@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.729"></script>
-<link rel="stylesheet" href="css/style.css?v=6.729">
+<script src="js/email.min.js?v=6.752"></script>
+<link rel="stylesheet" href="css/style.css?v=6.752">
 
 
 <style>
@@ -1221,7 +1221,19 @@ di tutte le serie</button>
             <div id="detail-admin-menu" style="position:relative;flex-shrink:0;">
               <button id="detail-admin-btn" onclick="_toggleMenuAdminSerie()"
                       class="btn-primary btn-admin"
-                      style="display:none;font-size:0.9rem;padding:0.4rem 1.1rem;">⚙️ Opzioni admin ▾</button>
+                      style="display:none;">⚙️ Opzioni admin ▾</button>
+              <!-- 🆕 v6.745 (Franco: "un bottone admin-like in alto a dx... dove c'e' il tasto
+                   equipollente della form della serie") - LA CONFIGURAZIONE DELLA TIPOLOGIA STA DOVE
+                   STA QUELLA DELLA SERIE.
+                   📌 IL POSTO E' LIBERO, e non per caso: dentro un box «Opzioni admin» non compare,
+                   perche' le sue voci parlano tutte della serie e sono spente (v6.644). I due tasti
+                   non si vedono mai insieme, quindi non si contendono lo spazio.
+                   🔴 E quello che stava accanto al titolo se n'e' andato: apriva questa stessa
+                   finestra, e due comandi identici nella stessa schermata sono due posti da tenere
+                   allineati. -->
+              <button id="detail-tipo-admin-btn" onclick="openAddTipoProdottoModal(_tipoProdottoCorrente)"
+                      class="btn-primary btn-admin"
+                      style="display:none;">⚙️ Modifica tipo di articolo</button>
               <!-- 📌 Il pannello si chiude da se' su QUALUNQUE clic che ci passi dentro:
                    un solo `onclick` sul contenitore invece di quattro sulle voci, e una
                    voce nuova domani non se ne puo' dimenticare. Il gesto della voce
@@ -1467,7 +1479,12 @@ di tutte le serie</button>
              ⚠️ Franco: "la coerenza e' solo nel look and feel del tasto". Quindi la posizione e'
              quella giusta per questo percorso, e lo STILE e' identico: la stringa qui sotto e'
              copiata da `detail-edit-series-btn`, meno il `display:none` che decide il JS. -->
-        <button id="detail-edit-tipo-btn" onclick="openAddTipoProdottoModal(_tipoProdottoCorrente)" style="display:none;font-size:0.92rem;padding:6px 14px;border-radius:8px;border:1px solid var(--action-admin);background:var(--action-admin);color:#ffffff;cursor:pointer;">&#9998; Modifica tipo di articolo</button>
+        <!-- 🗑️ v6.745 - QUI STAVA «Modifica tipo di articolo» (v6.165), ed e' salito in alto a
+             destra, dove la pagina di una serie tiene il suo comando da amministratore. Franco:
+             "dove c'e' il tasto equipollente della form della serie".
+             ⚠️ La ragione della v6.165 - "dentro un box la testata della serie si puo' chiudere,
+             quindi il tasto li' non si vedrebbe" - vale per la testata CHIUDIBILE, non per la riga
+             dei comandi in alto a destra, che in un box resta. -->
       </div>
       <div id="admin-add-item-btn" style="display:none;align-self:stretch;">
         <div style="display:flex;align-items:stretch;gap:0.75rem;flex-wrap:wrap;height:100%;">
@@ -1579,7 +1596,12 @@ di tutte le serie</button>
           <div id="items-owned-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
         </div>
         <div id="items-admin-filters" style="display:none;position:relative;margin-top:0.95rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">
-          <div style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);" data-i18n="items.adminFilters">Filtri aggiuntivi admin</div>
+          <!-- 🆕 v6.730 (Franco) - IL BOX DEI FILTRI ADMIN SI CHIUDE. L'etichetta sul bordo
+               diventa la testata premibile, con il triangolino degli altri riquadri.
+               ⚠️ Il triangolo sta nel div ESTERNO e il testo in uno span suo: applyI18n
+               scrive textContent su chi porta data-i18n, e si mangerebbe tutto cio' che gli
+               sta dentro. Stessa forma di items-filter-intro. -->
+          <div id="items-admin-filters-label" onclick="toggleAdminFiltri()" style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:0.5rem;white-space:nowrap;user-select:none;"><span id="items-admin-filters-tri" style="color:var(--accent);font-size:0.8rem;">▶</span><span data-i18n="items.adminFilters">Filtri aggiuntivi admin</span></div>
           <div id="items-admin-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:center;"></div>
         </div>
     </div>
@@ -2676,32 +2698,56 @@ di tutte le serie</button>
          cose: una gemella per la modifica sarebbe la copia che il §12.1 ha passato otto release a
          smontare. -->
     <input type="hidden" id="tipo-prodotto-id">
+    <!-- 🆕 v6.744 (Franco: "Nome e Nome in Inglese, mettili sulla stessa riga") — LE DUE
+         LINGUE AFFIANCATE. Sono la stessa domanda detta due volte: appaiate si leggono come una
+         coppia, incolonnate sembravano due campi indipendenti separati da una nota.
+         📌 La disposizione non e' nuova: e' quella delle due colonne griglia qui sotto (v6.162),
+         un flex che va a capo. Un secondo modo di affiancare due campi nella stessa finestra
+         sarebbe la copia destinata a divergere al primo ritocco.
+         ⚠️ La nota resta SOTTO la coppia e non dentro la colonna inglese: parla del ripiego fra
+         le due, non di uno dei due campi. -->
     <div class="form-group">
-      <label class="form-label">Nome</label>
-      <input class="form-input" type="text" id="tipo-prodotto-nome" placeholder="es. Cartoncini">
-    </div>
-    <div class="form-group">
-      <!-- 🆕 v6.305 (Franco: "in ENG Cartoncini non e' tradotto") — il nome dei tipi di articolo lo
-           scrive l'admin, quindi nessun dizionario poteva contenerlo: serviva un campo.
-           Vuoto = si usa l'italiano. Un tipo senza traduzione deve leggersi in italiano, non
-           sparire: un nome vuoto renderebbe il suo box irraggiungibile. -->
-      <label class="form-label">Nome in inglese</label>
-      <input class="form-input" type="text" id="tipo-prodotto-nome-en" placeholder="es. Cards">
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <div style="flex:1 1 220px;">
+          <label class="form-label">Nome</label>
+          <input class="form-input" type="text" id="tipo-prodotto-nome" placeholder="es. Cartoncini">
+        </div>
+        <!-- 🆕 v6.305 (Franco: "in ENG Cartoncini non e' tradotto") — il nome dei tipi di articolo
+             lo scrive l'admin, quindi nessun dizionario poteva contenerlo: serviva un campo.
+             Vuoto = si usa l'italiano. Un tipo senza traduzione deve leggersi in italiano, non
+             sparire: un nome vuoto renderebbe il suo box irraggiungibile. -->
+        <div style="flex:1 1 220px;">
+          <label class="form-label">Nome in inglese</label>
+          <input class="form-input" type="text" id="tipo-prodotto-nome-en" placeholder="es. Cards">
+        </div>
+      </div>
       <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Se lo lasci vuoto, in inglese si vede il nome italiano.</div>
     </div>
+    <!-- v6.148 (Franco) - il nome del BOX e' al plurale ("Cartoncini"), il titolo di UNA scheda
+         vuole il singolare ("Aggiungi cartoncino"). Sono due parole per due mestieri, e il codice
+         non ricava l'una dall'altra: sarebbe una regola di grammatica italiana dentro il codice,
+         che la v6.073 ha gia' rifiutato di scrivere. Vuoto = si usa il plurale.
+         🆕 v6.744 - e le due lingue stanno affiancate, come la coppia dei plurali. -->
     <div class="form-group">
-      <!-- v6.148 (Franco) - il nome del BOX e' al plurale ("Cartoncini"), il titolo di UNA scheda
-           vuole il singolare ("Aggiungi cartoncino"). Sono due parole per due mestieri, e il codice
-           non ricava l'una dall'altra: sarebbe una regola di grammatica italiana dentro il codice,
-           che la v6.073 ha gia' rifiutato di scrivere. Vuoto = si usa il plurale. -->
-      <label class="form-label">Nome al singolare</label>
-      <input class="form-input" type="text" id="tipo-prodotto-singolare" placeholder="es. cartoncino">
-      <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Serve al titolo della scheda: &quot;Aggiungi cartoncino&quot;. Se lo lasci vuoto si usa il nome qui sopra.</div>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <div style="flex:1 1 220px;">
+          <label class="form-label">Nome al singolare</label>
+          <input class="form-input" type="text" id="tipo-prodotto-singolare" placeholder="es. cartoncino">
+        </div>
+        <div style="flex:1 1 220px;">
+          <label class="form-label">Nome al singolare, in inglese</label>
+          <input class="form-input" type="text" id="tipo-prodotto-singolare-en" placeholder="es. card">
+        </div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Serve al titolo della scheda: &quot;Aggiungi cartoncino&quot;. Vuoti, si scende di ripiego: nome inglese, poi singolare italiano, poi nome italiano.</div>
     </div>
     <div class="form-group">
-      <label class="form-label">Nome al singolare, in inglese</label>
-      <input class="form-input" type="text" id="tipo-prodotto-singolare-en" placeholder="es. card">
-      <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Se lo lasci vuoto si scende di ripiego: nome inglese, poi singolare italiano, poi nome italiano.</div>
+      <label class="form-label">Genere</label>
+      <select class="form-select" id="tipo-prodotto-genere">
+        <option value="m">Maschile &#8212; &quot;Li hai tutti !&quot;</option>
+        <option value="f">Femminile &#8212; &quot;Le hai tutte !&quot;</option>
+      </select>
+      <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Serve alle frasi che si accordano: le numeriche della serie scrivono &quot;Le hai tutte !&quot; oppure &quot;Li hai tutti !&quot;.</div>
     </div>
     <!-- v6.149 (Franco) - il tipo di prodotto prevede il retro? Spento di default, al contrario
          del flag delle serie: li' e' l'eccezione su un insieme che il retro ce l'ha, qui il caso
@@ -2992,6 +3038,14 @@ di tutte le serie</button>
           <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:0.5rem;color:var(--warn);">Articoli non in questa serie</div>
           <div id="series-articoli-nascosti" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
           <div class="form-hint" style="margin-top:0.3rem;">Il box sparisce dall'hub della serie. Nasconde la porta, non la stanza: gli oggetti restano nei dati.</div>
+        </div>
+        <!-- 🆕 v6.749 (Franco: "quei due campi mettili uno affianco all'altro") — LA SECONDA
+             COLONNA. Le due liste sono la stessa domanda in due versi, e dalla v6.748 si parlano:
+             spuntare di la' spegne di qua. Affiancate quel legame si vede; incolonnate, per
+             confrontarle si scorreva.
+             📌 La griglia a due colonne e' quella della v6.219: non se ne apre una seconda,
+             cambiano i suoi figli. -->
+        <div>
           <!-- 🆕 v6.716 - L'ELENCO POSITIVO, e sta QUI perche' la domanda e' la sorella di
                quella sopra: la prima dice quali tipologie la serie NON ha, questa quali la
                FANNO. In due schede diverse avrebbe costretto ad andare avanti e indietro per
@@ -3000,12 +3054,18 @@ di tutte le serie</button>
                wantlist: e' il colore con cui il sito dice gia' "completa". Il giallo qui sopra
                dice "attenzione, questa roba non c'e'"; un secondo giallo avrebbe fatto sembrare
                le due liste la stessa cosa scritta due volte. -->
-          <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin:0.9rem 0 0.5rem;color:var(--success);">Servono per la serie completa</div>
+          <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:0.5rem;color:var(--success);">Servono per la serie completa</div>
           <div id="series-articoli-completezza" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
           <div class="form-hint" style="margin-top:0.3rem;">La serie e' completa quando hai tutti gli articoli base di QUESTE tipologie. Se non ne scegli nessuna vale il ripiego di sempre: Figurine con retro, Figurine, Carte.</div>
         </div>
-        <!-- DESTRA -->
-        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+      </div>
+      <!-- 🔄 v6.749 (Franco: "sposta piu' in basso i campi che ora sono alla dx di Articoli non
+           in questa serie") — LE SPUNTE DELLA SERIE SCENDONO SOTTO, e prendono la riga intera.
+           📌 Erano la colonna DESTRA della griglia dalla v6.219, quando a sinistra c'era una
+           lista sola. Adesso le liste sono due e la griglia e' piena: queste non ci stavano piu'
+           accanto, ci stavano SOPRA una delle due.
+           ⚠️ Il contenitore resta un flex in colonna, identico: cambia dove sta, non com'e'. -->
+      <div style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:0.75rem;">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label" id="series-has-subseries-group">
             <input type="checkbox" id="series-has-subseries-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
             <span data-i18n="form.series.hasSubseries">Ha sottoserie</span>
@@ -3092,7 +3152,6 @@ di tutte le serie</button>
             <input type="checkbox" id="series-abilita-modifica-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
             <span data-i18n="form.series.abilitaModifica">Abilita modifica figurine da attaccare</span>
           </label>
-        </div>
       </div>
 
     <!-- v6.220 — DI QUI LA COPERTINA E' SALITA accanto ai due nomi, in cima al tab. Era arrivata
@@ -3968,7 +4027,7 @@ di tutte le serie</button>
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.729"></script>
+<script src="js/app.js?v=6.752"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3992,7 +4051,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.729'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.752'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 

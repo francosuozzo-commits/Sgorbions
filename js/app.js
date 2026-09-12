@@ -1,6 +1,326 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.752 — 🚫 ANCHE LE SPUNTE CHE PARLANO SOLO DEI RETRO SI SPENGONO. Franco: «non sono
+//          d'accordo. Anche questa spunta deve essere disabilitata. Per change, omaggi ed
+//          errori di stampa».
+//          🔴 LA v6.750 SI ERA FERMATA A META': aveva spento i tre ELENCHI e lasciato
+//          premibili le spunte che li comandano - la stessa contraddizione un centimetro
+//          piu' in alto, e per giunta l'unica ancora capace di scrivere nei dati.
+//          🔴 E QUESTE SI SPENGONO DAVVERO, al contrario degli elenchi: un elenco e'
+//          testo scritto a mano che cancellato non torna, una spunta e' un'AFFERMAZIONE
+//          che lasciata accesa finirebbe nei dati dicendo il falso (regola della v6.748).
+//          ⚠️ GLI ERRORI DI STAMPA NON HANNO UNA SPUNTA DI RETRO e non se ne inventa una:
+//          «Ha errori di stampa» e' una sola per tutte e due le facce, e spegnerla
+//          toglierebbe a una serie senza retro il modo di dichiarare i suoi errori
+//          FRONTALI. Li' resta spento solo l'elenco DI RETRO (v6.750).
+//          📌 E i contatori seguono: `toggleSeriesCountGroups` si richiama, o «N. change
+//          di retro» resterebbe appeso sotto una spunta spenta.
+//          Modificato js/app.js.
+//
+// v6.751 — 🚫 NELL'ELENCO DI «SERVONO PER LA SERIE COMPLETA» CI SONO SOLO LE TIPOLOGIE
+//          CHE IN QUESTA SERIE CI STANNO. Franco: «come mai elenchi anche questi?
+//          Calendari Cartoncini Diari Felpe. Sono TDA senza serie quindi per def qui nn
+//          possono esserci».
+//          🔴 LA v6.716 LE PRENDEVA TUTTE E QUINDICI citando la regola della tabella
+//          dell'admin: vera per una tabella che CENSISCE, falsa per questa domanda, che
+//          non chiede quali tipologie esistano ma cosa rende completa QUESTA serie.
+//          📌 LA DOMANDA SI FA AGLI ARTICOLI: una TDA non dichiara da nessuna parte una
+//          «serie di riferimento», il legame lo fanno i suoi articoli con `seriesId`. Cosi'
+//          la regola copre anche il caso piu' largo: le Felpe non compaiono nella Serie 2
+//          perche' li' non ce ne sono, non perche' siano «senza serie» in assoluto.
+//          🔴 LE DODICI POSIZIONALI RESTANO TUTTE: quelle hanno gia' il loro comando
+//          («Articoli non in questa serie», che dalla v6.748 spegne le caselle di qua),
+//          le tipologie dei dati no - senza questa regola non avrebbero come uscirne.
+//          ⚠️ Una scelta GIA' FATTA si mostra comunque, o resterebbe nei dati senza un
+//          posto dove toglierla; e se gli articoli non sono ancora arrivati dalla rete
+//          l'elenco si accorcia ma non si perde niente, perche' il salvataggio conserva
+//          gia' cio' che non e' stato offerto (v6.716).
+//          Modificato js/app.js.
+//
+// v6.750 — 🚫 UNA SERIE SENZA RETRO NON COMPILA I CAMPI DEL RETRO, e il badge non dice
+//          piu' «frontale». Franco: «se una serie ha la spunta Retro attiva nel campo
+//          "Articoli non in questa serie" allora non deve essere popolabile il campo
+//          "Tipologie di omaggio DI RETRO"; stessa cosa per errori di stampa e change.
+//          Inoltre il badge "Errore di stampa frontale" deve essere solo "Errore di stampa"».
+//          🔴 LA DOMANDA SI FACEVA GIA', IN UN POSTO SOLO: `_aggiornaRigaColonneRetro`
+//          (v6.169) nasconde da li' la riga "Retro" delle colonne. Le tre liste sono la
+//          seconda conseguenza della stessa risposta, quindi stanno nella stessa funzione -
+//          che percio' cambia nome in `_aggiornaCampiDiRetro`: si chiamava "riga colonne"
+//          quando faceva una cosa sola, e un nome che mente costa piu' di una rinomina.
+//          🔴 I TRE CAMPI NON SI SVUOTANO, al contrario delle caselle della v6.748:
+//          la' una spunta accesa era un'affermazione falsa destinata ai dati, qui c'e' del
+//          testo scritto a mano che non dice niente di falso e che cancellato non torna.
+//          🔄 IL BADGE: la parola vive in una fonte sola dalla v6.510, e da li' la
+//          prendono il badge E il titolo della scheda - la v6.519 le aveva unificate
+//          apposta. Quindi cambiano tutti e due, ed e' una REVOCA PARZIALE della v6.519:
+//          «frontale» era rumore (lo sono quasi tutti), «posteriore» e' la notizia.
+//          📌 Le pillole dei filtri restano «FRONTALI»/«POSTERIORI»: sono due scelte
+//          affiancate, e una senza nome non si potrebbe premere.
+//          Modificato js/app.js.
+//
+// v6.749 — 🧮 LE DUE LISTE SORELLE AFFIANCATE. Franco: «quei due campi mettili uno
+//          affianco all'altro; sposta piu' in basso i campi che ora sono alla dx».
+//          🔴 Sono la stessa domanda in due versi - cosa la serie NON ha, cosa la FA - e
+//          dalla v6.748 si parlano davvero: spuntare di la' spegne di qua. Affiancate quel
+//          legame si vede; incolonnate, per confrontarle si scorreva.
+//          📌 La griglia a due colonne e' quella della v6.219: non se ne e' aperta una
+//          seconda, sono cambiati i suoi figli. Le spunte della serie scendono sotto e
+//          prendono la riga intera.
+//          📌 Il titoletto verde perde lo 0.9rem che aveva SOPRA: era lo stacco da cio'
+//          che gli stava sopra quand'era secondo in colonna, e affiancato dava 14px di
+//          scarto fra i due titoli - due colonne che non partono insieme.
+//          ⚠️ Si tocca SOLO l'impaginazione: nessun id, nessuna classe, nessun campo
+//          cambia nome - ed e' la condizione perche' una modifica cosi' non porti con se'
+//          un difetto invisibile. La prova conta le graffe dell'index: un `</div>` di
+//          troppo non da' nessun errore, scompone la scheda piu' in basso.
+//          Modificato index.html.
+//
+// v6.748 — 🚫 NON SI DICHIARA COMPLETANTE UNA TIPOLOGIA CHE LA SERIE NON HA. Franco: «il
+//          campo Servono per la serie completa dovrebbe mostrare grigiate (non cliccabili)
+//          le opzioni per le quali Articoli non in questa serie e' true».
+//          🔴 LE DUE DOMANDE SONO SORELLE (v6.716) e insieme potevano dire una cosa
+//          impossibile: «completa quando hai tutti gli articoli che NON ha».
+//          🔴 E LA CASELLA SI SPEGNE, NON SOLO SI GRIGIA: il DOM non salta le caselle
+//          disabilitate, quindi una spuntata-e-grigia sarebbe finita nei dati lo stesso -
+//          la contraddizione, con l'aria di essere stata sistemata a schermo.
+//          📌 Non e' silenzioso: accade mentre si preme l'altra casella. Ed e'
+//          reversibile - togliendo quella spunta, questa torna premibile e vuota.
+//          ⚠️ Le tipologie della completezza sono quindici e quelle nascondibili dodici:
+//          le tre dei dati non hanno una casella «non in questa serie» e restano libere.
+//          Modificato js/app.js.
+//
+// v6.747 — 🗂️ L'HUB DI UNA TIPOLOGIA E' LARGO COME QUELLO DELL'INVENTARIO, E FA QUATTRO
+//          CARD. Franco: «sotto al carosello non occupa tutto lo spazio... vedo 3 card per
+//          riga» → «4».
+//          🔴 MISURATO: quelle card stavano in un contenitore da 1100px meno 4rem di
+//          padding (~1036), con `.grid-3` che e' «quante colonne da almeno 300px ci
+//          stanno»: tre. L'hub dell'Inventario e' largo fino a 1620 (v6.725→727) e le
+//          colonne le dichiara (v6.724). Non era una scelta, era un'altra pagina.
+//          📌 DUE SELETTORI, NON DUE NUMERI - la lezione della v6.746, di poche ore fa:
+//          una regola in un posto solo protegge chi c'era, non chi arriva dopo.
+//          ⚠️ Il telefono non cambia: li' le colonne le scrive il JS come stile inline
+//          (v6.080), e l'inline vince su queste regole.
+//          Modificato css/style.css.
+//
+// v6.746 — 📏 IL TASTO DELLA TIPOLOGIA E' GRANDE COME «OPZIONI ADMIN». Franco: «il tasto
+//          deve avere le stesse dimensioni del tasto opzioni admin».
+//          🔴 MISURATO APRENDO LA PREVIEW: 18,4px di corpo e 12/32 di imbottitura contro
+//          14,4px e 6,4/17,6. La taglia dei tasti admin sta in una regola sola dalla
+//          v6.733, e quel tasto non era nel suo elenco - e' nato dopo.
+//          📌 Si aggiunge un SELETTORE, non si riscrivono i numeri: scriverli sarebbe la
+//          seconda copia della stessa taglia, cioe' il difetto che la v6.733 aveva tolto.
+//          ⚠️ LA LEZIONE: una regola «in un posto solo» protegge chi c'era, non chi nasce
+//          dopo. Niente lo ricorda a un tasto nuovo, tranne una prova che lo conta.
+//          Modificato css/style.css.
+//
+// v6.745 — ⚙️ LA CONFIGURAZIONE DELLA TIPOLOGIA STA DOVE STA QUELLA DELLA SERIE. Franco:
+//          «un bottone admin-like in alto a dx... dove c'e' il tasto equipollente della
+//          form della serie».
+//          📌 IL POSTO ERA LIBERO, e non per caso: dentro un box «Opzioni admin» non
+//          compare, perche' le sue voci parlano tutte della serie e sono spente (v6.644).
+//          I due tasti non si vedono mai insieme.
+//          🔴 E QUELLO ACCANTO AL TITOLO SE N'E' ANDATO: apriva la stessa identica
+//          finestra. Due comandi uguali nella stessa schermata sono due posti da tenere
+//          allineati - il difetto che questa giornata ha gia' pagato tre volte.
+//          ⚠️ La ragione della v6.165 («dentro un box la testata si puo' chiudere, quindi
+//          li' il tasto non si vedrebbe») vale per la testata chiudibile, non per la riga
+//          dei comandi in alto a destra, che in un box resta.
+//          Modificato index.html e js/app.js.
+//
+// v6.744 — 📐 ITALIANO E INGLESE AFFIANCATI nella scheda della tipologia. Franco: «Nome e
+//          Nome in Inglese, mettili sulla stessa riga; stessa cosa per Nome al singolare e
+//          Nome al singolare Inglese; stessa cosa per i nomi plurali».
+//          🔴 LE COPPIE SONO DUE - plurale e singolare - e sono la stessa domanda detta in
+//          due lingue: appaiate si leggono come una coppia, incolonnate sembravano campi
+//          indipendenti separati da una nota.
+//          📌 SI RIUSA LA DISPOSIZIONE CHE C'ERA: quella delle due colonne griglia
+//          (v6.162), un flex che va a capo. Un secondo modo di affiancare due campi nella
+//          stessa finestra sarebbe la copia che diverge al primo ritocco.
+//          ⚠️ Il GENERE resta su una riga sua: non ha un gemello inglese, perche' e' una
+//          proprieta' della parola italiana.
+//          📌 E le due note dei ripieghi si fondono in una sola sotto ciascuna coppia:
+//          parlano del rapporto fra i due campi, non di uno dei due.
+//          Modificato index.html.
+//
+// v6.743 — 🎨 IL CAMPO GENERE PORTA `.form-select`, NON `.form-input`. Franco: «non lo
+//          vedo?».
+//          🔴 Il campo c'era - verificato nell'index e nella preview - ma con il vestito
+//          delle CASELLE DI TESTO. Le tendine di questo sito hanno una classe loro, che
+//          porta `appearance: none` e la regola `.form-select option`: quella che colora le
+//          voci sul fondo scuro. Con la classe sbagliata la tendina la disegna il sistema
+//          operativo, e su un tema scuro puo' uscire chiara su chiaro.
+//          📌 MISURATO: le tendine dell'index sono sei, tre per classe. Non c'e' una
+//          convenzione unica, c'e' una differenza reale - `.form-select option` - e
+//          questa tendina la vuole.
+//          ⚠️ E NON E' DETTO CHE FOSSE QUESTO A NASCONDERLA: con `.form-input` una
+//          tendina si disegna comunque. Qui si corregge una cosa giusta, non si
+//          dichiara chiusa la segnalazione.
+//          Modificato index.html.
+//
+// v6.742 — ♀♂ IL GENERE DI UNA TIPOLOGIA DI ARTICOLO. Franco: «fai il campo».
+//          🔴 SERVE A UNA FRASE SOLA - «Le hai tutte !» / «Li hai tutti !» nelle
+//          numeriche della serie - e fino a ieri si prendeva dalla SEZIONE che contiene il
+//          box: «Altri articoli» e' maschile, quindi su «Felpe» diceva «li hai tutti».
+//          📌 SI DICHIARA, NON SI INDOVINA: ricavarlo dalla desinenza sarebbe grammatica
+//          italiana scritta nel codice, che la v6.073 ha gia' rifiutato di scrivere.
+//          ⚠️ RIPIEGO DICHIARATO: una tipologia salvata prima di oggi il campo non ce l'ha
+//          e continua a prendere il genere della sezione - si comporta come ieri finche'
+//          non si apre e si salva quella scheda. Nessuna cambia frase da sola.
+//          Modificato index.html e js/app.js.
+//
+// v6.741 — ✍️ «1 FELPA», NON «1 ALTRI ARTICOLI». Franco: «scrivi 1 Altri articoli, usando
+//          il plurale; non devi usare questa modalita' espressiva; devi dire N diari, o N
+//          felpe».
+//          🔴 DUE COSE NELLA STESSA RIGA: dentro un box la parola e' quella del BOX (era
+//          quella della sezione che lo contiene), e va al SINGOLARE quando il numero e' uno.
+//          ⚠️ Il singolare vale anche FUORI dai box: «1 figurina set base» invece di «1
+//          Figurine set base». E' la regola della v6.688, che questa riga non seguiva.
+//          📌 IL GENERE RESTA QUELLO DELLA SEZIONE, dichiarato: serve a «le hai tutte» /
+//          «li hai tutti», e la scheda di una tipologia non ha un campo per il genere.
+//          Indovinarlo dalla desinenza sarebbe grammatica italiana scritta nel codice, che
+//          questo file rifiuta dalla v6.073.
+//          Modificato js/app.js.
+//
+// v6.740 — 🧹 L'11 VENIVA DA `tipiPresenti`, E LA v6.739 AVEVA CORRETTO UNA RIGA MORTA.
+//          Franco: «io vedo ancora 11» → «11 Altri articoli».
+//          🔴 IN `renderSeriesMeta` C'ERA UN `const items` CHE NESSUNO LEGGEVA. Tutti i
+//          numeri di quella funzione vengono da `tipiPresenti` (`g.base`, `g.items`); quella
+//          riga era una seconda lettura degli stessi dati, morta da chissa' quando. La
+//          v6.739 l'ha corretta, la prova l'ha eseguita, ed erano tutte e due verdi su
+//          codice che non gira.
+//          ✅ Adesso il box e' il TERZO ARGOMENTO di `tipiPresenti`, con ripiego al
+//          comportamento di sempre: lo passa chi disegna la pagina corrente, non chi genera
+//          le pagine per Google - li' `_tipoProdottoCorrente` puo' essere rimasto acceso da
+//          una navigazione precedente, e filtrerebbe in silenzio.
+//          ⚠️ LA LEZIONE E' SUL METODO: eseguire non basta, bisogna eseguire cio' che la
+//          PAGINA esegue. Una prova che esegue codice morto e' verde e non difende niente.
+//          Modificato js/app.js.
+//
+// v6.739 — 🔧 ANCHE I NUMERI DELLA TESTATA SANNO DENTRO QUALE BOX SI E'. Franco: «se
+//          vado in felpe trovo 11 articoli; di felpa ce ne e' una; stai mostrando il n. di
+//          tutti gli articoli senza serie».
+//          🔴 TERZA VOLTA OGGI CON LA STESSA FORMA: `renderSeriesMeta` chiedeva serie e
+//          sezione e non il box, come `_articoliDiQuestaVista` prima della v6.736. Il
+//          setaccio lo sa dalla v6.144: a dimenticarlo sono le funzioni che si contano gli
+//          articoli per conto proprio.
+//          📌 Si vedeva adesso perche' la v6.737 ha messo «Felpe» in cima a quella
+//          pagina: finche' il titolo diceva «Articoli senza serie», undici era il numero
+//          giusto della cosa sbagliata.
+//          ⚠️ NON tocca il caso della SOTTOSERIE: li' quei numeri restano quelli della
+//          sezione intera. E' la stessa domanda, ma nessuno l'ha ancora posta.
+//          Modificato js/app.js.
+//
+// v6.738 — 🔎 DENTRO UN BOX LA RICERCA NOMINA IL BOX. Franco: «dentro il box vorrei
+//          leggere Felpe». La frase diceva «Imposta i criteri per la tua ricerca di altri
+//          articoli» stando dentro le Felpe - il nome della sezione che il box contiene.
+//          🔴 UNA PAROLA SOLA, e cambiano insieme la frase e il SEGNAPOSTO della barra:
+//          nascono dalla stessa. Lasciarne indietro uno sarebbe due frasi che si
+//          contraddicono a due centimetri.
+//          📌 `tipoQui` sale in cima alla funzione: era dichiarata dentro il ramo del
+//          TASTO, che questa regola ce l'ha dalla v6.653 - ed e' esattamente il motivo per
+//          cui le altre due frasi erano rimaste indietro di due release.
+//          Modificato js/app.js.
+//
+// v6.737 — 🏰 LA SERIE FINTA NON SI VEDE PIU'. Franco: «quando premo una card relativa a
+//          una TDA che non ha serie non devo atterrare su una pagina il cui titolo sia il
+//          nome della serie finta che li contiene; il titolo deve dare il nome della TDA e
+//          mostrare la foto di quella TDA».
+//          🔴 LA DOMANDA E' IL FLAG `serieContenitore`, NON IL NOME: quella serie si puo'
+//          chiamare come si vuole, ed e' la ragione per cui il flag e' nato (v6.204).
+//          ⚠️ Se ne vanno anche l'ANNO e la FOTINA: Franco non li ha nominati uno per uno,
+//          ma sono la stessa cosa in altra forma - «in quello scenario non c'e' alcuna
+//          serie». Se ne volesse uno indietro, e' una riga.
+//          📌 E il titolo della SEZIONE tace, per la regola della v6.729: quella parola
+//          la dice gia' il titolo della pagina.
+//          Modificato js/app.js.
+//
+// v6.736 — 🔧 LA VISTA SA ANCHE DENTRO QUALE BOX SI E'. Franco, sulla preview della
+//          v6.735: «vedo ancora il raggruppatore categorie per le felpe» - una felpa sola,
+//          senza categoria, e il riquadro a schermo.
+//          🔴 DIFETTO DELLA v6.731, E UNA DIMENTICANZA: `_articoliDiQuestaVista` chiedeva
+//          serie, sezione e sottoserie, non il tipo di articolo. Dentro un box tornavano
+//          tutti gli «Altri articoli», quindi bastava che UNO avesse una categoria perche'
+//          il riquadro delle felpe si mostrasse - e poi si riempisse con la sola
+//          «(Senza categoria)».
+//          📌 Il box e' DOVE SI E', come la sezione e il gruppo. Il setaccio lo sa dalla
+//          v6.144; questa funzione era nata senza. Le tre domande stanno adesso insieme.
+//          ⚠️ L'ha trovato Franco guardando lo schermo: la suite della v6.731 eseguiva la
+//          funzione, ma su un banco dove i box non esistevano. Adesso li esegue.
+//          Modificato js/app.js.
+//
+// v6.735 — 🗑️ LE PAGINE PER GOOGLE CHIAMANO OGNI TIPOLOGIA COL SUO NOME. Via il
+//          dizionario a mano di `_GSC_PAROLE`: conosceva cinque tipologie su dodici, e per
+//          le altre sette la riga del set base scriveva «48 undefined set base».
+//          🔴 LA PAROLA E' L'ETICHETTA DEL SITO IN MINUSCOLO, quindi non e' piu' una
+//          copia: non puo' divergere, e una tipologia nuova entra da se'. Franco, davanti
+//          alle otto parole proposte: «sono perfette, procedi con la traduzione automatica
+//          presa dal descrittore» - e le otto proposte ERANO quelle etichette.
+//          ⚠️ Due frasi cambiano, ed e' voluto: «Figurine con retro» diceva «figurine»,
+//          cioe' il nome di un'altra tipologia.
+//          📌 Resta a mano il solo elenco di chi NON ha un set base (bustine, album,
+//          altri articoli): non e' un nome, e' una proprieta' - e il suo ripiego e' quello
+//          che Franco ha confermato per tutte le altre otto.
+//          Modificato js/app.js.
+//
+// v6.734 — 🧧 L'ICONA DELLE BUSTINE. Franco: «la icona di Bustine non mi piace» — era
+//          📦, uno scatolone da spedizione - e fra le tre proposte ha scelto 🧧,
+//          la bustina chiusa.
+//          📌 UNA RIGA SOLA, nel descrittore: `SECTION_ICONS` si deriva da `ARTICOLI`,
+//          quindi non esiste una seconda copia da tenere allineata.
+//          ⚠️ Le altre due 📦 restano: sono i segnaposto della griglia vuota e del box
+//          senza foto. Dicono «qui non c'e' niente», non «bustine».
+//          Modificato js/app.js.
+//
+// v6.733 — 📏 I TASTI «+ AGGIUNGI» ALTI COME «OPZIONI ADMIN». Franco: «i bottoni
+//          Aggiungi serie e Aggiungi articolo devono essere alti la meta'», e poi il metro:
+//          «falli alti come il tasto opzioni admin».
+//          🔴 IL METRO NON E' UN NUMERO, E' UN ALTRO TASTO: la taglia sta in una regola
+//          sola che comprende anche «Opzioni admin», che finora se la portava INLINE
+//          nell'index. Lasciarcela avrebbe scritto lo stesso numero in due posti.
+//          ⚠️ REVOCA DICHIARATA, e sono due, tutte e due chieste da Franco a suo tempo:
+//          la v6.373 (il tasto della sezione alto quanto il titolo della pagina) e la
+//          v6.712 per i due «+» della testata Inventario. Il 3,05rem resta al solo
+//          «Mostra informazioni sommarie», che stavolta Franco non ha nominato - quindi
+//          in quella testata il riepilogo resta piu' alto dei due «+».
+//          Modificato index.html e css/style.css.
+//
+// v6.732 — 🏷️ LA FRASE DELLA RICERCA DICE IN QUALE SOTTOSERIE SI E'. Franco:
+//          «Imposta i criteri per la tua ricerca di spille [some sottoserie]».
+//          🔴 LA CODA NASCE COME FUNZIONE (`_codaSottoserie`) E LA USA ANCHE LA TESTATA
+//          (v6.719): era la stessa composizione scritta in due punti, e due punti
+//          divergono il giorno che uno dei due cambia. Medicina della v6.729.
+//          ⚠️ La stringa vuota non e' un gruppo (SET PRINCIPALE, v6.682): li' la frase
+//          resta quella di sempre.
+//          📌 Il segnaposto della barra («Cerca spille...») NON cambia: Franco ha
+//          nominato il titolo del box, che e' un'altra frase (distinzione della v6.365).
+//          Modificato js/app.js.
+//
+// v6.731 — 🙈 QUELLO CHE NON AVRA' MAI NIENTE DA DIRE NON SI MOSTRA. Due punti della
+//          pagina di ricerca segnati da Franco: il box «Aggiungi dei filtri di ricerca
+//          preimpostati» e, dentro di lui, il riquadro delle categorie.
+//          🔴 «MAI» NON E' «ADESSO», ed e' tutto il punto: la domanda si fa sugli articoli
+//          della vista ignorando ogni filtro acceso. Fatta sul setaccio, il riquadro
+//          sparirebbe proprio mentre una ricerca lo svuota, cioe' quando serve per tornare
+//          indietro - la regola di Franco scritta nel commento della v6.533.
+//          📌 Il vuoto e' un valore vero in `_retroCatCounts`: senza nessuna categoria
+//          compilata gli articoli finivano tutti in UN gruppo, non in zero, e chi disegnava
+//          contava i gruppi. La regola giusta non e' «un gruppo solo non si mostra»: e' «si
+//          nasconde quando l'unico gruppo e' quello VUOTO».
+//          ⚠️ Si spegne il BOX, non l'etichetta: l'etichetta sta dentro di lui, e due
+//          condizioni da tenere allineate sono il modo in cui questa coppia si era scucita.
+//          Modificato js/app.js.
+//
+// v6.730 — 🔽 IL BOX «FILTRI AGGIUNTIVI ADMIN» SI CHIUDE, E NASCE CHIUSO. Franco:
+//          «il box Filtri aggiuntivi admin prende un collassatore, chiuso di default».
+//          🔴 E ALLA DOMANDA SE LA SCELTA SI RICORDI HA RISPOSTO **chiuso a ogni
+//          apertura**: nessun localStorage, nessuna memoria fra una sezione e l'altra.
+//          📌 Il collassatore dei riquadri di raggruppamento ha un'altra regola (si apre
+//          da se' sotto le dieci voci, `_SOGLIA_COLLASSO`): qui non c'e' soglia.
+//          ⚠️ Il triangolino sta nel div esterno e il testo in uno span con `data-i18n`,
+//          perche' `applyI18n` scrive `textContent` e si mangerebbe il triangolo.
+//          Modificato index.html e js/app.js.
+//
 // v6.729 — 🤫 IL TITOLO DELLA SEZIONE TACE DENTRO UN GRUPPO. Franco: «non mostrare la TDA
 //          nei casi in cui la mostri in altro, cioe' nei casi in cui la pagina e' in una
 //          sottoserie» — la testata scrive gia' «Figurine Metal», e il titolo sotto ripeteva
@@ -9783,7 +10103,7 @@
 //          e la sequenza espandi/migra/sposta/contrai e' effettivamente piu' pulita: alla fine non
 //          resta niente di morto, mentre col ripiego i due campi sarebbero rimasti li' per sempre.
 //
-//          ⚠️ `_aggiornaRigaColonneRetro` era attaccata alla casella "Figurine senza retro" con
+//          ⚠️ `_aggiornaCampiDiRetro` era attaccata alla casella "Figurine senza retro" con
 //          un `onchange` nell'index: ora la domanda la fa alle caselle generate. Senza questo, la
 //          riga delle colonne dei Retro avrebbe smesso di comparire e sparire - **e senza errori**.
 // ------------------------------------------------------------
@@ -10762,7 +11082,7 @@
 //          📌 Due dettagli che non sono di forma:
 //          - `_ripristinaFlagSerie` si chiama FUORI dal `if (s)`, cosi' una serie non trovata non
 //            lascia in giro le caselle di quella di prima;
-//          - `_aggiornaRigaColonneRetro()` sta DENTRO la funzione, dopo le spunte: dipende da
+//          - `_aggiornaCampiDiRetro()` sta DENTRO la funzione, dopo le spunte: dipende da
 //            `noRetro`, e nel ramo creazione veniva chiamata prima che qualcuno lo azzerasse.
 //
 //          Trovato leggendo il codice mentre si preparava la prova del giro salva-e-riapri sulle
@@ -26169,7 +26489,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.729';
+const JS_VERSION = 'v6.752';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27934,10 +28254,33 @@ function t(key) { return (i18n[currentLang] || i18n.en)[key] || (i18n.en)[key] |
 // "Cerca figurine...") perché contengono il nome della sezione, quindi non possono stare in un
 // data-i18n fisso: venivano scritti una volta sola all'apertura della sezione e restavano nella
 // lingua di quel momento. Ora sono in una funzione, chiamata sia lì sia ad ogni cambio lingua.
+// 🆕 v6.732 (Franco) - LA CODA DEL GRUPPO, SCRITTA IN UN POSTO SOLO. La frase della
+// ricerca diventa «Imposta i criteri per la tua ricerca di spille Grandi»: dice DOVE si sta
+// cercando, e la griglia sotto mostra soltanto quel gruppo dalla v6.651.
+// 📌 La composizione e' quella che la testata usa dalla v6.719 - tipologia, uno spazio,
+//    gruppo. Adesso e' una funzione, quindi i due punti non possono piu' divergere: e' la
+//    medicina della v6.729, dove a scrivere la stessa cosa erano in quattro.
+// ⚠️ La stringa vuota NON e' un gruppo: e' il SET PRINCIPALE (v6.682), e li' non si
+//    aggiunge niente - stessa decisione del titolo di sezione.
+function _codaSottoserie() {
+  return _sottoserieAttiva ? ' ' + _sottoserieAttiva : '';
+}
 function aggiornaTestiRicercaSezione() {
   if (!currentSection) return;
   const it = (currentLang === 'it');
-  const nome = (getSectionLabel(currentSection) || (it ? 'articoli' : 'items')).toLowerCase();
+  // 🆕 v6.738 (Franco: «dentro il box vorrei leggere Felpe») - DENTRO UN BOX SI PARLA DEL
+  //    BOX. La frase diceva «la tua ricerca di altri articoli» stando dentro le Felpe: il nome
+  //    della sezione che il box contiene, non quello di cio' che si sta guardando.
+  // 📌 E' la regola che il TASTO segue dalla v6.653, portata sulla parola: da qui in giu'
+  //    la tipologia si cerca UNA volta e la usano in tre - frase, segnaposto e tasto. Prima
+  //    la cercava solo il tasto, ed e' il motivo per cui le altre due erano rimaste indietro.
+  // ⚠️ CAMBIANO INSIEME anche il SEGNAPOSTO della barra («Cerca felpe...»): nasce dalla
+  //    stessa parola, e lasciarlo a «Cerca altri articoli...» avrebbe messo due frasi che si
+  //    contraddicono a due centimetri di distanza.
+  const tipoQui = _tipoProdottoCorrente
+    ? _tipiProdotto().find(x => x.id === _tipoProdottoCorrente) : null;
+  const nome = ((tipoQui ? _nomeTipo(tipoQui) : getSectionLabel(currentSection))
+                || (it ? 'articoli' : 'items')).toLowerCase();
   const si = document.getElementById('items-search');
   if (si) si.placeholder = (it ? 'Cerca ' : 'Search ') + nome + '...';
   const st = document.getElementById('items-search-title');
@@ -27960,7 +28303,7 @@ function aggiornaTestiRicercaSezione() {
   // tolto una frase per far posto a un'altra dove non andava.
   // 📌 La frase nuova non passa piu' di qui: e' un `data-i18n` nell'index (`items.searchHint`), e
   // puo' esserlo perche' - a differenza di questa - non contiene il nome della sezione.
-  if (st) st.textContent = (it ? 'Imposta i criteri per la tua ricerca di ' : 'Set your search criteria for ') + nome;
+  if (st) st.textContent = (it ? 'Imposta i criteri per la tua ricerca di ' : 'Set your search criteria for ') + nome + _codaSottoserie();
   // 🆕 v6.652 (Franco: «nella pagina delle Spille, il tasto "Aggiungi" dovrebbe dire
   //    "Aggiungi spilla"») — IL TASTO DICE COSA SI AGGIUNGE.
   // 📌 Si chiede la parola al DESCRITTORE, per tutti e otto gli articoli: un ramo per le
@@ -27979,8 +28322,9 @@ function aggiornaTestiRicercaSezione() {
   //    sanno gia' rispondere, chiamate al momento giusto.
   const btnAdd = document.getElementById('admin-add-label');
   if (btnAdd) {
-    const tipoQui = _tipoProdottoCorrente
-      ? _tipiProdotto().find(x => x.id === _tipoProdottoCorrente) : null;
+    // 🔄 v6.738 - `tipoQui` sta in cima, insieme alla parola della frase: era dichiarata
+    //    qui dentro, e da fuori non si vedeva. E' per questo che la frase e il segnaposto
+    //    erano rimasti indietro di due release rispetto al tasto.
     btnAdd.textContent = (it ? '+ Aggiungi ' : '+ Add ')
       + (tipoQui ? _singolareTipo(tipoQui) : getSectionLabelSingular(currentSection));
   }
@@ -31803,7 +32147,8 @@ function _ripristinaFlagSerie(s) {
   renderSeriesBypassCheckboxes(s && s.controlliSospesi);                     // v6.080
   // Dipende da `noRetro`, quindi va DOPO le spunte e non prima: e' il motivo per cui sta qui
   // dentro invece che nei due rami.
-  _aggiornaRigaColonneRetro();
+  _aggiornaCampiDiRetro();
+  _aggiornaCaselleCompletezza();   // v6.748 - dopo le due liste di caselle, o leggerebbe quelle di prima
 }
 // \uD83D\uDD34 v6.215 - LA TABELLA DELLE COLONNE NELLA SCHEDA SERIE, GENERATA.
 // Fino alla v6.214 era markup scritto a mano nell'index, con CINQUE righe - e gli articoli sono
@@ -31831,7 +32176,7 @@ function _ripristinaFlagSerie(s) {
 // v6.216 - le caselle "articoli che questa serie non ha", generate dal descrittore come la tabella
 // delle colonne. Un articolo nuovo porta la sua casella da se'.
 // ⚠️ `onchange` su tutte: la riga delle colonne dei Retro si mostra o si nasconde a seconda che
-// i Retro ci siano, e quella regola sta in `_aggiornaRigaColonneRetro`. Prima era attaccata alla
+// i Retro ci siano, e quella regola sta in `_aggiornaCampiDiRetro`. Prima era attaccata alla
 // casella "Figurine senza retro", che questa release toglie.
 function _caselleArticoliSerie() {
   const box = document.getElementById('series-articoli-nascosti');
@@ -31839,13 +32184,40 @@ function _caselleArticoliSerie() {
   box.innerHTML = PRODOTTI_INVENTARIO.map(sez =>
     '<label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem;">' +
       '<input type="checkbox" class="series-articolo-nascosto" value="' + sez + '" ' +
-        'onchange="_aggiornaRigaColonneRetro()" ' +
+        'onchange="_aggiornaCampiDiRetro();_aggiornaCaselleCompletezza()" ' +
         'style="width:15px;height:15px;cursor:pointer;flex-shrink:0;">' +
       // v6.229 (Franco: "lo metterei in bianco") - i nomi degli articoli erano `--muted`, cioe' lo
       // stesso grigio-viola dei SUGGERIMENTI. Ma questi non sono un suggerimento: sono le sei cose
       // fra cui si sceglie, e stavano piu' spente della frase che le spiega.
       '<span style="color:var(--text);">' + esc(getSectionLabel(sez)) + '</span>' +
     '</label>').join('');
+}
+// 🆕 v6.748 (Franco: «il campo Servono per la serie completa dovrebbe mostrare grigiate,
+//    non cliccabili, le opzioni per le quali Articoli non in questa serie e' true») - LE DUE
+//    DOMANDE SONO SORELLE, e insieme possono dire una cosa impossibile: «questa serie e'
+//    completa quando hai tutti gli articoli che NON ha».
+// 🔴 E LA CASELLA SI SPEGNE, NON SOLO SI GRIGIA: il DOM non salta le caselle disabilitate,
+//    quindi una spuntata-e-grigia sarebbe stata letta e salvata lo stesso - la
+//    contraddizione nei dati, con l'aria di essere stata sistemata a schermo.
+// 📌 Non e' un cambio silenzioso: succede mentre si preme l'altra casella, davanti a chi
+//    la preme. Ed e' reversibile: togliendo la spunta di la', questa torna premibile (vuota,
+//    perche' una scelta cancellata non si indovina).
+// ⚠️ Le tipologie della completezza sono QUINDICI e quelle nascondibili DODICI (v6.716): le
+//    tre che vivono nei dati non hanno una casella «non in questa serie», quindi restano
+//    sempre premibili. La domanda si fa sui valori, non sulle posizioni.
+function _aggiornaCaselleCompletezza() {
+  const nascosti = new Set(_leggiArticoliNascosti());
+  document.querySelectorAll('.series-articolo-completezza').forEach(x => {
+    const spenta = nascosti.has(x.value);
+    x.disabled = spenta;
+    if (spenta) x.checked = false;
+    const lab = x.closest('label');
+    if (lab) {
+      lab.style.opacity = spenta ? '0.45' : '';
+      lab.style.cursor = spenta ? 'not-allowed' : 'pointer';
+      lab.title = spenta ? 'Questa serie dichiara di non avere questi articoli' : '';
+    }
+  });
 }
 function _leggiArticoliNascosti() {
   return [...document.querySelectorAll('.series-articolo-nascosto')].filter(x => x.checked).map(x => x.value);
@@ -31858,10 +32230,41 @@ function _leggiArticoliNascosti() {
 // fatta di Felpe deve poter dire che sono le Felpe a completarla.
 // ⚠️ `getSectionLabel` NON sa i nomi delle tre tipologie che stanno nei dati: torna l'id.
 // L'etichetta la porta la riga, che ce l'ha per tutte e quindici.
-function _caselleCompletezzaSerie() {
+// 🆕 v6.751 (Franco: «come mai elenchi anche questi? Calendari Cartoncini Diari Felpe.
+// Sono TDA senza serie quindi per def qui nn possono esserci») - QUESTA TIPOLOGIA STA IN QUESTA
+// SERIE?
+// 📌 SI CHIEDE AGLI ARTICOLI, non alla tipologia: una TDA non dichiara da nessuna parte
+//    una «serie di riferimento» - il legame lo fanno i suoi articoli, con "seriesId". E cosi' la
+//    regola copre anche il caso piu' largo di quello segnalato: le Felpe non compaiono nella
+//    Serie 2 perche' nella Serie 2 non ce ne sono, non perche' siano «senza serie» in assoluto.
+//    Il caso di Franco e' quello in cui la risposta e' no per ogni serie vera.
+// ⚠️ MA UNA SCELTA GIA' FATTA SI MOSTRA COMUNQUE: se la serie dichiara gia' quella tipologia,
+//    toglierla dall'elenco lascerebbe la dichiarazione scritta nei dati senza un posto dove
+//    cancellarla. Una regola che nasconde un valore acceso e' una regola che non si puo' disfare.
+// ⚠️ Se gli articoli non sono ancora arrivati dalla rete la risposta e' no, e l'elenco si
+//    accorcia: non si perde niente lo stesso, perche' "_leggiArticoliCompletezza" (v6.716)
+//    conserva cio' che non e' stato offerto.
+function _tdaDiQuestaSerie(tda, seriesId) {
+  if (!seriesId) return false;
+  const s = getData('series', []).find(x => x.id === seriesId);
+  if (s && Array.isArray(s.articoliCompletezza) && s.articoliCompletezza.includes(tda)) return true;
+  return getData('figurines', []).some(f => f.seriesId === seriesId
+    && (f.tipoProdotto || '') === tda);
+}
+// 🔄 v6.751 - L'ELENCO NON E' PIU' QUELLO DI TUTTE E QUINDICI LE RIGHE. La v6.716 le
+// prendeva tutte citando la regola della tabella dell'admin (*"quei 15 oggetti sono tutti uguali:
+// tipologie di articolo"*): vera per una tabella che CENSISCE, falsa per questa domanda, che non
+// chiede quali tipologie esistano ma cosa rende completa QUESTA serie.
+// 🔴 LE DODICI POSIZIONALI RESTANO TUTTE, e non e' una dimenticanza: quelle hanno gia' il
+// loro comando - «Articoli non in questa serie», che dalla v6.748 spegne le caselle di qua. Le
+// tipologie dei dati quella casella non ce l'hanno, quindi senza questa regola non avrebbero
+// nessun modo di uscire dall'elenco.
+function _caselleCompletezzaSerie(seriesId) {
   const box = document.getElementById('series-articoli-completezza');
   if (!box) return;
-  box.innerHTML = _righeTipoArticolo().map(r =>
+  box.innerHTML = _righeTipoArticolo()
+    .filter(r => !r.dato || _tdaDiQuestaSerie(r.chiave, seriesId))
+    .map(r =>
     '<label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem;">' +
       '<input type="checkbox" class="series-articolo-completezza" value="' + esc(r.chiave) + '" ' +
         'style="width:15px;height:15px;cursor:pointer;flex-shrink:0;">' +
@@ -31927,7 +32330,8 @@ function openAddSeriesModal(seriesId) {
   // release chiude, e senza dare errore.
   _tabellaColonneSerie();
   _caselleArticoliSerie();   // v6.216 - anche queste PRIMA del ripristino, che le spunta
-  _caselleCompletezzaSerie();   // v6.716 - stessa ragione, stesso momento
+  _caselleCompletezzaSerie(seriesId);   // v6.716 - stessa ragione, stesso momento
+                                        // v6.751 - e con la serie: l'elenco dipende da lei
   if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
   document.getElementById('edit-series-id').value = seriesId || '';
   // v6.162 - la form si riusa fra creazione e modifica: i due campi si azzerano sempre, e in
@@ -31941,7 +32345,8 @@ function openAddSeriesModal(seriesId) {
     if (cd) cd.value = _colonneDefault(sez).d;   // v6.197
     if (cm) cm.value = _colonneDefault(sez).m;   // v6.197
   });
-  _aggiornaRigaColonneRetro();   // v6.169 - anche in creazione
+  _aggiornaCampiDiRetro();   // v6.169 - anche in creazione
+  _aggiornaCaselleCompletezza();   // v6.748 - idem: una serie nuova nasce con tutto nascosto
   document.getElementById('series-modal-title').textContent = seriesId ? t('modal.series.edit') : t('modal.series.title');
   document.getElementById('series-img-preview').style.display = 'none';
   editingSeriesImg = null;
@@ -33069,7 +33474,7 @@ const ARTICOLI = {
     it: 'Bustine', en: 'Wrappers',
     itSing: 'bustina', enSing: 'wrapper',
     genere: 'f',
-    icona: '&#128230;',
+    icona: '&#129511;',   // v6.734 (Franco) - la bustina chiusa, non lo scatolone
     colonne: { d: 4, m: 3 },
     numero: 'ordinamento',
     ordina: 'campo',
@@ -35772,6 +36177,10 @@ function openAddTipoProdottoModal(idDaModificare) {
   if (g('tipo-prodotto-singolare')) g('tipo-prodotto-singolare').value = t ? (t.singolare || '') : '';
   if (g('tipo-prodotto-nome-en')) g('tipo-prodotto-nome-en').value = t ? (t.nomeEn || '') : '';
   if (g('tipo-prodotto-singolare-en')) g('tipo-prodotto-singolare-en').value = t ? (t.singolareEn || '') : '';
+  // 🆕 v6.742 - il genere. Un tipo che non ce l'ha ancora si apre su «maschile», che e' il
+  //    ripiego di oggi (quello della sezione «Altri articoli»): la scheda mostra cio' che il
+  //    sito sta gia' facendo, invece di proporre un valore diverso da quello in uso.
+  if (g('tipo-prodotto-genere')) g('tipo-prodotto-genere').value = (t && t.genere) || 'm';
 
   if (g('tipo-prodotto-haretro')) g('tipo-prodotto-haretro').checked = !!(t && t.haRetro);
   if (g('tipo-prodotto-ordina')) g('tipo-prodotto-ordina').value = t ? (t.ordina || '') : '';   // v6.155
@@ -35848,6 +36257,8 @@ async function salvaTipoProdotto() {
   // v6.305 - le due caselle inglesi. Possono restare vuote: il ripiego e' l'italiano.
   const nomeEn = (document.getElementById('tipo-prodotto-nome-en')?.value || '').trim();
   const singolareEn = (document.getElementById('tipo-prodotto-singolare-en')?.value || '').trim();
+  // 🆕 v6.742 - il genere, che serve a «Le hai tutte !» / «Li hai tutti !».
+  const genere = (document.getElementById('tipo-prodotto-genere')?.value === 'f') ? 'f' : 'm';
   // v6.167 - il campo "Ordine" non c'e' piu': non lo usava nessuno (Franco). I box si ordinano per
   // NOME, che e' l'unico criterio rimasto e non ha bisogno di essere scritto da qualcuno.
   const ordina = (document.getElementById('tipo-prodotto-ordina')?.value || '').trim();   // v6.155
@@ -35893,12 +36304,12 @@ async function salvaTipoProdotto() {
     if (k < 0) { toast(it ? 'Quel tipo di articolo non esiste più.' : 'That item type no longer exists.', 'error'); return; }
     // Si riscrive il record intero a partire da quello che c'e': cosi' un campo aggiunto in futuro
     // non viene perso da un salvataggio scritto oggi.
-    tipi[k] = { ...tipi[k], nome, singolare, nomeEn, singolareEn, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile };
+    tipi[k] = { ...tipi[k], nome, singolare, nomeEn, singolareEn, genere, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile };
   } else {
     // L'id si genera e non si scrive: e' un riferimento, e un riferimento battuto a mano e' un id
     // storto che non si vede (la lezione della v6.119 sul `baseFigurineId`).
     const id = 'tp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    tipi.push({ id, nome, singolare, nomeEn, singolareEn, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile });
+    tipi.push({ id, nome, singolare, nomeEn, singolareEn, genere, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile });
   }
   try {
     await _salvaTipiProdotto(tipi);
@@ -38154,8 +38565,18 @@ function _etichettaConteggio(chiave, quanti, it) {
   return t.charAt(0).toLowerCase() + t.slice(1);
 }
 
-function tipiPresenti(seriesId, section) {
-  const items = getData('figurines', []).filter(f => f.seriesId === seriesId && f.section === section);
+// 🔧 v6.740 (Franco: «11 Altri articoli») - IL BOX, COME TERZO ARGOMENTO. Dentro un box
+//    la testata contava tutti gli articoli della sezione che lo contiene: undici, cioe' il
+//    numero giusto di un'altra cosa.
+// 🔴 E' UN ARGOMENTO E NON UNA LETTURA DI _tipoProdottoCorrente: questa funzione risponde
+//    a «cosa contiene questa serie in questa sezione», che e' una domanda sui DATI. Chi
+//    disegna la pagina corrente le aggiunge il box; chi genera le pagine per Google (dove
+//    quella variabile puo' essere rimasta accesa da una navigazione di prima) non glielo
+//    passa, e continua a vedere la sezione intera.
+// 📌 Il ripiego e' il comportamento di sempre: senza terzo argomento non cambia niente.
+function tipiPresenti(seriesId, section, box) {
+  const items = getData('figurines', []).filter(f => f.seriesId === seriesId && f.section === section
+    && (!box || (f.tipoProdotto || '') === box));
   return {
     items,
     // 🔴 v6.235 - QUI C'ERA L'OTTAVA COPIA A MANO DI `_eBase`, la quaterna di negazioni riscritta.
@@ -38347,7 +38768,12 @@ function renderSeriesMeta(s) {
   const BULLET = '<span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:currentColor;margin-right:7px;vertical-align:0.05em;"></span>';
   const it = currentLang === 'it';
   const sez = currentSection || 'figurines';
-  const items = getData('figurines', []).filter(f => f.seriesId === s.id && f.section === sez);
+  // 🗑️ v6.740 - QUI STAVA UN const items CHE NON LEGGEVA NESSUNO, e la v6.739 lo aveva
+  //    pure corretto. Tutti i numeri di questa funzione vengono da tipiPresenti (g.base,
+  //    g.items, ...): questa riga era una seconda lettura degli stessi dati, morta da chissa'
+  //    quando, e per una release ha fatto credere che il difetto fosse chiuso.
+  // ⚠️ E' il genere di codice piu' pericoloso che ci sia: sembra la risposta alla domanda
+  //    che ti stai facendo, e non lo e'.
 
   const ownedIds = currentUser ? getOwned() : [];
   const miei = elenco => elenco.filter(f => ownedIds.includes(f.id)).length;
@@ -38432,16 +38858,46 @@ function renderSeriesMeta(s) {
   // storta. Le Spille l'hanno fatto davvero». Erano due rami diversi, stessa malattia.
   // ⚠️ E IL GENERE NON E' UN VEZZO: `colonna(...)` lo usa per accordare «posseduta/posseduto».
   // Il descrittore lo dichiara gia' (`genere: 'f'`), quindi si legge da li' come tutto il resto.
+  // 🆕 v6.741 (Franco: «non devi usare questa modalita' espressiva; devi dire N diari, o
+  //    N felpe») - DENTRO UN BOX LA PAROLA E' QUELLA DEL BOX. La riga diceva «1 Altri
+  //    articoli», cioe' il nome della sezione che il box contiene: la stessa famiglia del
+  //    titolo e della frase di ricerca, chiusi dalle v6.737 e v6.738.
+  // ⚠️ IL GENERE RESTA QUELLO DELLA SEZIONE, ed e' una mancanza dichiarata: serve a scrivere
+  //    «le hai tutte» o «li hai tutti», e la scheda di una tipologia un campo per il genere
+  //    non ce l'ha. Indovinarlo dalla desinenza sarebbe scrivere grammatica italiana dentro
+  //    il codice - cosa che questo file ha gia' rifiutato di fare alla v6.073, e una regola
+  //    di grammatica sbagliata e' peggio di un campo in piu'.
+  // ⚠️ E IL SINGOLARE SI ALLINEA AL PLURALE NELLE MAIUSCOLE: il descrittore scrive «Spille»
+  //    ma «spilla», e a schermo le due forme si alternerebbero nella stessa riga. Non e'
+  //    grammatica: e' la stessa parola scritta in due convenzioni diverse.
+  // 📌 E LA MAIUSCOLA LA METTE _maiuscola, non una settima copia a mano: quella funzione
+  //    esiste dalla v6.711 proprio per questo, e prova-v6711 conta le copie che restano.
+  const _comeIlPlurale = (sing, plur) =>
+    (sing && plur && plur[0] === plur[0].toUpperCase()) ? _maiuscola(sing) : sing;
   const nomiSez = (sez2) => {
     const a = _art(sez2);
-    return { p: it ? a.it : a.en, s: it ? a.itSing : a.enSing, f: a.genere === 'f' };
+    const tp = _tipoProdottoCorrente
+      ? _tipiProdotto().find(x => x.id === _tipoProdottoCorrente) : null;
+    // 🆕 v6.742 (Franco: «fai il campo») - IL GENERE LO DICHIARA LA TIPOLOGIA. Serve a
+    //    «Le hai tutte !» / «Li hai tutti !», e fino a ieri veniva dalla sezione che contiene
+    //    il box: «Altri articoli» e' maschile, quindi su «Felpe» diceva «li hai tutti».
+    // ⚠️ RIPIEGO DICHIARATO: una tipologia salvata prima di oggi il campo non ce l'ha, e
+    //    continua a prendere quello della sezione. Nessuna cambia frase da sola: cambia
+    //    quando Franco apre quella scheda e la salva.
+    if (tp) return { p: _nomeTipo(tp), s: _comeIlPlurale(_singolareTipo(tp), _nomeTipo(tp)),
+                     f: tp.genere ? tp.genere === 'f' : a.genere === 'f' };
+    const _p = it ? a.it : a.en;
+    return { p: _p, s: _comeIlPlurale(it ? a.itSing : a.enSing, _p), f: a.genere === 'f' };
   };
 
   // Costruisce le colonne (set base, variazioni ufficiali/non ufficiali, change, errori di stampa,
   // in totale) di UNA categoria — la riga di dettaglio. alwaysTotal: mostra "in totale" anche a 0
   // (usato nell'hub, cosi' ogni categoria compare comunque).
   function sezRows(sez2) {
-    const g = tipiPresenti(s.id, sez2);
+    // 🔧 v6.740 - dentro un box si contano i suoi articoli, non quelli della sezione che
+    //    lo contiene. Nell'hub la variabile e' nulla (openSeriesDetail la azzera), quindi
+    //    li' questa riga non cambia niente.
+    const g = tipiPresenti(s.id, sez2, _tipoProdottoCorrente);
     const nm = nomiSez(sez2);
     const m = [];
     // 🔄 v6.698 (Franco: «la parola "set base" dovrebbe accompagnare il nome
@@ -38460,6 +38916,9 @@ function renderSeriesMeta(s) {
     //    retro non hanno una riga loro qui. L'ha preso la prova, lanciandola.
     const _altreVersioni = g.variation.length + g.unofficial.length + g.change.length
       + g.free.length + g.printError.length;
+    // 🆕 v6.741 - IL SINGOLARE QUANDO E' UNO: «1 felpa», non «1 Felpe». E' la regola
+    //    che Franco ha posto alla v6.688 per le card, e che questa riga non seguiva.
+    const _nomeNum = (g.base.length === 1) ? nm.s : nm.p;
     if (g.base.length) m.push(colonna(BULLET, g.base,
       (_altreVersioni
         // 🔄 v6.622 (Franco: *«la numerica "160 set base" diventa "160 figurine set base"»* e
@@ -38473,8 +38932,8 @@ function renderSeriesMeta(s) {
         // ⚠️ Il nome viene da «nm.p», cioe' il PLURALE gia' nella lingua corrente: il
         // descrittore lo porta con se', e una sezione nuova non ha bisogno di una riga qui.
         // 📌 Plurale e non singolare: «160 figurine set base», «72 retro set base».
-        ? (nm.p + (it ? ' set base' : ' base set'))
-        : nm.p),
+        ? (_nomeNum + (it ? ' set base' : ' base set'))
+        : _nomeNum),
       false, nm.f, 'var(--type-base)'));
     if (g.variation.length) m.push(colonna(BULLET, g.variation,
       _etichettaConteggio('variation', g.variation.length, it),
@@ -39088,12 +39547,40 @@ function openSeriesSottoserie(el) {
 // 🔴 LA CONDIZIONE E' `_sottoserieAttiva` NON VUOTA, e la stringa vuota NON conta: quella e' il
 //    SET PRINCIPALE (v6.682), dove la testata scrive la sola tipologia. Li' il titolo resta,
 //    esattamente come in «Bustine» - che e' la scelta di Franco dell'11 settembre.
+// 🆕 v6.737 (Franco) - SONO DENTRO UNA TDA CHE NON HA SERIE? Torna la tipologia, o null.
+// 🔴 La domanda e' il FLAG, non il nome: la serie contenitore si puo' chiamare come si
+//    vuole, ed e' proprio per questo che il flag e' nato (v6.204). Un confronto sul nome
+//    avrebbe funzionato finche' nessuno la rinominava.
+// 📌 Una funzione sola, perche' la stessa domanda la fanno in due: chi veste la testata
+//    e chi scrive il titolo della sezione. Due copie sarebbero due risposte.
+function _tdaSenzaSerie() {
+  if (!_tipoProdottoCorrente || !currentSeriesId) return null;
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  if (!s || !s.serieContenitore) return null;
+  return _tipiProdotto().find(x => x.id === _tipoProdottoCorrente) || null;
+}
+// 🆕 v6.737 - IL TITOLO DELLA TESTATA E L'ANNO, in un posto solo. Dentro una TDA senza
+//    serie il titolo e' la TIPOLOGIA e l'anno non si scrive: sarebbe quello della serie
+//    contenitore, cioe' un numero che non parla di niente che si stia guardando.
+// ⚠️ L'anno si SPEGNE, non si svuota: e' un figlio di una riga flex con un gap suo, e un
+//    nodo vuoto lascerebbe lo spazio di una parola che non c'e'.
+// 📌 Il giorno che gli articoli avranno un campo Anno (chiesto da Franco il 12 settembre),
+//    questo e' il punto dove quella data tornerebbe a schermo.
+function _vestiTitoloTestata(s, tda) {
+  const nome = document.getElementById('detail-name');
+  const anno = document.getElementById('detail-year');
+  if (nome) nome.textContent = tda ? _nomeTipo(tda) : (s ? _nomeSerie(s) : '');
+  if (anno) {
+    anno.textContent = tda ? '' : ((s && s.year) || '');
+    anno.style.display = tda ? 'none' : '';
+  }
+}
 function _scriviTitoloSezione(testo) {
   const el = document.getElementById('items-section-title');
   if (!el) return;
   // dentro un gruppo la testata dice gia' «Tipologia Gruppo»: ripeterlo qui e' la stessa parola
   // due volte a due centimetri, il difetto chiuso dalla v6.688 e dalla v6.695.
-  const _muto = !!_sottoserieAttiva;
+  const _muto = !!_sottoserieAttiva || !!_tdaSenzaSerie();
   el.textContent = _muto ? '' : (testo || '');
   el.style.display = _muto ? 'none' : '';
 }
@@ -39141,6 +39628,9 @@ function openSeriesSection(section, sottoserie) {
   //    vestirebbe la testata con il gruppo che si sta LASCIANDO. E' lo stesso inciampo che la
   //    v6.338 ha gia' pagato col seme dei raggruppamenti e la v6.651 con i gruppi di sezione.
   try { _vestiTestataPerSezione(_s); } catch (e) { console.error('_vestiTestataPerSottoserie', e); }
+  // 🆕 v6.730 (Franco: «chiuso a ogni apertura») - i filtri admin ripartono CHIUSI ogni
+  //    volta che si entra in una sezione. Sta qui e non fra i filtri: non filtra niente.
+  _adminFiltriAperti = false;
   const si = document.getElementById('items-search'); if (si) si.value = '';
   aggiornaTestiRicercaSezione();  // v5.939 — titolo e segnaposto, in una funzione sola (v5.890)
   currentItemPage = 1;
@@ -39360,6 +39850,7 @@ function _vestiTestataPerSezione(s) {
     sub.textContent = '';
     cover.classList.remove('mostra-sottoserie');   // v6.720 - la copertina della serie si ritaglia
     document.querySelector('.series-title-area')?.classList.remove('con-sottoserie');
+    _vestiTitoloTestata(s, null);   // v6.737 - il titolo torna quello della serie
     if (s) _disegnaCopertinaSerie(s);
     return;
   }
@@ -39367,9 +39858,15 @@ function _vestiTestataPerSezione(s) {
   // 🔴 Le due sorgenti sono le stesse che riempiono le CARD da cui si e' entrati
   //    (`_fotoSottoserie` v6.684, `_fotoSezioneSerie` v6.686): la testata non sceglie una
   //    foto per conto suo, mostra quella su cui si e' appena cliccato.
-  const foto = _sottoserieAttiva
-    ? _fotoSottoserie(s, _sottoserieAttiva)
-    : _fotoSezioneSerie(currentSection);
+  // 🆕 v6.737 - dentro una TDA senza serie la foto grande e' quella della TIPOLOGIA,
+  //    cioe' la stessa della card dell'Inventario da cui si e' premuto. E' la regola gia'
+  //    scritta qui sopra - la testata mostra la foto su cui si e' appena cliccato - con la
+  //    sorgente che mancava: li' la card non e' quella di una sezione di questa serie.
+  const tda = _tdaSenzaSerie();
+  _vestiTitoloTestata(s, tda);
+  const foto = tda
+    ? _fotoBoxUrl(tda.id)
+    : (_sottoserieAttiva ? _fotoSottoserie(s, _sottoserieAttiva) : _fotoSezioneSerie(currentSection));
   // 🆕 v6.720 - la foto di una sottoserie si vede INTERA, come sulla card da cui si e' entrati
   //    (Franco: «e' tagliata»). La classe si toglie uscendo, qui sopra: e' lo stesso gesto che
   //    rimette la copertina della serie, che invece il ritaglio lo vuole.
@@ -39383,12 +39880,19 @@ function _vestiTestataPerSezione(s) {
     ? '<img src="' + cloudinaryUrl(foto, 'w_200,h_200,c_fit,q_auto,f_auto') + '">'
     : '<span>&#127924;</span>';
   // la fotina a destra: la serie. Senza timbro anche qui - a 56px non si leggerebbe.
-  mini.innerHTML = s && s.img
+  // 🆕 v6.737 - e in una TDA senza serie la fotina NON c'e': direbbe «questo appartiene
+  //    alla serie X», e quella serie e' l'attrezzo che non si deve vedere.
+  mini.innerHTML = (!tda && s && s.img)
     ? '<img src="' + cloudinaryUrl(s.img, 'w_120,h_120,c_fit,q_auto,f_auto') + '" alt="">'
     : '';
   // 🔄 v6.721 - dentro una tipologia il nome e' quello della tipologia, senza coda.
-  sub.textContent = getSectionLabel(currentSection) + (_sottoserieAttiva ? ' ' + _sottoserieAttiva : '');
-  sub.style.display = '';
+  // 🆕 v6.737 - e in una TDA senza serie TACE: il titolo della pagina dice gia' quella
+  //    parola, e scriverla due centimetri sotto e' il difetto chiuso dalle v6.688 e v6.729.
+  if (tda) { sub.textContent = ''; sub.style.display = 'none'; }
+  else {
+    sub.textContent = getSectionLabel(currentSection) + _codaSottoserie();
+    sub.style.display = '';
+  }
 }
 
 function _mostraTestataSerie() {
@@ -40052,6 +40556,18 @@ function _tipoColorato(f, conBase) {
   return '<span style="color:' + col + ';font-weight:600;">' + testo + '</span>';
 }
 
+// 🆕 v6.730 (Franco: «il box Filtri aggiuntivi admin prende un collassatore, chiuso di
+// default») - E LO STATO NON SI RICORDA: «chiuso a ogni apertura», scelta sua fra le due
+// letture possibili di «chiuso di default».
+// 📌 NON entra in _FILTRI: non e' un filtro, e azzerarlo insieme agli altri direbbe che lo
+//    e'. Si rimette a chiuso in openSeriesSection, accanto agli altri stati di vista.
+// ⚠️ E niente localStorage: la testata della serie ci sta (v6.001), ma quella e' una
+//    preferenza; questa Franco la vuole ripartire da zero ogni volta che apre la pagina.
+let _adminFiltriAperti = false;
+function toggleAdminFiltri() {
+  _adminFiltriAperti = !_adminFiltriAperti;
+  try { renderItemTypeFilters(); } catch (e) { console.error('toggleAdminFiltri', e); }
+}
 function renderItemTypeFilters() {
   // 🔴 v6.346 - VIA `el` E LA SUA GUARDIA, E NON E' PULIZIA: SENZA, QUESTA RELEASE AVREBBE ROTTO
   // DUE BOX. La funzione cominciava con `const el = getElementById('items-filter-toggles'); if
@@ -40185,6 +40701,11 @@ function renderItemTypeFilters() {
 
       elAdmT.innerHTML = ha;
       elAdm.style.display = '';
+      // 🆕 v6.730 - il collassatore: il triangolino segue lo stato, il contenuto si spegne.
+      // 📌 Il box resta, con la sua etichetta sul bordo: e' il comando per riaprirlo.
+      const _triAdm = document.getElementById('items-admin-filters-tri');
+      if (_triAdm) _triAdm.textContent = _adminFiltriAperti ? '\u25bc' : '\u25b6';
+      elAdmT.style.display = _adminFiltriAperti ? 'flex' : 'none';
     }
   }
 
@@ -41141,9 +41662,51 @@ header += `</div>`;
 // 🗑️ Con lei se ne vanno il ramo `topEl`, che era morto da quando la testata la fa
 // `renderSpecchiettiTop` (v6.079) e si portava dietro un `if` sempre falso, e il contenitore
 // `retro-cat-summary-results` nell'index.
+// 🆕 v6.731 (Franco) - GLI ARTICOLI DI QUESTA VISTA, SENZA NESSUN FILTRO: serie,
+// sezione e gruppo, cioe' DOVE SI E'. Serve a rispondere «questa cosa avra' mai qualcosa da
+// dire?», che e' un'altra domanda da «con questi filtri resta qualcosa?».
+// 🔴 Chiesta al setaccio, la risposta cambierebbe mentre si filtra, e il riquadro
+//    sparirebbe proprio quando serve per tornare indietro: e' la regola di Franco scritta nel
+//    commento della v6.533.
+// 🔧 v6.736 (Franco: «vedo ancora il raggruppatore categorie per le felpe») - LA TERZA
+//    DOMANDA MANCAVA: dentro quale BOX si e'. Senza, qui tornavano tutti gli articoli della
+//    sezione «Altri articoli» - le felpe e tutto il resto - e bastava che UNO qualunque
+//    degli altri avesse una categoria perche' il riquadro delle felpe si mostrasse, per poi
+//    riempirsi con la sola casella «(Senza categoria)».
+// 🔴 Il box e' DOVE SI E', come la sezione e il gruppo: il setaccio lo sa dalla v6.144,
+//    questa funzione no. Le tre domande adesso stanno nello stesso posto, ed e' l'unico modo
+//    perche' non se ne dimentichi una la prossima volta.
+function _articoliDiQuestaVista() {
+  if (!currentSeriesId || !currentSection) return [];
+  return getData('figurines', []).filter(f =>
+    f.seriesId === currentSeriesId && f.section === currentSection
+    && (!_tipoProdottoCorrente || (f.tipoProdotto || '') === _tipoProdottoCorrente)
+    && (_sottoserieAttiva === null || String(f.subseries || '').trim() === _sottoserieAttiva));
+}
+// 🆕 v6.731 (Franco: «la categoria non e' una informazione obbligatoria per ogni tipologia
+// di articolo») - LA REGOLA NON E' «UN GRUPPO SOLO NON SI MOSTRA»: e' «si nasconde quando
+// l'unico gruppo e' quello VUOTO». Se tutte le felpe avessero categoria «Estive», un riquadro
+// con una casella sola direbbe comunque qualcosa di vero.
+// ⚠️ Il vuoto e' un valore VERO in _retroCatCounts, per scelta: con la categoria non
+//    compilata da nessuno gli articoli non finiscono in ZERO gruppi, finiscono tutti in UNO -
+//    e chi disegna guardava soltanto quanti gruppi ci fossero, quindi ne vedeva uno e lo
+//    disegnava. Il riquadro che ne usciva aveva una casella, «(Senza categoria)», e premerla
+//    non filtrava niente: c'erano gia' dentro tutti.
+function _categorieDannoUnRiquadro(items) {
+  if (!currentSeriesId || !(currentSection === 'retros' || _tipoProdottoCorrente)) return false;
+  const gruppi = _retroCatCounts(items);
+  if (!gruppi.length) return false;
+  return !(gruppi.length === 1 && gruppi[0][0] === '');
+}
 function _pannelloCategorieRisultati() {
   const isRetro = (currentSection === 'retros' || !!_tipoProdottoCorrente) && !!currentSeriesId;
   if (!isRetro) return '';
+  // 🆕 v6.731 - e non si mostra dove la categoria non ce l'ha nessuno (vedi sopra).
+  // 🔴 La domanda si fa sugli articoli della VISTA, non su _elenco: quello ignora la
+  //    categoria e il lato, ma non la ricerca scritta - quindi calcolata li' la condizione
+  //    farebbe sparire il riquadro anche quando e' una ricerca in corso a lasciare fuori gli
+  //    articoli con categoria. Di nuovo «adesso» al posto di «mai».
+  if (!_categorieDannoUnRiquadro(_articoliDiQuestaVista())) return '';
   // 🔄 v6.533 - stessa medicina di `_pairsConZeri`: l'ELENCO dei valori ignora anche il
   // lato, i CONTEGGI no. Prima era una chiamata sola, quindi con una pillola del lato
   // accesa spariva anche questo riquadro.
@@ -41947,9 +42510,34 @@ function renderSpecchiettiTop() {
 // per ritagliare `_cfgRaggr` dal sorgente (`pezzo('const _RAGGR_DAVANTI_IT', '\n}')`), e una
 // funzione infilata li' in mezzo le mandava tutte in errore - non a fallire: in errore, cioe'
 // rumore travestito da allarme. L'ordine delle dichiarazioni e' arbitrario, l'ancora no.
+// 🆕 v6.731 (Franco) - IL BOX «Aggiungi dei filtri di ricerca preimpostati» AVRA' MAI
+// QUALCOSA DA DIRE? L'etichetta si accendeva SEMPRE (display flex, in renderItemTypeFilters)
+// mentre il contenuto si spegne da se': restava una cornice con un titolo e dentro il vuoto.
+// 🔴 Si guarda il BOX intero e non la sola etichetta: l'etichetta sta dentro di lui,
+//    quindi spegnendo il box se ne va anche lei, e non ci sono due condizioni da tenere
+//    allineate a mano - che e' il modo in cui questa coppia era andata fuori sincrono.
+// 📌 Le domande sono le STESSE di renderRaggrSummaries - un riquadro c'e' se il suo
+//    valore esiste nella serie, e quello delle versioni vuole almeno due voci
+//    (unaSolaInerte, v6.359) - ma fatte sugli articoli della vista invece che sul setaccio.
+function _riquadriAvrannoMaiQualcosa() {
+  const tutti = _articoliDiQuestaVista();
+  if (!tutti.length) return false;
+  return _ORDINE_RIQUADRI.some(chiave => {
+    if (chiave === 'categoria') return _categorieDannoUnRiquadro(tutti);
+    const v = _RAGGRUPPAMENTI.find(x => x.chiave === chiave);
+    if (!v) return false;
+    const pairs = _raggrCounts(tutti, v);
+    if (!pairs.length) return false;
+    return !(v.unaSolaInerte && pairs.length < 2);
+  });
+}
 function renderRaggrSummaries() {
   const el = document.getElementById('raggr-summary-results');
   if (!el) return;
+  // 🆕 v6.731 - il box si mostra solo se un giorno avra' qualcosa da dire (vedi sopra).
+  // ⚠️ PRIMA dell'uscita anticipata: fuori da una serie il box va spento lo stesso.
+  const _boxRaggr = document.getElementById('items-raggr-box');
+  if (_boxRaggr) _boxRaggr.style.display = _riquadriAvrannoMaiQualcosa() ? '' : 'none';
   if (!currentSeriesId) { el.style.display = 'none'; el.innerHTML = ''; return; }
   const _pairsConZeri = (v) => {
     const numeri = new Map(_raggrCounts(getCurrentlyFilteredItems({ skipRaggr: v.chiave }), v));
@@ -46914,7 +47502,10 @@ function _aggiornaComandiTestata() {
   const adm = !!currentUser?.isAdmin;
   const inBox = !!_tipoProdottoCorrente;
   const b1 = document.getElementById('detail-edit-series-btn');
-  const b2 = document.getElementById('detail-edit-tipo-btn');
+  // 🔄 v6.745 - il comando della tipologia adesso vive in alto a destra, dove la pagina di
+  //    una serie tiene il suo. La regola non cambia: si accende dentro un box e solo per
+  //    l'admin.
+  const b2 = document.getElementById('detail-tipo-admin-btn');
   const b3 = document.getElementById('detail-ebay-series-btn');
   if (b1) b1.style.display = (adm && !inBox) ? '' : 'none';
   if (b2) b2.style.display = (adm && inBox) ? '' : 'none';
@@ -46973,17 +47564,71 @@ function _aggiornaComandiTestata() {
 
 // v6.169 (Franco) - la riga "Retro" della tabellina delle colonne sparisce se la serie dichiara di
 // non avere retro: sono due numeri per una griglia che non si aprira' mai.
+// 🔄 v6.750 (Franco: «se una serie ha la spunta Retro attiva in "Articoli non in questa serie",
+// allora non deve essere popolabile il campo "Tipologie di omaggio DI RETRO"; stessa cosa per
+// errori di stampa e change») - E QUI DENTRO, PERCHE' E' LA STESSA RISPOSTA. La domanda «questa
+// serie ha i retro?» si faceva gia' qui, una volta sola; le tre liste sono la seconda conseguenza.
+// Una funzione gemella avrebbe fatto due volte la stessa domanda, e il giorno che la domanda
+// cambia una delle due sarebbe rimasta indietro.
+// 🔄 Percio' il NOME e' cambiato: si chiamava "riga colonne" quando faceva una cosa sola.
+// 🔴 E I TRE CAMPI NON SI SVUOTANO - qui si diverge dalla v6.748 di proposito. La' una spunta
+// rimasta accesa era un'affermazione falsa che sarebbe finita nei dati; qui c'e' del testo scritto
+// a mano (sedici tipi di change sulla Serie 2) che non dice niente di falso: e' un elenco che
+// nessuno legge finche' i retro non ci sono. Cancellarlo alla prima spunta sarebbe una perdita
+// vera, in cambio di una contraddizione che non esiste.
 // ⚠️ Si NASCONDE, non si toglie dal DOM: gli `<input>` restano e conservano il loro valore, quindi
 // spegnendo e riaccendendo la spunta i numeri tornano quelli di prima. Toglierli avrebbe fatto
 // scrivere il default al primo salvataggio — che e' precisamente il guasto chiuso in questa stessa
 // release sui tre flag non ripristinati.
-function _aggiornaRigaColonneRetro() {
+function _aggiornaCampiDiRetro() {
   // v6.216 - la domanda passa dalle caselle nuove: la vecchia "Figurine senza retro" non esiste piu'.
   const cb = [...document.querySelectorAll('.series-articolo-nascosto')].find(x => x.value === 'retros');
   const senza = !!(cb && cb.checked);
   const inp = document.getElementById('series-col-retros-d');
   const riga = inp ? inp.closest('tr') : null;
   if (riga) riga.style.display = senza ? 'none' : '';
+  // v6.750 - le tre liste che descrivono i RETRO. Si spengono e si sbiadiscono insieme al loro
+  // titoletto e al loro suggerimento (il `.form-group` che le contiene): un campo grigio sotto
+  // un titolo acceso sembra rotto, non spento.
+  ['series-retro-change-types-input',
+   'series-retro-free-version-types-input',
+   'series-retro-print-error-types-input'].forEach(id => {
+    const ta = document.getElementById(id);
+    if (!ta) return;
+    ta.disabled = senza;
+    const gr = ta.closest('.form-group');
+    if (gr) {
+      gr.style.opacity = senza ? '0.45' : '';
+      gr.title = senza ? 'Questa serie dichiara di non avere retro' : '';
+    }
+  });
+  // 🆕 v6.752 (Franco: «anche questa spunta deve essere disabilitata; per change, omaggi ed
+  // errori di stampa») - LE DUE SPUNTE CHE PARLANO SOLO DEI RETRO. La v6.750 si era fermata a
+  // meta': aveva spento i tre elenchi e lasciato premibili le spunte che li comandano.
+  // 🔴 E QUESTE SI SPENGONO DAVVERO, al contrario degli elenchi: un elenco e' testo scritto
+  // a mano che cancellato non torna, una spunta e' un'AFFERMAZIONE - «questa serie ha change di
+  // retro» - e lasciata accesa su una serie senza retro finirebbe nei dati dicendo il falso, che
+  // e' esattamente la ragione della v6.748.
+  // ⚠️ GLI ERRORI DI STAMPA NON SONO QUI, e non e' una dimenticanza: «Ha errori di stampa» e' UNA
+  // spunta per tutte e due le facce. Spegnerla toglierebbe a una serie senza retro il modo di
+  // dichiarare i suoi errori di stampa FRONTALI, che ha eccome. Li' resta spento solo l'elenco
+  // «Tipologie di errore di stampa DI RETRO» (v6.750).
+  ['series-has-retro-change-input',
+   'series-has-retro-free-version-input'].forEach(id => {
+    const cb = document.getElementById(id);
+    if (!cb) return;
+    cb.disabled = senza;
+    if (senza) cb.checked = false;
+    const lab = cb.closest('label');
+    if (lab) {
+      lab.style.opacity = senza ? '0.45' : '';
+      lab.style.cursor = senza ? 'not-allowed' : 'pointer';
+      lab.title = senza ? 'Questa serie dichiara di non avere retro' : '';
+    }
+  });
+  // v6.752 - e il contatore va via con la sua spunta. Al tocco della casella «Retro» non chiama
+  // questa nessuno: senza la riga, «N. change di retro» resterebbe appeso sotto una spunta spenta.
+  toggleSeriesCountGroups();
 }
 
 // ============================================================
@@ -47294,9 +47939,17 @@ function _numeroVariazioneNU_RIMOSSA(f, allFigs, indice) {
 function _latoErroreStampaTesto(f, allFigs) {
   const lato = _latoErroreStampa(f, allFigs);
   if (!lato) return '';
-  const it = currentLang === 'it';
-  return it ? (lato === 'retro' ? 'posteriore'  : 'frontale')
-            : (lato === 'retro' ? 'on the back' : 'on the front');
+  // 🔄 v6.750 (Franco: «il badge "Errore di stampa frontale" deve essere solo "Errore di
+  // stampa"») - SUL FRONTE NON SI DICE NIENTE. Revoca PARZIALE della v6.519, che «frontale»
+  // l'aveva messo su richiesta sua: un errore di stampa e' frontale quasi sempre, quindi quella
+  // parola non portava una notizia - la porta l'altra.
+  // 🔴 Cambia QUI, cioe' nell'unica fonte, quindi cambia anche il TITOLO della scheda: e'
+  // esattamente cio' per cui la v6.519 aveva unificato le due frasi. Ritoccare solo il badge
+  // avrebbe riaperto quel difetto il giorno stesso in cui lo si e' citato.
+  // 📌 Le PILLOLE DEI FILTRI non passano di qua e non cambiano: li' «FRONTALI» e
+  // «POSTERIORI» sono due scelte affiancate, e una senza nome non si potrebbe premere.
+  if (lato !== 'retro') return '';
+  return currentLang === 'it' ? 'posteriore' : 'on the back';
 }
 
 // 🆕 v6.552 (Franco: *"una cornice attorno alla foto che fa riferimento all'errore; la
@@ -53574,17 +54227,24 @@ function _gscIndirizzi(s) {
            dove: { it: dove('it'), en: dove('en') } };
 }
 
-// ⚠️ LE SOLE PAROLE COPIATE DAL SITO sono quelle della riga BASE e del totale: non sono versioni,
-//    e in `VERSIONI_ARTICOLO` non ci sono. Tutte le altre le da' `_etichettaConteggio` (v6.629),
-//    che legge il descrittore; i nomi delle categorie li da' `getSectionLabel`. Questo e' l'unico
-//    punto di questa scheda che puo' divergere dal resto del sito.
+// 🔄 v6.735 (Franco: «procedi con una traduzione automatica presa dal descrittore») -
+//    QUI STAVA UN ELENCO DI SEZIONI SCRITTO A MANO, e conosceva CINQUE tipologie su DODICI.
+//    Per le altre sette la riga del set base scriveva «48 undefined set base»: non si vedeva
+//    solo perche' quelle pagine non sono ancora online.
+// 🔴 Adesso la parola e' l'etichetta del sito in minuscolo, quindi non e' piu' una copia:
+//    non puo' divergere, e una tipologia nuova entra da se' il giorno che nasce. Era l'ultimo
+//    punto di questa scheda che poteva dire una parola diversa dal resto del sito.
+// ⚠️ Due frasi cambiano, ed e' voluto: «Figurine con retro» qui diceva «figurine» - cioe'
+//    il nome di un'ALTRA tipologia, quella nata il 10 settembre.
+// 📌 Resta a mano l'elenco di CHI NON HA UN SET BASE (le tre righe sotto): quello non e'
+//    un nome, e' una proprieta' della tipologia. Il suo ripiego pero' e' quello giusto -
+//    Franco ha confermato «set base» per tutte e otto le altre - quindi una tipologia nuova
+//    nasce con la frase giusta invece che con un buco.
 const _GSC_PAROLE = {
-  it: { nomi: { figurines: 'figurine', retros: 'retro', albums: 'album', extras: 'articoli', bustine: 'bustine' },
-        setBase: p => p + ' set base',
+  it: { setBase: p => p + ' set base',
         standard: n => n === 1 ? 'versione standard' : 'versioni standard',
         totale: 'in totale', locale: 'it-IT' },
-  en: { nomi: { figurines: 'stickers', retros: 'retros', albums: 'albums', extras: 'items', bustine: 'wrappers' },
-        setBase: p => p + ' base set',
+  en: { setBase: p => p + ' base set',
         standard: n => n === 1 ? 'standard version' : 'standard versions',
         totale: 'in total', locale: 'en-US' },
 };
@@ -53660,7 +54320,8 @@ function _gscNumeriche(s, L) {
     if (!g.items.length) return '';   // una categoria vuota non si annuncia a un visitatore
     const m = [];
     if (g.base.length) m.push(voce(g.base.length,
-      (['bustine', 'albums', 'extras'].includes(sez) ? P.standard(g.base.length) : P.setBase(P.nomi[sez])),
+      (['bustine', 'albums', 'extras'].includes(sez) ? P.standard(g.base.length)
+                                                     : P.setBase(getSectionLabel(sez).toLowerCase())),
       tinta('--type-base')));
     if (g.variation.length) m.push(voce(g.variation.length, _etichettaConteggio('variation', g.variation.length, L === 'it'), tinta('--type-official')));
     if (g.unofficial.length) m.push(voce(g.unofficial.length, _etichettaConteggio('unofficialVariation', g.unofficial.length, L === 'it'), tinta('--type-unofficial')));
