@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.768"></script>
-<link rel="stylesheet" href="css/style.css?v=6.768">
+<script src="js/email.min.js?v=6.783"></script>
+<link rel="stylesheet" href="css/style.css?v=6.783">
 
 
 <style>
@@ -660,8 +660,11 @@ button.back-btn { color:#ffffff; }
    La colonna Nome resta a sinistra da sé: ha lo stile in linea, che batte questa regola. */
 #admin-series-table .data-table th { text-align: center; }
 
-/* 🆕 v6.219 (Franco) — i titoletti del tab "Articoli non base": Variazioni, Change, Errori di
-   stampa. */
+/* 🆕 v6.219 (Franco) — i titoletti del tab "Versioni non base": Variazioni, Change,
+   Errori di stampa.
+   🔄 v6.783 - prima si chiamava "Articoli non base", e il nome vecchio resta scritto qui una
+   volta sola, dichiarato come vecchio: chi cerca la vecchia parola la trova e capisce subito che
+   non e' piu' quella. */
 #add-series-modal .series-sottotitolo {
   font-size:0.95rem; color:var(--text); font-weight:700;
   margin:1.1rem 0 0.5rem; padding-bottom:0.25rem; border-bottom:1px solid var(--border);
@@ -2911,7 +2914,7 @@ di tutte le serie</button>
     <div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin:0.75rem 0 1rem;flex-wrap:wrap;">
       <button type="button" class="series-tab-btn" data-tab="serie" onclick="switchSeriesTab('serie')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Serie</button>
       <button type="button" class="series-tab-btn" data-tab="descrizioni" onclick="switchSeriesTab('descrizioni')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">📝 Descrizioni</button>
-      <button type="button" class="series-tab-btn" data-tab="nonbase" onclick="switchSeriesTab('nonbase')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🔀 Articoli non base</button>
+      <button type="button" class="series-tab-btn" data-tab="nonbase" onclick="switchSeriesTab('nonbase')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🔀 Versioni non base</button>
       <button type="button" class="series-tab-btn" data-tab="visualizzazione" onclick="switchSeriesTab('visualizzazione')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🗂️ Visualizzazione</button>
       <!-- 🆕 v6.681 - IL QUINTO TAB. 🔴 Si mostra solo se la serie dice di avere
            sottoserie: lo accende `_aggiornaCasellaSottoserie`, lo stesso punto che accendeva
@@ -3466,7 +3469,7 @@ di tutte le serie</button>
         <textarea class="form-input" id="series-retro-print-error-types-input" rows="5" style="resize:vertical;font-family:inherit;"></textarea>
         <div class="form-hint">Un valore per riga. Sono le tipologie che la tendina «Tipo di errore di stampa» offre sui RETRO di questa serie.</div>
       </div>
-    </div><!-- chiude il tab Articoli non base -->
+    </div><!-- chiude il tab Versioni non base (v6.783) -->
 
     <div class="series-tab-panel" data-tab="visualizzazione" style="display:none;">
         <!-- v6.163 (Franco) - QUANTE COLONNE HA LA GRIGLIA, due numeri PER SEZIONE. I valori di
@@ -3956,7 +3959,37 @@ di tutte le serie</button>
       <button class="modal-close" onclick="fotoSceltaAnnulla()">&#10005;</button>
     </div>
     <img id="foto-scelta-preview" alt="" style="width:100%;max-height:320px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.75rem;">
-    <button id="foto-scelta-bg-btn" type="button" onclick="fotoSceltaTogliSfondo()" class="btn-foto" style="width:100%;margin-bottom:0.75rem;">&#10024; Rimuovi sfondo</button>
+    <!-- 🆕 v6.772 (Franco: «manca il bottone "cambia foto" dentro a quella finestra») — si cambia
+         la foto senza uscire e rifare il giro dalla matita.
+         📌 STA SOPRA «Rimuovi sfondo», non accanto: regola della v6.605 — i comandi che METTONO
+         una foto stanno sopra, quelli che la TOLGONO o la modificano sotto.
+         📌 `btn-foto` e non una classe nuova: è la famiglia di questi comandi, e `prova-v6456`
+         conta quanti la portano proprio per accorgersi di uno vestito a mano.
+         ⚠️ È una `<label>` con la sua `<input type=file>` dentro: un `<button>` non può aprire il
+         selettore dei file da solo, e una casella condivisa con un altro comando farebbe decidere
+         al primo anche per il secondo (lezione della v6.602).
+         ⚠️ Il testo sta in uno `<span>` con un id: lo riscrive `_mostraFotoScelta` nella lingua
+         corrente, come fa `_ETICHETTA_SFONDO()` per il bottone qui sotto. -->
+    <!-- 🔄 v6.777 (Franco: «i bottoni sono troppo larghi: disponili in 2 righe da 2 bottoni») —
+         DUE RIGHE DA DUE, e il taglio non è solo di larghezza: la riga 1 è quello che fai ALLA
+         FOTO, la riga 2 quello che fai alla FINESTRA. La v6.772 aveva messo «Cambia foto» sopra
+         «Rimuovi sfondo» per la regola della v6.605 (chi mette sopra, chi toglie sotto): lì i
+         comandi erano tre in colonna e l'unico ordine possibile era verticale. A due a due quella
+         regola non serve più — i due che agiscono sulla foto stanno sulla stessa riga, e nessuno
+         dei due «toglie» qualcosa all'articolo.
+         📌 `flex:1` su tutti e quattro, come nella riga dei comandi della scheda (v6.605): quattro
+         tasti della stessa larghezza, incolonnati fra le due righe.
+         ⚠️ Via i `width:100%`: dentro un contenitore flex una larghezza cablata scavalca il
+         `flex:1` e rimette un tasto lungo quanto due — è il difetto che `prova-v6605` §2 guarda
+         nella scheda, qui in piccolo.
+         ⚠️ Il `margin-bottom` passa dai due tasti alla RIGA: lasciato sui tasti, in una riga flex
+         si sommerebbe a quello della riga e lo spazio fra le due file raddoppierebbe. -->
+    <div style="display:flex;gap:0.6rem;margin-bottom:0.75rem;">
+      <label class="btn-foto" style="flex:1;text-align:center;cursor:pointer;">&#128247; <span id="foto-scelta-cambia-testo">Cambia foto</span>
+        <input type="file" accept="image/*" style="display:none;" onchange="fotoSceltaCambia(event)">
+      </label>
+      <button id="foto-scelta-bg-btn" type="button" onclick="fotoSceltaTogliSfondo()" class="btn-foto" style="flex:1;">&#10024; Rimuovi sfondo</button>
+    </div>
     <div style="display:flex;gap:0.6rem;">
       <button class="btn-primary btn-azione-admin" style="flex:1;" onclick="fotoSceltaConferma()">Applica foto</button>
       <button class="btn-secondary btn-admin-ghost" style="flex:1;" onclick="fotoSceltaAnnulla()">Annulla</button>
@@ -4066,7 +4099,7 @@ di tutte le serie</button>
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.768"></script>
+<script src="js/app.js?v=6.783"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4090,7 +4123,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.768'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.783'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
