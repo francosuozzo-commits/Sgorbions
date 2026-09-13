@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.783"></script>
-<link rel="stylesheet" href="css/style.css?v=6.783">
+<script src="js/email.min.js?v=6.791"></script>
+<link rel="stylesheet" href="css/style.css?v=6.795">
 
 
 <style>
@@ -3077,9 +3077,21 @@ di tutte le serie</button>
                di una VERSIONE — usarlo qui spargerebbe un token che significa gia'
                qualcos'altro. E «scuro» sceglie da se': #ffb400 e' ambra, #fff275 chiaro.
                ✅ Contrasto misurato: 9,4:1 su `--card2`, 10,9:1 sul fondo pagina. -->
-          <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:0.5rem;color:var(--warn);">Articoli non in questa serie</div>
-          <div id="series-articoli-nascosti" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
-          <div class="form-hint" style="margin-top:0.3rem;">Il box sparisce dall'hub della serie. Nasconde la porta, non la stanza: gli oggetti restano nei dati.</div>
+          <!-- 🔄 v6.789 (Franco: *"a me non sono mai piaciuti quei flag a logica negativa... flag
+               acceso significa che la TDA e' ammessa"*) — IL VERSO SI GIRA, E CON LUI LE PAROLE.
+               🔴 Il titolo e' suo, alla lettera: «Tipologie di articoli di questa serie» — che e'
+               poi TDA scritto per esteso, e a schermo l'acronimo non compare mai.
+               📌 IL GIALLO RESTA `--warn` (#ffb400), e resta per la ragione della v6.500: la
+               tavolozza ha due gialli e l'altro (`--type-unofficial`) e' il colore di una
+               VERSIONE — usarlo qui spargerebbe un token che significa gia' qualcos'altro.
+               Contrasto misurato allora: 9,4:1 su `--card2`, 10,9:1 sul fondo pagina.
+               ⚠️ E IL SUGGERIMENTO SI GIRA CON IL TITOLO, o resta a spiegare il verso di ieri: un
+               suggerimento piu' vecchio della regola e' il difetto che questo progetto paga piu'
+               spesso. La frase «nasconde la porta, non la stanza» e' troppo buona per perderla e
+               dice ancora il vero — dall'altro lato. -->
+          <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:0.5rem;color:var(--warn);">Tipologie di articoli di questa serie</div>
+          <div id="series-tipologie-ammesse" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
+          <div class="form-hint" style="margin-top:0.3rem;">Spuntata = la serie ha questi articoli e il suo box compare nell'hub. Non spuntata, il box sparisce: nasconde la porta, non la stanza — gli oggetti restano nei dati.</div>
         </div>
         <!-- 🆕 v6.749 (Franco: "quei due campi mettili uno affianco all'altro") — LA SECONDA
              COLONNA. Le due liste sono la stessa domanda in due versi, e dalla v6.748 si parlano:
@@ -3282,193 +3294,221 @@ di tutte le serie</button>
            inline, e non e' una preferenza: `toggleSeriesCountGroups` accende il riquadro con
            `style.display = ''`, cioe' "torna a quello che dice il CSS". Scrivendo `display:flex`
            inline, quella riga lo cancellerebbe e il riquadro tornerebbe a impilarsi. -->
-      <!-- 🆕 v6.245 (Franco) — IL COLORE STA SUL SOTTOTITOLO, non sulle etichette dei flag: marca
-           la SEZIONE, e i campi dentro restano neutri. La v6.243 aveva fatto il contrario.
-           📌 E "Variazioni" porta le due tinte dentro le parentesi — che era il problema per
-           cui non l'avevo colorata: un sottotitolo che copre DUE versioni non puo' avere un
-           colore solo, ma puo' averne due se nomina le due cose. È lo stesso modo in cui il
-           filtro "Variazioni (ufficiali e non ufficiali)" della ricerca risolve la stessa
-           ambiguità dalla v5.870. -->
-      <div class="series-sottotitolo" style="margin-top:0;">Variazioni (<span style="color:var(--type-official);">ufficiali</span> / <span style="color:var(--type-unofficial);">non ufficiali</span>)</div>
+      <!-- 🔄 v6.790 (Franco: *"serve una prima sezione chiamata Figurine, poi una analoga per i
+           retro, poi bustine, poi album"* — e stanotte, secco: *"ma certo che la form devi
+           scriverla adesso"*) — IL TAB SI ORDINA PER TIPOLOGIA, NON PIÙ PER VERSIONE.
+           🔴 ERA L'ULTIMA COSA CHE MANCAVA ALLA v6.787, e la v6.787 stessa scriveva che sarebbe
+           stata «la release dopo». Fino a ieri questo tab elencava VERSIONI (Variazioni, Change,
+           Omaggio, Errori di stampa) e dentro ognuna mescolava figurine e retro; sotto, i blocchi
+           per tipologia della v6.784. Due modi di dire la stessa cosa nella stessa schermata.
+           🔴 I BLOCCHI SONO STATI SPOSTATI, NON RIGENERATI: ogni `id`, ogni conteggio, ogni
+           suggerimento e ogni `data-i18n` è quello di prima, riga per riga. Riscriverli «già che
+           c'ero» è il modo in cui una release ne rompe una vecchia — e qui sotto c'è markup che
+           porta cinque release di decisioni.
+           🔄 E IL COLORE SI SPOSTA DAL TITOLO ALL'ETICHETTA, che è una revoca della v6.245
+           («il colore sta sul sottotitolo, non sulle etichette dei flag: marca la SEZIONE»).
+           Quella regola valeva quando la sezione ERA una versione; adesso la sezione è una
+           tipologia e cinque versioni diverse non possono avere un colore solo. 📌 Non è una
+           strada nuova: è esattamente come `_rendiTDAVersioni` disegna da sé i blocchi delle
+           altre nove tipologie dalla v6.784 — titolo neutro, etichetta colorata. Le due metà
+           della schermata adesso si assomigliano perché fanno la stessa cosa.
+           ⚠️ LE ETICHETTE RESTANO QUELLE DELLA v6.785 («di figurine», «di retro»), e sono
+           ridondanti col titolo della sezione. Sono parole di Franco, scritte tre release fa per
+           togliere una bugia: accorciarle è una sua decisione, non una pulizia da fare di
+           passaggio. Sta nella TODO. -->
+
+      <div class="series-sottotitolo" style="margin-top:0;">Figurine con retro</div>
+      <div class="form-hint" style="margin-bottom:0.35rem;">Le versioni che questa serie ha sulle figurine con retro, e i tipi che le loro tendine offrono.</div>
       <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <div class="series-flag-riga">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-has-variations-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span data-i18n="form.series.hasVariations">Ha variazioni ufficiali</span>
+            <span style="color:var(--type-official);" data-versione="variation"></span>
           </label>
           <div class="form-group series-conteggio" id="series-count-variations-group" style="display:none;">
             <label class="form-label" style="font-size:0.78rem;margin:0;" data-i18n="form.series.countVariations">N. variazioni ufficiali</label>
             <input class="form-input" type="number" id="series-count-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: le figurine marcate «variazione ufficiale»">
           </div>
         </div>
-
         <div class="series-flag-riga">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-has-unofficial-variations-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span data-i18n="form.series.hasUnofficialVariations">Ha variazioni non ufficiali</span>
+            <span style="color:var(--type-unofficial);" data-versione="unofficialVariation"></span>
           </label>
           <div class="form-group series-conteggio" id="series-count-unofficial-variations-group" style="display:none;">
             <label class="form-label" style="font-size:0.78rem;margin:0;" data-i18n="form.series.countUnofficialVariations">N. variazioni non ufficiali</label>
             <input class="form-input" type="number" id="series-count-unofficial-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: le figurine marcate «variazione non ufficiale»">
           </div>
         </div>
-
-      </div>
-
-      <!-- 🆕 v6.219 (Franco) — I TITOLETTI. Il tab elencava sei controlli di fila senza dire che
-           parlano di tre cose diverse. -->
-      <div class="series-sottotitolo" style="color:var(--type-change);">Change</div>
-      <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <div class="series-flag-riga">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-has-change-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span data-i18n="form.series.hasChange">Ha change di figurine</span>
+            <span style="color:var(--type-change);" data-versione="change"></span>
           </label>
           <div class="form-group series-conteggio" id="series-count-change-group" style="display:none;">
-            <label class="form-label" style="font-size:0.78rem;margin:0;" data-i18n="form.series.countChange">N. change di figurine</label>
+            <label class="form-label" style="font-size:0.78rem;margin:0;" data-i18n="form.series.countChange">N. change</label>
             <input class="form-input" type="number" id="series-count-change-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i change che stanno nella sezione Figurine">
           </div>
         </div>
-
-        <!-- v6.170 - la coppia NUOVA. `hasRetroChange` non esiste sui documenti gia' salvati:
-             nasce spento ovunque, e va acceso a mano dove serve (Serie 1, 2 e 3, misurate il 15
-             agosto). `hasChange` invece NON cambia significato - i dati dicono che si comportava
-             gia' come "di figurine": acceso su Serie 2 e 3, che ne hanno, spento su Serie 1, che
-             non ne ha. Nessuna migrazione. -->
-        <div class="series-flag-riga">
-          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-            <input type="checkbox" id="series-has-retro-change-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span data-i18n="form.series.hasRetroChange">Ha change di retro</span>
-          </label>
-          <div class="form-group series-conteggio" id="series-count-retro-change-group" style="display:none;">
-            <label class="form-label" style="font-size:0.78rem;margin:0;" data-i18n="form.series.countRetroChange">N. change di retro</label>
-            <input class="form-input" type="number" id="series-count-retro-change-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i change che stanno nella sezione Retro">
-          </div>
-        </div>
-      </div>
-
-    <!-- v6.217 — I DUE ELENCHI DEI TIPI DI CHANGE arrivano qui dal fondo della form: sono
-         variazioni, e nel raggruppamento di Franco stanno in questo tab. Il markup e' lo stesso,
-         spostato di posto e non riscritto. -->
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.series.retroChangeTypes">Tipi di change DI RETRO (uno per riga)</label>
-      <textarea class="form-input" id="series-retro-change-types-input" rows="8" style="resize:vertical;font-family:inherit;"></textarea>
-      <div class="form-hint" data-i18n="form.series.retroChangeTypesHint">Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».</div>
-    </div>
-
-    <!-- v6.102 (§12.10) — la seconda lista. Il campo `frontChangeTypes` e' NUOVO: `retroChangeTypes`
-         qui sopra non e' stato toccato, perche' 14 dei 16 tipi esistenti erano gia' di retro e il
-         suo nome finalmente dice il vero. -->
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.series.frontChangeTypes">Tipi di change FRONTALI (uno per riga)</label>
-      <textarea class="form-input" id="series-front-change-types-input" rows="4" style="resize:vertical;font-family:inherit;"></textarea>
-      <div class="form-hint" data-i18n="form.series.frontChangeTypesHint">Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.</div>
-    </div>
-
-      <!-- 🆕 v6.219 (Franco) — GLI ERRORI DI STAMPA ENTRANO NELLA FORM. Il titoletto era chiesto,
-           ma sotto non c'era niente: `hasPrintError`, `countPrintError` e `printErrorTypes` non
-           esistevano da nessuna parte. Franco ha scelto la coppia spunta+numero come le altre.
-           🔴 IL FLAG NUOVO VA ANCHE RIPRISTINATO all'apertura (`_ripristinaFlagSerie`): senza, si
-           aprirebbe sempre spento, il salvataggio lo leggerebbe e scriverebbe `false` — cioe' si
-           ricreerebbe su un campo nuovo il guasto della v6.169. Nove flag, nove ripristini.
-           📌 E il conteggio NON dichiara una sezione, al contrario degli altri cinque. Gli altri
-           possono farlo perche' si sa dove vive il loro contrassegno; degli errori di stampa
-           sappiamo solo che ce ne sono fra le FIGURINE (79 su Serie 3, misurati nella v6.170) e
-           non e' mai stato misurato se ce ne siano fra i RETRO. Contarli ovunque non puo' essere
-           piu' stretto dell'etichetta — che e' esattamente l'errore della v6.170, dove
-           "N. Change = 0" rispondeva a una domanda diversa da quella che l'etichetta faceva
-           credere. Se un giorno si misura e stanno in due sezioni, la strada e' la coppia doppia
-           dei change. -->
-      <!-- 🆕 v6.235 (Franco) — LE VERSIONI OMAGGIO. Sta PRIMA degli errori di stampa: è l'ordine
-           dichiarato in `VERSIONI_ARTICOLO` e quello dell'ordinamento dentro il numero. Un blocco
-           che nella form sta in un posto e nell'elenco in un altro sarebbe una terza verità sullo
-           stesso ordine.
-           ⚠️ Il conteggio NON filtra per sezione, come quello degli errori di stampa e per la
-           stessa ragione: le versioni omaggio esistono fra le figurine E fra i retro (Franco), e
-           un filtro su `figurines` scriverebbe "0" a una serie che ne ha. -->
-      <!-- v6.240 (Franco) — "Omaggio", non "Versioni omaggio": vedi il CHANGELOG. -->
-      <div class="series-sottotitolo" style="color:var(--type-free);">Omaggio</div>
-
-      <!-- 🆕 v6.248 (Franco) — LA SEZIONE OMAGGIO E' A SPECCHIO DEI CHANGE: due flag, due conteggi,
-           due elenchi di tipologie. La v6.235 ne aveva fatto UNO solo, e la v6.246 aveva sdoppiato
-           le tipologie senza sdoppiare il resto — meta' del lavoro, che e' peggio di niente perche'
-           sembra finito.
-           📌 E le due meta' sono SEPARATE e ORDINATE: prima le Figurine, poi i Retro, ciascuna con
-           la sua mini-intestazione. Prima i sei campi stavano in fila senza dire a cosa
-           appartenessero, e "DI RETRO" / "FRONTALI" in fondo all'etichetta si legge per ultimo. -->
-      <div style="font-size:0.8rem;color:var(--text);font-weight:700;letter-spacing:0.04em;margin:0.9rem 0 0.4rem;">FIGURINE</div>
-      <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <div class="series-flag-riga">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-has-free-version-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span>Ha omaggio di figurine</span>
+            <span style="color:var(--type-free);" data-versione="free"></span>
           </label>
           <div class="form-group series-conteggio" id="series-count-free-version-group" style="display:none;">
-            <label class="form-label" style="font-size:0.78rem;margin:0;">N. omaggi di figurine</label>
+            <label class="form-label" style="font-size:0.78rem;margin:0;">N. versioni omaggio</label>
             <input class="form-input" type="number" id="series-count-free-version-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: le FIGURINE marcate «omaggio»">
           </div>
         </div>
-      </div>
-      <div class="form-group" style="margin-top:0.6rem;">
-        <label class="form-label">Tipologie di omaggio FRONTALI (una per riga)</label>
-        <textarea class="form-input" id="series-front-free-version-types-input" rows="5" style="resize:vertical;font-family:inherit;"></textarea>
-        <div class="form-hint">Un valore per riga. Sono le tipologie che la tendina «Tipo di omaggio» offre sulle FIGURINE di questa serie.</div>
-      </div>
-
-      <div style="font-size:0.8rem;color:var(--text);font-weight:700;letter-spacing:0.04em;margin:1rem 0 0.4rem;">RETRO</div>
-      <div style="display:flex;flex-direction:column;gap:0.5rem;">
-        <div class="series-flag-riga">
-          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-            <input type="checkbox" id="series-has-retro-free-version-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span>Ha omaggio di retro</span>
-          </label>
-          <div class="form-group series-conteggio" id="series-count-retro-free-version-group" style="display:none;">
-            <label class="form-label" style="font-size:0.78rem;margin:0;">N. omaggi di retro</label>
-            <input class="form-input" type="number" id="series-count-retro-free-version-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i RETRO marcati «omaggio»">
-          </div>
-        </div>
-      </div>
-      <div class="form-group" style="margin-top:0.6rem;">
-        <label class="form-label">Tipologie di omaggio DI RETRO (una per riga)</label>
-        <textarea class="form-input" id="series-retro-free-version-types-input" rows="5" style="resize:vertical;font-family:inherit;"></textarea>
-        <div class="form-hint">Un valore per riga. Sono le tipologie che la tendina «Tipo di omaggio» offre sui RETRO di questa serie.</div>
-      </div>
-
-      <div class="series-sottotitolo" style="color:var(--type-printerror);">Errori di stampa</div>
-      <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <div class="series-flag-riga">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-has-print-error-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span>Ha errori di stampa</span>
+            <span style="color:var(--type-printerror);" data-versione="printError"></span>
           </label>
           <div class="form-group series-conteggio" id="series-count-print-error-group" style="display:none;">
             <label class="form-label" style="font-size:0.78rem;margin:0;">N. errori di stampa</label>
-            <input class="form-input" type="number" id="series-count-print-error-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: gli oggetti marcati «errore di stampa», in QUALUNQUE sezione">
+            <input class="form-input" type="number" id="series-count-print-error-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: le FIGURINE marcate «errore di stampa»">
           </div>
         </div>
       </div>
-      <!-- 🆕 v6.350 (Franco: *"mi serve un campo chiamato «Tipologie di errore di stampa», analogo
-           a quello che abbiamo per change ed omaggio, e mi serve sia nella versione figurine che
-           nella versione retro"*) — LE DUE CASELLE, nella stessa forma delle altre quattro.
-           🔴 CHIUDE UN ELENCO CHE ERA APERTO PER SCELTA, e va detto perché il codice lo dichiarava:
-           `opzioniTipo: null` nell'elenco delle versioni portava scritto *"non è una dimenticanza:
-           il Tipo di errore di stampa è l'unico dei tre a ELENCO APERTO (testo libero)"*. La scelta
-           è stata revocata da Franco, che sistemerà i dati: fino ad allora le tipologie scritte a
-           mano che non corrispondono compaiono nella tendina sotto «⚠️ non in elenco» — visibili e
-           modificabili, non sparite.
-           📌 Il testo libero era anche il modo più rapido per accorgersi che la stessa cosa era
-           stata scritta in tre modi. Con l'elenco chiuso quella spia si spegne e al suo posto
-           subentra la tendina: è lo stesso scambio già fatto per change e omaggio. -->
+
+      <!-- 🔴 v6.790 — OGNI ELENCO STA SOTTO LA TIPOLOGIA CHE DESCRIVE, change compresi.
+           🗑️ QUI AVEVO SCRITTO IL CONTRARIO, e lo tengo scritto perché l'errore è istruttivo:
+           «i due elenchi dei change stanno tutti e due sotto Figurine, sono le due FACCE di un
+           change di FIGURINA». L'avevo DEDOTTO dal suggerimento della v6.102 invece di chiederlo,
+           e Franco aveva già deciso il contrario tempo fa.
+           ✅ PAROLE SUE: «Tipi di change di retro elenca le possibili tipologie di change del
+           RETRO. Siccome il retro va in coppia con le figurine, allora anche loro si possono
+           catalogare per change di retro — ma una figurina il change di retro lo EREDITA dal
+           retro; non è un attributo suo». E ancora: «in visualizzazione (card) le figurine lo
+           ereditano dal retro, quindi non necessitavano di un campo… ora che i retro hanno la
+           loro lista è corretto che le figurine non abbiano una loro lista di change di retro».
+           📌 Quindi: «Tipi di change FRONTALI» è delle figurine e resta qui; «Tipi di change DI
+           RETRO» è dei retro e sta di là. L'omaggio e l'errore di stampa si dividevano già, e
+           sono parole sue: «in duplice copia: per figurine e retro» (v6.246), «sia nella versione
+           figurine che nella versione retro» (v6.350). Adesso le tre coppie si comportano uguale.
+           ✅ v6.791 - LA CONSEGUENZA PIÙ GRANDE, che qui era ancora «nella TODO», è stata fatta:
+           la tendina «Tipo di change» di una figurina offre i soli tipi frontali.
+           ✅ v6.792 - E un passo oltre, sempre suo: se la differenza sta dietro non c'è nessuna
+           tendina. Franco: «non la chiamerei tendina, dato che non può essere premuta alcuna
+           tendina: quella informazione è DEDOTTA dal retro». La scheda mostra il valore, e il
+           campo sulla figurina si azzera. Nei dati la tendina resta per DUE articoli in tutto
+           il sito - i soli change la cui differenza sta davanti. -->
+    <div class="form-group">
+      <label class="form-label" data-lista-versione="change"></label>
+      <textarea class="form-input" id="series-front-change-types-input" rows="4" style="resize:vertical;font-family:inherit;"></textarea>
+      <!-- 🗑️ v6.794 (Franco: «toglila; è troppo complessa, eventualmente poi penserò a
+           qualcosaltro») - QUI STAVA IL SUGGERIMENTO DI QUESTA LISTA, ed è il gemello di quello
+           dei retro, tolto dalla v6.791 con le stesse parole sue.
+           📌 Diceva: «Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi
+           usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le
+           liste.» - tre regole in una frase, di cui due che riguardano il RETRO. Spiegava una
+           distinzione che serviva quando i due elenchi stavano tutti e due sotto le figurine e non
+           era chiaro di chi fossero; adesso ognuno sta sotto la sua tipologia e lo dice il titolo.
+           ⚠️ La terza regola resta VERA e non è scritta da nessun'altra parte a schermo: lo stesso
+           tipo in tutte e due le liste renderebbe `_facciaDelTipo` ambigua. Se servirà dirlo,
+           saranno parole sue. -->
+    </div>
+    
+      <!-- 🗑️ v6.795 (Franco) - QUI STAVA «Tipologie di omaggio FRONTALI (una per riga)», e con
+           lei se ne va la v6.246 (*«il campo tipo di omaggio serve in duplice copia: per figurine e
+           retro»*), che era vera quando l'ha detta.
+           🔴 Parole sue: *«gli omaggi sono sempre e solo per i retro... la tipologia di omaggio è
+           sempre derivante dal retro omaggio collegato alla fig»*, e *«per le figurine con retro,
+           mentre change ed errore di stampa possono essere sia frontali che non, omaggio è sempre
+           dei retro»*. Il tipo non si sceglie MAI su una figurina, quindi questa lista non aveva
+           più niente da offrire a nessuno.
+           📏 E i dati lo dicevano già: le due serie che la usavano dichiaravano le STESSE due voci
+           in tutte e due le liste - NERO e ROSSO di qua, NERO e ROSSO di là. Era una copia.
+           ⚠️ Il campo `frontFreeVersionTypes` resta nei documenti: non lo legge più nessuno, ma
+           cancellarlo sarebbe una migrazione, e non è stata chiesta. -->
+      <!-- 🗑️ v6.795 (Franco, una per una: «toglila») - QUI STAVANO I QUATTRO SUGGERIMENTI
+           DEGLI ELENCHI DEI TIPI, tutti della stessa forma: «Un valore per riga. Sono le tipologie
+           che la tendina X offre sulle FIGURINE / sui RETRO di questa serie».
+           📌 Dicevano due cose, e tutte e due sono gia' dette altrove: COSA sono lo dice
+           l'etichetta del campo, e DI CHI sono lo dice il titolo della sezione dalla v6.790. Erano
+           utili quando i sei elenchi stavano mescolati e non si capiva a chi appartenessero.
+           ⚠️ Franco ne ha nominati TRE su quattro; il quarto è la stessa frase con un'altra
+           parola dentro, e lasciarlo da solo sarebbe stato peggio che toglierlo. Se lo rivuole,
+           è una riga. -->
       <div class="form-group" style="margin-top:0.6rem;">
-        <label class="form-label">Tipologie di errore di stampa FRONTALI (una per riga)</label>
+        <label class="form-label" data-lista-versione="printError"></label>
         <textarea class="form-input" id="series-front-print-error-types-input" rows="5" style="resize:vertical;font-family:inherit;"></textarea>
-        <div class="form-hint">Un valore per riga. Sono le tipologie che la tendina «Tipo di errore di stampa» offre sulle FIGURINE di questa serie.</div>
+        
+      </div>
+
+      <div class="series-sottotitolo" style="margin-top:1.1rem;">Retro</div>
+      <div class="form-hint" style="margin-bottom:0.35rem;">Le versioni che questa serie ha sui retro, e i tipi che le loro tendine offrono.</div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem;">
+        <div class="series-flag-riga">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-retro-change-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span style="color:var(--type-change);" data-versione="change"></span>
+          </label>
+          <div class="form-group series-conteggio" id="series-count-retro-change-group" style="display:none;">
+            <label class="form-label" style="font-size:0.78rem;margin:0;" data-i18n="form.series.countRetroChange">N. change</label>
+            <input class="form-input" type="number" id="series-count-retro-change-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i change che stanno nella sezione Retro">
+          </div>
+        </div>
+        <div class="series-flag-riga">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-retro-free-version-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span style="color:var(--type-free);" data-versione="free"></span>
+          </label>
+          <div class="form-group series-conteggio" id="series-count-retro-free-version-group" style="display:none;">
+            <label class="form-label" style="font-size:0.78rem;margin:0;">N. versioni omaggio</label>
+            <input class="form-input" type="number" id="series-count-retro-free-version-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i RETRO marcati «omaggio»">
+          </div>
+        </div>
+        <div class="series-flag-riga">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-retro-print-error-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span style="color:var(--type-printerror);" data-versione="printError"></span>
+          </label>
+          <!-- 🆕 v6.794 (Franco: «se dividiamo i campi anche i loro contatori si separano») -
+               IL GEMELLO DEL CONTEGGIO, che fino a ieri non esisteva: ce n'era uno solo, sotto le
+               figurine, e contava gli errori di stampa di TUTTE le tipologie. -->
+          <div class="form-group series-conteggio" id="series-count-retro-print-error-group" style="display:none;">
+            <label class="form-label" style="font-size:0.78rem;margin:0;">N. errori di stampa</label>
+            <input class="form-input" type="number" id="series-count-retro-print-error-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i RETRO marcati «errore di stampa»">
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+      <label class="form-label" data-lista-versione="change"></label>
+      <textarea class="form-input" id="series-retro-change-types-input" rows="8" style="resize:vertical;font-family:inherit;"></textarea>
+      <!-- 🗑️ v6.791 (Franco: «togliamo proprio la nota») - QUI STAVA IL SUGGERIMENTO DELLA
+           v6.102: «Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un
+           retro tutto suo, oppure il flag Retro bianco».
+           🔴 Descriveva questo elenco quando era una FACCIA del change di una figurina. Adesso
+           l'elenco e' dei RETRO e sta sotto il loro titolo, quindi quella frase spiegava una cosa
+           che non e' piu' vera: una spiegazione piu' vecchia della regola, che e' il difetto che
+           questo progetto paga piu' spesso. Tolta, non riscritta - le parole a schermo le sceglie
+           Franco (v6.754), e lui ha detto di toglierla. -->
+    </div>
+<div class="form-group" style="margin-top:0.6rem;">
+        <label class="form-label" data-lista-versione="free"></label>
+        <textarea class="form-input" id="series-retro-free-version-types-input" rows="5" style="resize:vertical;font-family:inherit;"></textarea>
+        
       </div>
       <div class="form-group" style="margin-top:0.6rem;">
-        <label class="form-label">Tipologie di errore di stampa DI RETRO (una per riga)</label>
+        <label class="form-label" data-lista-versione="printError"></label>
         <textarea class="form-input" id="series-retro-print-error-types-input" rows="5" style="resize:vertical;font-family:inherit;"></textarea>
-        <div class="form-hint">Un valore per riga. Sono le tipologie che la tendina «Tipo di errore di stampa» offre sui RETRO di questa serie.</div>
+        
       </div>
+
+      <!-- 🆕 v6.784 (Franco: «ci servono quantomeno per le bustine e per gli album») - I
+           BLOCCHI PER TIPOLOGIA, e qui c'e' soltanto il CONTENITORE.
+           🔴 Il contenuto lo disegna `_rendiTDAVersioni` invece di stare scritto qui, e non e'
+           una preferenza: le versioni sono cinque e si leggono da `VERSIONI_ARTICOLO`, le tipologie
+           da `_TDA_CON_VERSIONI`. Scritto a mano sarebbe una griglia di caselle da tenere allineata
+           a due elenchi che vivono altrove - cioe' la copia che diverge al primo ritocco. La sesta
+           versione, il giorno che nasce, comparira' qui da sola.
+           📌 I blocchi di sopra (Figurine e Retro) restano scritti a mano: hanno conteggi,
+           avvertimenti e una divisione fronte/retro che non si ricava da un elenco. Riscriverli non
+           era la richiesta, e riscriverli «gia' che c'ero» e' il modo in cui una release ne rompe
+           una vecchia. -->
+      <div id="series-tda-versioni"></div>
     </div><!-- chiude il tab Versioni non base (v6.783) -->
 
     <div class="series-tab-panel" data-tab="visualizzazione" style="display:none;">
@@ -4099,7 +4139,7 @@ di tutte le serie</button>
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.783"></script>
+<script src="js/app.js?v=6.795"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4123,7 +4163,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.783'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.795'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 

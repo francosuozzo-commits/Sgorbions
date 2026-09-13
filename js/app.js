@@ -1,6 +1,531 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.795 - 🎁 L'OMAGGIO DI UNA FIGURINA CON RETRO STA SEMPRE DIETRO. Modificati js/app.js e
+//          index.html. Terza e ultima delle tre release sullo stesso tema (v6.577 l'errore di
+//          stampa, v6.792 il change, questa l'omaggio): adesso i tre campi del Tipo rispondono
+//          tutti e tre alla stessa domanda nello stesso modo.
+//          🔴 LA CORREZIONE E' SUA, E RIGUARDA UNA RISPOSTA CHE AVEVA DATO LUI: *«gli omaggi sono
+//          sempre e solo per i retro. Forse ti ho mandato io fuori strada quando ti ho risposto
+//          alla intervista. E' vero che le fig hanno gli omaggi ma la tipologia di omaggio e'
+//          sempre derivante dal retro omaggio collegato alla fig»*, e la nota che chiude il caso:
+//          *«per le figurine con retro, mentre change ed errore di stampa possono essere sia
+//          frontali che non, omaggio e' sempre dei retro»*.
+//          📏 MISURATO, SENZA UNA SOLA ECCEZIONE: 220 omaggi (194 retro, 26 figurine, tutte in
+//          Serie 2). Delle 26, 26 SU 26 hanno un retro che e' a sua volta un omaggio; zero senza
+//          retro, zero con un retro che omaggio non e'; divergenze fra il tipo della figurina e
+//          quello del suo retro: ZERO (sul change erano tre). E le due serie dichiaravano le
+//          STESSE due voci in tutte e due le liste - NERO e ROSSO di qua, NERO e ROSSO di la'.
+//          ⚠️ E LA REGOLA ERA GIA' SCRITTA, in una release sua: la v6.487 dice *«il timbro OMAGGIO
+//          sta SUL RETRO - lo dice la voce di legenda del sito - quindi il fronte e' quello
+//          dell'articolo di partenza, sempre»*. Sapeva gia': era il campo a non averlo imparato.
+//          🗑️ VIA LA LISTA «Tipologie di omaggio FRONTALI», e con lei la v6.246 (*«il campo tipo
+//          di omaggio serve in duplice copia: per figurine e retro»*), che era vera quando l'ha
+//          detta. Il tipo non si sceglie MAI su una figurina: quella lista non aveva piu' niente
+//          da offrire a nessuno.
+//          🔴 E LA TRAPPOLA CHE QUESTA RELEASE HA SFIORATO, che vale piu' del resto: tolta la
+//          lista, il salvataggio CONTINUAVA A RILEGGERLA da un elemento che non esiste piu' -
+//          cioe' la v6.169 alla lettera, *cio' che la form non ripristina, il salvataggio lo
+//          azzera*. Al primo salvataggio di Serie 1 o Serie 2 quei due valori se ne andavano in
+//          silenzio. ⚠️ E non sarebbe stato «dato morto che sparisce»: quel campo e' ancora il
+//          RIPIEGO dei tipi di omaggio di BUSTINE e ALBUM (`_omaggioTypes` lo legge quando la
+//          tipologia non ne dichiara uno suo). Avrebbe svuotato la tendina di una bustina, in
+//          un'altra schermata, giorni dopo. Adesso il valore si CONSERVA.
+//          ⚠️ LE ALTRE TIPOLOGIE NON SONO TOCCATE, e gliel'ho chiesto: su Bustine e Album l'omaggio
+//          resta LORO, perche' un retro collegato non ce l'hanno e non c'e' nessuno a cui chiedere.
+//          🆕 E NEL TAB NON C'E' PIU' NIENTE DELLE TIPOLOGIE CHE LA SERIE NON HA. Franco: *«nel tab
+//          Versioni non base non ci deve essere nulla legato alle TDA non ammesse; invece io vedo
+//          il nome sezione e il flag relativo agli errori di stampa»* - nella Serie 1 comparivano
+//          Figurine, Carte, Spille, Tatuaggi e Trasferelli. 🔴 Si guardano le CASELLE e non il
+//          record salvato: le tipologie si spuntano nell'altro tab della stessa finestra, e fra lo
+//          spuntare e il salvare c'e' tutto il tempo di venire a guardare questo.
+//          🗑️ VIA ANCHE I QUATTRO SUGGERIMENTI degli elenchi dei tipi («Un valore per riga. Sono
+//          le tipologie che la tendina X offre sulle FIGURINE / sui RETRO di questa serie»), uno
+//          per uno su sua richiesta. Dicevano due cose che sono gia' dette altrove: COSA sono lo
+//          dice l'etichetta, DI CHI sono lo dice il titolo della sezione (v6.790).
+//          🐛 E UN DIFETTO MIO, TROVATO PRIMA DI PROVARE: il record finto che la form usa per
+//          giudicare dichiara `isChange: true` (v6.792). Riusandolo com'era, `_omaggioDiRetro`
+//          avrebbe risposto «no» a tutti e la tendina sarebbe rimasta dov'era - senza nessun
+//          errore, e senza che niente lo dicesse.
+//          ✅ `prova-v6795` (23 controlli), rossa su ventuno sulla `_upload_v6.794`. Aggiornate
+//          `prova-v6782` (la domanda che poneva ha avuto risposta: l'omaggio ha la sua eredita',
+//          l'errore di stampa no) e `prova-v6790` (quattordici controlli → tredici).
+//          🔄 E «OMAGGI» DIVENTA «VERSIONI OMAGGIO» NEL DESCRITTORE, che è la SECONDA volta che
+//          Franco chiede questa parola: la prima fu la v6.526 (*«il tab dice "Omaggi", deve dire
+//          "Versioni omaggio"»*), e allora si risolse cambiando l'ORDINE delle chiavi - `filtroIt`
+//          per primo - lasciando apposta `pluraleIt: 'Omaggi'`, con la ragione scritta nella sua
+//          prova: *«"Omaggi per tipo" parla davvero degli oggetti»*. 🔴 Stavolta ha chiesto la
+//          correzione profonda: *«cambia anche il descrittore perche' e' cosi' ovunque»*. La
+//          ragione vecchia cade con quella frase sola - il descrittore aveva DUE parole per la
+//          stessa cosa, e `filtroIt` diceva gia' «Versioni omaggio».
+//          ⚠️ CAMBIA IN TRE POSTI, e li dico tutti: le righe dei flag, il titolo «Versioni
+//          omaggio per tipo» (era «Omaggi per tipo») e l'avviso «il tipo X non e' piu' fra i tipi
+//          di ... di questa serie». In inglese, «Free versions» - la parola che `filtroEn` usa gia'.
+//          Aggiornate `prova-v6266`, `prova-v6323` e `prova-v6526`, che quella parola la
+//          sorvegliavano: tre suite rosse insieme, ed e' il motivo per cui ci sono.
+//          🔄 E LE ETICHETTE DEI CONTEGGI PERDONO LA CODA, con lo stesso argomento delle otto
+//          della v6.794: *«anche nei contatori non serve il finale ripetuto: N. errori di stampa
+//          di figurine diventa N. errori di stampa»*. DI CHI sono lo dice il titolo della sezione
+//          (v6.790). ⚠️ Le due sezioni hanno adesso etichette IDENTICHE - «N. change» di qua e
+//          «N. change» di la' - e a chi rilegge sembrera' una svista da correggere: non lo e', e
+//          `prova-v6795` §4-bis è li' per dirlo. E' la lezione di `prova-v6785`, dove una parola
+//          aggiunta e ritirata nella stessa notte ha avuto bisogno di una riga che la tenesse
+//          fuori.
+//          Giro completo: 342 su 342.
+// ------------------------------------------------------------
+// v6.794 - 🧾 IL TAB DELLE VERSIONI DICE LE COSE GIUSTE: PAROLE, CONTEGGI, ELENCHI.
+//          Quattro cose chieste da Franco guardando la preview. Modificati js/app.js e index.html.
+//          🔴 1) LE OTTO ETICHETTE VENGONO DALL'ELENCO UNICO. *«Visto che abbiamo il cappello
+//          introduttivo, ai nomi campo puoi togliere la parte iniziale "Ha"»*, e poi *«togli "ha" e
+//          la parola che indica di cosa stiamo parlando, visto che lo dici subito prima»*. Fra tre
+//          forme ha scelto quella del descrittore: le stesse cinque parole che il codice usa gia'
+//          per le altre nove tipologie. 📌 Prima la stessa schermata diceva «Versioni omaggio»
+//          sopra e «Omaggio» sotto, plurale sopra e singolare sotto - due modi di dire la stessa
+//          cosa, che e' il difetto che la v6.790 era venuta a togliere e che era rimasto nella
+//          meta' che quella release aveva solo SPOSTATO.
+//          🆕 E COSI' SPARISCE UNA BUGIA SILENZIOSA: quattro delle otto (i due omaggi e i due
+//          errori di stampa) non avevano NESSUNA chiave di traduzione, ed erano italiano scritto
+//          nell'HTML. La v6.785 l'aveva perfino dichiarato. Adesso l'inglese arriva dall'elenco, ed
+//          e' una parola che Franco ha gia' visto. ✅ Misurato in Chromium sulla preview vera:
+//          cambiando lingua tutte e otto cambiano, nei due versi.
+//          🔴 2) OTTO CASELLE, OTTO CONTEGGI. Franco l'ha visto da utente - *«il campo "n. errori
+//          di stampa" non sparisce se il campo "Ha errori di stampa di figurine" e' spento»* - ma la
+//          causa non era la riga che lo mostra: il conteggio era UNO per DUE caselle, e contava gli
+//          errori di stampa di TUTTE le tipologie. 📌 La v6.219 aveva scritto perche' non lo
+//          filtrava: *«non e' mai stato guardato se ce ne siano fra i retro»*. È stato guardato: ce
+//          ne sono (2 in Serie 1), e ce ne sono anche fuori da quelle due tipologie (7 sulle
+//          Spille). Quella riga non era sbagliata - rispondeva a una domanda che nel frattempo ha
+//          avuto risposta. Franco: *«anche i contatori ora sono separati per TDA»*, *«se dividiamo i
+//          campi anche i loro contatori si separano»*.
+//          ⚠️ IL TOTALE SPARISCE invece di restare, e non e' come `omaggi`: quello ha tre lettori
+//          (tabella admin, colonna desktop, riga di telefono), `erroriStampa` ne aveva UNO - il
+//          campo che adesso ne legge due. Tenerlo sarebbe un ramo che nessuno prova (v6.393).
+//          🔴 3) UN ELENCO DI TIPI NON SI SCRIVE SE LA SUA CASELLA E' SPENTA. Prima risposta «read
+//          only», poi cambiata: *«io sono piu' per nascondere i campi non ammessi che renderli read
+//          only; mi riferisco alle descrizioni, che occupano SPAZIO in form»*. La seconda porta una
+//          ragione che la prima domanda non conteneva, quindi vince lei. Si nasconde il
+//          `form-group` e non il solo `textarea`: l'etichetta e' meta' dello spazio.
+//          ⚠️ MA IL CAMPO RESTA NEL DOM: il salvataggio lo legge (v6.169), e toglierlo davvero
+//          azzererebbe l'elenco di chi spegne una casella per sbaglio e risalva.
+//          🔴 E NON SONO SEI, SONO QUINDICI: gli elenchi scritti a mano sono sei, piu' quelli che
+//          `_rendiTDAVersioni` disegna per le altre nove tipologie, e NESSUNO guardava la sua
+//          casella. Correggerne sei sarebbe una regola nata gia' meta' applicata. 🆕 Per questo le
+//          caselle GENERATE adesso hanno un `onchange`: finora non comandavano niente.
+//          📌 E GLI ID SI CHIEDONO AL MODELLO: `idListaSerie`/`idListaSerieRetro` nel descrittore
+//          (come `idForm` dalla v6.314), `_idTDALista` per le generate. Dedurre
+//          `series-front-change-types-input` da `frontChangeTypes` e' la regola di trasformazione
+//          che la v6.314 ha gia' rifiutato: ci si assomiglia, e basta un elenco scritto
+//          diversamente perche' smetta di valere in silenzio.
+//          🗑️ 4) VIA IL SUGGERIMENTO DEI CHANGE FRONTALI (*«toglila; e' troppo complessa,
+//          eventualmente poi pensero' a qualcosaltro»*), gemello di quello tolto dalla v6.791.
+//          ⚠️ Delle tre regole che conteneva, due parlavano del RETRO; la terza - lo stesso tipo
+//          non puo' stare in tutte e due le liste - resta VERA e adesso non e' scritta da nessuna
+//          parte a schermo. Se servira' dirlo, saranno parole sue.
+//          ✅ `prova-v6794` (23 controlli), rossa su diciannove sulla `_upload_v6.793`. Aggiornate
+//          `prova-v6785` (le sue quattro etichette sono state REVOCATE: la prova cambia pretesa
+//          invece di sparire) e `prova-v6790` (sette conteggi → otto, e le etichette non hanno piu'
+//          un testo proprio). Giro completo: 341 su 341.
+//          🐛 E UN DIFETTO VECCHIO TROVATO DI RIMBALZO, in `prova-v6402`: il suo ritaglio cercava
+//          `colore:` entro 3000 caratteri da `chiave:`, e su `free` la distanza era gia' 6011 nella
+//          v6.793 - quindi quella voce non veniva MAI trovata. Nessuno se n'era accorto perche' il
+//          controllo chiedeva «almeno quattro» su cinque. Adesso ritaglia per voce e pretende
+//          cinque su cinque. 📌 Una soglia tollerante aveva nascosto un ritaglio rotto per intere
+//          release: e' il gemello statico del «funziona per sbaglio» della v6.792.
+// ------------------------------------------------------------
+// v6.793 - 🚫 LO STRUMENTO MASSIVO NON SCRIVE UN TIPO CHE NESSUNO LEGGE, E LO DICE.
+//          Modificato il solo js/app.js. Chiude il punto 25 della TODO, aperto dalla v6.792 poche
+//          ore prima — e lo chiude perche' Franco ha scelto fra le tre strade che quel punto
+//          elencava: *«dire che non fai la modifica e a salvataggio avvenuto lo dici a video»*.
+//          🔴 IL PROBLEMA: dalla v6.792 il tipo di un change di retro si chiede al RETRO. La
+//          vista tabellare pero' applicava il valore scelto a QUALUNQUE riga selezionata, quindi su
+//          113 figurine + REMO SCEMO avrebbe scritto in un campo che non legge piu' nessuno: una
+//          modifica che sembra fatta e non c'e', cioe' il difetto della v6.375.
+//          🔴 E LE DUE META' SONO UNA COSA SOLA. Saltare senza dirlo sarebbe stato peggio del
+//          problema: un massivo che scrive meno righe di quante ne hai selezionate e tace e' la
+//          stessa cosa di un massivo che sbaglia — te ne accorgi tre giorni dopo guardando un nome.
+//          E' la ragione per cui la v6.382 dice anche i collegati. 📌 Quindi le righe saltate si
+//          contano, si dicono nel messaggio finale insieme al resto, e dicono anche PERCHE'; e il
+//          toast smette di essere verde, perche' la spunta su un'operazione incompleta e' la bugia
+//          piu' facile da non notare.
+//          ⚠️ SI SALTA SOLO IL TIPO DI CHANGE, e solo dove la differenza sta dietro. L'omaggio e
+//          l'errore di stampa non si ereditano cosi': saltarli «per simmetria» toglierebbe una
+//          scrittura legittima, ed e' l'errore che la v6.246 ha gia' pagato una volta. 📌 E il ramo
+//          «versione» continua ad AZZERARE i tipi residui: la' l'oggetto smette di essere un change,
+//          e un tipo che gli resta addosso e' dato morto che riaffiora.
+//          📌 LA REGOLA SI CHIEDE, non si riscrive: `_changeDiRetro` (v6.792) e' la quinta
+//          chiamante. Una copia in piu' qui sarebbe quella che resta indietro il giorno di una
+//          regola nuova — esattamente com'e' successo col flag «Retro bianco».
+//          🐛 E UN DIFETTO TROVATO SCRIVENDOLA, che merita di restare scritto: il contatore
+//          `saltati` era finito in `ebayImpostaCoda`, che ha un `let toccati = 0;` identico
+//          qualche migliaio di righe prima. Compilava, `node --check` non aveva niente da dire, e
+//          il massivo avrebbe contato sempre zero — cioe' non avrebbe mai detto niente, che e'
+//          proprio la meta' che Franco ha chiesto. Trovato guardando DOVE era finito, non
+//          fidandosi del fatto che l'inserimento fosse andato a buon fine.
+//          ⚠️ LE PAROLE DEL MESSAGGIO SONO MIE, NON SUE: lui ha dato il comportamento, non la
+//          frase. Da confermare (v6.754).
+//          ✅ `prova-v6793` (15 controlli) ESEGUE il ciclo vero del massivo su quattro righe finte;
+//          sulla `_upload_v6.792` e' rossa su dieci. ⚠️ E il suo banco si ancora alla riga
+//          `const rec = tutte.find(...)` perche' di `bersagli.forEach` in quella funzione ce ne
+//          sono DUE: la prima stesura prendeva l'altra e il pezzo non compilava nemmeno.
+//          Aggiornata `prova-v6382` (C3: il toast ha adesso due motivi per non essere verde).
+//          Giro completo: 340 su 340.
+// ------------------------------------------------------------
+// v6.792 - 🏗️ IL TIPO DI UN CHANGE DI RETRO SI CHIEDE AL RETRO, E LA FORM SMETTE DI CHIEDERLO.
+//          Modificati js/app.js e index.html.
+//          🔴 LA DOMANDA E' DI FRANCO, secca: *«per le figurine aventi change di retro, cosa hai
+//          deciso per il calcolo del nome completo? lo fai lo stesso prendendo la info dal retro?
+//          riesci?»*. Si', e la prova che si poteva era due rami piu' sotto: il ramo dell'errore
+//          di stampa lo fa dalla v6.606, chiamato da dentro `computeFullName`.
+//          🔴 E L'ALTRA STRADA L'HA SCARTATA LUI contandone il costo: *«o la info la prendi dal
+//          retro o la prendi dalla figurina e sulla figurina copiamo il valore del retro associato;
+//          in questo secondo caso pero' la sync va fatta sia in sede di associazione fig-retro, sia
+//          in sede di cambio nome alla tipologia di retro»*. I punti sono almeno quattro
+//          (associazione, rinomina, scollegamento o cambio di retro, import).
+//          📏 E IL COSTO DI QUELLA COPIA E' MISURATO, non temuto: dei 114 campi copiati addosso
+//          alle figurine, 110 combaciavano col retro e 3 NO (FIORINA MATASSINA, CILIE-GINO, ALVARO
+//          LINGUACCIARO). Non e' un incidente: e' il tasso di divergenza di una copia senza
+//          sincronizzazione, ed e' lo stesso guasto della figurina 641 che ha prodotto la v6.606.
+//          Da oggi quelle tre dicono quello che dice il loro retro, e nessuno scrive niente.
+//          🆕 NASCONO DUE FUNZIONI, e la prima non e' nuova: `_changeDiRetro` era gia' scritta
+//          dalla v6.083 come una `const` di una riga dentro `_fotoFronteFigurina`. Adesso e' una
+//          funzione perche' la chiedono in cinque, e — soprattutto — perche' ha imparato una cosa
+//          che quella riga non sapeva: IL FLAG «RETRO BIANCO».
+//          🔴 Franco: *«REMO SCEMO ha un retro bianco, ma il retro bianco abbiamo deciso assieme
+//          tempo fa di non censirlo; quindi per REMO SCEMO abbiamo messo in piedi il campo "Retro
+//          bianco" per non vederla come un'anomalia»*. Un retro bianco e' un retro a tutti gli
+//          effetti: non ha un record. Fermarsi a `retroId` vorrebbe dire dire «la differenza sta
+//          davanti» proprio dell'unico articolo per cui esiste un campo apposta per dire il
+//          contrario. ⚠️ E la regola era scritta anche a schermo, nella nota che la v6.791 ha
+//          tolto: *«un retro tutto suo, OPPURE il flag «Retro bianco»»*. Non si inventa niente: si
+//          rimette nel codice una cosa che stava solo in un suggerimento.
+//          🆕 `_tipoChange` e' la gemella di `_tipoErroreStampa`, con UNA differenza voluta:
+//          NIENTE RIPIEGO sul campo proprio. Li' ha senso (un errore frontale il tipo ce l'ha suo);
+//          qui leggerlo dal campo quando il retro tace farebbe riaffiorare proprio la copia vecchia
+//          che questa funzione esiste per non guardare piu'. 📏 E la domanda «e se il retro
+//          tacesse?» e' stata misurata: dei 107 retro change del sito, quelli senza tipo sono ZERO
+//          — e non puo' nemmeno succedere, perche' per un retro la pretesa della v5.779 resta.
+//          🔴 LA FORM: NIENTE TENDINA DOVE NON C'E' NIENTE DA SCEGLIERE. Parole sue: *«non la
+//          chiamerei tendina, dato che non puo' essere premuta alcuna tendina: quella informazione
+//          e' DEDOTTA dal retro»*. Un campo modificabile che mostra il valore di un altro invita a
+//          modificarlo, e la modifica non avrebbe dove andare. Le righe diventano due e ne vive una
+//          sola. ⚠️ IL GIUDIZIO SI LEGGE DALLA FORM APERTA e non dal record, perche' fra
+//          l'apertura e il Salva l'articolo puo' cambiare caso — si collega un retro, si spunta
+//          «Retro bianco» — e i due punti in cui il retro cambia rifanno il conto.
+//          🔄 E LA v6.782 SI RESTRINGE, invece di essere tolta. Franco l'aveva visto da solo:
+//          *«se la v6.782 non salva una fig change senza il campo change type associato, o togli
+//          quel controllo quando la fig e' associata a un retro change, o...»*. Un change di FRONTE
+//          il Tipo lo deve avere, e per lui la pretesa resta; un change di retro non ha niente da
+//          compilare, e pretendere un campo che non si mostra e' il vicolo cieco al contrario.
+//          ⚠️ E IL CAMPO SI AZZERA AL SALVATAGGIO, deliberatamente: la riga e' nascosta ma il
+//          `<select>` c'e', quindi senza quella riga il valore vecchio verrebbe risalvato tale e
+//          quale — la copia che rinasce a ogni salvataggio, cioe' la strada scartata. Cosi' invece
+//          le 114 copie si ripuliscono da sole man mano che Franco tocca quelle figurine.
+//          🔴 E LO CHIEDONO TUTTI, non solo il Nome completo: la riga della SCHEDA e l'INDICE DI
+//          RICERCA. Dedurre in un posto solo avrebbe lasciato la ricerca a funzionare PER SBAGLIO
+//          — trova quelle figurine finche' la copia e' ancora scritta addosso, e smette il giorno
+//          che la form la ripulisce.
+//          📏 LA MISURA CHE TIENE INSIEME TUTTO: dei 116 change fuori dalla sezione Retro, 113
+//          stanno dietro, 1 e' il flag, e **2 stanno davanti** (ORNELLA NUTELLA, ELVIRA PRESA DI
+//          MIRA). La tendina ristretta dalla v6.791 resta quindi accesa su DUE articoli in tutto il
+//          sito — e su tutti quelli che nasceranno.
+//          ✅ `prova-v6792` (28 controlli) esegue le funzioni vere sui nove casi; sulla
+//          `_upload_v6.791` e' rossa su ventiquattro. Aggiornate `prova-v6782` (due ancore e la
+//          revoca dei «tre gemelli») e cinque banchi che montavano `_fotoFigurina` (v6.358, 6.413,
+//          6.538, 6.539, 6.541): montano anche `_changeDiRetro`, che e' il prezzo giusto di una
+//          prova che ESEGUE. Giro completo: 339 su 339.
+//          ⚠️ RESTA UN LIMITE DICHIARATO, e non lo decido io: lo STRUMENTO MASSIVO puo' ancora
+//          scrivere un `changeType` su un change di retro, dove nessuno lo legge. Sta nella TODO.
+// ------------------------------------------------------------
+// v6.791 - 🗑️ LA TENDINA «TIPO DI CHANGE» DI UNA FIGURINA NON OFFRE PIU' I TIPI DI RETRO.
+//          Modificati js/app.js e index.html. Chiude il punto 22 della TODO, che la v6.790 aveva
+//          appena aperto; Franco: «no, non lasciamo nella TODO questo punto; fallo ora».
+//          🔴 E' UNA REGOLA DI DOMINIO, NON DI INTERFACCIA, ed e' sua: «Tipi di change di retro
+//          elenca le possibili tipologie di change del RETRO. Siccome il retro va in coppia con le
+//          figurine, allora anche loro si possono catalogare per change di retro — ma una figurina
+//          il change di retro lo EREDITA dal retro; non e' un attributo suo». E: «ora che i retro
+//          hanno la loro lista e' corretto che le figurine non abbiano una loro lista di change di
+//          retro». Quindi il campo non sparisce: sparisce l'idea che quel valore si SCELGA sulla
+//          figurina.
+//          🗑️ COSI' I DUE GRUPPI DELLA v6.102 DIVENTANO UNO. Quella release li aveva messi tutti
+//          e due apposta — «scegliendo il tipo si dichiara il lato, senza un campo in piu' da
+//          compilare e senza poterlo dimenticare» — e la regola era buona finche' un change di
+//          figurina poteva essere «di retro». Non lo e'. 📌 E la stessa regola esisteva gia'
+//          accanto da tre release: l'omaggio nello strumento massivo si divide per sezione dalla
+//          v6.253. Il change era l'unico dei tre fuori riga, di qua e di la'.
+//          🔴 LA RIGA PIU' PERICOLOSA DELLA RELEASE E' LA RETE, e non e' quella che si vede.
+//          Il terzo gruppo ⚠️ scattava su «tipo non CLASSIFICATO» (cioe' assente da tutte e due le
+//          liste), e andava bene finche' tutte e due le liste erano OFFERTE. Adesso su una figurina
+//          se ne offre una sola: un change di figurina che porta un tipo di retro sarebbe risultato
+//          «classificato» → niente terzo gruppo → nessuna `<option>` che lo contenga → il `select`
+//          ripiega sul vuoto → IL PRIMO SALVATAGGIO CANCELLA IL TIPO, in silenzio. Il guasto che il
+//          terzo gruppo esiste per impedire, ricreato da una release scritta per fare ordine.
+//          La condizione diventa `!offerti.some(...)`: la rete guarda cio' che si OFFRE.
+//          📏 E NON E' UN'IPOTESI: misurato sul sito, 114 figurine della serie 3 portano un tipo
+//          di change DI RETRO (mosca nera 78, ciao addizionale 23, retro azzurro senza cornice 7,
+//          e altre quattro voci). Senza questa riga si azzeravano 114 campi a una a una, al primo
+//          salvataggio di ognuna, senza un messaggio.
+//          🔴 E ANCHE L'AVVISO DI LISTA VUOTA (v6.786) GUARDA LA SOLA LISTA OFFERTA: con la
+//          condizione vecchia (`!retro && !fronte`) una serie che ha SOLO tipi di retro avrebbe
+//          dato a una figurina una tendina con la sola voce vuota e nessun avviso — cioe' il
+//          vicolo cieco della v6.782, che la v6.786 aveva chiuso.
+//          🔄 LO STRUMENTO MASSIVO SI DIVIDE ALLO STESSO MODO: nella vista tabellare la colonna
+//          «Tipo» del change offriva l'UNIONE, e la riga di commento dell'omaggio subito sotto
+//          diceva gia' il motivo per cui non doveva.
+//          🗑️ VIA IL SUGGERIMENTO SOTTO «Tipi di change di retro» (Franco: «togliamo proprio la
+//          nota»): spiegava come si riconosce un change di retro quando la lista stava sotto le
+//          figurine ed era ambigua «di chi» fosse. Adesso sta sotto Retro e lo dice il titolo. Il
+//          ragionamento resta scritto li' come commento, e le due chiavi i18n rimaste orfane
+//          (`form.series.retroChangeTypesHint`) se ne vanno con lui.
+//          ⚠️ RESTA UNA FRASE CHE ADESSO E' MENO VERA, ed e' di Franco quindi non la tocco io:
+//          l'etichetta del terzo gruppo dice «non classificato — va messo in una delle due liste».
+//          Su quelle 114 figurine il tipo in una delle due liste C'E' GIA' (in quella dei retro), e
+//          il consiglio manda a fare una cosa fatta. Sta nella TODO (punto 23): le parole a schermo
+//          le sceglie lui (v6.754).
+// ------------------------------------------------------------
+// v6.790 - 🧱 IL TAB DELLE VERSIONI SI ORDINA PER TIPOLOGIA, NON PIU' PER VERSIONE. Modificato il
+//          solo index.html (piu' i cache-buster) — nessuna riga di logica.
+//          🔴 E' L'ULTIMA COSA CHE MANCAVA ALLA v6.787, e la v6.787 stessa scriveva che sarebbe
+//          stata «la release dopo». Franco, a suo tempo: «serve una prima sezione chiamata
+//          Figurine, poi una analoga per i retro, poi bustine, poi album»; e stanotte, secco:
+//          «ma certo che la form devi scriverla adesso».
+//          📌 COM'ERA: quattro titoli per VERSIONE (Variazioni, Change, Omaggio, Errori di
+//          stampa) e dentro ognuno le figurine mescolate ai retro; sotto, i blocchi per tipologia
+//          che la v6.784 disegna da se'. Due modi di dire la stessa cosa nella stessa schermata.
+//          📌 COM'E': «Figurine con retro» con le sue cinque versioni e le sue liste, «Retro» con
+//          le sue tre, e poi le altre nove come sempre.
+//          🔴 SPOSTATO, NON RIGENERATO: ogni id, ogni conteggio, ogni suggerimento e ogni
+//          `data-i18n` e' quello di prima, riga per riga. Quel markup porta cinque release di
+//          decisioni e riscriverlo «gia' che c'ero» e' il modo in cui una release ne rompe una
+//          vecchia. `prova-v6790` conta i quattordici controlli e i sette conteggi uno per uno.
+//          🔴 OGNI ELENCO STA SOTTO LA TIPOLOGIA CHE DESCRIVE, change compresi — e questa riga
+//          e' una CORREZIONE, non una scelta riuscita. La prima stesura metteva tutti e due gli
+//          elenchi dei change sotto Figurine, con una giustificazione DEDOTTA dal suggerimento
+//          della v6.102 («le due facce di un change di figurina») invece che chiesta. Franco
+//          aveva gia' deciso il contrario, tempo fa: «Tipi di change di retro elenca le possibili
+//          tipologie di change del RETRO. Siccome il retro va in coppia con le figurine, allora
+//          anche loro si possono catalogare per change di retro — ma una figurina il change di
+//          retro lo EREDITA dal retro; non e' un attributo suo»; e «ora che i retro hanno la loro
+//          lista e' corretto che le figurine non abbiano una loro lista di change di retro».
+//          📌 Quindi le tre coppie si dividono tutte allo stesso modo: frontale di qua, di retro
+//          di la'. Per l'omaggio e l'errore di stampa era gia' cosi' (v6.246, v6.350) — il change
+//          era l'unico fuori riga, ed era fuori riga per una mia deduzione.
+//          ⚠️ E RESTA UNA CONSEGUENZA PIU' GRANDE, che non e' di questa release: se il change di
+//          retro di una figurina e' EREDITATO, la tendina «Tipo di change» di una figurina non
+//          dovrebbe offrire i tipi di retro. Oggi li offre, nei due gruppi della v6.102. E' in TODO.
+//          🔄 E IL COLORE PASSA DAL TITOLO ALL'ETICHETTA, che revoca la v6.245 («il colore sta
+//          sul sottotitolo: marca la SEZIONE»). Quella regola valeva quando la sezione ERA una
+//          versione; adesso e' una tipologia, e cinque versioni non hanno un colore solo. 📌 Non
+//          e' una strada nuova: e' esattamente come `_rendiTDAVersioni` disegna i blocchi delle
+//          altre nove dalla v6.784 — titolo neutro, etichetta colorata. Le due meta' della
+//          schermata adesso si assomigliano perche' fanno la stessa cosa.
+//          ⚠️ IL GIRO E' PASSATO 336 SU 336 AL PRIMO COLPO, e non e' una buona notizia: vuol dire
+//          che NESSUNA delle suite guardava l'ordine di quella schermata. Si poteva spostare
+//          qualunque cosa, o perderla, e il verde restava verde. Da qui `prova-v6790` (19
+//          controlli), che sulla v6.789 e' rossa su dieci.
+//          ⚠️ RESTA RIDONDANTE UNA COSA, ed e' di Franco: le etichette dicono ancora «di
+//          figurine» e «di retro» (v6.785) mentre adesso lo dice gia' il titolo della sezione.
+//          Sono parole sue, scritte tre release fa per togliere una bugia: accorciarle e' una sua
+//          decisione, non una pulizia da fare di passaggio. Sta nella TODO.
+// ------------------------------------------------------------
+// v6.789 - 🔀 LE TIPOLOGIE DI UNA SERIE SI DICHIARANO IN POSITIVO: nasce `s.tipologieAmmesse`,
+//          e con lei muoiono `articoliNascosti`, `noRetro` e `noAlbums`. Modificati js/app.js e
+//          index.html.
+//          🔴 FRANCO: «a me non sono mai piaciuti quei flag a logica negativa "TDA che serie non
+//          ha". Le TDA sono moltissime e parecchie serie ne hanno solo poche. Non possiamo passare
+//          ad una logica positiva? Flag acceso significa che la TDA e' ammessa».
+//          📌 E IL PREZZO DEL VERSO VECCHIO ERA GIA' STATO PAGATO UNA VOLTA, con un rimedio: la
+//          v6.696 («alla creazione della prossima serie accendili tutti») esisteva SOLO perche'
+//          con dodici tipologie e una serie che ne usa da una a cinque, dire «questa serie ha
+//          figurine e retro» voleva dire spuntare le altre dieci. Girato il verso quel rimedio e'
+//          il difetto che curava, e se ne va: una serie nuova nasce con NESSUNA casella accesa,
+//          come `articoliCompletezza` (v6.716), che sta nella colonna accanto (v6.749) ed era
+//          gia' positivo. Due caselle affiancate che si aprivano in due modi opposti erano meta'
+//          della confusione.
+//          🔴 E SI CHIUDE UNA MIGRAZIONE APERTA DA UN ANNO. La v6.216 aveva scritto il suo piano
+//          in quattro passi - espandi, migra, sposta i lettori, contrai - e i passi 3 e 4 non
+//          erano mai stati fatti: `noRetro` e `noAlbums` si scrivevano ancora a ogni salvataggio
+//          e si LEGGEVANO ancora in quattro punti vivi (`_serieSenzaRetro`, `_serieSenzaAlbum` e
+//          due celle della tabella delle serie in console). Mettere il verso nuovo sopra quei due
+//          avrebbe fatto TRE strati sulla stessa domanda, quindi si chiudono qui.
+//          📌 COSA CAMBIA, IN CONCRETO:
+//          · un lettore solo, `_tipologieAmmesseDaRecord`, con dentro la CATENA del ripiego:
+//            `tipologieAmmesse` -> `articoliNascosti` (tutte meno quelle) -> i due flag della
+//            v6.216. E' l'unico posto del sito che nomina ancora i campi vecchi;
+//            `_tipologiaAmmessa(sez, id)` ha sette chiamanti, quattro dei quali sono gli ex
+//            lettori dei campi della v6.216;
+//          · la form: classe `series-tipologia-ammessa`, contenitore `series-tipologie-ammesse`,
+//            e il titoletto giallo dice le parole di Franco - «Tipologie di articoli di questa
+//            serie», che e' poi TDA scritto per esteso. Il suggerimento si gira con lui;
+//          · i tre campi vecchi non si scrivono piu'. Restano sui documenti gia' salvati, ed e'
+//            proprio quello che tiene in piedi le sedici serie finche' lo script non gira.
+//          🔴 IL DIFETTO VERO DI QUESTA RELEASE L'HA TROVATO `prova-v6748`, ESEGUENDO, e non una
+//          rilettura: «non e' fra le ammesse» NON e' «dichiarata assente». Le tre tipologie che
+//          vengono dai DATI (v6.716, tipo `tp_felpe`) non hanno nessuna casella nella colonna di
+//          sinistra: girando la domanda in `!ammesse.has(x)` diventavano tutte e tre spente nella
+//          colonna della completezza - un divieto nato dalla MANCANZA di un comando invece che da
+//          una dichiarazione, cioe' la stessa forma dello zero che decide. Da li' nasce
+//          `_dichiarataAssente`, che guarda prima se la casella ESISTE.
+//          ⚠️ E UNA RIGA IN CUI GIRARE IL VERSO PER BELLEZZA AVREBBE CAMBIATO COSA SI VEDE: serie
+//          non trovata. Il lettore vecchio rispondeva «nessuna nascosta» e mostrava tutti i box;
+//          «nessuna ammessa» li avrebbe nascosti tutti - una pagina vuota al posto di una piena.
+//          Risponde «tutte ammesse», e il comportamento resta quello di ieri.
+//          ⚠️ DODICI SUITE HANNO REAGITO, contro le «cinque chiamanti» che il censimento a grep
+//          lasciava prevedere - ed e' la ragione per cui si lancia il giro invece di crederci.
+//          Sei erano banchi che iniettano un finto (nome nuovo), tre asserivano il nome o l'id
+//          vecchio, due guidavano il banco spuntando «Retro» per dire «senza retro» e vanno
+//          girate col codice, e `prova-v6748` ha trovato il difetto. 🔴 `prova-v6696` e' stata
+//          RISCRITTA da capo: era nata per custodire «accendili tutti» e conteneva una trappola
+//          esplicita contro questa modifica - «invertire il DATO invece del default chiederebbe
+//          una conversione dei quindici record: senza, ogni serie con l'elenco vuoto sparirebbe
+//          dalla vista». Aveva ragione, ed e' esattamente cio' che la catena del ripiego fa:
+//          adesso quella suite misura la rete invece di vietare la strada.
+// ------------------------------------------------------------
+// v6.788 - 🏗️ UNA STRADA SOLA: ANCHE FIGURINE E RETRO DICHIARANO IN `s.perTDA`, e nasce la
+//          casella «Ha errori di stampa di retro». Modificati js/app.js e index.html.
+//          🔴 NASCE DA DUE FRASI DI FRANCO, e la prima non chiedeva una funzione: «sai che mi
+//          piacciono le cose fatte bene. fallo. come lavoro suo ma fallo». La v6.787 si era
+//          tenuta un'asimmetria dichiarata: nove tipologie su undici rispondevano con `s.perTDA`,
+//          e `figurines` e `retros` con le sette spunte storiche in cima al documento. Il motivo
+//          scritto allora era «un guadagno di sola forma» - e non era vero: il modello diceva
+//          «una riga per tipologia» e il documento ne teneva due su undici con nomi propri.
+//          🔴 LA SECONDA FRASE HA CHIUSO UNA CELLA CHE NESSUNO GOVERNAVA: «anche il retro puo'
+//          avere errori di stampa; infatti a Inventario ne abbiamo». `hasRetroPrintError` non e'
+//          mai esistito - non tolto, non nascosto: mai nato - quindi al livello 2 il retro
+//          rispondeva SI' agli errori di stampa su OGNI serie. Delle tre versioni dei retro due
+//          avevano il loro interruttore e una no, e la v6.219 lo diceva gia': «non e' mai stato
+//          misurato se ce ne siano fra i RETRO». Adesso e' misurato.
+//          📌 COSA CAMBIA, IN CONCRETO:
+//          · `_versioneAmmessa` non tratta piu' nessuna tipologia a parte. Le tre domande sono
+//            le stesse (la rete, il livello 1, il livello 2), ma la terza passa da UN posto:
+//            `_dichiarazionePerTDA`, col `_ripiegoStorico` per chi non ha ancora dichiarato.
+//          · `_TDA_CON_VERSIONI` comprende tutte e undici. L'esclusione di figurine e retro
+//            vive adesso in `_TDA_DISEGNATE_NELLA_FORM`, che e' UN'ALTRA DOMANDA: quali blocchi
+//            la form disegna da se'. Prima erano una funzione sola, ed e' per questo che «non si
+//            disegna» voleva dire anche «non dichiara».
+//          · le otto caselle scritte a mano nell'index si ripristinano e si salvano passando da
+//            `s.perTDA`; i loro id si DICHIARANO nel descrittore (`idSpuntaSerie`,
+//            `idSpuntaSerieRetro`) come `idForm` dalla v6.314.
+//          · i sette campi storici NON SI SCRIVONO PIU'. Restano sul documento delle serie gia'
+//            salvate e si LEGGONO come ripiego. Un campo che si scrive e si legge e' una verita';
+//            un campo che si legge soltanto, per documenti scritti prima, e' storia - e la storia
+//            non diverge. Il giorno che ogni serie e' stata riaperta e salvata, ripiego e campi
+//            se ne vanno insieme.
+//          ✅ MISURATO, NON DEDOTTO - due banchi, e il secondo e' nato perche' il primo mentiva.
+//          Il primo confrontava una serie migrata dalla v6.788 con la v6.787 letta su una serie
+//          NON migrata, e dava 832 differenze: erano il seme dell'ereditarieta' della v6.784,
+//          cioe' roba di due release fa. Il confronto giusto - «serie salvata sotto la v6.787 e
+//          letta dalla v6.787» contro «serie salvata sotto la v6.788 e letta dalla v6.788» - su
+//          128 combinazioni di spunte x 12 tipologie x 5 versioni = 7680 celle da' **ZERO
+//          differenze**. E lo stesso conto su una serie MAI risalvata, cioe' tutte quelle che ci
+//          sono adesso: **zero differenze su 7680**. Questo rilascio, da solo, non cambia niente.
+//          📌 LE LISTE DEI TIPI NON SONO MIGRATE, ed e' una scelta scritta: `frontChangeTypes` e
+//          `retroChangeTypes` non sono «la lista delle figurine» e «la lista dei retro» - sono le
+//          due FACCE di un change di figurina (v6.102), e i retro leggono le stesse. Trattarle
+//          come per-sezione le spezzerebbe in due elenchi che oggi sono uno. In lettura sono gia'
+//          unificate da `_campoTipiSerie` (v6.784). E' una release sua, se servira'.
+//          ⚠️ TRE SUITE HANNO CAMBIATO FORMA E UNA HA RISCOSSO UNA TRAPPOLA. `prova-v6752` aveva
+//          scritto, un mese fa: «nell'index non esiste una spunta errori di stampa DI RETRO -> se
+//          un domani nascesse, questo controllo diventa rosso ed e' il momento di aggiungerla
+//          sopra». E' diventato rosso, e la casella e' entrata in `_aggiornaCampiDiRetro` con le
+//          altre due: su una serie che dichiara di non avere retro si spegne, perche' e' un'
+//          AFFERMAZIONE sui retro. `prova-v6784` ha perso un'asserzione per REVOCA, non per
+//          errore - diceva «i retro NON passano dalla mappa» - e al suo posto ne ha tre.
+// ------------------------------------------------------------
+// v6.786 - 🚧 LA TENDINA DEL TIPO DI CHANGE DICE QUANDO NON HA NIENTE DA OFFRIRE, e con lei
+//          il vicolo cieco della v6.782 non rientra dalla porta principale. Nasce da una domanda di
+//          Franco: «la modifica portata dalla v6.782 e' compatibile con quello che ho chiesto
+//          dopo?». Modificato js/app.js e index.html (solo i cache-buster).
+//          ✅ VERIFICATO ESEGUENDO, non rispondendo a memoria. Su una serie con la lista delle
+//          bustine vuota la tendina tornava esattamente questo:
+//              FIGURINE : «— scegli —» · Di retro: Retro B · Frontale: Fronte A
+//              BUSTINA  : «— scegli —»
+//          Nient'altro. E il salvataggio pretende il Tipo per un Change (v6.782): tendina muta,
+//          campo obbligatorio, nessun modo di uscire ne' di capire perche'. 🔴 Cioe' il gesto
+//          che Franco aveva segnalato, riaperto da due release scritte per chiuderlo.
+//          📌 LA CAUSA E' LA SOLITA ASIMMETRIA FRA I TRE CAMPI GEMELLI, la terza in due ore:
+//          «Tipo di omaggio» e «Tipo di errore di stampa» l'avviso ce l'hanno da sempre, il change
+//          no. Con le liste condivise non si notava - una serie senza nessun tipo di change e' rara;
+//          dalla v6.784 le liste sono PER TIPOLOGIA e nascono VUOTE, quindi quella condizione e' il
+//          punto di partenza di ogni bustina e di ogni album.
+//          📌 L'avviso non nomina il LATO, e qui e' diverso dall'errore di stampa: li' il retro
+//          esclude il fronte, qui le due liste sono tutte e due candidate, e dire «nessuna tipologia
+//          FRONTALE» manderebbe a cercare una casella sola quando ne esistono due.
+//          ⚠️ E IL VALORE GIA' SCRITTO NON SPARISCE: se l'articolo un tipo ce l'ha e le liste sono
+//          vuote, resta nella tendina sotto «valore attuale». Un avviso che cancella il dato che
+//          segnala sarebbe peggio del silenzio.
+//
+// v6.785 - 🏷️ QUATTRO ETICHETTE DELLE FIGURINE DICONO CHE PARLANO DI FIGURINE. Franco, in
+//          fila: «"Ha variazioni ufficiali" va rinominato in "Ha variazioni di figurina ufficiali"»,
+//          «"Ha variazioni non ufficiali" -> "Ha variazioni di figurina non ufficiali"», «"Ha
+//          omaggio di figurine" -> "Ha versioni omaggio di figurine"», «"Ha errori di stampa" ->
+//          "Ha errori di stampa di figurine"». Modificato index.html e js/app.js.
+//          🔄 QUATTRO E NON CINQUE: il quinto era «Ha change di figurine» -> «Ha change
+//          FRONTALI di figurine», e Franco l'ha ritirato mentre la release era gia' scritta
+//          («errata corrige: il campo "Ha change di figurine" diventa "Ha change di figurine"»).
+//          Quell'etichetta resta com'e'. 📌 Il passaggio si scrive invece di farlo sparire:
+//          chi rilegge trova la parola «frontali» qui e sa che e' stata considerata e tolta, non
+//          dimenticata - e non la rimette credendo di correggere una svista.
+//          🔴 E' LA v6.784 CHE RENDE NECESSARIA QUESTA: finche' quelle spunte erano le uniche,
+//          «Ha errori di stampa» bastava. Adesso sotto ce ne sono altre, una fila per le Bustine e
+//          una per gli Album, e un'etichetta senza soggetto direbbe «di tutta la serie» proprio nel
+//          punto in cui la serie ha smesso di essere una cosa sola.
+//          📌 E UNA NON E' SOLO PIU' PRECISA, E' PIU' VERA: «Ha VERSIONI omaggio di figurine»
+//          toglie un singolare che faceva pensare a un oggetto solo.
+//          ⚠️ DUE CHIAVI SU QUATTRO SONO TRADOTTE (`form.series.has*`) e due sono scritte a mano
+//          nell'index, in italiano: le ho rinominate tutte e quattro, ma le due senza chiave restano
+//          senza. NON si inventa qui una traduzione che Franco non ha dato - le parole a schermo le
+//          sceglie lui (v6.754). Sono due delle quattordici frasi solo italiane gia' in elenco.
+//
+// v6.784 - 🗂️ LE VERSIONI SI DICHIARANO PER TIPOLOGIA: BUSTINE E ALBUM HANNO LE LORO.
+//          Franco: «i campi relativi alle variazioni, ai change, agli omaggi ed agli errori di
+//          stampa fanno riferimento solo alle figurine, ma potrebbero servire per altri TDA; ci
+//          servono quantomeno per le bustine e per gli album», poi «una colonna per TDA, ma per ora
+//          mi limiterei solo ad album e bustine», «anche il campo Tipologia errori di stampa,
+//          Tipologia change vanno rifatti dedicati alle bustine e album», «fronte e retro indicato
+//          sempre se sia davanti o dietro, ma le liste valori sono diverse» e «per bustine ed album
+//          le modifiche influenzano solo il fronte». Modificato js/app.js e index.html.
+//          🔴 E LO HA DETTO LUI CHE LE DUE COSE ERANO UNA: «il baco che ti ho segnalato poco
+//          fa e' collegato al requisito». Il vicolo cieco della v6.782 (casella Change spuntabile su
+//          una bustina, tendina del tipo assente) era la meta' mancante di questa regola.
+//          🔴 QUELLO CHE C'ERA NON ERA «SOLO PER LE FIGURINE»: ERA PEGGIO. La spunta si chiama
+//          «Ha change di figurine» ma `_versioneAmmessa` la applicava a TUTTE le sezioni tranne i
+//          retro. L'etichetta diceva il falso, e il campo del TIPO invece la sezione la guardava.
+//          📌 IL MODELLO E' PER TIPOLOGIA, LA FORM SI LIMITA A DUE, e le due cose non sono in
+//          conflitto: la dichiarazione vive in `s.perTDA` (una mappa per sezione) e l'unico elenco
+//          scritto a mano e' `_TDA_CON_VERSIONI`, che dice quali BLOCCHI disegnare. Il giorno che
+//          servono le Carte si aggiunge una parola a quella riga e non si tocca nient'altro.
+//          `prova-v6784` pretende che quei due nomi NON compaiano nella logica.
+//          📌 I CAMPI DENTRO LA MAPPA HANNO GLI STESSI NOMI DEL LIVELLO SERIE
+//          (`frontChangeTypes`, `retroChangeTypes`, ...): il lettore e' una funzione di tre righe
+//          (`_campoTipiSerie`) e non nasce un secondo vocabolario per la stessa cosa.
+//          🔴 SENZA DICHIARAZIONE NON CAMBIA NIENTE, ed e' la scelta piu' importante della
+//          release. Le SPILLE hanno SETTE errori di stampa - MISURATI sui dati veri - e ce li hanno
+//          perche' ereditano `hasPrintError` dalle figurine. Far rispondere «no» a chi non ha
+//          dichiarato niente avrebbe tolto la casella a quei sette: una funzione nuova che toglie
+//          in silenzio a chi con la richiesta non c'entra. Franco non ha risposto a questa domanda
+//          e la strada l'ho scelta io - e' la piu' prudente, e si revoca con una riga.
+//          ⚠️ `false` DICHIARATO E' DIVERSO DA NON DICHIARATO, e si legge con `hasOwnProperty`:
+//          con `!!mappa[chiave]` le due cose collasserebbero e togliere una spunta non farebbe
+//          niente, cioe' la dichiarazione esplicita non servirebbe.
+//          ⚠️ LE SPUNTE NUOVE NASCONO COL VALORE CHE QUELLA TIPOLOGIA HA DI FATTO OGGI, non spente:
+//          e' la regola scritta sopra `spunta()` (v6.219, v6.235, v6.480) - «cio' che la form non
+//          ripristina, il salvataggio lo azzera» - e qui il valore «di fatto» non sta in un campo,
+//          si CALCOLA. Aprendo e salvando una serie senza toccare niente non cambia niente: la
+//          prima scrittura fotografa il comportamento di oggi, e da li' in poi e' esplicito.
+//          ⚠️ E IL SALVATAGGIO PARTE DA CIO' CHE C'ERA: la form disegna due tipologie e la mappa
+//          puo' contenerne altre, piu' le liste «di retro» che non si mostrano. Ricostruirla da
+//          cio' che e' a schermo le cancellerebbe in silenzio - il guasto della v6.169.
+//          ⚠️ COSA DEVE FARE FRANCO DOPO: le liste dei tipi di bustine e album nascono VUOTE, e
+//          finche' non le compila la tendina del Tipo su quegli articoli non offre niente. Non e'
+//          un difetto, e' il prezzo di liste dedicate - ed e' detto prima, non dopo.
+//          📌 QUATTRO SUITE SI SONO ACCESE: `prova-v6350` (💥, il banco non aveva la
+//          funzione nuova), `prova-v6509` e `prova-v6577` (le chiamate ai lettori portano un
+//          parametro in piu': il VERSO che difendono non e' cambiato, e le regex ora accettano le
+//          due forme) e `prova-v6782`, che pretendeva l'OPPOSTO di questa release - «le opzioni non
+//          si filtrano per sezione». 🔴 Quella pretesa non era sbagliata, era una regola che
+//          non esisteva ancora: Franco l'ha data due ore dopo. Cancellata nella prova che la
+//          smentisce, non lasciata a contraddire il codice.
+//
 // v6.783 - 🏷️ IL TAB «ARTICOLI NON BASE» SI CHIAMA «VERSIONI NON BASE». Franco: «nella form
 //          della serie, il tab "Articoli non base" va chiamato "Versioni non base"». Modificato
 //          index.html; js/app.js solo per `JS_VERSION` e per le tre righe che nominavano il tab.
@@ -27157,7 +27682,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.783';
+const JS_VERSION = 'v6.795';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -28791,7 +29316,7 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
 'form.series.hasSizes':'Peel-off stickers differ from the ones with backs','form.series.abilitaModifica':'Enable editing of peel-off stickers','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has sticker Change','form.series.hasRetroChange':'Has back Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of sticker Change','form.series.countRetroChange':'No. of back Change','form.series.retroChangeTypes':'BACK change types (one per line)','form.series.retroChangeTypesHint':'One value per line. The difference is on the BACK: a change of these types has a back of its own, or the "Blank back" flag.','form.series.frontChangeTypes':'FRONT change types (one per line)','form.series.frontChangeTypesHint':'One value per line. The difference is on the FRONT: a change of these types uses the back of its base sticker. The same type cannot be in both lists.','form.series.descPlaceholder':'Describe this series...','form.series.sottoserie':'Subseries','form.series.sottoserieHint':'One row per subseries, with its photo. The ORDER matters: it is the order the subseries will appear in. A subseries written on an item but not listed here does not disappear: it shows up last.',
+'form.series.hasVariations':'Official variations','form.series.hasUnofficialVariations':'Unofficial variations','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of sticker Change','form.series.countRetroChange':'No. of back Change','form.series.retroChangeTypes':'BACK change types (one per line)','form.series.frontChangeTypes':'FRONT change types (one per line)','form.series.descPlaceholder':'Describe this series...','form.series.sottoserie':'Subseries','form.series.sottoserieHint':'One row per subseries, with its photo. The ORDER matters: it is the order the subseries will appear in. A subseries written on an item but not listed here does not disappear: it shows up last.',
 'form.fig.subseries':'Subseries',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -28885,7 +29410,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità ai risultati','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli articoli non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista articoli non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista articoli non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da attaccare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da attaccare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.series.sottoserie':'Sottoserie','form.series.sottoserieHint':'Una riga per sottoserie, con la sua foto. L\'ORDINE conta: è l\'ordine con cui le sottoserie si vedranno. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da attaccare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da attaccare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Variazioni ufficiali','form.series.hasUnofficialVariations':'Variazioni non ufficiali','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.descPlaceholder':'Descrivi questa serie...','form.series.sottoserie':'Sottoserie','form.series.sottoserieHint':'Una riga per sottoserie, con la sua foto. L\'ORDINE conta: è l\'ordine con cui le sottoserie si vedranno. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri articoli','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -28998,6 +29523,23 @@ function aggiornaTestiRicercaSezione() {
   }
 }
 
+// 🆕 v6.794 - LE OTTO ETICHETTE SCRITTE A MANO, RIEMPITE DALL'ELENCO. Il markup porta solo
+//    `data-versione`; la parola la mette l'elenco, nella lingua corrente.
+// ⚠️ Si cercano SOLO dentro il tab delle versioni non base: `data-versione` e' un nome generico
+//    e un domani potrebbe comparire altrove con un altro significato.
+function _etichetteVersioniScritteAMano() {
+  const tab = document.querySelector('.series-tab-panel[data-tab="nonbase"]');
+  if (!tab) return;
+  const it = currentLang === 'it';
+  tab.querySelectorAll('span[data-versione]').forEach(el => {
+    const v = VERSIONI_ARTICOLO.find(x => x.chiave === el.dataset.versione);
+    // 🔄 v6.794 - IL PLURALE, non il singolare. Queste righe dicono «questa serie ha...»,
+    //    e al singolare si leggono male (Franco: *«brutto da leggere»*). ⚠️ Col ripiego su
+    //    `it`: una versione senza plurale dichiarato mostra il singolare invece di niente.
+    if (v) el.textContent = it ? (v.pluraleIt || v.it) : (v.pluraleEn || v.en);
+  });
+}
+
 function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.dataset.i18n);
@@ -29011,6 +29553,21 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
     el.title = t(el.dataset.i18nTitle);
   });
+  // 🆕 v6.794 (Franco) - LE OTTO ETICHETTE DEL TAB «VERSIONI NON BASE» VENGONO DALL'ELENCO.
+  // 🔴 Erano scritte a mano nell'HTML, e dicevano le stesse cinque versioni con parole DIVERSE
+  //    da quelle che il codice usa due centimetri piu' sotto per le altre nove tipologie: «Versioni
+  //    omaggio» sopra e «Omaggio» sotto, plurale sopra e singolare sotto. Due modi di dire la
+  //    stessa cosa nella stessa schermata - il difetto che la v6.790 era venuta a togliere, rimasto
+  //    nella meta' che quella release aveva solo SPOSTATO.
+  // 🔴 Franco, sul cappello che ogni sezione ha gia': *«togli "ha" e la parola che indica di
+  //    cosa stiamo parlando, visto che lo dici subito prima»*; e, scegliendo fra tre forme, quella
+  //    dell'elenco unico.
+  // 📌 E cosi' le parole vivono in UN posto: il giorno che una versione cambia nome, cambia in
+  //    tutte e due le meta' della schermata invece che in una sola.
+  // ⚠️ QUESTO TOGLIE ANCHE UNA BUGIA SILENZIOSA: quattro delle otto (i due omaggi e i due errori
+  //    di stampa) non avevano NESSUNA chiave di traduzione - erano italiano scritto nell'HTML, e a
+  //    un utente inglese restavano in italiano. Adesso prendono `it`/`en` dall'elenco come le altre.
+  try { _etichetteVersioniScritteAMano(); } catch (e) { console.error('etichette versioni', e); }
   // v5.939 — i due testi della ricerca che contengono il nome della sezione
   try { aggiornaTestiRicercaSezione(); } catch (e) { console.error('aggiornaTestiRicercaSezione', e); }
   // e le etichette dei box filtri, anch'esse costruite a mano con il nome della sezione
@@ -31299,7 +31856,9 @@ function updateSeriesVariationCounts(seriesId) {
   if (elChg) elChg.value = c.changeFigurine;
   if (elChgRetro) elChgRetro.value = c.changeRetro;
   const elErr = document.getElementById('series-count-print-error-input');   // v6.219
-  if (elErr) elErr.value = c.erroriStampa;
+  if (elErr) elErr.value = c.erroriStampaFigurine;                          // 🔄 v6.794
+  const elErrR = document.getElementById('series-count-retro-print-error-input');   // 🆕 v6.794
+  if (elErrR) elErrR.value = c.erroriStampaRetro;
   const elOma = document.getElementById('series-count-free-version-input');           // v6.248
   if (elOma) elOma.value = c.omaggiFigurine;
   const elOmaR = document.getElementById('series-count-retro-free-version-input');    // v6.248
@@ -31360,12 +31919,22 @@ function _conteggiSerie(items) {
     // calcolano dagli oggetti a ogni disegno, e da questa riga arrivano da soli in tutti i punti che
     // leggono `_conteggiSerie` - il riepilogo utenti, la tabella admin e la scheda della serie.
     retro:          items.filter(f => sez(f) === 'retros' && _eBase(f)).length,
-    // 🆕 v6.219 - GLI ERRORI DI STAMPA. ⚠️ E' l'unico conteggio SENZA sezione, e non e' una
-    // dimenticanza: gli altri la dichiarano perche' si sa dove vive il loro contrassegno, di
-    // questo si sa solo che ce n'e' fra le figurine (79 su Serie 3, misurati nella v6.170) e non
-    // e' mai stato guardato se ce ne siano fra i retro. Un filtro su `figurines` avrebbe potuto
-    // scrivere "0" a una serie che ne ha - che e' parola per parola l'errore della v6.170.
-    erroriStampa:   items.filter(f => f.isPrintError).length,
+    // 🗑️ v6.794 - QUI STAVA `erroriStampa`, L'UNICO CONTEGGIO SENZA SEZIONE, e la v6.219
+    // spiegava perche': *«di questo si sa solo che ce n'e' fra le figurine e non e' mai stato
+    // guardato se ce ne siano fra i retro»*. 🔴 ADESSO E' STATO GUARDATO: i retro con un errore
+    // di stampa ci sono (2 in Serie 1), e ce ne sono anche fuori da quelle due tipologie (7 sulle
+    // Spille). Quella riga non era sbagliata: rispondeva a una domanda che nel frattempo ha avuto
+    // risposta.
+    // 🔴 E Franco: *«anche i contatori ora sono separati per TDA»*, e *«se dividiamo i campi
+    // anche i loro contatori si separano»*. Un numero che somma tutte le tipologie, mostrato sotto
+    // il titolo «Figurine con retro», dice una cosa e ne promette un'altra - ed e' esattamente
+    // l'equivoco dei «146 Change» annotato venti righe piu' su.
+    // ⚠️ IL TOTALE SPARISCE INVECE DI RESTARE, e non e' come l'omaggio: `omaggi` era rimasto
+    // perche' lo leggono in tre (la tabella admin, la colonna desktop, la riga di telefono).
+    // `erroriStampa` lo leggeva UN punto solo, il campo della scheda, che adesso ne legge due.
+    // Tenerlo sarebbe stato un ramo che nessuno prova (regola v6.393).
+    erroriStampaFigurine: items.filter(f => fig(f) && f.isPrintError).length,
+    erroriStampaRetro:    items.filter(f => sez(f) === 'retros' && f.isPrintError).length,
     // 🆕 v6.248 - GLI OMAGGI, DIVISI COME I CHANGE. La v6.235 ne faceva un conto solo, senza filtro
     // di sezione, perche' non si sapeva dove vivessero. Adesso si sa — Franco: *"nei change ci sono
     // 2 contatori... serve lo stesso per gli omaggio"* — e i due numeri si contano separati.
@@ -31378,7 +31947,61 @@ function _conteggiSerie(items) {
   };
 }
 
+// 🆕 v6.794 (Franco) - UN ELENCO DI TIPI NON SI SCRIVE SE LA SUA CASELLA E' SPENTA.
+// 🔴 Parole sue: *«il campo "Tipi di change FRONTALI (uno per riga)" deve essere read only (o
+//    sparire del tutto) se il relativo flag e' spento»*, e fra le due ha scelto **read only**:
+//    *sparire* nasconderebbe dei valori che sono suoi e che possono essere gia' scritti, e un dato
+//    che non si vede piu' e' un dato di cui ci si dimentica.
+// 🔴 E NON E' SOLO QUELLO CHE HA NOMINATO: gli elenchi sono SEI scritti a mano (change,
+//    omaggio ed errore di stampa, per fronte e retro) piu' quelli che `_rendiTDAVersioni` disegna
+//    per le altre nove tipologie, e NESSUNO guardava la sua casella. Correggerne uno solo avrebbe
+//    lasciato in giro lo stesso difetto con un altro nome.
+// 📌 GLI ID SI CHIEDONO AL MODELLO, non si costruiscono: per le due tipologie scritte a mano
+//    li dichiara il descrittore (`idListaSerie` / `idListaSerieRetro`, v6.794), per le altre nove
+//    li genera `_idTDALista` — la stessa funzione che li ha scritti. Dedurre
+//    `series-front-change-types-input` da `frontChangeTypes` sarebbe la regola di trasformazione
+//    che la v6.314 ha gia' rifiutato una volta: ci si assomiglia, e basta un elenco scritto
+//    diversamente perche' smetta di valere in silenzio.
+// ⚠️ `readOnly` e NON `disabled`: un campo disabilitato non si puo' nemmeno SELEZIONARE, quindi
+//    non se ne puo' copiare il contenuto - e per un elenco che si sta per spostare altrove e'
+//    proprio la cosa che serve.
+function _elencoTipiEcasella() {
+  const coppie = [];
+  _VERSIONI_VIVE.filter(v => v.listeTipo).forEach(v => {
+    if (v.idListaSerie && v.idSpuntaSerie) coppie.push([v.idListaSerie, v.idSpuntaSerie]);
+    if (v.idListaSerieRetro && v.idSpuntaSerieRetro) coppie.push([v.idListaSerieRetro, v.idSpuntaSerieRetro]);
+    // le altre nove tipologie: id generati, casella generata
+    _TDA_DISEGNATE_NELLA_FORM().forEach(tda => {
+      if (!_versioneEsistePerTDA(v.chiave, tda)) return;
+      coppie.push([_idTDALista(tda, v.listeTipo[0]), _idTDAVersione(tda, v.chiave)]);
+    });
+  });
+  return coppie;
+}
+
+// 🔄 v6.794 - SI NASCONDE, NON SI BLOCCA. Franco ha scelto due volte, e la seconda ha
+//    cambiato idea con una ragione che la prima domanda non conteneva: *«io sono piu' per
+//    nascondere i campi non ammessi che renderli read only; mi riferisco alle descrizioni, che
+//    occupano SPAZIO in form»*. Un campo grigio e inerte occupa lo stesso posto di uno vivo: su
+//    undici tipologie sono parecchie righe di elenco che non servono a niente.
+// ⚠️ SI NASCONDE IL `form-group`, non il solo `textarea`: l'etichetta «Tipi di change frontali
+//    (uno per riga)» è meta' dello spazio, e lasciarla sopra il vuoto sarebbe peggio di prima.
+// 🔴 E IL CAMPO RESTA NEL DOM, nascosto: è la regola della v6.169 al contrario - il
+//    salvataggio legge quel `textarea`, quindi TOGLIERLO davvero azzererebbe l'elenco di chi
+//    spegne una casella per sbaglio e risalva. Nascosto, i valori sono ancora li' e tornano a
+//    vedersi riaccendendo la casella.
+function _mostraElenchiTipiAmmessi() {
+  _elencoTipiEcasella().forEach(([idLista, idCasella]) => {
+    const ta = document.getElementById(idLista);
+    if (!ta) return;
+    const acceso = !!document.getElementById(idCasella)?.checked;
+    const box = ta.closest('.form-group') || ta;
+    box.style.display = acceso ? '' : 'none';
+  });
+}
+
 function toggleSeriesCountGroups() {
+  try { _mostraElenchiTipiAmmessi(); } catch (e) { console.error('elenchi dei tipi', e); }
   const hasVar = document.getElementById('series-has-variations-input')?.checked;
   const hasUnoff = document.getElementById('series-has-unofficial-variations-input')?.checked;
   const hasChg = document.getElementById('series-has-change-input')?.checked;
@@ -31392,9 +32015,18 @@ function toggleSeriesCountGroups() {
   if (gChg) gChg.style.display = hasChg ? '' : 'none';
   if (gChgRetro) gChgRetro.style.display = hasChgRetro ? '' : 'none';
   // v6.219 - la coppia degli errori di stampa
+  // 🗑️ v6.794 - QUI STAVA «il numero si vede se e' accesa UNA QUALUNQUE delle due caselle»
+  //    (v6.788), e la ragione era vera allora: il conteggio era UNO e contava tutte le sezioni,
+  //    quindi legarlo a una sola casella avrebbe nascosto un numero che parlava anche dell'altra.
+  // 🔴 Franco l'ha visto da utente - *«il campo "n. errori di stampa" non sparisce se il campo
+  //    "Ha errori di stampa di figurine" e' spento»* - e la causa non era quella riga: era che il
+  //    conteggio era uno per due caselle. Diviso il conteggio, la riga torna come le altre sei.
   const hasErr = document.getElementById('series-has-print-error-input')?.checked;
+  const hasErrRetro = document.getElementById('series-has-retro-print-error-input')?.checked;
   const gErr = document.getElementById('series-count-print-error-group');
+  const gErrRetro = document.getElementById('series-count-retro-print-error-group');
   if (gErr) gErr.style.display = hasErr ? '' : 'none';
+  if (gErrRetro) gErrRetro.style.display = hasErrRetro ? '' : 'none';
   // v6.248 - le DUE coppie degli omaggi, a specchio dei change
   const hasOma = document.getElementById('series-has-free-version-input')?.checked;
   const gOma = document.getElementById('series-count-free-version-group');
@@ -32755,14 +33387,11 @@ function _etichettaSottoserie(v) {
   return currentLang === 'it' ? 'Set principale' : 'Base set';
 }
 
-function _articoliNascostiDaRecord(s) {
-  if (!s) return [];
-  if (Array.isArray(s.articoliNascosti)) return s.articoliNascosti;
-  const da = [];
-  if (s.noAlbums) da.push('albums');
-  if (s.noRetro)  da.push('retros');
-  return da;
-}
+// 🗑️ v6.789 - QUI STAVA `_articoliNascostiDaRecord`, il gemello lato form di `_articoliNascosti`.
+// Se ne va perche' il verso e' cambiato E perche' erano DUE funzioni che rispondevano alla stessa
+// domanda su due strade (una prendeva il record, l'altra l'id). Adesso ce n'e' una che prende il
+// record (`_tipologieAmmesseDaRecord`) e una che le passa la serie trovata per id: la catena del
+// ripiego e' scritta una volta sola, e il giorno che si toglie si toglie da un posto.
 
 // 🆕 v6.650 - LA CASELLA DELLE SOTTOSERIE SI VEDE SOLO SE LA SERIE DICE DI AVERNE.
 // 📌 Una funzione sola, chiamata dall'apertura della scheda e dal clic sulla spunta: due
@@ -32789,33 +33418,53 @@ function _aggiornaCasellaSottoserie() {
   }
 }
 
+// 🆕 v6.788 - IL VALORE CON CUI NASCE UNA DELLE OTTO CASELLE DI FIGURINE E RETRO.
+// 🔴 E' LO STESSO LETTORE DEL SITO, non una seconda lettura: `perTDA` se la serie ha dichiarato,
+//    altrimenti il campo storico. Senza questa riga una serie gia' migrata si riaprirebbe sui
+//    campi storici - che dalla v6.788 non si scrivono piu' - e il primo salvataggio riporterebbe
+//    indietro le sue spunte. E' il guasto della v6.169 travestito da migrazione.
+// ⚠️ SU UNA SERIE NUOVA (`s` assente) SI NASCE SPENTI, tutte e otto. Il ripiego direbbe SI'
+//    all'errore di stampa dei retro, perche' descrive fedelmente cio' che il sito faceva ieri su
+//    una serie qualunque - ma quella regola esiste per non PERDERE una scelta gia' fatta, e su una
+//    serie che non esiste ancora non c'e' niente da perdere. Le altre sette nascono spente da
+//    sempre: una sola accesa sarebbe una differenza senza ragione.
+function _versioneSpuntaForm(s, tda, v) {
+  if (!s) return false;
+  const detta = _dichiarazionePerTDA(s, tda, v.chiave);
+  return detta === null ? _ripiegoStorico(s, tda, v) : detta;
+}
+function _spuntaVersioneSerie(s, tda, chiave) {
+  const v = VERSIONI_ARTICOLO.find(x => x.chiave === chiave);
+  if (!v) return false;
+  return _versioneSpuntaForm(s, tda, v);
+}
+
 function _ripristinaFlagSerie(s) {
   const spunta = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
-  spunta('series-has-unofficial-variations-input', s && s.hasUnofficialVariations);
-  spunta('series-has-change-input',                s && s.hasChange);
-  spunta('series-has-retro-change-input',          s && s.hasRetroChange);   // v6.170
+  // 🔄 v6.788 - le otto caselle delle versioni non leggono piu' `s.hasXxx` ma la griglia.
+  spunta('series-has-unofficial-variations-input', _spuntaVersioneSerie(s, 'figurines', 'unofficialVariation'));
+  spunta('series-has-change-input',                _spuntaVersioneSerie(s, 'figurines', 'change'));
+  spunta('series-has-retro-change-input',          _spuntaVersioneSerie(s, 'retros',    'change'));   // v6.170
   spunta('series-no-numbers-input',                s && s.noNumbers);
   // v6.216 - le due caselle singole sono diventate l'elenco.
-  // 🔄 v6.696 (Franco: «le tipologie stanno diventando tante; alla creazione della
-  //    prossima serie accendili tutti») - SU UNA SERIE NUOVA SI ACCENDONO TUTTE.
-  // 🗑️ QUI C'ERA SCRITTO IL CONTRARIO - «con `s` a null (creazione) si spengono tutte» -
-  //    e quel commento se ne va con la riga che descriveva.
-  // 📌 PERCHE': le tipologie sono DODICI dalla v6.691 e una serie ne usa da una a
-  //    cinque. Aprire la form con tutte spente voleva dire, ogni volta, mettere sette o otto
-  //    spunte per dire quello che si dice togliendone tre. Il default dev'essere il caso raro
-  //    da correggere, non il caso comune da smontare.
-  // ⚠️ IL PREZZO, ed e' l'altra faccia dello stesso gesto: una serie appena creata non mostra
-  //    nessuna sezione finche' non si tolgono le spunte. E' voluto - una serie senza articoli
-  //    non ha niente da mostrare - ma va saputo, o sembra nata rotta.
-  // 📌 IL CAMPO NON CAMBIA SIGNIFICATO: `articoliNascosti` vuol dire ancora «quelle che
-  //    NON ci sono», e i record esistenti non si toccano. Cambia come si apre la form.
-  // 📌 La domanda «e' una serie nuova?» c'era gia' (`s` a null) e serviva a spegnere
-  //    tutto: adesso la stessa domanda accende tutto. Nessun ramo nuovo.
+  // 🗑️ v6.789 - E QUI SE NE VA LA v6.696, «alla creazione della prossima serie accendili tutti».
+  //    Era una richiesta di Franco e aveva una ragione buona, scritta allora: le tipologie sono
+  //    dodici, una serie ne usa da una a cinque, e col verso NEGATIVO dire «questa serie ha
+  //    figurine e retro» voleva dire spuntare le altre dieci. Accenderle tutte alla nascita
+  //    risparmiava sette spunte su dodici.
+  // 🔴 GIRATO IL VERSO, QUEL RIMEDIO DIVENTA IL PROBLEMA CHE CURAVA: una serie nuova che nasce
+  //    con tutte e dodici ACCESE dichiarerebbe di avere tutto, e per dire il vero bisognerebbe
+  //    spegnerne dieci. Nasce vuota, e si accendono le due o tre che la serie ha - che e'
+  //    esattamente il gesto che Franco ha chiesto girando la logica.
+  // 📌 E cosi' si comporta come `articoliCompletezza` (v6.716), che nasce vuoto da sempre e sta
+  //    nella colonna accanto (v6.749). Due caselle affiancate che si aprivano in due modi opposti
+  //    erano meta' della confusione.
+  // ⚠️ IL PREZZO E' LO STESSO DI PRIMA, girato: una serie appena creata non mostra nessuna
+  //    sezione finche' non si accende qualcosa. Era vero anche ieri (li' finche' non si TOGLIEVA
+  //    qualcosa) ed e' voluto - una serie senza articoli non ha niente da mostrare.
   {
-    const nuova = !s;
-    const nascosti = _articoliNascostiDaRecord(s);
-    document.querySelectorAll('.series-articolo-nascosto')
-      .forEach(x => { x.checked = nuova ? true : nascosti.includes(x.value); });
+    const ammesse = _tipologieAmmesseDaRecord(s);
+    _caselleTipologie().forEach(x => { x.checked = ammesse.includes(x.value); });
   }
   // 🆕 v6.716 - e le caselle della completezza, che NON seguono la regola della riga sopra:
   // su una serie nuova restano tutte SPENTE. «Accendile tutte» (v6.696) e' giusto per «quali
@@ -32846,16 +33495,27 @@ function _ripristinaFlagSerie(s) {
   _aggiornaCasellaSottoserie();   // v6.650 - dopo la spunta, o leggerebbe quella di prima
   spunta('series-has-sizes-input',                 s && s.hasSizes);
   spunta('series-abilita-modifica-input',          s && s.abilitaModifica); // v6.366         // v6.169
-  spunta('series-has-variations-input',            s && s.hasVariations);    // v6.169
+  spunta('series-has-variations-input',            _spuntaVersioneSerie(s, 'figurines', 'variation'));    // v6.169
   // 🔴 v6.219 - IL FLAG NUOVO, E QUESTA E' LA RIGA PIU' IMPORTANTE DELLA RELEASE. Senza, la
   // casella si aprirebbe sempre spenta, `saveSeries` la leggerebbe e scriverebbe `false`: il
   // guasto della v6.169 ricreato da capo su un campo appena nato. Nove flag, nove ripristini.
-  spunta('series-has-print-error-input',           s && s.hasPrintError);    // v6.219
+  spunta('series-has-print-error-input',           _spuntaVersioneSerie(s, 'figurines', 'printError'));    // v6.219
+  // 🆕 v6.788 - la casella nata oggi, e vale l'avvertimento della v6.219 parola per parola:
+  // senza questa riga si aprirebbe sempre spenta e il salvataggio scriverebbe «i retro non hanno
+  // errori di stampa» su ogni serie — cioe' proprio i sette che Franco dice di avere a Inventario
+  // resterebbero senza governo. Undici caselle, undici ripristini.
+  spunta('series-has-retro-print-error-input',     _spuntaVersioneSerie(s, 'retros',    'printError'));
   // 🔴 v6.235 - il flag nuovo, e vale l'avvertimento della v6.219 qui sopra: senza questa riga la
   // casella si aprirebbe sempre spenta e `saveSeries` scriverebbe `false` a ogni salvataggio.
   // Dieci flag, dieci ripristini.
-  spunta('series-has-free-version-input',          s && s.hasFreeVersion);        // v6.235
-  spunta('series-has-retro-free-version-input',    s && s.hasRetroFreeVersion);   // v6.248
+  spunta('series-has-free-version-input',          _spuntaVersioneSerie(s, 'figurines', 'free'));        // v6.235
+  spunta('series-has-retro-free-version-input',    _spuntaVersioneSerie(s, 'retros',    'free'));   // v6.248
+  // 🆕 v6.784 - e i blocchi per tipologia. 🔴 QUI e non altrove: e' il punto in cui la
+  //    form si riempie, e le sue caselle seguono la stessa regola delle dieci qui sopra - cio' che
+  //    non si ripristina, il salvataggio lo azzera. Disegnarli al primo `switchSeriesTab` sarebbe
+  //    stato piu' furbo e sbagliato: una serie salvata senza mai aprire quel tab avrebbe scritto
+  //    una mappa vuota.
+  try { _rendiTDAVersioni(s); } catch (e) { console.error('_rendiTDAVersioni', e); }
   const nc = document.getElementById('series-nome-corto-input');
   if (nc) nc.value = (s && s.nomeCorto) || '';                               // v6.080
   // 🆕 v6.480 - il Nome album. 🔴 Questa riga non e' facoltativa come il campo: senza, la scheda
@@ -32908,12 +33568,15 @@ function _ripristinaFlagSerie(s) {
 // i Retro ci siano, e quella regola sta in `_aggiornaCampiDiRetro`. Prima era attaccata alla
 // casella "Figurine senza retro", che questa release toglie.
 function _caselleArticoliSerie() {
-  const box = document.getElementById('series-articoli-nascosti');
+  const box = document.getElementById('series-tipologie-ammesse');   // v6.789
   if (!box) return;
   box.innerHTML = PRODOTTI_INVENTARIO.map(sez =>
     '<label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem;">' +
-      '<input type="checkbox" class="series-articolo-nascosto" value="' + sez + '" ' +
-        'onchange="_aggiornaCampiDiRetro();_aggiornaCaselleCompletezza();_aggiornaRigheColonneSerie()" ' +
+      '<input type="checkbox" class="series-tipologia-ammessa" value="' + sez + '" ' +
+        'onchange="_aggiornaCampiDiRetro();_aggiornaCaselleCompletezza();_aggiornaRigheColonneSerie();_mostraTDAAmmesse()" ' +   // v6.795
+        // 🔴 v6.795 - senza `_mostraTDAAmmesse()` la tipologia appena spuntata comparirebbe nel
+        //    tab delle versioni solo riaprendo la scheda: due tab della stessa finestra che
+        //    dicono cose diverse sulla stessa serie nello stesso momento.
         'style="width:15px;height:15px;cursor:pointer;flex-shrink:0;">' +
       // v6.229 (Franco: "lo metterei in bianco") - i nomi degli articoli erano `--muted`, cioe' lo
       // stesso grigio-viola dei SUGGERIMENTI. Ma questi non sono un suggerimento: sono le sei cose
@@ -32935,9 +33598,10 @@ function _caselleArticoliSerie() {
 //    tre che vivono nei dati non hanno una casella «non in questa serie», quindi restano
 //    sempre premibili. La domanda si fa sui valori, non sulle posizioni.
 function _aggiornaCaselleCompletezza() {
-  const nascosti = new Set(_leggiArticoliNascosti());
+  // 🔄 v6.789 - la domanda e' la stessa, girata - ma NON e' «non sta fra le ammesse»: vedi
+  //    `_dichiarataAssente`, che e' il difetto che `prova-v6748` ha trovato in questa release.
   document.querySelectorAll('.series-articolo-completezza').forEach(x => {
-    const spenta = nascosti.has(x.value);
+    const spenta = _dichiarataAssente(x.value);
     x.disabled = spenta;
     if (spenta) x.checked = false;
     const lab = x.closest('label');
@@ -32948,8 +33612,31 @@ function _aggiornaCaselleCompletezza() {
     }
   });
 }
-function _leggiArticoliNascosti() {
-  return [...document.querySelectorAll('.series-articolo-nascosto')].filter(x => x.checked).map(x => x.value);
+// 🆕 v6.789 - IL SELETTORE STA IN UN POSTO SOLO. Le due funzioni qui sotto fanno due domande
+// diverse sulle STESSE caselle («quali sono accese?» e «questa e' spenta?»), e scrivere
+// `.series-tipologia-ammessa` in tutte e due vorrebbe dire due punti da correggere il giorno che
+// la classe cambia - il difetto che la v6.763 ha gia' chiuso una volta su questa stessa famiglia.
+function _caselleTipologie() {
+  return [...document.querySelectorAll('.series-tipologia-ammessa')];
+}
+function _leggiTipologieAmmesse() {
+  return _caselleTipologie().filter(x => x.checked).map(x => x.value);
+}
+
+// 🆕 v6.789 - «QUESTA TIPOLOGIA E' DICHIARATA ASSENTE?», E NON E' «NON E' FRA LE AMMESSE».
+// 🔴 LA DIFFERENZA L'HA TROVATA `prova-v6748`, ed e' il difetto vero di questa release.
+//    `_aggiornaCaselleCompletezza` spegne le caselle della colonna di destra guardando quella di
+//    sinistra. Col verso vecchio la domanda era «sta fra le NASCOSTE?»: una tipologia che nella
+//    colonna di sinistra non ha nessuna casella - le tre che vengono dai DATI, tipo `tp_felpe`
+//    (v6.716) - non ci stava, e quindi restava premibile. Girando la domanda in «NON sta fra le
+//    ammesse?», quelle tre diventavano tutte spente: non perche' qualcuno l'avesse dichiarato,
+//    ma perche' non hanno una casella in cui dirlo. ⚠️ Un divieto nato dall'ASSENZA di un
+//    comando, che e' la stessa forma dello zero che decide.
+// ✅ Quindi si guarda prima se la casella ESISTE: assente = non dichiarato = premibile, esattamente
+//    come ieri. Le due funzioni che spengono (completezza e righe delle colonne) passano da qui.
+function _dichiarataAssente(chiave) {
+  const casella = _caselleTipologie().find(x => x.value === chiave);
+  return !!casella && !casella.checked;
 }
 
 // 🆕 v6.763 (Franco: «il campo "Colonne griglia hub Serie" deve ANCH'ESSO mostrare o rendere
@@ -32966,9 +33653,11 @@ function _leggiArticoliNascosti() {
 //    che la v6.750 ha deciso di non fare sugli elenchi.
 // ⚠️ E il salvataggio continua a leggerla: un `<input>` disabilitato conserva il suo `.value`.
 function _aggiornaRigheColonneSerie() {
-  const nascosti = new Set(_leggiArticoliNascosti());
+  // 🔄 v6.789 - stessa domanda e stessa funzione della completezza: queste righe vengono tutte
+  //    da `PRODOTTI_INVENTARIO` e una casella ce l'hanno sempre, ma farla in due modi diversi e'
+  //    il difetto che la v6.763 e' servita a togliere.
   document.querySelectorAll('#series-colonne-tabella tr[data-sez]').forEach(tr => {
-    const spenta = nascosti.has(tr.getAttribute('data-sez'));
+    const spenta = _dichiarataAssente(tr.getAttribute('data-sez'));
     tr.style.opacity = spenta ? '0.45' : '';
     tr.title = spenta ? (currentLang === 'it'
       ? 'Questa serie dichiara di non avere questi articoli: la loro griglia non esiste'
@@ -33439,22 +34128,32 @@ async function saveSeries() {
     colonne[sez] = { d: d || _colonneDefault(sez).d, m: m || _colonneDefault(sez).m };   // v6.197
   });
   const hasSubseries = document.getElementById('series-has-subseries-input').checked;
-  const hasVariations = document.getElementById('series-has-variations-input')?.checked || false;
-  const hasUnofficialVariations = document.getElementById('series-has-unofficial-variations-input')?.checked || false;
-  const hasChange = document.getElementById('series-has-change-input')?.checked || false;
-  const hasRetroChange = document.getElementById('series-has-retro-change-input')?.checked || false;   // v6.170
-  const hasPrintError = document.getElementById('series-has-print-error-input')?.checked || false;     // v6.219
-  const hasFreeVersion = document.getElementById('series-has-free-version-input')?.checked || false;            // v6.235
-  const hasRetroFreeVersion = document.getElementById('series-has-retro-free-version-input')?.checked || false;  // v6.248
+  // 🗑️ v6.788 - QUI STAVANO LE SETTE LETTURE DEI CAMPI STORICI (`hasVariations`, `hasChange`,
+  //    `hasRetroChange`, `hasPrintError`, `hasFreeVersion`, `hasRetroFreeVersion`,
+  //    `hasUnofficialVariations`), e se ne vanno insieme alle sette scritture piu' sotto.
+  // 🔴 LE OTTO CASELLE SI LEGGONO LO STESSO, ma da `_leggiTDAVersioni` (cioe' `_perTDAForm`
+  //    qui sotto), che adesso comprende anche `figurines` e `retros`. Non si perde niente: si
+  //    scrive nello stesso salvataggio, dalle stesse caselle, in un posto solo.
+  // ⚠️ I CAMPI RESTANO SUL DOCUMENTO delle serie gia' salvate, e non si cancellano: sono il
+  //    ripiego di `_versioneAmmessa` per le serie non ancora riaperte. Non si aggiornano piu',
+  //    e non serve: una serie che ha `perTDA` non li guarda nemmeno.
+  // 🆕 v6.784 - la mappa per tipologia. Si legge PRIMA dei due rami (modifica e creazione)
+  //    perche' la usano tutti e due, e il valore precedente lo prende ognuno dal suo posto.
+  const _perTDAForm = (prec) => { try { return _leggiTDAVersioni(prec); } catch (e) { console.error('_leggiTDAVersioni', e); return prec || {}; } };
   const noNumbers = document.getElementById('series-no-numbers-input')?.checked || false;
   // \uD83D\uDD34 v6.216 - PASSO 1: si scrive l'elenco E si tengono ALLINEATI i due vecchi flag. Non e'
   // ridondanza: fra la migrazione (passo 2) e lo spostamento dei lettori (passo 3) i lettori
   // guardano ancora i vecchi, e se restassero indietro mostrerebbero la cosa sbagliata. Queste due
   // righe spariscono al passo 3, e i campi al passo 4.
-  const articoliNascosti = _leggiArticoliNascosti();
+  const tipologieAmmesse = _leggiTipologieAmmesse();   // v6.789
   const articoliCompletezza = _leggiArticoliCompletezza();   // v6.716
-  const noRetro = articoliNascosti.includes('retros');
-  const noAlbums = articoliNascosti.includes('albums');
+  // 🗑️ v6.789 - PASSO 4 DELLA v6.216: `noRetro` e `noAlbums` non si calcolano e non si scrivono
+  //    piu'. La v6.216 li teneva allineati apposta - «fra la migrazione e lo spostamento dei
+  //    lettori i lettori guardano ancora i vecchi, e se restassero indietro mostrerebbero la cosa
+  //    sbagliata» - e prometteva che sarebbero spariti al passo 3 e al passo 4. I lettori sono
+  //    stati spostati in questa stessa release, quindi il passo 4 e' adesso.
+  // ⚠️ Restano SUI DOCUMENTI gia' salvati e li si legge ancora in un posto solo, la catena del
+  //    ripiego dentro `_tipologieAmmesseDaRecord`, per le serie non ancora migrate.
 
   const serieContenitore = document.getElementById('series-contenitore-input')?.checked || false; // v6.204
   // 🔄 v6.668 - un campo solo al posto delle due spunte. Il ripiego a «pubblicata» copre il
@@ -33475,6 +34174,10 @@ async function saveSeries() {
   const countChange = parseInt(document.getElementById('series-count-change-input').value) || null;
   const countRetroChange = parseInt(document.getElementById('series-count-retro-change-input')?.value) || null;   // v6.170
   const countPrintError = parseInt(document.getElementById('series-count-print-error-input')?.value) || null;     // v6.219
+  // 🆕 v6.794 - il gemello dei retro. ⚠️ Senza questa riga il campo nuovo esisterebbe a
+  //    schermo e non arriverebbe mai nel documento: la v6.169 in azione - cio' che la form non
+  //    ripristina, il salvataggio lo azzera - su un campo che ieri non c'era.
+  const countRetroPrintError = parseInt(document.getElementById('series-count-retro-print-error-input')?.value) || null;
   const countFreeVersion = parseInt(document.getElementById('series-count-free-version-input')?.value) || null;             // v6.235
   const countRetroFreeVersion = parseInt(document.getElementById('series-count-retro-free-version-input')?.value) || null;   // v6.248
   const count = document.getElementById('series-count-input').value;
@@ -33493,8 +34196,22 @@ async function saveSeries() {
   // v6.246 - i tipi di omaggio, DUE liste come i change: uno per riga.
   const retroFreeVersionTypes = (document.getElementById('series-retro-free-version-types-input')?.value || '')
     .split('\n').map(v => v.trim()).filter(Boolean);
-  const frontFreeVersionTypes = (document.getElementById('series-front-free-version-types-input')?.value || '')
-    .split('\n').map(v => v.trim()).filter(Boolean);
+  // 🔴 v6.795 - IL CAMPO SI CONSERVA, NON SI RILEGGE: la sua casella di testo non esiste piu'
+  //    (l'omaggio di una figurina con retro sta dietro, quindi non c'era piu' niente da scegliere).
+  // ⚠️ E senza questa riga sarebbe scattata la v6.169 alla lettera - *cio' che la form non
+  //    ripristina, il salvataggio lo azzera*: al primo salvataggio di Serie 1 o Serie 2 quei due
+  //    valori (NERO, ROSSO) se ne andavano, in silenzio.
+  // 🔴 E NON SAREBBE STATO «dato morto che sparisce»: quel campo è ancora il RIPIEGO dei tipi di
+  //    omaggio di BUSTINE e ALBUM (`_omaggioTypes` lo legge quando la tipologia non ne dichiara
+  //    uno suo). Azzerarlo avrebbe svuotato la tendina di una bustina, in un'altra schermata,
+  //    giorni dopo, senza nessuno che collegasse le due cose.
+  // ⚠️ L'id della serie aperta sta nel campo nascosto `edit-series-id`, che è dove lo cerca gia'
+  //    `_confermaSottoserieRinominate` qualche riga piu' sotto: `saveSeries` non riceve parametri.
+  const _idSerieAperta = document.getElementById('edit-series-id')?.value || '';
+  const _serieInCorso = _idSerieAperta ? getData('series', []).find(x => x.id === _idSerieAperta) : null;
+  const frontFreeVersionTypes = (_serieInCorso && Array.isArray(_serieInCorso.frontFreeVersionTypes))
+    ? _serieInCorso.frontFreeVersionTypes.slice()
+    : [];
   // 🆕 v6.350 - i tipi di errore di stampa, due liste come le altre quattro.
   const retroPrintErrorTypes = (document.getElementById('series-retro-print-error-types-input')?.value || '')
     .split('\n').map(v => v.trim()).filter(Boolean);
@@ -33625,7 +34342,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -33647,7 +34364,7 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -34747,6 +35464,76 @@ async function salvaVersioniArticolo() {
 // quindi qui non c'e' piu' niente da ordinare: l'elenco esce gia' in fila.
 // ⚠️ E vuol dire che **spostare una voce nel descrittore cambia il sito**. E' scritto anche
 // in cima ad `ARTICOLI`, ed e' l'unica cosa da sapere prima di riordinare quel blocco per gusto.
+// 🆕 v6.787 (Franco) - LA GRIGLIA: QUALI VERSIONI ESISTONO PER QUALE TIPOLOGIA.
+// 🔴 E' IL LIVELLO 1 DELLE DUE DOMANDE, e le due domande erano una sola finora, con esito
+//    sbagliato: «Ha change di figurine» era una spunta della SERIE che valeva per OGNI sezione
+//    tranne i retro. Adesso: qui si dice cosa PUO' ESISTERE (proprieta' della tipologia, uguale per
+//    tutte le serie), nella serie si dice cosa QUELLA SERIE HA (`s.perTDA`, v6.784).
+// 🔴 «NON ESISTE» NON E' «SPENTO», ed e' una correzione di Franco: «piu' che non ammessi,
+//    non esistenti». Per questo e' un ELENCO e non cinque interruttori: una versione che non e' in
+//    elenco non lascia dietro di se' nessuna casella spenta da guardare - non c'e' proprio.
+// ✅ CHIUSA UNA CELLA PER VOLTA, 26 domande e 26 risposte, il 13 settembre 2026. Delle 55 caselle
+//    (11 tipologie x 5 versioni) ne esistono VENTUNO - venti chiuse nel giro delle domande, piu'
+//    la variazione degli album che Franco si e' ricordato subito dopo. 🔴 E NESSUNA DELLE 20 E' STATA DECISA DAI
+//    DATI: e' l'altra correzione di Franco, «il sito non e' completo, quindi nessuna conclusione
+//    puo' essere tratta dai dati». Un conteggio a zero ha due cause indistinguibili da fuori - non
+//    esiste, oppure non e' ancora stato inserito. I conteggi sono serviti a UNA cosa sola: a
+//    verificare che nessuna cella con articoli dentro venisse spenta (controllate tutte, nessuna).
+// 📌 LE RAGIONI, parole di Franco, perche' una riga vuota senza spiegazione domani sembra
+//    una dimenticanza:
+//    · VARIAZIONE solo su `figurines`: «la Variazione rimane una definizione valida solo per le
+//      Figurine con retro». Si distingue NEL retro, e l'unica tipologia con un retro e' quella.
+//    · `cartoncini` (carte d'identita') NIENTE: «sono costruite a mano dal collezionista, quindi
+//      mai ne farebbe una non regolare». Non sono stampate: non possono avere un errore di stampa.
+//    · `attaccare` NIENTE: «si creano scindendo una figurina con retro dal suo retro». La versione
+//      la racconta la figurina di partenza; qui non nasce niente di nuovo.
+//    · `spille` senza OMAGGIO ma con CHANGE; `carte`, `tatuaggi`, `trasferelli` e `figurine` solo
+//      ERRORE DI STAMPA. Tutte risposte sue, una per una.
+// ⚠️ UNA TIPOLOGIA CHE NON COMPARE QUI NON HA NESSUNA VERSIONE, e non e' un ripiego comodo: e' il
+//    caso della tipologia NUOVA che nasce domani in `ARTICOLI` e che nessuno pensa a dichiarare
+//    qui. Silenzio vorrebbe dire «nessuna versione» senza che nessuno l'abbia deciso - percio'
+//    `prova-v6787` conta che le chiavi di qui e quelle di `ARTICOLI` coincidano, e diventa rossa.
+const VERSIONI_PER_TDA = {
+  figurines:   ['variation', 'unofficialVariation', 'change', 'free', 'printError'],
+  retros:      ['change', 'free', 'printError'],
+  bustine:     ['change', 'free', 'printError'],
+  // 🆕 v6.787, a griglia gia' scritta - L'ALBUM HA LA VARIAZIONE. Franco: «mi e' venuto in
+  //    mente che vi sono degli album che sono stati prodotti in piu' versioni». 🔴 E porta con
+  //    se' una DEFINIZIONE, che e' la cosa piu' importante di questa riga - sue parole:
+  //      · una, non tecnica, che vale per tutte: «(netta) differente versione prodotta dal
+  //        produttore»;
+  //      · due tecniche, che dicono DOVE guardare: sulle figurine il RETRO diverso, sugli album la
+  //        COPERTINA diversa;
+  //      · e il CHANGE resta l'altra cosa: «una piccola modifica di una specifica versione».
+  // 📌 SOLO L'UFFICIALE, non la non ufficiale: la distinzione fra le due e'
+  //    documentata/alta tiratura contro non documentata/rara, e una copertina diversa e' sempre una
+  //    cosa documentata. Risposta di Franco.
+  // ⚠️ E LA LEGENDA A SCHERMO ADESSO DICE IL FALSO SUGLI ALBUM: «Variazione ufficiale: variante di
+  //    RETRO documentata e ad alta tiratura». Franco l'ha vista e ha detto «la scrivo io dopo» - le
+  //    parole a schermo le sceglie lui (v6.754). E' un debito DICHIARATO, non una dimenticanza:
+  //    sta qui, sta nel documento, e finche' non e' pagato la spiegazione e' piu' vecchia della
+  //    regola - il difetto che questo progetto paga piu' spesso.
+  albums:      ['variation', 'change', 'free', 'printError'],
+  spille:      ['change', 'printError'],
+  figurine:    ['printError'],
+  trasferelli: ['printError'],
+  carte:       ['printError'],
+  tatuaggi:    ['printError'],
+  attaccare:   [],
+  cartoncini:  [],
+  // ⚠️ `extras` e' la dodicesima del descrittore e NON e' legata alle serie: Franco conta
+  //    undici tipologie. Sta qui con l'elenco vuoto e non manca, cosi' il censimento torna.
+  extras:      [],
+};
+
+// 🆕 v6.787 - LE DUE DOMANDE DEL LIVELLO 1, e sono due funzioni perche' sono due domande.
+function _versioniDellaTDA(sezione) {
+  return VERSIONI_PER_TDA[sezione || 'figurines'] || [];
+}
+function _versioneEsistePerTDA(chiave, sezione) {
+  return _versioniDellaTDA(sezione).indexOf(chiave) >= 0;
+}
+
 const ARTICOLI_ORDINE_DICHIARATO = Object.keys(ARTICOLI);
 
 // 🆕 v6.283 - L'ORDINE SALVATO SI VALIDA SEMPRE, e la ragione non e' la prudenza: quel documento
@@ -34876,9 +35663,26 @@ async function _aggiornaOrdineArticoliDaConfigurazione() {
 // alla v6.233 erano quattro elenchi paralleli scritti a mano.
 // ⚠️ L'ORDINE DELLE RIGHE E' L'ORDINE DI PRECEDENZA. Era implicito in ogni catena di `if`, e in
 // tre catene su cinque era DIVERSO (vedi il CHANGELOG). Adesso e' un fatto scritto in un posto.
+// 🆕 v6.788 - `idSpuntaSerie` / `idSpuntaSerieRetro`: L'ID DELLA CASELLA CHE, NELLA SCHEDA DELLA
+// SERIE, GOVERNA QUESTA VERSIONE PER LE FIGURINE E PER I RETRO.
+// 🔴 SI DICHIARA, NON SI RICAVA, ed e' la stessa scelta di `idForm` (v6.314): da `hasVariations`
+// a `series-has-variations-input` non porta nessuna regola, e inventarne una qui la smentirebbe
+// la prima casella scritta diversamente. Da questi due campi leggono il RIPRISTINO
+// (`_ripristinaFlagSerie`) e il SALVATAGGIO (`_leggiTDAVersioni`) dei blocchi `figurines` e
+// `retros` di `s.perTDA` - cioe' le due tipologie che nella form hanno il blocco scritto a mano.
+// ⚠️ Chi non dichiara `idSpuntaSerieRetro` non ha casella di retro, e `_idSpuntaVersione`
+// risponde null: la versione non si scrive, invece di leggere la casella delle figurine.
 const VERSIONI_ARTICOLO = [
   { chiave: 'variation',           campo: 'isVariation',           it: 'Variazione ufficiale',     en: 'Official variation',
-    filtroIt: 'Variazioni ufficiali', filtroEn: 'Official variations',   // v6.514
+    filtroIt: 'Variazioni ufficiali', filtroEn: 'Official variations',
+    // 🆕 v6.794 - IL PLURALE MANCAVA A QUESTE DUE VOCI, e serve alle righe delle caselle
+    //    («questa serie ha...»): al singolare si leggono male, ed e' la correzione di Franco a
+    //    release scritta - *«hai lasciato i campi al singolare... mi riferisco ai flag... brutto
+    //    da leggere»*.
+    // 📌 LE PAROLE NON SONO INVENTATE: sono quelle che il FILTRO di questa stessa versione usa
+    //    gia' a schermo (`filtroIt`/`filtroEn`, qui sopra). Sceglierne di nuove avrebbe voluto
+    //    dire scrivere parole che Franco non ha mai visto (v6.754), per dire la stessa cosa.
+    pluraleIt: 'Variazioni ufficiali', pluraleEn: 'Official variations',   // v6.514
     badgeIt: 'Variazione<br>ufficiale', badgeEn: 'Official<br>variation',
     itBreve: 'Variazione', enBreve: 'Variation', livello: 'capo', partenza: ['base'],
     // 🆕 v6.314 - L'ID DELLA CASELLA NELLA SCHEDA. Non si ricava dal nome del campo
@@ -34889,6 +35693,7 @@ const VERSIONI_ARTICOLO = [
     // avrebbe dato errore.
     idForm: 'fe-is-variation',
     flagSerie: 'hasVariations',   // v6.655
+    idSpuntaSerie: 'series-has-variations-input',   // v6.788 - vedi il commento sopra la tabella
     // v6.284 - come si nomina questa versione dopo "Includi": articolo compreso, perche' le
     // cinque frasi non hanno lo stesso articolo e da `it` non ci si arriva.
     esportaIt: 'Variazioni ufficiali', esportaEn: 'official variations',
@@ -34898,11 +35703,14 @@ const VERSIONI_ARTICOLO = [
     colore: 'var(--type-official)',    badge: 'fig-badge-official',    marcatoreEbay: 'VARIAZIONE',
     iconaTab: '🎨' },
   { chiave: 'unofficialVariation', campo: 'isUnofficialVariation', it: 'Variazione non ufficiale', en: 'Unofficial variation',
-    filtroIt: 'Variazioni non ufficiali', filtroEn: 'Unofficial variations',   // v6.514
+    filtroIt: 'Variazioni non ufficiali', filtroEn: 'Unofficial variations',
+    pluraleIt: 'Variazioni non ufficiali', pluraleEn: 'Unofficial variations',   // v6.794
+   // v6.514
     badgeIt: 'Variazione<br>non ufficiale', badgeEn: 'Unofficial<br>variation',
     itBreve: 'Var. non ufficiale', enBreve: 'Unofficial var.', livello: 'capo', partenza: ['base'],
     idForm: 'fe-is-unofficial-variation',
     flagSerie: 'hasUnofficialVariations',   // v6.655
+    idSpuntaSerie: 'series-has-unofficial-variations-input',   // v6.788
     // v6.284 - come si nomina questa versione dopo "Includi": articolo compreso, perche' le
     // cinque frasi non hanno lo stesso articolo e da `it` non ci si arriva.
     esportaIt: 'Variazioni non ufficiali', esportaEn: 'unofficial variations',
@@ -34917,9 +35725,18 @@ const VERSIONI_ARTICOLO = [
     livello: 'figlio', partenza: ['base', 'variation', 'unofficialVariation'],
     campoTipo: 'changeType', opzioniTipo: '_opzioniTipoChange', idForm: 'fe-is-change',
     flagSerie: 'hasChange', flagSerieRetro: 'hasRetroChange',   // v6.655
+    idSpuntaSerie: 'series-has-change-input',                       // v6.788
+    idSpuntaSerieRetro: 'series-has-retro-change-input',            // v6.788
     // 🆕 v6.583 - DOVE la serie dichiara i tipi di questa versione. Terzo pezzo accanto a
     // `campoTipo` e `opzioniTipo`: chi deve sapere quali tipi esistono lo chiede all'elenco.
     listeTipo: ['frontChangeTypes', 'retroChangeTypes'],
+    // 🆕 v6.794 - GLI ID DEI DUE ELENCHI SCRITTI A MANO, DICHIARATI invece che dedotti dal
+    //    nome del campo. E' la mossa della v6.314 su `idForm`, e la sua ragione parola per
+    //    parola: la regola di trasformazione da `frontChangeTypes` a
+    //    `series-front-change-types-input` non esiste - ci si assomiglia, e basta un elenco
+    //    scritto diversamente perche' smetta di valere, in silenzio.
+    idListaSerie: 'series-front-change-types-input',
+    idListaSerieRetro: 'series-retro-change-types-input',
     // v6.266 - il PLURALE del titolo fisso del riquadro. Vedi la riga dell'omaggio.
     pluraleIt: 'Change', pluraleEn: 'Changes',
     // v6.267 - la coda della dicitura del raggruppamento, dettata da Franco. Vedi l'omaggio.
@@ -34978,14 +35795,27 @@ const VERSIONI_ARTICOLO = [
     livello: 'figlio', partenza: ['base', 'variation'],
     campoTipo: 'freeVersionType', opzioniTipo: '_opzioniTipoOmaggio', idForm: 'fe-is-free-version',
     flagSerie: 'hasFreeVersion', flagSerieRetro: 'hasRetroFreeVersion',   // v6.655
-    listeTipo: ['frontFreeVersionTypes', 'retroFreeVersionTypes'],   // v6.583
+    idSpuntaSerie: 'series-has-free-version-input',                 // v6.788
+    idSpuntaSerieRetro: 'series-has-retro-free-version-input',      // v6.788
+    listeTipo: ['frontFreeVersionTypes', 'retroFreeVersionTypes'],
+    idListaSerie: 'series-front-free-version-types-input',       // v6.794
+    idListaSerieRetro: 'series-retro-free-version-types-input',  // v6.794   // v6.583
     // 🆕 v6.266 - IL PLURALE, e non si deriva da `it`: il titolo fisso del riquadro dice
     // "Omaggi per tipo", e da "Omaggio" non si arriva a "Omaggi" senza inventare una regola di
     // grammatica italiana - che su "Errore di stampa" -> "Errori di stampa" sbaglierebbe subito.
     // Stessa ragione di `prefissoTipo` (v6.257): un'etichetta e un plurale sono due mestieri.
     // ⚠️ `pluraleEn: 'Free items'` e' l'unica parola NUOVA di questa release: "Frees" non esiste
     // e "Free by type" si legge come un prezzo. Da confermare guardandola.
-    pluraleIt: 'Omaggi', pluraleEn: 'Free items',
+    // 🔄 v6.795 (Franco: *«"omaggi" deve essere "versioni omaggio"»*, e poi *«cambia anche il
+    //    descrittore perche' e' cosi' ovunque»*) - IL PLURALE DIVENTA QUELLO CHE IL FILTRO USA GIA'.
+    // 📌 Le parole non sono scelte da me: `filtroIt` di questa stessa voce dice «Versioni
+    //    omaggio» e `filtroEn` dice «Free versions», ed erano gia' a schermo. Il descrittore ne
+    //    aveva due diverse per la stessa cosa - «Omaggi» da una parte, «Versioni omaggio»
+    //    dall'altra - e adesso ne ha una.
+    // ⚠️ CAMBIA IN TRE POSTI, NON SOLO SULLE CASELLE: le righe dei flag (v6.794), l'avviso
+    //    «il tipo X non e' piu' fra i tipi di ... di questa serie» e il titolo «... per tipo».
+    //    E' quello che lui ha chiesto: *e' cosi' ovunque*.
+    pluraleIt: 'Versioni omaggio', pluraleEn: 'Free versions',
     // 🆕 v6.267 - LA CODA DELLA DICITURA DEL RAGGRUPPAMENTO, e le tre code NON sono uniformi:
     // qui "TIPOLOGIA DI OMAGGIO", sull'errore di stampa "TIPOLOGIA ERRORE DI STAMPA" (senza DI),
     // sul change "TIPO DI CHANGE". Sono le parole di Franco, confermate chiedendo prima di
@@ -35035,6 +35865,21 @@ const VERSIONI_ARTICOLO = [
     esportaParolaIt: 'Omaggio', esportaParolaEn: 'free versions',
     colore: 'var(--type-free)',        badge: 'fig-badge-free',        marcatoreEbay: null,
     iconaTab: '🎁' },
+  // 🆕 v6.788 (Franco: «anche il retro puo' avere errori di stampa; infatti a Inventario ne
+  //    abbiamo») - QUESTA VOCE PORTA DA OGGI ANCHE `idSpuntaSerieRetro`, ed e' l'unica cella della
+  //    griglia che non aveva un interruttore: `hasRetroPrintError` non e' mai esistito, quindi al
+  //    livello 2 il retro rispondeva SI' agli errori di stampa su OGNI serie, senza che nessuno
+  //    l'avesse deciso. La v6.219 lo diceva gia' - «non e' mai stato misurato se ce ne siano fra i
+  //    RETRO» - e Franco ha misurato: ce ne sono.
+  // 🔴 E NON NASCE UN CAMPO STORICO: la casella scrive in `s.perTDA.retros`, come tutte le altre
+  //    sette da questa release. Il ripiego per le serie non ancora risalvate risponde SI', che e'
+  //    cio' che il sito faceva ieri (vedi `_ripiegoStorico`), quindi non cambia niente finche'
+  //    Franco non tocca la casella.
+  // ⚠️ IL COMMENTO STA QUI FUORI E NON DENTRO LA VOCE, e non e' un gusto: `prova-v6402` estrae i
+  //    colori con una finestra di 3000 caratteri fra `chiave:` e `colore:`, e scritto dentro
+  //    questa voce la sfondava - la suite trovava tre versioni invece di quattro e diventava
+  //    rossa senza che nessun colore fosse cambiato. E' il posto dove stanno gia' i commenti
+  //    lunghi dell'omaggio, per la stessa ragione.
   { chiave: 'printError',          campo: 'isPrintError',          it: 'Errore di stampa',         en: 'Print error',
     filtroIt: 'Errori di stampa', filtroEn: 'Print errors',   // v6.514
     badgeIt: 'Errore<br>di stampa', badgeEn: 'Print<br>error',
@@ -35050,7 +35895,11 @@ const VERSIONI_ARTICOLO = [
     // la forma di bugia piu' difficile da smentire - suona come una ragione.
     campoTipo: 'printErrorType', opzioniTipo: '_opzioniTipoErrore', idForm: 'fe-is-printerror',
     flagSerie: 'hasPrintError',   // v6.655
-    listeTipo: ['frontPrintErrorTypes', 'retroPrintErrorTypes'],   // v6.583
+    idSpuntaSerie: 'series-has-print-error-input',                  // v6.788
+    idSpuntaSerieRetro: 'series-has-retro-print-error-input',       // v6.788
+    listeTipo: ['frontPrintErrorTypes', 'retroPrintErrorTypes'],
+    idListaSerie: 'series-front-print-error-types-input',        // v6.794
+    idListaSerieRetro: 'series-retro-print-error-types-input',   // v6.794   // v6.583
     // 🆕 v6.520 - il riquadro degli errori di stampa porta un cappello: le due pillole del
     // LATO. È l'unico che ce l'ha, ed è per questo che si dichiara qui invece che nel
     // pannello (stessa scelta di `pieHTML`, v6.333).
@@ -35103,14 +35952,284 @@ function _qualcheVersioneAmmessa(serie, sezione) {
   return VERSIONI_ARTICOLO.some(v => _versioneAmmessa(v.chiave, finto, serie));
 }
 
+// 🔄 v6.784 - E PRIMA DI TUTTO SI CHIEDE ALLA TIPOLOGIA. Franco: «una colonna per TDA».
+// 🔴 L'ORDINE DELLE TRE DOMANDE E' LA FUNZIONE: (1) cio' che l'articolo GIA' E' si vede
+//    sempre - la rete della v6.655, che qui vale piu' che mai perche' questa release puo' togliere
+//    caselle; (2) se la SEZIONE ha dichiarato questa versione, comanda lei; (3) altrimenti valgono
+//    le spunte di sempre. Invertire (1) e (2) vorrebbe dire nascondere il comando di un change che
+//    esiste, e il primo salvataggio lo riporterebbe a base senza che nessuno l'abbia chiesto.
+// ⚠️ SI GUARDA `hasOwnProperty` E NON IL VALORE: `false` dichiarato vuol dire «no», ed e' diverso
+//    da «non dichiarato». Leggendo `!!dich[chiave]` le due cose collasserebbero e una sezione che
+//    dichiara «niente change» sarebbe indistinguibile da una che non ha detto niente - cioe' la
+//    dichiarazione esplicita non servirebbe a niente.
+// 📌 E LA MAPPA NON E' INTERROGATA PER I RETRO: loro hanno gia' il loro asse
+//    (`flagSerieRetro`), che e' la stessa cosa detta prima e meglio. Una sezione «retros» dentro
+//    `perTDA` sarebbe una seconda verita' sulla stessa domanda.
+// 🔄 v6.787 - LE DUE DOMANDE, IN ORDINE, E L'EREDITA' SPARISCE.
+// 🔴 L'ORDINE E' LA FUNZIONE:
+//    1. cio' che l'articolo GIA' E' si vede sempre (la rete della v6.655). Sta per prima perche'
+//       questa release TOGLIE caselle: nascondere il comando di un change che esiste lo
+//       lascerebbe senza governo, e il primo salvataggio potrebbe riportarlo a base.
+//    2. LIVELLO 1 - l'incrocio esiste per questa tipologia? Se no, non esiste: nessuna casella,
+//       nessun campo, niente. E' la parola di Franco, «piu' che non ammessi, non esistenti».
+//    3. LIVELLO 2 - questa serie ce l'ha? I retro e le figurine rispondono con le spunte di
+//       sempre; le altre tipologie con `s.perTDA`.
+// 📌 PERCHE' `figurines` E `retros` TENGONO LE SETTE SPUNTE invece di passare alla mappa:
+//    quei campi si chiamano `hasChange` / `hasRetroChange` e dalla v6.785 le loro etichette dicono
+//    «di figurine» e «di retro» - sono gia' la riga della griglia di quelle due tipologie, con un
+//    nome storico. Migrarli vorrebbe dire riscrivere sedici serie su Firestore per un guadagno di
+//    sola forma, e il rischio di quella riscrittura e' piu' grande del disordine che toglie.
+// 🔴 E QUI MUORE L'EREDITA', che e' il punto di tutta la richiesta: prima `flagSerie`
+//    valeva per OGNI sezione non-retro, quindi «Ha errori di stampa di figurine» governava anche
+//    spille, carte e bustine - l'etichetta diceva il falso. Adesso vale per le sole figurine.
+// ⚠️ CONSEGUENZA DA SAPERE, ed e' l'unica: una tipologia diversa da figurine e retro, finche' la
+//    sua serie non dichiara niente, risponde NO. Oggi rispondeva SI' per eredita'. Nei dati questo
+//    tocca un caso solo - l'errore di stampa delle SPILLE, che ne ha sette: quei sette restano
+//    visibili e modificabili (la rete), e per farne un ottavo basta una spunta nella scheda della
+//    serie. La form nasce con la casella GIA' spuntata sul valore di prima, quindi aprire e
+//    salvare la serie Spille rimette tutto a posto senza scelte da fare.
+// 🔄 v6.788 (Franco: «sai che mi piacciono le cose fatte bene») - UNA STRADA SOLA PER TUTTE E
+//    UNDICI LE TIPOLOGIE. La v6.787 ne aveva due: `figurines` e `retros` rispondevano con le sette
+//    spunte storiche, le altre nove con `s.perTDA`. Funzionava, e non era una cosa sola: il modello
+//    diceva «una riga per tipologia» e il documento della serie ne teneva due su undici in cima,
+//    con nomi propri. Da qui in avanti la domanda «questa serie ha questa versione?» ha UN posto
+//    dove si risponde, per tutte.
+// 🔴 IL RIPIEGO NON E' UNA SECONDA VERITA', ed e' la riga su cui sta in piedi la release: i
+//    campi storici non si scrivono piu' (vedi `saveSeries`). Si LEGGONO, e solo per le serie
+//    salvate prima di oggi, che `perTDA` non ce l'hanno. Un campo che si scrive e si legge e' una
+//    verita'; un campo che si legge soltanto, per documenti scritti prima, e' STORIA - e la storia
+//    non diverge. Il giorno che ogni serie e' stata risalvata, il ripiego e i campi se ne vanno
+//    insieme, e si vede da fuori: `perTDA` presente su tutte.
+// ⚠️ E IL RIPIEGO VA GUARDATO CON `hasOwnProperty`, non col valore: `false` dichiarato vuol dire
+//    «no», ed e' diverso da «non dichiarato». Leggendo `!!dich[chiave]` le due cose
+//    collasserebbero, e una serie che spegne una casella tornerebbe a leggere il campo storico -
+//    cioe' la casella non si potrebbe spegnere. E' lo stesso avvertimento della v6.784, che qui
+//    vale per DUE tipologie in piu'.
+function _dichiarazionePerTDA(serie, sez, chiave) {
+  const dich = serie && serie.perTDA && serie.perTDA[sez] && serie.perTDA[sez].versioni;
+  if (dich && Object.prototype.hasOwnProperty.call(dich, chiave)) return !!dich[chiave];
+  return null;   // null = «questa serie non ha detto niente», diverso da `false`
+}
+
+// Il ripiego per le serie salvate prima della v6.788. Dice ESATTAMENTE cio' che il sito faceva
+// ieri, riga per riga - non «qualcosa di simile»:
+//   · `retros`    -> il flag di retro se esiste; se non esiste (errore di stampa) rispondeva SI';
+//   · `figurines` -> il flag di figurina se esiste; se non esiste rispondeva SI';
+//   · le altre nove -> NO, che e' la fine dell'eredita' decisa dalla v6.787.
+function _ripiegoStorico(serie, sez, v) {
+  if (sez === 'retros')    return !v.flagSerieRetro || !!(serie && serie[v.flagSerieRetro]);
+  if (sez === 'figurines') return !v.flagSerie      || !!(serie && serie[v.flagSerie]);
+  return false;
+}
+
+// 🔴 L'ORDINE DELLE TRE DOMANDE E' LA FUNZIONE, e non cambia dalla v6.787:
+//    1. cio' che l'articolo GIA' E' si vede sempre (la rete della v6.655);
+//    2. LIVELLO 1 - l'incrocio esiste per questa tipologia? Se no, non esiste;
+//    3. LIVELLO 2 - questa serie ce l'ha? Adesso una domanda sola, `s.perTDA`, col ripiego.
 function _versioneAmmessa(chiave, f, serie) {
   const v = VERSIONI_ARTICOLO.find(x => x.chiave === chiave);
   if (!v) return true;                       // una versione sconosciuta non si nasconde
   if (f && v.campo && f[v.campo]) return true;   // la rete
-  const retro = !!(f && f.section === 'retros');
-  const nome = (retro && v.flagSerieRetro) ? v.flagSerieRetro : v.flagSerie;
-  if (!nome) return true;                    // versione senza spunta dichiarata: ammessa
-  return !!(serie && serie[nome]);
+  const sez = (f && f.section) || 'figurines';
+  if (!_versioneEsistePerTDA(chiave, sez)) return false;   // livello 1: non esiste
+  const detta = _dichiarazionePerTDA(serie, sez, chiave);  // livello 2
+  return detta === null ? _ripiegoStorico(serie, sez, v) : detta;
+}
+
+// 🔄 v6.787 - L'ELENCO A MANO SPARISCE, E SI RICAVA. La v6.784 aveva scritto qui
+//    `['bustine', 'albums']` perche' Franco aveva detto «per ora mi limiterei a quelle due». Dalla
+//    v6.787 la griglia c'e' (`VERSIONI_PER_TDA`), quindi la domanda ha una fonte: hanno un blocco
+//    proprio le tipologie che hanno ALMENO UNA versione.
+// 📌 FIGURINE E RETRO RESTANO FUORI DA QUESTO ELENCO, e non perche' non abbiano versioni -
+//    ne hanno piu' di tutte. Hanno gia' i loro blocchi scritti a mano nell'index, con conteggi,
+//    avvertimenti e la divisione fronte/retro che non si ricava da nessun elenco. Riscriverli non
+//    era la richiesta, e riscriverli «gia' che c'ero» e' il modo in cui una release ne rompe una
+//    vecchia. La riorganizzazione della form in sezioni per tipologia e' la release dopo.
+// ⚠️ E' UNA FUNZIONE E NON UNA COSTANTE: `ARTICOLI_ORDINE_DICHIARATO` e `VERSIONI_PER_TDA` sono
+//    dichiarate piu' sotto in questo file, e una costante calcolata qui girerebbe nella zona morta.
+// 🔄 v6.788 - ADESSO LE COMPRENDE TUTTE, figurine e retro inclusi: e' l'elenco delle tipologie
+//    che DICHIARANO in `s.perTDA`, cioe' il modello. La v6.787 ne escludeva due, e quella
+//    esclusione era l'asimmetria.
+function _TDA_CON_VERSIONI() {
+  return ARTICOLI_ORDINE_DICHIARATO.filter(k => _versioniDellaTDA(k).length > 0);
+}
+
+// 🆕 v6.788 - E QUESTE SONO LE TIPOLOGIE DI CUI LA FORM DISEGNA IL BLOCCO DA SE'.
+// 🔴 E' UNA DOMANDA DIVERSA DALLA PRECEDENTE, e tenerle separate e' il punto: `figurines` e
+//    `retros` DICHIARANO come tutte (sopra) ma non si disegnano qui, perche' i loro blocchi sono
+//    HTML scritto a mano nell'index, con conteggi, avvertimenti e la divisione fronte/retro che
+//    non si ricava da nessun elenco. Prima della v6.788 le due domande erano una funzione sola, e
+//    percio' «non si disegna» voleva dire anche «non dichiara».
+// 📌 La riorganizzazione della form in sezioni per tipologia e' la release dopo: quel giorno
+//    questa funzione sparisce, e resta solo quella di sopra.
+function _TDA_DISEGNATE_NELLA_FORM() {
+  return _TDA_CON_VERSIONI().filter(k => k !== 'figurines' && k !== 'retros');
+}
+
+// 🆕 v6.788 - L'ID DELLA CASELLA CHE GOVERNA QUESTA VERSIONE PER QUESTA TIPOLOGIA.
+// Per le nove tipologie disegnate e' l'id generato (`series-tda-...`); per figurine e retro e'
+// quello dichiarato nel descrittore, cioe' la casella scritta a mano che c'e' da sempre.
+// ⚠️ Se torna null la casella NON esiste, e chi legge deve lasciar perdere quella versione invece
+//    di scrivere `false`: e' la regola di sopra `spunta()` - cio' che la form non ripristina, il
+//    salvataggio lo azzera. `prova-v6788` conta che per ogni cella della griglia di figurine e
+//    retro l'id dichiarato esista davvero dentro `index.html`.
+function _idSpuntaVersione(tda, v) {
+  if (tda === 'figurines') return v.idSpuntaSerie || null;
+  // ⚠️ NESSUN RIPIEGO SULL'ID DI FIGURINA: sarebbe la casella sbagliata, e leggerebbe in
+  //    silenzio il valore delle figurine spacciandolo per quello dei retro. Meglio null.
+  if (tda === 'retros')    return v.idSpuntaSerieRetro || null;
+  return _idTDAVersione(tda, v.chiave);
+}
+
+// 🆕 v6.784 - I DUE BLOCCHI DELLA FORM, DISEGNATI DA DUE ELENCHI CHE VIVONO ALTROVE.
+// 🔴 NON C'E' NESSUN NOME DI VERSIONE SCRITTO QUI: le cinque righe vengono da
+//    `_VERSIONI_VIVE` e le liste dei tipi da `v.listeTipo`, lo stesso descrittore che governa
+//    badge, filtri, pillole ed export. Scrivere «Ha change» a mano avrebbe creato la sesta copia
+//    di un elenco che il progetto ha gia' pagato cinque volte per unificare.
+// 🔴 E LE SPUNTE NASCONO COL VALORE CHE QUELLA TIPOLOGIA HA DI FATTO OGGI, non spente:
+//    e' la regola scritta a caratteri cubitali sopra `spunta()` (v6.219, v6.235, v6.480) - «cio'
+//    che la form non ripristina, il salvataggio lo azzera». Qui il pericolo e' anche piu' grosso,
+//    perche' il valore «di fatto» non sta in un campo: si CALCOLA, ed e' l'ereditarieta' dalle
+//    spunte delle figurine. Aprendo e salvando una serie senza toccare niente, quindi, non cambia
+//    niente: la prima scrittura fotografa il comportamento di oggi e da li' in poi e' esplicito.
+// 📌 IL CONTEGGIO E' UN NUMERO, NON UNA CASELLA: nei blocchi di sopra e' un `<input>` in
+//    sola lettura, qui sono cinque righe per tipologia e cinque caselle grigie sarebbero cinque
+//    comandi finti. Dice la stessa cosa - quanti ce ne sono davvero nell'Inventario.
+// ⚠️ SI COMPILA SOLO LA LISTA FRONTALE (`v.listeTipo[0]`), parole di Franco: «per bustine ed album
+//    le modifiche influenzano solo il fronte». La lista di retro esiste nella mappa e resta vuota,
+//    cosi' il giorno che una bustina avra' una differenza sul dietro ha gia' il suo posto.
+function _idTDAVersione(tda, chiave) { return 'series-tda-' + tda + '-' + chiave; }
+function _idTDALista(tda, campo)     { return 'series-tda-' + tda + '-lista-' + campo; }
+
+function _rendiTDAVersioni(s) {
+  const box = document.getElementById('series-tda-versioni');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const figs = getData('figurines', []);
+  box.innerHTML = _TDA_DISEGNATE_NELLA_FORM().map(tda => {
+    const dich = s && s.perTDA && s.perTDA[tda];
+    // 🔄 v6.787 - SOLO LE VERSIONI CHE ESISTONO per questa tipologia (livello 1). Le altre
+    //    non sono caselle spente: non si disegnano.
+    const righe = _VERSIONI_VIVE.filter(v => _versioneEsistePerTDA(v.chiave, tda)).map(v => {
+      // 🔴 v6.787 - IL VALORE DI PARTENZA E' QUELLO CHE QUELLA TIPOLOGIA AVEVA PRIMA, cioe'
+      //    la spunta delle figurine da cui ereditava. NON si chiama `_versioneAmmessa`: da questa
+      //    release quella risponde NO a chi non ha dichiarato, quindi la casella nascerebbe spenta
+      //    e il primo salvataggio scriverebbe quel NO - che e' esattamente il guasto della v6.169
+      //    («cio' che la form non ripristina, il salvataggio lo azzera»), stavolta su un campo che
+      //    non esisteva ieri. Aprendo e salvando una serie, cosi', non cambia niente.
+      const acceso = (dich && dich.versioni
+                      && Object.prototype.hasOwnProperty.call(dich.versioni, v.chiave))
+        ? !!dich.versioni[v.chiave]
+        : !!(v.flagSerie && s && s[v.flagSerie]);
+      const quanti = s ? figs.filter(f => f.seriesId === s.id
+        && (f.section || 'figurines') === tda && f[v.campo]).length : 0;
+      return '<label class="form-label" style="display:flex;align-items:center;gap:0.5rem;'
+        + 'cursor:pointer;font-size:0.88rem;margin:0.15rem 0;">'
+        + '<input type="checkbox" id="' + _idTDAVersione(tda, v.chiave) + '"'
+        + (acceso ? ' checked' : '')
+        // 🆕 v6.794 - LE CASELLE GENERATE NON AVVISAVANO NESSUNO. Le otto scritte a mano
+        //    chiamano `toggleSeriesCountGroups` da sempre; queste no, perche' finora non
+        //    comandavano niente. Adesso comandano la sola lettura del loro elenco, e senza
+        //    questa riga l'elenco di una bustina resterebbe scrivibile fino alla riapertura
+        //    della scheda - cioe' funzionerebbe per le due tipologie scritte a mano e non per
+        //    le altre nove, che e' il modo in cui una regola nasce gia' meta' applicata.
+        + ' onchange="toggleSeriesCountGroups()"'
+        + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">'
+        // 🔄 v6.794 - al PLURALE come le otto scritte a mano: sono la stessa riga, e due
+        //    meta' della stessa schermata che declinano diversamente sono la solita coppia
+        //    che diverge - il difetto che questa release e' venuta a togliere.
+        + '<span style="color:' + v.colore + ';">' + esc(it ? (v.pluraleIt || v.it) : (v.pluraleEn || v.en)) + '</span>'
+        + (quanti ? '<span style="color:var(--muted);font-size:0.8rem;">(' + nfmt(quanti) + ')</span>' : '')
+        + '</label>';
+    }).join('');
+    const liste = _VERSIONI_VIVE.filter(v => v.listeTipo && _versioneEsistePerTDA(v.chiave, tda)).map(v => {
+      const campo = v.listeTipo[0];
+      const val = (dich && Array.isArray(dich[campo])) ? dich[campo] : [];
+      return '<div class="form-group" style="margin-top:0.5rem;">'
+        + '<label class="form-label" style="font-size:0.8rem;">'
+        + esc((it ? 'Tipi di ' : 'Types of ') + (it ? v.it : v.en).toLowerCase())
+        + esc(it ? ' (uno per riga)' : ' (one per line)') + '</label>'
+        + '<textarea class="form-input" id="' + _idTDALista(tda, campo) + '" rows="3"'
+        + ' style="resize:vertical;font-family:inherit;">' + esc(val.join('\n')) + '</textarea>'
+        + '</div>';
+    }).join('');
+    // 🆕 v6.795 - OGNI BLOCCO IN UN CONTENITORE CON LA SUA CHIAVE, cosi' si puo' nascondere
+    //    quando la serie non ha quella tipologia. Franco: *«nel tab Versioni non base non ci deve
+    //    essere nulla legato alle TDA non ammesse; invece io vedo il nome sezione e il flag
+    //    relativo agli errori di stampa»* - nella Serie 1 comparivano Figurine, Carte, Spille,
+    //    Tatuaggi e Trasferelli, che quella serie non ha.
+    return '<div class="tda-blocco" data-tda="' + esc(tda) + '">'
+      + '<div class="series-sottotitolo" style="margin-top:1rem;">' + esc(getSectionLabel(tda)) + '</div>'
+      + '<div class="form-hint" style="margin-bottom:0.35rem;">'
+      + esc(it ? 'Le versioni che questa serie ha in questa tipologia, e i tipi che la tendina offre. Solo il FRONTE.'
+               : 'The versions this series has in this item type, and the types its dropdown offers. Front only.')
+      + '</div>' + righe + liste
+      + '</div>';
+  }).join('');
+  _mostraTDAAmmesse();   // 🆕 v6.795 - appena disegnate, si nasconde quello che la serie non ha
+}
+
+// 🆕 v6.795 (Franco) - NEL TAB DELLE VERSIONI NON C'È NIENTE DELLE TIPOLOGIE CHE LA SERIE NON HA.
+// 🔴 Si guarda le CASELLE, non il record salvato: le tipologie si spuntano nell'altro tab della
+//    stessa finestra, e fra lo spuntare e il salvare c'è tutto il tempo di andare a guardare
+//    questo. Leggendo il record, una tipologia appena tolta resterebbe lì fino al salvataggio -
+//    cioè proprio nel momento in cui la si sta guardando per decidere.
+// ⚠️ SI NASCONDE, NON SI CANCELLA, ed è la stessa ragione degli elenchi (v6.794): le caselle
+//    restano nel DOM e il salvataggio continua a leggerle. `_leggiPerTDA` scrive `perTDA` per tutte
+//    le tipologie che hanno versioni, non solo per quelle ammesse - è quello che fa da sempre, e
+//    toglierle dal DOM le azzererebbe (v6.169) su una serie a cui un domani quella tipologia
+//    tornasse.
+// 📌 E se le caselle non ci sono ancora (la form si sta aprendo), non si nasconde niente: meglio
+//    mostrare tutto per un istante che nascondere tutto per sempre.
+function _mostraTDAAmmesse() {
+  const box = document.getElementById('series-tda-versioni');
+  if (!box) return;
+  const caselle = _caselleTipologie();
+  if (!caselle.length) return;
+  const ammesse = new Set(_leggiTipologieAmmesse());
+  box.querySelectorAll('.tda-blocco').forEach(b => {
+    b.style.display = ammesse.has(b.dataset.tda) ? '' : 'none';
+  });
+}
+
+// 🔴 v6.784 - SI PARTE DA CIO' CHE C'ERA (`precedente`), e non e' prudenza generica: la
+//    form disegna DUE tipologie e la mappa puo' contenerne altre, piu' le liste «di retro» che
+//    qui non si mostrano. Ricostruirla da zero da cio' che e' a schermo cancellerebbe tutto il
+//    resto in silenzio, al primo salvataggio di una serie - lo stesso guasto della v6.169, che in
+//    questo file e' citato tre volte come avvertimento.
+// 🔄 v6.788 - SCRIVE ANCHE `figurines` E `retros`, leggendo le caselle scritte a mano.
+// 🔴 LE LISTE DEI TIPI NON SI TOCCANO, ed e' una scelta e non una dimenticanza: per figurine e
+//    retro vivono ancora nei sei campi in cima al documento (`frontChangeTypes`, `retroChangeTypes`,
+//    ...), e li' restano. Il loro lettore e' gia' uno solo dalla v6.784 (`_campoTipiSerie`, che
+//    guarda `perTDA` e poi ripiega), quindi in LETTURA sono gia' unificate. Spostarle vuol dire
+//    un'altra cosa: quelle due liste non sono «la lista delle figurine» e «la lista dei retro» -
+//    sono le due FACCE di un change di figurina (v6.102, «un change di questi tipi ha un retro
+//    tutto suo»), e i retro leggono le stesse. Trattarle come se fossero per-sezione le
+//    spezzerebbe in due elenchi che oggi sono uno, e non era la richiesta. E' una release sua.
+function _leggiTDAVersioni(precedente) {
+  const out = { ...(precedente || {}) };
+  _TDA_CON_VERSIONI().forEach(tda => {
+    const blocco = { ...(out[tda] || {}) };
+    const versioni = { ...(blocco.versioni || {}) };
+    _VERSIONI_VIVE.filter(v => _versioneEsistePerTDA(v.chiave, tda)).forEach(v => {
+      const id = _idSpuntaVersione(tda, v);
+      const el = id && document.getElementById(id);
+      // ⚠️ Casella assente = non si scrive NIENTE su quella chiave. Scrivere `false` sarebbe
+      //    il guasto della v6.169 su un campo nato ieri: la form non l'ha ripristinata, quindi
+      //    il salvataggio non la puo' azzerare.
+      if (el) versioni[v.chiave] = !!el.checked;
+    });
+    blocco.versioni = versioni;
+    if (tda !== 'figurines' && tda !== 'retros') {
+      _VERSIONI_VIVE.filter(v => v.listeTipo && _versioneEsistePerTDA(v.chiave, tda)).forEach(v => {
+        const campo = v.listeTipo[0];
+        const el = document.getElementById(_idTDALista(tda, campo));
+        if (el) blocco[campo] = el.value.split('\n').map(x => x.trim()).filter(Boolean);
+      });
+    }
+    out[tda] = blocco;
+  });
+  return out;
 }
 
 // 🆕 v6.266 - LE VERSIONI CHE HANNO UN TIPO, e che quindi si possono raggruppare nei risultati.
@@ -35302,11 +36421,15 @@ const _partenzeDi = chiave => (_versioneDiChiave(chiave)?.partenza) || [];
 // funzionare il giorno che qualcuno le riscrive come `const`, e senza dare errore qui: darebbe una
 // pagina bianca al caricamento (v6.117/140/151/195). Col nome, il legame si risolve quando serve.
 const _FUNZIONI_OPZIONI_TIPO = {
-  _opzioniTipoChange:  (seriesId, sel) => _opzioniTipoChange(seriesId, sel),
-  // v6.253 - l'omaggio riceve anche la SEZIONE. ⚠️ Il change no, di proposito: li' i due elenchi
+  _opzioniTipoChange:  (seriesId, sel, sezione) => _opzioniTipoChange(seriesId, sel, sezione),   // v6.784
+  // v6.253 - l'omaggio riceve anche la SEZIONE.
+  // 🗑️ v6.791 - QUI STAVA «Il change no, di proposito», e la ragione era: *«i due elenchi
   // distinguono i change che hanno un retro PROPRIO da quelli che usano il retro della base
-  // (v6.102) — una distinzione che NON coincide con la sezione. Restringerli "per simmetria"
-  // toglierebbe scelte legittime, e non e' stato chiesto.
+  // (v6.102) - una distinzione che NON coincide con la sezione»*. Era vera finche' un change di
+  // figurina poteva essere «di retro». Franco ha chiarito che non lo e' - quel lato lo racconta il
+  // retro - quindi la distinzione COINCIDE con la sezione, e il change si restringe come gli altri.
+  // ⚠️ La riga era rimasta a dire il contrario di cio' che il codice fa gia': un commento che
+  // mente e' peggio di uno che manca, perche' chi lo legge smette di guardare.
   _opzioniTipoOmaggio: (seriesId, sel, sezione) => _opzioniTipoOmaggio(seriesId, sel, sezione),
   // 🆕 v6.350 - l'errore di stampa entra qui, e riceve la sezione come l'omaggio: le sue due liste
   // distinguono fronte e retro, quindi offrire quelle frontali su un retro sarebbe proporre valori
@@ -36602,9 +37725,11 @@ async function _caricaFotoBox(ev) {
 // nascondere dall'hub il box Album").
 // La domanda vive in un posto solo, come `_serieSenzaRetro` (v6.098) che ha la stessa forma: e'
 // una proprieta' della SERIE, e chi la legge non deve sapere come si chiama il campo.
+// 🔄 v6.789 - PASSO 3 DELLA v6.216, FATTO CON DUE ANNI DI RITARDO SU SE STESSO: questa funzione
+// leggeva ancora `noAlbums`, il campo che la v6.216 aveva promesso di ritirare («queste due righe
+// spariscono al passo 3, e i campi al passo 4»). Adesso chiede a chi risponde per tutte.
 function _serieSenzaAlbum(seriesId) {
-  const s = getData('series', []).find(x => x.id === seriesId);
-  return !!(s && s.noAlbums);
+  return !_tipologiaAmmessa('albums', seriesId);
 }
 
 // La card di una sezione dentro l'hub. Estratta perche' ora la cercano in DUE: la foto (v6.145) e
@@ -36712,19 +37837,46 @@ function _cardSezione(sel, sec) {
 // \uD83D\uDCCC Franco aveva scartato il ripiego-in-lettura che avevo proposto - *"non mi piace molto...
 // cosi' si che e' pulito: no campi che sono superflui"* - e la sequenza espandi/migra/sposta/contrai
 // e' effettivamente piu' pulita: alla fine non resta niente di morto.
-function _articoliNascosti(seriesId) {
-  const s = getData('series', []).find(x => x.id === seriesId);
+// 🔄 v6.789 (Franco: «a me non sono mai piaciuti quei flag a logica negativa; le TDA sono
+//    moltissime e parecchie serie ne hanno solo poche. Flag acceso significa che la TDA e'
+//    ammessa») - IL VERSO SI GIRA, E LA DOMANDA DIVENTA QUELLA CHE SI FA DAVVERO.
+// 🔴 PERCHE' IL VERSO NEGATIVO ERA COSTOSO, ed e' misurato, non un gusto: le tipologie sono
+//    DODICI e una serie ne usa da una a cinque. Per dire «questa serie ha figurine e retro»
+//    bisognava spuntare le altre dieci. La v6.696 aveva gia' pagato questo prezzo con un
+//    rimedio - «alla creazione della prossima serie accendili tutti» - che esisteva SOLO per non
+//    far spuntare sette caselle su dodici a ogni serie nuova. Girato il verso, quel rimedio non
+//    serve piu' e se ne va con questa release.
+// 📌 E il campo gemello era gia' positivo: `articoliCompletezza` (v6.716) dice «quali tipologie
+//    FANNO la serie» e nasce vuoto. Due campi affiancati a schermo (v6.749) che dicevano la stessa
+//    cosa in due versi opposti erano meta' della confusione: adesso si leggono allo stesso modo.
+// ⚠️ IL RIPIEGO E' UNA CATENA, E VIVE QUI DENTRO E BASTA. Una serie salvata prima di oggi non ha
+//    `tipologieAmmesse`: si ricava da `articoliNascosti` (tutte meno quelle), e se manca anche
+//    quello dai due flag della v6.216. 🔴 E' l'unico posto del sito che nomina ancora i campi
+//    vecchi: muore quando lo script di migrazione ha scritto le sedici serie, e si vede da fuori
+//    che e' morto - `tipologieAmmesse` presente su tutte.
+// 📌 «Espandi, migra, sposta i lettori, contrai»: e' la sequenza che Franco aveva scelto per la
+//    v6.216 («non mi piace molto il ripiego in lettura... cosi' si che e' pulito: no campi che
+//    sono superflui»). Questa release fa espandi + sposta; lo script fa migra; contrai e' una riga.
+function _tipologieAmmesseDaRecord(s) {
   if (!s) return [];
-  if (Array.isArray(s.articoliNascosti)) return s.articoliNascosti;
-  // ⚠️ Finche' il passo 2 non e' stato lanciato, la verita' sta ancora nei due flag: qui si
-  // ricostruisce l'elenco da loro, cosi' le caselle si aprono gia' giuste. Questa ricostruzione
-  // sparisce al passo 3, quando i dati saranno migrati.
-  const da = [];
-  if (s.noAlbums) da.push('albums');
-  if (s.noRetro)  da.push('retros');
-  return da;
+  if (Array.isArray(s.tipologieAmmesse)) return s.tipologieAmmesse;
+  const tutte = ARTICOLI_ORDINE_DICHIARATO;
+  if (Array.isArray(s.articoliNascosti)) return tutte.filter(k => !s.articoliNascosti.includes(k));
+  const nascosti = [];
+  if (s.noAlbums) nascosti.push('albums');
+  if (s.noRetro)  nascosti.push('retros');
+  return tutte.filter(k => !nascosti.includes(k));
 }
-function _articoloNascosto(sez, seriesId) { return _articoliNascosti(seriesId).includes(sez); }
+// 🔴 SERIE NON TROVATA = TUTTE AMMESSE, e questa riga e' l'unica del giro in cui girare il verso
+//    per bellezza avrebbe cambiato cosa si vede. Il lettore vecchio rispondeva «nessuna nascosta»
+//    e quindi mostrava tutti i box; rispondere «nessuna ammessa» li nasconderebbe tutti - una
+//    pagina vuota al posto di una piena, per una serie che non c'e'. Il verso cambia, il
+//    comportamento no: e' la regola di tutta questa notte.
+function _tipologieAmmesse(seriesId) {
+  const s = getData('series', []).find(x => x.id === seriesId);
+  return s ? _tipologieAmmesseDaRecord(s) : ARTICOLI_ORDINE_DICHIARATO;
+}
+function _tipologiaAmmessa(sez, seriesId) { return _tipologieAmmesse(seriesId).includes(sez); }
 
 // 🆕 v6.283 - I SETTE BOX DELLA PAGINA SERIE, RIMESSI IN FILA. Sono markup fisso di
 // `index.html` (dentro ci stanno le loro foto in base64), quindi non si rigenerano: si spostano.
@@ -36770,7 +37922,7 @@ function _applicaSezioniNascoste() {
   const sel = document.getElementById('section-selector');
   if (!sel || !currentSeriesId) return;
   // v6.216 - si guardano TUTTI gli articoli, non piu' solo quelli di una tabella a parte.
-  const nascosti = _articoliNascosti(currentSeriesId);
+  const ammesse = _tipologieAmmesse(currentSeriesId);
   PRODOTTI_INVENTARIO.forEach(sez => {
     const card = _cardSezione(sel, sez);
     if (!card) {
@@ -36778,7 +37930,7 @@ function _applicaSezioniNascoste() {
       console.warn('v6.216 _applicaSezioniNascoste: card', sez, 'non trovata nel selettore.');
       return;
     }
-    card.style.display = (nascosti.includes(sez) || _sezioneCoperta(sez)) ? 'none' : '';
+    card.style.display = (!ammesse.includes(sez) || _sezioneCoperta(sez)) ? 'none' : '';   // v6.789
   });
 }
 
@@ -37521,8 +38673,16 @@ function _matchRicerca(testo, qn) {
 // 📌 L'etichetta e' nella lingua corrente, quindi si cerca nella lingua che si sta leggendo — che e'
 // l'unica cosa che chi cerca puo' aspettarsi.
 function _campiRicercaFigurina(f) {
+  // 🔄 v6.792 - il tipo di change entra DEDOTTO. 🔴 Se restasse `f.changeType` nudo, la
+  //    ricerca funzionerebbe **per sbaglio**: trova quelle 114 figurine solo finché la copia è
+  //    ancora scritta addosso, e smette il giorno che la form la ripulisce. Cercare «mosca nera»
+  //    deve trovare le figurine perché il loro retro è una mosca nera, non perché qualcuno
+  //    gliel'aveva copiato.
   const campi = [f.name, f.subseries, f.desc, f.category, f.subcategory, f.subname, f.fullName,
-                 f.changeType, f.printErrorType, f.freeVersionType,   // v6.247
+                 (f.isChange ? _tipoChange(f) : f.changeType),        // v6.792
+                 f.printErrorType,
+                 (f.isFreeVersion ? _tipoOmaggio(f) : f.freeVersionType),   // 🔄 v6.795
+                 // v6.247
                  _etichettaTipo(f, false)];                           // v6.247 - la Versione
   if (currentUser?.isAdmin) campi.push(f.note);
   return campi;
@@ -39278,19 +40438,49 @@ function tipoDiOggetto(f) {
 // NOTA SU "ORFANO", perche' cambia come lo si legge: `SCRITTA BIANCA` non mancava alla lista per
 // distrazione. Non e' un tipo di retro, e la lista di retro era l'unica che esistesse. Non mancava
 // un valore: mancava la lista giusta.
-function frontChangeTypesDiSerie(seriesId) {
+// 🆕 v6.784 (Franco: «i campi relativi alle variazioni, ai change, agli omaggi ed agli errori
+//    di stampa fanno riferimento solo alle figurine, ma potrebbero servire per altri TDA; ci servono
+//    quantomeno per le bustine e per gli album») - LE VERSIONI SI DICHIARANO PER TIPOLOGIA.
+// 🔴 QUELLO CHE C'ERA NON ERA «SOLO PER LE FIGURINE»: ERA PEGGIO. La spunta si chiama «Ha
+//    change di figurine» ma `_versioneAmmessa` la applicava a TUTTE le sezioni tranne i retro -
+//    bustine, album, spille, carte. L'etichetta diceva il falso, e il campo del TIPO invece la
+//    sezione la guardava: da li' il vicolo cieco della v6.782 (casella spuntabile su una bustina,
+//    tendina del tipo assente). ⚠️ Le due segnalazioni di Franco erano la stessa cosa, e l'ha detto
+//    lui: «il baco che ti ho segnalato e' collegato al requisito».
+// 📌 LA DICHIARAZIONE VIVE IN UNA MAPPA PER SEZIONE (`s.perTDA`), e NON in un elenco di due
+//    nomi scritto nella logica. Franco: «una colonna per TDA, ma per ora mi limiterei ad album e
+//    bustine» - le due cose non sono in conflitto: il MODELLO e' per tipologia, cio' che si limita a
+//    due e' la FORM (`_TDA_CON_VERSIONI`). Il giorno che servono le Carte si tocca quella riga.
+// 📌 I NOMI DEI CAMPI DENTRO LA MAPPA SONO GLI STESSI DEL LIVELLO SERIE
+//    (`frontChangeTypes`, `retroChangeTypes`, ...): il lettore e' una riga sola e non nasce un
+//    secondo vocabolario per dire la stessa cosa. Franco: «fronte e retro indicato sempre se sia
+//    davanti o dietro, ma le liste valori sono diverse» - l'ASSE resta, cambiano i VALORI.
+// ⚠️ E PER BUSTINE E ALBUM SI COMPILA SOLO IL FRONTE (parole sue): la lista «di retro» esiste nella
+//    mappa e resta vuota. Non si toglie - il giorno che una bustina avra' una differenza sul dietro
+//    ha gia' il suo posto, e un posto vuoto non fa danno perche' nessuno lo legge.
+// 🔴 SENZA DICHIARAZIONE NON CAMBIA NIENTE, ed e' la scelta piu' importante: una sezione che
+//    non compare nella mappa continua a seguire le spunte di sempre. Le SPILLE hanno SETTE errori di
+//    stampa (misurati) proprio perche' ereditano `hasPrintError`: far rispondere «no» a chi non ha
+//    dichiarato niente avrebbe tolto la casella a quei sette.
+function _campoTipiSerie(s, campo, sezione) {
+  const d = s && s.perTDA && s.perTDA[sezione];
+  if (d && Array.isArray(d[campo])) return d[campo];
+  return (s && s[campo]) || [];
+}
+
+function frontChangeTypesDiSerie(seriesId, sezione) {
   const s = getData('series', []).find(x => x.id === seriesId);
-  return (s?.frontChangeTypes || [])
+  return _campoTipiSerie(s, 'frontChangeTypes', sezione)
     .filter(t => (t || '').trim())
     .slice()
     .sort((a, b) => (a || '').localeCompare((b || ''), 'it', { sensitivity: 'base' }));
 }
 
-function retroChangeTypesDiSerie(seriesId) {
+function retroChangeTypesDiSerie(seriesId, sezione) {
   const s = getData('series', []).find(x => x.id === seriesId);
   // L'esclusione di "errore di stampa" resta qui: dalla v5.711 e' un TIPO a se', non un changeType,
   // e la v5.716 ha chiuso le porte di ritorno perche' la lista e' letta da piu' punti.
-  return (s?.retroChangeTypes || [])
+  return _campoTipiSerie(s, 'retroChangeTypes', sezione)
     .filter(t => !/^error[ei]\s+di\s+stampa$/i.test((t || '').trim()))
     .slice()
     .sort((a, b) => (a || '').localeCompare((b || ''), 'it', { sensitivity: 'base' }));
@@ -39314,11 +40504,11 @@ function changeTypesDiSerie(seriesId) {
 // frontale sarebbe inventare una risposta. Chi la chiama deve trattare il null come "da guardare".
 // (Il confronto e' case-insensitive e senza spazi ai bordi, come le chiavi di unicita' e l'import:
 // tre punti che confrontano gli stessi valori devono confrontarli allo stesso modo.)
-function _facciaDelTipo(tipo, seriesId) {
+function _facciaDelTipo(tipo, seriesId, sezione) {
   const t = (tipo || '').trim().toLowerCase();
   if (!t) return null;
-  if (retroChangeTypesDiSerie(seriesId).some(x => (x || '').trim().toLowerCase() === t)) return 'retro';
-  if (frontChangeTypesDiSerie(seriesId).some(x => (x || '').trim().toLowerCase() === t)) return 'fronte';
+  if (retroChangeTypesDiSerie(seriesId, sezione).some(x => (x || '').trim().toLowerCase() === t)) return 'retro';
+  if (frontChangeTypesDiSerie(seriesId, sezione).some(x => (x || '').trim().toLowerCase() === t)) return 'fronte';
   return null;
 }
 
@@ -39361,17 +40551,22 @@ function _facciaDelTipo(tipo, seriesId) {
 // hanno un retro proprio da quelli che non ce l'hanno (v6.102), una distinzione che riguarda il
 // retro e non il tipo. Per l'omaggio quella distinzione non esiste, e inventarne una seconda lista
 // per simmetria avrebbe creato una domanda a cui nessuno deve rispondere.
-function _omaggioTypes(seriesId, campo) {
+function _omaggioTypes(seriesId, campo, sezione) {
   const s = getData('series', []).find(x => x.id === seriesId);
   // v6.246 - ripiego sul campo unico della v6.241, solo per la lista frontale.
-  const grezzi = s?.[campo] || (campo === 'frontFreeVersionTypes' ? (s?.freeVersionTypes || []) : []);
+  // 🔄 v6.784 - IL RIPIEGO STORICO VALE SOLO SE LA SEZIONE NON HA DICHIARATO LA SUA: una
+  //    bustina con la lista vuota vuol dire «nessun tipo», non «usa quella vecchia delle figurine».
+  const dich = s && s.perTDA && s.perTDA[sezione];
+  const grezzi = (dich && Array.isArray(dich[campo]))
+    ? dich[campo]
+    : (s?.[campo] || (campo === 'frontFreeVersionTypes' ? (s?.freeVersionTypes || []) : []));
   return grezzi
     .filter(t => (t || '').trim())
     .slice()
     .sort((a, b) => (a || '').localeCompare((b || ''), 'it', { sensitivity: 'base' }));
 }
-function frontOmaggioTypesDiSerie(seriesId) { return _omaggioTypes(seriesId, 'frontFreeVersionTypes'); }
-function retroOmaggioTypesDiSerie(seriesId) { return _omaggioTypes(seriesId, 'retroFreeVersionTypes'); }
+function frontOmaggioTypesDiSerie(seriesId, sezione) { return _omaggioTypes(seriesId, 'frontFreeVersionTypes', sezione); }
+function retroOmaggioTypesDiSerie(seriesId, sezione) { return _omaggioTypes(seriesId, 'retroFreeVersionTypes', sezione); }
 
 // 🆕 v6.350 (Franco) - LE TIPOLOGIE DI ERRORE DI STAMPA, due liste come per l'omaggio.
 // 🔴 CHIUDE UN ELENCO CHE ERA APERTO PER SCELTA. `VERSIONI_ARTICOLO` portava scritto
@@ -39389,15 +40584,15 @@ function retroOmaggioTypesDiSerie(seriesId) { return _omaggioTypes(seriesId, 're
 // gia' («degli errori di stampa sappiamo solo che ce ne sono fra le FIGURINE, e non e' mai stato
 // misurato se ce ne siano fra i RETRO»). Franco le ha chieste entrambe: *"sia nella versione
 // figurine che nella versione retro"*.
-function _erroreTypes(seriesId, campo) {
+function _erroreTypes(seriesId, campo, sezione) {
   const s = getData('series', []).find(x => x.id === seriesId);
-  return (s?.[campo] || [])
+  return _campoTipiSerie(s, campo, sezione)
     .filter(t => (t || '').trim())
     .slice()
     .sort((a, b) => (a || '').localeCompare((b || ''), 'it', { sensitivity: 'base' }));
 }
-function frontErroreTypesDiSerie(seriesId) { return _erroreTypes(seriesId, 'frontPrintErrorTypes'); }
-function retroErroreTypesDiSerie(seriesId) { return _erroreTypes(seriesId, 'retroPrintErrorTypes'); }
+function frontErroreTypesDiSerie(seriesId, sezione) { return _erroreTypes(seriesId, 'frontPrintErrorTypes', sezione); }
+function retroErroreTypesDiSerie(seriesId, sezione) { return _erroreTypes(seriesId, 'retroPrintErrorTypes', sezione); }
 // L'unione, per chi deve solo sapere "quali tipi esistono in questa serie" - la modifica massiva e
 // l'import. Gemella di `omaggioTypesDiSerie` e `changeTypesDiSerie`, e non e' una copia per
 // simmetria: sono i tre punti che le tre versioni con tipo devono saper rispondere allo stesso modo.
@@ -39424,8 +40619,8 @@ function _opzioniTipoOmaggio(seriesId, selezionato, sezione) {
   const eRetro = sezione === 'retros';
   // sezione non dichiarata: si mostrano entrambi, com'era. Meglio troppo che un elenco vuoto su
   // una strada che non conoscevo.
-  const retro  = (sezione === undefined || eRetro)  ? retroOmaggioTypesDiSerie(seriesId) : [];
-  const fronte = (sezione === undefined || !eRetro) ? frontOmaggioTypesDiSerie(seriesId) : [];
+  const retro  = (sezione === undefined || eRetro)  ? retroOmaggioTypesDiSerie(seriesId, sezione) : [];
+  const fronte = (sezione === undefined || !eRetro) ? frontOmaggioTypesDiSerie(seriesId, sezione) : [];
   const elenco = [...retro, ...fronte];
   const opt = t => '<option value="' + esc(t) + '"' + (_n(t) === _n(sel) ? ' selected' : '') + '>' + esc(t) + '</option>';
   // Con un gruppo solo l'etichetta sparisce: un optgroup unico non distingue niente, dice solo che
@@ -39496,8 +40691,8 @@ function _opzioniTipoErrore(seriesId, selezionato, sezione) {
   // l'unica cosa che quella lista permetteva di fare qui, ed era una copia.
   // ⚠️ I valori gia' scritti non spariscono: la tendina conserva i fuori elenco sotto
   // «⚠️ non in elenco», e a schermo il tipo arriva comunque dal retro.
-  const retro  = eRetro ? retroErroreTypesDiSerie(seriesId) : [];
-  const fronte = eRetro ? [] : frontErroreTypesDiSerie(seriesId);
+  const retro  = eRetro ? retroErroreTypesDiSerie(seriesId, sezione) : [];
+  const fronte = eRetro ? [] : frontErroreTypesDiSerie(seriesId, sezione);
   const elenco = [...retro, ...fronte];
   const opt = t => '<option value="' + esc(t) + '"' + (_n(t) === _n(sel) ? ' selected' : '') + '>' + esc(t) + '</option>';
   const unSolo = !(retro.length && fronte.length);
@@ -39530,11 +40725,35 @@ function _opzioniTipoErrore(seriesId, selezionato, sezione) {
   return html;
 }
 
-function _opzioniTipoChange(seriesId, selezionato) {
+// 🔄 v6.784 - ARRIVA LA SEZIONE, come gia' l'avevano `_opzioniTipoOmaggio` (v6.253) e
+//    `_opzioniTipoErrore`: era l'unica delle tre a non sapere su che tipologia stava lavorando.
+//    Non e' un parametro in piu' per simmetria - e' quello che permette a una bustina di avere i
+//    SUOI tipi invece di quelli pensati per le figurine.
+// ⚠️ SENZA SEZIONE RISPONDE COME PRIMA, e le chiamate che non la passano (la tabella della console,
+//    l'import) continuano a vedere le liste della serie: questa release non le tocca.
+function _opzioniTipoChange(seriesId, selezionato, sezione) {
   const it = currentLang === 'it';
   const sel = (selezionato || '').trim();
-  const retro  = retroChangeTypesDiSerie(seriesId);
-  const fronte = frontChangeTypesDiSerie(seriesId);
+  const retro  = retroChangeTypesDiSerie(seriesId, sezione);
+  const fronte = frontChangeTypesDiSerie(seriesId, sezione);
+  // 🆕 v6.791 (Franco) - LA TENDINA OFFRE SOLO I TIPI DELLA SEZIONE IN CUI SI STA.
+  // 🔴 PAROLE SUE, ed e' una regola di dominio, non di interfaccia: «Tipi di change di retro
+  //    elenca le possibili tipologie di change del RETRO. Siccome il retro va in coppia con le
+  //    figurine, allora anche loro si possono catalogare per change di retro - ma una figurina il
+  //    change di retro lo EREDITA dal retro; non e' un attributo suo». E ancora: «in
+  //    visualizzazione (card) le figurine lo ereditano dal retro, quindi non necessitavano di un
+  //    campo... ora che i retro hanno la loro lista e' corretto che le figurine non abbiano una
+  //    loro lista di change di retro».
+  // 🗑️ QUINDI I DUE GRUPPI DELLA v6.102 DIVENTANO UNO. Quella release li aveva messi tutti e
+  //    due apposta - «scegliendo il tipo si dichiara il lato, senza un campo in piu' da compilare
+  //    e senza poterlo dimenticare» - e la regola era buona finche' un change di figurina poteva
+  //    essere «di retro». Non lo e': quel lato lo racconta il retro.
+  // 📌 E LA STESSA REGOLA ESISTEVA GIA' ACCANTO, da tre release: l'omaggio nello strumento
+  //    massivo la applica dalla v6.253 («nella vista tabellare dei RETRO le tipologie frontali non
+  //    si applicano a niente, e offrirle vorrebbe dire proporre un valore che il controllo di
+  //    coerenza dovrebbe poi rifiutare»). Il change era l'unico fuori riga.
+  const _diRetro = (sezione === 'retros');
+  const offerti = _diRetro ? retro : fronte;
   // Il confronto e' normalizzato come in `_facciaDelTipo`, e non e' pignoleria: se una delle due
   // dicesse "classificato" e l'altra non marcasse `selected`, il select ripiegherebbe sul vuoto e
   // il tipo sparirebbe al salvataggio. Due funzioni che guardano gli stessi valori devono
@@ -39544,10 +40763,47 @@ function _opzioniTipoChange(seriesId, selezionato) {
   const gruppo = (etichetta, elenco) => elenco.length
     ? '<optgroup label="' + esc(etichetta) + '">' + elenco.map(opt).join('') + '</optgroup>'
     : '';
+  // 🔴 v6.786 - E SE LE DUE LISTE SONO VUOTE, LO DICE. Era l'unico dei tre campi del Tipo a
+  //    TACERE: «Tipo di omaggio» e «Tipo di errore di stampa» questo avviso ce l'hanno da sempre.
+  //    Con le liste condivise non si notava, perche' una serie senza nessun tipo di change era
+  //    rara; dalla v6.784 le liste sono PER TIPOLOGIA e nascono vuote, quindi quella condizione e'
+  //    il punto di partenza di ogni bustina e di ogni album.
+  // ⚠️ E SENZA QUESTA RIGA IL VICOLO CIECO DELLA v6.782 RIENTRAVA DALLA PORTA PRINCIPALE: tendina
+  //    con la sola voce vuota, salvataggio che pretende il campo, e nessun modo di uscire ne' di
+  //    capire perche'. Misurato eseguendo la funzione, non dedotto - ed e' la domanda che l'ha
+  //    fatto trovare: Franco, «la modifica della v6.782 e' compatibile con quello che ho chiesto
+  //    dopo?». Lo era; mancava questo.
+  // 📌 L'avviso NON nomina il lato: le due liste qui sono tutte e due candidate (a differenza
+  //    dell'errore di stampa, dove il retro esclude il fronte), e dire «nessuna tipologia FRONTALE»
+  //    manderebbe a cercare una casella sola quando ne esistono due.
+  // 🔄 v6.791 - SI GUARDA LA SOLA LISTA OFFERTA, e la ragione del commento qui sopra e'
+  //    CAMBIATA senza cambiare quella frase: le liste candidate non sono piu' due, e' una. Dire
+  //    «nessuna tipologia FRONTALE» adesso si potrebbe - ma le parole a schermo le sceglie Franco
+  //    (v6.754) e quella frase dice ancora il vero, quindi resta.
+  // ⚠️ Con la condizione vecchia (`!retro && !fronte`) una serie che ha solo tipi di retro
+  //    avrebbe offerto a una figurina una tendina con la sola voce vuota e NESSUN avviso - cioe'
+  //    il vicolo cieco della v6.782, che la v6.786 aveva chiuso.
+  if (!offerti.length) {
+    const avviso = '<option value="">' + (it
+      ? '⚠️ nessuna tipologia di change per questa tipologia di articolo — si definiscono nella scheda della serie'
+      : '⚠️ no change types for this item type — set them in the series form') + '</option>';
+    return sel
+      ? avviso + '<optgroup label="' + (it ? '⚠️ valore attuale — va aggiunto ai tipi della serie' : '⚠️ current value')
+        + '">' + opt(sel) + '</optgroup>'
+      : avviso;
+  }
   let html = '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
-    + gruppo(it ? 'Di retro' : 'Back', retro)
-    + gruppo(it ? 'Frontale' : 'Front', fronte);
-  if (sel && !_facciaDelTipo(sel, seriesId)) {
+    + (_diRetro ? gruppo(it ? 'Di retro' : 'Back', retro)
+                : gruppo(it ? 'Frontale' : 'Front', fronte));
+  // 🔴 v6.791 - E LA RETE ADESSO GUARDA CIO' CHE SI OFFRE, NON CIO' CHE E' CLASSIFICATO. E'
+  //    LA RIGA PIU' PERICOLOSA DELLA RELEASE: prima bastava che il tipo fosse in UNA delle due
+  //    liste per non finire nel terzo gruppo, perche' tutte e due erano offerte. Adesso su una
+  //    figurina si offrono le sole frontali: un change di figurina che porta un tipo DI RETRO -
+  //    e nei dati ce ne sono - risulterebbe «classificato», quindi niente terzo gruppo, quindi
+  //    nessuna `<option>` che lo contenga, quindi il `select` ripiega sul vuoto e IL PRIMO
+  //    SALVATAGGIO CANCELLA IL TIPO. In silenzio. E' esattamente il guasto che il terzo gruppo
+  //    esiste per impedire (v6.102), ricreato da una release scritta per fare ordine.
+  if (sel && !offerti.some(t => _n(t) === _n(sel))) {
     html += '<optgroup label="' + (it ? '⚠️ non classificato — va messo in una delle due liste' : '⚠️ unclassified — add it to one of the two lists') + '">' + opt(sel) + '</optgroup>';
   }
   return html;
@@ -40234,7 +41490,7 @@ function renderSeriesMeta(s) {
     // 📌 Due fonti, ognuna per la sua domanda: `PRODOTTI_INVENTARIO` dice QUALI articoli
     //    esistono (dal descrittore `ARTICOLI`), `_articoloNascosto` quali questa serie
     //    non ha. Nessuna delle due riscritta qui - e una tipologia nuova entra da se'.
-    const cats = PRODOTTI_INVENTARIO.filter(c => !_articoloNascosto(c, currentSeriesId));
+    const cats = PRODOTTI_INVENTARIO.filter(c => _tipologiaAmmessa(c, currentSeriesId));
     // 🔄 v6.622 (Franco: *«le numeriche vorrei iniziassero tutte alla stessa distanza dal
     // margine sx»*) — VIA IL «min-width:96px», e con lui il disallineamento.
     // 🔴 MISURATO PRIMA DI TOCCARE: «Figurine con retro» misura 108px e sforava quel 96,
@@ -40533,7 +41789,7 @@ function _rendiCardSottoserie() {
   const tutti = getData('figurines', []).filter(f => f.seriesId === currentSeriesId);
   const it = currentLang === 'it';
   PRODOTTI_INVENTARIO.forEach(sec => {
-    if (_articoloNascosto(sec, currentSeriesId)) return;
+    if (!_tipologiaAmmessa(sec, currentSeriesId)) return;
     const items = tutti.filter(f => (f.section || 'figurines') === sec);
     const gruppi = _sottoserieUsate(s, items).filter(v => v);
     if (!gruppi.length) return;
@@ -46594,7 +47850,7 @@ function renderAdminSeries() {
     // contrassegni si contano invece di dichiararsi (*"la tabella dice i numeri, non i flag"*).
     { key:'omaggio',  lab: _L?'HA<br>OMAGGIO':'HAS<br>FREE', val:r => r.c.omaggi },
     { key:'colfig',   lab: _L?'COLONNE<br>FIG D/M':'COLUMNS<br>FIG D/M', val:r => _colonneDefault('figurines').d },
-    { key:'colretro', lab: _L?'COLONNE<br>RETRO D/M':'COLUMNS<br>BACK D/M', val:r => r.s.noRetro ? -1 : 0 },
+    { key:'colretro', lab: _L?'COLONNE<br>RETRO D/M':'COLUMNS<br>BACK D/M', val:r => _tipologiaAmmessa('retros', r.s.id) ? 0 : -1 },   // v6.789
     { key:'azioni',   lab: _L?'Azioni':'Actions' }
   ];
   // I conteggi si calcolano UNA VOLTA per riga, qui: servono sia per disegnare sia per ordinare, e
@@ -46760,7 +48016,7 @@ function renderAdminSeries() {
         <!-- v6.169 (Franco) - le colonne dei RETRO. Su una serie che i retro non li ha la cella
              resta VUOTA: scriverci 5/4 direbbe un numero per una griglia che non si aprira' mai, e
              chi legge la tabella si chiederebbe dove la trova. -->
-        <td style="text-align:center;white-space:nowrap;">${s.noRetro ? '' : ((((s.colonne||{}).retros||{}).d || COLONNE_DEFAULT.retros.d) + '/' + (((s.colonne||{}).retros||{}).m || COLONNE_DEFAULT.retros.m))}</td>
+        <td style="text-align:center;white-space:nowrap;">${!_tipologiaAmmessa('retros', s.id) ? '' : ((((s.colonne||{}).retros||{}).d || COLONNE_DEFAULT.retros.d) + '/' + (((s.colonne||{}).retros||{}).m || COLONNE_DEFAULT.retros.m))}</td>
         <td>
         <!-- v6.225 (Franco) - IL TASTO PICCOLO, quello della vista tabellare delle figurine.
              La stringa di stile e' COPIATA da li' carattere per carattere (font-size 1.05rem,
@@ -47839,10 +49095,13 @@ function _daAttaccareModificaVietata(f) {
 // sbagliata senza che si vedesse.
 
 
+// 🔄 v6.789 - come `_serieSenzaAlbum`: era l'altro lettore rimasto su un campo della v6.216.
+// ⚠️ Il `if (!seriesId) return false` resta, e non e' ridondante: senza id non c'e' serie, e
+// «questa serie non ha retro» sarebbe una risposta inventata. Dire NO qui vuol dire «non lo so,
+// quindi non tolgo niente» - la stessa scelta di `_tipologieAmmesse` su una serie non trovata.
 function _serieSenzaRetro(seriesId) {
   if (!seriesId) return false;
-  const s = getData('series', []).find(x => x.id === seriesId);
-  return !!(s && s.noRetro);
+  return !_tipologiaAmmessa('retros', seriesId);
 }
 
 // v6.076 - DOVE sta la seconda faccia. E' l'altra meta' di _schedaDueFoto, e le due insieme
@@ -48145,8 +49404,14 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   // v5.849 — su telefono la riga che QUALIFICA la variante (tipo di change, tipo di errore di
   // stampa, oppure il retro della variazione) sale in cima, subito dopo il Nome: e' quella che
   // distingue questa figurina dalla sua base, quindi va letta insieme al nome, non in fondo.
-  if (f.isChange && f.changeType) {
-    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</span><span class="detail-value">${f.changeType}</span></div>`);
+  // 🔄 v6.792 - anche la scheda chiede il tipo a chi lo possiede. Senza questa riga la
+  //    scheda e il Nome completo dello STESSO articolo direbbero due cose diverse appena il campo
+  //    copiato diverge dal retro - e nei dati diverge già, su tre figurine.
+  {
+    const _tCh = f.isChange ? _tipoChange(f) : '';
+    if (_tCh) {
+      (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</span><span class="detail-value">${esc(_tCh)}</span></div>`);
+    }
   }
   // 🆕 v6.259 - TIPO DI OMAGGIO. Come per l'errore di stampa la riga si mostra SEMPRE su un
   // omaggio, anche col tipo vuoto: e' proprio il caso che stanotte e' costato due giri — un omaggio
@@ -48154,7 +49419,9 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   // posto in cui accorgersene. Una riga che dice "non impostato" e' un'informazione; una riga
   // assente non lo e'.
   if (f.isFreeVersion) {
-    const _tOm = (f.freeVersionType || '').trim();
+    // 🔄 v6.795 - il tipo si chiede, non si legge dal campo: su una figurina con retro l'omaggio
+    //    sta dietro, e la scheda deve dire la stessa cosa del Nome completo dello stesso articolo.
+    const _tOm = _tipoOmaggio(f);
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di omaggio' : 'Free type'}</span><span class="detail-value"${_tOm ? '' : ' style="color:var(--muted);font-style:italic;"'}>${_tOm ? esc(_tOm) : (currentLang === 'it' ? 'non impostato' : 'not set')}</span></div>`);
   }
   // Tipo di errore di stampa (testo libero, tutte le sezioni) — per gli Errori di stampa la riga
@@ -49005,8 +50272,14 @@ function _aggiornaComandiTestata() {
 // release sui tre flag non ripristinati.
 function _aggiornaCampiDiRetro() {
   // v6.216 - la domanda passa dalle caselle nuove: la vecchia "Figurine senza retro" non esiste piu'.
-  const cb = [...document.querySelectorAll('.series-articolo-nascosto')].find(x => x.value === 'retros');
-  const senza = !!(cb && cb.checked);
+  // 🔄 v6.789 - LA CASELLA HA CAMBIATO VERSO: spuntata voleva dire «non ha retro», adesso vuol
+  //    dire «ha retro». 🔴 E LA CASELLA ASSENTE NON E' «SENZA RETRO»: scritto `!(cb && cb.checked)`
+  //    una casella mancante avrebbe spento i campi di retro di ogni serie, cioe' un difetto
+  //    invisibile che si vede solo se il markup si rompe. `!!cb && !cb.checked` dice la stessa
+  //    cosa per la casella che c'e' e lascia le cose come stanno per quella che non c'e' - che e'
+  //    esattamente cio' che faceva la riga di ieri.
+  const cb = _caselleTipologie().find(x => x.value === 'retros');
+  const senza = !!cb && !cb.checked;
   const inp = document.getElementById('series-col-retros-d');
   const riga = inp ? inp.closest('tr') : null;
   if (riga) riga.style.display = senza ? 'none' : '';
@@ -49032,12 +50305,19 @@ function _aggiornaCampiDiRetro() {
   // a mano che cancellato non torna, una spunta e' un'AFFERMAZIONE - «questa serie ha change di
   // retro» - e lasciata accesa su una serie senza retro finirebbe nei dati dicendo il falso, che
   // e' esattamente la ragione della v6.748.
-  // ⚠️ GLI ERRORI DI STAMPA NON SONO QUI, e non e' una dimenticanza: «Ha errori di stampa» e' UNA
-  // spunta per tutte e due le facce. Spegnerla toglierebbe a una serie senza retro il modo di
-  // dichiarare i suoi errori di stampa FRONTALI, che ha eccome. Li' resta spento solo l'elenco
-  // «Tipologie di errore di stampa DI RETRO» (v6.750).
+  // 🔄 v6.788 - ADESSO SONO TRE, e l'avvertimento di sopra vale ancora ma dice un'altra cosa.
+  // ⚠️ QUELLO CHE RESTA FUORI E' «Ha errori di stampa DI FIGURINE», e per la ragione di sempre:
+  // spegnerlo toglierebbe a una serie senza retro il modo di dichiarare i suoi errori di stampa
+  // frontali, che ha eccome. Fino a ieri quella spunta era UNA per tutte e due le facce, e per
+  // questo nessuna delle due si poteva spegnere; da oggi le facce hanno una spunta ciascuna, e
+  // quella dei retro e' un'AFFERMAZIONE sui retro come le altre due - su una serie che dichiara
+  // di non averne, lasciata accesa, finirebbe nei dati dicendo il falso.
+  // 📌 `prova-v6752` aveva piantato qui la sua trappola: «nell'index non esiste una spunta
+  // errori di stampa DI RETRO → se un domani nascesse, questo controllo diventa rosso ed e' il
+  // momento di aggiungerla sopra». E' diventato rosso, ed e' stato questo momento.
   ['series-has-retro-change-input',
-   'series-has-retro-free-version-input'].forEach(id => {
+   'series-has-retro-free-version-input',
+   'series-has-retro-print-error-input'].forEach(id => {
     const cb = document.getElementById(id);
     if (!cb) return;
     cb.disabled = senza;
@@ -49220,6 +50500,117 @@ function _tipoErroreStampa(f, allFigs, indice) {
   const r = indice ? indice.get(f.retroId)
                    : (allFigs || getData('figurines', [])).find(x => x.id === f.retroId);
   return ((r && r.printErrorType) || '').trim() || _mio;
+}
+
+// 🆕 v6.792 (Franco) — DA CHE PARTE STA LA DIFFERENZA DI UN CHANGE. Torna `true` quando sta
+//    DIETRO, e sono i due modi in cui ci si arriva.
+// 🔴 QUESTA REGOLA NON NASCE OGGI: era già scritta, dentro `_fotoFronteFigurina`, come una
+//    `const` di una riga sola (v6.083). Parole di Franco allora: *«i change di figurina sono due
+//    cose diverse, e solo una delle due ha un fronte suo»*, e il dettaglio che aveva fatto
+//    sbagliare la prima stesura: **`retroId` NON distingue i due casi**, perché ce l'hanno tutti e
+//    due. Ciò che distingue è COSA c'è dall'altro capo — se il retro puntato è a sua volta un
+//    change, la differenza sta dietro.
+// 🔴 E OGGI IMPARA IL FLAG «RETRO BIANCO», che non conosceva. Franco: *«REMO SCEMO ha un retro
+//    bianco, ma il retro bianco abbiamo deciso assieme tempo fa di non censirlo; quindi per REMO
+//    SCEMO abbiamo messo in piedi il campo "Retro bianco" per non vederla come un'anomalia»*.
+//    📌 Un retro bianco è un retro a tutti gli effetti: semplicemente non ha un record. Chiedere
+//    `retroId` e fermarsi lì vorrebbe dire dire «la differenza sta davanti» proprio dell'unico
+//    articolo per cui abbiamo inventato un campo apposta per dire il contrario.
+//    ⚠️ E la regola era scritta anche a schermo: la nota tolta dalla v6.791 diceva *«un change
+//    di questi tipi ha un retro tutto suo, OPPURE il flag «Retro bianco»»*. Non si sta inventando
+//    niente: si sta rimettendo nel codice una cosa che stava solo in un suggerimento.
+// 📏 MISURATO sul sito: dei 116 change fuori dalla sezione Retro, **113 stanno dietro**, **1 è
+//    il flag** (REMO SCEMO) e **2 stanno davanti** (ORNELLA NUTELLA, ELVIRA PRESA DI MIRA).
+function _changeDiRetro(f, allFigs, indice) {
+  if (!f || !f.isChange || (f.section || 'figurines') === 'retros') return false;
+  if (f.retroBianco && !f.retroId) return true;   // il flag È il retro: non c'e' un record, c'e' il fatto
+  if (!f.retroId) return false;
+  const r = indice ? indice.get(f.retroId)
+                   : (allFigs || getData('figurines', [])).find(x => x.id === f.retroId);
+  return !!(r && r.isChange);
+}
+
+// 🆕 v6.792 — L'ETICHETTA DEL RETRO BIANCO, IN UNA FONTE SOLA. La casella della form la
+//    scriveva a mano; adesso il tipo dedotto e la casella dicono la stessa parola perché la
+//    prendono dallo stesso posto. Sono le parole di Franco (*«il valore è "Retro bianco"»*).
+function _etichettaRetroBianco() { return currentLang === 'it' ? 'Retro bianco' : 'Blank back'; }
+
+// 🆕 v6.792 (Franco) — CHE TIPO DI CHANGE MOSTRO PER QUESTO ARTICOLO. Gemella esatta di
+//    `_tipoErroreStampa` (v6.577), e per la stessa ragione: *«una figurina il change di retro lo
+//    EREDITA dal retro; non è un attributo suo»*.
+// 🔴 UNA RISPOSTA PER CASO, E NESSUNA DI SCORTA. Franco, netto: *«o la info la prendi dal retro
+//    o la prendi dalla figurina e sulla figurina copiamo il valore del retro associato»* — e la
+//    seconda strada l'ha scartata lui stesso guardando cosa costa: *«in quel secondo caso però la
+//    sync va fatta sia in sede di associazione fig-retro, sia in sede di cambio nome alla tipologia
+//    di retro»*. I punti di sincronizzazione sono almeno quattro (associazione, rinomina,
+//    scollegamento o cambio di retro, import), e ne basta uno saltato.
+// 📏 E IL COSTO DI QUELLA COPIA È MISURATO, non temuto: dei 114 campi copiati addosso alle
+//    figurine, **110 combaciavano col retro e 3 no** (FIORINA MATASSINA, CILIE-GINO, ALVARO
+//    LINGUACCIARO, che dicono «retro azzurro senza cornice» mentre il loro retro dice «retro bianco
+//    senza titolo e cornice»). Non è un incidente: è il tasso di divergenza di una copia senza
+//    sincronizzazione, ed è lo stesso guasto della figurina 641 che ha prodotto la v6.606.
+//    Da oggi quelle tre dicono quello che dice il loro retro, e nessuno scrive niente.
+// ⚠️ NIENTE RIPIEGO SUL CAMPO PROPRIO, a differenza di `_tipoErroreStampa`. Lì ha senso (un
+//    errore di stampa frontale il tipo ce l'ha suo); qui un change di retro il tipo NON ce l'ha, e
+//    leggerlo dal campo quando il retro tace vorrebbe dire far riaffiorare proprio la copia vecchia
+//    che questa funzione esiste per non guardare più.
+//    📏 E la domanda «e se il retro tacesse?» è stata misurata prima di deciderla: dei **107**
+//    retro change del sito, quelli **senza tipo sono zero**. Non può nemmeno succedere: la v5.779
+//    rifiuta il salvataggio di un change senza Tipo, e per un retro quella pretesa resta.
+// 🆕 v6.795 (Franco) - L'OMAGGIO DI UNA FIGURINA CON RETRO STA SEMPRE DIETRO.
+// 🔴 PAROLE SUE, ed è una correzione di una risposta che mi aveva dato lui: *«gli omaggi sono
+//    sempre e solo per i retro. Forse ti ho mandato io fuori strada quando ti ho risposto alla
+//    intervista. E' vero che le fig hanno gli omaggi ma la tipologia di omaggio è sempre derivante
+//    dal retro omaggio collegato alla fig. La fig omaggio è sempre collegata a un retro omaggio»*.
+//    E la nota che chiude il caso: *«per le figurine con retro, mentre change ed errore di stampa
+//    possono essere sia frontali che non, omaggio è sempre dei retro»*.
+// 📌 QUINDI NON È COME IL CHANGE: lì i casi erano due (di fronte e di retro) e servivano due
+//    risposte. Qui il caso è uno solo, e la funzione non ha niente da distinguere - deve solo
+//    sapere DOVE guardare.
+// 📏 MISURATO SUL SITO, e senza una sola eccezione: 220 omaggi in tutto, 194 sui retro e 26
+//    sulle figurine (tutte in Serie 2). Delle 26, **26 su 26** hanno un retro che è a sua volta un
+//    omaggio; zero senza retro, zero con un retro che omaggio non è; e le divergenze fra il tipo
+//    della figurina e quello del suo retro sono **ZERO** (sul change erano tre). 📌 E le due serie
+//    dichiaravano le STESSE due voci in tutte e due le liste - NERO e ROSSO di qua, NERO e ROSSO
+//    di là: la lista «di figurine» era letteralmente una copia di quella dei retro.
+// ⚠️ E LA REGOLA ERA GIÀ SCRITTA NEL CODICE, in una release sua: la v6.487 dice *«il timbro
+//    OMAGGIO sta SUL RETRO - lo dice la voce di legenda del sito - quindi il fronte è quello
+//    dell'articolo di partenza, sempre»*. Quella riga sapeva già: era il campo a non averlo
+//    imparato. 🗑️ Con questo se ne va la v6.246 (*«il campo tipo di omaggio serve in duplice
+//    copia: per figurine e retro»*), che era vera quando l'ha detta.
+// ⚠️ LE ALTRE TIPOLOGIE NON C'ENTRANO, e gliel'ho chiesto: su Bustine e Album l'omaggio resta
+//    LORO, perché un retro collegato non ce l'hanno e non c'è nessuno a cui chiedere. La regola
+//    vale per la sola tipologia «Figurine con retro» - che è esattamente come l'ha detta lui.
+function _omaggioDiRetro(f, allFigs, indice) {
+  if (!f || !f.isFreeVersion) return false;
+  if ((f.section || 'figurines') !== 'figurines') return false;   // bustine, album: l'omaggio e' loro
+  if (!f.retroId) return false;
+  const r = indice ? indice.get(f.retroId)
+                   : (allFigs || getData('figurines', [])).find(x => x.id === f.retroId);
+  return !!(r && r.isFreeVersion);
+}
+
+// 🆕 v6.795 - CHE TIPO DI OMAGGIO MOSTRO PER QUESTO ARTICOLO. Terza sorella di
+//    `_tipoErroreStampa` (v6.577) e `_tipoChange` (v6.792), e adesso i tre campi del Tipo
+//    rispondono tutti e tre alla stessa domanda nello stesso modo.
+// ⚠️ Chi non è un omaggio di retro tiene il suo: un omaggio di BUSTINA, e una figurina omaggio
+//    a cui il retro non è ancora stato collegato. Non è un ripiego - è l'altro caso, e in quel
+//    caso il campo della figurina è l'unico posto dove quel fatto esiste.
+function _tipoOmaggio(f, allFigs, indice) {
+  if (!f) return '';
+  if (!_omaggioDiRetro(f, allFigs, indice)) return (f.freeVersionType || '').trim();
+  const r = indice ? indice.get(f.retroId)
+                   : (allFigs || getData('figurines', [])).find(x => x.id === f.retroId);
+  return ((r && r.freeVersionType) || '').trim();
+}
+
+function _tipoChange(f, allFigs, indice) {
+  if (!f) return '';
+  if (!_changeDiRetro(f, allFigs, indice)) return (f.changeType || '').trim();
+  if (!f.retroId) return _etichettaRetroBianco();   // il retro non si censisce: il tipo E' il flag
+  const r = indice ? indice.get(f.retroId)
+                   : (allFigs || getData('figurines', [])).find(x => x.id === f.retroId);
+  return ((r && r.changeType) || '').trim();
 }
 
 // 🆕 v6.616 (Franco: *«numerare le variazioni non ufficiali, mostrando un numero sulla
@@ -49524,7 +50915,14 @@ function _fotoFigurina(f, allFigs, _salti) {
   // no. Cio' che distingue e' COSA c'e' dall'altro capo del collegamento: se il retro puntato e' a
   // sua volta un change, siamo nel caso B.
   const figs = allFigs || getData('figurines', []);
-  const _changeDiRetro = !!(f.isChange && f.retroId && figs.find(x => x.id === f.retroId)?.isChange);
+  // 🔄 v6.792 - LA REGOLA SI CHIEDE, NON SI RISCRIVE. Era qui, come `const` di una riga, ed è
+  //    la stessa domanda che adesso fanno il Nome completo, la scheda e la ricerca: tenerne una
+  //    copia qui vorrebbe dire che il giorno in cui impara qualcosa (il flag «Retro bianco», per
+  //    dirne una che è successa davvero) questa riga resta indietro e la foto sbaglia da sola.
+  // ⚠️ E il flag «Retro bianco» CAMBIA anche questo ripiego, giustamente: REMO SCEMO è un change
+  //    la cui differenza sta dietro, quindi il suo fronte è quello della base — che è esattamente
+  //    quello che la regola della v6.083 dice, e che la riga vecchia gli negava.
+  const _staDietro = _changeDiRetro(f, figs);
   // 🆕 v6.487 (Franco) — L'OMAGGIO ENTRA NELL'ELENCO, e la ragione e' la stessa delle
   // variazioni: il timbro OMAGGIO sta SUL RETRO — lo dice la voce di legenda del sito —
   // quindi il fronte e' quello dell'articolo di partenza, sempre.
@@ -49553,7 +50951,7 @@ function _fotoFigurina(f, allFigs, _salti) {
   // deve solo caricarla.
   const _erroreCheEreditaIlFronte = f.isPrintError && _latoErroreStampa(f, figs) === 'retro';
   const _frontePariAllaBase = f.isVariation || f.isUnofficialVariation
-    || _erroreCheEreditaIlFronte || _changeDiRetro || f.isFreeVersion;
+    || _erroreCheEreditaIlFronte || _staDietro || f.isFreeVersion;
   // 🆕 v6.358 - LA FIGURINA DA ATTACCARE NON HA UNA FOTO SUA, E NON DEVE AVERLA. Franco: *"la foto
   // della parte frontale (come collegamento, come per le variazioni, cosi' non ingrandiamo
   // Cloudinary)"*. E' lo stesso fronte della figurina con velina: caricarne una copia vorrebbe dire
@@ -50036,8 +51434,38 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
   }
   // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
   if (numberGroup) numberGroup.style.display = _mostraCampoNumero(_feSezione, showBase) ? '' : 'none'; // v6.077 - stessa fonte delle altre due
-  if (changeTypeGroup) changeTypeGroup.style.display = isChg ? '' : 'none';
-  if (freeTypeGroup) freeTypeGroup.style.display = isFree ? '' : 'none';   // v6.254
+  // 🆕 v6.792 - QUALE DELLE DUE RIGHE DEL TIPO DI CHANGE. 🔴 Si guarda lo stato ATTUALE
+  //    della form e non il record aperto, perché fra l'apertura e il salvataggio l'articolo può
+  //    cambiare caso senza che la scheda si ridisegni: si collega un retro change, o si spunta
+  //    «Retro bianco». Guardare il record aperto lascerebbe la tendina a chi non deve più
+  //    sceglierla, e - peggio - la toglierebbe a chi ha appena ricominciato a doverlo fare,
+  //    che è un vicolo cieco: campo obbligatorio (v5.779) e nessun controllo per compilarlo.
+  const _chDiRetro = isChg && _changeDiRetroDallaForm('fe');
+  if (changeTypeGroup) changeTypeGroup.style.display = (isChg && !_chDiRetro) ? '' : 'none';
+  {
+    const _ered = document.getElementById('fe-change-type-ereditato-group');
+    if (_ered) {
+      _ered.style.display = _chDiRetro ? '' : 'none';
+      if (_chDiRetro) {
+        const _sp = document.getElementById('fe-change-type-ereditato');
+        if (_sp) _sp.textContent = _tipoChangeDallaForm('fe');
+      }
+    }
+  }
+  // 🔄 v6.795 - e l'omaggio si divide come il change (v6.792): dove il tipo viene dal retro,
+  //    niente tendina - il valore si mostra e basta.
+  const _omDiRetro = isFree && _omaggioDiRetroDallaForm('fe');
+  if (freeTypeGroup) freeTypeGroup.style.display = (isFree && !_omDiRetro) ? '' : 'none';   // v6.254
+  {
+    const _er = document.getElementById('fe-free-version-type-ereditato-group');
+    if (_er) {
+      _er.style.display = _omDiRetro ? '' : 'none';
+      if (_omDiRetro) {
+        const _sp = document.getElementById('fe-free-version-type-ereditato');
+        if (_sp) _sp.textContent = _tipoOmaggioDallaForm('fe');
+      }
+    }
+  }
   const printErrorTypeGroup = document.getElementById('fe-print-error-type-group');
   if (printErrorTypeGroup) printErrorTypeGroup.style.display = isPE ? '' : 'none';
   // v5.774/v5.790 — i campi che eredita la partenza cambiano appena si tocca una casella del tipo,
@@ -50184,7 +51612,10 @@ function selectFeRetroLink(id) {
   document.getElementById('fe-retro').value = id;
   document.getElementById('fe-retro-search').value = _retroLinkLabel(r);
   document.getElementById('fe-retro-dropdown').style.display = 'none';
-  _aggiornaVisibilitaRetroBianco('fe'); // v6.078
+  _aggiornaVisibilitaRetroBianco('fe'); // v6.078  // 🆕 v6.792 - collegare un retro può far passare l'articolo da «scelgo il tipo» a «il tipo
+  //    me lo dice il retro», e viceversa. Senza questa riga il cambio si vedrebbe solo riaprendo
+  //    la scheda - e nel frattempo la form mostrerebbe il caso sbagliato dei due.
+  toggleFeBaseFigurineGroup();
 }
 
 function clearFeRetroLinkIfEmpty() {
@@ -50625,22 +52056,44 @@ function switchToEditMode(figId) {
   //    qui sarebbe una regola di dominio che Franco non ha dato - e inventarla e' l'errore che la
   //    v6.246 ha gia' pagato una volta.
   {
+    // 🔄 v6.792 (Franco) - LE RIGHE DIVENTANO DUE, E NE VIVE UNA SOLA PER VOLTA.
+    // 🔴 Parole sue: *«io non la chiamerei tendina, dato che non può essere premuta alcuna
+    //    tendina: se c'è un retro change associato, quella informazione è DEDOTTA dal retro»*. Non
+    //    è una tendina che legge da un'altra parte: è una tendina che non c'è, perché non c'è
+    //    niente da scegliere. Un campo modificabile che mostra un valore altrui invita a
+    //    modificarlo, e la modifica non avrebbe dove andare.
+    // ⚠️ IL `<select>` RESTA NEL DOM, NASCOSTO, e non è pigrizia: il salvataggio lo legge
+    //    (v6.169 - *ciò che la form non ripristina, il salvataggio lo azzera*), e soprattutto lo
+    //    stato può cambiare SENZA riaprire la scheda - si collega un retro, si spunta «Retro
+    //    bianco», e l'articolo passa da un caso all'altro. Togliere l'elemento vorrebbe dire non
+    //    poterlo rimettere senza ridisegnare tutto.
     const showChangeType = !!f.isChange;
     // v6.102 (§12.10) - stesse opzioni a due gruppi dell'altra form, dalla stessa funzione.
     html += '<div class="detail-row" id="fe-retro-change-type-group" style="' + (showChangeType ? '' : 'display:none;') + '">' +
       '<span class="detail-label">' + (currentLang==='it'?'Tipo di change':'Change type') + '</span>' +
       '<select class="form-input" id="fe-retro-change-type" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
-      _opzioniTipoChange(f.seriesId, f.changeType) +
+      _opzioniTipoChange(f.seriesId, f.changeType, f.section || 'figurines') +   // v6.784
       '</select></div>';
+    // 🆕 v6.792 - LA RIGA DEL TIPO EREDITATO. Stessa etichetta, valore in sola lettura.
+    html += '<div class="detail-row" id="fe-change-type-ereditato-group" style="display:none;">' +
+      '<span class="detail-label">' + (currentLang==='it'?'Tipo di change':'Change type') + '</span>' +
+      '<span class="detail-value" id="fe-change-type-ereditato" style="opacity:0.85;"></span></div>';
   }
   // 🆕 v6.241/253 (Franco) - TIPO DI OMAGGIO. Elenco chiuso preso dalla serie, come il Tipo di
   // change. In TUTTE le sezioni, come il Tipo di errore di stampa.
   // ⚠️ Le opzioni dipendono dalla SEZIONE: su un retro le tipologie frontali non esistono (v6.253).
+  // 🔄 v6.795 - DUE RIGHE, UNA VIVA PER VOLTA, come il Tipo di change dalla v6.792: su una
+  //    figurina con retro l'omaggio sta dietro, quindi non c'e' niente da scegliere e la tendina
+  //    non si mostra. ⚠️ Il `<select>` resta nel DOM: il salvataggio lo legge, e lo stato puo'
+  //    cambiare senza riaprire la scheda (si collega un retro).
   html += '<div class="detail-row" id="fe-free-version-type-group" style="' + (f.isFreeVersion ? '' : 'display:none;') + '">' +
     '<span class="detail-label">' + (currentLang==='it'?'Tipo di omaggio':'Free type') + '</span>' +
     '<select class="form-input" id="fe-free-version-type" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
     _opzioniTipoOmaggio(f.seriesId, f.freeVersionType, f.section || 'figurines') +
     '</select></div>';
+  html += '<div class="detail-row" id="fe-free-version-type-ereditato-group" style="display:none;">' +
+    '<span class="detail-label">' + (currentLang==='it'?'Tipo di omaggio':'Free type') + '</span>' +
+    '<span class="detail-value" id="fe-free-version-type-ereditato" style="opacity:0.85;"></span></div>';
 
   // Tipo di errore di stampa — TUTTE le sezioni, mostrato quando e' un Errore di stampa. Stessa
   // posizione del Tipo di change, con cui e' mutuamente esclusivo (v5.767).
@@ -51551,6 +53004,36 @@ function _aggiornaVisibilitaRetroBianco(prefisso) {
   if (riga) riga.style.display = conRetro ? 'none' : '';
 }
 
+// 🆕 v6.792 - LO STESSO GIUDIZIO, MA LETTO DALLA FORM APERTA invece che da un record. Le due
+//    form (`fe` e `fig`) hanno gli stessi campi con prefissi diversi, quindi il prefisso è un
+//    parametro: una copia per form sarebbe la solita coppia che diverge (§12.1).
+// ⚠️ `_changeDiRetro` vuole un RECORD; qui il record non esiste ancora - esistono i campi a
+//    schermo, che possono già dire una cosa diversa da quello che c'è nel database. Si compone
+//    quindi un record finto con i soli tre campi che contano, e si chiede alla funzione vera:
+//    nessuna seconda regola scritta a mano.
+function _recordFintoDallaForm(pref) {
+  const _v = (id) => document.getElementById(pref + '-' + id);
+  // 🔴 LA SEZIONE VERA, non 'figurines' a tappo: su un RETRO il tipo è SUO (v6.606 lo dice
+  //    per l'errore di stampa con le stesse parole), e un retro change collegato a un altro retro
+  //    change sarebbe stato giudicato «eredita» - perdendo la tendina proprio a chi la deve avere.
+  return {
+    isChange: true,
+    section: (pref === 'fe' ? _feSezione : currentSection) || 'figurines',
+    retroId: (_v('retro') && _v('retro').value) || '',
+    retroBianco: !!(_v('retro-bianco') && _v('retro-bianco').checked)
+  };
+}
+function _changeDiRetroDallaForm(pref) { return _changeDiRetro(_recordFintoDallaForm(pref)); }
+// 🆕 v6.795 - i gemelli per l'omaggio. ⚠️ Il record finto della v6.792 dichiara `isChange: true`
+//    perche' li' serviva solo a quello: qui si sovrascrive con `isFreeVersion`, o `_omaggioDiRetro`
+//    risponderebbe «no» a tutti e la tendina resterebbe dov'era.
+function _recordFintoOmaggio(pref) {
+  return Object.assign({}, _recordFintoDallaForm(pref), { isChange: false, isFreeVersion: true });
+}
+function _omaggioDiRetroDallaForm(pref) { return _omaggioDiRetro(_recordFintoOmaggio(pref)); }
+function _tipoOmaggioDallaForm(pref)    { return _tipoOmaggio(_recordFintoOmaggio(pref)); }
+function _tipoChangeDallaForm(pref)    { return _tipoChange(_recordFintoDallaForm(pref)); }
+
 function toggleFeRetroBianco() {
   const chk = document.getElementById('fe-retro-bianco');
   const group = document.getElementById('fe-retro-group');
@@ -51563,6 +53046,7 @@ function toggleFeRetroBianco() {
     if (dd) dd.style.display = 'none';
   }
   if (group) group.style.display = chk?.checked ? 'none' : '';
+  toggleFeBaseFigurineGroup();   // v6.792 - «Retro bianco» è un retro: cambia quale riga del Tipo vive
 }
 // v6.052 - opzioni.resta = salva SENZA chiudere la scheda.
 
@@ -52285,8 +53769,30 @@ async function saveFigFromDetail(figId, opzioni) {
       toast((currentLang === 'it' ? 'Il campo "Tipo di errore di stampa" è obbligatorio quando è selezionato "Errore di stampa"' : 'The "Print error type" field is required when "Print error" is selected'), 'error');
       return;
     }
+    // 🆕 v6.792 (Franco) - SE LA DIFFERENZA STA DIETRO, IL TIPO NON E' SUO E NON SI SCRIVE.
+    // 🔴 Qui si chiude il vicolo cieco che Franco aveva visto da solo: *«se la v6.782 non salva
+    //    una fig change senza il campo change type associato, o togli quel controllo quando la fig
+    //    è associata a un retro change, o dobbiamo riconsiderare di sincronizzare il valore»*. La
+    //    sincronizzazione l'ha scartata lui stesso contando i punti in cui andrebbe fatta.
+    // ⚠️ L'AZZERAMENTO E' VOLUTO, NON UN EFFETTO DELLA v6.169. La riga della tendina è nascosta
+    //    ma il `<select>` c'è, quindi il valore vecchio verrebbe risalvato tale e quale: sarebbe la
+    //    copia che rinasce a ogni salvataggio, cioè esattamente la strada scartata. Azzerando, le
+    //    114 copie si ripuliscono da sole man mano che Franco tocca quelle figurine, senza nessuno
+    //    script - e le tre divergenti smettono di mentire al primo salvataggio.
+    // 📌 Si guarda `updates`, non il record aperto: fra l'apertura e il Salva l'articolo può
+    //    aver cambiato caso, ed è la forma finale che decide di chi è il tipo.
+    const _sezSalva = updates.section || existingForCheck?.section || 'figurines';
+    const _chDietro = _changeDiRetro({ ...updates, section: _sezSalva });
+    if (_chDietro) updates.changeType = '';
+    // 🆕 v6.795 - e lo stesso per l'omaggio: se sta dietro, il tipo non e' suo e non si scrive.
+    //    ⚠️ Cosi' le 26 copie misurate si ripuliscono da sole man mano che Franco tocca quelle
+    //    figurine, senza nessuno script - come le 114 del change.
+    if (_omaggioDiRetro({ ...updates, section: _sezSalva })) updates.freeVersionType = '';
     // v5.779 — Il Tipo di change e' OBBLIGATORIO per un Change (Retro o figurina)
-    if (updates.isChange && !updates.changeType) {
+    // 🔄 v6.792 - ...ma solo dove una SCELTA esiste: su un change di retro non c'è nessun
+    //    controllo da compilare, e pretendere un campo che non si mostra è la peggiore delle due
+    //    cose - il modulo si rifiuta di salvare e non dice dove mettere le mani.
+    if (updates.isChange && !_chDietro && !updates.changeType) {
       toast((currentLang === 'it' ? 'Il campo "Tipo di change" è obbligatorio per un Change' : 'The "Change type" field is required for a Change'), 'error');
       return;
     }
@@ -53093,7 +54599,16 @@ function computeFullName(fig, allFigs, _salti) {
     // Senza changeType (dato vecchio) resta il solo NomeBase, niente trattino penzolante.
     const base = fig.baseFigurineId ? allFigs.find(x => x.id === fig.baseFigurineId) : null;
     const baseName = _nomeFigurinaDiPartenza(base, fig, allFigs, _salti);
-    return fig.changeType ? baseName + ' - ' + fig.changeType.toUpperCase() : baseName;
+    // 🔄 v6.792 - IL TIPO SI CHIEDE A CHI LO POSSIEDE, esattamente come il ramo dell'errore di
+    //    stampa qui sotto fa dalla v6.606. 🔴 Ed è QUI che si capisce perché quel campo era
+    //    stato copiato addosso a 114 figurine: una VARIAZIONE ha il Nome completo
+    //    `nome - _retroFullName(retro)` (v6.131), e il tipo del retro le arriva da solo; un CHANGE
+    //    ha il Nome completo costruito sulla BASE, e del suo retro non dice niente. La copia non
+    //    era un secondo dato: era un ponte costruito a mano dove il nome non passava.
+    // ⚠️ E come per l'errore di stampa (v6.606), il Nome completo si SCRIVE nei dati: un tipo
+    //    letto dal campo vecchio non sbaglia una schermata, resta cotto dentro `fullName`.
+    const tipoCh = _tipoChange(fig, allFigs);
+    return tipoCh ? baseName + ' - ' + tipoCh.toUpperCase() : baseName;
   }
   // 🆕 v6.241 - IL RAMO DELL'OMAGGIO, CHE MANCAVA DALLA v6.235. Senza, un omaggio cadeva nell'ultimo
   // ramo — quello della base — e il suo Nome completo era il proprio nome piu' il retro: cioe' lo
@@ -53108,7 +54623,9 @@ function computeFullName(fig, allFigs, _salti) {
     const base = fig.baseFigurineId ? allFigs.find(x => x.id === fig.baseFigurineId) : null;
     const baseName = _nomeFigurinaDiPartenza(base, fig, allFigs, _salti);
     // v6.257 - il prefisso viene dalla dichiarazione; il maiuscolo lo mette questo ramo.
-    const _pz = _pezzoTipologia({ ...fig, freeVersionType: (fig.freeVersionType || '').toUpperCase() });
+    // 🔄 v6.795 - e il TIPO si chiede a chi lo possiede: su una figurina con retro l'omaggio sta
+    //    sempre dietro. Stessa mossa dei due campi gemelli (v6.606, v6.792).
+    const _pz = _pezzoTipologia({ ...fig, freeVersionType: _tipoOmaggio(fig, allFigs).toUpperCase() });
     return baseName + ' - ' + _pz;
   }
   if (fig.isPrintError) {
@@ -55868,7 +57385,7 @@ function _gscNumeriche(s, L) {
   //    avere non deve comparire nemmeno a zero.
   // 📌 Il salto delle categorie VUOTE resta due righe piu' sotto ed e' un'altra cosa: li'
   //    si tace di cio' che non c'e' ANCORA, qui di cio' che non ci sara' mai.
-  const righe = PRODOTTI_INVENTARIO.filter(sez => !_articoloNascosto(sez, s.id)).map(sez => {
+  const righe = PRODOTTI_INVENTARIO.filter(sez => _tipologiaAmmessa(sez, s.id)).map(sez => {
     const g = tipiPresenti(s.id, sez);
     if (!g.items.length) return '';   // una categoria vuota non si annuncia a un visitatore
     const m = [];
@@ -58547,7 +60064,12 @@ function _massivoAggiornaValori() {
   if (c.tipologia) {
     const gruppi = VERSIONI_ARTICOLO.filter(v => v.campoTipo).map(v => {
       let valori;
-      if (v.opzioniTipo === '_opzioniTipoChange')       valori = [...retroChangeTypesDiSerie(currentSeriesId), ...frontChangeTypesDiSerie(currentSeriesId)];
+      // 🔄 v6.791 - ANCHE QUI LA SEZIONE CONTA, come per l'omaggio dalla v6.253: la riga
+      //    qui sotto diceva gia' «nella vista tabellare dei RETRO le tipologie frontali non si
+      //    applicano a niente», e il change era l'unico dei tre a offrire l'UNIONE.
+      if (v.opzioniTipo === '_opzioniTipoChange')       valori = (currentSection === 'retros')
+        ? retroChangeTypesDiSerie(currentSeriesId, currentSection)
+        : frontChangeTypesDiSerie(currentSeriesId, currentSection);
       // v6.253 - anche qui la sezione conta: nella vista tabellare dei RETRO le tipologie frontali
       // non si applicano a niente, e offrirle vorrebbe dire proporre un valore che il controllo di
       // coerenza dovrebbe poi rifiutare.
@@ -58642,6 +60164,7 @@ async function applicaAggiornamentoMassivo() {
   const tutte = Array.isArray(_cache.figurines) ? _cache.figurines : [];
   const perSerie = new Map();
   let toccati = 0;
+  let saltati = 0;   // v6.793 - le righe che il massivo NON tocca, e che vanno dette
   // 🆕 v6.235 - IL CAMBIO DI VERSIONE SI CONTA PRIMA DI APPLICARLO.
   //
   // 🔴 Il rischio vero non e' sbagliare il flag: e' la PARTENZA. Un change puo' oggi discendere da
@@ -58734,6 +60257,17 @@ async function applicaAggiornamentoMassivo() {
     // lì non salta niente.
     if (_campoComandatoDalGenitore(rec, campo)) return;
     if (c.tipologia) {
+      // 🆕 v6.793 (Franco) - IL TIPO DI CHANGE DI UN CHANGE DI RETRO NON SI SCRIVE DA QUI.
+      // 🔴 Dalla v6.792 quel tipo si chiede al retro, quindi scriverlo sulla figurina
+      //    metterebbe un valore in un campo che nessuno legge piu': una modifica che sembra fatta
+      //    e non c'e', che e' il difetto peggiore di tutti (v6.375).
+      // 🔴 LE TRE STRADE ERANO RIFIUTARE, SALTARE IN SILENZIO O DIRLO, e ha scelto lui:
+      //    *«dire che non fai la modifica e a salvataggio avvenuto lo dici a video»*. Quindi la
+      //    riga si salta E si conta - il silenzio era la strada sbagliata, ed è quella che questo
+      //    ciclo prende già due volte qui sopra.
+      // ⚠️ Vale SOLO per il tipo di change: l'omaggio e l'errore di stampa non si ereditano
+      //    cosi', e saltarli «per simmetria» toglierebbe una scrittura legittima.
+      if (_campoTipoDi(rec) === 'changeType' && _changeDiRetro(rec, tutte)) { saltati++; return; }
       // v6.244 - il campo su cui scrivere lo dice la VERSIONE della riga, non la voce del menu.
       // A questo punto tutte le righe hanno la versione giusta: il controllo qui sopra ha gia'
       // fermato tutto se anche una sola non l'aveva.
@@ -58814,9 +60348,20 @@ async function applicaAggiornamentoMassivo() {
     ? (it ? ', e ' + _collegati.size + ' collegat' + (_collegati.size === 1 ? 'o' : 'i')
           : ', plus ' + _collegati.size + ' linked item' + (_collegati.size === 1 ? '' : 's'))
     : '';
+  // 🆕 v6.793 (Franco: *«a salvataggio avvenuto lo dici a video»*) - LE RIGHE SALTATE SI
+  //    DICONO, e si dicono DOPO, insieme al resto. 🔴 Un massivo che scrive meno righe di quante
+  //    ne hai selezionate e non lo dice e' la stessa cosa di un massivo che sbaglia: te ne accorgi
+  //    tre giorni dopo guardando un nome. È la ragione per cui la v6.382 dice anche i collegati.
+  // ⚠️ LE PAROLE SONO MIE E NON SUE, quindi sono da confermare (v6.754): lui ha dato il
+  //    COMPORTAMENTO - non fare la modifica, e dirlo - non la frase.
+  const _saltate = saltati
+    ? (it ? ' — ' + saltati + ' saltat' + (saltati === 1 ? 'a' : 'e')
+            + ': il tipo di change lo dice il retro'
+          : ' — ' + saltati + ' skipped: the back declares the change type')
+    : '';
   toast(errori
-    ? (it ? 'Aggiornati ' + toccati + ' articoli' + _coda + ', ' + errori + ' serie NON salvate' : toccati + ' items updated' + _coda + ', ' + errori + ' series failed')
-    : (it ? '✅ Aggiornati ' + toccati + ' articoli' + _coda : '✅ ' + toccati + ' items updated' + _coda), errori ? 'warn' : 'success');
+    ? (it ? 'Aggiornati ' + toccati + ' articoli' + _coda + _saltate + ', ' + errori + ' serie NON salvate' : toccati + ' items updated' + _coda + _saltate + ', ' + errori + ' series failed')
+    : (it ? '✅ Aggiornati ' + toccati + ' articoli' + _coda + _saltate : '✅ ' + toccati + ' items updated' + _coda + _saltate), (errori || saltati) ? 'warn' : 'success');
   renderBulkEditView();
   try { renderItems(); } catch(e) {}
 }
