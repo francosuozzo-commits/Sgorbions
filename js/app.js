@@ -1,6 +1,468 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.808 - 📱 LA RICERCA GLOBALE ENTRA NEL PANINO. Franco: *«nel mobile mettila nel menu' di
+//          navigazione»*. Modificati js/app.js e index.html.
+//          ❌ E LA RAGIONE PER CUI NON C'ERA NON REGGEVA - e' la parte che vale piu' della release.
+//          La v6.341 aveva scritto, come fosse misurato: *«una casella di testo in mezzo a quelle
+//          righe sarebbe l'unica che non si preme, dentro un menu che si chiude appena tocchi
+//          qualcosa (`closeNavMenu` scatta sul primo click dentro `.nav-links a`) - quindi nemmeno
+//          scriverci dentro funzionerebbe davvero»*.
+//          🔴 Verificato LEGGENDO IL GESTORE invece di ricordarlo: scatta su `.nav-links a`, cioe'
+//          sui soli LINK. La casella e' un campo di testo, e non lo fa scattare. E il ramo «click
+//          fuori» non la tocca, perche' sta DENTRO `.nav-links`. Era una deduzione scritta come
+//          fatto - LA TERZA DELLA GIORNATA, dopo il grep di `counts` (v6.804) e quello fatto
+//          sull'index invece che su app.js (v6.805).
+//          📌 E LA CURA NON E' STATA TOCCARE IL GESTORE. La tentazione era «insegnargli» a
+//          ignorare la casella: non serviva, perche' gia' ignora tutto cio' che non e' un link, e
+//          cambiarlo avrebbe toccato il comportamento di OGNI voce del menu per un problema che non
+//          esisteva.
+//          🔴 IL SEGUITO CHE NESSUNO AVEVA CHIESTO, e senza il quale la release e' mezza: adesso
+//          la casella vive DENTRO il menu aperto, che COPRE la pagina. Cercando senza chiudere il
+//          panino si arriva all'Inventario e i risultati restano sotto il menu - cioe' il comando
+//          sembra non aver fatto niente. Quindi `ricercaGlobaleDaNavbar` chiude il panino, PRIMA di
+//          cambiare pagina, e in `try` perche' `closeNavMenu` vive nello script in linea dell'index.
+//          📏 E NEL PANINO LA CASELLA PRENDE LA RIGA INTERA: i 325px del desktop col tetto al 32%
+//          della finestra, su uno schermo da 390px, darebbero ~125px - piu' stretta di quella che la
+//          v6.807 aveva appena allargato perche' il suggerimento si leggesse.
+//          ⚠️ E PER POTERLO FARE la larghezza e' USCITA dallo stile IN LINEA ed e' finita in un
+//          foglio: uno stile in linea batte qualunque regola senza `!important`, quindi lasciandola
+//          li' la media query non avrebbe potuto allargarla. E' la trappola che la v6.162 ha gia'
+//          pagato sulle colonne della griglia.
+//          📏 E `prova-v6749` HA FATTO IL SUO MESTIERE: il commento nuovo nominava i tag di un
+//          contenitore per spiegare il difetto, e quella prova conta aperture e chiusure nell'index -
+//          una citata in un commento le sballa. La nota e' stata riscritta a parole.
+//          ✅ `prova-v6808` (12 controlli, di cui uno che ESEGUE la ricerca da navbar con un menu
+//          finto), rossa su otto sulla `_upload_v6.807`. Aggiornate `prova-v6341` (le due righe che
+//          pretendevano l'assenza su telefono sono diventate il loro seguito) e `prova-v6807` (la
+//          larghezza si legge dal foglio invece che dallo stile in linea). Giro completo: 355 su 355.
+// ------------------------------------------------------------
+// v6.807 - 🔍 LA RICERCA GLOBALE SI VEDE DA TUTTI, E DICE COS'E'. Franco: *«rendi la buca della
+//          ricerca globale visibile a tutti»* e *«aggiungi una hint (ricerca globale nel sito di
+//          articoli Sgorbions)»*. Modificati js/app.js e index.html.
+//          🔄 1) NON E' PIU' SOLO DELL'ADMIN. La v6.341 l'aveva accesa per lui e basta; adesso la
+//          vedono tutti, ospiti compresi. 📌 La funzione `_aggiornaRicercaNavbar` RESTA, e non e' un
+//          residuo: la ragione per cui esiste - *«quel ramo ha un gemello per gli ospiti, e una
+//          regola scritta in un ramo solo vale a meta'»* - vale ancora.
+//          ⚠️ E il CSS continua a nasconderla sotto gli 860px: e' una domanda diversa, e li'
+//          `.nav-links` diventa il panino. Quindi «visibile a tutti» vuol dire su desktop.
+//          🔴 2) IL SUGGERIMENTO STA NELLE CHIAVI, NON SOLO NELL'HTML, ed e' la parte che conta.
+//          Quel placeholder ha un `data-i18n-placeholder`, e `applyI18n` gira DOPO: a schermo vince
+//          il valore della CHIAVE. ⚠️ E' lo stesso difetto che la v6.795 ha pagato sulle due
+//          etichette dei conteggi - la prova era verde perche' guardava l'HTML, che era giusto,
+//          mentre il sito diceva altro. Qui il testo sta in tutti e due i posti, e la prova li
+//          guarda tutti e due.
+//          ⚠️ LA FRASE INGLESE E' UNA PROPOSTA: Franco ha dettato l'italiano, e le parole a
+//          schermo le sceglie lui (v6.754). Se non gli va, si cambia una chiave.
+//          📏 3) E LA CASELLA SI ALLARGA, perche' se no il suggerimento non si legge: misurato, a
+//          0,82rem in 150px ci stanno ~19 caratteri su 46 - si sarebbe letto «Ricerca globale n…»,
+//          cioe' un troncamento, non un suggerimento. 325px lo contengono tutto, con
+//          `max-width:32vw` perche' su un portatile stretto non spinga fuori le voci del menu, e il
+//          `title` per leggerlo comunque quando si stringe.
+//          ✅ `prova-v6807` (16 controlli, di cui cinque che ESEGUONO `_aggiornaRicercaNavbar` coi
+//          tre tipi di visitatore), rossa su dieci sulla `_upload_v6.806`. Aggiornata `prova-v6341`:
+//          le due righe che pretendevano «l'admin si, gli altri no» sono diventate il loro
+//          opposto - e continuano a pretendere che la risposta sia la STESSA per tutti e tre.
+//          Giro completo: 353 su 353.
+// ------------------------------------------------------------
+// v6.806 - 📖 «SFOGLIA L'ALBUM»: IL FLAG, I TRE PULSANTI, LO SFOGLIATORE, E L'ORIGINALE.
+//          Seconda meta', e TRE correzioni di Franco arrivate mentre si scriveva. Modificati
+//          js/app.js e index.html. Chiude «Sfoglia l'album» (punto 8).
+//          🔄 1) IL FLAG REVOCA UNA DECISIONE SCRITTA. Il piano diceva «l'album con ordine 1»,
+//          cioe' IL PRIMO. Franco: *«un flag negli album che indica che sia quello per lo sfoglia
+//          album»*. 🔴 «Il primo» e' una POSIZIONE: cambia da sola il giorno che gli album si
+//          riordinano, e nessuno se ne accorgerebbe - il sito continuerebbe a sfogliare, solo un
+//          altro album. Un flag e' una DICHIARAZIONE: dice CHI E', non DOVE STA.
+//          🔴 2) DUE SFOGLIABILI SI BLOCCANO, NON SE NE SPEGNE UNO. Prima stesura: accendere il
+//          flag lo spegneva sugli altri della serie. Franco, subito: *«no. L'accensione si blocca se
+//          ce n'e' gia' un altro sfogliabile per quella serie»*. ⚠️ Ed e' la regola che il sito ha
+//          gia' dalla v6.101 - *«davanti a due dati che si contraddicono, un programma non ne
+//          sceglie uno: li fa vedere tutti e due»*. Spegnere l'altro sarebbe stato decidere al posto
+//          di chi salva senza dirglielo. E il messaggio NOMINA l'album che ce l'ha gia' (v6.204).
+//          📌 3) IL PULSANTE STA IN TRE POSTI: *«quindi in tre punti»* - la pagina della SERIE
+//          (non si sa quale dei quindici album sia), la pagina degli ALBUM (si stanno guardando
+//          tutti), e la scheda dell'album DICHIARATO, e solo quella. Tre modi di arrivarci, una
+//          condizione sola (`_albumDaSfogliare`: dichiarato E con delle pagine).
+//          🔴 4) E OGNI PAGINA TIENE IL SUO ORIGINALE - la riga piu' importante delle due release.
+//          Franco: *«a volte la procedura di pulizia rovina le foto e magari ne rovina solo una su
+//          N; cosi' sistemo a mano solo quella»*. ⚠️ Nella v6.805 lo sfondo massivo SOSTITUIVA
+//          l'indirizzo: la pagina rovinata restava rovinata e la scansione buona non era piu'
+//          raggiungibile da nessuna parte del sito. Il file su Cloudinary c'era ancora - non si
+//          cancella niente - ma nessuno ne sapeva piu' l'indirizzo, che e' lo stesso che averlo
+//          perso. Adesso una pagina e' `{ url, orig }`: pulire cambia `url`, «rimetti l'originale»
+//          lo disfa in un clic, e OGNI strada di pulizia riparte da `orig` - ripulire una foto gia'
+//          pulita peggiora il risultato a ogni giro.
+//          📌 E LE TRE STRADE CHE FRANCO HA CHIESTO CI SONO TUTTE: caricare SENZA pulizia (il
+//          caricamento non chiama il modello), pulire TUTTE insieme, pulire UNA a mano. A schermo si
+//          vede quali pagine sono state pulite: dopo una passata massiva, senza un segno non si
+//          distingue piu' quella da rifare.
+//          ⚠️ LO SFOGLIATORE non gira in tondo (un album ha un principio e una fine), spegne i
+//          comandi ai capi invece di farli sparire, si chiude con Esc TOGLIENDO l'ascoltatore dei
+//          tasti, e precarica la pagina dopo.
+//          📏 E `prova-v6456` HA FATTO IL SUO MESTIERE DUE VOLTE in questa release: le due frecce
+//          dello sfogliatore erano nate con `btn-foto` addosso, e non sono comandi della foto - la
+//          correzione giusta era togliere la classe, non alzare il numero. Poi il conto e' salito a
+//          quattordici per «Rimetti l'originale», che invece lo e'. E `prova-v6393` ha preso i
+//          bianchi letterali del modale (`#fff` invece di `var(--text)`).
+//          ✅ `prova-v6806` (31 controlli, di cui sei che ESEGUONO il blocco su tre album finti di
+//          due serie), rossa su ventinove sulla `_upload_v6.805`. Giro completo: 353 su 353.
+// ------------------------------------------------------------
+// v6.805 - 📖 LE PAGINE DELL'ALBUM: CARICAMENTO MULTIPLO E SFONDO MASSIVO. Prima meta' di
+//          «Sfoglia l'album» (punto 8). Modificato il solo js/app.js (piu' i cache-buster).
+//          Franco: *«una sequenza di foto che metto io in configurazione, come allegati dell'album
+//          avente ordine 1»*, e poi *«ho bisogno della funzione rimuovi sfondo; se anche quella
+//          possiamo farla massivamente e' meglio»*.
+//          ❌ PRIMA DI TUTTO: IL DOCUMENTO DICEVA UNA COSA FALSA, e l'ha corretta Franco. C'era
+//          scritto - da mesi, e marcato «misurato» - che *«in questo sito la foto di un articolo
+//          non si carica mai dalla sua scheda»*. Lui: *«non mi torna... ho caricato centinaia di
+//          foto dall'articolo direttamente, per esempio tutte le spille»*. Aveva ragione: la scheda
+//          ha DUE slot foto (`_SLOT_FOTO`) piu' quello eBay, con `handleFigEditImg` e il
+//          caricamento su Cloudinary al salvataggio, dalla v6.074.
+//          🔴 E COME C'ERA FINITA: l'`<input type="file">` della scheda NON sta in `index.html` -
+//          lo scrive `_slotFotoEdit` dentro app.js. Un grep di `type="file"` sull'index torna TRE
+//          risultati e nessuno e' la scheda. ⚠️ E' la lezione della v6.804 due volte nello stesso
+//          giorno: UN GREP CHE NON TROVA NON E' UNA MISURA. Scritta come fatto, e' rimasta li' a
+//          far progettare sul vuoto.
+//          📏 QUINDI LE STRADE PER UNA FOTO SONO DUE, e nessuna va bene per N pagine:
+//          (a) LA SCHEDA - file in uno slot come data-URL, caricamento AL SALVATAGGIO: bene per due
+//          facce, non per venti scansioni tenute in memoria; (b) SOTTOSERIE/BOX/AVATAR
+//          (`_scegliFoto`) - finestra con anteprima e salvataggio SUBITO, ma UNA PER VOLTA, che e'
+//          il supplizio che Franco ha nominato.
+//          ✅ QUESTA E' LA TERZA: selezione MULTIPLA, caricamento immediato, in memoria solo URL.
+//          La matita di riga richiama la (b) sulla singola pagina da pulire, cosi' quella strada
+//          resta dove serve davvero.
+//          ⚠️ LO SFONDO MASSIVO GIRA NEL BROWSER, IN FILA, e non c'e' alternativa:
+//          `_togliSfondoDaBlob` (v6.189) usa il modello PIENO `isnet` dentro la pagina. La prima
+//          immagine scarica decine di MB, poi il modello resta caricato. L'unica cosa che si puo'
+//          fare bene e' DIRE A CHE PUNTO E': il bottone conta «3 / 20» e nomina la fase «scarico il
+//          modello», se no sembra piantato.
+//          🔴 E IL PEZZO DA GUARDARE ALLA PRIMA PROVA, dichiarato adesso perche' non sembri un
+//          difetto nuovo: quella funzione, tolto lo sfondo, RITAGLIA la trasparenza residua con 4px
+//          di margine. Su una figurina e' quello che si vuole; su una pagina di album vuol dire che
+//          ogni pagina esce larga quanto il suo contenuto, e due pagine possono uscire di misure
+//          diverse. Non e' stato toccato niente - e' la stessa funzione in un posto solo - ma se le
+//          pagine venissero storte, il ritaglio e' il primo posto dove guardare, non lo sfondo.
+//          📌 LE PAGINE SI SALVANO SUBITO, da `_saveFigurineItem` (l'unico punto che scrive un
+//          articolo, v6.318), e un errore rimette com'era e lo dice (v6.101). Serve un id: su un
+//          album mai salvato il blocco dice di salvare prima, invece di mostrare un comando che non
+//          puo' funzionare (v6.171).
+//          ⚠️ E LA SCHEDA NON LE AZZERA - la regola della v6.169 - per DUE fatti che vanno tenuti
+//          fermi insieme: `saveFigFromDetail` FONDE (`{ ...existing, ...updates }`), e `existing`
+//          si rilegge VIVO da `_recordInModifica`. Verificato leggendo le due funzioni, non
+//          assunto; e il §5 della prova li sorveglia tutti e due.
+//          📌 `pagine: true` sta nel DESCRITTORE, non in un `section === 'albums'`: e' la scelta
+//          della v6.667 per il sottonome. E il campo nuovo entra anche in `_ETICHETTE_DESCRITTORE`,
+//          o la tabella della console ne stampa la chiave in minuscolo (v6.714).
+//          ✅ `prova-v6805` (24 controlli, di cui sei che ESEGUONO il blocco col descrittore vero),
+//          rossa su ventuno sulla `_upload_v6.804`. Aggiornate `prova-v6456` (i comandi foto marcati
+//          passano da nove a tredici) e `prova-v6714` (l'etichetta del campo nuovo).
+//          Giro completo: 352 su 352.
+//          ⬜ RESTA LA SECONDA META': il pulsante «Sfoglia l'album» e lo sfogliatore a schermo
+//          pieno, che compare solo se il primo album della serie ha delle pagine.
+// ------------------------------------------------------------
+// v6.804 - 🗑️ `series.counts`, CAMPO MORTO: NESSUNO LO SCRIVE PIU'. Era segnato nel punto 8 della
+//          TODO, e la v6.466 l'aveva gia' misurato per iscritto. Modificato il solo js/app.js.
+//          📏 LA MISURA, col metodo della v6.157 (*grep del nome; se torna una riga sola, quella
+//          riga e' morta*): di `counts` c'erano UNDICI punti vivi - una funzione che lo calcolava,
+//          SETTE chiamate a lei, DUE payload che lo mandavano a Firestore e DUE fotografie per il
+//          disfare - e ZERO letture. Non poche: zero.
+//          ⚠️ E NON ERA SOLO MORTO, ERA ANCHE FALSO: contava QUATTRO sezioni su DODICI
+//          (figurines, retros, albums, extras). Se un domani qualcuno l'avesse letto «tanto c'e'
+//          gia'», avrebbe trovato un numero pronto e SBAGLIATO - peggio di un numero che manca.
+//          E' la famiglia della v6.801, tre release fa.
+//          🔴 L'ERRORE FATTO SCRIVENDO QUESTA RELEASE, che vale piu' della release: la prima
+//          passata ha cercato `counts` con un grep SENSIBILE ALLE MAIUSCOLE, e
+//          `_recomputeSeriesCounts` ha la C grande. Ne sono usciti tre chiamanti su sette, e la
+//          funzione e' stata cancellata lasciandone QUATTRO a chiamarla.
+//          ⚠️ E `node --check` E' PASSATO LO STESSO: un nome che non esiste e' un `ReferenceError`
+//          a ESECUZIONE, non un errore di sintassi. Sarebbe esploso alla prima cancellazione
+//          definitiva di un articolo, allo spostamento fra serie, al massivo e alla migrazione -
+//          cioe' in quattro strumenti da amministratore, tutti fuori dal giro di prove.
+//          📌 La regola della v6.157 non e' «fai un grep»: e' «fai un grep CHE TROVI». Il
+//          controllo §2 di `prova-v6804` cerca adesso senza distinguere le maiuscole.
+//          📌 IL CAMPO GIA' SCRITTO SU FIRESTORE NON SI TOCCA, ed e' deliberato: toglierlo dai
+//          documenti e' una migrazione sui dati di Franco, non una riga di codice. Nessuno lo
+//          legge, quindi resta come dato morto a riposo. Il giorno che si vuole pulire e' una
+//          passata sola con `deleteField()`, e la decide lui.
+//          ⚠️ E IL «DISFARE» DEGLI ITEMS E' INTATTO: le fotografie tolte erano due, e la seconda -
+//          quella che impedisce a un salvataggio fallito di lasciare in memoria dati che sul
+//          database non ci sono - resta. Tre controlli la sorvegliano.
+//          ✅ `prova-v6804` (18 controlli), rossa su sei sulla `_upload_v6.803`.
+//          Giro completo: 351 su 351.
+// ------------------------------------------------------------
+// v6.803 - ⭐ «1 PUNTI»: IL SINGOLARE SI DECIDE SUL NUMERO, NON SULLA SUA FORMA. Difetto segnato
+//          il 10 settembre 2026 (il punto «e») e rimasto aperto. Modificato il solo js/app.js.
+//          📏 MISURATO SUL SITO IN LINEA, non dedotto: delle NOVE serie che hanno un punteggio,
+//          QUATTRO scrivono «⭐ 1 punti» - Serie 2, I mitici Sgorbions (serie 4), Mega Sgorbions 2
+//          e Sgorbions 2018.
+//          🔴 LA CAUSA NON E' LA FRASE, E' IL TIPO: `n === 1` e' un confronto STRETTO, e cinque
+//          dei sette punti che chiamano non passano un numero. La card della serie passa la MODA,
+//          che esce da `Object.entries(freq)` - e le chiavi di un oggetto sono sempre STRINGHE; le
+//          altre quattro passano `score.toLocaleString(...)`, cioe' una stringa per costruzione.
+//          `'1' === 1` e' falso, quindi da quelle parti il singolare non scattava mai.
+//          📌 E SI CHIUDE NELLA FUNZIONE, NON AI CHIAMANTI, anche se il punto della TODO diceva
+//          «basta un `Number()` sulla moda»: quel `Number()` avrebbe sistemato UNA card su cinque
+//          punti rotti, e avrebbe lasciato in piedi la trappola per il sesto chiamante che
+//          nascera'. E' la lezione della v6.801, due release fa - un punto di TODO che indica la
+//          porta sbagliata. La domanda vera e' «la quantita' e' uno?», e la risposta non puo'
+//          dipendere dal modo in cui il numero e' stato scritto.
+//          ⚠️ E `n` SI CONTINUA A STAMPARE COM'E' ARRIVATO, che vale quanto il resto: quattro
+//          chiamanti passano APPOSTA la forma localizzata, col separatore delle migliaia.
+//          Convertirla in numero per stamparla avrebbe sistemato il singolare e rotto «1.000
+//          punti» - uno scambio in perdita, e silenzioso. IL NUMERO SERVE PER DECIDERE, LA STRINGA
+//          PER SCRIVERE. 📌 Togliere le cifre regge tutte e due le localizzazioni: «1.000» (it) e
+//          «1,000» (en) danno 1000, «1» da' 1; i punteggi sono interi, quindi non c'e' una virgola
+//          decimale da confondere con un separatore.
+//          📌 LE QUATTRO PAROLE NON SONO CAMBIATE: le ha scelte Franco alla v6.486 («cambiato
+//          "pt" in "punti"»), e questa release tocca il tipo, non il testo (v6.790).
+//          ✅ `prova-v6803` (16 controlli, di cui undici che ESEGUONO `_codaPunti` vera nelle due
+//          lingue e nelle due localizzazioni), rossa su tre sulla `_upload_v6.802`.
+//          Giro completo: 350 su 350.
+// ------------------------------------------------------------
+// v6.802 - 🐛 CAMBIARE LINGUA DENTRO UN BOX NON CANCELLA PIU' IL NOME DEL BOX. Difetto
+//          DICHIARATO L'11 SETTEMBRE 2026 e rimasto aperto tre release (punto 8 della TODO).
+//          Modificato il solo js/app.js (piu' i cache-buster).
+//          🔴 IL DIFETTO: dentro un BOX di tipo prodotto, toccare la bandierina rimetteva
+//          l'etichetta della SEZIONE al posto del nome del box. Si entra in un box da `extras`,
+//          quindi "Metal" diventava "Altri articoli" / "Other Items", e non tornava piu' finche'
+//          non si usciva e si rientrava.
+//          📌 PERCHE' ERA SFUGGITO, ed e' la cosa che vale piu' della correzione: la v6.729
+//          aveva messo in un posto solo il modo di SCRIVERE quel titolo (`_scriviTitoloSezione`,
+//          che sa tacere dentro un gruppo), e con quello il doppione era chiuso. Ma COSA scrivere
+//          era rimasto in QUATTRO punti indipendenti, e tre su quattro si ricordavano del box
+//          mentre il quarto - il cambio di lingua - no. UNA REGOLA SOLA PER IL «COME» NON BASTA SE
+//          IL «COSA» E' ANCORA SPARSO: e' la stessa forma della v6.133 e della v6.143.
+//          ⚠️ E IL NOME DEL BOX HA UNA LINGUA SUA (`nomeEn`), quindi la correzione NON era
+//          "non toccarlo": cambiando lingua va RISCRITTO, nell'altra lingua. Congelarlo sarebbe
+//          stato l'altro mezzo difetto - un box che resta in italiano dentro un sito in inglese.
+//          🐛 E METTENDO IN COMUNE LA DOMANDA NE E' USCITO UN SECONDO: la rinomina di un box
+//          scriveva `_t.nome`, cioe' SEMPRE L'ITALIANO. Per vederlo bisogna essere in inglese E
+//          stare rinominando un box - motivo per cui non l'aveva visto nessuno.
+//          🗑️ E UNO DEI QUATTRO SCRITTORI SE N'E' ANDATO: chi apre un box riscriveva il titolo
+//          subito dopo `openSeriesSection`, che adesso lo scrive gia' bene (`_tipoProdottoCorrente`
+//          e' impostato nella riga sopra, v6.144). Lasciarlo sarebbe stato il quinto punto che dice
+//          la stessa cosa, cioe' il difetto che questa release chiude.
+//          ⚠️ LA DECISIONE DELLA v6.729 NON E' TOCCATA: dentro un gruppo il titolo continua a
+//          tacere, e nelle sezioni senza gruppi la parola resta scritta due volte - scelta
+//          esplicita di Franco, non una svista.
+//          ✅ `prova-v6802` (16 controlli, di cui nove che ESEGUONO `_titoloSezioneAtteso` con
+//          `_nomeTipo` vera, nelle due lingue), rossa su quattordici sulla `_upload_v6.801`.
+//          Aggiornate `prova-v6729` (i chiamanti passano da quattro a tre) e `prova-v6718`, che
+//          difendeva "il titolo non compone mai tipologia + gruppo" ed era ancorata
+//          all'espressione: adesso guarda anche dentro la funzione a cui la riga chiede.
+//          Giro completo: 349 su 349.
+// ------------------------------------------------------------
+// v6.801 - 🏷️ LE TRE SCHERMATE CHE CONOSCEVANO CINQUE TIPOLOGIE SU DODICI. Punto 5 della TODO,
+//          riaperto dalla misura. Modificato il solo js/app.js (piu' i cache-buster).
+//          ⚠️ IL PUNTO NOMINAVA `_gscIndirizzi`, E LI' ERA GIA' CHIUSO dalla v6.735. Ma lo stesso
+//          difetto era vivo in TRE altri posti, e non li guardava nessuno.
+//          🔴 MISURATO, dizionario per dizionario: l'anteprima del ricalcolo dei Nomi completi e
+//          la pagina «Cio' che cerco» conoscono CINQUE tipologie su dodici; l'export «non nella tua
+//          lista» ne conosce SETTE. Le altre non sparivano: uscivano come la parola `undefined`
+//          nella prima - che non aveva nemmeno un ripiego - e come la CHIAVE IN MINUSCOLO
+//          (`spille`, `tatuaggi`) nelle altre due. E' lo stesso difetto che la v6.284 aveva chiuso
+//          per `carte` e `attaccare`, tornato con le quattro tipologie nate il 10 settembre.
+//          📌 PERCHE' NON SI SOSTITUISCONO E BASTA CON `getSectionLabel`, che pure e' la fonte
+//          giusta, ed e' la parte che vale: nel descrittore `figurines` si chiama "Figurine con
+//          retro", mentre queste schermate dicono "Figurine". Sostituire avrebbe RINOMINATO di
+//          straforo una parola a schermo che nessuno ha chiesto di cambiare - ed e' la ragione,
+//          gia' scritta nella v6.284, per cui allora non l'aveva fatto. Le parole a schermo le
+//          sceglie Franco (v6.754). Quindi: cio' che e' scritto a mano VINCE e non cambia una
+//          virgola, cio' che manca viene dal descrittore invece che da un buco.
+//          ⚠️ `hasOwnProperty` e non `sovra[k] ||`: un'etichetta volutamente VUOTA e' una scelta,
+//          e l'oppure la ribalterebbe in silenzio.
+//          🔴 E C'ERA UN SECONDO DIFETTO NELLO STESSO PUNTO, che valeva quanto il primo: l'ORDINE
+//          delle sezioni era un ALTRO elenco a cinque nomi - anzi TRE elenchi, uno dei quali nella
+//          stessa funzione dell'altro - e `indexOf` torna -1 per chi non c'e'. Le sette mancanti
+//          finivano TUTTE in cima, prima delle figurine: un ordine deciso da chi nell'elenco non
+//          era. Adesso chiedono `PRODOTTI_INVENTARIO`, cioe' l'ordine che decide Franco.
+//          📏 IL CENSIMENTO DI `prova-v6646` PASSA DA SETTE A QUATTRO, ed e' il motivo per cui
+//          quella prova esiste: conta le liste di sezioni scritte a mano e diventa rossa quando una
+//          si chiude, cosi' nessuna se ne va senza che qualcuno la guardi.
+//          ⬜ LE DUE CHE RESTANO NON SONO UNA RIGA, e non sono state toccate: `sezioni` (i riquadri
+//          del profilo) e `_SEZ_ORD` (la pagina Errori) non sono solo un ordine, sono l'elenco di
+//          COSA SI GUARDA - quindi la pagina Errori controlla 5 tipologie su 12. Aprirle farebbe
+//          comparire numeri nuovi in due schermate, e «senza retro» su una spilla non vuol dire
+//          niente. E' il punto 30 della TODO.
+//          ✅ `prova-v6801` (21 controlli, di cui dieci che ESEGUONO il ripiego sulle dodici chiavi
+//          vere del descrittore), rossa su quattordici sulla `_upload_v6.800`. Aggiornate
+//          `prova-v6646` (il censimento) e `prova-v6398`, che difendeva un COLORE ma era ancorata
+//          all'espressione. Giro completo: 348 su 348.
+// ------------------------------------------------------------
+// v6.800 - 🧭 SOTTOSERIE DIVERSE SIGNIFICA GRUPPI DIVERSI. Franco: *«sottoserie diverse
+//          significa gruppi diversi; non chiamarle famiglie»*. Modificato il solo js/app.js
+//          (piu' i cache-buster). Chiude il punto 27.
+//          🔴 QUESTA RELEASE CORREGGE UNA DOMANDA, NON UNA RIGA, ed e' la cosa da non perdere. Il
+//          punto 27 era scritto cosi': *«due spille della stessa famiglia finiscono su pagine
+//          diverse - in quale delle due sottoserie va messa la famiglia?»*. La domanda non ha
+//          risposta perche' non ha OGGETTO: quelle due spille non sono una famiglia. Hanno
+//          sottoserie diverse, quindi sono due gruppi, e stare su due pagine e' giusto.
+//          ⚠️ LE TRE RISPOSTE CHE STAVO PER PROPORGLI - la famiglia segue la base, ogni pagina si
+//          porta dietro la famiglia intera, oppure e' il dato da correggere - erano sbagliate tutte
+//          e tre ALLO STESSO MODO: davano per buona una premessa che nessuno aveva verificato. E la
+//          premessa veniva da una misura mia: *«77 spille, 70 famiglie, 7 con due membri»*. Quella
+//          misura l'aveva chiesta a `_familyKey`, e `_familyKey` la sottoserie non la guardava.
+//          📌 LA REGOLA CHE RESTA: una misura vale quanto la definizione che ha interrogato.
+//          Contare con la definizione sbagliata non da' un numero sbagliato - da' un numero giusto
+//          di una cosa che non e' quella di cui si sta parlando, che e' molto piu' difficile da
+//          vedere. E' la famiglia della v6.375 e della v6.246, un piano piu' su.
+//          📌 COSA CAMBIA DAVVERO OGGI: quasi niente, e va detto. Base e derivato stanno quasi
+//          sempre nella stessa sottoserie, e quando non ci stanno non sono mai nella stessa pagina -
+//          quindi `_incollaGruppi` e `buildItemPages` non li incontravano comunque. Cambia per la
+//          v6.799, che ordina per le chiavi del CAPO: senza questa riga un derivato ordinerebbe per
+//          un capo che nella sua pagina non c'e', cioe' per un articolo che li' non si vede.
+//          ⚠️ LA STRINGA VUOTA E' UN GRUPPO VERO - il «Set principale» (v6.729) - quindi base e
+//          derivato entrambi senza sottoserie restano insieme, che e' il caso di sette sezioni su
+//          otto. Scritto come `if (f.subseries)` si sarebbe perso in silenzio.
+//          ⚠️ E LA DEFINIZIONE RESTA UNA SOLA: tutti e tre i chiamanti passano l'indice
+//          (`_incollaGruppi`, `buildItemPages`, `_capoFamiglia`), e senza indice la risposta e' la
+//          stessa - solo piu' lenta. Due risposte secondo chi chiama sarebbero due idee di gruppo,
+//          cioe' il difetto che questa release chiude.
+//          ✅ `prova-v6800` (14 controlli, di cui dieci che ESEGUONO `_familyKey` vera), rossa su
+//          quattordici sulla `_upload_v6.799`. Aggiornata `prova-v6799`: due controlli erano
+//          agganciati alla firma vecchia, e il suo cappello diceva che la domanda era aperta.
+//          Giro completo: 347 su 347.
+// ------------------------------------------------------------
+// v6.799 - 👪 NON SI SPEZZA MAI UNA FAMIGLIA: L'ORDINE DELLE SEZIONI SENZA NUMERI.
+//          Franco, sul punto 27: *«non si spezza mai una famiglia»* - una regola che aveva gia'
+//          dato (v6.767) e che qui diventa l'ORDINAMENTO invece del riempimento di fine riga.
+//          Modificato il solo js/app.js (piu' i cache-buster).
+//          🔴 QUI L'ORDINE ERA DEL SINGOLO ARTICOLO, E LA FAMIGLIA NON ESISTEVA. Le sezioni senza
+//          numeri - spille, carte, tatuaggi, trasferelli, cartoncini, bustine, album, altri -
+//          confrontavano `number` e `name` DEL RECORD. Il ramo delle figurine la famiglia la
+//          conosce da sempre (`refFig`: se stessa se e' base, altrimenti la base collegata);
+//          questo no. ⚠️ E NON E' `_collocaFamiglia` A SBAGLIARE: quella tiene unito cio' che e'
+//          gia' CONTIGUO nell'elenco ordinato. Quando arriva lei, il danno e' fatto - e' la stessa
+//          trappola della v6.768, dove il pezzo che si sospettava era quello col nome giusto.
+//          🔴 E IL SEGUITO ERA UN ORDINE CHE DICE «SONO PARI», che vale quanto l'altro difetto: il
+//          Nome e' EREDITATO dalla base (`_campiEreditatiDaBase` torna `['name']`), quindi una base
+//          e il suo errore di stampa hanno lo STESSO nome. Senza numero - e sulle spille
+//          l'Ordinamento quasi nessuno lo usa - l'ultimo confronto tornava 0 e le due card si
+//          scambiavano posto a ogni ridisegno. E' la v6.616 in piena regola, su dati che ci sono
+//          oggi. Adesso l'ultima parola ce l'ha l'id, in DUE punti: fra famiglie e dentro una.
+//          📌 IL CAPO SI CHIEDE A `_familyKey`, non a una seconda idea di chi sia il padre. In
+//          questo file le idee di «chi e' un figlio» sono gia' TRE (`_eBase`, `_eFiglioCollegato`,
+//          `_familyKey`) e la v6.314 racconta cosa succede quando due non sono d'accordo dentro lo
+//          STESSO ordinamento. `_incollaGruppi` raggruppa per `_familyKey`: l'ordinamento chiede a
+//          lei, o ordinerebbe famiglie che il disegno non riconosce.
+//          📌 E DENTRO LA FAMIGLIA SI SCENDE NELL'ORDINE DICHIARATO (`_prioritaTipo`, da
+//          `_VERSIONI_VIVE`): il giorno che nasce una versione nuova si infila da se'.
+//          ⬜ QUELLO CHE QUESTA RELEASE NON FA, E VA SAPUTO: due membri con SOTTOSERIE diverse
+//          stanno su due PAGINE diverse (una pagina per sottoserie, v6.765), e nessun ordinamento
+//          li avvicina. Sono DUE spille su settantasette, e non e' un pezzo mancante: e' una
+//          domanda aperta per Franco, perche' «non si spezza mai una famiglia» si puo' onorare in
+//          due modi opposti - la famiglia segue la BASE (e una spilla da 4,1 CM sparisce dalla
+//          pagina 4,1 CM), oppure ogni pagina si porta dietro la famiglia INTERA (e niente
+//          sparisce, ma un articolo si vede in due pagine). Sta nella TODO, punto 27.
+//          ⬜ E LA VISTA TABELLARE NON E' TOCCATA, dichiarato e non dimenticato: Franco ha detto
+//          «in tutte le GRIGLIE», e `cmpVistaTabellare` ha TRE consumatori di cui due sono tabelle
+//          eBay che famiglie non ne raggruppano. Estenderla per simmetria e' l'errore della v6.246.
+//          ✅ `prova-v6799` (15 controlli, di cui otto che ESEGUONO il ramo vero su elenchi
+//          mescolati), rossa su undici sulla `_upload_v6.798`. Giro completo: 346 su 346.
+// ------------------------------------------------------------
+// v6.798 - 🐛 LA MINIATURA SOTTO LA CARD DELLE BUSTINE: NON ERA UNA FOTO, ERA UN DISEGNO.
+//          Franco: *«la card delle bustine anche quando cambi la foto mostra sullo sfondo una
+//          miniatura raffigurante delle bustine; questa miniatura assomiglia molto alla prima foto
+//          che mettemmo a quella card. Non so se questo possa essere rilevante»*. Modificati
+//          js/app.js e index.html. Chiude il punto 19 della TODO.
+//          🔴 NON ERA UNA FOTO VECCHIA, E NON ERA LA CACHE: e' un SVG DISEGNATO A MANO, scritto
+//          nell'index dalla v5.874 - quando le bustine nacquero «per ora SENZA immagine
+//          (placeholder emoji)». Assomiglia alla prima foto perche' e' un disegno di bustine, come
+//          lo era quella foto. 📏 Misurato card per card: dei DODICI riquadri foto dell'hub, dieci
+//          contengono solo spazio bianco, uno (retros) porta un `background-image` scritto a mano, e
+//          uno solo - bustine - contiene un ELEMENTO. La foto entra come `background-image` DEL
+//          RIQUADRO, e un FIGLIO del riquadro le sta sopra: il disegno non se ne andava mai.
+//          ⚠️ LA PISTA CHE LA TODO PORTAVA DA MESI ERA SBAGLIATA, e va detto perche' era
+//          ragionevole: la v6.216 aveva misurato che bustine e' l'unica card senza
+//          `background-repeat` NE' `background-size` inline. Vero, e irrilevante - dalla v6.216
+//          stessa quei due valori li scrive `_sfondoUnaVoltaSola`, quindi quel markup non conta
+//          piu'. 📌 E la causa vera era gia' scritta in chiaro dalla v6.073: *«Retro e Bustine non
+//          stanno in SECTION_IMAGES - il primo ha lo sfondo scritto nell'index, la seconda e' un
+//          SVG disegnato a mano»*. Era noto, da due release diverse, e nessuno l'aveva collegato
+//          alla foto che non si vedeva. La lezione e' quella della v6.157: il pezzo che spiega il
+//          guasto puo' essere gia' scritto, in una nota che parlava d'altro.
+//          📌 SI DICHIARA, NON SI SVUOTA. `riquadro.innerHTML = ''` avrebbe chiuso il caso in una
+//          riga e cancellato anche cio' che un domani ci mettesse qualcun altro senza saperlo -
+//          che e' esattamente il modo in cui questo difetto e' nato. Il segnaposto porta adesso
+//          `data-segnaposto` e `_segnapostoDelRiquadro` parla a quello: se ne nascera' un secondo,
+//          funzionera' senza che nessuno tocchi questa funzione.
+//          ⚠️ E SI RIACCENDE QUANDO LA FOTO NON C'E'. Queste card sono markup fisso e si RIUSANO
+//          da una serie all'altra (v6.686): spegnere il segnaposto e basta l'avrebbe fatto sparire
+//          per sempre alla prima serie che una foto ce l'ha, e le altre avrebbero mostrato un
+//          riquadro vuoto. Sarebbe stato un secondo difetto, visibile solo cambiando serie - cioe'
+//          quasi mai guardando una schermata.
+//          🎨 E IL VIOLA PASSA SUL SEGNAPOSTO. `background:#c9a3ef` stava sul RIQUADRO, quindi
+//          restava anche sotto la foto - e la foto entra con `contain`, che lascia due bande: erano
+//          viola qui e grigie (`--bg3`) nelle altre undici card. Adesso il colore appartiene al
+//          disegno, e sparisce con lui.
+//          ⬜ RESTA UNA DOMANDA PER FRANCO, e non e' stata decisa qui: la v6.686 ha stabilito che
+//          una serie senza foto mostra il riquadro VUOTO (scelta sua, col prezzo davanti), e sette
+//          card su otto fanno cosi'. Le bustine sono l'unica col disegno, per anzianita', non per
+//          decisione. Se lo vuole via del tutto, e' una riga - ma e' una parola a schermo, e le
+//          parole a schermo le sceglie lui (v6.754).
+//          ✅ `prova-v6798` (18 controlli), rossa su dodici sulla `_upload_v6.797`. Aggiornata
+//          `prova-v6686`, che esegue `_applicaFotoSezioni` con dei finti: `_segnapostoDelRiquadro`
+//          ci entra VERA e non finta, perche' un finto che tornasse `null` avrebbe tenuto quella
+//          suite verde mentre il disegno restava acceso sopra la foto. Giro completo: 345 su 345.
+// ------------------------------------------------------------
+// v6.797 - 🔢 IL NUMERO DELLE SERIE IN HOMEPAGE, E L'ORDINAMENTO CHE SCENDE. Due cose di Franco,
+//          guardando il sito dal telefono. Modificati js/app.js e index.html (i soli cache-buster).
+//          🔴 1) *«nella homepage il numero di serie non deve contare quelle IN ARRIVO e
+//          invisibili»*. E scrivendola è saltata fuori una cosa che nessuno aveva mai detto ad alta
+//          voce: QUEL NUMERO DIPENDEVA DA CHI GUARDAVA. `getData('series')` passa da
+//          `_serieVisibili` (v6.584), che toglie le nascoste - ma solo ai VISITATORI: a un
+//          amministratore restituisce tutto. Sulla stessa homepage Franco leggeva un numero e un
+//          visitatore un altro, e nessuno dei due era sbagliato per come era scritto.
+//          📌 Questo numero è un'affermazione sul sito, non una vista personale: deve dire la
+//          stessa cosa a tutti, quindi il filtro sta QUI, esplicito, invece di fidarsi di uno che
+//          cambia risposta secondo chi è collegato. ⚠️ CONSEGUENZA: il numero che vede Franco si
+//          abbassa, anche di quanto nessun altro vedeva gia' prima.
+//          ⚠️ E si chiede `_statoSerie`, non `s.invisibile`: lo stato ha QUATTRO valori dalla
+//          v6.676 e `invisibile` è solo il ripiego per i record vecchi. Il banco prova tutti e due
+//          i modi di scrivere «in arrivo» e «nascosta»: su sette serie finte ne conta tre.
+//          ⚠️ GLI ALTRI CONTATORI NON SONO TOCCATI: figurine, retro, bustine, album e altri articoli
+//          contano ancora gli articoli di TUTTE le serie, comprese queste. E' un'incoerenza vera, e
+//          resta perche' Franco ha nominato il numero delle SERIE: estenderla per simmetria senza
+//          chiederglielo e' l'errore che la v6.246 ha gia' pagato. Sta nella TODO.
+//          🔄 2) *«il campo Ordinamento, sulla form degli articoli (tutti) va + in basso; mettilo
+//          prima di "rarita'"»*. Era la PRIMA riga della scheda: il primo campo che si incontra
+//          aprendo un articolo era quello che si tocca quasi mai.
+//          ⚠️ SPOSTATO, NON RIGENERATO: stessi id, stessa nota della v6.660, stessa casella «Non ha
+//          numero». E' la lezione della v6.790. 📌 E resta UN blocco solo per tutte le tipologie -
+//          l'etichetta dice «Ordinamento» o «N.» secondo la tipologia, ma il campo è lo stesso.
+//          ✅ `prova-v6797` (12 controlli), rossa su nove sulla `_upload_v6.796`.
+//          Giro completo: 344 su 344.
+// ------------------------------------------------------------
+// v6.796 - 🏷️ IL SOTTONOME ENTRA NEL NOME COMPLETO DELLE SPILLE. Modificato il solo js/app.js
+//          (piu' i cache-buster). Franco: *«per le spille, nel nome completo metti anche il sotto
+//          nome; dopo il nome»*, e poi la forma piena: *«Sottoserie - Nome - Sottonome»*.
+//          🔴 NON E' UNA REGOLA NUOVA, E' UNA STRADA CHE NON PASSAVA DI QUI. Il sottonome nel nome
+//          completo esiste dalla v5.751 - ma solo per i RETRO, perche' `_retroNomeLungo` (che
+//          compone `nome - sottonome`) ha UN solo chiamante: `_retroFullName`. E `computeFullName`
+//          smista per VERSIONE, non per tipologia: i retro escono alla prima riga, tutti gli altri
+//          finiscono nel ramo delle basi, dove `subname` non era nemmeno nominato. Una spilla
+//          cadeva nel caso «senza retro collegato» e tornava il solo nome.
+//          📌 E IL CAMPO NON ERA INVISIBILE, il che spiega perche' la mancanza non saltasse
+//          all'occhio: sulla CARD il sottonome di una spilla si vede gia', di suo, fra parentesi.
+//          Due posti e due strade - quella che si vedeva funzionava, questa non era mai stata
+//          collegata.
+//          ⚠️ I DERIVATI SEGUONO DA SOLI: un errore di stampa di spilla compone
+//          `_nomeFigurinaDiPartenza`, che rientra in questa stessa funzione sulla base. Cambiato il
+//          ramo delle basi, i sette errori di stampa delle spille si sistemano senza toccare i loro
+//          rami - e nella STESSA forma di figurine e retro («nome della base - tipo»), che e'
+//          esattamente quello che Franco ha chiesto: *«fai come fai per figurine o retro, stesso
+//          modo»*. Verificato eseguendo, non affermato.
+//          📌 LA CONDIZIONE E' «questa tipologia dichiara un sottonome» e non «e' una spilla»: lo
+//          dice il descrittore (`_haSottonome`), la stessa fonte che decide se il campo si mostra
+//          nella form e sulla card. ⚠️ Oggi le tipologie che lo dichiarano sono DUE - Retro e
+//          Spille - e i retro non arrivano qui. Se un domani una TERZA lo dichiarasse, la regola
+//          varrebbe anche per lei: e' una conseguenza da guardare, e `prova-v6796` §4b la fa notare.
+//          ⚠️ E RESTA UNA COSA DA GUARDARE A SCHERMO, che decide Franco quando la vede: il sito
+//          mostra UNA PAGINA PER OGNI SOTTOSERIE, quindi dentro la pagina «3,7 CM classiche» il nome
+//          completo comincera' con «3,7 CM classiche». E' lo stesso genere di ripetizione che la
+//          v6.729 ha fatto togliere per la tipologia.
+//          ✅ `prova-v6796` (14 controlli), rossa su sette sulla `_upload_v6.795`.
+// ------------------------------------------------------------
 // v6.795 - 🎁 L'OMAGGIO DI UNA FIGURINA CON RETRO STA SEMPRE DIETRO. Modificati js/app.js e
 //          index.html. Terza e ultima delle tre release sullo stesso tema (v6.577 l'errore di
 //          stampa, v6.792 il change, questa l'omaggio): adesso i tre campi del Tipo rispondono
@@ -27699,7 +28161,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.795';
+const JS_VERSION = 'v6.808';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -28548,15 +29010,24 @@ function _dataCreazioneTesto(f) {
     { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-function _recomputeSeriesCounts(series) {
-  const items = series.items || [];
-  series.counts = {
-    figurines: items.filter(f => f.section === 'figurines' || !f.section).length,
-    retros: items.filter(f => f.section === 'retros').length,
-    albums: items.filter(f => f.section === 'albums').length,
-    extras: items.filter(f => f.section === 'extras').length
-  };
-}
+// 🗑️ v6.804 - QUI STAVA `_recomputeSeriesCounts`, E `series.counts` NON LO SCRIVE PIU' NESSUNO.
+// 📏 LA MISURA, fatta col metodo della v6.157 (*grep del nome; se torna una riga sola, quella
+//    riga e' morta*): di `counts` c'erano SETTE punti vivi - una funzione che lo calcolava, TRE
+//    chiamate a lei, DUE payload che lo mandavano a Firestore e DUE fotografie per il disfare - e
+//    ZERO letture. Non una scarsa: zero. Il campo veniva calcolato, spedito e conservato perche'
+//    qualcuno lo leggesse, e quel qualcuno non e' mai esistito.
+// ⚠️ E NON ERA SOLO MORTO, ERA ANCHE FALSO: contava QUATTRO sezioni (figurines, retros, albums,
+//    extras) su DODICI. Carte, spille, tatuaggi, trasferelli, cartoncini, da attaccare, bustine e
+//    figurine non entravano nel conto. Se un domani qualcuno l'avesse letto «tanto c'e' gia'»,
+//    avrebbe trovato un numero pronto e sbagliato - che e' peggio di un numero che manca.
+// 📌 IL CAMPO GIA' SCRITTO SU FIRESTORE NON SI TOCCA, ed e' deliberato: toglierlo dai documenti
+//    e' una migrazione sui dati di Franco, non una riga di codice, e nessuno lo legge - quindi
+//    resta li' come dato morto a riposo, innocuo. Il giorno che si vuole pulire, e' una passata
+//    sola con `deleteField()` e la decide lui.
+// ⚠️ E SE UN DOMANI SERVISSERO DAVVERO QUEI NUMERI, non si resuscita questo campo: si contano
+//    gli `items` al momento, come fanno gia' tutte le schermate che quei numeri li mostrano. Un
+//    totale scritto accanto ai dati che lo producono e' un secondo posto da tenere allineato -
+//    ed e' la ragione per cui questo era gia' incompleto senza che nessuno se ne accorgesse.
 
 // v6.043 (Franco, baco) - FIRESTORE RIFIUTA `undefined`, e lo fa con "invalid-argument".
 // E' il codice che compariva provando a clonare un retro: un campo che nel record di partenza non
@@ -28709,7 +29180,6 @@ async function _saveFigurineItem(item) {
   // Ora si tiene lo stato di prima e lo si rimette esattamente com'era: chi fallisce fallisce da
   // solo. Non nasconde il problema a monte, gli toglie la capacita' di propagarsi.
   const _primaItem = isNew ? null : series.items[iIdx];
-  const _primaCounts = series.counts ? { ...series.counts } : series.counts;
   const _disfa = () => {
     if (isNew) {
       const k = series.items.indexOf(item);
@@ -28717,10 +29187,12 @@ async function _saveFigurineItem(item) {
     } else {
       series.items[iIdx] = _primaItem;
     }
-    series.counts = _primaCounts;
+    // 🗑️ v6.804 - qui si rimetteva anche `series.counts`: non si scrive piu', quindi non c'e'
+    //    piu' niente da rimettere. ⚠️ Il disfare degli `items` resta INTATTO, ed e' la parte che
+    //    conta: e' quella che impedisce a un salvataggio fallito di lasciare in memoria dei dati
+    //    che sul database non ci sono.
   };
   if (isNew) series.items.push(item); else series.items[iIdx] = item;
-  _recomputeSeriesCounts(series);
 
   if (isNew) {
     // Nuovo elemento: arrayUnion invia a Firestore solo il nuovo oggetto,
@@ -28732,7 +29204,7 @@ async function _saveFigurineItem(item) {
     _invalidateSessionCache();
     try {
       const { doc, updateDoc, arrayUnion } = window._fb;
-      await updateDoc(doc(db, 'series', series.id), { items: arrayUnion(item), counts: series.counts });
+      await updateDoc(doc(db, 'series', series.id), { items: arrayUnion(item) });   // v6.804: via `counts`
     } catch(e) {
       console.warn('arrayUnion non riuscito, riscrivo l\u2019intera serie come fallback:', e.message);
       try {
@@ -28776,11 +29248,10 @@ async function _deleteFigurineItem(id) {
       if (_serieSorpassata(series.id)) throw _erroreSerieSorpassata(series.id);
       const itemToRemove = series.items[idx];
       series.items.splice(idx, 1);
-      _recomputeSeriesCounts(series);
       _invalidateSessionCache();
       try {
         const { doc, updateDoc, arrayRemove } = window._fb;
-        await updateDoc(doc(db, 'series', series.id), { items: arrayRemove(itemToRemove), counts: series.counts });
+        await updateDoc(doc(db, 'series', series.id), { items: arrayRemove(itemToRemove) });   // v6.804: via `counts`
       } catch(e) {
         console.warn('arrayRemove non riuscito, riscrivo l\u2019intera serie come fallback:', e.message);
         await fsSave('series', series);
@@ -28833,12 +29304,17 @@ function previewRecomputeFullNames() {
   });
   if (!daAgg.length) { _recomputePending = null; show('Serie "' + esc(serie.name) + '": ' + (it ? 'tutti i Nomi completi sono già aggiornati. Nessuna modifica.' : 'all full names already up to date. No changes.')); return; }
   _recomputePending = { serieId, daAgg };
+  // 🐛 v6.801 - QUESTE CINQUE VOCI SU DODICI NON AVEVANO NEMMENO UN RIPIEGO: la cella di una
+  //    spilla scriveva la parola `undefined`. Restano com'erano (niente rinomine), e per le altre
+  //    sette risponde il descrittore.
   const secLbl = { figurines: it ? 'Figurine' : 'Stickers', retros: 'Retro', albums: it ? 'Album' : 'Albums', extras: it ? 'Altri articoli' : 'Other items', bustine: it ? 'Bustine' : 'Wrappers' };
-  // v5.905 — ordina per categoria (Figurine, Retro, Bustine, Album, Altri oggetti), poi Numero, poi Nome.
-  const _ord = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
+  // 🔄 v6.801 - e l'ORDINE viene da `PRODOTTI_INVENTARIO`, che e' quello che Franco decide dalla
+  //    console: con l'elenco a cinque, `indexOf` tornava -1 per le altre sette e le spingeva TUTTE
+  //    in cima, prima delle figurine. Un ordine deciso da chi non era nell'elenco.
+  const _ord = PRODOTTI_INVENTARIO;
   daAgg.sort((a, b) => (_ord.indexOf(a.f.section || 'figurines') - _ord.indexOf(b.f.section || 'figurines')) || ((a.f.number || 0) - (b.f.number || 0)) || (a.f.name || '').localeCompare(b.f.name || '', 'it'));
   const rows = daAgg.map(({ f, nuovo }) => '<tr>' +
-    '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;color:var(--text);white-space:nowrap;">' + secLbl[f.section || 'figurines'] + '</td>' +
+    '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;color:var(--text);white-space:nowrap;">' + _etichettaSezione(secLbl, f.section) + '</td>' +
     '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;white-space:nowrap;">' + (f.number || '—') + '</td>' +
     '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;">' + esc(f.name || '') + '</td>' +
     '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;color:var(--text);">' + esc(f.fullName || '(vuoto)') + '</td>' +
@@ -28987,7 +29463,6 @@ async function migrateFigurinesIntoSeries() {
     let done = 0;
     for (const series of seriesList) {
       series.items = bySeriesId[series.id] || [];
-      _recomputeSeriesCounts(series);
       await fsSave('series', series);
       done++;
       if (progressEl) progressEl.textContent = 'Migrate ' + done + ' / ' + seriesList.length + ' serie...';
@@ -29270,7 +29745,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search…','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Global search in the Sgorbions item site','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -29359,7 +29834,7 @@ const i18n = {
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with backs) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in your list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in your list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Cerca…','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca globale nel sito di articoli Sgorbions','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
@@ -31769,6 +32244,12 @@ async function logout() {
 function ricercaGlobaleDaNavbar() {
   const q = (document.getElementById('nav-search-input')?.value || '').trim();
   if (!q) return;   // a casella vuota non si va da nessuna parte: sarebbe un salto di pagina senza motivo
+  // 🆕 v6.808 - SU TELEFONO IL PANINO SI CHIUDE, e non e' un dettaglio: dalla v6.808 la casella
+  //    vive DENTRO il menu aperto, che copre la pagina. Senza questa riga si cerca, si arriva
+  //    all'Inventario, e i risultati restano sotto il menu - cioe' il comando sembra non aver fatto
+  //    niente. ⚠️ Sul desktop non cambia niente: `closeNavMenu` esce subito se il menu non e'
+  //    aperto. E si chiama in `try` perche' vive nello script in linea dell'index, non qui.
+  try { if (typeof closeNavMenu === 'function') closeNavMenu(); } catch (e) {}
   showPage('catalog');
   const cerca = document.getElementById('series-search');
   if (cerca) cerca.value = q;
@@ -31780,9 +32261,19 @@ function ricercaGlobaleDaNavbar() {
 // 📌 Sta in una funzione sua, chiamata in cima a `updateNavUser`, invece che in una riga dentro il
 // ramo "loggato": quel ramo ha un gemello per gli ospiti, e una regola scritta in un ramo solo e'
 // una regola che vale a meta' - la casella sarebbe rimasta a schermo dopo il logout di un admin.
+// 🔄 v6.807 (Franco: «rendi la buca della ricerca globale visibile a tutti») - NON E' PIU'
+//    SOLO DELL'ADMIN. La v6.341 l'aveva accesa per lui e basta; adesso la vede chiunque, ospiti
+//    compresi.
+// 📌 LA FUNZIONE RESTA, e non e' un residuo: la ragione per cui esiste - *«quel ramo ha un
+//    gemello per gli ospiti, e una regola scritta in un ramo solo vale a meta'»* - vale ancora, e
+//    il giorno che quella casella dovesse tornare a dipendere da qualcosa, il posto e' uno.
+// ⚠️ Il CSS continua a nasconderla sotto gli 860px, e resta una domanda diversa: li' `.nav-links`
+//    diventa il panino, e una casella di testo in mezzo alle voci del menu non si potrebbe premere.
+//    Quindi «visibile a tutti» vuol dire su desktop, e su telefono la ricerca resta quella
+//    dell'Inventario.
 function _aggiornaRicercaNavbar() {
   const box = document.getElementById('nav-search');
-  if (box) box.style.display = currentUser?.isAdmin ? '' : 'none';
+  if (box) box.style.display = '';
 }
 function updateNavUser() {
   _aggiornaRicercaNavbar();   // v6.341 - vale per tutti e due i rami, quindi sta prima del bivio
@@ -35001,6 +35492,11 @@ const ARTICOLI = {
   },
   albums: {
     riquadro: 1,   // v6.654
+    // 🆕 v6.805 (Franco: «un pulsante grosso titolato "Sfoglia l'album"... una sequenza di foto
+    //    che metto io in configurazione») - L'ALBUM HA DELLE PAGINE. Sta QUI e non in un
+    //    `section === 'albums'` scritto nella form: e' la stessa scelta di `sottonome` (v6.667), e
+    //    il giorno che una seconda tipologia avesse delle pagine le basterebbe questa riga.
+    pagine: true,
     it: 'Album',   en: 'Albums',
     itSing: 'album', enSing: 'album',
     genere: 'm',
@@ -35056,6 +35552,13 @@ function _haSottonome(sez) {
   return !!_art(sez).sottonome;
 }
 
+// 🆕 v6.805 - «QUESTO ARTICOLO HA DELLE PAGINE?», gemella di `_haSottonome` e per la stessa
+//    ragione: la domanda vive nel descrittore, non in un elenco di sezioni scritto a mano. Oggi
+//    risponde «si» al solo Album.
+function _haPagine(sez) {
+  return !!_art(sez).pagine;
+}
+
 // 🆕 v6.506 — IL NOME DI UNA SEZIONE COME LO SI DICE IN UN BADGE: singolare se è uno
 // solo, e nella lingua corrente. Sta accanto a `_art` e chiede al DESCRITTORE, non a una
 // tabella parallela: è la lezione della v6.481, dove lo stesso nome viveva in due fonti
@@ -35108,6 +35611,8 @@ const _ETICHETTE_DESCRITTORE = {
   it: 'Nome (IT)', en: 'Nome (EN)', itSing: 'Singolare (IT)', enSing: 'Singolare (EN)',
   icona: 'Icona', colonne: 'Colonne d/m', riquadro: 'Riquadro foto (l/h)',
   sottonome: 'Sottonome',   // v6.667
+  pagine: 'Pagine',         // v6.805 - un campo nuovo del descrittore entra ANCHE qui, o la
+                            //   tabella della console ne stampa la chiave in minuscolo (v6.714)
   // 🆕 v6.714 - `genere` e `carosello` non erano qui, quindi la tabella ne stampava la
   //    CHIAVE: due intestazioni minuscole in mezzo alle altre. Si vedeva a occhio, e nessun
   //    controllo poteva dirlo - il ripiego `|| k` non e' un errore, e' un ripiego.
@@ -37308,9 +37813,31 @@ function _righeTipologie(oggetti, modo) {
 // nessuno. «punti» costringe a tradurre — ed e' esattamente cio' che era successo
 // alla v6.471 quando «base» diventò «articoli».
 // 📌 E fa comparire un caso che l'abbreviazione non aveva: il SINGOLARE.
+// 🐛 v6.803 - «⭐ 1 PUNTI». Difetto segnato il 10 settembre (punto e), rimasto aperto.
+// 📏 MISURATO SUL SITO IN LINEA, non dedotto: delle nove serie che hanno un punteggio,
+//    QUATTRO scrivono «⭐ 1 punti» - Serie 2, I mitici Sgorbions (serie 4), Mega Sgorbions 2 e
+//    Sgorbions 2018.
+// 🔴 LA CAUSA NON E' LA FRASE, E' IL TIPO: `n === 1` e' un confronto STRETTO, e cinque dei
+//    sette chiamanti non passano un numero. La card della serie passa la moda, che esce da
+//    `Object.entries(freq)` - e le chiavi di un oggetto sono SEMPRE stringhe. Gli altri quattro
+//    passano `score.toLocaleString(...)`, cioe' una stringa per costruzione. `'1' === 1` e' falso,
+//    quindi il singolare non scattava mai da quelle parti.
+// 📌 E SI CHIUDE QUI, NON AI CHIAMANTI, anche se il punto della TODO diceva «basta un
+//    `Number()` sulla moda»: quel `Number()` avrebbe sistemato UNA card su cinque punti rotti, e
+//    avrebbe lasciato in piedi la trappola per il sesto chiamante che nascera'. La domanda che
+//    questa funzione deve farsi e' «la quantita' e' uno?», e la risposta non puo' dipendere dal
+//    modo in cui il numero e' stato scritto.
+// ⚠️ E `n` SI CONTINUA A STAMPARE COM'E' ARRIVATO: quattro chiamanti passano apposta la forma
+//    LOCALIZZATA (`toLocaleString`), che porta il separatore delle migliaia. Convertirla in numero
+//    per stamparla avrebbe sistemato il singolare e rotto «1.000 punti», che e' uno scambio in
+//    perdita. Il numero serve per DECIDERE, la stringa per SCRIVERE.
+// 📌 Togliere le cifre e basta regge tutte e due le localizzazioni: «1.000» (it) e «1,000»
+//    (en) danno 1000, «1» da' 1. I punteggi sono interi, quindi non c'e' una virgola decimale da
+//    confondere con un separatore.
 function _codaPunti(n) {
   const it = currentLang === 'it';
-  return n + (it ? (n === 1 ? ' punto' : ' punti') : (n === 1 ? ' point' : ' points'));
+  const _uno = Number(String(n == null ? '' : n).replace(/[^0-9-]/g, '')) === 1;
+  return n + (it ? (_uno ? ' punto' : ' punti') : (_uno ? ' point' : ' points'));
 }
 
 function _descArticoliBase(n, soloBase = false) {
@@ -37985,6 +38512,30 @@ function _sfondoUnaVoltaSola(el) {
   el.style.backgroundPosition = 'center';
 }
 
+// 🔴 v6.798 (Franco: "la card delle bustine anche quando cambi la foto mostra sullo sfondo una
+// miniatura raffigurante delle bustine; questa miniatura assomiglia molto alla prima foto che
+// mettemmo a quella card").
+// IL RIQUADRO DELLE BUSTINE E' L'UNICO DEI DODICI CHE NON E' VUOTO.
+// 📏 Misurato sull'index, card per card: dieci riquadri contengono solo spazio bianco, uno
+// (retros) porta un `background-image` scritto a mano, e uno solo - `bustine` - contiene un
+// ELEMENTO: l'SVG disegnato a mano dalla v5.874, quando quella sezione nacque "per ora senza
+// immagine". La foto scelta da Franco entra come `background-image` del riquadro, e un FIGLIO del
+// riquadro le sta sopra: il disegno non se ne va mai.
+// ⚠️ LA PISTA SCRITTA NELLA TODO ERA SBAGLIATA, e va detto perche' era ragionevole: la v6.216
+// aveva misurato che `bustine` e' l'unica card senza `background-repeat` NE' `background-size`
+// inline, e sembrava la causa. Non lo e' - dalla v6.216 stessa quei due valori li scrive
+// `_sfondoUnaVoltaSola`, quindi il markup non conta piu'. La causa era scritta altrove, in chiaro,
+// dalla v6.073: *"Retro e Bustine non stanno in SECTION_IMAGES - il primo ha lo sfondo scritto
+// nell'index, la seconda e' un SVG disegnato a mano"*. Era noto e nessuno l'aveva collegato a
+// questo.
+// 📌 PERCHE' SI DICHIARA INVECE DI SVUOTARE: `riquadro.innerHTML = ''` avrebbe chiuso il caso in
+// una riga e cancellato anche cio' che un domani ci mettesse qualcun altro senza saperlo - che e'
+// esattamente il modo in cui questo difetto e' nato. Il segnaposto porta `data-segnaposto`, e
+// questa funzione parla a quello.
+function _segnapostoDelRiquadro(riquadro) {
+  return riquadro ? riquadro.querySelector('[data-segnaposto]') : null;
+}
+
 function _applicaFotoSezioni() {
   const sel = document.getElementById('section-selector');
   if (!sel) return;
@@ -38020,6 +38571,10 @@ function _applicaFotoSezioni() {
       riquadro.style.backgroundImage = 'url(\'' + cloudinaryUrl(url, 'w_600,h_600,c_fit,q_auto,f_auto') + '\')';
       riquadro.style.backgroundSize = 'contain';
       _sfondoUnaVoltaSola(riquadro);   // v6.216
+      // 🔴 v6.798 - e il segnaposto disegnato a mano si spegne: e' un FIGLIO del riquadro, quindi
+      //    sta SOPRA la foto e non se ne andrebbe da solo. Oggi ce l'hanno solo le bustine.
+      const _sp = _segnapostoDelRiquadro(riquadro);
+      if (_sp) _sp.style.display = 'none';
     } else {
       // 🔴 v6.686 - QUI C'ERA IL RIPIEGO SU `SECTION_IMAGES`, LE FOTO DI FABBRICA, E NON
       //    C'E' PIU': da questa release la foto e' della SERIE, e una serie che non ce l'ha
@@ -38029,6 +38584,12 @@ function _applicaFotoSezioni() {
       //    sfondo, una serie senza foto si terrebbe quella della serie aperta prima - e il
       //    difetto si vedrebbe solo cambiando serie, cioe' quasi mai guardando una schermata.
       riquadro.style.backgroundImage = '';
+      // ⚠️ v6.798 - E SI RIACCENDE, con la stessa ragione della riga qui sopra: queste card si
+      //    RIUSANO da una serie all'altra. Spegnendolo e basta, il segnaposto sparirebbe per
+      //    sempre alla prima serie che una foto ce l'ha, e le altre mostrerebbero un riquadro
+      //    grigio - un secondo difetto, visibile solo cambiando serie.
+      const _sp2 = _segnapostoDelRiquadro(riquadro);
+      if (_sp2) _sp2.style.display = '';
     }
     const vecchia = card.querySelector('[data-matita-box]');
     if (vecchia) vecchia.remove();
@@ -38210,9 +38771,11 @@ function openTipoProdotto(id) {
   if (d) d.style.display = 'none';
   openSeriesDetail(serie.id);
   _tipoProdottoCorrente = id;   // DOPO: `openSeriesDetail` azzera, e deve azzerare
+  // 🗑️ v6.802 - QUI C'ERA IL TERZO SCRITTORE DEL TITOLO, e se n'e' andato: `openSeriesSection`
+  //    lo scrive gia' bene, perche' `_tipoProdottoCorrente` e' impostato nella riga sopra e la
+  //    domanda ora e' una sola (`_titoloSezioneAtteso`). Lasciarlo sarebbe stato il quinto punto che
+  //    dice la stessa cosa - cioe' esattamente il difetto che questa release chiude.
   openSeriesSection('extras');  // e questa ridisegna la griglia, quindi il filtro e' gia' acceso
-  const titolo = document.getElementById('items-section-title');
-  if (titolo) _scriviTitoloSezione(_nomeTipo(tipo) || titolo.textContent);   // v6.729
 }
 
 // ---- LA FORM DEL TIPO: due campi, e non e' una form di prodotti ----
@@ -38398,9 +38961,12 @@ async function salvaTipoProdotto() {
   // rinominare un tipo lasciava a schermo il nome vecchio fino al giro dopo — e chi l'ha appena
   // cambiato conclude che non si e' salvato.
   if (idEsistente && _tipoProdottoCorrente === idEsistente) {
-    const _t = _tipiProdotto().find(x => x.id === idEsistente);
+    // 🐛 v6.802 - ERA `_t.nome`, cioe' SEMPRE L'ITALIANO: rinominare un box mentre il sito e' in
+    //    inglese ci scriveva sopra il nome italiano. Secondo mezzo difetto, trovato mettendo in
+    //    comune la domanda - e non si vedeva perche' bisogna essere in inglese E stare rinominando.
+    //    `_titoloSezioneAtteso` passa da `_nomeTipo`, che la lingua la guarda.
     const _titolo = document.getElementById('items-section-title');
-    if (_t && _titolo) _scriviTitoloSezione(_t.nome || _titolo.textContent);   // v6.729
+    if (_titolo) _scriviTitoloSezione(_titoloSezioneAtteso());
     try { renderItems(); } catch (e) {}   // l'ordinamento del tipo puo' essere cambiato
   }
   toast(it ? (idEsistente ? '✅ Tipo di articolo aggiornato' : '✅ Tipo di articolo creato')
@@ -40191,7 +40757,53 @@ function _gridGeometry() {
 // Chiave di FAMIGLIA: un oggetto base e tutto cio' che vi si aggancia (variazioni ufficiali e non,
 // Change, errori di stampa) portano la stessa chiave. Il legame e' sempre baseFigurineId — vale
 // identico per Figurine e Retro (i Retro non hanno variazioni, ma hanno Change ed errori di stampa).
-function _familyKey(f) { return f.baseFigurineId || f.id; }
+// 🔴 v6.800 (Franco: *"sottoserie diverse significa GRUPPI DIVERSI; non chiamarle famiglie"*).
+// LA SOTTOSERIE FA PARTE DELLA DEFINIZIONE DI GRUPPO, E FINO A QUI NON C'ERA.
+// 🔴 E' la correzione di una domanda, non di una riga: il punto 27 era stato scritto come
+//    *"due spille della stessa famiglia finiscono su pagine diverse - in quale delle due sottoserie
+//    va messa la famiglia?"*, e la domanda non ha risposta perche' non ha oggetto. Quelle due
+//    spille NON sono una famiglia: hanno sottoserie diverse, quindi sono due gruppi, e stare su due
+//    pagine e' giusto. ⚠️ Le tre risposte che stavo per proporre - segui la base, mostrala in
+//    tutte e due, correggi il dato - erano tutte e tre sbagliate allo stesso modo: davano per buona
+//    una premessa che nessuno aveva verificato. La misura diceva "7 famiglie con due membri" perche'
+//    l'aveva chiesto a `_familyKey`, e `_familyKey` la sottoserie non la guardava.
+// 📌 COSA CAMBIA DAVVERO, OGGI: quasi niente, e va detto. Base e derivato stanno quasi sempre
+//    nella stessa sottoserie, e quando non ci stanno non sono mai nella stessa pagina - quindi
+//    `_incollaGruppi` e `buildItemPages` non li incontravano comunque. Cambia per la v6.799, che
+//    ordina per le chiavi del CAPO: senza questa riga, un derivato ordinerebbe per un capo che nella
+//    sua pagina non c'e'. E cambia per chi legge: la definizione adesso dice quello che Franco dice.
+// ⚠️ LA STRINGA VUOTA E' UN GRUPPO VERO - il "Set principale" (v6.729) - quindi base e derivato
+//    entrambi senza sottoserie restano insieme. Scriverlo come `if (f.subseries)` lo perderebbe.
+// ⚠️ `idx` E' FACOLTATIVO MA LA RISPOSTA E' LA STESSA: senza, si cerca con un `find`. Due
+//    risposte diverse a seconda di chi chiama sarebbero due idee di gruppo, che e' esattamente il
+//    difetto che questa release chiude. Tutti e tre i chiamanti l'indice ce l'hanno gia'.
+function _familyKey(f, idx) {
+  if (!f) return '';
+  if (!f.baseFigurineId) return f.id;
+  const b = idx ? idx.get(f.baseFigurineId)
+                : getData('figurines', []).find(x => x.id === f.baseFigurineId);
+  if (!b) return f.id;   // base sparita: e' un gruppo suo, non un orfano senza collocazione
+  const g = x => String(x.subseries || '').trim();
+  return g(f) === g(b) ? b.id : f.id;
+}
+
+// 🆕 v6.799 (Franco, sul punto 27: *"non si spezza mai una famiglia"*).
+// IL CAPO DI UNA FAMIGLIA, CHIESTO A `_familyKey` E NON A UNA SECONDA IDEA DI CHI SIA IL PADRE.
+// 🔴 E' la ragione per cui questa riga esiste invece di un `f.baseFigurineId ? ... : f`
+//    scritto dove serve: in questo file le idee di *"chi e' un figlio"* sono gia' TRE
+//    (`_eBase`, `_eFiglioCollegato`, `_familyKey`), e la v6.314 racconta cosa succede quando due
+//    di loro non sono d'accordo dentro lo STESSO ordinamento - un errore di stampa trattato da
+//    capogruppo da una riga e da figlio da quella dopo, silenzioso per mesi perche' i dati di quel
+//    giorno non lo mostravano. Qui la famiglia e' quella che disegna la griglia
+//    (`_incollaGruppi` raggruppa per `_familyKey`), quindi l'ordinamento deve chiedere a lei.
+// ⚠️ Il ripiego su `f` non e' cortesia: un `baseFigurineId` che punta a un record cancellato
+//    lascerebbe la famiglia senza capo, e un `undefined` qui dentro romperebbe la griglia INTERA
+//    invece di sbagliare una riga. E' la stessa scelta del `_kVuota` poco piu' sotto.
+function _capoFamiglia(f, idx) {
+  const k = _familyKey(f, idx);   // v6.800 - la sottoserie e' dentro la domanda
+  if (!f || k === f.id) return f;
+  return (idx ? idx.get(k) : getData('figurines', []).find(x => x.id === k)) || f;
+}
 
 // 🆕 v6.767 (Franco: «nella griglia, come per altre TDA, non devi andare a capo tra elementi
 //    dello stesso gruppo - base, versioni, change, omaggi, errori di stampa»; e sulla coda della
@@ -40267,9 +40879,9 @@ function _incollaGruppi(items, cardsHTML, geo, allFigs, idx) {
   const pezzi = [];
   let x = 0, rows = 1, i = 0;
   while (i < items.length) {
-    const k = _familyKey(items[i]);
+    const k = _familyKey(items[i], idx);          // v6.800 - l'indice c'e' gia': si passa
     let j = i + 1;
-    while (j < items.length && _familyKey(items[j]) === k) j++;
+    while (j < items.length && _familyKey(items[j], idx) === k) j++;
     const p = _collocaFamiglia(items.slice(i, j), geo, x, rows, allFigs, idx);
     if (p.vuoti > 0) pezzi.push(geo.kind === 'flex' ? codaRiga(p.vuoti) : CELLA_VUOTA.repeat(p.vuoti));
     for (let q = i; q < j; q++) pezzi.push(cardsHTML[q]);
@@ -40305,8 +40917,8 @@ function buildItemPages(allItems, geoData) {
   const geo = geoData || _gridGeometry();
   const allFigs = getData('figurines', []);
   const idx = _figIndex(allFigs);
-  const famEnd = i => { let j = i + 1; const k = _familyKey(allItems[i]);
-                        while (j < allItems.length && _familyKey(allItems[j]) === k) j++; return j; };
+  const famEnd = i => { let j = i + 1; const k = _familyKey(allItems[i], idx);   // v6.800
+                        while (j < allItems.length && _familyKey(allItems[j], idx) === k) j++; return j; };
   const pages = [];
   let start = 0;
   while (start < allItems.length) {
@@ -40347,6 +40959,28 @@ function getSectionLabel(section) {
   if (!a) return section;
   return currentLang === 'it' ? a.it : a.en;
 }
+// 🆕 v6.801 - UN'ETICHETTA SCRITTA A MANO PUO' RESTARE, MA IL BUCO NO.
+// 🔴 IL PROBLEMA MISURATO: tre schermate hanno un dizionario di sezioni SCRITTO A MANO, e
+//    conoscono CINQUE tipologie su DODICI (una ne conosce sette). Le altre non sparivano: uscivano
+//    come `undefined` nell'anteprima del ricalcolo dei Nomi completi - che non ha nemmeno un
+//    ripiego - e come la CHIAVE IN MINUSCOLO (`spille`, `tatuaggi`) nelle altre due. E' lo stesso
+//    difetto che la v6.284 aveva chiuso per `carte` e `attaccare`, tornato con le quattro tipologie
+//    nate il 10 settembre piu' `figurine`.
+// 📌 PERCHE' NON SI SOSTITUISCONO E BASTA CON `getSectionLabel`, che pure e' la fonte giusta:
+//    nel descrittore `figurines` si chiama "Figurine con retro" (v6.195), mentre queste schermate
+//    dicono "Figurine". Sostituire avrebbe RINOMINATO di straforo una parola a schermo che nessuno
+//    ha chiesto di cambiare - ed e' la ragione, scritta, per cui la v6.284 non l'aveva fatto.
+//    Le parole a schermo le sceglie Franco (v6.754).
+// ✅ Quindi: cio' che e' scritto a mano VINCE e non cambia una virgola; cio' che manca viene dal
+//    descrittore invece che da un buco. Una tipologia nuova nasce con un nome vero, e il giorno che
+//    Franco vuole cambiarne uno toglie la riga scritta a mano invece di aggiungerne una.
+// ⚠️ `hasOwnProperty` e non `sovra[k] ||`: un'etichetta volutamente VUOTA e' una scelta, e
+//    l'oppure la ribalterebbe in silenzio.
+function _etichettaSezione(sovra, sec) {
+  const k = sec || 'figurines';
+  return (sovra && Object.prototype.hasOwnProperty.call(sovra, k)) ? sovra[k] : getSectionLabel(k);
+}
+
 function getSectionLabelSingular(section) {
   // v6.214 - idem, dal descrittore.
   const a = ARTICOLI[section];
@@ -41691,6 +42325,9 @@ function openSeriesDetail(seriesId) {
   try { _riordinaBoxSezioni(); } catch (e) { console.error('_riordinaBoxSezioni', e); }   // v6.283
   _applicaFotoSezioni();
   _applicaSezioniNascoste();   // v6.194
+  // 🆕 v6.806 - il pulsante «Sfoglia l'album» della pagina serie. Sta qui perche' questo e' il
+  //    punto in cui si sa quale serie si sta guardando, insieme a chi decide foto e sezioni.
+  try { _mostraSfogliaAlbum(); } catch (e) { console.error('_mostraSfogliaAlbum', e); }
   // update counts
   updateSectionCounts();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -42039,6 +42676,30 @@ function _vestiTitoloTestata(s, tda) {
     anno.style.display = tda ? 'none' : '';
   }
 }
+// 🐛 v6.802 - CHE COSA DEVE DIRE, ADESSO, IL TITOLO DELLA SEZIONE.
+// 🔴 IL DIFETTO CHE CHIUDE, dichiarato l'11 settembre 2026 e rimasto aperto: dentro un BOX di
+//    tipo prodotto, toccare la bandierina rimetteva l'etichetta della SEZIONE al posto del nome del
+//    box. Si entra in un box da `extras`, quindi "Metal" diventava "Altri articoli" / "Other
+//    Items" - e non tornava piu' finche' non si usciva e si rientrava.
+// 📌 PERCHE' ERA SFUGGITO PER TRE RELEASE: la v6.729 aveva messo in un posto solo il modo di
+//    SCRIVERE quel titolo (`_scriviTitoloSezione`, che sa tacere dentro un gruppo), e con quello il
+//    doppione era chiuso. Ma COSA scrivere era rimasto in quattro punti indipendenti, e tre su
+//    quattro si ricordavano del box mentre il quarto - il cambio di lingua - no. Una regola sola per
+//    il COME non basta se il COSA e' ancora sparso: e' la stessa forma della v6.133 e della v6.143.
+// ⚠️ E IL NOME DEL BOX HA UNA LINGUA SUA (`nomeEn`), quindi non si trattava di non toccarlo:
+//    cambiando lingua va RISCRITTO, nell'altra lingua. Congelarlo sarebbe stato l'altro mezzo
+//    difetto - un box che resta in italiano dentro un sito in inglese.
+// 📌 Il ripiego e' l'etichetta della sezione, che e' cio' che il sito ha sempre scritto fuori
+//    dai box: un box senza nome non lascia un buco.
+function _titoloSezioneAtteso() {
+  if (_tipoProdottoCorrente) {
+    const t = _tipiProdotto().find(x => x.id === _tipoProdottoCorrente);
+    const n = _nomeTipo(t);
+    if (n) return n;
+  }
+  return currentSection ? getSectionLabel(currentSection) : '';
+}
+
 function _scriviTitoloSezione(testo) {
   const el = document.getElementById('items-section-title');
   if (!el) return;
@@ -42114,7 +42775,13 @@ function openSeriesSection(section, sottoserie) {
   //    v6.688 («era la stessa parola due volte»).
   // 📌 La v6.718 era durata mezz'ora, e non e' sprecata: e' servita a far vedere che
   //    l'informazione mancava. Il posto giusto l'ha detto Franco guardandola.
-  _scriviTitoloSezione(getSectionLabel(section));   // v6.729 - tace dentro un gruppo
+  // 🔄 v6.802 - la domanda e' quella condivisa. Chi entra in un box imposta
+  //    `_tipoProdottoCorrente` PRIMA di chiamare questa (v6.144), quindi qui il nome del box c'e'
+  //    gia': e' il motivo per cui la riga che lo riscriveva subito dopo se n'e' potuta andare.
+  _scriviTitoloSezione(_titoloSezioneAtteso());   // v6.729 - tace dentro un gruppo
+  // 🆕 v6.806 - il pulsante della pagina degli Album. Qui e non solo all'apertura della serie:
+  //    `currentSection` cambia entrando in una sezione, e il pulsante dipende da lei.
+  try { _mostraSfogliaAlbum(); } catch (e) { console.error('_mostraSfogliaAlbum', e); }
   // v6.153 - l'etichetta del tasto indietro dice DOVE si torna, non un posto fisso. Dentro un box
   // si torna all'Inventario; altrove alle Sezioni della serie, come sempre.
   // v6.156 (Franco) - UN SOLO TASTO INDIETRO. La v6.153 aveva rinominato quello della sezione in
@@ -43586,7 +44253,6 @@ async function _applyBulkFigurineUpdate(updateFn, confirmMsg, successMsg, skipCo
   series.items.forEach((it, idx) => {
     if (targetIds.has(it.id)) series.items[idx] = updateFn(it);
   });
-  _recomputeSeriesCounts(series);
   try {
     await fsSave('series', series);
   } catch(e) {
@@ -45953,11 +46619,44 @@ function renderItems() {
     // cambia senza motivo e non e' un ordine.
     // Collazione NUMERICA sul nome: "L. 500" prima di "L. 1000", che l'alfabetico puro metterebbe
     // dopo perche' confronta '5' con '1' invece di 500 con 1000.
-    const ordA = a.number, ordB = b.number;
-    if (ordA && ordB && ordA !== ordB) return ordA - ordB;
-    if (ordA && !ordB) return -1;
-    if (!ordA && ordB) return 1;
-    return (a.name || '').localeCompare(b.name || '', 'it', { numeric: true, sensitivity: 'base' });
+    // 🔴 v6.799 (Franco: *"non si spezza mai una famiglia"*) - QUI L'ORDINE ERA DEL SINGOLO
+    //    ARTICOLO, E LA FAMIGLIA NON ESISTEVA. Le sezioni senza numeri (spille, carte, tatuaggi,
+    //    trasferelli, cartoncini, bustine, album, altri) confrontavano `number` e `name` del
+    //    record, quindi un errore di stampa poteva finire lontano dalla sua base - e
+    //    `_incollaGruppi`, che raggruppa cio' che e' CONTIGUO, non poteva piu' rimetterli insieme.
+    //    ⚠️ Non e' `_collocaFamiglia` a sbagliare: quando arriva, il danno e' gia' fatto.
+    // 🔴 E IL SEGUITO ERA UN ORDINE CHE DICE "SONO PARI". Il Nome e' EREDITATO dalla base
+    //    (`_campiEreditatiDaBase`), quindi una base e il suo errore di stampa hanno lo STESSO nome:
+    //    senza numero, l'ultimo confronto tornava 0 e le due card si scambiavano posto a ogni
+    //    ridisegno. E' il difetto intermittente della v6.616, qui in piena regola.
+    // 📌 Adesso: prima si ordinano le FAMIGLIE per le chiavi del loro capo, poi dentro la
+    //    famiglia si scende nell'ordine DICHIARATO delle versioni (`_prioritaTipo`, che viene da
+    //    `_VERSIONI_VIVE`: il giorno che nasce una versione nuova si infila da se'), e l'ultima
+    //    parola ce l'ha l'id, che e' unico.
+    // ⬜ RESTA APERTO, ED E' UNA DOMANDA PER FRANCO, NON UN PEZZO MANCANTE: due membri di una
+    //    famiglia con SOTTOSERIE diverse stanno su due PAGINE diverse (una pagina per sottoserie,
+    //    v6.765), e li' non c'e' nessun ordine che li avvicini. Sono due spille su settantasette.
+    const capoA = _capoFamiglia(a, _idx), capoB = _capoFamiglia(b, _idx);
+    if (capoA !== capoB) {
+      const ordA = capoA.number, ordB = capoB.number;
+      if (ordA && ordB && ordA !== ordB) return ordA - ordB;
+      if (ordA && !ordB) return -1;
+      if (!ordA && ordB) return 1;
+      const nomeCmp = (capoA.name || '').localeCompare(capoB.name || '', 'it', { numeric: true, sensitivity: 'base' });
+      if (nomeCmp !== 0) return nomeCmp;
+      // ⚠️ due famiglie con lo stesso nome e nessun numero esistono: senza questa riga
+      //    tornerebbero "pari" e si scambierebbero posto a ogni ridisegno (v6.616).
+      return String(capoA.id || '').localeCompare(String(capoB.id || ''));
+    }
+    // stessa famiglia: prima il capo, poi i suoi nell'ordine dichiarato
+    const pA = _prioritaTipo(a), pB = _prioritaTipo(b);
+    if (pA !== pB) return pA - pB;
+    // 📌 fra pari (due errori di stampa della stessa base) il NOME COMPLETO, che e' cio' che
+    //    la card mostra davvero - e dalla v6.796 su una spilla porta anche il sottonome.
+    const _nomePieno = f => f.fullName || computeFullName(f, _allFigs) || f.name || '';
+    const pienoCmp = _nomePieno(a).localeCompare(_nomePieno(b), 'it', { numeric: true });
+    if (pienoCmp !== 0) return pienoCmp;
+    return String(a.id || '').localeCompare(String(b.id || ''));
   });
   updateItemsCountDisplay(allItems);
   const owned = getOwned();
@@ -51853,7 +52552,11 @@ function switchToEditMode(figId) {
   if (photo) {
     _figSlotF = f;   // 🆕 v6.599 - il record della scheda aperta, per poter ridisegnare un riquadro solo
     photo.innerHTML = _slotFotoEdit('fronte', f.img, f)
-      + (_schedaDueFoto(f) && _secondaFacciaSulRecord(f.section) ? _slotFotoEdit('retro', f.imgRetro, f) : '');
+      + (_schedaDueFoto(f) && _secondaFacciaSulRecord(f.section) ? _slotFotoEdit('retro', f.imgRetro, f) : '')
+      // 🆕 v6.805 - le pagine dell'album, sotto i riquadri delle facce. Il blocco decide da
+      //    solo se mostrarsi (`_haPagine` dal descrittore), quindi qui non c'e' nessuna condizione
+      //    sulla sezione: e' la stessa forma dei due riquadri sopra.
+      + _bloccoPagineEdit(f);
   }
 
   // Build edit form
@@ -51986,6 +52689,29 @@ function switchToEditMode(figId) {
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Commento album':'Album note') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-commento-album" value="' + esc(f.commentoAlbum || '') + '"></span></div>';
   }
 
+  // Nome
+  // v5.774/779/790 — Nome nascosto per Change ED Errori di stampa, sia Retro sia figurine (eredita
+  // dalla base; derivato al salvataggio).
+  // (il flag e' dichiarato piu' in alto, v6.038: lo usano anche Categoria/Sottocategoria/Sottonome)
+  html += '<div class="detail-row" id="fe-name-group" style="' + _eredStile('name') + '"' + _eredAttr('name') + '><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + esc((f.name||'')) + '"' + _eredRO('name') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+  // v6.036 (Franco) - il SOTTONOME sta SOTTO IL NOME, di cui e' la seconda parte. Stava fra
+  // Sottocategoria e Numero, cioe' in mezzo ai campi della categoria e prima ancora del Nome: la
+  // stessa disposizione che la v6.026 aveva gia' corretto nella VISTA della scheda. Vista e
+  // modifica devono coincidere (regola di Franco, v5.782), e finora non coincidevano.
+  if (_haSottonome(f.section)) {
+    html += '<div class="detail-row" style="' + _eredStile('subname') + '"' + _eredAttr('subname') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"' + _eredRO('subname') + '></span></div>';
+  }
+
+  // 🔄 v6.797 (Franco) - L'ORDINAMENTO SCENDE, E SI FERMA PRIMA DELLA RARITÀ. Parole sue:
+  //    *«il campo Ordinamento, sulla form degli articoli (tutti) va + in basso; mettilo prima di
+  //    "rarità"»*. Era la PRIMA riga della scheda: il primo campo che si incontra aprendo un
+  //    articolo era quello che si tocca quasi mai.
+  // ⚠️ SPOSTATO, NON RIGENERATO: è lo stesso blocco con gli stessi id, la stessa nota della
+  //    v6.660 e la stessa casella «Non ha numero». Riscriverlo «già che c'ero» è il modo in cui una
+  //    release ne rompe una vecchia (lezione della v6.790).
+  // 📌 E resta un blocco SOLO: l'etichetta dice «Ordinamento» o «N.» secondo la tipologia
+  //    (`_numeroEOrdinamento`), ma il campo è lo stesso - quindi si sposta per tutte, che è
+  //    esattamente quello che ha chiesto (*«sulla form degli articoli, tutti»*).
   // Numero (i Retro non sono numerati; le Variazioni/Change ereditano quello della figurina base)
   // v6.077 (Franco) - lo stesso campo, due mestieri diversi. Nelle FIGURINE e' il Numero, un dato
   // dell'oggetto che si vede ovunque. Nelle altre sezioni non e' un dato di nessuno: e' la leva con
@@ -52012,19 +52738,6 @@ function switchToEditMode(figId) {
     // legge (`fe-no-number`), e se non la trova scrive `false`. Toglierla avrebbe azzerato il flag
     // in silenzio al primo salvataggio, che e' il modo peggiore di perdere un dato.
     '<label style="' + (_numeroEOrdine ? 'display:none;' : 'display:flex;') + 'align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--text);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Non ha numero':'Does not have a number') + '</label></span></div>';
-
-  // Nome
-  // v5.774/779/790 — Nome nascosto per Change ED Errori di stampa, sia Retro sia figurine (eredita
-  // dalla base; derivato al salvataggio).
-  // (il flag e' dichiarato piu' in alto, v6.038: lo usano anche Categoria/Sottocategoria/Sottonome)
-  html += '<div class="detail-row" id="fe-name-group" style="' + _eredStile('name') + '"' + _eredAttr('name') + '><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + esc((f.name||'')) + '"' + _eredRO('name') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
-  // v6.036 (Franco) - il SOTTONOME sta SOTTO IL NOME, di cui e' la seconda parte. Stava fra
-  // Sottocategoria e Numero, cioe' in mezzo ai campi della categoria e prima ancora del Nome: la
-  // stessa disposizione che la v6.026 aveva gia' corretto nella VISTA della scheda. Vista e
-  // modifica devono coincidere (regola di Franco, v5.782), e finora non coincidevano.
-  if (_haSottonome(f.section)) {
-    html += '<div class="detail-row" style="' + _eredStile('subname') + '"' + _eredAttr('subname') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"' + _eredRO('subname') + '></span></div>';
-  }
 
   // Punteggio
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Rarità':'Rarity') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-score" value="' + (f.score||0) + '" min="0" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
@@ -52260,6 +52973,19 @@ function switchToEditMode(figId) {
   // Sta in fondo perche' non descrive l'oggetto ma cio' che sappiamo dell'oggetto - come la data
   // di creazione, ma questa si puo' scrivere.
   // v6.093 (Franco) - via la spiegazione accanto alla casella: l'etichetta la dice gia'.
+  // 🆕 v6.806 - LA SPUNTA CHE DICHIARA L'ALBUM DA SFOGLIARE. Si mostra solo dove ha senso -
+  //    `_haPagine`, dal descrittore - e non su una sezione nominata a mano.
+  // 📌 Sta accanto alle altre dichiarazioni della scheda («Foto non disponibile», «Invisibile»):
+  //    anche questa non descrive l'oggetto, dice che ruolo ha nel sito.
+  if (_haPagine(f.section)) {
+    html += '<div class="detail-row"><span class="detail-label">'
+      + (currentLang === 'it' ? '\uD83D\uDCD6 Album da sfogliare' : '\uD83D\uDCD6 Album to browse') + '</span>'
+      + '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">'
+      + '<input type="checkbox" id="fe-sfogliabile" ' + (f.sfogliabile ? 'checked' : '')
+      + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">'
+      + '</label></span></div>';
+  }
+
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Foto non disponibile':'Photo unavailable') + '</span>' +
     '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">' +
     '<input type="checkbox" id="fe-foto-non-disponibile" ' + (f.fotoNonDisponibile ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
@@ -52602,6 +53328,414 @@ function _slotFotoEdit(slot, url, f) {
     '</div>' : '') +
   '</div>';
 }
+
+// ============================================================
+// 🆕 v6.805 (Franco) - LE PAGINE DELL'ALBUM: caricamento MULTIPLO e sfondo MASSIVO.
+// ------------------------------------------------------------
+// E' la prima meta' di «Sfoglia l'album». Franco: *«una sequenza di foto che metto io in
+// configurazione, come allegati dell'album avente ordine 1»*, e poi: *«ho bisogno della funzione
+// rimuovi sfondo; se anche quella possiamo farla massivamente e' meglio»*.
+//
+// 📏 PERCHE' UNA TERZA STRADA PER LE FOTO, misurato prima di scrivere: in questo sito ce ne
+//    sono gia' DUE, e nessuna delle due va bene per N pagine.
+//    (a) LA SCHEDA DELL'ARTICOLO (`_slotFotoEdit` + `handleFigEditImg`): si sceglie il file,
+//        `FileReader` lo mette in uno slot, e il caricamento avviene AL SALVATAGGIO. Tiene in
+//        memoria l'immagine come data-URL - accettabile per due facce, non per venti scansioni.
+//    (b) SOTTOSERIE, BOX DELL'HUB, AVATAR (`_scegliFoto`): finestra con «Rimuovi sfondo» e
+//        «Applica foto», salvataggio SUBITO. Ma e' una-per-volta, ed e' esattamente il supplizio
+//        che Franco ha nominato.
+//    ✅ QUI: selezione multipla, caricamento immediato su Cloudinary, e in memoria restano solo
+//    gli URL. La matita di riga richiama `_scegliFoto` sulla singola pagina da pulire, cosi' la
+//    strada (b) resta disponibile dove serve davvero.
+//
+// ⚠️ LO SFONDO MASSIVO GIRA NEL BROWSER, UNA ALLA VOLTA, e va detto perche' cambia cosa si
+//    vede: `_togliSfondoDaBlob` (v6.189) usa il modello PIENO `isnet` dentro la pagina. La prima
+//    volta scarica decine di MB, poi resta caricato - quindi la pagina 1 e' lenta e le altre molto
+//    meno. Non c'e' nessun modo di farne venti insieme: si fanno in fila, e l'unica cosa che si
+//    puo' fare bene e' DIRE A CHE PUNTO SIAMO.
+// 🔴 E IL PEZZO DA GUARDARE ALLA PRIMA PROVA: quella funzione, dopo aver tolto lo sfondo,
+//    RITAGLIA la trasparenza residua con 4px di margine. Su una figurina e' quello che si vuole;
+//    su una pagina di album vuol dire che ogni pagina esce larga quanto il suo contenuto, e due
+//    pagine possono uscire di misure diverse. Non si e' toccato niente - e' la stessa funzione di
+//    sempre, in un posto solo (v6.189) - ma se le pagine venissero storte, il ritaglio e' il primo
+//    posto dove guardare, non lo sfondo.
+//
+// 📌 LE PAGINE SI SALVANO SUBITO, e questo richiede un id: su un album mai salvato il blocco
+//    dice di salvare prima. ⚠️ E il salvataggio della scheda NON le azzera - la regola della
+//    v6.169 - perche' `saveFigFromDetail` fonde (`{ ...existing, ...updates }`) e `existing` si
+//    rilegge VIVO da `_recordInModifica`, che vede quello che questo blocco ha appena scritto.
+//    Verificato leggendo le due funzioni, non assunto.
+
+// 🔴 v6.806 - OGNI PAGINA TIENE IL SUO ORIGINALE, e questa e' la riga piu' importante delle due
+//    release. Franco: *«a volte la procedura di pulizia rovina le foto e magari ne rovina solo una
+//    su N; cosi' sistemo a mano solo quella»*.
+// ⚠️ Nella v6.805 lo sfondo massivo SOSTITUIVA l'indirizzo: la pagina rovinata restava
+//    rovinata, e la scansione buona non era piu' raggiungibile da nessuna parte del sito. Il file
+//    su Cloudinary c'era ancora - non si cancella niente - ma nessuno sapeva piu' il suo indirizzo,
+//    che e' lo stesso che averlo perso.
+// 📌 Adesso una pagina e' `{ url, orig }`: `url` e' quello che si vede, `orig` quello caricato.
+//    Pulire cambia `url` e lascia `orig`; ripristinare rimette `orig`; la matita riparte SEMPRE
+//    dall'originale, perche' ripulire una foto gia' rovinata non la aggiusta.
+// ⚠️ E si accettano anche le stringhe: il campo e' nato ieri e non c'e' ancora nessun dato in
+//    giro, ma una forma vecchia che passa di qui non deve far sparire una pagina in silenzio.
+const _pagina = p => (typeof p === 'string') ? { url: p, orig: p }
+                                            : { url: p.url || p.orig, orig: p.orig || p.url };
+const _pagineDi = f => (Array.isArray(f && f.pagine) ? f.pagine : [])
+  .filter(p => p && (typeof p === 'string' ? p : (p.url || p.orig))).map(_pagina);
+
+// 🆕 v6.806 (Franco) - QUALE ALBUM SI SFOGLIA, E LO DICE UN FLAG.
+// 🔄 REVOCA UNA DECISIONE SCRITTA: il piano diceva «l'album con ordine 1», cioe' IL PRIMO.
+//    Franco: *«un flag negli album che indica che sia quello per lo sfoglia album»*.
+// 🔴 PERCHE' E' MEGLIO, ed e' la regola che questo progetto ripete: «il primo» e' una
+//    POSIZIONE - un dato che cambia da solo il giorno che gli album si riordinano, e nessuno se ne
+//    accorgerebbe perche' il sito continuerebbe a sfogliare, solo un altro album. Un flag e' una
+//    DICHIARAZIONE: dice CHI E', non DOVE STA.
+function _albumSfogliabileDi(seriesId, escludiId) {
+  if (!seriesId) return null;
+  return getData('figurines', []).find(x =>
+    x.seriesId === seriesId && _haPagine(x.section) && x.sfogliabile && x.id !== escludiId) || null;
+}
+
+// 📖 L'album che si puo' sfogliare DAVVERO: dichiarato E con delle pagine dentro. Le due
+//    condizioni stanno insieme in un posto solo perche' le chiedono in tre (i due pulsanti e lo
+//    sfogliatore), e tre copie di una condizione divergono al primo ritocco.
+function _albumDaSfogliare(seriesId) {
+  const a = _albumSfogliabileDi(seriesId, null);
+  return (a && _pagineDi(a).length) ? a : null;
+}
+
+// ============================================================
+// 📖 v6.806 - IL PULSANTE E LO SFOGLIATORE.
+// ------------------------------------------------------------
+// Franco: *«nella pagina della tipologia di articolo Album, un pulsante grosso titolato "Sfoglia
+// l'album"»*, e poi, correggendo: *«io avevo detto nella pagina della SERIE... una serie ha piu'
+// album ma ne mettiamo uno solo sfogliabile»*, e *«il pulsante lo metti sia su quello (ma solo su
+// quello) che sulla serie»*.
+// 📌 QUINDI IL PULSANTE STA IN DUE POSTI, PER DUE RAGIONI DIVERSE: sulla SERIE perche' e' li'
+//    che uno arriva per sfogliare, e non deve sapere quale dei quindici album e' quello giusto;
+//    sull'ALBUM DICHIARATO perche' chi ci passa deve poterlo aprire da li'. E SOLO su quello, se
+//    no il sito direbbe che ogni album si sfoglia.
+// ⚠️ E NON COMPARE SE NON C'E' NIENTE DA SFOGLIARE: `_albumDaSfogliare` chiede due cose insieme
+//    - dichiarato E con delle pagine. Un comando che apre una sequenza vuota e' peggio di un
+//    comando che non c'e' (v6.171).
+let _sfogliaPagine = [];
+let _sfogliaQui = 0;
+
+function _bottoneSfogliaHTML(grosso) {
+  const it = currentLang === 'it';
+  return '<button type="button" class="btn-primary" onclick="apriSfogliaAlbum()" '
+    + 'style="' + (grosso ? 'font-size:1.05rem;padding:0.9rem 1.6rem;' : 'padding:0.5rem 1rem;')
+    + 'display:inline-flex;align-items:center;gap:0.5rem;">\uD83D\uDCD6 '
+    + (it ? 'Sfoglia l\'album' : 'Browse the album') + '</button>';
+}
+
+// 📌 Si ridisegna a ogni apertura di serie, insieme alle foto e alle sezioni nascoste: e'
+//    l'unico momento in cui si sa quale serie si sta guardando.
+function _mostraSfogliaAlbum() {
+  const alb = _albumDaSfogliare(currentSeriesId);
+  // 📌 I posti sono TRE e la condizione e' UNA: il pulsante della pagina serie e quello della
+  //    pagina degli album compaiono insieme, perche' rispondono alla stessa domanda. Il terzo (la
+  //    scheda dell'album dichiarato) lo disegna `_bottoneSfogliaSuArticolo`, che la ripete a lei.
+  const serie = document.getElementById('sfoglia-album-serie');
+  if (serie) {
+    serie.innerHTML = alb ? _bottoneSfogliaHTML(true) : '';
+    serie.style.display = alb ? '' : 'none';
+  }
+  // ⚠️ Nella pagina degli ALBUM, e non in tutte: dentro le Bustine un pulsante «Sfoglia
+  //    l'album» accanto al titolo direbbe una cosa che non c'entra con quello che si sta guardando.
+  const sez = document.getElementById('sfoglia-album-sezione');
+  if (sez) {
+    const qui = !!alb && _haPagine(currentSection);
+    sez.innerHTML = qui ? _bottoneSfogliaHTML(false) : '';
+    sez.style.display = qui ? '' : 'none';
+  }
+}
+
+// ⚠️ Sulla scheda in LETTURA di un album: solo se e' quello dichiarato e ha le pagine. La
+//    domanda e' la stessa di sopra, chiesta alla stessa funzione.
+function _bottoneSfogliaSuArticolo(f) {
+  if (!f || !_haPagine(f.section)) return '';
+  const alb = _albumDaSfogliare(f.seriesId);
+  return (alb && alb.id === f.id) ? _bottoneSfogliaHTML(false) : '';
+}
+
+function apriSfogliaAlbum(idAlbum) {
+  const alb = idAlbum
+    ? getData('figurines', []).find(x => x.id === idAlbum)
+    : _albumDaSfogliare(currentSeriesId);
+  const pag = _pagineDi(alb);
+  if (!pag.length) return;
+  _sfogliaPagine = pag;
+  _sfogliaQui = 0;
+  const m = document.getElementById('sfoglia-album-modal');
+  if (!m) return;
+  m.classList.remove('hidden');
+  document.addEventListener('keydown', _sfogliaTasti);
+  _disegnaSfoglia();
+}
+
+function chiudiSfogliaAlbum() {
+  const m = document.getElementById('sfoglia-album-modal');
+  if (m) m.classList.add('hidden');
+  document.removeEventListener('keydown', _sfogliaTasti);
+  _sfogliaPagine = [];
+}
+
+// 📌 Le frecce e Esc: chi sfoglia venti pagine non lo fa a colpi di mouse. `Escape` chiude,
+//    che e' la stessa uscita di tutti gli altri modali del sito.
+function _sfogliaTasti(ev) {
+  if (ev.key === 'ArrowRight' || ev.key === ' ') { ev.preventDefault(); sfogliaVai(1); }
+  else if (ev.key === 'ArrowLeft') { ev.preventDefault(); sfogliaVai(-1); }
+  else if (ev.key === 'Escape') chiudiSfogliaAlbum();
+}
+
+// ⚠️ NON si gira in tondo: dall'ultima pagina la freccia avanti non riporta alla prima. Un
+//    album ha un principio e una fine, e tornare all'inizio senza dirlo fa credere di aver perso
+//    il segno.
+function sfogliaVai(d) {
+  const n = _sfogliaPagine.length;
+  if (!n) return;
+  const nuovo = _sfogliaQui + d;
+  if (nuovo < 0 || nuovo >= n) return;
+  _sfogliaQui = nuovo;
+  _disegnaSfoglia();
+}
+
+function _disegnaSfoglia() {
+  const img = document.getElementById('sfoglia-album-img');
+  const cnt = document.getElementById('sfoglia-album-conta');
+  const pre = document.getElementById('sfoglia-album-prec');
+  const suc = document.getElementById('sfoglia-album-succ');
+  const n = _sfogliaPagine.length;
+  if (img) img.src = cloudinaryUrl(_sfogliaPagine[_sfogliaQui].url, 'w_1600,h_1600,c_fit,q_auto,f_auto');
+  if (cnt) cnt.textContent = (_sfogliaQui + 1) + ' / ' + n;
+  // 📌 I comandi si SPENGONO ai due capi invece di sparire: un tasto che va e viene fa ballare
+  //    la riga, e a schermo pieno lo si nota.
+  if (pre) pre.disabled = _sfogliaQui === 0;
+  if (suc) suc.disabled = _sfogliaQui >= n - 1;
+  // 📌 Si precarica la pagina dopo: sfogliando, l'attesa si sente tutta.
+  if (_sfogliaQui + 1 < n) {
+    const p = new Image();
+    p.src = cloudinaryUrl(_sfogliaPagine[_sfogliaQui + 1].url, 'w_1600,h_1600,c_fit,q_auto,f_auto');
+  }
+}
+
+// 🔴 v6.806 - DUE ALBUM SFOGLIABILI NELLA STESSA SERIE: SI BLOCCA, NON SI SPEGNE L'ALTRO.
+// La prima stesura spegneva il flag sugli altri. Franco, subito: *«no. L'accensione di un flag su
+// un album si blocca se ce n'e' gia' un altro sfogliabile per quella serie»*.
+// 📌 ED E' LA REGOLA CHE IL SITO HA GIA', scritta nella v6.101: *«al salvataggio fai presente
+//    la incongruenza e non si puo' salvare sin che la incongruenza rimane»*, con la nota di metodo
+//    che l'accompagna - *davanti a due dati che si contraddicono, un programma non ne sceglie uno:
+//    li fa vedere tutti e due*. Spegnere l'altro sarebbe stato decidere al posto di chi salva senza
+//    dirglielo, che e' esattamente cio' che quella release aveva gia' corretto una volta.
+// ⚠️ E IL MESSAGGIO NOMINA L'ALTRO ALBUM: senza, si manda a cercare in quindici schede quale
+//    sia. E' la lezione della v6.204.
+function _messaggioSfogliabileDoppio(seriesId, idCorrente, spuntato) {
+  if (!spuntato) return null;
+  const altro = _albumSfogliabileDi(seriesId, idCorrente);
+  if (!altro) return null;
+  const nome = (altro.fullName || altro.name || '').trim() || (currentLang === 'it' ? 'un altro album' : 'another album');
+  return (currentLang === 'it')
+    ? 'In questa serie l\'album da sfogliare e\' gia\' \u00ab' + nome + '\u00bb. Togli la spunta di la\', oppure toglila qui.'
+    : 'In this series the album to browse is already \u00ab' + nome + '\u00bb. Uncheck it there, or uncheck it here.';
+}
+
+// ⚠️ Il record su cui il blocco sta lavorando e' `_figSlotF`, lo stesso che la v6.599 ha messo
+//    li' per poter ridisegnare un riquadro da solo: una seconda variabile sarebbe una seconda idea
+//    di «quale scheda e' aperta».
+async function _salvaPagine(nuove) {
+  const f = _figSlotF;
+  if (!f || !f.id) return false;
+  const prima = _pagineDi(f);
+  f.pagine = nuove;
+  try {
+    await _saveFigurineItem(f);
+    return true;
+  } catch (e) {
+    // 🔴 v6.101, §12.1: se la scrittura fallisce si rimette com'era e lo si DICE. Lasciare a
+    //    schermo delle pagine che sul database non ci sono e' la bugia piu' facile da non notare.
+    f.pagine = prima;
+    console.error('_salvaPagine', e);
+    toast(currentLang === 'it' ? 'Salvataggio delle pagine fallito' : 'Saving pages failed', 'error');
+    _ridisegnaPagine();
+    return false;
+  }
+}
+
+function _ridisegnaPagine() {
+  const cont = document.getElementById('fe-pagine-box');
+  if (cont) cont.outerHTML = _bloccoPagineEdit(_figSlotF);
+}
+
+function _bloccoPagineEdit(f) {
+  const it = currentLang === 'it';
+  if (!f || !_haPagine(f.section) || !currentUser || !currentUser.isAdmin) {
+    return '<div id="fe-pagine-box" style="display:none;"></div>';
+  }
+  const pag = _pagineDi(f);
+  const testa = '<div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:0.5rem;">'
+    + (it ? '\uD83D\uDCD6 Pagine dell\'album' : '\uD83D\uDCD6 Album pages')
+    + (pag.length ? ' <span style="font-weight:400;color:var(--muted);">(' + pag.length + ')</span>' : '')
+    + '</div>';
+  // 📌 Un album mai salvato non ha un id, e senza id non c'e' niente su cui scrivere: si dice,
+  //    invece di mostrare un comando che non puo' funzionare (v6.171).
+  if (!f.id) {
+    return '<div id="fe-pagine-box" style="margin-top:1rem;">' + testa
+      + '<p style="font-size:0.82rem;color:var(--muted);font-style:italic;margin:0;">'
+      + (it ? 'Salva prima l\'album: le pagine si caricano subito, e hanno bisogno di un articolo su cui stare.'
+            : 'Save the album first: pages upload immediately and need an item to live on.')
+      + '</p></div>';
+  }
+  const righe = pag.map((p, i) =>
+    '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.3rem 0;border-bottom:1px solid var(--border);">'
+    + '<span style="font-size:0.78rem;color:var(--muted);width:2.2rem;flex-shrink:0;">' + (i + 1) + '</span>'
+    + '<img src="' + cloudinaryUrl(p.url, 'w_120,h_120,c_fit,q_auto,f_auto') + '" alt="" '
+    + 'style="width:48px;height:48px;object-fit:contain;background:var(--bg2);border-radius:4px;flex-shrink:0;">'
+    // 📌 Si DICE quali pagine sono state pulite: senza, dopo una passata massiva non si
+    //    distingue piu' quella da rifare, ed e' esattamente il caso che Franco ha descritto.
+    + '<span style="flex:1;font-size:0.72rem;color:var(--muted);">'
+    + (p.url !== p.orig ? (it ? 'pulita' : 'cleaned') : '') + '</span>'
+    + (p.url !== p.orig
+        ? '<button type="button" class="btn-foto" title="' + (it ? 'Rimetti l\'originale' : 'Restore the original')
+          + '" onclick="pagineRipristina(' + i + ')">\u21A9\uFE0F</button>'
+        : '')
+    + '<button type="button" class="btn-foto" title="' + (it ? 'Pulisci questa pagina (dall\'originale)' : 'Clean this page (from the original)')
+    + '" onclick="pagineSfondoUna(' + i + ')">\u270F\uFE0F</button>'
+    + '<button type="button" class="btn-foto" title="' + (it ? 'Togli questa pagina' : 'Remove this page')
+    + '" onclick="pagineRimuovi(' + i + ')">\uD83D\uDDD1\uFE0F</button>'
+    + '</div>').join('');
+
+  return '<div id="fe-pagine-box" style="margin-top:1rem;">' + testa
+    + '<div style="display:flex;gap:0.6rem;margin-bottom:0.6rem;">'
+    + '<label class="btn-foto" style="flex:1;text-align:center;cursor:pointer;">\uD83D\uDCF7 '
+    + (it ? 'Aggiungi pagine' : 'Add pages')
+    // ⚠️ `multiple` e' il punto di questa release: senza, sono N giri di finestra.
+    + '<input type="file" accept="image/*" multiple style="display:none;" onchange="handlePagineScelte(event)">'
+    + '</label>'
+    + (pag.length
+        ? '<button type="button" id="fe-pagine-sfondo-btn" class="btn-foto" style="flex:1;" '
+          + 'onclick="pagineSfondoTutte()">\u2728 '
+          + (it ? 'Rimuovi sfondo da tutte' : 'Remove background from all') + '</button>'
+        : '')
+    + '</div>'
+    + (righe || '<p style="font-size:0.82rem;color:var(--muted);font-style:italic;margin:0;">'
+        + (it ? 'Nessuna pagina ancora.' : 'No pages yet.') + '</p>')
+    + '</div>';
+}
+
+// ⚠️ `ev.target.value = \'\'` alla fine: se no riscegliendo GLI STESSI file l'evento `change`
+//    non parte piu'. E' la stessa riga, e la stessa ragione, di `fotoSceltaCambia` (v6.772).
+async function handlePagineScelte(ev) {
+  const files = [...(ev.target.files || [])];
+  ev.target.value = '';
+  if (!files.length || !_figSlotF || !_figSlotF.id) return;
+  const it = currentLang === 'it';
+  const nuove = _pagineDi(_figSlotF).slice();
+  let caricate = 0;
+  for (let i = 0; i < files.length; i++) {
+    toast((it ? 'Carico la pagina ' : 'Uploading page ') + (i + 1) + ' / ' + files.length + '...', 'info', null, 4000);
+    try {
+      const url = await uploadToCloudinary(files[i]);
+      // 📌 Si carica e basta: la pulizia NON si fa qui. Franco: *«deve essere possibile caricare
+      //    senza pulizia»* - e chi carica venti scansioni gia' buone non deve aspettare un modello.
+      if (url) { nuove.push({ url: url, orig: url }); caricate++; }
+    } catch (e) {
+      // 📌 Una che fallisce non ferma le altre, ma si CONTA: dire «caricate 18 su 20» e' cio' che
+      //    distingue un caricamento incompleto da uno sbagliato (la lezione della v6.793).
+      console.error('handlePagineScelte', e);
+    }
+  }
+  if (!caricate) { toast(it ? 'Nessuna pagina caricata' : 'No pages uploaded', 'error'); return; }
+  if (!await _salvaPagine(nuove)) return;
+  _ridisegnaPagine();
+  const perse = files.length - caricate;
+  toast((it ? '\u2705 ' + caricate + ' pagine aggiunte' : '\u2705 ' + caricate + ' pages added')
+    + (perse ? (it ? ' \u2014 ' + perse + ' non caricate' : ' \u2014 ' + perse + ' failed') : ''),
+    perse ? 'warn' : 'success');
+}
+
+// 🆕 v6.806 - RIMETTI L'ORIGINALE. E' la meta' che rende utile tenere `orig`: una pulizia
+//    andata male si disfa in un clic, invece di ricaricare la scansione.
+async function pagineRipristina(i) {
+  const pag = _pagineDi(_figSlotF);
+  if (i < 0 || i >= pag.length || pag[i].url === pag[i].orig) return;
+  const nuove = pag.slice();
+  nuove[i] = { url: pag[i].orig, orig: pag[i].orig };
+  if (await _salvaPagine(nuove)) {
+    _ridisegnaPagine();
+    toast(currentLang === 'it' ? '\u21A9\uFE0F Originale rimesso' : '\u21A9\uFE0F Original restored', 'success');
+  }
+}
+
+async function pagineRimuovi(i) {
+  const pag = _pagineDi(_figSlotF);
+  if (i < 0 || i >= pag.length) return;
+  const nuove = pag.slice();
+  nuove.splice(i, 1);
+  if (await _salvaPagine(nuove)) _ridisegnaPagine();
+}
+
+// 📌 La matita di riga richiama la strada (b): la finestra con l'anteprima, per la singola
+//    pagina che si vuole guardare mentre si pulisce.
+async function pagineSfondoUna(i) {
+  const pag = _pagineDi(_figSlotF);
+  if (i < 0 || i >= pag.length) return;
+  try {
+    // 🔴 DALL'ORIGINALE, sempre. E' il caso che Franco ha descritto: *«a volte la procedura di
+    //    pulizia rovina le foto e magari ne rovina solo una su N, cosi' sistemo a mano solo
+    //    quella»*. Aprire la copia rovinata non servirebbe a niente.
+    const blob = await (await fetch(cloudinaryUrl(pag[i].orig, 'q_auto,f_auto'))).blob();
+    const scelto = await _scegliFoto(blob, (currentLang === 'it' ? 'Pagina ' : 'Page ') + (i + 1));
+    if (!scelto) return;
+    const url = await uploadToCloudinary(scelto);
+    if (!url) return;
+    const nuove = pag.slice(); nuove[i] = { url: url, orig: pag[i].orig };
+    if (await _salvaPagine(nuove)) _ridisegnaPagine();
+  } catch (e) {
+    console.error('pagineSfondoUna', e);
+    toast(currentLang === 'it' ? 'Non sono riuscito ad aprire la pagina' : 'Could not open the page', 'error');
+  }
+}
+
+// 🔴 LO SFONDO MASSIVO. Gira in fila perche' non c'e' alternativa (vedi il cappello), e
+//    l'unica cosa che conta e' che si veda A CHE PUNTO E'. Il bottone dice «3 / 20», non «attendi».
+// ⚠️ SI SCRIVE UNA VOLTA SOLA, alla fine: venti scritture di fila sullo stesso documento sono
+//    venti occasioni di fallire a meta'. Se una pagina non riesce, le altre proseguono e il conto
+//    finale lo dice (v6.793).
+async function pagineSfondoTutte() {
+  const it = currentLang === 'it';
+  const pag = _pagineDi(_figSlotF);
+  if (!pag.length) return;
+  const btn = document.getElementById('fe-pagine-sfondo-btn');
+  const nuove = pag.slice();
+  let fatte = 0, fallite = 0;
+  if (btn) btn.disabled = true;
+  for (let i = 0; i < pag.length; i++) {
+    if (btn) btn.textContent = '\u23F3 ' + (i + 1) + ' / ' + pag.length;
+    try {
+      // ⚠️ Si riparte dall'ORIGINALE anche qui: rilanciando la pulizia su una passata gia'
+      //    fatta si pulirebbe una foto gia' pulita, e il risultato peggiora a ogni giro.
+      const blob = await (await fetch(cloudinaryUrl(pag[i].orig, 'q_auto,f_auto'))).blob();
+      const fuori = await _togliSfondoDaBlob(blob, (pct, fase) => {
+        if (!btn) return;
+        btn.textContent = fase === 'libreria'
+          ? (it ? '\u23F3 scarico il modello...' : '\u23F3 loading model...')
+          : '\u23F3 ' + (i + 1) + ' / ' + pag.length + (pct ? ' \u2014 ' + pct + '%' : '');
+      });
+      const url = await uploadToCloudinary(fuori);
+      if (url) { nuove[i] = { url: url, orig: pag[i].orig }; fatte++; } else { fallite++; }
+    } catch (e) {
+      console.error('pagineSfondoTutte', i, e);
+      fallite++;
+    }
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '\u2728 ' + (it ? 'Rimuovi sfondo da tutte' : 'Remove background from all'); }
+  if (fatte && await _salvaPagine(nuove)) _ridisegnaPagine();
+  toast((it ? '\u2705 Sfondo tolto a ' + fatte + ' pagine' : '\u2705 Background removed from ' + fatte + ' pages')
+    + (fallite ? (it ? ' \u2014 ' + fallite + ' non riuscite' : ' \u2014 ' + fallite + ' failed') : ''),
+    fallite ? 'warn' : 'success');
+}
+
 
 // v5.895 — Rimozione sfondo: modello RMBG-1.4 (q8) via transformers.js, al posto di
 // @imgly/background-removal (isnet). Qualità nettamente migliore sui soggetti chiari a basso
@@ -53462,9 +54596,7 @@ async function _salvaFigurineInBlocco(items) {
       const i = series.items.findIndex(x => x.id === it.id);
       return { it, i, precedente: i < 0 ? null : series.items[i] };
     });
-    const primaCounts = series.counts ? { ...series.counts } : series.counts;
     prima.forEach(({ it, i }) => { if (i < 0) series.items.push(it); else series.items[i] = it; });
-    _recomputeSeriesCounts(series);
     _invalidateSessionCache();
     try {
       await fsSave('series', series);
@@ -53474,7 +54606,7 @@ async function _salvaFigurineInBlocco(items) {
         if (i < 0) { const k = series.items.indexOf(it); if (k >= 0) series.items.splice(k, 1); }
         else series.items[i] = precedente;
       });
-      series.counts = primaCounts;
+      // 🗑️ v6.804 - qui si rimetteva anche il campo dei conteggi, che non si scrive piu'.
       throw e;
     }
   }
@@ -53612,6 +54744,17 @@ async function saveFigFromDetail(figId, opzioni) {
     // funzione, stesso messaggio dell'altra form.
     const _msgNum = _messaggioIncongruenzaNumero(_numScritto, _noNumChk);
     if (_msgNum) { toast(_msgNum, 'error', null, 7000); return; }
+    // 🆕 v6.806 - e due album sfogliabili nella stessa serie fermano il salvataggio, con lo
+    //    stesso modo e nello stesso posto: si dice la contraddizione e non si sceglie al posto suo.
+    {
+      // ⚠️ La serie si legge dal RECORD, non da un campo: nella scheda la serie e' in sola
+      //    lettura, e `fe-series` non esiste. `currentSeriesId` e' il ripiego per un articolo nuovo,
+      //    che il record ancora non ce l'ha.
+      const _serieQui = existingForCheck?.seriesId || currentSeriesId || '';
+      const _sfoChk = document.getElementById('fe-sfogliabile')?.checked || false;
+      const _msgSfo = _messaggioSfogliabileDoppio(_serieQui, figId, _sfoChk);
+      if (_msgSfo) { toast(_msgSfo, 'error', null, 9000); return; }
+    }
     if (existingForCheck?.section === 'retros') {
       const category = _catEff; // v6.038
       const changeTypeVal = document.getElementById('fe-retro-change-type')?.value || '';
@@ -53700,6 +54843,16 @@ async function saveFigFromDetail(figId, opzioni) {
       number: document.getElementById('fe-number')?.value ? +document.getElementById('fe-number').value : null,
       noNumber: document.getElementById('fe-no-number')?.checked || false,
       fotoNonDisponibile: document.getElementById('fe-foto-non-disponibile')?.checked || false, // v6.079
+      // 🆕 v6.806 - ⚠️ SI LEGGE SOLO DOVE LA CASELLA ESISTE. Scritto come
+      //    `?.checked || false` e basta, su una figurina tornerebbe `false` e finirebbe in `updates`:
+      //    salvando una qualunque figurina si SPEGNEREBBE il flag di un album. E' la regola della
+      //    v6.169 al contrario - non «cio' che la form non ripristina si azzera», ma «cio' che la
+      //    form non ha nemmeno disegnato non deve scrivere».
+      // ⚠️ Si guarda se la CASELLA ESISTE, e non `_haPagine(_sezSalva)`: quella costante nasce
+      //    duecento righe piu' sotto, e qui sarebbe in zona morta. La domanda e' la stessa - la
+      //    casella la disegna `_haPagine` - e cosi' non ci sono due modi di farla.
+      ...(document.getElementById('fe-sfogliabile')
+            ? { sfogliabile: document.getElementById('fe-sfogliabile').checked } : {}),
       invisibile: document.getElementById('fe-invisibile')?.checked || false, // v6.080
       subseries: document.getElementById('fe-subseries')?.value.trim() || '',
       desc: document.getElementById('fe-desc')?.value.trim() || '',
@@ -54391,7 +55544,29 @@ function renderHomeStats() {
   const bustine = figs.filter(f => f.section === 'bustine');
   const albums = figs.filter(f => f.section === 'albums');
   const extras = figs.filter(f => f.section === 'extras');
-  animateCount(document.getElementById('stat-series'), series.length);
+  // 🆕 v6.797 (Franco) - IL NUMERO DELLE SERIE IN HOMEPAGE NON CONTA LE «IN ARRIVO» NÉ LE
+  //    INVISIBILI. Parole sue: *«nella homepage il numero di serie non deve contare quelle IN
+  //    ARRIVO e invisibili»*.
+  // 🔴 E QUI C'ERA UNA COSA CHE NESSUNO AVEVA DETTO AD ALTA VOCE: quel numero dipendeva da CHI
+  //    guardava. `getData('series')` passa da `_serieVisibili` (v6.584), che toglie le nascoste -
+  //    ma **solo ai visitatori**: a un amministratore restituisce tutto. Quindi sulla stessa
+  //    pagina Franco leggeva un numero e un visitatore un altro, e nessuno dei due era sbagliato
+  //    per come era scritto.
+  // 📌 Questo numero è un'affermazione sul sito, non una vista personale: deve dire la stessa
+  //    cosa a tutti. Quindi si filtra QUI, esplicitamente, invece di fidarsi di un filtro che
+  //    cambia risposta secondo chi è collegato.
+  // ⚠️ E si usa `_statoSerie`, non `s.invisibile`: lo stato ha QUATTRO valori dalla v6.676 e
+  //    `invisibile` è solo il ripiego per i record vecchi. Guardare il flag direbbe «visibile» di
+  //    una serie marcata nascosta col campo nuovo.
+  // ⚠️ GLI ALTRI CONTATORI NON SONO TOCCATI: figurine, retro, bustine, album e altri articoli
+  //    contano ancora gli articoli DI TUTTE le serie, comprese queste. E' un'incoerenza che resta,
+  //    e resta perché Franco ha nominato il numero delle serie: non la si estende per simmetria
+  //    senza chiederglielo (è l'errore che la v6.246 ha già pagato una volta). Sta nella TODO.
+  const _serieContate = series.filter(s => {
+    const st = _statoSerie(s);
+    return st !== 'nascosta' && st !== 'in-arrivo';
+  });
+  animateCount(document.getElementById('stat-series'), _serieContate.length);
   animateCount(document.getElementById('stat-figs'), onlyFigs.length);
   animateCount(document.getElementById('stat-retros'), retros.length);
   animateCount(document.getElementById('stat-bustine'), bustine.length);
@@ -54685,6 +55860,33 @@ function computeFullName(fig, allFigs, _salti) {
   // Prima questo ramo tornava il solo `fig.name`: una base si chiamava "ADAM BOMB" mentre ogni suo
   // figlio portava il retro nel nome. Ora anche la base dice qual e' il suo dietro.
   // Chi non ha `retroId` resta il solo nome, senza trattino penzolante.
+  // 🆕 v6.796 (Franco) - LE TIPOLOGIE CHE HANNO UN SOTTONOME LO SCRIVONO NEL NOME COMPLETO.
+  // 🔴 Parole sue: *«per le spille, nel nome completo metti anche il sotto nome; dopo il nome»*, e
+  //    poi la forma piena: *«Sottoserie - Nome - Sottonome»*.
+  // 📌 NON E' UNA REGOLA NUOVA, E' UNA STRADA CHE NON PASSAVA DI QUI. Il sottonome nel nome
+  //    completo esiste dalla v5.751 - ma solo per i RETRO, perche' `_retroNomeLungo` (che compone
+  //    `nome - sottonome`) ha UN solo chiamante: `_retroFullName`. E `computeFullName` smista per
+  //    VERSIONE, non per tipologia: i retro escono alla prima riga, tutti gli altri finiscono qui,
+  //    dove `subname` non veniva nemmeno nominato. Una spilla cadeva nel ramo senza retro e
+  //    tornava il solo nome.
+  // ⚠️ E il campo non era invisibile, il che spiega perche' la mancanza non saltasse all'occhio:
+  //    sulla CARD il sottonome di una spilla si vede gia', di suo, fra parentesi. Due posti e due
+  //    strade: quella che si vedeva funzionava, questa non era mai stata collegata.
+  // 📌 LA CONDIZIONE E' «questa tipologia dichiara un sottonome» e non «e' una spilla»: lo dice
+  //    il descrittore (`_haSottonome`), che e' la stessa fonte che decide se il campo si mostra
+  //    nella form e sulla card. Oggi le tipologie che lo dichiarano sono DUE - Retro e Spille - e
+  //    i retro non arrivano qui, quindi in pratica parla delle spille. ⚠️ Se un domani una terza
+  //    tipologia dichiarasse un sottonome, questa regola varrebbe anche per lei: e' una
+  //    conseguenza da guardare, non un difetto - ma va guardata.
+  // ⚠️ I PEZZI MANCANTI SPARISCONO SENZA TRATTINI PENZOLANTI, come ovunque in questa funzione:
+  //    senza sottoserie resta `Nome - Sottonome`, senza sottonome resta `Sottoserie - Nome`.
+  // 📌 E I DERIVATI SEGUONO DA SOLI: un errore di stampa di spilla compone
+  //    `_nomeFigurinaDiPartenza`, che rientra in questa stessa funzione sulla base. Cambiare qui
+  //    li sistema tutti e sette senza toccare i loro rami.
+  if (_haSottonome(fig.section || 'figurines')) {
+    return [(fig.subseries || '').trim(), (fig.name || '').trim(), (fig.subname || '').trim()]
+      .filter(Boolean).join(' - ');
+  }
   const _retroBase = fig.retroId ? allFigs.find(x => x.id === fig.retroId) : null;
   return _retroBase
     ? (fig.name || '') + ' - ' + _retroFullName(_retroBase, allFigs)
@@ -56440,7 +57642,6 @@ async function deleteDuplicateBaseFig(figId) {
   if (sIdx < 0) { toast(currentLang === 'it' ? 'Serie non trovata' : 'Series not found', 'error'); return; }
   const series = seriesList[sIdx];
   series.items = (series.items || []).filter(it => it.id !== figId);
-  _recomputeSeriesCounts(series);
   try {
     await fsSave('series', series);
   } catch(e) {
@@ -57231,8 +58432,6 @@ async function moveFigurinesToSeries() {
   moving.forEach(x => { x.seriesId = dst; });
   srcS.items = srcS.items.filter(x => !moveSet.has(x.id));
   dstS.items = dstS.items.concat(moving);
-  _recomputeSeriesCounts(srcS);
-  _recomputeSeriesCounts(dstS);
 
   const btn = document.getElementById('move-start-btn'); if (btn) btn.disabled = true;
   try {
@@ -59128,7 +60327,7 @@ function renderAll() {
   // Re-render items section if open
   if (document.getElementById('items-section')?.style.display !== 'none') {
     const titleEl = document.getElementById('items-section-title');
-    if (titleEl && currentSection) _scriviTitoloSezione(getSectionLabel(currentSection));   // v6.729
+    if (titleEl && currentSection) _scriviTitoloSezione(_titoloSezioneAtteso());   // 🐛 v6.802: era `getSectionLabel`, e dentro un box cancellava il nome del box
     // Aggiorna testo pulsanti toolbar figurine (Vista tabellare / Solo senza foto)
     const bulkBtn = document.getElementById('bulk-edit-toggle-btn');
     if (bulkBtn) {
@@ -60999,7 +62198,9 @@ function renderWishlist() {
     // oggetti), altrimenti non si capisce cosa si sta guardando quando una
     // serie ha in lista più tipi diversi mescolati insieme
     const typeLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altri articoli' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Wrappers' };
-    const typeOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine'];
+    // 🔄 v6.801 - l'ordine dichiarato invece di cinque nomi scritti qui: le altre sette
+    //    tornavano -1 e finivano in cima. Le etichette scritte a mano restano e vincono.
+    const typeOrder = PRODOTTI_INVENTARIO;
     const byType = {};
     figs.forEach(f => {
       const sec = f.section || 'figurines';
@@ -61023,7 +62224,7 @@ function renderWishlist() {
       groupsHtml += Object.entries(byGroup).sort(([a],[b]) => a.localeCompare(b)).map(([label, groupFigs]) =>
         `<div style="margin-top:0.3rem;"><div style="font-size:0.78rem;font-weight:700;color:var(--accent3);margin-bottom:0.25rem;">${label}</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem;">${groupFigs.map(chipHtml).join('')}</div></div>`
       ).join('');
-      return `<div style="margin-top:0.5rem;"><div style="font-family:var(--font-ui);font-size:0.9rem;color:var(--muted);margin-bottom:0.3rem;">${typeLabels[sec] || sec}</div>${groupsHtml}</div>`;
+      return `<div style="margin-top:0.5rem;"><div style="font-family:var(--font-ui);font-size:0.9rem;color:var(--muted);margin-bottom:0.3rem;">${_etichettaSezione(typeLabels, sec)}</div>${groupsHtml}</div>`;
     }).join('');
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.75rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
@@ -61359,6 +62560,21 @@ function renderWantlist() {
   // 📌 Non si usa `getSectionLabel()`, che pure verrebbe da `ARTICOLI` ed e' la fonte giusta: li'
   // le figurine si chiamano "Figurine con velina" (v6.195), e questa riga avrebbe rinominato di
   // straforo una cosa che nessuno ha chiesto di rinominare.
+  // 🔄 v6.801 - LE SETTE FRASI RESTANO, il ripiego smette di essere la chiave in minuscolo.
+  //    La v6.284 aveva riempito questo elenco a mano e scritto perche' non usava `getSectionLabel`
+  //    ("li' le figurine si chiamano in un altro modo"): giusto allora e giusto adesso, ma il buco
+  //    e' tornato con `figurine`, `spille`, `tatuaggi`, `trasferelli` e `cartoncini`. La frase per
+  //    quelle si COMPONE dall'etichetta del sito, invece di mostrare `spille` in minuscolo.
+  // ⚠️ Comporre una frase italiana e' la cosa che `_titoloProdotto` evita apposta (li' cambia
+  //    l'articolo: "Le Figurine", "I Retro", "Gli Album"). Qui non c'e' articolo - "<Etichetta> base
+  //    non nella tua lista" - quindi la composizione regge per tutte e dodici.
+  const _etichettaSezioneElenco = (sovra, sec) => {
+    const k = sec || 'figurines';
+    if (sovra && Object.prototype.hasOwnProperty.call(sovra, k)) return sovra[k];
+    const lab = getSectionLabel(k);
+    return currentLang === 'it' ? (lab + ' base non nella tua lista')
+                                : ('Base ' + lab.toLowerCase() + ' not in your list');
+  };
   const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine base non nella tua lista' : 'Base stickers not in your list', carte: currentLang === 'it' ? 'Carte base non nella tua lista' : 'Base cards not in your list', attaccare: currentLang === 'it' ? 'Figurine da attaccare base non nella tua lista' : 'Base stickers to stick not in your list', retros: currentLang === 'it' ? 'Retro base non nella tua lista' : 'Base retros not in your list', albums: currentLang === 'it' ? 'Album base non nella tua lista' : 'Base albums not in your list', extras: currentLang === 'it' ? 'Altri articoli base non nella tua lista' : 'Base other items not in your list', bustine: currentLang === 'it' ? 'Bustine base non nella tua lista' : 'Base wrappers not in your list' };
 
   const sortedEntries = Object.entries(bySeries).sort(([aId], [bId]) => {
@@ -61447,7 +62663,7 @@ function renderWantlist() {
         </div>
         `;
       })()}
-      ${(() => { if (_wantlistCollapsed[sId] !== false) return ''; const prefs = getWantlistPrefs(); if (prefs[sId]?.excludeMissing) return '<p style="color:var(--muted);font-size:0.82rem;font-style:italic;">' + (currentLang === 'it' ? 'Esclusa dalla mancolista.' : 'Excluded from missing list.') + '</p>'; const sectionOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine']; return Object.entries(bySection).sort(([secA], [secB]) => sectionOrder.indexOf(secA) - sectionOrder.indexOf(secB)).map(([sec, items]) => {
+      ${(() => { if (_wantlistCollapsed[sId] !== false) return ''; const prefs = getWantlistPrefs(); if (prefs[sId]?.excludeMissing) return '<p style="color:var(--muted);font-size:0.82rem;font-style:italic;">' + (currentLang === 'it' ? 'Esclusa dalla mancolista.' : 'Excluded from missing list.') + '</p>'; const sectionOrder = PRODOTTI_INVENTARIO /* v6.801: era un TERZO elenco a cinque nomi, nella stessa funzione dell'altro */; return Object.entries(bySection).sort(([secA], [secB]) => sectionOrder.indexOf(secA) - sectionOrder.indexOf(secB)).map(([sec, items]) => {
         const groupKey = sId + '_' + sec;
         const mode = wantlistMode[groupKey] || 'both';
         const hasNumbers = items.some(f => f.number);
@@ -61462,7 +62678,7 @@ function renderWantlist() {
                  stava a ΔE 7 dal colore della Variazione ufficiale, e Franco ha scelto di non
                  prendere un'altra tinta: la tavolozza e' affollata, e l'etichetta si distingue per
                  FORMA invece che per colore. -->
-            <span style="font-family:var(--font-ui);font-size:0.85rem;color:var(--text);">${sectionLabels[sec] || sec}</span>
+            <span style="font-family:var(--font-ui);font-size:0.85rem;color:var(--text);">${_etichettaSezioneElenco(sectionLabels, sec)}</span>
             <div style="margin-left:auto;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
               ${hasNumbers ? `<div style="display:flex;align-items:center;gap:0.35rem;"><button class="toggle-btn-blue ${mode==='numbers'?'on':''}" onclick="toggleWantlistMode('${groupKey}','numbers')" title="${currentLang === 'it' ? 'Mostra solo numeri' : 'Show numbers only'}"></button><span style="font-size:0.78rem;color:var(--muted);">${currentLang === 'it' ? 'Mostra solo numeri' : 'Show numbers only'}</span></div>` : ''}
               ${hasNumbers ? `<div style="display:flex;align-items:center;gap:0.35rem;"><button class="toggle-btn-blue ${mode==='names'?'on':''}" onclick="toggleWantlistMode('${groupKey}','names')" title="${currentLang === 'it' ? 'Mostra solo nomi' : 'Show names only'}"></button><span style="font-size:0.78rem;color:var(--muted);">${currentLang === 'it' ? 'Mostra solo nomi' : 'Show names only'}</span></div>` : ''}
