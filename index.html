@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.808">
+<link rel="stylesheet" href="css/style.css?v=6.809">
 
 
 <style>
@@ -738,6 +738,42 @@ button.back-btn { color:#ffffff; }
    ⚠️ La regola in style.css resta e continuerà a dire viola: chi legge quel file vedrà una cosa che
    il sito non fa più. È il prezzo dello scavalcamento, e si paga sapendolo. */
 .card-tag { color: var(--text); }
+
+/* 🔴 v6.809 — LA REGOLA CHE MANCAVA, E CHE NESSUNO SAPEVA MANCASSE.
+   Franco, aprendo la preview: «si apre solo una finestra con 2 frecce». Non era la preview: era il
+   sito, e lo era anche IN RETE.
+   📏 MISURATO: in tutto il foglio esisteva UNA sola regola che nascondesse, `.modal-overlay.hidden`
+   — DUE classi, non una. Dei ventiquattro elementi dell'index con `hidden`, ventitre portavano
+   anche `modal-overlay` e funzionavano; il ventiquattresimo era il visore «sfoglia l'album» della
+   v6.806, che portava `hidden` e basta. Quella regola non lo toccava: un rettangolo nero a
+   `z-index:9000` sopra OGNI pagina.
+   📏 E prima di scrivere `!important` si è contato chi lo incassa: quei ventitre non cambiano
+   comportamento (erano già `display:none`), e NESSUN elemento con `hidden` riceve mai uno
+   `style.display` da app.js — i punti che lo fanno toccano dei FIGLI dentro il modale. Quindi
+   l'`!important` non spegne niente che dovesse restare acceso.
+   ⚠️ E non è pigrizia: serve a battere uno stile IN LINEA, che è l'altra metà del difetto. */
+.hidden { display: none !important; }
+
+/* 🆕 v6.809 — IL VISORE «SFOGLIA L'ALBUM», FUORI DALLO STILE IN LINEA.
+   Nella v6.806 tutte queste dichiarazioni stavano dentro `style="..."` sul div, e fra loro c'era
+   `display:flex`. ⚠️ Uno stile in linea batte qualunque regola senza `!important`: nemmeno una
+   `.hidden` scritta bene avrebbe potuto vincerlo. È la trappola che la v6.162 ha pagato sulle
+   colonne e che la v6.808 ha appena ripagato sulla larghezza della casella di ricerca — terza.
+   🔴 E STA QUI, NON IN css/style.css, per la ragione scritta dodici righe più su nella v6.396: il
+   deploy porta su SOLO index.html e js/app.js. La prima stesura di questa correzione l'aveva messa
+   nel foglio — dove sarebbe stata giustissima e non sarebbe MAI arrivata sul sito, lasciando il
+   rettangolo nero esattamente dov'era. E in silenzio: la rete di sicurezza in fondo all'index
+   confronta la versione di app.js, non quella del CSS.
+   📌 Non porta `modal-overlay` per scelta: quella classe ha la sfocatura, la partenza in alto e lo
+   `z-index` 2000, e qui servono il nero pieno, il centro e lo strato più alto. */
+#sfoglia-album-modal {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0,0,0,0.92);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0.8rem; padding: 1rem;
+}
+#sfoglia-album-modal.hidden { display: none !important; }
 
 /* 🆕 v6.399 (Franco) — IL NOME DELL'ENTITÀ CHE LA CARD RAPPRESENTA.
    Il colore dice: "questa parola è il NOME della cosa che questa card, o questo gruppo di
@@ -4198,8 +4234,12 @@ di tutte le serie</button>
      📌 Il markup sta qui e non si fabbrica in `app.js`: è la scelta di tutti gli altri modali del
      sito (`foto-scelta-modal`, `series-ebay-modal`), e tenerla vuol dire che un modale si trova
      dove ci si aspetta di trovarlo.
-     ⚠️ `hidden` di partenza: senza, comparirebbe per un istante al caricamento di ogni pagina. -->
-<div id="sfoglia-album-modal" class="hidden" style="position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.8rem;padding:1rem;">
+     ⚠️ `hidden` di partenza: senza, comparirebbe per un istante al caricamento di ogni pagina.
+     🔴 v6.809 - E NON BASTAVA. Qui c'era anche `style="...display:flex..."` in linea, e la
+     sola regola che nascondeva nel sito era `.modal-overlay.hidden`, che questo div non ha mai
+     portato. Risultato: il visore stava SEMPRE aperto, sopra ogni pagina, anche in rete. Adesso
+     tutto lo stile sta nel foglio (`#sfoglia-album-modal`) e `.hidden` esiste per davvero. -->
+<div id="sfoglia-album-modal" class="hidden">
   <button type="button" onclick="chiudiSfogliaAlbum()" aria-label="Chiudi" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text);font-size:2rem;line-height:1;cursor:pointer;">&times;</button>
   <img id="sfoglia-album-img" alt="" style="max-width:100%;max-height:calc(100vh - 8rem);object-fit:contain;">
   <!-- ⚠️ v6.806 - `var(--text)` e non `#fff`: il sito ha un tema solo, e un bianco
@@ -4216,7 +4256,7 @@ di tutte le serie</button>
     <button type="button" id="sfoglia-album-succ" onclick="sfogliaVai(1)" style="min-width:3rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.4rem 0.8rem;font-size:1.3rem;line-height:1;cursor:pointer;">&#8250;</button>
   </div>
 </div>
-<script src="js/app.js?v=6.808"></script>
+<script src="js/app.js?v=6.809"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4240,7 +4280,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.808'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.809'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
