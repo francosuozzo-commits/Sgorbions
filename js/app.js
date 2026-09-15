@@ -1,6 +1,39 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.824 - 🔢 TUTTI I CONTATORI CONTANO LO STESSO ELENCO (Franco): *«mi sembrava di aver già
+//          chiarito che tutti i contatori devono escludere le serie IN ARRIVO ed INVISIBILI»*.
+//          Chiude il punto 33 della TODO. Modificato js/app.js.
+//          🔴 La v6.811 aveva applicato la regola ai soli numeroni della home. Passavano ancora da
+//          `getData('figurines')` - che a un admin non toglie niente e a nessuno toglie le IN
+//          ARRIVO - il «N / totale» (navbar, home, profilo), «I tuoi numeri Sgorbions», i
+//          punteggi e i conteggi della CLASSIFICA e il livello nella scheda utente dell'admin.
+//          📌 Adesso chiedono tutti `_articoliDaContareSito()`, cioè `_articoliDaContare` sulla
+//          cache grezza: la regola vive in un posto solo.
+//          🔢 E IL «N / TOTALE» HA LE SUE TIPOLOGIE (Franco): *«somma le seguenti TDA: Figurine con
+//          retro, Carte, Carte d'identità, trasferelli, tatuaggi, spille»*, tutte le versioni
+//          *«eccetto gli errori di stampa»*. Stesso filtro sopra e sotto la barra. Misurato sui dati
+//          veri il 15 settembre: totale 2.018 (era 4.708 senza nessun filtro). La tipologia
+//          «Figurine» (61, Holidays) rientra quando sarà migrata a «Figurine con retro».
+//          Profilo e Classifica NON hanno il filtro delle tipologie.
+//          🎁 «LE SERIE SGORBIONS CENSITE»: LA COLONNA OMAGGIO DIVENTA DUE (Franco): *«la finestra
+//          conta gli omaggi in modo sbagliato; servono 2 colonne; 1: FIGURINE OMAGGIO; 2: RETRO
+//          OMAGGIO»*. Leggono `c.omaggiFigurine` e `c.omaggiRetro` (esistevano dalla v6.248) e passano
+//          da `_contoSerieACella`. Su telefono sono due righe dentro SPECIALI. `_serieHaOmaggi` se ne
+//          va. ⬜ La colonna HA OMAGGIO della tabella serie in console admin resta com'è.
+//          🏷️ E nella stessa finestra il NOME, su desktop, è il «Nome breve» (Franco): *«usiamo i
+//          nomi serie brevi»*. Da `_nomeSerieCard(s, true)`, come su telefono. «VARIAZIONI NON
+//          UFFICIALI» su tre righe; «PRIMA», «ULTIMA», «CHANGE FIGURINA», «CHANGE RETRO»; e la
+//          colonna SPILLE (set base); su telefono le spille stanno in N. FIG, nelle serie che
+//          hanno spille e non figurine; tatuaggi, trasferelli e carte d'identità sono righe di
+//          SPECIALI («CARTE IDENTITÀ»); «N. FIG» diventa «FIG», e il (prima/ultima) sotto il
+//          conteggio se ne va.
+//          Poi TRASFERELLI, CARTE D'IDENTITÀ e TATUAGGI (solo desktop), e su desktop la FOTO scende
+//          sotto il nome nella stessa cella: la colonna senza titolo se ne va.
+//          ⚠️ LA CLASSIFICA È SALVATA IN FIRESTORE: il codice nuovo non la corregge da solo.
+//          Serve un giro di «Ricalcola i Punteggi rarità di tutti» dopo la pubblicazione.
+//          ⬜ `updateSectionCounts` (card delle sezioni DENTRO la pagina di una serie) resta com'è:
+//          è una vista della serie aperta, e un admin su una serie IN ARRIVO deve vederne i numeri.
 // v6.823 - 🕳️ NIENTE CELLE VUOTE: O UN «-» O UNO ZERO (Franco). Trovato da lui guardando
 //          la tabella: *«sg3 variazioni ufficiali non ha "-"»*, *«idem sg2 variazioni non
 //          ufficiali»*, *«idem sg1 change»*, *«insomma, ci sono dei buchi»*. Modificato js/app.js.
@@ -28343,7 +28376,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.823';
+const JS_VERSION = 'v6.824';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32616,6 +32649,12 @@ function _conteggiSerie(items) {
     // ottenerla. Ora la ottiene, usando `_eBase` — la definizione canonica, gia' letta da quattro
     // punti. Un'equivalenza dichiarata a parole non regge a una release; una condivisa si'.
     base:           items.filter(f => fig(f) && _eBase(f)).length,
+    // 🆕 v6.824 (Franco) — per la colonna SPILLE di «Le serie Sgorbions censite»: il set base, come
+    //    `base` e `retro`. Errori di stampa e altre versioni restano fuori.
+    spille:         items.filter(f => sez(f) === 'spille' && _eBase(f)).length,
+    trasferelli:    items.filter(f => sez(f) === 'trasferelli' && _eBase(f)).length,
+    cartoncini:     items.filter(f => sez(f) === 'cartoncini' && _eBase(f)).length,
+    tatuaggi:       items.filter(f => sez(f) === 'tatuaggi' && _eBase(f)).length,
     variazioni:     items.filter(f => fig(f) && f.isVariation).length,
     nonUfficiali:   items.filter(f => fig(f) && f.isUnofficialVariation).length,
     changeFigurine: items.filter(f => fig(f) && f.isChange).length,
@@ -37617,8 +37656,10 @@ function apriInfoTutteLeSerie() {
     // che si LEGGONO INSIEME - le variazioni fra loro, i change fra loro. Il conto dei retro invece
     // sta accanto a quello delle figurine: sono le due quantita' che descrivono la serie, e si
     // guardano affiancate. Metterlo dentro SPECIALI l'avrebbe sepolto fra i contrassegni.
-    ? (it ? ['', 'N.<br>FIG', 'RETRO', 'SPECIALI']
-          : ['', 'N.<br>stickers', 'BACKS', 'SPECIALS'])
+    // 🔄 v6.824 (Franco) — «N. FIG» diventa «FIG»: su telefono le intestazioni si accorciano come su
+    //    desktop («PRIMA», «ULTIMA»).
+    ? (it ? ['', 'FIG', 'RETRO', 'SPECIALI']
+          : ['', 'stickers', 'BACKS', 'SPECIALS'])
     // v6.177 (Franco) - via il prefisso "N." / "NUMERO": la colonna dice gia' di essere un conteggio
     // perche' sotto ci sono dei numeri, e cinque prefissi uguali allungano le intestazioni senza
     // aggiungere niente. Stessa idea del "SI" tolto nella v6.166 e del `#` tolto nella v6.115.
@@ -37636,8 +37677,14 @@ function apriInfoTutteLeSerie() {
     // tagliata (e' la stessa correzione della v6.175, applicata a due colonne rimaste indietro).
     // v6.211 - la colonna RETRO anche su desktop: e' un dato della serie, e mostrarlo su telefono
     // e non sullo schermo largo sarebbe l'unico caso in cui il telefono dice di piu'.
-    : (it ? ['', 'NOME', 'ANNO', 'FIGURINE', 'PRIMA<br>FIGURINA', 'ULTIMA<br>FIGURINA', 'VARIAZIONI<br>UFFICIALI', 'VARIAZIONI NON<br>UFFICIALI', 'CHANGE<br>DI FIGURINA', 'RETRO', 'CHANGE<br>DI RETRO', 'OMAGGIO']
-          : ['', 'NAME', 'YEAR', 'STICKERS', 'FIRST<br>STICKER', 'LAST<br>STICKER', 'OFFICIAL<br>VARIATIONS', 'UNOFFICIAL<br>VARIATIONS', 'STICKER<br>CHANGE', 'BACKS', 'BACK<br>CHANGE', 'FREE']);
+    // 🔄 v6.824 (Franco) — «VARIAZIONI NON UFFICIALI» su TRE righe: *«scrivilo su 3 righe»*.
+    // 🔄 v6.824 (Franco) — *«la finestra conta gli omaggi in modo sbagliato; servono 2 colonne;
+    //    1: FIGURINE OMAGGIO; 2: RETRO OMAGGIO»*. La colonna unica sommava gli omaggi di TUTTE le
+    //    tipologie (da attaccare, album, bustine…) sotto una tabella che parla di figurine e retro.
+    // 🔄 v6.824 (Franco) — quattro intestazioni si accorciano: «PRIMA», «ULTIMA», «CHANGE FIGURINA»,
+    //    «CHANGE RETRO». E in coda la colonna SPILLE: *«aggiungi la colonna Spille»*.
+    : (it ? ['NOME', 'ANNO', 'FIGURINE', 'PRIMA', 'ULTIMA', 'VARIAZIONI<br>UFFICIALI', 'VARIAZIONI<br>NON<br>UFFICIALI', 'CHANGE<br>FIGURINA', 'RETRO', 'CHANGE<br>RETRO', 'FIGURINE<br>OMAGGIO', 'RETRO<br>OMAGGIO', 'SPILLE', 'TRASFERELLI', "CARTE<br>D'IDENTITÀ", 'TATUAGGI']
+          : ['NAME', 'YEAR', 'STICKERS', 'FIRST', 'LAST', 'OFFICIAL<br>VARIATIONS', 'UNOFFICIAL<br>VARIATIONS', 'STICKER<br>CHANGE', 'BACKS', 'BACK<br>CHANGE', 'FREE<br>STICKERS', 'FREE<br>BACKS', 'PINS', 'IRON-ONS', 'IDENTITY<br>CARDS', 'TATTOOS']);
 
   // Tutto centrato tranne una colonna per variante, e per lo stesso motivo: quando una cella
   // contiene TESTO di lunghezza diversa riga per riga, centrarla toglie il bordo da cui l'occhio
@@ -37687,18 +37734,17 @@ function apriInfoTutteLeSerie() {
     const primaCella = mobile
       ? miniatura + `<div style="font-size:0.75rem;line-height:1.2;margin-top:0.25rem;">${_nomeSerieCard(s)}</div>`
                   + _annoSottoNome(s)
-      : miniatura;
+      // 🔄 v6.824 (Franco) — *«metti la foto della serie sotto al nome, così recuperiamo spazio»*:
+      //    su desktop la foto non ha più una colonna sua, sta nella cella del NOME, sotto il nome
+      //    breve. ⚠️ Allineata a sinistra come il nome: `margin:0 auto` della miniatura la
+      //    centrerebbe in una cella che non lo è.
+      : `<div>${_nomeSerieCard(s, true)}</div>`
+        + (s.img ? `<img src="${s.img}" alt="" loading="lazy" style="width:44px;height:44px;object-fit:cover;border-radius:8px;display:block;margin-top:0.25rem;">` : '');
     // Lo zero resta vuoto, come nella tabella admin (v6.166): una parete di zeri nasconde i numeri
     // veri esattamente come la parete di NO nascondeva i SI. Nome e anno no: quelli ci sono sempre.
-    // v6.179 (Franco) - su telefono il primo e l'ultimo numero entrano SOTTO il conteggio, nella
-    // forma  60 / (1/160), e le colonne DA e A spariscono.
-    // ⚠️ La parentesi compare solo se ci sono TUTTI E DUE i numeri. Una serie senza numerazione
-    // (`noNumbers`) o con un estremo solo mostra il conteggio nudo: scrivere "(1/)" o "(/160)"
-    // darebbe l'idea di un dato rotto invece che di un dato assente.
-    const _n = _intervalloNumeriSerie(s);   // 🔄 v6.818 - calcolato, non piu' letto dalla serie
-    const _intervallo = (_n != null)
-      ? `<div style="font-size:0.72rem;color:var(--text);line-height:1.25;">(${_n.first}/${_n.last})</div>`
-      : '';
+    // 🗑️ v6.824 (Franco) - *«da mobile togliamo min/max»*. Qui c'era la parentesi (prima/ultima)
+    //    sotto il conteggio delle figurine, nata nella v6.179 quando su telefono sparirono le
+    //    colonne DA e A. Su desktop PRIMA e ULTIMA restano colonne.
     // v6.180 (Franco) - la colonna VAR di telefono: due righe etichettate invece di due colonne.
     // ⚠️ Le righe con zero NON si scrivono, e la cella con entrambi a zero resta vuota: e' la regola
     // che Franco ha confermato per l'intervallo ("no dati -> non mostrare nulla"), la stessa del
@@ -37760,20 +37806,38 @@ function apriInfoTutteLeSerie() {
                     // delle figurine perche' e' una quantita' della serie, non un contrassegno.
                     // La regola "riga con zero non si scrive" arriva gratis da `_rigaVar`: finche'
                     // non sposti niente su omaggio, questa riga non compare.
-                    + _rigaVar(it ? 'OMAGGIO' : 'FREE', c.omaggi);   // v6.240
+                    // 🔄 v6.824 (Franco) — DUE righe, come i change: la famiglia sopra, quale sotto.
+                    + _rigaVar(it ? 'OMAGGIO<br>FIG'   : 'FREE<br>STICKERS', c.omaggiFigurine)
+                    + _rigaVar(it ? 'OMAGGIO<br>RETRO' : 'FREE<br>BACKS',    c.omaggiRetro)
+                    // 🆕 v6.824 (Franco) — *«le altre 3 TDA: tatuaggi, trasferelli e carte identità
+                    //    mettile nella colonna SPECIALI»*. Su desktop hanno una colonna ciascuna.
+                    + _rigaVar(it ? 'TATUAGGI' : 'TATTOOS', c.tatuaggi)
+                    + _rigaVar(it ? 'TRASFERELLI' : 'IRON-ONS', c.trasferelli)
+                    // «CARTE IDENTITÀ», senza «D'»: più corta, e SPECIALI è stretta (Franco).
+                    + _rigaVar(it ? 'CARTE<br>IDENTITÀ' : 'IDENTITY<br>CARDS', c.cartoncini);
     const celle = mobile
       // 🔄 v6.821 - anche su telefono le due celle dei conteggi prendono il trattino. ⚠️ Le righe
       //    dentro SPECIALI no, ed e' dichiarato: `_rigaVar` non scrive la riga quando il valore e'
       //    zero, quindi li' una tipologia assente non lascia gia' niente da leggere - un trattino
       //    aggiungerebbe quattro righe per dire che non c'e' niente da dire.
-      ? [primaCella, _contoSerieACella(s, c.base, 'figurines') + _intervallo,
+      // 🔄 v6.824 (Franco) — *«le spille possono stare nella colonna figurine, dato che ci sono
+      //    spille in quella serie»* (telefono). Se la serie non ha figurine con retro ma ha spille,
+      //    N. FIG porta le spille. ⚠️ Una serie con tutte e due mostrerebbe le figurine: oggi non
+      //    ce n'è nessuna, ed è dichiarato in prova-v6824 §5j.
+      ? [primaCella, ((!_serieAmmetteTipologia(s, 'figurines') && _serieAmmetteTipologia(s, 'spille'))
+           ? _contoSerieACella(s, c.spille, 'spille')
+           : _contoSerieACella(s, c.base, 'figurines')),
          _contoSerieACella(s, c.retro, 'retros'), _speciali]
       // v6.211 - `c.retro` sta PRIMA di `c.changeRetro` (Franco): i due numeri dei retro si leggono
       // affiancati, come le due colonne dei change lo erano gia'.
       // 🔄 v6.823 - ogni conteggio porta la sua TIPOLOGIA e, dove esiste, la sua VERSIONE: la
       //    prima dice se la colonna esiste per questa serie, la seconda se puo' portare un numero.
       //    Niente celle vuote: o «-» o uno zero (Franco).
-      : [primaCella, s.name || '', s.year ?? '',
+      // 🔄 v6.824 (Franco) — *«nella tabellina della finestra, usiamo i nomi serie brevi»*: anche su
+      //    desktop il NOME è il «Nome breve» della serie, da `_nomeSerieCard(s, true)` come su
+      //    telefono. In inglese usa `nomeCortoEn`, e se è vuoto il breve italiano; senza nessun
+      //    breve, il nome intero.
+      : [primaCella, s.year ?? '',
          _contoSerieACella(s, c.base, 'figurines'),
          _numeroSerieACella(s, 'first'), _numeroSerieACella(s, 'last'),   // v6.820
          // v6.235 - VERSIONI OMAGGIO, in coda come chiesto da Franco (dopo CHANGE DI RETRO).
@@ -37782,7 +37846,20 @@ function apriInfoTutteLeSerie() {
          _contoSerieACella(s, c.changeFigurine, 'figurines', 'change'),
          _contoSerieACella(s, c.retro, 'retros'),
          _contoSerieACella(s, c.changeRetro, 'retros', 'change'),
-         _serieHaOmaggi(s) ? Number(c.omaggi || 0) : '-'];
+         // 🔄 v6.824 — gli omaggi hanno adesso una tipologia ciascuno, quindi passano dalla stessa
+         //    funzione delle colonne accanto: «-» se la tipologia non è ammessa o la serie non
+         //    dichiara la versione omaggio, altrimenti il numero (anche 0).
+         _contoSerieACella(s, c.omaggiFigurine, 'figurines', 'free'),
+         _contoSerieACella(s, c.omaggiRetro, 'retros', 'free'),
+         // 🆕 v6.824 (Franco) — SPILLE: le spille del set base, come FIGURINE e RETRO. «-» dove la
+         //    serie non ammette la tipologia.
+         _contoSerieACella(s, c.spille, 'spille'),
+         // 🆕 v6.824 (Franco) — *«aggiungi le 3 colonne mancanti: trasferelli, carte d'identità e
+         //    tatuaggi»*: con FIGURINE e SPILLE la tabella copre le sei tipologie del «N / totale».
+         //    ⬜ Solo desktop: su telefono sarebbero tre colonne strette in più.
+         _contoSerieACella(s, c.trasferelli, 'trasferelli'),
+         _contoSerieACella(s, c.cartoncini, 'cartoncini'),
+         _contoSerieACella(s, c.tatuaggi, 'tatuaggi')];
     return '<tr>' + celle.map((v, i) =>
       // v6.208 (Franco) - su TELEFONO: celle piu' strette e griglia visibile.
       // \uD83D\uDCCC Lo spazio orizzontale scende da 0,7rem a 0,3rem per lato. In una tabella a sei
@@ -43919,7 +43996,9 @@ async function _updatePublicScore(userId, owned) {
   // mai la lista dettagliata di quali figurine specifiche si possiedono
   // (quella resta privata nella collezione 'owned').
   try {
-    const allFigs = getData('figurines', []);
+    // 🔄 v6.824 — non più `getData`: il ricalcolo lo lancia un admin, e con `getData` scriveva i
+    //    punteggi di tutti senza togliere né le IN ARRIVO né le nascoste né gli invisibili.
+    const allFigs = _articoliDaContareSito();
     const ownedFigs = allFigs.filter(f => owned.includes(f.id));
     const score = ownedFigs.reduce((sum, f) => sum + (f.score || 0), 0);
     const countFigurines = ownedFigs.filter(f => f.section === 'figurines' || !f.section).length;
@@ -48698,7 +48777,8 @@ function renderProfile() {
   } else {
     if (avatarText) { avatarText.style.display = ''; avatarText.textContent = currentUser.username[0].toUpperCase(); }
   }
-  const allFigs = getData('figurines', []);
+  // 🔄 v6.824 — «I tuoi numeri Sgorbions» sono contatori: stesso elenco del «N / totale».
+  const allFigs = _articoliDaContareSito();
   const owned = getOwned();
   const ownedFigs = allFigs.filter(f => owned.includes(f.id));
   const profileStatsBox = document.getElementById('profile-stats-box');
@@ -50282,16 +50362,12 @@ function _contoSerieACella(serie, valore, tipologia, chiaveVersione) {
   return Number(valore || 0);
 }
 
-// 🆕 v6.823 — GLI OMAGGI SONO L'ECCEZIONE, e ha una ragione misurata: `c.omaggi` conta
-// `isFreeVersion` su TUTTE le sezioni, quindi non appartiene a una tipologia sola. La serie «ha
-// omaggi» se ALMENO UNA delle tipologie che ammette li dichiara.
-// 📏 Sulla serie 3 questo conta: `figurines.free` e `retros.free` sono `false`, ma `albums.free` e
-// `bustine.free` sono `true` — quindi la colonna porta **0**, non «-». Dire «-» avrebbe affermato
-// che quella serie non può avere omaggi, e non è vero: può averli sugli album.
-function _serieHaOmaggi(serie) {
-  return (Array.isArray(PRODOTTI_INVENTARIO) ? PRODOTTI_INVENTARIO : []).some(sez =>
-    _serieAmmetteTipologia(serie, sez) && _versioneAmmessa('free', { section: sez }, serie));
-}
+// 🗑️ v6.824 — QUI STAVA `_serieHaOmaggi` (v6.823), la domanda della colonna OMAGGIO unica, che
+//    sommava gli omaggi di tutte le tipologie. Franco ha diviso la colonna in FIGURINE OMAGGIO e
+//    RETRO OMAGGIO: ognuna ha la sua tipologia e passa da `_contoSerieACella` come le altre, e
+//    l'eccezione non ha più niente da spiegare. 📌 Il 0-e-non-«-» della serie 3 era vero solo per
+//    la somma (omaggi su album e bustine): nelle due colonne nuove la serie 3 non dichiara omaggi,
+//    quindi «-» è la risposta giusta.
 
 // 📌 E la domanda intera, per chi la fa a schermo: «questa serie ha due numeri?»
 function _serieHaNumeri(serie) {
@@ -55927,7 +56003,8 @@ function openEditUserModal(userId) {
   const levelEl = document.getElementById('edit-user-level');
   if (levelEl) {
     const owned = (_cache.ownedMap && _cache.ownedMap[user.id]) || [];
-    const allFigs = getData('figurines', []);
+    // 🔄 v6.824 — lo stesso punteggio della Classifica, contato allo stesso modo.
+    const allFigs = _articoliDaContareSito();
     const score = allFigs.filter(f => owned.includes(f.id)).reduce((s, f) => s + (f.score || 0), 0);
     // Ensure levels are loaded
     if (!_cache.levels || !_cache.levels.length) {
@@ -56136,6 +56213,21 @@ function _articoliDaContare(tuttiGliArticoli, tutteLeSerie) {
   return (tuttiGliArticoli || []).filter(f => !f.invisibile && !fuori.has(f.seriesId));
 }
 
+// 🆕 v6.824 (Franco) — GLI ARTICOLI CHE OGNI CONTATORE DEL SITO CONTA, da qualunque parte stia.
+//    Parole sue: *«mi sembrava di aver già chiarito che tutti i contatori devono escludere le
+//    serie IN ARRIVO ed INVISIBILI»*. La v6.811 l'aveva applicato ai soli numeroni della home.
+// 🔴 SI PARTE DALLA CACHE GREZZA, non da `getData`: `getData('figurines')` passa da
+//    `_figurineVisibili`, che a un admin restituisce tutto e a nessuno toglie le IN ARRIVO. Il
+//    «N / totale», il profilo e la Classifica dicevano quindi numeri diversi secondo chi guardava.
+// ⚠️ La Classifica è il caso peggiore: `backfillPublicScores` lo lancia un ADMIN, e scriveva in
+//    Firestore i punteggi di tutti col filtro dell'admin — cioè senza togliere niente.
+// 📌 Chi conta un numero nuovo chiede questa funzione. Le pagine che MOSTRANO articoli (inventario,
+//    pagina della serie, wantlist, export) non passano di qui: quelle sono viste, non contatori.
+function _articoliDaContareSito() {
+  return _articoliDaContare(Array.isArray(_cache.figurines) ? _cache.figurines : [],
+                            Array.isArray(_cache.series) ? _cache.series : []);
+}
+
 // 🆕 v6.815 — la firma dell'ultimo elenco disegnato: serve a NON ridisegnare i riquadri a ogni
 // salvataggio. Ci entra anche la lingua, perché le etichette sono scritte dentro i riquadri.
 let _firmaNumeroniHero = '';
@@ -56220,7 +56312,21 @@ function renderHomeStats() {
 }
 
 function updateOwnedCounter() {
-  const figs = getData('figurines', []);
+  // 🔄 v6.824 — chiude il punto 33: sopra e sotto la barra contano lo STESSO elenco, quello di
+  //    tutti i contatori. Un articolo in lista di una serie IN ARRIVO resta in lista, e torna nel
+  //    conto il giorno che la serie esce.
+  // 🔄 v6.824 (Franco) — E NON CONTA TUTTE LE TIPOLOGIE: *«somma le seguenti TDA: Figurine con
+  //    retro, Carte, Carte d'identità, trasferelli, tatuaggi, spille»*, di tutte le versioni
+  //    *«eccetto gli errori di stampa»*. Retro, album, bustine, altri articoli e figurine da
+  //    attaccare restano fuori. La tipologia «Figurine» (senza retro) è fuori oggi e rientra da
+  //    sola quando sarà migrata a «Figurine con retro» (TODO).
+  // 📌 Il filtro è UNO e vale sopra e sotto la barra: il N si conta dentro `figs`.
+  // ⚠️ Chiavi, non etichette: `figurines` è «Figurine con retro», `cartoncini` è «Carte d'identità».
+  //    L'elenco sta QUI e non in una `const` globale: questa funzione può girare prima che lo
+  //    script arrivi a quella riga (TDZ, strumenti/controllo-tdz.py).
+  const tdaContate = ['figurines', 'carte', 'cartoncini', 'trasferelli', 'tatuaggi', 'spille'];
+  const figs = _articoliDaContareSito()
+    .filter(f => tdaContate.includes(f.section || 'figurines') && !f.isPrintError);
   const owned = getOwned();
   const ownedCount = figs.filter(f => owned.includes(f.id)).length;
   const total = figs.length;
