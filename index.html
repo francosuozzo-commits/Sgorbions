@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.809">
+<link rel="stylesheet" href="css/style.css?v=6.823">
 
 
 <style>
@@ -238,8 +238,45 @@
 .hero-stats-right  { grid-area:dx; }
 
 .hero-stats-side { display:flex; align-items:center; justify-content:center; }
-/* fianchi in colonna, file sopra/sotto in riga: è l'unica differenza fra i quattro gruppi */
-.hero-stats-left, .hero-stats-right   { flex-direction:column; gap:0.7rem; }
+/* 🔄 v6.815 (Franco) — DA UNA COLONNA A DUE COLONNE PER TRE RIGHE, per sponda. Il suo disegno:
+        a sx                                       a dx
+   N serie      N figurine per album       N Carte         N carte d'identità
+   N Album      N figurine con retro       N Spille        N tatuaggi
+   N bustine    N Retro                    N Trasferelli   N Altri articoli
+   🔴 TRE RIGHE FISSE E LE COLONNE CHE SI AGGIUNGONO DA SÉ (`grid-auto-flow:column`): è il disegno
+   di Franco — ogni sponda si legge DALL'ALTO IN BASSO, prima colonna e poi seconda. L'ordine dei
+   riquadri dentro una sponda è quindi l'ordine in cui lui li ha scritti, e non serve nessuna
+   regola che deduca la posizione da una lista unica: le due sponde non seguono la stessa regola.
+   📌 E il giorno che nasce una tipologia nuova la griglia le apre una TERZA colonna a destra
+   invece di sfasare le righe: è il seguito visivo del setaccio della v6.283.
+   ⚠️ E STA QUI, NON IN `css/style.css`: il deploy porta su solo `index.html` e `js/app.js`, e una
+   regola scritta là sarebbe correttissima e non arriverebbe mai sul sito (lezione della v6.809). */
+.hero-stats-left, .hero-stats-right {
+  display:grid; grid-template-rows:repeat(3, auto); grid-auto-flow:column;
+  justify-content:center; align-items:start; gap:0.7rem 1.4rem; }
+
+/* 🆕 v6.816 (Franco) — I COLORI DELLE ISTRUZIONI DI IMPORT. Sue parole, 14 settembre:
+   ISTRUZIONI in BLU; «I dettagli del file da caricare:», «Significato delle Colonne», i nomi
+   delle colonne e «NOTA:» in AZZURRO.
+   🔴 IL COLORE STA QUI, NON NELLE STRINGHE. Le istruzioni sono quattro stringhe in `app.js`
+   (due blocchi × due lingue) e i nomi di colonna sono 53 `<code>`: scrivere il colore dentro
+   vorrebbe dire 53 copie della stessa decisione, cioè 53 posti da cui può divergere (v6.372).
+   Qui è scritto UNA volta, e una colonna nuova nasce già del colore giusto — il setaccio della
+   v6.283 applicato a una tinta.
+   ⚠️ E `<b>` NON BASTA COME BERSAGLIO: in quel testo fa due mestieri. Le due intestazioni sono
+   in grassetto, ma lo sono anche `base`, `variazione ufficiale`, `change`, `omaggio`, `errore di
+   stampa` — parole di VALORE, che Franco non ha chiesto di colorare. Per questo le intestazioni
+   portano una classe e il grassetto resta grassetto.
+   📌 `--action` è il blu che il sito ha già (#2563eb) e `--info` l'azzurro che il codice chiama
+   per nome (`COL_IDENTITA`): nessuna tinta nuova è stata inventata — le parole a schermo, colori
+   compresi, le sceglie Franco (v6.754).
+   ⬜ E il contrasto del blu sul fondo è 3,77, sotto il 4,5 di soglia: misurato e detto a Franco
+   prima di scrivere, e scelto da lui per non far nascere un colore nuovo. Dichiarato, non subìto.
+   ⚠️ STA NELL'INDEX E NON IN `css/style.css`: il deploy porta su solo `index.html` e `js/app.js`,
+   e una regola scritta là sarebbe correttissima e non arriverebbe mai sul sito (lezione v6.809). */
+.istruzioni-import .istruzioni-titolo  { color: var(--action); }
+.istruzioni-import .istruzioni-sezione { color: var(--info); }
+.istruzioni-import code                { color: var(--info); }
 .hero-stats-side .stat-item { display:block; text-align:center; }
 .hero-stats-side .stat-num { display:block; text-align:center; line-height:1.1; margin:0; }
 .hero-stats-side .stat-label { display:block; text-align:center; margin:2px 0 0; white-space:nowrap; }
@@ -1021,11 +1058,14 @@ button.back-btn { color:#ffffff; }
        torneranno, ovunque li si metta, si riaccenderanno da sole. -->
   <!-- v6.060 (Franco) — i numeroni solo SOPRA, a sinistra e a destra: il gruppo di sotto se n'e'
        andato per fare spazio al carosello. Tre voci per fianco invece di due. -->
-  <div class="hero-stats-side hero-stats-left" id="hero-stats" style="display:none;">
-    <div class="stat-item"><span class="stat-num" id="stat-series">0</span><span class="stat-label" data-i18n="hero.stat1">Series</span></div>
-    <div class="stat-item"><span class="stat-num" id="stat-figs">0</span><span class="stat-label" data-i18n="hero.stat2">Figurines</span></div>
-    <div class="stat-item"><span class="stat-num" id="stat-retros">0</span><span class="stat-label" data-i18n="hero.stat2b">Retro</span></div>
-  </div>
+  <!-- 🔄 v6.815 (Franco) — I RIQUADRI NON SONO PIÙ SCRITTI QUI: li disegna `renderHomeStats`.
+       🔴 Erano sei, e ognuno portava una chiave i18n inventata in questo file (`hero.stat2`,
+       `hero.stat2b`, `hero.stat2c`…). Gli undici di Franco a mano avrebbero voluto dire cinque
+       chiavi nuove e cinque etichette capaci di divergere da quelle che il sito usa altrove: è
+       il difetto che la v6.812 ha tolto dal profilo, e qui era l'ultimo posto dove viveva.
+       📌 Le due sponde restano, vuote: `hero-stats` (sei a sinistra, Serie compresa) e
+       `hero-stats-right` (cinque a destra). Gli id `stat-<tipologia>` nascono da `ARTICOLI`. -->
+  <div class="hero-stats-side hero-stats-left" id="hero-stats" style="display:none;"></div>
   <!-- v6.019 — via il margin-bottom:1rem del logo. Con i numeroni ai soli fianchi non dava
        fastidio; ora che la riga di mezzo è centrata verticalmente, quel margine fa parte della
        cella e spinge l'IMMAGINE 8px sopra il centro — misurato, i due gruppi laterali
@@ -1041,9 +1081,6 @@ button.back-btn { color:#ffffff; }
        qualcosa, e si vede a occhio. -->
   <h1 class="hero-h1"><img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions — le figurine italiane anni '90" style="max-width:440px;width:100%;margin:0 auto;display:block;"></h1>
   <div class="hero-stats-side hero-stats-right" id="hero-stats-right" style="display:none;">
-    <div class="stat-item"><span class="stat-num" id="stat-bustine">0</span><span class="stat-label" data-i18n="hero.stat2e">Bustine</span></div>
-    <div class="stat-item"><span class="stat-num" id="stat-albums">0</span><span class="stat-label" data-i18n="hero.stat2c">Album</span></div>
-    <div class="stat-item"><span class="stat-num" id="stat-extras">0</span><span class="stat-label" data-i18n="hero.stat2d">Altri articoli</span></div>
     <!-- v5.940 — "Mia lista / Totale Inventario" tolto dai numeroni della home (Franco).
          Il dato resta nel profilo e nel contatore in navbar; updateOwnedCounter regge l'assenza
          dell'elemento perché controlla che esista prima di scriverci.
@@ -3003,7 +3040,13 @@ di tutte le serie</button>
          niente. Un pannello con quella classe diventerebbe la cosa che trova, e il tab intero
          sparirebbe. -->
     <div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin:0.75rem 0 1rem;flex-wrap:wrap;">
-      <button type="button" class="series-tab-btn" data-tab="serie" onclick="switchSeriesTab('serie')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Serie</button>
+      <button type="button" class="series-tab-btn" data-tab="serie" onclick="switchSeriesTab('serie')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Generale</button>
+      <!-- 🆕 v6.817 (Franco) — IL TAB NUOVO, IN POSIZIONE 2. 🔴 La CHIAVE è nuova (`tipologie`);
+           quella del primo tab NON è stata toccata: `'serie'` è nominata in tre punti
+           (`switchSeriesTab('serie')` nell'`onclick`, e due volte in `app.js` per tornare al primo
+           tab dopo il salvataggio). Rinominarla insieme all'etichetta avrebbe rotto quel ritorno
+           **in silenzio**: è cambiata la PAROLA, non la chiave. -->
+      <button type="button" class="series-tab-btn" data-tab="tipologie" onclick="switchSeriesTab('tipologie')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🧩 Tipologie di articoli</button>
       <button type="button" class="series-tab-btn" data-tab="descrizioni" onclick="switchSeriesTab('descrizioni')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">📝 Descrizioni</button>
       <button type="button" class="series-tab-btn" data-tab="nonbase" onclick="switchSeriesTab('nonbase')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🔀 Versioni non base</button>
       <button type="button" class="series-tab-btn" data-tab="visualizzazione" onclick="switchSeriesTab('visualizzazione')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🗂️ Visualizzazione</button>
@@ -3038,7 +3081,7 @@ di tutte le serie</button>
       <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="flex:1 1 260px;">
           <div style="margin-bottom:0.6rem;">
-            <label class="form-label" data-i18n="form.series.name">Series Name</label>
+            <label class="form-label" data-i18n="form.series.name">Name</label>
             <input class="form-input" type="text" id="series-name-input" placeholder="e.g. Serie 1 — Primavera">
             <!-- 🆕 v6.645 (Franco: «ci serve una versione Inglese del nome delle Serie»)
                  FACOLTATIVO, e si lascia vuoto per le serie che hanno un NOME PROPRIO —
@@ -3109,13 +3152,23 @@ di tutte le serie</button>
         <label class="form-label" data-i18n="form.series.count">N. di Figurine</label>
         <input class="form-input" type="number" id="series-count-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;" title="Calcolato dall'Inventario: le figurine senza alcun contrassegno (né variazione, né change)">
       </div>
-      <div class="form-group" style="margin-bottom:0;">
+      <!-- 🔄 v6.818 (Franco) — I DUE CAMPI SONO CALCOLATI E DI SOLA LETTURA, e il contenitore ha
+           un id perché va NASCOSTO quando la serie dichiara «Senza numeri».
+           🔴 Sono di SOLA LETTURA, non spariti: parole di Franco, «se un giorno esce storto, dalla
+           form non si vede più niente». Le misure e il `title` seguono `series-count-input`, che è
+           calcolato dalla v6.129 e dice già com'è fatto un campo derivato in questa finestra: non
+           è stata inventata nessuna forma nuova.
+           ⚠️ IL `title` DELLE DUE ETICHETTE DICE ANCORA «Lascia vuoto se non numerata», che da
+           oggi è un'istruzione che non si può più eseguire. Sta nelle chiavi i18n
+           `form.series.firstNumberHint` / `lastNumberHint`, e le parole a schermo le sceglie
+           Franco (v6.754): è dichiarato qui e nella TODO, non riscritto d'iniziativa. -->
+      <div class="form-group" id="series-first-number-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.firstNumber" title="Lascia vuoto se non numerata">N. prima figurina</label>
-        <input class="form-input" type="number" id="series-first-number-input" min="1">
+        <input class="form-input" type="number" id="series-first-number-input" min="1" readonly style="opacity:0.7;cursor:not-allowed;" title="Calcolato: il primo numero delle figurine da attaccare della serie; in loro assenza delle figurine con retro, poi delle carte">
       </div>
-      <div class="form-group" style="margin-bottom:0;">
+      <div class="form-group" id="series-last-number-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.lastNumber" title="Lascia vuoto se non numerata">N. ultima figurina</label>
-        <input class="form-input" type="number" id="series-last-number-input" min="1">
+        <input class="form-input" type="number" id="series-last-number-input" min="1" readonly style="opacity:0.7;cursor:not-allowed;" title="Calcolato: l'ultimo numero delle figurine da attaccare della serie; in loro assenza delle figurine con retro, poi delle carte">
       </div>
     </div>
     <!-- 🗑️ v6.495 (Franco: *"il campo «N. figurine album» non ci serve piu'. Eliminalo"*)
@@ -3131,79 +3184,6 @@ di tutte le serie</button>
          ⚠️ Il dato gia' scritto sulle serie RESTA: in modifica il payload parte da
          `...series[idx]` e se lo porta dietro. Toglierlo davvero e' un intervento sui
          dati, ed e' un altro lavoro. -->
-    <!-- 🆕 v6.219 (Franco) — DUE COLONNE: a SINISTRA gli articoli che la serie non ha, uno per
-         riga; a DESTRA le quattro spunte della serie.
-         📌 La v6.217 aveva tolto una griglia a due colonne da questo punto - ma quella affiancava
-         le spunte della serie a quelle delle variazioni, che ora stanno in un altro tab. Questa
-         affianca due cose che sono rimaste tutte e due qui: non e' un ritorno indietro.
-         ⚠️ Il contenitore NON porta la classe `form-group`: `openAddSeriesModal` fa
-         `closest('.form-group')` su `series-has-sizes-input` per nasconderla ai non-admin, e oggi
-         non trova niente. Dandogliela, si porterebbe via mezza scheda. -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1.5rem;margin-bottom:0.75rem;align-items:start;">
-        <!-- SINISTRA -->
-        <!-- 🆕 v6.216 (Franco) — GLI ARTICOLI CHE QUESTA SERIE NON HA. Sostituisce le due caselle
-             singole "Figurine senza retro" (v6.098) e "Senza album" (v6.194): erano due modi di dire
-             la stessa cosa su due articoli diversi. Le caselle le genera `_caselleArticoliSerie()`
-             dal descrittore, quindi ci sono tutti e sei gli articoli e un settimo comparirebbe da sé.
-             v6.219 - in colonna: erano a `repeat(auto-fill,minmax(150px,1fr))`, cioe' due o tre per
-             riga secondo la larghezza. Il numero di caselle per riga cambiava con la finestra, e
-             quindi cambiava anche quali stavano vicine. -->
-        <div>
-          <!-- v6.229 (Franco) — il titolo del campo in BIANCO. `.form-label` e' `--muted` per tutto
-               il sito; qui l'eccezione e' scritta in linea, come si fa in questa finestra, e non
-               con una regola nuova nel CSS: la regola esiste gia' due volte (`#add-fig-modal` e le
-               procedure di caricamento) e la terza avrebbe cominciato a essere un elenco. -->
-          <!-- 🔄 v6.496 — le misure sono COPIATE da `.series-year`, il titoletto della stessa
-               famiglia visiva (dentro una scheda, non in cima a una pagina): font-ui,
-               letter-spacing 2px, maiuscoletto. Inventarne una variante nuova avrebbe dato
-               un titoletto simile a tutti e uguale a nessuno.
-               🔄 v6.500 (Franco: *"cambiare in «Articoli non in questa serie» e scrivilo in
-               giallo (scuro)"*) — E QUI IL BIANCO SE NE VA. La v6.229 lo aveva messo in
-               bianco, sempre su richiesta di Franco, e la v6.496 lo aveva lasciato citando
-               quella decisione: adesso la decisione e' cambiata, e il commento cambia con
-               lei. Un commento che spiega perche' una cosa e' bianca, sopra una riga
-               gialla, e' peggio di nessun commento.
-               📌 Il giallo e' `--warn` (#ffb400), non un giallo scelto a occhio: la
-               tavolozza ne ha due, e l'altro (`--type-unofficial`, #fff275) e' il colore
-               di una VERSIONE — usarlo qui spargerebbe un token che significa gia'
-               qualcos'altro. E «scuro» sceglie da se': #ffb400 e' ambra, #fff275 chiaro.
-               ✅ Contrasto misurato: 9,4:1 su `--card2`, 10,9:1 sul fondo pagina. -->
-          <!-- 🔄 v6.789 (Franco: *"a me non sono mai piaciuti quei flag a logica negativa... flag
-               acceso significa che la TDA e' ammessa"*) — IL VERSO SI GIRA, E CON LUI LE PAROLE.
-               🔴 Il titolo e' suo, alla lettera: «Tipologie di articoli di questa serie» — che e'
-               poi TDA scritto per esteso, e a schermo l'acronimo non compare mai.
-               📌 IL GIALLO RESTA `--warn` (#ffb400), e resta per la ragione della v6.500: la
-               tavolozza ha due gialli e l'altro (`--type-unofficial`) e' il colore di una
-               VERSIONE — usarlo qui spargerebbe un token che significa gia' qualcos'altro.
-               Contrasto misurato allora: 9,4:1 su `--card2`, 10,9:1 sul fondo pagina.
-               ⚠️ E IL SUGGERIMENTO SI GIRA CON IL TITOLO, o resta a spiegare il verso di ieri: un
-               suggerimento piu' vecchio della regola e' il difetto che questo progetto paga piu'
-               spesso. La frase «nasconde la porta, non la stanza» e' troppo buona per perderla e
-               dice ancora il vero — dall'altro lato. -->
-          <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:0.5rem;color:var(--warn);">Tipologie di articoli di questa serie</div>
-          <div id="series-tipologie-ammesse" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
-          <div class="form-hint" style="margin-top:0.3rem;">Spuntata = la serie ha questi articoli e il suo box compare nell'hub. Non spuntata, il box sparisce: nasconde la porta, non la stanza — gli oggetti restano nei dati.</div>
-        </div>
-        <!-- 🆕 v6.749 (Franco: "quei due campi mettili uno affianco all'altro") — LA SECONDA
-             COLONNA. Le due liste sono la stessa domanda in due versi, e dalla v6.748 si parlano:
-             spuntare di la' spegne di qua. Affiancate quel legame si vede; incolonnate, per
-             confrontarle si scorreva.
-             📌 La griglia a due colonne e' quella della v6.219: non se ne apre una seconda,
-             cambiano i suoi figli. -->
-        <div>
-          <!-- 🆕 v6.716 - L'ELENCO POSITIVO, e sta QUI perche' la domanda e' la sorella di
-               quella sopra: la prima dice quali tipologie la serie NON ha, questa quali la
-               FANNO. In due schede diverse avrebbe costretto ad andare avanti e indietro per
-               rispondere a due domande sulla stessa manciata di caselle.
-               📌 IL VERDE E' `--success`, lo stesso della spunta «serie completa» nella
-               wantlist: e' il colore con cui il sito dice gia' "completa". Il giallo qui sopra
-               dice "attenzione, questa roba non c'e'"; un secondo giallo avrebbe fatto sembrare
-               le due liste la stessa cosa scritta due volte. -->
-          <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:0.5rem;color:var(--success);">Servono per la serie completa</div>
-          <div id="series-articoli-completezza" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
-          <div class="form-hint" style="margin-top:0.3rem;">La serie e' completa quando hai tutti gli articoli base di QUESTE tipologie. Se non ne scegli nessuna vale il ripiego di sempre: Figurine con retro, Figurine, Carte.</div>
-        </div>
-      </div>
       <!-- 🔄 v6.749 (Franco: "sposta piu' in basso i campi che ora sono alla dx di Articoli non
            in questa serie") — LE SPUNTE DELLA SERIE SCENDONO SOTTO, e prendono la riga intera.
            📌 Erano la colonna DESTRA della griglia dalla v6.219, quando a sinistra c'era una
@@ -3227,7 +3207,7 @@ di tutte le serie</button>
                scritta vecchia sarebbe tornata al primo cambio di lingua (§5 di procedura-deploy:
                "ci si perde una release, ogni volta"). -->
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-            <input type="checkbox" id="series-no-numbers-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <input type="checkbox" id="series-no-numbers-input" onchange="_aggiornaCampiNumeriSerie()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
             <span data-i18n="form.series.noNumbers">Senza numeri</span>
           </label>
           <!-- v6.204 (Franco) — QUESTA serie fa da contenitore agli articoli senza serie. Prima il
@@ -3236,6 +3216,16 @@ di tutte le serie</button>
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-contenitore-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
             <span>Serie contenitore (articoli senza serie)</span>
+          </label>
+          <!-- 🆕 v6.814 (Franco) — le figurine di questa serie hanno tutte LO STESSO retro, quindi
+               il retro non si gestisce per articolo: niente campo «Retro associato», niente «Retro
+               bianco», una faccia sola in griglia e nella scheda.
+               🔴 NON vuol dire «questa serie non ha retro»: la sezione Retro resta, perché i retro
+               esistono (uno per sottoserie, più i loro errori di stampa). Sono due affermazioni
+               diverse, e per questo sono due spunte e non una. -->
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-unico-retro-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span>Unico retro</span>
           </label>
           <!-- 🆕 v6.369 (Franco: *"i campi «Senza numeri» e «Serie contenitore» mettili SOPRA il
                titoletto «Figurine da incollare»; altrimenti sembra che facciano parte di quella
@@ -3310,6 +3300,96 @@ di tutte le serie</button>
          📌 `display:none` sul gruppo resta: e' `_aggiornaCasellaSottoserie` ad accenderlo,
          ed e' lo stesso interruttore del bottone qui sopra. Uno solo, per due cose che
          devono comparire e sparire insieme. -->
+    <!-- 🆕 v6.817 (Franco, 14 settembre: *"aggiungi un tab in posizione 2 chiamato Tipologie di
+         articoli, e dentro ci metti tutti i flag i «Tipologie di articoli di questa serie» e
+         «Servono per la serie completa»"*) — IL TAB NUOVO.
+         🔴 È uno SPOSTAMENTO DI MARKUP, non una riscrittura: le due liste stavano dentro il
+         pannello `data-tab="serie"` e sono arrivate qui identiche, con i loro commenti e i loro
+         id. Le caselle le disegna `_caselleArticoliSerie()` / `_caselleCompletezzaSerie()`
+         cercando i due contenitori per `getElementById`, non percorrendo il pannello: per loro
+         non cambia niente, ed è la ragione per cui questo spostamento è sicuro.
+         ⚠️ VALE LA v6.169 — *ciò che la form non ripristina, il salvataggio lo azzera*. Un
+         pannello nascosto con `display:none` è comunque **disegnato**, quindi le spunte esistono
+         e si rileggono; un pannello mai creato le avrebbe fatte sparire **in silenzio**. È la
+         sola cosa che questo spostamento poteva rompere, ed è per questo che `prova-v6817`
+         ESEGUE il giro invece di guardare il markup.
+         📌 L'ordine nella pagina non decide l'ordine dei tab: quello lo fa la fila dei bottoni. -->
+    <div class="series-tab-panel" data-tab="tipologie" style="display:none;">
+    <!-- 🆕 v6.219 (Franco) — DUE COLONNE: a SINISTRA gli articoli che la serie non ha, uno per
+         riga; a DESTRA le quattro spunte della serie.
+         📌 La v6.217 aveva tolto una griglia a due colonne da questo punto - ma quella affiancava
+         le spunte della serie a quelle delle variazioni, che ora stanno in un altro tab. Questa
+         affianca due cose che sono rimaste tutte e due qui: non e' un ritorno indietro.
+         ⚠️ Il contenitore NON porta la classe `form-group`: `openAddSeriesModal` fa
+         `closest('.form-group')` su `series-has-sizes-input` per nasconderla ai non-admin, e oggi
+         non trova niente. Dandogliela, si porterebbe via mezza scheda. -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1.5rem;margin-bottom:0.75rem;align-items:start;">
+        <!-- SINISTRA -->
+        <!-- 🆕 v6.216 (Franco) — GLI ARTICOLI CHE QUESTA SERIE NON HA. Sostituisce le due caselle
+             singole "Figurine senza retro" (v6.098) e "Senza album" (v6.194): erano due modi di dire
+             la stessa cosa su due articoli diversi. Le caselle le genera `_caselleArticoliSerie()`
+             dal descrittore, quindi ci sono tutti e sei gli articoli e un settimo comparirebbe da sé.
+             v6.219 - in colonna: erano a `repeat(auto-fill,minmax(150px,1fr))`, cioe' due o tre per
+             riga secondo la larghezza. Il numero di caselle per riga cambiava con la finestra, e
+             quindi cambiava anche quali stavano vicine. -->
+        <div>
+          <!-- v6.229 (Franco) — il titolo del campo in BIANCO. `.form-label` e' `--muted` per tutto
+               il sito; qui l'eccezione e' scritta in linea, come si fa in questa finestra, e non
+               con una regola nuova nel CSS: la regola esiste gia' due volte (`#add-fig-modal` e le
+               procedure di caricamento) e la terza avrebbe cominciato a essere un elenco. -->
+          <!-- 🔄 v6.496 — le misure sono COPIATE da `.series-year`, il titoletto della stessa
+               famiglia visiva (dentro una scheda, non in cima a una pagina): font-ui,
+               letter-spacing 2px, maiuscoletto. Inventarne una variante nuova avrebbe dato
+               un titoletto simile a tutti e uguale a nessuno.
+               🔄 v6.500 (Franco: *"cambiare in «Articoli non in questa serie» e scrivilo in
+               giallo (scuro)"*) — E QUI IL BIANCO SE NE VA. La v6.229 lo aveva messo in
+               bianco, sempre su richiesta di Franco, e la v6.496 lo aveva lasciato citando
+               quella decisione: adesso la decisione e' cambiata, e il commento cambia con
+               lei. Un commento che spiega perche' una cosa e' bianca, sopra una riga
+               gialla, e' peggio di nessun commento.
+               📌 Il giallo e' `--warn` (#ffb400), non un giallo scelto a occhio: la
+               tavolozza ne ha due, e l'altro (`--type-unofficial`, #fff275) e' il colore
+               di una VERSIONE — usarlo qui spargerebbe un token che significa gia'
+               qualcos'altro. E «scuro» sceglie da se': #ffb400 e' ambra, #fff275 chiaro.
+               ✅ Contrasto misurato: 9,4:1 su `--card2`, 10,9:1 sul fondo pagina. -->
+          <!-- 🔄 v6.789 (Franco: *"a me non sono mai piaciuti quei flag a logica negativa... flag
+               acceso significa che la TDA e' ammessa"*) — IL VERSO SI GIRA, E CON LUI LE PAROLE.
+               🔴 Il titolo e' suo, alla lettera: «Tipologie di articoli di questa serie» — che e'
+               poi TDA scritto per esteso, e a schermo l'acronimo non compare mai.
+               📌 IL GIALLO RESTA `--warn` (#ffb400), e resta per la ragione della v6.500: la
+               tavolozza ha due gialli e l'altro (`--type-unofficial`) e' il colore di una
+               VERSIONE — usarlo qui spargerebbe un token che significa gia' qualcos'altro.
+               Contrasto misurato allora: 9,4:1 su `--card2`, 10,9:1 sul fondo pagina.
+               ⚠️ E IL SUGGERIMENTO SI GIRA CON IL TITOLO, o resta a spiegare il verso di ieri: un
+               suggerimento piu' vecchio della regola e' il difetto che questo progetto paga piu'
+               spesso. La frase «nasconde la porta, non la stanza» e' troppo buona per perderla e
+               dice ancora il vero — dall'altro lato. -->
+          <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:0.5rem;color:var(--warn);">Tipologie di articoli di questa serie</div>
+          <div id="series-tipologie-ammesse" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
+          <div class="form-hint" style="margin-top:0.3rem;">Spuntata = la serie ha questi articoli e il suo box compare nell'hub. Non spuntata, il box sparisce: nasconde la porta, non la stanza — gli oggetti restano nei dati.</div>
+        </div>
+        <!-- 🆕 v6.749 (Franco: "quei due campi mettili uno affianco all'altro") — LA SECONDA
+             COLONNA. Le due liste sono la stessa domanda in due versi, e dalla v6.748 si parlano:
+             spuntare di la' spegne di qua. Affiancate quel legame si vede; incolonnate, per
+             confrontarle si scorreva.
+             📌 La griglia a due colonne e' quella della v6.219: non se ne apre una seconda,
+             cambiano i suoi figli. -->
+        <div>
+          <!-- 🆕 v6.716 - L'ELENCO POSITIVO, e sta QUI perche' la domanda e' la sorella di
+               quella sopra: la prima dice quali tipologie la serie NON ha, questa quali la
+               FANNO. In due schede diverse avrebbe costretto ad andare avanti e indietro per
+               rispondere a due domande sulla stessa manciata di caselle.
+               📌 IL VERDE E' `--success`, lo stesso della spunta «serie completa» nella
+               wantlist: e' il colore con cui il sito dice gia' "completa". Il giallo qui sopra
+               dice "attenzione, questa roba non c'e'"; un secondo giallo avrebbe fatto sembrare
+               le due liste la stessa cosa scritta due volte. -->
+          <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:0.5rem;color:var(--warn);">Servono per la serie completa</div>
+          <div id="series-articoli-completezza" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
+          <div class="form-hint" style="margin-top:0.3rem;">La serie e' completa quando hai tutti gli articoli base di QUESTE tipologie. Se non ne scegli nessuna vale il ripiego di sempre: Figurine con retro, Figurine, Carte.</div>
+        </div>
+      </div>
+    </div>
+
     <div class="series-tab-panel" data-tab="sottoserie" style="display:none;">
           <!-- 🆕 v6.650 (Franco: «dovremo anche stabilire l'ordine delle sottoserie […]
                questo lo gestisco io manualmente con l'ordinamento») — L'ELENCO DELLE
@@ -4256,7 +4336,7 @@ di tutte le serie</button>
     <button type="button" id="sfoglia-album-succ" onclick="sfogliaVai(1)" style="min-width:3rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.4rem 0.8rem;font-size:1.3rem;line-height:1;cursor:pointer;">&#8250;</button>
   </div>
 </div>
-<script src="js/app.js?v=6.809"></script>
+<script src="js/app.js?v=6.823"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4280,7 +4360,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.809'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.823'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
