@@ -1,6 +1,55 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.833 - 📱 HOME DA TELEFONO: I NUMERONI SOPRA E SOTTO IL LOGO (Franco: «i 12 score verdi non
+//          lasciano spazio alla immagine del logo; metti 6 score sopra la immagine, poi la
+//          immagine, e dopo ancora gli altri 6 score» e «i due gruppi da 6 falli con 2 righe da 3
+//          ciascuno»). Modificato index.html (solo CSS); qui solo la versione. Desktop invariato.
+// v6.832 - 🏷️ NELLA FORM DELLA SERIE «Tipologie di articoli di questa serie» diventa «Tipologie di
+//          articoli della serie» (Franco). Modificato index.html; qui solo la versione.
+// v6.831 - 🗑️ LA TIPOLOGIA «FIGURINE» SPARISCE (Franco: «la TDA Figurine deve scomparire del tutto;
+//          le 61 figurine migrano alla TDA Figurine con retro»). Modificati js/app.js e index.html.
+//          🔴 SI PUBBLICA DOPO strumenti/migrazione-v6831.js: sui dati non migrati i 61 articoli di
+//          Holidays, che hanno ancora `section: 'figurine'`, non li mostrerebbe piu' nessuno.
+//          Via il descrittore in ARTICOLI, la riga in VERSIONI_PER_TDA, la card dell'hub, la voce
+//          nel ripiego della completezza e HOME_CONTATORI_ESCLUSI, che esisteva solo per lei.
+//          E «Unico retro» nella form della serie si chiama «Non mostrare retro in griglia» (Franco):
+//          cambia la parola, non il campo (`unicoRetro`) ne' cio' che fa.
+// v6.830 - 🚧 L'IMPORT RISPETTA LA SERIE (Franco: «la tua proposta per l'import mi va bene»).
+//          Modificato js/app.js. Chiude l'aperto della v6.822. Due domande, e restano due:
+//          1. LA TIPOLOGIA - la tendina delle serie dell'import figurine elenca solo le serie che
+//             ammettono le figurine con retro, quella dei retro solo quelle che ammettono i retro;
+//             e se ci si arriva comunque, l'import si ferma prima di leggere il file.
+//          2. LA VERSIONE - una riga con una versione che la serie non dichiara per quella
+//             tipologia si scarta, col suo messaggio; le altre righe si importano.
+//          ⚠️ Qui la «rete» di `_versioneAmmessa` (cio' che l'articolo gia' e' si vede sempre)
+//             NON vale: si chiede per la sola tipologia, perche' una riga di import non e' ancora
+//             un articolo. Aggiornare un articolo di una versione spenta passa dalla scheda.
+// v6.829 - ↕️ «LE SERIE SGORBIONS CENSITE»: LE INTESTAZIONI SI CENTRANO IN VERTICALE (Franco: «i nomi
+//          colonna vorrei fossero tra loro allineati verticalmente», e fra in basso, in mezzo e in
+//          alto ha scelto in mezzo). Erano `vertical-align:bottom`. Modificato js/app.js.
+// v6.828 - 📋 «LE SERIE SGORBIONS CENSITE», DESKTOP (Franco): *«le colonne PRIMA e ULTIMA mergiale in
+//          una colonna sola chiamata "DA / A"»* e *«la colonna SPILLE toglila; metti il contatore
+//          delle spille nella colonna FIGURINE, ma sotto al numero scrivi (SPILLE)»*. Modificato
+//          js/app.js. Le spille vanno in FIGURINE con la stessa regola del telefono (v6.824): la
+//          serie non ammette figurine con retro e ammette spille. Telefono invariato.
+//          E nella console admin le due colonne della v6.827 si chiamano FIGURINE OMAGGIO e RETRO
+//          OMAGGIO (Franco), le stesse parole della finestra pubblica.
+// v6.827 - 🎁 HA OMAGGIO SI DIVIDE IN OMAGGIO FIGURINE e OMAGGIO RETRO, nella tabella delle serie
+//          della console admin (Franco: *«HA omaggio, da dividere tra fig e retro»*). Come la
+//          finestra pubblica dalla v6.824 e come CHANGE FIGURINE / CHANGE RETRO accanto.
+//          Modificato js/app.js. Era l'ultimo lettore del totale `omaggi` di `_conteggiSerie`,
+//          che quindi esce: un campo che nessuno legge e' un ramo che nessuno prova (v6.393).
+// v6.826 - 🗑️ VIA «Lascia vuoto se non numerata» (Franco: *«quella form la vedo solo io»*).
+//          Era il suggerimento sulle etichette «N. prima/ultima figurina», e dalla v6.818 chiedeva
+//          una cosa impossibile: i due campi si calcolano. Le caselle hanno gia' il loro
+//          suggerimento giusto. Tolte anche le chiavi form.series.firstNumberHint / lastNumberHint,
+//          che nessuno usava. Modificati js/app.js e index.html.
+// v6.825 - 🏷️ IL SEPARATORE DEL VALORE FUORI LISTA DICE «non in elenco», OVUNQUE (Franco: *«usa
+//          sempre "non in elenco"»*). Chiude il punto 23. Modificati js/app.js e index.html.
+//          Le tendine con quel separatore sono quattro: change, omaggio, errore di stampa,
+//          sottoserie. «non classificato — va messo in una delle due liste» dava un consiglio che
+//          dalla v6.791 poteva essere gia' eseguito. In inglese: «not listed».
 // v6.824 - 🔢 TUTTI I CONTATORI CONTANO LO STESSO ELENCO (Franco): *«mi sembrava di aver già
 //          chiarito che tutti i contatori devono escludere le serie IN ARRIVO ed INVISIBILI»*.
 //          Chiude il punto 33 della TODO. Modificato js/app.js.
@@ -155,9 +204,8 @@
 //          ⚠️ Il salvataggio NON scrive piu' quei due campi, e NON lascia un `null` al loro posto:
 //          scriverebbe `null` su ogni serie salvata, cioe' cancellerebbe il dato esistente a ogni
 //          modifica (lezione della v6.495, alla lettera).
-//          ⚠️ IL `title` DELLE DUE ETICHETTE DICE ANCORA «Lascia vuoto se non numerata», che da
-//          oggi e' un'istruzione che non si puo' piu' eseguire: le parole a schermo le sceglie
-//          Franco (v6.754), quindi e' DICHIARATO nella TODO e non riscritto d'iniziativa.
+//          🔄 Il `title` «Lascia vuoto se non numerata» delle due etichette, rimasto falso, e'
+//          uscito con la v6.826.
 //          📌 Il `title` NUOVO sulle due caselle («Calcolato: il primo numero...») l'ho scritto
 //          io, copiando la forma di `series-count-input` che e' calcolato dalla v6.129. Se Franco
 //          lo vuole diverso e' una riga.
@@ -28376,7 +28424,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.824';
+const JS_VERSION = 'v6.833';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -29980,7 +30028,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message !',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.spille':'Pins','catalog.attaccare':'Peel-off stickers','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','catalog.backToSeries':'Series','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.spille':'Pins','catalog.attaccare':'Peel-off stickers','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','catalog.backToSeries':'Series','form.series.firstNumber':'First sticker N.','form.series.lastNumber':'Last sticker N.','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
@@ -30102,7 +30150,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Tipologie di articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine da attaccare','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','catalog.backToSeries':'Serie','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Tipologie di articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine da attaccare','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','catalog.backToSeries':'Serie','form.series.firstNumber':'N. prima figurina','form.series.lastNumber':'N. ultima figurina','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione !',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici !',
@@ -32687,12 +32735,10 @@ function _conteggiSerie(items) {
     // 🆕 v6.248 - GLI OMAGGI, DIVISI COME I CHANGE. La v6.235 ne faceva un conto solo, senza filtro
     // di sezione, perche' non si sapeva dove vivessero. Adesso si sa — Franco: *"nei change ci sono
     // 2 contatori... serve lo stesso per gli omaggio"* — e i due numeri si contano separati.
-    // ⚠️ `omaggi` RESTA come somma dei due: e' quello che leggono la colonna HA OMAGGIO della
-    // tabella admin, la colonna desktop e la riga di telefono (v6.235/240). Toglierlo avrebbe
-    // svuotato tre tabelle senza dare errore — sono lettori di questo oggetto, non di quelle righe.
+    // 🔄 v6.827 - il totale `omaggi` e' uscito: i suoi tre lettori (colonna HA OMAGGIO della
+    // tabella admin, colonna desktop e riga di telefono) leggono adesso i due numeri separati.
     omaggiFigurine: items.filter(f => fig(f) && f.isFreeVersion).length,
-    omaggiRetro:    items.filter(f => sez(f) === 'retros' && f.isFreeVersion).length,
-    omaggi:         items.filter(f => f.isFreeVersion).length
+    omaggiRetro:    items.filter(f => sez(f) === 'retros' && f.isFreeVersion).length
   };
 }
 
@@ -33893,7 +33939,7 @@ function _opzioniSottoserie(seriesId, sel) {
     + (v === scelto ? ' selected' : '') + '>' + esc(v) + '</option>').join('');
   if (scelto && !elenco.includes(scelto)) {
     html += '<optgroup label="' + (it
-      ? '\u26a0\ufe0f non in elenco \u2014 va aggiunta alle sottoserie della serie'
+      ? '\u26a0\ufe0f non in elenco'
       : '\u26a0\ufe0f not listed') + '"><option value="' + esc(scelto)
       + '" selected>' + esc(scelto) + '</option></optgroup>';
   }
@@ -35495,19 +35541,8 @@ const ARTICOLI = {
   // 📌 `numero: 'inventario'` come le figurine: una figurina il numero ce l'ha. Che
   //    quelle di Holidays non l'abbiano lo dice gia' `noNumbers` sulla SERIE, ed e' li' che
   //    va detto - non nel descrittore di una tipologia che varra' anche per altre serie.
-  figurine: {
-    riquadro: 1,
-    it: 'Figurine',   en: 'Stickers',
-    itSing: 'figurina', enSing: 'sticker',
-    genere: 'f',
-    icona: '&#128444;&#65039;',
-    colonne: { d: 7, m: 4 },
-    numero: 'inventario',
-    ordina: 'campo',
-    ordinaDove: 'number',
-    nomeCompleto: 'codice',
-    nomeCompletoDove: 'computeFullName'
-  },
+  // 🗑️ v6.831 (Franco) - qui c'era `figurine`, «Figurine»: i suoi 61 articoli di Holidays sono
+  //    diventati «Figurine con retro» (strumenti/migrazione-v6831.js), e la tipologia e' uscita.
   figurines: {
     riquadro: 1,   // v6.654
     // 🔄 v6.481 (Franco) — «Figurine con velina» -> «Figurine con retro». L'inglese
@@ -36294,7 +36329,6 @@ const VERSIONI_PER_TDA = {
   //    regola - il difetto che questo progetto paga piu' spesso.
   albums:      ['variation', 'change', 'free', 'printError'],
   spille:      ['change', 'printError'],
-  figurine:    ['printError'],
   trasferelli: ['printError'],
   carte:       ['printError'],
   tatuaggi:    ['printError'],
@@ -36368,7 +36402,7 @@ const HOME_CONTATORI_DX = ['carte', 'spille', 'trasferelli', 'cartoncini', 'tatu
 // sparire (i suoi articoli vanno sotto «Figurine con retro»). Finché esiste, senza questa riga
 // comparirebbe in coda come tredicesimo riquadro. Il giorno che sparisce dal codice questa riga
 // diventa inutile, e `prova-v6815` §4 se ne accorge.
-const HOME_CONTATORI_ESCLUSI = ['figurine'];
+// 🗑️ v6.831 - `figurine` e' sparita dal codice, e con lei la ragione di questo elenco: via.
 
 // 📌 IL SETACCIO DELLA v6.283, APPLICATO AI RIQUADRI: una tipologia che il codice non conosce più
 // cade da sé (è così che sparirà `figurine`), e una NUOVA compare **in coda alla sponda destra**
@@ -36378,7 +36412,7 @@ function _contatoriHome() {
   const sx = HOME_CONTATORI_SX.filter(k => ARTICOLI[k]);
   const dx = HOME_CONTATORI_DX.filter(k => ARTICOLI[k]);
   const coda = PRODOTTI_INVENTARIO.filter(k =>
-    ARTICOLI[k] && !sx.includes(k) && !dx.includes(k) && !HOME_CONTATORI_ESCLUSI.includes(k));
+    ARTICOLI[k] && !sx.includes(k) && !dx.includes(k));
   return { sx, dx: dx.concat(coda) };
 }
 
@@ -37683,8 +37717,10 @@ function apriInfoTutteLeSerie() {
     //    tipologie (da attaccare, album, bustine…) sotto una tabella che parla di figurine e retro.
     // 🔄 v6.824 (Franco) — quattro intestazioni si accorciano: «PRIMA», «ULTIMA», «CHANGE FIGURINA»,
     //    «CHANGE RETRO». E in coda la colonna SPILLE: *«aggiungi la colonna Spille»*.
-    : (it ? ['NOME', 'ANNO', 'FIGURINE', 'PRIMA', 'ULTIMA', 'VARIAZIONI<br>UFFICIALI', 'VARIAZIONI<br>NON<br>UFFICIALI', 'CHANGE<br>FIGURINA', 'RETRO', 'CHANGE<br>RETRO', 'FIGURINE<br>OMAGGIO', 'RETRO<br>OMAGGIO', 'SPILLE', 'TRASFERELLI', "CARTE<br>D'IDENTITÀ", 'TATUAGGI']
-          : ['NAME', 'YEAR', 'STICKERS', 'FIRST', 'LAST', 'OFFICIAL<br>VARIATIONS', 'UNOFFICIAL<br>VARIATIONS', 'STICKER<br>CHANGE', 'BACKS', 'BACK<br>CHANGE', 'FREE<br>STICKERS', 'FREE<br>BACKS', 'PINS', 'IRON-ONS', 'IDENTITY<br>CARDS', 'TATTOOS']);
+    // 🔄 v6.828 (Franco) — PRIMA e ULTIMA diventano una colonna sola, «DA / A», e la colonna SPILLE
+    //    esce: le spille stanno in FIGURINE, con «(SPILLE)» sotto il numero.
+    : (it ? ['NOME', 'ANNO', 'FIGURINE', 'DA / A', 'VARIAZIONI<br>UFFICIALI', 'VARIAZIONI<br>NON<br>UFFICIALI', 'CHANGE<br>FIGURINA', 'RETRO', 'CHANGE<br>RETRO', 'FIGURINE<br>OMAGGIO', 'RETRO<br>OMAGGIO', 'TRASFERELLI', "CARTE<br>D'IDENTITÀ", 'TATUAGGI']
+          : ['NAME', 'YEAR', 'STICKERS', 'FROM / TO', 'OFFICIAL<br>VARIATIONS', 'UNOFFICIAL<br>VARIATIONS', 'STICKER<br>CHANGE', 'BACKS', 'BACK<br>CHANGE', 'FREE<br>STICKERS', 'FREE<br>BACKS', 'IRON-ONS', 'IDENTITY<br>CARDS', 'TATTOOS']);
 
   // Tutto centrato tranne una colonna per variante, e per lo stesso motivo: quando una cella
   // contiene TESTO di lunghezza diversa riga per riga, centrarla toglie il bordo da cui l'occhio
@@ -37815,6 +37851,13 @@ function apriInfoTutteLeSerie() {
                     + _rigaVar(it ? 'TRASFERELLI' : 'IRON-ONS', c.trasferelli)
                     // «CARTE IDENTITÀ», senza «D'»: più corta, e SPECIALI è stretta (Franco).
                     + _rigaVar(it ? 'CARTE<br>IDENTITÀ' : 'IDENTITY<br>CARDS', c.cartoncini);
+    // 🔄 v6.828 - la domanda «in FIGURINE ci vanno le spille?» la fanno telefono e desktop: una
+    //    riga sola, perche' le due risposte non possano divergere.
+    const _spilleInFigurine = !_serieAmmetteTipologia(s, 'figurines') && _serieAmmetteTipologia(s, 'spille');
+    const _cellaFigurineDesktop = _spilleInFigurine
+      ? _contoSerieACella(s, c.spille, 'spille')
+        + `<div style="font-size:0.7rem;line-height:1.1;">${it ? '(SPILLE)' : '(PINS)'}</div>`
+      : _contoSerieACella(s, c.base, 'figurines');
     const celle = mobile
       // 🔄 v6.821 - anche su telefono le due celle dei conteggi prendono il trattino. ⚠️ Le righe
       //    dentro SPECIALI no, ed e' dichiarato: `_rigaVar` non scrive la riga quando il valore e'
@@ -37824,7 +37867,7 @@ function apriInfoTutteLeSerie() {
       //    spille in quella serie»* (telefono). Se la serie non ha figurine con retro ma ha spille,
       //    N. FIG porta le spille. ⚠️ Una serie con tutte e due mostrerebbe le figurine: oggi non
       //    ce n'è nessuna, ed è dichiarato in prova-v6824 §5j.
-      ? [primaCella, ((!_serieAmmetteTipologia(s, 'figurines') && _serieAmmetteTipologia(s, 'spille'))
+      ? [primaCella, (_spilleInFigurine
            ? _contoSerieACella(s, c.spille, 'spille')
            : _contoSerieACella(s, c.base, 'figurines')),
          _contoSerieACella(s, c.retro, 'retros'), _speciali]
@@ -37838,8 +37881,10 @@ function apriInfoTutteLeSerie() {
       //    telefono. In inglese usa `nomeCortoEn`, e se è vuoto il breve italiano; senza nessun
       //    breve, il nome intero.
       : [primaCella, s.year ?? '',
-         _contoSerieACella(s, c.base, 'figurines'),
-         _numeroSerieACella(s, 'first'), _numeroSerieACella(s, 'last'),   // v6.820
+         // 🔄 v6.828 (Franco) — le spille nella colonna FIGURINE, con «(SPILLE)» sotto il numero:
+         //    su desktop, a differenza del telefono, la parola dice che il numero non è di figurine.
+         _cellaFigurineDesktop,
+         _daASerieACella(s),   // v6.828: PRIMA e ULTIMA in una cella
          // v6.235 - VERSIONI OMAGGIO, in coda come chiesto da Franco (dopo CHANGE DI RETRO).
          _contoSerieACella(s, c.variazioni, 'figurines', 'variation'),
          _contoSerieACella(s, c.nonUfficiali, 'figurines', 'unofficialVariation'),
@@ -37851,9 +37896,7 @@ function apriInfoTutteLeSerie() {
          //    dichiara la versione omaggio, altrimenti il numero (anche 0).
          _contoSerieACella(s, c.omaggiFigurine, 'figurines', 'free'),
          _contoSerieACella(s, c.omaggiRetro, 'retros', 'free'),
-         // 🆕 v6.824 (Franco) — SPILLE: le spille del set base, come FIGURINE e RETRO. «-» dove la
-         //    serie non ammette la tipologia.
-         _contoSerieACella(s, c.spille, 'spille'),
+         // 🗑️ v6.828 (Franco) — qui c'era la colonna SPILLE (v6.824): le spille stanno in FIGURINE.
          // 🆕 v6.824 (Franco) — *«aggiungi le 3 colonne mancanti: trasferelli, carte d'identità e
          //    tatuaggi»*: con FIGURINE e SPILLE la tabella copre le sei tipologie del «N / totale».
          //    ⬜ Solo desktop: su telefono sarebbero tre colonne strette in più.
@@ -37896,7 +37939,9 @@ function apriInfoTutteLeSerie() {
     // si legge**, senza una trasformazione invisibile in mezzo.
     // v6.208 - le intestazioni prendono lo stesso trattamento delle celle, se no la griglia
     // comincerebbe dalla seconda riga e la prima sembrerebbe staccata dalla tabella.
-    intestazioni.map((h, i) => `<th style="line-height:1.2;vertical-align:bottom;white-space:normal;text-transform:none;${mobile ? 'padding:0.3rem 0.3rem;border:1px solid rgba(255,255,255,0.16);' : ''}text-align:${aSinistra(i) ? 'left' : 'center'};">${h}</th>`).join('')
+    // 🔄 v6.829 (Franco) - centrate in verticale: i titoli su una, due e tre righe stanno tutti a
+    //    meta' altezza, invece di appoggiarsi in basso.
+    intestazioni.map((h, i) => `<th style="line-height:1.2;vertical-align:middle;white-space:normal;text-transform:none;${mobile ? 'padding:0.3rem 0.3rem;border:1px solid rgba(255,255,255,0.16);' : ''}text-align:${aSinistra(i) ? 'left' : 'center'};">${h}</th>`).join('')
   }</tr></thead><tbody>${righe}</tbody></table>`;
   // 🔴 v6.179 - QUI SOTTO C'ERA UNA NOTA CHE NON MI ERA STATA CHIESTA, e l'ho tolta.
   // Diceva "Le celle vuote valgono zero. «FIGURINE» conta le figurine del set base, senza
@@ -41691,7 +41736,7 @@ function _opzioniTipoOmaggio(seriesId, selezionato, sezione) {
     + gruppo(it ? 'Di retro' : 'Back', retro)
     + gruppo(it ? 'Frontale' : 'Front', fronte);
   if (sel && !elenco.some(t => _n(t) === _n(sel))) {
-    html += '<optgroup label="' + (it ? '⚠️ non in elenco \u2014 va aggiunto ai tipi della serie' : '⚠️ not listed')
+    html += '<optgroup label="' + (it ? '⚠️ non in elenco' : '⚠️ not listed')
          + '"><option value="' + esc(sel) + '" selected>' + esc(sel) + '</option></optgroup>';
   }
   return html;
@@ -41759,7 +41804,7 @@ function _opzioniTipoErrore(seriesId, selezionato, sezione) {
       ? '⚠️ nessuna tipologia di errore di stampa ' + (eRetro ? 'DI RETRO ' : '') + 'in questa serie — si definiscono nella scheda della serie'
       : '⚠️ no ' + (eRetro ? 'back ' : '') + 'print error types in this series') + '</option>';
     return sel
-      ? avviso + '<optgroup label="' + (it ? '⚠️ valore attuale — va aggiunto ai tipi della serie' : '⚠️ current value')
+      ? avviso + '<optgroup label="' + (it ? '⚠️ non in elenco' : '⚠️ not listed')
               + '"><option value="' + esc(sel) + '" selected>' + esc(sel) + '</option></optgroup>'
       : avviso;
   }
@@ -41767,7 +41812,7 @@ function _opzioniTipoErrore(seriesId, selezionato, sezione) {
     + gruppo(it ? 'Di retro' : 'Back', retro)
     + gruppo(it ? 'Frontale' : 'Front', fronte);
   if (sel && !elenco.some(t => _n(t) === _n(sel))) {
-    html += '<optgroup label="' + (it ? '⚠️ non in elenco — va aggiunto ai tipi della serie' : '⚠️ not listed')
+    html += '<optgroup label="' + (it ? '⚠️ non in elenco' : '⚠️ not listed')
          + '"><option value="' + esc(sel) + '" selected>' + esc(sel) + '</option></optgroup>';
   }
   return html;
@@ -41779,6 +41824,9 @@ function _opzioniTipoErrore(seriesId, selezionato, sezione) {
 //    SUOI tipi invece di quelli pensati per le figurine.
 // ⚠️ SENZA SEZIONE RISPONDE COME PRIMA, e le chiamate che non la passano (la tabella della console,
 //    l'import) continuano a vedere le liste della serie: questa release non le tocca.
+// 🏷️ v6.825 (Franco) - IL SEPARATORE DEL VALORE FUORI LISTA DICE SEMPRE «non in elenco», in tutte e
+//    quattro le tendine (change, omaggio, errore di stampa, sottoserie). Le frasi vecchie davano un
+//    consiglio («va messo in una delle due liste») che dalla v6.791 poteva essere gia' eseguito.
 function _opzioniTipoChange(seriesId, selezionato, sezione) {
   const it = currentLang === 'it';
   const sel = (selezionato || '').trim();
@@ -41836,7 +41884,7 @@ function _opzioniTipoChange(seriesId, selezionato, sezione) {
       ? '⚠️ nessuna tipologia di change per questa tipologia di articolo — si definiscono nella scheda della serie'
       : '⚠️ no change types for this item type — set them in the series form') + '</option>';
     return sel
-      ? avviso + '<optgroup label="' + (it ? '⚠️ valore attuale — va aggiunto ai tipi della serie' : '⚠️ current value')
+      ? avviso + '<optgroup label="' + (it ? '⚠️ non in elenco' : '⚠️ not listed')
         + '">' + opt(sel) + '</optgroup>'
       : avviso;
   }
@@ -41852,7 +41900,7 @@ function _opzioniTipoChange(seriesId, selezionato, sezione) {
   //    SALVATAGGIO CANCELLA IL TIPO. In silenzio. E' esattamente il guasto che il terzo gruppo
   //    esiste per impedire (v6.102), ricreato da una release scritta per fare ordine.
   if (sel && !offerti.some(t => _n(t) === _n(sel))) {
-    html += '<optgroup label="' + (it ? '⚠️ non classificato — va messo in una delle due liste' : '⚠️ unclassified — add it to one of the two lists') + '">' + opt(sel) + '</optgroup>';
+    html += '<optgroup label="' + (it ? '⚠️ non in elenco' : '⚠️ not listed') + '">' + opt(sel) + '</optgroup>';
   }
   return html;
 }
@@ -48991,7 +49039,10 @@ function renderAdminSeries() {
     // 🆕 v6.235 (Franco) - HA OMAGGIO, subito dopo CHANGE RETRO. Porta il NUMERO come le quattro
     // colonne accanto, non un si'/no: la v6.184 aveva gia' deciso che in questa tabella i
     // contrassegni si contano invece di dichiararsi (*"la tabella dice i numeri, non i flag"*).
-    { key:'omaggio',  lab: _L?'HA<br>OMAGGIO':'HAS<br>FREE', val:r => r.c.omaggi },
+    // 🔄 v6.827 (Franco) - divisa in due, figurine e retro, come i change qui sopra.
+    // 🔄 v6.828 (Franco) - rinominate FIGURINE OMAGGIO e RETRO OMAGGIO, come nella finestra pubblica.
+    { key:'omaggiofig',   lab: _L?'FIGURINE<br>OMAGGIO':'FREE<br>STICKERS', val:r => r.c.omaggiFigurine },
+    { key:'omaggioretro', lab: _L?'RETRO<br>OMAGGIO':'FREE<br>BACKS', val:r => r.c.omaggiRetro },
     { key:'colfig',   lab: _L?'COLONNE<br>FIG D/M':'COLUMNS<br>FIG D/M', val:r => _colonneDefault('figurines').d },
     { key:'colretro', lab: _L?'COLONNE<br>RETRO D/M':'COLUMNS<br>BACK D/M', val:r => _tipologiaAmmessa('retros', r.s.id) ? 0 : -1 },   // v6.789
     { key:'azioni',   lab: _L?'Azioni':'Actions' }
@@ -49145,7 +49196,9 @@ function renderAdminSeries() {
              Non e' una riga sola — questi sedici td hanno stili, title, pulsanti e commenti
              propri — quindi e' un lavoro a se'. Nel frattempo il conto dei due numeri lo
              sorveglia prova-v6478.js, che e' cio' che mancava davvero. -->
-        <td>${c.omaggi || ''}</td>
+        <!-- 🔄 v6.827 (Franco) - HA OMAGGIO diviso in figurine e retro: due celle, due titoli. -->
+        <td>${c.omaggiFigurine || ''}</td>
+        <td>${c.omaggiRetro || ''}</td>
         <!-- v6.166 (Franco) - le colonne della griglia delle FIGURINE, che sono quelle
              che si guardano piu' spesso. Si mostra il valore vero: quello della serie se c'e',
              altrimenti il default - lo stesso numero che il sito usa, non un trattino. Una tabella
@@ -50431,6 +50484,17 @@ function _numeroSerieACella(serie, quale) {
 //    `_aggiornaCasellaSottoserie`).
 // ⚠️ E guarda la SPUNTA A SCHERMO, non `serie.noNumbers`: dentro la form vale quello che l'admin
 //    sta facendo adesso, non quello che è salvato.
+// 🆕 v6.828 (Franco) - «DA / A»: PRIMA e ULTIMA in una cella sola. Il «-» di `_numeroSerieACella`
+//    (serie senza numeri) vale per tutta la cella, e il vuoto (numero non ancora noto) anche:
+//    «- / -» o « / » direbbero due volte la stessa cosa, o niente.
+function _daASerieACella(serie) {
+  const da = _numeroSerieACella(serie, 'first');
+  if (da === '-') return '-';
+  const a = _numeroSerieACella(serie, 'last');
+  if ((da ?? '') === '' && (a ?? '') === '') return '';
+  return `<span style="white-space:nowrap;">${da ?? ''} / ${a ?? ''}</span>`;
+}
+
 function _aggiornaCampiNumeriSerie() {
   const gF = document.getElementById('series-first-number-group');
   const gL = document.getElementById('series-last-number-group');
@@ -57408,6 +57472,23 @@ function retroImportStatus(msg, pct) {
   if (status) status.textContent = msg;
 }
 
+// 🆕 v6.830 (Franco) - LE DUE DOMANDE DELL'IMPORT SULLA SERIE: la tipologia e' ammessa? la
+//    versione e' dichiarata? La seconda chiede a `_versioneAmmessa` con un articolo finto che ha
+//    la sola sezione: la rete per l'articolo esistente qui non vale (vedi CHANGELOG v6.830).
+function _importTipologiaAmmessa(sez, seriesId) {
+  return !!seriesId && _tipologiaAmmessa(sez, seriesId);
+}
+function _importVersioneDichiarata(sez, flag, serie) {
+  if (!flag) return true;   // la base non e' una versione
+  const v = VERSIONI_ARTICOLO.find(x => x.campo === flag);
+  return !v || _versioneAmmessa(v.chiave, { section: sez }, serie);
+}
+function _importAvvisoTipologia(sez, it) {
+  const nome = sez === 'retros' ? (it ? 'i retro' : 'backs') : (it ? 'le figurine con retro' : 'stickers with back');
+  return it ? 'Questa serie non ammette ' + nome + ': importazione non avviata'
+            : 'This series does not allow ' + nome + ': import not started';
+}
+
 async function startImportRetro() {
   // 🆕 v6.379 (Franco: *"ad inizio di esportazione puliamo il log"*) - SI SVUOTA QUI, PRIMA DEI
   // CONTROLLI D'INGRESSO, e le due cose che guadagna non si vedono finche' non capitano.
@@ -57423,6 +57504,9 @@ async function startImportRetro() {
   clearImportRetroLog();
   const seriesId = document.getElementById('import-retro-series-select').value;
   if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series','error'); return; }
+  // 🆕 v6.830 - la tipologia prima di tutto: una serie senza retro non ne riceve dal file.
+  if (!_importTipologiaAmmessa('retros', seriesId)) { toast(_importAvvisoTipologia('retros', currentLang==='it'), 'error'); return; }
+  const _serieImport = getData('series', []).find(x => x.id === seriesId);
   const fileInput = document.getElementById('import-retro-file');
   if (!fileInput.files.length) { toast(currentLang==='it'?'Seleziona un file XLS':'Select an XLS file','error'); return; }
 
@@ -57567,6 +57651,11 @@ async function startImportRetro() {
       continue;
     }
     const eBase = !V.flag;
+    // 🆕 v6.830 - la versione deve essere dichiarata dalla serie per i retro.
+    if (!_importVersioneDichiarata('retros', V.flag, _serieImport)) {
+      errRiga(pf() + '❌ la serie non ha la versione «' + versioneCol + '» per i retro — riga scartata', 'err');
+      continue;
+    }
 
     // ── LA TIPOLOGIA ──
     // ⚠️ UNA TIPOLOGIA CHE NON APPARTIENE ALLA VERSIONE DICHIARATA FERMA LA RIGA, come nell'altro
@@ -57817,6 +57906,8 @@ async function startImportFig() {
 
   const it = (currentLang==='it');
   const seriesObj = getData('series', []).find(s => s.id === seriesId);
+  // 🆕 v6.830 - la tipologia prima di tutto: una serie senza figurine con retro non ne riceve.
+  if (!_importTipologiaAmmessa('figurines', seriesId)) { toast(_importAvvisoTipologia('figurines', it), 'error'); return; }
   const hasSubseries = seriesObj?.hasSubseries || false;
 
   await loadXLSX(); // SheetJS, da js/xlsx.full.min.js
@@ -58059,6 +58150,11 @@ async function startImportFig() {
     if (versione && !(versione in _VERSIONI_IMPORT)) {
       errRiga(pf() + '❌ Versione "' + versione + '" non riconosciuta. Valori ammessi: '
         + Object.keys(_VERSIONI_IMPORT).join(', '), 'err');
+      continue;
+    }
+    // 🆕 v6.830 - la versione deve essere dichiarata dalla serie per le figurine con retro.
+    if (!eBase && !_importVersioneDichiarata('figurines', _VERSIONI_IMPORT[versione], seriesObj)) {
+      errRiga(pf() + '❌ la serie non ha la versione «' + versione + '» per le figurine con retro — riga scartata', 'err');
       continue;
     }
 
@@ -60403,7 +60499,7 @@ function renderAdminFoto() {
         <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
         <select id="import-fig-series-select" class="form-select" style="margin-bottom:0.75rem;">
           <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
-          ${series.map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
+          ${series.filter(s => _importTipologiaAmmessa('figurines', s.id)).map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
         </select>
 
         <label class="form-label">${currentLang==='it'?'File XLS (.xlsx, .xls)':'XLS File (.xlsx, .xls)'}</label>
@@ -60440,7 +60536,7 @@ function renderAdminFoto() {
         <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
         <select id="import-retro-series-select" class="form-select" style="margin-bottom:0.75rem;">
           <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
-          ${series.map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
+          ${series.filter(s => _importTipologiaAmmessa('retros', s.id)).map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
         </select>
 
         <label class="form-label">${currentLang==='it'?'File XLS (.xlsx, .xls)':'XLS File (.xlsx, .xls)'}</label>
@@ -63263,7 +63359,7 @@ function isBaseFigurine(f) {
 // ⚠️ Scartato il ripiego "tutte le tipologie che la serie ha": avrebbe reso obbligatori album e
 // bustine da un giorno all'altro. Scartato anche "nessuna": una serie di sole Carte sarebbe
 // diventata impossibile da completare, in silenzio.
-const ARTICOLI_COMPLETEZZA_RIPIEGO = ['figurines', 'figurine', 'carte'];
+const ARTICOLI_COMPLETEZZA_RIPIEGO = ['figurines', 'carte'];   // v6.831: via 'figurine'
 function _articoliCompletezza(s) {
   const d = (s && Array.isArray(s.articoliCompletezza)) ? s.articoliCompletezza.filter(k => !!k) : [];
   return d.length ? d : ARTICOLI_COMPLETEZZA_RIPIEGO;
