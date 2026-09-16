@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.824">
+<link rel="stylesheet" href="css/style.css?v=6.833">
 
 
 <style>
@@ -362,6 +362,25 @@
   .hero-stats-left, .hero-stats-right  { gap:0.45rem; }
   .hero-stats-side .stat-item { min-width:0; }
   .hero-stats-side .stat-label { white-space:normal; }   /* "Altri oggetti" può andare a capo */
+}
+/* 🔄 v6.833 (Franco) — TELEFONO: I NUMERONI SOPRA E SOTTO IL LOGO, NON AI FIANCHI. Parole sue: «i 12
+   score verdi non lasciano spazio alla immagine del logo; metti 6 score sopra la immagine, poi la
+   immagine, e dopo ancora gli altri 6 score», e «i due gruppi da 6 falli con 2 righe da 3 ciascuno».
+   📌 Le aree restano DICHIARATE A LETTERE (v5.948): cambia solo il disegno, da una riga a tre.
+   📌 Dentro ogni sponda le due colonne da tre del desktop diventano due RIGHE da tre: la sinistra si
+   legge Serie · Album · Bustine / Figurine per album · Figurine con retro · Retro — gli stessi gruppi
+   di Franco, girati. Per questo `grid-auto-flow` torna `row` e le righe fisse del desktop si tolgono.
+   📏 Il logo, liberato dai fianchi, torna largo: fino a 300px, al posto dei 190 della v5.948.
+   ⚠️ Sta DOPO il blocco della v5.948 e dentro la stessa soglia: a parità di specificità vince
+   l'ultima regola scritta, ed è questa. */
+@media (max-width:860px) {
+  .hero-top { grid-template-columns:minmax(0,1fr);
+              grid-template-areas:"sx" "logo" "dx";
+              gap:0.9rem 0; }
+  #hero .hero-top .hero-logo-img { max-width:300px !important; }
+  .hero-stats-left, .hero-stats-right {
+    grid-template-rows:none; grid-template-columns:repeat(3, minmax(0,1fr)); grid-auto-flow:row;
+    width:100%; justify-content:stretch; gap:0.6rem 0.5rem; }
 }
 /* v5.950 → v5.952 — SCHEDA SERIE: i due bottoni di ritorno nel MARGINE ESTERNO (Franco).
    "← Inventario" (chiude la scheda serie) e "← Sezioni" (chiude una sezione) stavano ciascuno su
@@ -1539,14 +1558,7 @@ di tutte le serie</button>
            l'attributo lo TOGLIE comunque, a ogni giro.
            📌 La POSIZIONE non conta: `_riordinaBoxSezioni` sposta le card secondo
            `PRODOTTI_INVENTARIO`, cioe' l'ordine che Franco decide dalla console. -->
-      <div class="section-choice-card" onclick="openSeriesSection('figurine')" style="padding:0;overflow:hidden;">
-        <div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;background-size:60%;background-repeat:no-repeat;background-position:center;">
-        </div>
-        <div style="padding:1.25rem 1.5rem;">
-          <div class="section-choice-title">Figurine</div>
-          <div class="section-choice-count" id="count-figurine" data-i18n-loading="catalog.loading">caricamento...</div>
-        </div>
-      </div>
+      <!-- 🗑️ v6.831 (Franco) - qui c'era la card «Figurine»: la tipologia e' sparita. -->
       <div class="section-choice-card" onclick="openSeriesSection('tatuaggi')" style="padding:0;overflow:hidden;">
         <div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;background-size:60%;background-repeat:no-repeat;background-position:center;">
         </div>
@@ -3158,16 +3170,13 @@ di tutte le serie</button>
            form non si vede più niente». Le misure e il `title` seguono `series-count-input`, che è
            calcolato dalla v6.129 e dice già com'è fatto un campo derivato in questa finestra: non
            è stata inventata nessuna forma nuova.
-           ⚠️ IL `title` DELLE DUE ETICHETTE DICE ANCORA «Lascia vuoto se non numerata», che da
-           oggi è un'istruzione che non si può più eseguire. Sta nelle chiavi i18n
-           `form.series.firstNumberHint` / `lastNumberHint`, e le parole a schermo le sceglie
-           Franco (v6.754): è dichiarato qui e nella TODO, non riscritto d'iniziativa. -->
+           🔄 v6.826: il `title` «Lascia vuoto se non numerata» delle due etichette è uscito. -->
       <div class="form-group" id="series-first-number-group" style="margin-bottom:0;">
-        <label class="form-label" data-i18n="form.series.firstNumber" title="Lascia vuoto se non numerata">N. prima figurina</label>
+        <label class="form-label" data-i18n="form.series.firstNumber">N. prima figurina</label>
         <input class="form-input" type="number" id="series-first-number-input" min="1" readonly style="opacity:0.7;cursor:not-allowed;" title="Calcolato: il primo numero delle figurine da attaccare della serie; in loro assenza delle figurine con retro, poi delle carte">
       </div>
       <div class="form-group" id="series-last-number-group" style="margin-bottom:0;">
-        <label class="form-label" data-i18n="form.series.lastNumber" title="Lascia vuoto se non numerata">N. ultima figurina</label>
+        <label class="form-label" data-i18n="form.series.lastNumber">N. ultima figurina</label>
         <input class="form-input" type="number" id="series-last-number-input" min="1" readonly style="opacity:0.7;cursor:not-allowed;" title="Calcolato: l'ultimo numero delle figurine da attaccare della serie; in loro assenza delle figurine con retro, poi delle carte">
       </div>
     </div>
@@ -3225,7 +3234,8 @@ di tutte le serie</button>
                diverse, e per questo sono due spunte e non una. -->
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-unico-retro-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span>Unico retro</span>
+            <!-- 🔄 v6.831 (Franco) - «Unico retro» diventa «Non mostrare retro in griglia»: stesso campo, `unicoRetro`. -->
+            <span>Non mostrare retro in griglia</span>
           </label>
           <!-- 🆕 v6.369 (Franco: *"i campi «Senza numeri» e «Serie contenitore» mettili SOPRA il
                titoletto «Figurine da incollare»; altrimenti sembra che facciano parte di quella
@@ -3364,7 +3374,8 @@ di tutte le serie</button>
                suggerimento piu' vecchio della regola e' il difetto che questo progetto paga piu'
                spesso. La frase «nasconde la porta, non la stanza» e' troppo buona per perderla e
                dice ancora il vero — dall'altro lato. -->
-          <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:0.5rem;color:var(--warn);">Tipologie di articoli di questa serie</div>
+          <!-- 🔄 v6.832 (Franco) - il titolo diventa «Tipologie di articoli della serie». -->
+          <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:0.5rem;color:var(--warn);">Tipologie di articoli della serie</div>
           <div id="series-tipologie-ammesse" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
           <div class="form-hint" style="margin-top:0.3rem;">Spuntata = la serie ha questi articoli e il suo box compare nell'hub. Non spuntata, il box sparisce: nasconde la porta, non la stanza — gli oggetti restano nei dati.</div>
         </div>
@@ -4336,7 +4347,7 @@ di tutte le serie</button>
     <button type="button" id="sfoglia-album-succ" onclick="sfogliaVai(1)" style="min-width:3rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.4rem 0.8rem;font-size:1.3rem;line-height:1;cursor:pointer;">&#8250;</button>
   </div>
 </div>
-<script src="js/app.js?v=6.824"></script>
+<script src="js/app.js?v=6.833"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4360,7 +4371,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.824'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.833'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
