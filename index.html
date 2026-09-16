@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.833">
+<link rel="stylesheet" href="css/style.css?v=6.845">
 
 
 <style>
@@ -926,7 +926,7 @@ button.back-btn { color:#ffffff; }
     <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
     <a onclick="showPage('catalog')" data-page="catalog" data-i18n="nav.catalog" id="nav-catalog" style="display:none;">Inventario</a>
-    <a onclick="showPage('blog')" data-page="blog" id="nav-blog" style="display:none;" data-i18n="nav.blog">Blog / D&amp;R</a>
+    <a onclick="showPage('blog')" data-page="blog" id="nav-blog" style="display:none;" data-i18n="nav.blog">Blog</a>
     <a onclick="showPage('wantlist')" data-page="wantlist" id="nav-wantlist" style="display:none;" data-i18n="nav.wantlist">Liste</a>
     <a onclick="showPage('wishlist')" data-page="wishlist" id="nav-wishlist" style="display:none;position:relative;"><span data-i18n="nav.wishlist">Ciò che cerco</span><span id="nav-wishlist-badge" style="display:none;position:absolute;top:-6px;right:-10px;background:var(--danger);color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span></a>
     <a onclick="showPage('classifica')" data-page="classifica" id="nav-classifica" style="display:none;" data-i18n="nav.classifica">🏆 Classifica</a>
@@ -957,8 +957,8 @@ button.back-btn { color:#ffffff; }
            ⚠️ `max-width:32vw` perché quei 325px non se li mangino: su un portatile stretto la
            navbar ha poco spazio, e lì la casella si stringe invece di spingere fuori le voci del
            menu. Il `title` resta comunque, così anche stretta si legge passandoci sopra. -->
-      <input type="text" id="nav-search-input" placeholder="Ricerca globale nel sito di articoli Sgorbions"
-             title="Ricerca globale nel sito di articoli Sgorbions" data-i18n-placeholder="nav.search"
+      <input type="text" id="nav-search-input" placeholder="Ricerca in tutto il sito"
+             title="Ricerca in tutto il sito" data-i18n-placeholder="nav.search"
              onkeydown="if(event.key==='Enter'){event.preventDefault();ricercaGlobaleDaNavbar();}"
              style="background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:999px;color:var(--text);font-family:var(--font-ui);font-size:0.82rem;padding:0.3rem 0.75rem;outline:none;">
     </div>
@@ -1482,7 +1482,7 @@ di tutte le serie</button>
                leggeva in italiano. La chiave e' la STESSA del titoletto nella form della
                serie: due chiavi con lo stesso testo sono due cose da cambiare insieme, e
                la seconda volta non succede. -->
-          <div class="section-choice-title" data-i18n="catalog.attaccare">Figurine da attaccare</div>
+          <div class="section-choice-title" data-i18n="catalog.attaccare">Figurine per album</div>
           <div class="section-choice-count" id="count-attaccare" data-i18n-loading="catalog.loading">caricamento...</div>
         </div>
       </div>
@@ -2246,6 +2246,13 @@ di tutte le serie</button>
                fatto il modello, non cosa contiene questa collezione. È il descrittore
                stampato, come la prima tabella. -->
           <div id="admin-partenze-versione"></div>
+          <!-- 🔄 v6.842 (Franco: «riguarda la TDA quindi andava nel tab delle TDA») — I CAMPI DELL'AGGIORNAMENTO
+               MASSIVO, PER TIPOLOGIA. Nati nella scheda Impostazioni con la v6.841, spostati qui accanto alle
+               altre tabelle per tipologia. La griglia la disegna `renderCampiMassiviConfig()`. -->
+          <h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">✏️ Campi dell'aggiornamento massivo</h4>
+          <div id="campi-massivi-tabella"></div>
+          <div class="form-hint" style="margin-top:0.6rem;">Una spunta per tipologia: i campi spuntati compaiono nell'aggiornamento massivo della vista tabellare di quella tipologia. Ogni spunta si salva da sola. Il trattino vuol dire che in quella tipologia il campo non esiste.</div>
+          <div id="campi-massivi-feedback" style="font-size:0.85rem;margin-top:0.4rem;"></div>
         </div>
         <div id="admin-series" class="admin-section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
@@ -3173,11 +3180,11 @@ di tutte le serie</button>
            🔄 v6.826: il `title` «Lascia vuoto se non numerata» delle due etichette è uscito. -->
       <div class="form-group" id="series-first-number-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.firstNumber">N. prima figurina</label>
-        <input class="form-input" type="number" id="series-first-number-input" min="1" readonly style="opacity:0.7;cursor:not-allowed;" title="Calcolato: il primo numero delle figurine da attaccare della serie; in loro assenza delle figurine con retro, poi delle carte">
+        <input class="form-input" type="number" id="series-first-number-input" min="1" readonly style="opacity:0.7;cursor:not-allowed;" title="Calcolato: il primo numero delle figurine per album della serie; in loro assenza delle figurine con retro, poi delle carte">
       </div>
       <div class="form-group" id="series-last-number-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.lastNumber">N. ultima figurina</label>
-        <input class="form-input" type="number" id="series-last-number-input" min="1" readonly style="opacity:0.7;cursor:not-allowed;" title="Calcolato: l'ultimo numero delle figurine da attaccare della serie; in loro assenza delle figurine con retro, poi delle carte">
+        <input class="form-input" type="number" id="series-last-number-input" min="1" readonly style="opacity:0.7;cursor:not-allowed;" title="Calcolato: l'ultimo numero delle figurine per album della serie; in loro assenza delle figurine con retro, poi delle carte">
       </div>
     </div>
     <!-- 🗑️ v6.495 (Franco: *"il campo «N. figurine album» non ci serve piu'. Eliminalo"*)
@@ -3269,7 +3276,7 @@ di tutte le serie</button>
                  chiave vuol dire scegliere quale delle due forme inglesi in giro usare
                  («Stick-in stickers» del dizionario o «Stickers to stick» del
                  descrittore). Le due cose si chiudono insieme. -->
-          <div class="series-sottotitolo" style="margin-top:0.55rem;" data-i18n="catalog.attaccare">Figurine da attaccare</div>
+          <div class="series-sottotitolo" style="margin-top:0.55rem;" data-i18n="catalog.attaccare">Figurine per album</div>
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-has-sizes-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
             <!-- 🆕 v6.362 (Franco) — UNA SPUNTA SOLA. La v6.361 ne aveva aggiunta una seconda per
@@ -3281,7 +3288,7 @@ di tutte le serie</button>
                  non il nome sul database. Rinominarlo avrebbe voluto dire riscrivere ogni documento
                  di serie per un guadagno di sola leggibilita' — e la chiave `form.series.hasSizes`
                  nomina il campo, non la frase, quindi continua a dire il vero. -->
-            <span data-i18n="form.series.hasSizes">Figurine da attaccare diverse da figurine con retro</span>
+            <span data-i18n="form.series.hasSizes">Figurine per album diverse da figurine con retro</span>
           </label>
           <!-- 🆕 v6.366 (Franco) — LA SECONDA SPUNTA, e stavolta i due flag sono due fatti davvero
                diversi: *"il flag 1 comanda la visibilita' dei bottoni di Creazione (Aggiungi) e
@@ -3295,9 +3302,17 @@ di tutte le serie</button>
                ⚠️ Nasce SPENTA su ogni serie, com'e' giusto per un interruttore di sicurezza. -->
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-abilita-modifica-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span data-i18n="form.series.abilitaModifica">Abilita modifica figurine da attaccare</span>
+            <span data-i18n="form.series.abilitaModifica">Abilita modifica figurine per album</span>
           </label>
-      </div>
+            <!-- 🆕 v6.837 (Franco) - LE FAMIGLIE DELLA SERIE, una per riga. Sono i valori fra cui si sceglie la
+               «Famiglia» delle figurine con retro e per album. Sta nel tab Generale e non in Sottoserie
+               (Franco: «quel tab si vede solo se la serie ha sottoserie, e le famiglie non sono sottoserie»). -->
+          <div class="form-group" id="series-famiglie-group" style="margin-top:0.9rem;">
+            <label class="form-label">Famiglie</label>
+            <textarea class="form-input" id="series-famiglie-input" rows="3" style="resize:vertical;font-family:inherit;"></textarea>
+            <div class="form-hint">Una per riga. Sono i valori fra cui scegliere la Famiglia delle figurine con retro e delle figurine per album.</div>
+          </div>
+    </div>
 
     <!-- v6.220 — DI QUI LA COPERTINA E' SALITA accanto ai due nomi, in cima al tab. Era arrivata
          qui nella v6.217 dal fondo della form, e nella v6.219 aveva perso il riquadro finto di
@@ -4347,7 +4362,7 @@ di tutte le serie</button>
     <button type="button" id="sfoglia-album-succ" onclick="sfogliaVai(1)" style="min-width:3rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.4rem 0.8rem;font-size:1.3rem;line-height:1;cursor:pointer;">&#8250;</button>
   </div>
 </div>
-<script src="js/app.js?v=6.833"></script>
+<script src="js/app.js?v=6.845"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4371,7 +4386,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.833'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.845'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
