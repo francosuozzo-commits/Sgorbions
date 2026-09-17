@@ -2311,3 +2311,17 @@ footer {
 #bulk-score-modal .form-label, #bulk-score-modal .form-hint, #bulk-score-modal .modal-close {
   color: var(--text);
 }
+
+/* 🆕 v6.849 (Franco: «nella versione mobile, nella pagina della newsletter, non sprechiamo una colonna per la
+   nazionalità dell'utente, bensì metti la bandierina della nazionalità a fianco al nome utente») - da
+   telefono la colonna Naz. sparisce e la bandiera va accanto al nome. Sul computer resta com'era. */
+.nl-flag-nome { display: none; }
+/* 🆕 v6.850 (Franco: «accetto la tua proposta di mettere la mail sotto al nome, per la versione mobile») - la
+   colonna E-mail da telefono si stringeva a poche lettere per riga: l'indirizzo va sotto il nome, piccolo. */
+.nl-email-nome { display: none; }
+@media (max-width: 860px) {
+  #newsletter-users-list .nl-col-naz { display: none; }
+  #newsletter-users-list .nl-flag-nome { display: inline; }
+  #newsletter-users-list .nl-col-email { display: none; }
+  #newsletter-users-list .nl-email-nome { display: block; font-size: 0.75rem; color: var(--text); margin-top: 0.15rem; }
+}
