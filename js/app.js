@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.850 - 📧 NEWSLETTER DA TELEFONO: L'E-MAIL SOTTO IL NOME (Franco: «accetto la tua proposta di mettere la mail
+//          sotto al nome, per la versione mobile»). Stesso schema della v6.849: la colonna E-mail prende
+//          .nl-col-email, la cella del nome un .nl-email-nome; sotto gli 860px la colonna sparisce e l'indirizzo
+//          compare sotto il nome, in piccolo. Desktop invariato.
+//          Modificato index.html, css/style.css, js/app.js.
+// v6.849 - 📧 NEWSLETTER DA TELEFONO: LA BANDIERA ACCANTO AL NOME, NON IN UNA COLONNA (Franco: «non sprechiamo una
+//          colonna per la nazionalità dell'utente, bensì metti la bandierina della nazionalità a fianco al nome
+//          utente»). In renderNewsletterUsers la colonna Naz. prende .nl-col-naz e il nome una seconda bandiera
+//          .nl-flag-nome; sotto gli 860px la prima sparisce e la seconda compare. Desktop invariato.
+//          Modificato index.html, css/style.css, js/app.js.
 // v6.848 - 📧 LA NEWSLETTER ANCHE DA TELEFONO, NEL MENU (Franco: «potresti mettermi anche la newsletter su mobile?
 //          Nuova opzione nel menù di navigazione»). Terza revoca parziale della v5.822: #nav-newsletter-btn esce
 //          dalla lista dei nascosti (sta gia' in .nav-links, che da telefono e' il panino, e app.js la accende
@@ -28420,8 +28430,8 @@ function renderNewsletterUsers() {
     <thead><tr>
       <th style="${th}width:36px;"></th>
       <th style="${thS}width:22%;" onclick="sortNewsletterUsers('username')" title="${L ? 'Ordina per utente' : 'Sort by user'}">${L ? 'Utente' : 'User'}${arrow('username')}</th>
-      <th style="${thS}" onclick="sortNewsletterUsers('email')" title="${L ? 'Ordina per e-mail' : 'Sort by e-mail'}">E-mail${arrow('email')}</th>
-      <th style="${thS}width:56px;text-align:center;" onclick="sortNewsletterUsers('nat')" title="${L ? 'Ordina per nazionalità' : 'Sort by nationality'}">${L ? 'Naz.' : 'Nat.'}${arrow('nat')}</th>
+      <th class="nl-col-email" style="${thS}" onclick="sortNewsletterUsers('email')" title="${L ? 'Ordina per e-mail' : 'Sort by e-mail'}">E-mail${arrow('email')}</th>
+      <th class="nl-col-naz" style="${thS}width:56px;text-align:center;" onclick="sortNewsletterUsers('nat')" title="${L ? 'Ordina per nazionalità' : 'Sort by nationality'}">${L ? 'Naz.' : 'Nat.'}${arrow('nat')}</th>
       <th style="${thS}width:130px;" onclick="sortNewsletterUsers('consent')" title="${L ? 'Ordina per consenso' : 'Sort by consent'}">${L ? 'Consenso' : 'Consent'}${arrow('consent')}</th>
       <th style="${th}width:70px;text-align:center;">${L ? 'Invia e-mail' : 'Send e-mail'}</th>
       <th style="${th}width:80px;text-align:center;">${L ? 'Invia messaggio' : 'Send message'}</th>
@@ -28432,9 +28442,9 @@ function renderNewsletterUsers() {
         <td style="text-align:center;">
           <input type="checkbox" class="newsletter-user-cb" data-id="${u.id}" data-email="${u.email}" data-username="${u.username}" style="width:16px;height:16px;cursor:pointer;">
         </td>
-        <td style="overflow-wrap:anywhere;${ok ? 'color:var(--accent);' : ''}">${u.username}</td>
-        <td style="color:var(--text);overflow-wrap:anywhere;">${u.email}</td>
-        <td style="text-align:center;">${u.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName || ''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;">` : '<span style="color:var(--text);">—</span>'}</td>
+        <td style="overflow-wrap:anywhere;${ok ? 'color:var(--accent);' : ''}">${u.username}${u.nationalityCode ? ` <img class="nl-flag-nome" src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName || ''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;">` : ''}<div class="nl-email-nome">${u.email}</div></td>
+        <td class="nl-col-email" style="color:var(--text);overflow-wrap:anywhere;">${u.email}</td>
+        <td class="nl-col-naz" style="text-align:center;">${u.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName || ''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;">` : '<span style="color:var(--text);">—</span>'}</td>
         <td>${consentCell(u)}</td>
         <td style="text-align:center;" title="${ok ? '' : (L ? 'Nessun consenso: e-mail non inviabile' : 'No consent: e-mail cannot be sent')}">
           <input type="checkbox" class="newsletter-user-email-cb" data-id="${u.id}" ${ok ? 'checked' : 'disabled'} style="width:16px;height:16px;cursor:${ok ? 'pointer' : 'not-allowed'};">
@@ -28522,7 +28532,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.848';
+const JS_VERSION = 'v6.850';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
