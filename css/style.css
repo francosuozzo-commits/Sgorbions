@@ -319,7 +319,15 @@ body {
 
 /* AZIONE ADMIN (v5.729): arancio, IN AGGIUNTA a .btn-primary (class="btn-primary btn-admin").
    Definita DOPO btn-primary: vince lo sfondo. Stessa taglia, cambia solo il colore. */
-.btn-admin { background: var(--action-admin); color: #ffffff; }
+/* 🧪 v6.858 (Franco: «facciamo una prova? proviamo a mettere sui tasti arancione, quelli admin, la
+   scritta azzurra anziche' bianca») - E' UNA PROVA, dichiarata tale.
+   📌 L'azzurro e' `--nome-entita`, quello che il sito usa gia' per i nomi delle entita' (v6.399):
+   un secondo azzurro scritto a mano sarebbe la copia numero due il giorno che quello cambia.
+   ⚠️ E il prezzo, misurato prima di scriverlo, non a occhio: il contrasto azzurro-su-arancione fa
+   **1,3** contro il **2,85** del bianco (e 6,35 di uno scuro). Sotto 3 una scritta su un tasto si
+   legge male, e su questo arancione l'azzurro e' il piu' basso dei tre. Si mostra a Franco e decide
+   lui: se non gli piace, si torna a `#ffffff` qui e nella gemella dell'index. */
+.btn-admin { background: var(--action-admin); color: #ffffff; }   /* 🔄 v6.867 - via la prova dei colori (azzurro v6.858, blu v6.866): il bianco e' il piu' leggibile, misurato */
 .btn-admin:hover { transform: translateY(-2px); background: var(--action-admin-hover); box-shadow: 0 8px 30px rgba(var(--action-admin-rgb),0.4); }
 
 /* 🆕 v6.644 — LE VOCI DI UNA TENDINA (Franco: «un unico pulsante con un menu a tendina»).
@@ -496,10 +504,33 @@ body {
    PERCHE' E' ROSSO. E' stato vero per una release: la v6.457 ce l'ha messo dentro togliendogli
    il rosso, e questo commento e' rimasto a dire il contrario del codice per duecento release.
    Adesso il colore torna — rosa, cioe' `--danger` — col modificatore `.elimina` qui sotto. */
+/* 🆕 v6.866 (Franco: «le foto fronte e retro ... una affianco all'altra ... i 3 pulsanti potrebbero
+   essere impilati») - QUANDO I DUE RIQUADRI STANNO AFFIANCATI ognuno ha meta' larghezza, e due
+   tasti per riga diventano due scritte tagliate: li' i comandi si impilano.
+   📌 La regola sta QUI e non in linea nel markup: e' la pretesa di `prova-v6637` - il verso dei
+   comandi si decide in un posto solo. */
+.fig-slot.slot-stretto .fig-cmd { flex-direction: column; }
+
+/* 🧪 v6.866 (Franco: «prima avevo chiesto di provare a mettere un colore diverso alla scritta dei
+   tasti arancioni-admin; ora la scritta è bianca; possiamo provare il blu?») - E QUI STAVA LA
+   RISPOSTA AL PERCHÉ ERA ANCORA BIANCA: i tasti arancioni sono DUE famiglie, `.btn-admin` (quelli
+   grossi) e `.btn-foto` (i comandi delle foto), e la v6.858 aveva cambiato solo la prima. Sono lo
+   stesso arancione a schermo, quindi cambiano insieme o il sito ne ha due che parlano lingue
+   diverse. ⚠️ `.btn-foto.elimina` NON cambia: quello e' rosa-`--danger`, non arancione. */
+/* 🔄 v6.867 (Franco: «il blu non si vede... oppure rimetti il bianco ma alza un attimo i tasti,
+   cosi anche la scritta diventa piu alta») - TORNA IL BIANCO, E I TASTI CRESCONO.
+   📏 Le tre prove, misurate e non a occhio - contrasto della scritta sull'arancione:
+   azzurro `--nome-entita` **1,3** (v6.858), blu `--action` **1,81** (v6.866), bianco **2,85**.
+   Il bianco e' il piu' leggibile dei tre, e i due colorati sono stati provati e scartati da
+   Franco guardandoli: nessuno dei due arriva vicino. Quindi la strada non era il colore ma la
+   TAGLIA - corpo da 0,72 a 0,82rem e imbottitura da 4/8 a 7/11 - che e' l'altra metà della sua
+   richiesta di ieri: «che si legga».
+   ⚠️ Questi tasti stanno anche nella fila stretta della v6.866 (due riquadri affiancati): li'
+   sono impilati, quindi crescere non li taglia - si allunga la colonna. */
 .btn-foto {
-  font-family: var(--font-ui); font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.82rem;
   border: 1px solid var(--action-admin); color: #ffffff;
-  background: var(--action-admin); border-radius: 6px; padding: 4px 8px;
+  background: var(--action-admin); border-radius: 6px; padding: 7px 11px;
   cursor: pointer; white-space: nowrap; text-align: center; transition: all 0.2s;
 }
 .btn-foto:hover { background: var(--action-admin-hover); border-color: var(--action-admin-hover); }
@@ -522,6 +553,13 @@ body {
 .btn-foto.elimina:hover {
   background: var(--danger); border-color: var(--danger); filter: brightness(1.12);
 }
+
+/* 🆕 v6.872 (scritta DOPO la regola base apposta: chi cerca la prima `.btn-foto` deve trovare quella)
+    (Franco: «riducendo la larghezza delle 2 pile di 3 tasti ... possiamo aumentare la
+   dimensione delle foto delle 3 colonne») - LE DUE PILE SI STRINGONO. I tasti impilati non hanno
+   bisogno della taglia di quelli larghi, e ogni pixel tolto qui va alle pagine.
+   ⚠️ Solo dove i riquadri sono affiancati: altrove restano quelli cresciuti nella v6.867. */
+.fig-slot.slot-stretto .fig-cmd .btn-foto { font-size: 0.7rem; padding: 4px 6px; }
 
 /* 🆕 v6.460 (Franco: *"porta la larghezza del carosello alla larghezza della griglia"*)
    🔴 IL CAROSELLO NON ERA STRETTO: ERA IL SUO CONTENITORE. Le tre file stanno dentro
@@ -1072,7 +1110,20 @@ body {
    e dx e piu' piccola»). `auto` e non una larghezza fissa: quando la fotina non c'e' - cioe'
    ovunque tranne dentro una sottoserie - quella colonna misura ZERO e la testata torna
    esattamente com'era. Una colonna fissa avrebbe lasciato un vuoto a destra su ogni serie. */
-.series-title-area { display: grid; grid-template-columns: 160px 1fr auto; gap: 0.5rem 2rem; align-items: start; }
+/* 🔄 v6.859 - UNA COLONNA IN PIU' DAVANTI, per «Sfoglia l'album» (Franco). E' `auto`: dove il
+   pulsante non c'e' misura zero, quindi la testata di tutte le altre serie non si sposta di un
+   pixel. ⚠️ Le posizioni scritte a mano qui sotto sono scalate di uno insieme a questa riga - sono
+   lo stesso elenco diviso in quattro punti, e cambiarne uno solo sfonderebbe la griglia in silenzio. */
+.series-title-area { display: grid; grid-template-columns: auto 1fr auto; gap: 0.5rem 2rem; align-items: start; }
+/* 🔄 v6.861 - LA SCATOLA CHE TIENE INSIEME «Sfoglia l'album» E LA FOTO. Prende il posto che aveva
+   la foto (prima colonna, seconda riga) e allinea i suoi due figli IN FONDO: e' l'unico modo in
+   cui i due bordi di sotto coincidono sempre, qualunque cosa succeda accanto.
+   📌 La colonna e' `auto` e non piu' 160px fissi: la larghezza adesso la fa la scatola, cioe' la
+   foto piu' il pulsante quando c'e'. Senza pulsante misura esattamente la foto, come prima. */
+.cover-riga { grid-row: 2; grid-column: 1; display: flex; align-items: flex-end; gap: 1rem; }
+/* 🆕 v6.869 - dentro una sezione il pulsante sta a DESTRA della foto (Franco). Si gira la riga, e
+   l'allineamento in basso resta quello di sopra: e' della riga, non del lato. */
+.cover-riga.sfoglia-a-destra { flex-direction: row-reverse; }
 /* 🆕 v6.719 - LA FOTO DELLA SERIE quando la grande e' della sottoserie. Un terzo scarso di
    quella (56 contro 160), stesso rapporto 3/4 e stesso arrotondamento: e' la stessa cosa in
    piccolo, non un altro oggetto. `:empty` la fa sparire con la sua colonna. */
@@ -1135,7 +1186,7 @@ body {
    `.series-title-area.con-sottoserie`, accesa dalla stessa funzione che veste la testata.
    Cambiare la foto senza la colonna avrebbe fatto sfondare la griglia in silenzio. */
 .series-cover.mostra-sottoserie { width: 288px; min-width: 288px; aspect-ratio: var(--hub-box-ratio); }
-.series-title-area.con-sottoserie { grid-template-columns: 288px 1fr auto; }
+.series-title-area.con-sottoserie { grid-template-columns: auto 1fr auto; }   /* v6.861: la larghezza la fa la scatola */
 .series-info { display: contents; }
 .series-info > div:first-child { grid-row: 1; grid-column: 1 / -1; }  /* nome+anno sopra */
 #detail-meta { grid-row: 2; grid-column: 2; }  /* contatori a destra della foto */
@@ -2068,6 +2119,11 @@ footer {
      ma si ferma a 176, che a 375px lascia ancora spazio alle numeriche accanto. */
   .series-cover.mostra-sottoserie { width: 176px; min-width: 176px; }
   .series-title-area.con-sottoserie { grid-template-columns: 176px 1fr; }   /* la fotina qui e' spenta */
+  /* 🔄 v6.861 - su telefono la scatola della v6.861 si scioglie: `display:contents` la fa sparire
+     come contenitore e i suoi due figli tornano caselle di questa griglia, dove le regole della
+     foto (riga 2, colonna 1) valgono come sempre. Il pulsante prende una riga sua in fondo. */
+  .cover-riga { display: contents; }
+  #sfoglia-album-serie { grid-row: 5; grid-column: 1 / -1; justify-self: start; margin-top: 0.5rem; }
   .series-subname { font-size: 1.15rem; }   /* v6.720 - cresciuto da 0.92 anche qui */
   .series-info { display: contents; }
   /* Le RIGHE vanno dette esplicitamente. La copertina viene prima nell'HTML: lasciando fare
