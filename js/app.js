@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.848 - 📧 LA NEWSLETTER ANCHE DA TELEFONO, NEL MENU (Franco: «potresti mettermi anche la newsletter su mobile?
+//          Nuova opzione nel menù di navigazione»). Terza revoca parziale della v5.822: #nav-newsletter-btn esce
+//          dalla lista dei nascosti (sta gia' in .nav-links, che da telefono e' il panino, e app.js la accende
+//          solo all'admin); dentro #page-newsletter «Invia» e «Seleziona/Deseleziona tutti» restano.
+//          Modificato index.html, css/style.css, js/app.js (solo versione).
 // v6.847 - 📱 LA VISTA TABELLARE DA TELEFONO, SOLO PER L'ADMIN (Franco: «non c'è la VT da mobile?», «mettila solo
 //          per l'admin», «magari scrivi (solo admin) sopra la tabella. Ma questa scritta la mostri solo su
 //          mobile»). Seconda revoca parziale della v5.822: sotto gli 860px il tasto resta a chi ha la classe
@@ -28517,7 +28522,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.847';
+const JS_VERSION = 'v6.848';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
