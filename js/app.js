@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.851 - 🔴 L'ORDINE DELLE TIPOLOGIE E LE COLONNE DELLA GRIGLIA ARRIVANO A TUTTI I BROWSER (trovato da Claude,
+//          confermato da Franco: «ok allora fai la fix»). `_aggiornaOrdineArticoliDaConfigurazione` e
+//          `_aggiornaColonneDaConfigurazione` esistevano dalla v6.283 e dalla v6.197 e NON le chiamava nessuno:
+//          i due valori si salvavano su Firestore e il sito li leggeva solo da LOCAL, che scrive il solo browser
+//          dove si e' premuto Salva. Adesso partono dopo il caricamento dei dati, accanto a
+//          `_aggiornaTimeoutDaConfigurazione`. Modificato index.html, js/app.js.
 // v6.850 - 📧 NEWSLETTER DA TELEFONO: L'E-MAIL SOTTO IL NOME (Franco: «accetto la tua proposta di mettere la mail
 //          sotto al nome, per la versione mobile»). Stesso schema della v6.849: la colonna E-mail prende
 //          .nl-col-email, la cella del nome un .nl-email-nome; sotto gli 860px la colonna sparisce e l'indirizzo
@@ -28532,7 +28538,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.850';
+const JS_VERSION = 'v6.851';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -29944,6 +29950,16 @@ async function loadAllData() {
   // v6.173 - si aggiorna il tetto per il PROSSIMO caricamento, adesso che i dati ci sono. Senza
   // `await` di proposito: e' una rifinitura per il giro dopo, non deve rallentare questo.
   _aggiornaTimeoutDaConfigurazione();
+  // 🔴 v6.851 - E QUI MANCAVANO DA SEMPRE LE ALTRE DUE, scritte e mai chiamate da nessuno.
+  // L'ordine delle tipologie e il numero di colonne della griglia si salvano su Firestore, ma il
+  // sito li legge da `LOCAL`, che scrive **solo il browser dove si e' premuto Salva**: su ogni
+  // altro browser `LOCAL` e' vuoto e vince il valore scritto nel codice, per sempre. Non era una
+  // copia scaduta - era una copia che non arrivava mai, e nessun ricaricamento la portava.
+  // 📌 Senza `await` come la riga sopra, e per la stessa ragione: sono rifiniture.
+  // ⚠️ Tre letture di `settings` invece di una: la collezione e' minuscola e ogni funzione sa
+  // leggere il SUO documento. Fonderle vorrebbe dire un quarto punto che le conosce tutte e tre.
+  _aggiornaOrdineArticoliDaConfigurazione();
+  _aggiornaColonneDaConfigurazione();
   if (currentUser?.isAdmin) _aggiornaCampiMassiviDaConfigurazione();   // v6.841
   // v6.233 - la semina delle versioni per articolo, una volta sola e solo da admin. Come sopra,
   // senza `await`: non deve rallentare il primo disegno della pagina.
