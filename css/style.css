@@ -1837,7 +1837,7 @@ footer {
   #items-admin-filters,
   #admin-classifica-title, #admin-classifica-btn-wrap,
   #admin-ebay-title, #admin-ebay-btn-wrap,
-  #detail-edit-series-btn, #detail-ebay-series-btn,
+  #detail-ebay-series-btn,
   #classifica-admin-backfill { display: none !important; }
 
   /* strumenti admin nella navbar (campanella eventi, messaggi, newsletter) */
@@ -1846,7 +1846,11 @@ footer {
   /* pulsanti admin ovunque siano resi da app.js:
      .btn-admin  = azioni arancioni ad alto potere
      .tbl-btn-edit / .tbl-btn-del = matita, clona e cestino su cartellini, dettaglio e tabelle */
-  .btn-admin, .tbl-btn-edit, .tbl-btn-del { display: none !important; }
+  /* 🔄 v6.846 (Franco: «puoi provare a mettere il tasto opzioni admin?») - ECCEZIONE: i tasti con
+     .admin-anche-telefono restano. Sono «Opzioni admin» della serie e quelli senza cui la form della
+     serie non si chiude: «Salva serie» e il «Procedi» di _finestraConferma. «Vista Ebay» resta
+     nascosta (lista qui sopra): i tasti della sua finestra sono .btn-admin. */
+  .btn-admin:not(.admin-anche-telefono), .tbl-btn-edit, .tbl-btn-del { display: none !important; }
 
   /* vista tabellare disattivata su telefono: il selettore sparisce
      (la guardia JS in index.html riporta alla griglia chi ci arriva restringendo la finestra) */
