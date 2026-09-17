@@ -1820,6 +1820,9 @@ footer {
    desktop non si toccano mai: sopra la soglia il browser non legge questi blocchi.
    ============================================================ */
 
+/* 🆕 v6.847 - la scritta «(solo admin)» sopra la vista tabellare: solo da telefono (regola sotto). */
+.vt-solo-admin { display: none; }
+
 /* ---- v5.822 — NIENTE AMMINISTRAZIONE DA TELEFONO ----
    Sotto gli 860px (stessa soglia dell'hamburger) l'admin resta loggato e vede il sito
    come un utente normale: corona, avatar ed Esci restano, ma spariscono TUTTI gli
@@ -1850,11 +1853,17 @@ footer {
      .admin-anche-telefono restano. Sono «Opzioni admin» della serie e quelli senza cui la form della
      serie non si chiude: «Salva serie» e il «Procedi» di _finestraConferma. «Vista Ebay» resta
      nascosta (lista qui sopra): i tasti della sua finestra sono .btn-admin. */
-  .btn-admin:not(.admin-anche-telefono), .tbl-btn-edit, .tbl-btn-del { display: none !important; }
+  /* 🔄 v6.847 (Franco: «mettila solo per l'admin») - e dentro la vista tabellare restano tutti:
+     la tabella da telefono la apre solo l'admin, quindi i suoi comandi sono gia' riservati. */
+  .btn-admin:not(.admin-anche-telefono):not(#bulk-edit-view *),
+  .tbl-btn-edit:not(#bulk-edit-view *),
+  .tbl-btn-del:not(#bulk-edit-view *) { display: none !important; }
 
   /* vista tabellare disattivata su telefono: il selettore sparisce
      (la guardia JS in index.html riporta alla griglia chi ci arriva restringendo la finestra) */
-  #user-table-view-btn { display: none !important; }
+  /* 🔄 v6.847 - disattivata per i visitatori, accesa per l'admin (classe messa da app.js) */
+  #user-table-view-btn:not(.vt-anche-telefono) { display: none !important; }
+  .vt-solo-admin { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.4rem; }
 }
 
 /* ---- v5.863 — NAVBAR MOBILE: logo dentro la barra (come desktop), niente nome utente ----
