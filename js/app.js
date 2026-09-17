@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.846 - 📱 «OPZIONI ADMIN» ANCHE DA TELEFONO (Franco: «ma il tasto modifica serie non c'è nel mobile?», poi
+//          «puoi provare a mettere il tasto opzioni admin?»). Revoca parziale della v5.822: sotto gli 860px
+//          la classe .admin-anche-telefono salva dalla sparizione il tasto «Opzioni admin» della serie,
+//          «Salva serie» e il «Procedi» di _finestraConferma (senza questi due la form si aprirebbe e non
+//          si potrebbe salvare). «Modifica serie» esce dalla lista dei nascosti; «Vista Ebay» ci resta.
+//          Modificato index.html, css/style.css, js/app.js.
 // v6.845 - ↕️ L'ORDINAMENTO DELLA VISTA TABELLARE: IL PRIMO CLIC CAMBIA SEMPRE QUALCOSA (Franco: «non è intuitivo
 //          che per ottenere il primo cambio di ordinamento si debba cliccare 2 volte»; «vai con l'ordinamento»).
 //          Su N. l'ordine normale e' gia' crescente, quindi il ▲ della v6.839 lasciava la tabella com'era.
@@ -26989,7 +26995,7 @@ function _finestraConferma(opz) {
     bNo.type = 'button';
     bNo.textContent = o.annulla || (it ? 'Annulla' : 'Cancel');
     const bSi = document.createElement('button');
-    bSi.className = 'btn-primary btn-admin';
+    bSi.className = 'btn-primary btn-admin admin-anche-telefono';   // v6.846: da telefono serve anche qui
     bSi.type = 'button';
     bSi.textContent = o.ok || (it ? 'Procedi' : 'Proceed');
     // ANNULLA a sinistra e PROCEDI a destra, e il fuoco parte da ANNULLA: chi apre questa finestra
@@ -28504,7 +28510,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.845';
+const JS_VERSION = 'v6.846';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
