@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.847 - 📱 LA VISTA TABELLARE DA TELEFONO, SOLO PER L'ADMIN (Franco: «non c'è la VT da mobile?», «mettila solo
+//          per l'admin», «magari scrivi (solo admin) sopra la tabella. Ma questa scritta la mostri solo su
+//          mobile»). Seconda revoca parziale della v5.822: sotto gli 860px il tasto resta a chi ha la classe
+//          .vt-anche-telefono (messa da app.js solo all'admin), la guardia sul restringimento della finestra
+//          non riporta piu' l'admin alla griglia, e dentro #bulk-edit-view i .btn-admin e le matite restano.
+//          Sopra la tabella «(solo admin)», visibile solo sotto gli 860px.
+//          Modificato index.html, css/style.css, js/app.js.
 // v6.846 - 📱 «OPZIONI ADMIN» ANCHE DA TELEFONO (Franco: «ma il tasto modifica serie non c'è nel mobile?», poi
 //          «puoi provare a mettere il tasto opzioni admin?»). Revoca parziale della v5.822: sotto gli 860px
 //          la classe .admin-anche-telefono salva dalla sparizione il tasto «Opzioni admin» della serie,
@@ -28510,7 +28517,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.846';
+const JS_VERSION = 'v6.847';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -43377,6 +43384,8 @@ function openSeriesSection(section, sottoserie) {
   if (ebayTitle) ebayTitle.style.display = currentUser?.isAdmin ? '' : 'none';
   const tableViewBtn = document.getElementById('user-table-view-btn');
   if (tableViewBtn) tableViewBtn.style.display = currentUser ? 'flex' : 'none';
+  // 🆕 v6.847 (Franco: «mettila solo per l'admin») - da telefono il CSS la nasconde a chi non ha questa classe
+  if (tableViewBtn) tableViewBtn.classList.toggle('vt-anche-telefono', !!currentUser?.isAdmin);
   // 🔄 v6.701 (Franco: «tutto ha punteggio») - QUI STAVA IL SESTO ELENCO DI SEZIONI
   //    SCRITTO A MANO, e ne nominava DUE su dodici: figurine e retro. Non era una decisione
   //    presa tipologia per tipologia - e' la riga di quando le sezioni erano poche, mai
@@ -61669,7 +61678,9 @@ function renderBulkEditView() {
   // in attesa di succedere: un pulsante che non sparisce non da' errore.
   // ⚠️ Si emette anche nel ramo «nessun oggetto trovato»: e' proprio li' che uno vuole rileggere.
   const _barraTabella = !isAdmin ? '' :
-    '<div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.6rem;">'
+    // 🆕 v6.847 (Franco: «scrivi (solo admin) sopra la tabella. Ma questa scritta la mostri solo su mobile»)
+    '<div class="vt-solo-admin">' + (currentLang === 'it' ? '(solo admin)' : '(admin only)') + '</div>'
+    + '<div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.6rem;">'
     + '<button class="btn-primary btn-admin" id="bulk-refresh-btn" onclick="aggiornaVistaTabellare()"'
     + ' title="' + (currentLang === 'it'
         ? 'Rilegge le serie dal server e ridisegna la tabella. Sveglia questa finestra: non impedisce a un’altra finestra rimasta aperta di sovrascrivere.'
