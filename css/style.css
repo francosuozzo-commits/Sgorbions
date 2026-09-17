@@ -1844,7 +1844,10 @@ footer {
   #classifica-admin-backfill { display: none !important; }
 
   /* strumenti admin nella navbar (campanella eventi, messaggi, newsletter) */
-  #nav-bell-btn, #nav-msg-btn, #nav-newsletter-btn { display: none !important; }
+  /* 🔄 v6.848 (Franco: «potresti mettermi anche la newsletter su mobile? nuova opzione nel menu di
+     navigazione») - la Newsletter esce dalla lista: sta gia' in .nav-links, cioe' nel panino, e la
+     accende app.js solo all'admin. */
+  #nav-bell-btn, #nav-msg-btn { display: none !important; }
 
   /* pulsanti admin ovunque siano resi da app.js:
      .btn-admin  = azioni arancioni ad alto potere
@@ -1855,9 +1858,10 @@ footer {
      nascosta (lista qui sopra): i tasti della sua finestra sono .btn-admin. */
   /* 🔄 v6.847 (Franco: «mettila solo per l'admin») - e dentro la vista tabellare restano tutti:
      la tabella da telefono la apre solo l'admin, quindi i suoi comandi sono gia' riservati. */
-  .btn-admin:not(.admin-anche-telefono):not(#bulk-edit-view *),
-  .tbl-btn-edit:not(#bulk-edit-view *),
-  .tbl-btn-del:not(#bulk-edit-view *) { display: none !important; }
+  /* 🔄 v6.848 - e nella pagina Newsletter, per la stessa ragione («Invia», «Seleziona tutti») */
+  .btn-admin:not(.admin-anche-telefono):not(#bulk-edit-view *):not(#page-newsletter *),
+  .tbl-btn-edit:not(#bulk-edit-view *):not(#page-newsletter *),
+  .tbl-btn-del:not(#bulk-edit-view *):not(#page-newsletter *) { display: none !important; }
 
   /* vista tabellare disattivata su telefono: il selettore sparisce
      (la guardia JS in index.html riporta alla griglia chi ci arriva restringendo la finestra) */
