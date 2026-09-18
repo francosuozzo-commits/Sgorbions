@@ -1,6 +1,178 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.895 - VIA L'ICONA DEL LIBRO DAL PULSANTE (Franco). \U0001f534 E con lei se ne va la struttura che
+//          serviva solo a tenerla sotto: i due <span> e `flex-direction:column` esistevano per una
+//          ragione sola (in un flex il testo nudo e l'emoji sono UN elemento anonimo, quindi per
+//          separarli servivano due involucri). Tolta l'emoji non c'e' piu' niente da separare, e
+//          una colonna con dentro un elemento solo sarebbe una struttura di cui nessuno sa piu' la
+//          ragione. Modificato il solo js/app.js.
+// v6.894 - IL PULSANTE SI CHIAMA «CLICCA QUI PER SFOGLIARE L'ALBUM !» (Franco). Da 18 caratteri a
+//          35, nelle due lingue. 📌 Lo spazio prima del «!» resta: e' la regola della v6.390, e
+//          `prova-v6390` la sorveglia da 504 release. ⚠️ Nella taglia piccola - quella della card
+//          della griglia - la frase andra' su due righe, ed e' voluto: una frase tagliata sarebbe
+//          peggio. Modificato il solo js/app.js.
+// v6.893 - LA × DELLO SFOGLIATORE SEGUE IL CONTENUTO, NON LO SCHERMO (Franco: «c'e' molto nero
+//          prima; non si puo' mettere piu' vicina?»). 📏 Era ancorata all'angolo di un contenitore
+//          `inset:0`, mentre la pagina sta in una cornice `min(70vw,1100px)` centrata: su un
+//          monitor largo, fra il bordo della foto e quello dello schermo ci sono centinaia di
+//          pixel di nero. Non era sbagliata, era ancorata alla cosa sbagliata.
+//          ✅ Adesso sta appesa alla riga della pagina, a filo del suo bordo destro, su qualunque
+//          schermo e senza numeri da tarare. ⬜ E la foto non si tocca: la cornice mantiene le
+//          misure della v6.868, come Franco ha chiesto. Modificato il solo index.html.
+// v6.892 - I DUE TASTI DI SPOSTAMENTO PORTANO UN'ETICHETTA, E LO SPOSTAMENTO LO DICE (Franco).
+//          🔴 L'etichetta e' la meta' che mancava alla v6.890: la' avevo separato le due coppie
+//          di frecce con il POSTO, ed era vero ma non bastava - due frecce uguali a un centimetro
+//          l'una dall'altra restano due frecce uguali, e il titolo al passaggio del mouse su un
+//          telefono non esiste.
+//          📌 Il messaggio sta in `pagineSposta`, non nei due bottoni: e' l'unica funzione che
+//          sposta davvero, e i posti da cui la si comanda sono due - mettendolo dove Franco l'ha
+//          chiesto, lo stesso gesto avrebbe detto una cosa dall'anteprima e niente dalla griglia.
+//          📌 E nomina i due numeri: «spostata» da sola non dice dov'e' finita, e chi riordina
+//          trentacinque pagine deve sapere se ha mosso quella che voleva (v6.204).
+//          Modificato index.html, js/app.js.
+// v6.891 - BACO DELLA v6.886: LE FOTO DELL'ALBUM SI VEDEVANO SOTTO TUTTI I TAB, ED ERANO ENORMI
+//          (Franco). 🔴 La classe che porta la scheda a una colonna si toglieva SOLO nel ramo di
+//          modifica, e la scheda ha due rami: aprendo un album in modifica e poi una qualsiasi
+//          scheda in lettura, la classe restava addosso. In lettura le foto stanno nella COLONNA,
+//          che a una colonna diventa larga quanto la pagina (enormi) e sta FUORI dai tab (sotto
+//          tutti e tre). ⚠️ `prova-v6886` pretendeva il `toggle` e lo trovava: era giusto, ma
+//          viveva in una sola delle due strade che aprono quella scheda.
+//          🔄 E le foto scendono in FONDO al tab Generale, dopo i campi e con uno spazio (Franco):
+//          in cima spingevano i campi sotto il bordo dello schermo - lo stesso difetto che la
+//          v6.866 aveva tolto, rimesso in piedi da un'altra parte.
+//          📏 E sono il 70% di prima: 660 -> 462px, il numero l'ha dato Franco.
+//          Modificato css/style.css, js/app.js.
+// v6.890 - I DUE TASTI DI SCAMBIO ANCHE NELLA FINESTRA DELLA SINGOLA PAGINA (Franco).
+//          ⚠️ NON sono le frecce che quella finestra ha gia': quelle SFOGLIANO, queste SPOSTANO -
+//          due gesti opposti sullo stesso verso. La navigazione resta ai lati dell'immagine, lo
+//          spostamento va nella barra del titolo, e i titoli lo dicono a parole.
+//          📌 Lo scambio non si riscrive: lo fa `pagineSposta`, la stessa dei tasti della griglia.
+//          🔴 E dopo lo scambio la finestra segue la PAGINA, non l'indice: `_pagGrandeQui` e' un
+//          numero, e restando fermo la finestra avrebbe cambiato contenuto sotto gli occhi
+//          mostrando la pagina con cui si era appena fatto lo scambio.
+//          📌 I tre comandi che riscrivono l'album dentro l'anteprima si accendono da un elenco,
+//          non da tre righe gemelle. Modificato index.html, js/app.js.
+// v6.889 - I CAMPI DEL TAB «GENERALE» STANNO IN UNA COLONNA, NON SU UNA RIGA LUNGA (Franco:
+//          «l'etichetta dei campi e' tutta a sx, mentre il valore e' tutto a dx; metti tutti i
+//          campi a sx nel complesso; non importa se la parte destra rimane vuota»).
+//          🔴 La causa e' una regola giusta che ha cambiato contesto: `.detail-row` e'
+//          `space-between` da sempre, ed e' giusto in una colonna da 600px. La v6.886 ha portato
+//          quel tab a ~1200px, e la stessa regola ha messo etichetta e valore ai due capi dello
+//          schermo. ✅ La correzione e' un TETTO di 660px, non un allineamento nuovo: dentro quel
+//          tetto i campi stanno come su ogni altra scheda del sito, invece di prendere una terza
+//          disposizione che la scheda dell'album avrebbe avuto tutta per se'.
+//          ⬜ Il tab PAGINE resta a tutta larghezza: la' lo spazio serve. Modificato css/style.css.
+// v6.888 - IL TAB «PAGINE» ANCHE NELLA SCHEDA IN SOLA LETTURA, CON DENTRO «SFOGLIA L'ALBUM !»
+//          (Franco). Compare quando la spunta «album da sfogliare» e' accesa e ci sono pagine - la
+//          stessa domanda della modifica, chiesta a `_pagineVisibili`. 🔴 MA SENZA la condizione
+//          «sei admin»: qui le pagine si GUARDANO, e frecce e cestino sarebbero tasti che non si
+//          possono premere.
+//          🔄 I tab della vista in lettura diventano un ELENCO (`_FD_TAB`) e la barra si
+//          costruisce dalle voci che il record ha davvero: erano due bottoni scritti a mano, e al
+//          terzo sarebbero diventati tre - il difetto che la v6.857 aveva gia' tolto dalla form.
+//          🔴 E IL RAMO SENZA EBAY - quello del VISITATORE - adesso puo' avere i tab, che non
+//          aveva mai avuti: sistemare solo il ramo dell'admin avrebbe dato una release che
+//          funziona per chi la scrive e non per chi la usa (lezione della v6.532).
+//          🔴 E LA GUARDIA «solo admin» SU «Cambia foto» ADESSO SERVE: la v6.885 l'aveva
+//          dichiarata non necessaria PERCHE' l'anteprima si apriva solo dall'area di modifica, e
+//          `prova-v6885` contava i chiamanti apposta. Questa release ne apre una terza strada.
+//          📌 E le miniature delle pagine si disegnano da una funzione sola, usata dalle due
+//          schede. Modificato index.html, js/app.js.
+// v6.887 - LA v6.886 NON SI VEDEVA: LA SCHEDA NON SI ERA MAI ALLARGATA (Franco: «non hai aumentato
+//          la dimensione delle foto delle pagine»). 📏 La causa, misurata nel foglio: dentro
+//          `@media (min-width: 861px)` la griglia della scheda e' forzata a `1fr 740px !important`
+//          (v6.550). Un `!important` batte qualunque regola che non ce l'abbia, e a parita' di
+//          `!important` decide la specificita': serviva un id in piu'. Le miniature erano gia'
+//          elastiche - era la cella a non essere mai cresciuta.
+//          🔴 E `prova-v6886` ERA VERDE: pretendeva che la regola ESISTESSE, e c'era. Una regola
+//          giusta che perde da un'altra passa qualunque controllo sulla sua esistenza - la stessa
+//          famiglia della funzione senza chiamanti della v6.881. `prova-v6887` misura chi VINCE.
+//          🔄 E le due facce prendono un tetto di 660px: in una riga larga 1200 `flex:1` le
+//          avrebbe fatte giganti, e Franco ha chiesto di spostarle, non di ingrandirle.
+//          Modificato il solo css/style.css.
+// v6.886 - LA SCHEDA DELL'ALBUM A UNA COLONNA: LE DUE FOTO DENTRO IL TAB «GENERALE», E LE PAGINE A
+//          QUATTRO PER RIGA (Franco: «lo spazio e' sfruttato male»). La colonna da 320px restava
+//          quasi vuota per tutta l'altezza del tab mentre i tre tab lavoravano in 1fr.
+//          ⚠️ CAMBIA SOLO PER GLI ALBUM: su una figurina la colonna delle foto e' piena e la
+//          scheda e' corta, non c'e' spazio sprecato da recuperare. La classe si mette E SI
+//          TOGLIE, perche' la scheda e' un elemento solo riusato per ogni articolo.
+//          🔴 IL MARKUP DELLE FOTO E' LO STESSO: cambia dove va a finire. Un secondo riquadro
+//          «per il tab Generale» sarebbe stata la copia numero due di un markup tenuto in una
+//          funzione sola dalla v6.074.
+//          🔴 E IL QUATTRO PER RIGA DA SOLO AVREBBE RIMPICCIOLITO LE FOTO: con la miniatura fissa
+//          a 128px, una colonna in piu' e' solo una cella piu' stretta attorno alla stessa
+//          immaginetta. Adesso la miniatura prende tutta la cella, e si chiede a Cloudinary in
+//          520 invece che in 320 perche' non sgrani. Modificato index.html, css/style.css, js/app.js.
+// v6.885 - «CAMBIA FOTO» NELLA FINESTRA DI ANTEPRIMA DELLA PAGINA (Franco: «lo vorrei nella
+//          finestra di anteprima della foto, non nella griglia delle pagine album»). Carica il
+//          file su Cloudinary, sostituisce la pagina che si sta guardando e salva da
+//          `_salvaPagine` come tutto il resto - con il rimbalzo della v6.101 se la scrittura
+//          fallisce. 🔴 `orig` diventa la foto NUOVA: tenendo la vecchia, «rimetti l'originale»
+//          avrebbe rimesso una pagina che non c'entra piu' niente, senza nessun errore.
+//          📌 Il tasto sta nella barra del TITOLO: sotto l'immagine avrebbe aggiunto una riga, e
+//          la v6.884 esiste per tenere questa finestra sempre della stessa misura.
+//          ⚠️ `ev.target.value = \'\'` prima di tutto, o riscegliendo lo STESSO file l'evento non
+//          parte piu' e il tasto sembra rotto (la riga di `handlePagineScelte` e della v6.772).
+//          Modificato index.html, js/app.js.
+// v6.884 - LA FINESTRELLA DELLA PAGINA NON CAMBIA PIU' MISURA FRA UNA PAGINA E L'ALTRA (Franco:
+//          «come mai la prima foto usa una finestra piu' alta? cosi' fai spostare le frecce e anche
+//          l'occhio di chi guarda»). 🔴 E' lo stesso difetto che la v6.868 ha tolto dallo
+//          sfogliatore, un piano piu' in la': l'immagine era l'unica cosa che dava un'altezza alla
+//          riga, e ogni scansione ha una forma sua. Adesso la pagina sta in una cornice di altezza
+//          FISSA e ci si centra dentro - la stessa ricetta della v6.868, riusata e non ripensata.
+//          📌 La cornice ha altezza fissa e larghezza elastica: quella dello sfogliatore puo'
+//          essere fissa in tutte e due perche' li' la finestra e' a schermo pieno; qui una
+//          larghezza fissa su un telefono uscirebbe dallo schermo. A far ballare la finestra era
+//          l'altezza. Modificato il solo index.html.
+// v6.883 - IL TASTO DELLA v6.880 SI ACCORCIA: «Vai agli album della serie» (Franco). Da 37 a 26
+//          caratteri, nelle due lingue. 📌 E' una release a se' e non una correzione della v6.880
+//          perche' quella ha gia' la sua voce qui e la sua suite: riscriverla avrebbe voluto dire
+//          un CHANGELOG che racconta un testo mai esistito e una `prova-v6880` rossa sulla propria
+//          cartella. La v6.880 non era ancora pubblicata, quindi l'etichetta lunga non l'ha vista
+//          nessuno - ed e' scritto qui perche' non si creda il contrario leggendo le due voci.
+//          Modificato index.html, js/app.js.
+// v6.882 - LA FINESTRELLA DELLA PAGINA GRANDE COME LO SFOGLIATORE (Franco). Il tetto
+//          dell'immagine diventa `min(70vw, 1100px)`, gli stessi numeri della cornice dello
+//          sfogliatore (v6.868), e l'altezza passa da 70vh a `calc(90vh - 8rem)`.
+//          ⚠️ E' un `max-width`, non una larghezza fissa: la cornice dello sfogliatore e'
+//          `flex-shrink:0` perche' li' la finestra e' a schermo pieno, qui invece ci sono due
+//          frecce e l'imbottitura del modale - 70vw fissi su un telefono uscirebbero dallo
+//          schermo. 📏 L'altezza non puo' coincidere al centimetro e non si finge che lo faccia:
+//          sopra l'immagine ci sono titolo e imbottitura, e `.modal` si ferma a 90vh.
+//          🔄 E la foto si chiede a `w_1600,h_1600,c_fit` come nello sfogliatore: allargare la
+//          finestra lasciando `w_1200` avrebbe dato una pagina piu' grande e piu' sgranata.
+//          Modificato index.html, js/app.js.
+// v6.881 - «SFOGLIA L'ALBUM !» ANCHE SULLA CARD DELL'ALBUM, PICCOLO (Franco).
+//          🔴 E LA SCOPERTA E' UN'ALTRA: `_bottoneSfogliaSuArticolo` ESISTEVA E NON LA CHIAMAVA
+//          NESSUNO. Il commento della v6.863 diceva «restano DUE posti» e i posti erano UNO.
+//          Misurato su tutte le cartelle in archivio (v6.859 -> v6.880): morta da almeno ventun
+//          release. ⚠️ E `prova-v6806` era verde, perche' pretendeva che la funzione esistesse e
+//          fosse scritta bene - non che qualcuno la usasse. Adesso pretende anche il chiamante.
+//          🔄 Le taglie del bottone diventano TRE e il parametro passa da booleano a parola: due
+//          booleani indipendenti avrebbero dato quattro combinazioni di cui due senza senso
+//          (lezione della v6.668). E il bottone della card porta l'ID del SUO album invece di
+//          farlo indovinare. Modificato js/app.js.
+// v6.880 - «VAI A TUTTI GLI ALBUM DI QUESTA SERIE» NELLO SFOGLIATORE (Franco). Terzo comando della
+//          colonna: chiude lo sfogliatore, entra nella serie e apre la sezione Album - la stessa
+//          coppia `openSeriesDetail` + `openSeriesSection` di `openTipoProdotto` (v6.073).
+//          ⚠️ LA SERIE SI CHIEDE AL RECORD DELL'ALBUM, non a `currentSeriesId`: allo sfogliatore si
+//          arriva anche dalla scheda di un album aperta dalla ricerca globale, e li' la pagina
+//          sotto puo' essere di un'altra serie - il tasto avrebbe portato altrove senza errori.
+//          📏 E l'etichetta va a capo dentro una larghezza fissata: 37 caratteri a riga unica
+//          fanno ~250px e su un telefono spingerebbero fuori schermo la pagina che si sfoglia.
+//          Modificato index.html, css/style.css, js/app.js.
+// v6.879 - «SFOGLIA L'ALBUM!» CON IL LIBRO SOTTO, E UN TASTO «INDIETRO» NELLO SFOGLIATORE (Franco).
+//          La scritta prende il punto esclamativo e l'icona scende sotto, centrata. 🔴 I due pezzi
+//          vanno avvolti in due <span>: in un flex il testo nudo e l'emoji sono UN solo elemento
+//          anonimo, quindi `flex-direction:column` non li separerebbe - e il pulsante uscirebbe
+//          identico a prima, senza nessun errore.
+//          🔴 E il tasto di uscita dallo sfogliatore C'ERA GIA' (la × in alto a destra, piu' Esc):
+//          mancava il fatto di VEDERLO. Adesso c'e' un comando con su scritto cosa fa, accanto a
+//          «Vai all'album», e i due condividono la classe `.sfoglia-cmd` invece di due stili
+//          scritti a mano. 📌 «Indietro» non nomina la destinazione come gli altri tasti indietro
+//          del sito: le strade che portano allo sfogliatore sono due, e nominarne una sarebbe
+//          falso su meta' dei casi. Modificato index.html, css/style.css, js/app.js.
 // v6.878 - IL PULSANTE «RC»: RICARICA IL SITO SALTANDO LA CACHE (Franco: «sia desktop che mobile»,
 //          «solo admin», «in alto a sx solo nella homepage», «piccolo, quindi chiamalo RC»).
 //          🔴 NON preme CTRL+SHIFT+R e non svuota la cache del browser: nessun JavaScript puo' farlo.
@@ -28712,7 +28884,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.878';
+const JS_VERSION = 'v6.895';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -30307,7 +30479,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -30396,7 +30568,7 @@ const i18n = {
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with backs) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in your list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in your list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
@@ -32915,6 +33087,16 @@ function updateNavUser() {
   //    la risolve il DOM, perche' il pulsante vive dentro `#page-home`.
   const rcBtn = document.getElementById('rc-btn');
   if (rcBtn) rcBtn.style.display = currentUser?.isAdmin ? '' : 'none';
+  // 🆕 v6.888 - e «Cambia foto» nell'anteprima di una pagina: dalla v6.888 quella finestra si
+  //    apre anche dalla scheda in LETTURA, quindi a chiunque. Stessa riga, stesso posto, stessa
+  //    ragione di quella qui sopra.
+  // 🔄 v6.890 - i comandi che RISCRIVONO l'album dentro l'anteprima sono tre, e si accendono
+  //    insieme: cambiare la foto e spostare la pagina sono la stessa cosa dal punto di vista di
+  //    chi puo' farla. Un elenco, non tre righe gemelle.
+  ['pagina-grande-cambia', 'pagina-grande-su', 'pagina-grande-giu'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = currentUser?.isAdmin ? '' : 'none';
+  });
   const guestNav = document.getElementById('guest-nav');
   const userNav = document.getElementById('user-nav');
   const addSeriesBtn = document.getElementById('admin-add-series-btn');
@@ -48291,6 +48473,14 @@ function renderItems() {
         ${typeIndicatorHTML}
         ${descHTML}
         ${sizeHTML}
+        ${/* 🆕 v6.881 (Franco) - «Sfoglia l'album !» SULLA CARD DELL'ALBUM DICHIARATO.
+             📌 La condizione non si scrive qui: la sa `_bottoneSfogliaSuArticolo`, che e' la
+             stessa che rispondeva gia' per la scheda. Rifarla nella card avrebbe dato due idee
+             di «questo album si sfoglia», destinate a divergere.
+             ⚠️ E la card ha `onclick` che apre la scheda: non si pestano perche' quel gestore
+             salta i clic che arrivano da un `<button>` (`event.target.closest('button')`), e
+             questo e' un button. La regola c'era gia', vale anche per questo. */''}
+        ${_bottoneSfogliaSuArticolo(f) ? `<div style="display:flex;justify-content:center;margin:0.35rem 0 0.15rem;">${_bottoneSfogliaSuArticolo(f)}</div>` : ''}
         <div class="fig-actions">
         ${slotSinistraHTML}
         <div class="fig-act fig-act-mylist"><span class="fig-act-label">${t('owned.toggle')}</span><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista \u2014 clicca per toglierla':'In your list \u2014 click to remove') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="event.stopPropagation();toggleOwned('${f.id}')">\u2713</button></div>
@@ -50497,15 +50687,44 @@ function updateBellBadge() {
   }
 }
 
+// 🔄 v6.888 - I TAB DELLA VISTA IN LETTURA SONO UN ELENCO, come quelli della form dalla
+// v6.857. Erano due righe gemelle scritte a mano per ogni cosa da fare (mostrare, colorare): al
+// terzo tab - le Pagine, chieste da Franco - sarebbero diventate tre, e il giorno del quarto una
+// si dimenticherebbe. E' il difetto che questo file ha registrato piu' volte di ogni altro.
+// 📌 L'elenco e' SEPARATO da `_FE_TAB`: sono due schede diverse e possono avere tab diversi -
+// in lettura non c'e' niente da modificare, in modifica non c'e' niente da sfogliare.
+const _FD_TAB = ['generale', 'pagine', 'ebay'];
+
+// 🆕 v6.888 - LA BARRA DEI TAB DELLA VISTA IN LETTURA SI COSTRUISCE DA UN ELENCO.
+// 🔴 Era scritta a mano con due bottoni, e i tab adesso possono essere due o tre secondo il
+//    record: un album da sfogliare ha le Pagine, una figurina no, e l'Ebay lo vede solo l'admin.
+//    Con il markup scritto a mano servivano tre versioni della stessa barra.
+// ⚠️ CON UNA VOCE SOLA LA BARRA NON SI DISEGNA: una fila di tab con un tab solo non e' una
+//    scelta, e' una decorazione che ruba una riga. E' la ragione per cui la vista in lettura, per
+//    un visitatore su una figurina, non ha mai avuto tab.
+// 📌 Il PRIMO della lista e' quello aperto: chi costruisce l'elenco decide anche cosa si vede
+//    per primo, e non c'e' un secondo posto che lo dichiara.
+function _tabNavLettura(voci) {
+  if (voci.length < 2) return '';
+  return '<div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin-bottom:1rem;">'
+    + voci.map((v, n) =>
+        '<button type="button" id="figdetail-tab-btn-' + v.k + '" onclick="switchFigDetailTab(\'' + v.k + '\')" '
+        + 'style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid '
+        + (n === 0 ? 'var(--accent)' : 'transparent') + ';background:transparent;color:'
+        + (n === 0 ? 'var(--accent)' : 'var(--muted)') + ';font-weight:' + (n === 0 ? '600' : '400')
+        + ';font-size:0.85rem;cursor:pointer;">' + v.et + '</button>').join('')
+    + '</div>';
+}
 function switchFigDetailTab(tab) {
-  const genDiv = document.getElementById('figdetail-tab-generale');
-  const ebayDiv = document.getElementById('figdetail-tab-ebay');
-  const genBtn = document.getElementById('figdetail-tab-btn-generale');
-  const ebayBtn = document.getElementById('figdetail-tab-btn-ebay');
-  if (genDiv) genDiv.style.display = tab === 'generale' ? '' : 'none';
-  if (ebayDiv) ebayDiv.style.display = tab === 'ebay' ? '' : 'none';
-  if (genBtn) { genBtn.style.borderBottomColor = tab === 'generale' ? 'var(--accent)' : 'transparent'; genBtn.style.color = tab === 'generale' ? 'var(--accent)' : 'var(--muted)'; }
-  if (ebayBtn) { ebayBtn.style.borderBottomColor = tab === 'ebay' ? 'var(--accent)' : 'transparent'; ebayBtn.style.color = tab === 'ebay' ? 'var(--accent)' : 'var(--muted)'; }
+  _FD_TAB.forEach(k => {
+    const div = document.getElementById('figdetail-tab-' + k);
+    const btn = document.getElementById('figdetail-tab-btn-' + k);
+    if (div) div.style.display = (k === tab) ? '' : 'none';
+    if (btn) {
+      btn.style.borderBottomColor = (k === tab) ? 'var(--accent)' : 'transparent';
+      btn.style.color = (k === tab) ? 'var(--accent)' : 'var(--text)';
+    }
+  });
 }
 
 // v6.032 (Franco, baco) - la scheda mostra DUE foto affiancate (fronte + retro) o UNA sola?
@@ -50935,6 +51154,19 @@ function _secondaFacciaSulRecord(sezione) {
 // qui (v6.033), e senza l'esclusione sfogliare venti figurine costruirebbe una pila di
 // venti: per uscire ci vorrebbero venti pressioni. Sfogliare non e' saltare.
 function openFigDetail(figId, elencoNav, senzaMemoria) {
+  // 🔴 v6.891 (Franco, baco: «le due foto dell'album devono essere mostrate solo nel tab
+  //    Generale; invece sono mostrate in tutti; e poi sono enormi») - LA SCHEDA TORNA A DUE
+  //    COLONNE OGNI VOLTA CHE SI APRE IN LETTURA.
+  // 🔴 IL DIFETTO ERA DELLA v6.886, E LA SUA PROVA LO AVEVA MANCATO PER UN PELO. Quella
+  //    release aveva scritto «la classe si mette E SI TOGLIE, perche' la scheda e' un elemento solo
+  //    riusato per ogni articolo», e `prova-v6886` §2b pretende il `toggle`. Vero - ma quel
+  //    `toggle` vive nel ramo di MODIFICA, e la scheda ha due rami: modifica e lettura. Aprendo un
+  //    album in modifica e poi QUALSIASI scheda in lettura, la classe restava addosso.
+  // 📏 E il sintomo era doppio, come l'ha visto Franco: in lettura le foto stanno nella COLONNA
+  //    (`#fig-detail-photo`), che a una colonna diventa larga quanto la pagina - quindi enormi - e
+  //    la colonna sta FUORI dai tab, quindi si vedevano sotto tutti e tre.
+  // ⚠️ La lezione non e' «ricordarsi di togliere»: e' che «si toglie anche» va verificato in OGNI
+  //    strada che apre quella scheda, non nella strada che l'ha introdotto. `prova-v6891` le conta.
   {
     const _mod = document.getElementById('fig-detail-modal');
     const _giaAperta = !!_mod && !_mod.classList.contains('hidden');
@@ -50945,6 +51177,13 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     else if (!senzaMemoria && _currentDetailFigId && _currentDetailFigId !== figId) {
       _pilaSchede.push({ id: _currentDetailFigId, elenco: _elencoNav });
     }
+  }
+  // 📌 Si toglie SOLO la classe, non si azzera anche `_feFotoNelGenerale`: quella variabile la
+  //    riscrive il ramo di modifica a ogni apertura, e toccarla da qui l'avrebbe fatta dipendere
+  //    da due punti invece che da uno. Il difetto era la classe rimasta addosso, e quella basta.
+  {
+    const _g = document.getElementById('fig-detail-griglia');
+    if (_g) _g.classList.remove('scheda-una-colonna');
   }
   _figEditImgData = null; _figEditImgRetroData = null; // reset immagini editing precedenti
   // v6.104 - si apre un oggetto vero: se una bozza era rimasta in sospeso (creazione annullata) qui
@@ -51665,19 +51904,37 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     if (f.section === 'figurines' || f.section === 'retros') {
       ebayRows.push(`<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">📷 ${currentLang === 'it' ? 'Foto Ebay' : 'Ebay photo'}</span><span class="detail-value">${f.ebayImg ? `<img src="${cloudinaryUrl(f.ebayImg,'w_200,h_200,c_fit,q_auto,f_auto')}" style="max-width:140px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'nessuna foto' : 'no photo') + '</span>'}</span></div>`);
     }
-    const tabNav = `<div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin-bottom:1rem;">
-      <button type="button" id="figdetail-tab-btn-generale" onclick="switchFigDetailTab('generale')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Generale</button>
-      <button type="button" id="figdetail-tab-btn-ebay" onclick="switchFigDetailTab('ebay')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>
-    </div>`;
+    // 🔄 v6.888 - la barra si costruisce dall'elenco delle voci che questo record ha davvero.
+    const _pagLett = _bloccoPagineLettura(f);
+    const _voci = [{ k: 'generale', et: '📋 ' + (currentLang === 'it' ? 'Generale' : 'General') }];
+    if (_pagLett) _voci.push({ k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') });
+    _voci.push({ k: 'ebay', et: '🏷️ Ebay' });
+    const tabNav = _tabNavLettura(_voci);
     // v6.529 - lo scambio si lancia dopo, quando questo markup e' nel DOM (in fondo alla funzione).
   document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + tabNav +
       '<div id="figdetail-tab-generale">' + rows.join('') + '</div>' +
+      (_pagLett ? '<div id="figdetail-tab-pagine" style="display:none;">' + _pagLett + '</div>' : '') +
       '<div id="figdetail-tab-ebay" style="display:none;">' + ebayRows.join('') + '</div>' +
       _codaAzioniDetail(bottomButtons);
     // v6.103 - dopo l'innerHTML, altrimenti i due contenitori non esistono ancora.
     if (f.forSale) riempiEbayVistaLettura(f);
   } else {
-    document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + rows.join('') + _codaAzioniDetail(bottomButtons);
+    // 🆕 v6.888 - E ANCHE QUESTO RAMO PUO' AVERE DEI TAB, che prima non aveva mai.
+    //    🔴 E' il ramo di chi NON vede l'Ebay - cioe' il visitatore, cioe' proprio quello per cui
+    //    Franco ha chiesto le pagine in sola lettura. Sistemare solo il ramo dell'admin avrebbe
+    //    dato una release che funziona per chi l'ha scritta e non per chi doveva usarla: e' la
+    //    lezione della v6.532, dove una riga dentro l'`else` faceva la stessa cosa al contrario.
+    //    ⚠️ Senza pagine da mostrare la barra non si disegna: `_tabNavLettura` con una voce sola
+    //    torna stringa vuota, quindi per una figurina non cambia assolutamente niente.
+    const _pagLett2 = _bloccoPagineLettura(f);
+    const _tabLett2 = _tabNavLettura(_pagLett2
+      ? [{ k: 'generale', et: '📋 ' + (currentLang === 'it' ? 'Generale' : 'General') },
+         { k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') }]
+      : []);
+    document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + _tabLett2
+      + '<div id="figdetail-tab-generale">' + rows.join('') + '</div>'
+      + (_pagLett2 ? '<div id="figdetail-tab-pagine" style="display:none;">' + _pagLett2 + '</div>' : '')
+      + _codaAzioniDetail(bottomButtons);
   }
   // 🆕 v6.529 - il markup c'e': si caricano le foto grandi di lato e si scambiano quando
   // arrivano. Vale per TUTTE le `img[data-grande]` della scheda.
@@ -53640,7 +53897,14 @@ function switchToEditMode(figId) {
     //    niente e un contenitore in piu' sarebbe una scatola vuota.
     const _dueFacce = _schedaDueFoto(f) && _secondaFacciaSulRecord(f.section);
     // 🔄 v6.872 - meno spazio fra le due facce (0,6 -> 0,3rem): Franco le vuole piu' vicine.
-    photo.innerHTML = (_dueFacce ? '<div style="display:flex;gap:0.3rem;align-items:flex-start;">' : '')
+    // 🆕 v6.886 (Franco: «mettiamo le 2 foto dell'album nella sezione principale, il tab
+    //    Generale; si allargano quindi tutti e 3 i tab») - SU UN ALBUM LE FOTO CAMBIANO POSTO.
+    // 🔴 IL MARKUP E' LO STESSO, CAMBIA DOVE VA A FINIRE, e questa e' la riga che rende la
+    //    release piccola invece che grande: `_slotFotoEdit` non sa e non deve sapere in quale
+    //    colonna sta. Scrivere un secondo riquadro «per il tab Generale» sarebbe stata la copia
+    //    numero due di un markup che questo file tiene in una funzione sola dalla v6.074, e che
+    //    la v6.599 sa gia' ridisegnare da solo.
+    const _fotoHTML = (_dueFacce ? '<div style="display:flex;gap:0.3rem;align-items:flex-start;">' : '')
       + _slotFotoEdit('fronte', f.img, f, _dueFacce)
       + (_dueFacce ? _slotFotoEdit('retro', f.imgRetro, f, _dueFacce) + '</div>' : '')
       // 🔄 v6.857 (Franco: «metti un tab apposito, per le pagine dell'album, nella scheda
@@ -53648,6 +53912,15 @@ function switchToEditMode(figId) {
       //    Erano sotto i riquadri delle facce, in coda a una colonna da 320px: N miniature
       //    incolonnate la' sono un elenco da scorrere, non una cosa da guardare.
       ;
+    // 🆕 v6.886 - E QUI SI DECIDE DOVE METTERLO. Su un album le foto scendono nel tab
+    //    Generale e la colonna di destra sparisce; su tutto il resto non cambia niente.
+    _feFotoNelGenerale = _fotoNelTabGenerale(f) ? _fotoHTML : '';
+    photo.innerHTML = _feFotoNelGenerale ? '' : _fotoHTML;
+    const _griglia = document.getElementById('fig-detail-griglia');
+    // ⚠️ Si TOGLIE anche, non solo si mette: la scheda e' un elemento solo che si riusa per
+    //    ogni articolo. Aggiungendo la classe e basta, dopo aver aperto un album ogni altra
+    //    scheda resterebbe a una colonna - con la colonna delle foto vuota e le foto sparite.
+    if (_griglia) _griglia.classList.toggle('scheda-una-colonna', !!_feFotoNelGenerale);
   }
 
   // Build edit form
@@ -54135,6 +54408,14 @@ function switchToEditMode(figId) {
   // Figurine collegate (variazioni/change di cui questa è la base) — tab
   html += buildLinkedFiguresTabsHTML(f.id);
 
+  // 🔄 v6.891 (Franco: «mettile subito dopo la fine dei campi, lascia chiaramente uno spazio»)
+  //    - LE FOTO STANNO IN FONDO AL TAB, NON IN CIMA. La v6.886 le aveva messe sopra i campi:
+  //    le foto sono la cosa piu' alta della scheda, e in cima spingevano tutti i campi sotto il
+  //    bordo dello schermo - cioe' lo stesso difetto che la v6.866 era venuta a togliere
+  //    ("la scheda cominciava sotto lo schermo"), rimesso in piedi da un'altra parte.
+  //    📌 Lo spazio prima e' dichiarato nel foglio (`margin-top`), non con un <br>: serve a
+  //    separare due cose diverse, ed e' una regola, non un ritocco.
+  html += (_feFotoNelGenerale ? '<div class="fe-foto-larghe">' + _feFotoNelGenerale + '</div>' : '');
   html += '</div>'; // chiude fe-tab-generale
 
   // 🆕 v6.857 - IL TAB DELLE PAGINE, fra Generale ed Ebay (Franco). Il contenuto e' lo stesso
@@ -54367,6 +54648,21 @@ function _ridisegnaSlotFoto(slot) {
 // 🔄 v6.866 - `stretto` dice che i due riquadri stanno AFFIANCATI: allora ognuno prende meta'
 // riga e i comandi si impilano uno sopra l'altro, perche' in meta' larghezza due tasti per riga
 // diventano due scritte tagliate. Senza il parametro il riquadro e' quello di sempre.
+// 🆕 v6.886 (Franco) - LE FOTO VANNO NEL TAB «GENERALE» SU QUALE SCHEDA?
+// 📌 Una domanda sola, chiesta da DUE punti: chi decide dove scrivere le foto e chi decide se
+//    la griglia ha una colonna o due. Sono la stessa decisione, e due `if` gemelli sarebbero due
+//    verita' che il giorno del cambio litigano.
+// ⚠️ SOLO GLI ALBUM, ed e' la richiesta di Franco alla lettera («la scheda album»). Su una
+//    figurina la colonna delle foto e' piena e la scheda e' corta: non c'e' nessuno spazio
+//    sprecato da recuperare, e allargare tutto sarebbe stato rispondere a una domanda diversa.
+function _fotoNelTabGenerale(f) {
+  return !!f && f.section === 'albums';
+}
+
+// 🆕 v6.886 - il markup delle foto in attesa di entrare nel tab Generale. Vuoto su tutte le
+// schede che non sono album, e in quel caso le foto restano nella colonna di destra.
+let _feFotoNelGenerale = '';
+
 function _slotFotoEdit(slot, url, f, stretto) {
   // ⚠️ La classe, non uno stile in linea: `prova-v6637` pretende che il verso dei comandi si
   //    decida nel FOGLIO e in un posto solo - due correzioni per lo stesso difetto vogliono dire
@@ -54552,12 +54848,45 @@ let _sfogliaQui = 0;
 // tenuto da parte sarebbe una copia vecchia (v6.442).
 let _sfogliaAlbumId = null;
 
-function _bottoneSfogliaHTML(grosso) {
+// 🔄 v6.881 (Franco: «nella pagina degli album, sulla card dell'album che si sfoglia, metti
+//    anche li' il bottone SFOGLIA L'ALBUM; chiaramente qui lo farei piu' piccolo») - LE TAGLIE
+//    DIVENTANO TRE, E IL BOTTONE SA A QUALE ALBUM SI RIFERISCE.
+// 🔴 IL PARAMETRO ERA UN BOOLEANO (`grosso`), E UN BOOLEANO NON REGGE UNA TERZA TAGLIA: la
+//    strada breve sarebbe stata aggiungerne un secondo (`grosso`, `piccolo`), e due booleani
+//    indipendenti permettono QUATTRO combinazioni di cui due senza senso - il difetto che la
+//    v6.668 ha tolto dagli stati della serie. Le taglie sono gradini di una scala sola, quindi
+//    una parola sola.
+// 📌 E L'ID SERVE ALLA CARD, non alla testata: nella griglia degli Album le card sono tante e
+//    `apriSfogliaAlbum()` senza argomenti va a cercare l'album dichiarato della serie. Oggi le
+//    due cose coincidono - il bottone compare solo su quello dichiarato - ma farglielo indovinare
+//    quando lo si sa e' il modo in cui le due risposte divergono il giorno che la regola cambia.
+function _bottoneSfogliaHTML(taglia, idAlbum) {
   const it = currentLang === 'it';
-  return '<button type="button" class="btn-primary" onclick="apriSfogliaAlbum()" '
-    + 'style="' + (grosso ? 'font-size:1.05rem;padding:0.9rem 1.6rem;' : 'padding:0.5rem 1rem;')
-    + 'display:inline-flex;align-items:center;gap:0.5rem;">\uD83D\uDCD6 '
-    + (it ? 'Sfoglia l\'album' : 'Browse the album') + '</button>';
+  const misure = {
+    grossa:  'font-size:1.05rem;padding:0.9rem 1.6rem;',
+    media:   'padding:0.5rem 1rem;',
+    piccola: 'font-size:0.7rem;padding:0.3rem 0.6rem;'
+  };
+  const arg = idAlbum ? "'" + idAlbum + "'" : '';
+  return '<button type="button" class="btn-primary" onclick="apriSfogliaAlbum(' + arg + ')" '
+    + 'style="' + (misure[taglia] || misure.media)
+    // 🔄 v6.895 (Franco: «togli la icona del libro dal pulsante di SFOGLIA ALBUM») - VIA IL
+    //    LIBRO, E CON LUI LA STRUTTURA CHE SERVIVA SOLO A TENERLO SOTTO.
+    // 🔴 LA COLONNA E I DUE <span> SE NE VANNO INSIEME ALL'ICONA, e non e' zelo: esistevano
+    //    per una ragione sola, scritta nella v6.879 - in un contenitore flex il testo nudo e
+    //    l'emoji diventano UN elemento anonimo, quindi per separarli servivano due involucri e
+    //    `flex-direction:column`. Tolta l'emoji non c'e' piu' niente da separare, e lasciare li'
+    //    una colonna con dentro un elemento solo avrebbe lasciato una struttura di cui nessuno
+    //    sa piu' la ragione - quella che questo file va a caccia di togliere.
+    // 📌 Resta `inline-flex` con il centraggio: serve al pulsante, non all'icona, ed e' cio'
+    //    che tiene la frase in mezzo quando va a capo nella taglia piccola.
+    + 'display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:1.15;">'
+    // ⚠️ LO SPAZIO PRIMA DEL «!» NON E' UN REFUSO: e' la regola che Franco ha dato nella
+    //    v6.390 (*«nel sito vedo che abbiamo dei ! che non hanno uno spazio prima, possiamo
+    //    metterlo sempre?»*), e vale in tutte e due le lingue - il sito scrive gia' «Welcome !»
+    //    e «Congratulations !». `prova-v6390` la sorveglia da 505 release.
+    + (it ? 'Clicca qui per sfogliare l\'album !' : 'Click here to browse the album !')
+    + '</button>';
 }
 
 // 📌 Si ridisegna a ogni apertura di serie, insieme alle foto e alle sezioni nascoste: e'
@@ -54569,7 +54898,7 @@ function _mostraSfogliaAlbum() {
   //    stessa funzione.
   const serie = document.getElementById('sfoglia-album-serie');
   if (serie) {
-    serie.innerHTML = alb ? _bottoneSfogliaHTML(true) : '';
+    serie.innerHTML = alb ? _bottoneSfogliaHTML('grossa') : '';
     serie.style.display = alb ? '' : 'none';
   }
   // 🆕 v6.869 (Franco: «nella pagina degli Album ... sposta quello rimasto lì, alla destra della
@@ -54590,10 +54919,20 @@ function _mostraSfogliaAlbum() {
 
 // ⚠️ Sulla scheda in LETTURA di un album: solo se e' quello dichiarato e ha le pagine. La
 //    domanda e' la stessa di sopra, chiesta alla stessa funzione.
+// 🔴 v6.881 - QUESTA FUNZIONE ESISTEVA E NON LA CHIAMAVA NESSUNO, ED E' LA SCOPERTA DELLA
+//    RELEASE. Il commento della v6.863 diceva «restano DUE posti: la testata della serie e la
+//    scheda dell'album dichiarato», e i posti erano UNO: questa riga non veniva eseguita mai.
+//    📏 Misurato su tutte le cartelle ancora in archivio (v6.859 → v6.880): nessuna la chiama.
+//    Le precedenti se le e' portate via la regola delle venti, quindi non si sa QUANDO si sia
+//    persa - solo che era morta da almeno ventun release.
+// ⚠️ E `prova-v6806` era VERDE: pretendeva che la funzione esistesse e fosse scritta bene, non
+//    che qualcuno la usasse. Una funzione giusta che non chiama nessuno passa qualunque controllo
+//    sulla sua forma. Da questa release quella suite pretende anche il chiamante.
+// 🆕 Il chiamante e' la card della griglia (Franco), e la taglia e' `piccola`.
 function _bottoneSfogliaSuArticolo(f) {
   if (!f || !_haPagine(f.section)) return '';
   const alb = _albumDaSfogliare(f.seriesId);
-  return (alb && alb.id === f.id) ? _bottoneSfogliaHTML(false) : '';
+  return (alb && alb.id === f.id) ? _bottoneSfogliaHTML('piccola', f.id) : '';
 }
 
 function apriSfogliaAlbum(idAlbum) {
@@ -54623,6 +54962,33 @@ function vaiAllAlbumSfogliato() {
   const id = _sfogliaAlbumId;
   chiudiSfogliaAlbum();
   if (id) openFigDetail(id);
+}
+
+// 🆕 v6.880 (Franco: «metti anche un tasto che si chiama "Vai a tutti gli album di questa
+// serie"; se cliccato porta alla pagina ALBUM della serie») - DALLO SFOGLIATORE ALL'ELENCO.
+// ⚠️ LA SERIE SI CHIEDE AL RECORD DELL'ALBUM, NON A `currentSeriesId`, ed e' la riga che decide
+//    se questo tasto dice il vero. Allo sfogliatore si arriva anche dalla scheda di un album
+//    aperta dalla RICERCA GLOBALE (v6.097), e li' la pagina che sta sotto puo' essere di un'altra
+//    serie: leggendo `currentSeriesId` il tasto avrebbe portato agli album della serie sbagliata,
+//    senza nessun errore e con una pagina che sembra giusta. Il ripiego su `currentSeriesId`
+//    resta per il caso in cui il record non si trovi: meglio la serie che si sta guardando che
+//    nessuna destinazione.
+// 📌 E SI RILEGGE IL RECORD DALL'ID, non si tiene l'oggetto: fra l'apertura e il clic i dati
+//    possono essere stati riletti dal server, e una copia tenuta da parte sarebbe vecchia
+//    (v6.442). E' la stessa scelta della v6.864, due funzioni piu' su.
+// 📌 PRIMA SI CHIUDE lo sfogliatore: e' a schermo pieno e coprirebbe la pagina che sta
+//    aprendo - la ragione gia' scritta per «Vai all'album».
+// 🔴 E I DUE PASSI SONO DUE, NON UNO: `openSeriesDetail` porta nella serie e `openSeriesSection`
+//    apre la sezione Album. E' la stessa coppia che usa `openTipoProdotto` (v6.073), e nello
+//    stesso ordine: la seconda ridisegna la griglia, quindi deve venire dopo.
+function vaiAgliAlbumDellaSerie() {
+  const id = _sfogliaAlbumId;
+  const alb = id ? getData('figurines', []).find(x => x.id === id) : null;
+  const serie = (alb && alb.seriesId) || currentSeriesId;
+  chiudiSfogliaAlbum();
+  if (!serie) return;
+  openSeriesDetail(serie);
+  openSeriesSection('albums');
 }
 
 function chiudiSfogliaAlbum() {
@@ -54793,6 +55159,59 @@ function _frecciaPagina(i, verso, quante, it) {
     + (verso < 0 ? '⬅️' : '➡️') + '</button>';
 }
 
+// 🆕 v6.888 - LA GRIGLIA DELLE PAGINE E LA SUA MINIATURA, IN UN POSTO SOLO.
+// Nascono perche' Franco ha chiesto le pagine ANCHE nella scheda in sola lettura: da qui in avanti
+// i posti che disegnano quelle miniature sono due, e due griglie gemelle con gli stessi numeri
+// scritti a mano divergono al primo ritocco. 📏 E i numeri sono tre, tutti decisi da Franco
+// guardando lo schermo: quattro colonne (v6.886), la miniatura che prende tutta la cella, e la
+// misura chiesta a Cloudinary - che deve restare piu' grande della cella o la foto sgrana.
+function _grigliaPagineApre() {
+  return '<div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:0.6rem;">';
+}
+
+// ⚠️ IL CLIC APRE L'ANTEPRIMA, ed e' lo stesso gesto nelle due schede. Chi disegna la griglia
+//    DEVE aver messo `_figSlotF` sul record giusto: e' li' che `apriPaginaGrande` va a prendere
+//    l'elenco delle pagine. In modifica lo fa gia' la scheda (v6.599); in lettura lo fa il blocco
+//    nuovo, e sta scritto accanto a quella riga.
+function _miniaturaPaginaHTML(p, i, it) {
+  return '<img src="' + cloudinaryUrl(p.url, 'w_520,h_520,c_fit,q_auto,f_auto') + '" alt="" '
+    + 'onclick="apriPaginaGrande(' + i + ')" title="' + (it ? 'Guarda questa pagina' : 'View this page') + '" '
+    + 'style="width:100%;aspect-ratio:1;object-fit:contain;background:var(--bg2);border-radius:4px;cursor:zoom-in;display:block;">';
+}
+
+// 🆕 v6.888 (Franco: «secondo me il Tab pagine possiamo mostrarlo anche in sola lettura, quando
+// il flag relativo e' true; infine, metterei il pulsante SFOGLIA L'ALBUM anche qui») - LE PAGINE
+// NELLA SCHEDA IN LETTURA.
+// 🔴 LA DOMANDA E' LA STESSA DELLA MODIFICA, chiesta alla stessa funzione: `_pagineVisibili`
+//    guarda la spunta «album da sfogliare» (v6.857). Riscriverla qui avrebbe dato due idee di
+//    «questo album ha delle pagine da mostrare», e sarebbero divergite al primo cambio.
+// ⚠️ MA LA CONDIZIONE «sei admin» NON C'E', ed e' il punto della richiesta: qui le pagine si
+//    GUARDANO. Niente frecce, niente cestino, niente «pulisci»: quelli sono comandi di chi
+//    modifica, e in una scheda in lettura sarebbero tasti che non si possono premere.
+// 📌 `_figSlotF` SI IMPOSTA QUI, ed e' la riga che fa funzionare il clic sulla miniatura:
+//    `apriPaginaGrande` legge le pagine da quel record. Senza, in lettura si aprirebbe
+//    l'anteprima dell'ULTIMO album aperto in modifica - una finestra che mostra le pagine di un
+//    altro album, e nessun errore da nessuna parte.
+function _bloccoPagineLettura(f) {
+  if (!f || !_haPagine(f.section) || !_pagineVisibili(f)) return '';
+  const pag = _pagineDi(f);
+  if (!pag.length) return '';
+  const it = currentLang === 'it';
+  _figSlotF = f;
+  return _grigliaPagineApre()
+    + pag.map((p, i) =>
+        '<div style="border:1px solid var(--border);border-radius:8px;padding:0.4rem;text-align:center;">'
+        + '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.2rem;">' + (i + 1) + '</div>'
+        + _miniaturaPaginaHTML(p, i, it)
+        + '</div>').join('')
+    + '</div>'
+    // 📌 E il pulsante sotto la griglia: si guardano le pagine, poi si sfoglia. La condizione
+    //    non si riscrive - la sa `_bottoneSfogliaSuArticolo`, la stessa che risponde per la card.
+    + (_bottoneSfogliaSuArticolo(f)
+        ? '<div style="display:flex;justify-content:center;margin-top:0.8rem;">' + _bottoneSfogliaSuArticolo(f) + '</div>'
+        : '');
+}
+
 function _bloccoPagineEdit(f) {
   const it = currentLang === 'it';
   if (!f || !_haPagine(f.section) || !currentUser || !currentUser.isAdmin || !_pagineVisibili(f)) {
@@ -54820,7 +55239,21 @@ function _bloccoPagineEdit(f) {
   //    fa stare tre colonne dove ne stavano due.
   // 📌 `repeat(3, 1fr)` e non `auto-fill`: il tre l'ha deciso Franco guardando lo spazio, e un
   //    `auto-fill` lo cambierebbe da solo con la larghezza della finestra - cioe' non sarebbe tre.
-  const righe = '<div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:0.6rem;">' + pag.map((p, i) =>
+  // 🔄 v6.886 (Franco: «nel tab Pagine, disponiamo le foto a righe da 4 ma sfruttando tutto lo
+  //    spazio a disposizione; mi aspetto quindi che si possa aumentare la dimensione delle foto»)
+  //    - QUATTRO PER RIGA, E LE MINIATURE NON HANNO PIU' UNA MISURA IN PIXEL.
+  // 🔴 IL QUATTRO DA SOLO AVREBBE RIMPICCIOLITO LE FOTO, non ingrandite: con la miniatura
+  //    fissa a 128px, una colonna in piu' vuol dire solo celle piu' strette attorno alla stessa
+  //    immaginetta. Le due meta' della richiesta di Franco sono legate, ed e' la seconda a fare il
+  //    lavoro: la miniatura adesso prende TUTTA la larghezza della cella (`width:100%`) e la cella
+  //    e' larga un quarto di un tab che dalla stessa release e' largo quanto la scheda.
+  // 📏 E si chiede a Cloudinary una misura piu' grande (320 -> 520): lasciando 320 la foto
+  //    sarebbe cresciuta a schermo e sgranata: e' la stessa attenzione della v6.860 (96px chiesti
+  //    in 240) e della v6.872 (128 chiesti in 320).
+  // ⚠️ `aspect-ratio:1` e non un'altezza in pixel: la cella deve restare quadrata mentre la
+  //    larghezza la decide la griglia, e un'altezza fissa accanto a una larghezza elastica e' il
+  //    modo di ottenere una miniatura schiacciata su una finestra stretta.
+  const righe = _grigliaPagineApre() + pag.map((p, i) =>
     '<div style="border:1px solid var(--border);border-radius:8px;padding:0.4rem;text-align:center;">'
     + '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.2rem;">' + (i + 1)
     + (p.url !== p.orig ? ' · ' + (it ? 'pulita' : 'cleaned') : '') + '</div>'
@@ -54831,9 +55264,7 @@ function _bloccoPagineEdit(f) {
     //    tutto lo schermo. Qui serve guardare QUESTA pagina e richiudere.
     // 🔄 v6.872 - la miniatura cresce da 96 a 128px (chiesta a Cloudinary in 320): lo spazio arriva
     //    dalle due pile di tasti che si sono strette qui accanto.
-    + '<img src="' + cloudinaryUrl(p.url, 'w_320,h_320,c_fit,q_auto,f_auto') + '" alt="" '
-    + 'onclick="apriPaginaGrande(' + i + ')" title="' + (it ? 'Guarda questa pagina' : 'View this page') + '" '
-    + 'style="width:128px;height:128px;object-fit:contain;background:var(--bg2);border-radius:4px;cursor:zoom-in;">'
+    + _miniaturaPaginaHTML(p, i, it)
     // 🔄 v6.860 - la riga dei comandi ha una CLASSE, e i tasti si stringono li' dentro: con cinque
     //    (quando c'e' anche «rimetti l'originale») andavano a capo, e quella cella diventava piu'
     //    alta delle altre due - la griglia si scalinava proprio sull'unica riga diversa.
@@ -54917,6 +55348,71 @@ async function handlePagineScelte(ev) {
 
 // 🆕 v6.806 - RIMETTI L'ORIGINALE. E' la meta' che rende utile tenere `orig`: una pulizia
 //    andata male si disfa in un clic, invece di ricaricare la scansione.
+// 🆕 v6.885 (Franco: «mi serve un tasto che permetta di cambiare la foto; ma lo vorrei nella
+// finestra di anteprima della foto, non nella griglia delle pagine album») - SI CAMBIA LA PAGINA
+// CHE SI STA GUARDANDO.
+// 📌 PASSA DA `_salvaPagine` COME TUTTO IL RESTO: scrive su Firestore e, se la scrittura
+//    fallisce, rimette l'elenco com'era e lo dice (v6.101). Una foto cambiata solo a schermo si
+//    perde chiudendo la scheda, ed e' la bugia piu' facile da non notare.
+// 🔴 E `orig` DIVENTA LA FOTO NUOVA, non resta quella di prima. `orig` e' la scansione da cui
+//    ripartire per la pulizia dello sfondo (v6.596): tenendo la vecchia, il tasto «rimetti
+//    l'originale» avrebbe rimesso una pagina che non c'entra piu' niente con quella che si sta
+//    guardando - e senza nessun errore, perche' il campo sarebbe pieno e valido.
+// ⚠️ `ev.target.value = ''` PRIMA DI TUTTO: senza, riscegliendo LO STESSO file l'evento `change`
+//    non parte piu' e il tasto sembra rotto. E' la stessa riga, e la stessa ragione, di
+//    `handlePagineScelte` e di `fotoSceltaCambia` (v6.772).
+// 📌 E SI RIAPRE L'ANTEPRIMA SULLO STESSO INDICE: la finestra resta aperta sulla pagina
+//    appena cambiata invece di chiudersi, che e' il gesto naturale di chi sta rifacendo una
+//    scansione venuta male.
+// 🆕 v6.890 (Franco: «i 2 tasti di scambio foto con quella precedente e successiva, mettili
+// anche nella finestra di dettaglio della singola pagina») - SPOSTARE LA PAGINA CHE SI GUARDA.
+// 📌 LO SCAMBIO NON SI RISCRIVE: lo fa `pagineSposta`, la stessa funzione dei tasti della
+//    griglia. Qui si aggiunge solo cio' che la griglia non ha bisogno di sapere - che dopo lo
+//    scambio bisogna restare sulla stessa PAGINA, che nel frattempo ha cambiato posto.
+// 🔴 E QUESTA E' LA RIGA CHE FA LA DIFFERENZA: `_pagGrandeQui` e' un INDICE, non una pagina.
+//    Scambiando la 3 con la 4, chi guardava la 3 si ritroverebbe davanti la pagina che prima era
+//    la 4 - la finestra resterebbe ferma sul numero e cambierebbe contenuto sotto gli occhi.
+//    Seguendo l'indice invece resta davanti alla SUA pagina, che ora si chiama 4. E' quello che
+//    fa un riordino: la cosa non cambia, cambia il suo posto.
+// ⚠️ Ai capi non si fa niente, e i tasti sono spenti: la pagina 1 non ha una precedente con cui
+//    scambiarsi. Lo spegnimento e' in `_disegnaSfoglia`... no: in `apriPaginaGrande`, insieme a
+//    quello delle frecce di navigazione, che e' l'unico punto che sa su quale pagina siamo.
+async function paginaGrandeSposta(verso) {
+  const i = _pagGrandeQui;
+  const j = i + verso;
+  const pag = _pagineDi(_figSlotF);
+  if (i < 0 || i >= pag.length || j < 0 || j >= pag.length) return;
+  await pagineSposta(i, verso);
+  // 📌 Si riapre sulla posizione NUOVA: la pagina che si stava guardando adesso sta in `j`.
+  //    `apriPaginaGrande` rilegge le pagine dal record, che `_salvaPagine` ha gia' aggiornato.
+  apriPaginaGrande(j);
+}
+
+async function paginaGrandeCambiaFoto(ev) {
+  const files = [...(ev.target.files || [])];
+  ev.target.value = '';
+  const file = files[0];
+  if (!file || !_figSlotF || !_figSlotF.id) return;
+  const pag = _pagineDi(_figSlotF);
+  const i = _pagGrandeQui;
+  if (i < 0 || i >= pag.length) return;
+  const it = currentLang === 'it';
+  toast(it ? 'Carico la foto...' : 'Uploading the photo...', 'info', null, 4000);
+  try {
+    const url = await uploadToCloudinary(file);
+    const nuove = pag.slice();
+    nuove[i] = { url: url, orig: url };
+    if (await _salvaPagine(nuove)) {
+      _ridisegnaPagine();
+      apriPaginaGrande(i);
+      toast(it ? '\u{1F4F7} Foto cambiata' : '\u{1F4F7} Photo changed', 'success');
+    }
+  } catch (e) {
+    console.error('paginaGrandeCambiaFoto', e);
+    toast(it ? 'Caricamento della foto fallito' : 'Photo upload failed', 'error');
+  }
+}
+
 async function pagineRipristina(i) {
   const pag = _pagineDi(_figSlotF);
   if (i < 0 || i >= pag.length || pag[i].url === pag[i].orig) return;
@@ -54953,7 +55449,13 @@ function apriPaginaGrande(i) {
   const img = document.getElementById('pagina-grande-img');
   const tit = document.getElementById('pagina-grande-titolo');
   if (!m || !img) return;
-  img.src = cloudinaryUrl(pag[i].url, 'w_1200,q_auto,f_auto');
+  // 🔄 v6.882 - LA FOTO SI CHIEDE DELLA MISURA DELLO SFOGLIATORE, non piu' `w_1200`.
+  //    Allargare la finestra e lasciare la richiesta com'era avrebbe dato una pagina piu' grande
+  //    e piu' SGRANATA: il browser avrebbe stirato 1200px su 1100 di cornice ad alta densita'.
+  //    📌 `w_1600,h_1600,c_fit` sono gli stessi parametri dello sfogliatore: stessa finestra,
+  //    stessa qualita', e una richiesta che Cloudinary ha gia' in cache se la pagina e' stata
+  //    sfogliata.
+  img.src = cloudinaryUrl(pag[i].url, 'w_1600,h_1600,c_fit,q_auto,f_auto');
   if (tit) tit.textContent = (currentLang === 'it' ? 'Pagina ' : 'Page ') + (i + 1) + ' / ' + pag.length;
   // ⚠️ Ai capi le frecce si SPENGONO, non spariscono: e' la scelta dello sfogliatore (v6.806) e
   //    della griglia (v6.860) - comandi che vanno e vengono fanno ballare la finestra.
@@ -54961,6 +55463,14 @@ function apriPaginaGrande(i) {
   const succ = document.getElementById('pagina-grande-succ');
   if (prec) prec.disabled = (i === 0);
   if (succ) succ.disabled = (i === pag.length - 1);
+  // 🆕 v6.890 - e i due tasti che SPOSTANO si spengono agli stessi capi, per la stessa
+  //    ragione: la prima pagina non ha una precedente con cui scambiarsi. 📌 Si spengono, non
+  //    spariscono - e' la scelta di tutta questa finestra (v6.806, v6.860): un comando che va e
+  //    viene fa ballare la riga, e qui la riga e' la barra del titolo.
+  const su = document.getElementById('pagina-grande-su');
+  const giu = document.getElementById('pagina-grande-giu');
+  if (su) su.disabled = (i === 0);
+  if (giu) giu.disabled = (i === pag.length - 1);
   m.classList.remove('hidden');
 }
 
@@ -54983,7 +55493,23 @@ async function pagineSposta(i, verso) {
   if (i < 0 || i >= pag.length || j < 0 || j >= pag.length) return;
   const nuove = pag.slice();
   const tmp = nuove[i]; nuove[i] = nuove[j]; nuove[j] = tmp;
-  if (await _salvaPagine(nuove)) _ridisegnaPagine();
+  if (await _salvaPagine(nuove)) {
+    _ridisegnaPagine();
+    // 🆕 v6.892 (Franco: «quando si sposta una pagina, mediante i 2 bottoni, mostra un messaggio
+    //    a video che dice che lo spostamento e' stato fatto. solo un messaggio»).
+    // 📌 STA QUI E NON NEI DUE BOTTONI DELLA FINESTRA, ed e' la differenza che conta: questa e'
+    //    l'unica funzione che sposta davvero una pagina, e i posti da cui la si comanda sono due -
+    //    le frecce della griglia e i tasti dell'anteprima. Mettendo il messaggio dove Franco l'ha
+    //    chiesto, lo stesso gesto avrebbe detto una cosa da una parte e niente dall'altra.
+    // 📌 E NOMINA I DUE NUMERI: «spostata» da sola non dice dov'e' finita, e chi riordina
+    //    trentacinque pagine ha bisogno di sapere se ha mosso quella che voleva (lezione della
+    //    v6.204, che vale per le conferme e vale identica per le notifiche).
+    // ⚠️ E arriva DOPO il salvataggio riuscito: prima avrebbe annunciato uno spostamento che la
+    //    scrittura poteva ancora rifiutare, e sopra il messaggio di errore di `_salvaPagine`.
+    const it = currentLang === 'it';
+    toast(it ? ('\u2194\uFE0F Pagina ' + (i + 1) + ' spostata in posizione ' + (j + 1))
+             : ('\u2194\uFE0F Page ' + (i + 1) + ' moved to position ' + (j + 1)), 'success');
+  }
 }
 
 // 🆕 v6.873 - ELIMINA TUTTE. 🔴 Si chiede conferma e la domanda NOMINA il numero: «togli 35 pagine»
