@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.876">
+<link rel="stylesheet" href="css/style.css?v=6.877">
 
 
 <style>
@@ -977,7 +977,21 @@ button.back-btn { color:#ffffff; }
   <div style="display:flex;align-items:center;gap:0;flex:1;min-width:0;">
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
-      <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
+      <!-- 🆕 v6.877 (Franco: «metti la data di online del sito sotto alla versione») — DUE
+           RIGHE, NON PIU' UNA. Sopra il numero di versione (e, per l'admin, il dettaglio JS/CSS:
+           e' la stessa informazione, quindi resta sulla stessa riga); sotto, la data.
+           🔴 L'INTERLINEA E' UN VINCOLO, NON UNA RIFINITURA, e il conto sta scritto qui perche'
+           non lo si rifaccia a mente: la barra e' alta 64px FISSI, il logo del desktop ne occupa
+           36, e per il testo ne restano ~27. Due righe da 0,7rem (11,2px) a interlinea normale
+           (~1,4) ne vorrebbero 31 — cioe' la barra sfonderebbe. A 1.05 ne occupano 11,76
+           ciascuna: 36 + 1 + 23,5 = ~60,5px, e ci stanno con ~3,5px di margine.
+           ✅ `prova-v6877` rifa' questo conto leggendo i valori dal file: se un domani qualcuno
+           ingrandisce il corpo o allarga l'interlinea, diventa rossa PRIMA che si veda a schermo.
+           📌 LA STRUTTURA RESTA «UN DIV SUBITO DOPO IL LOGO»: le regole del telefono (v5.865,
+           v5.878) ci si agganciano PER POSIZIONE (`.nav-logo + div`), e cambiarla le avrebbe
+           staccate in silenzio — senza errori, e visibile solo aprendo il sito da un telefono.
+           ⬜ Su telefono la data resta spenta com'era: Franco ha chiesto il desktop. -->
+      <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0;margin-top:1px;line-height:1.05;">
         <!-- v6.314 - il numero NON sta piu' qui: lo scrive app.js da JS_VERSION, come la barra del
              telefono dalla v5.954. Era fermo alla v6.265 da 48 release, e non lo diceva nessuno:
              il controllo cache in fondo alla pagina guarda altri due punti, non questo. Su
@@ -986,8 +1000,10 @@ button.back-btn { color:#ffffff; }
              pezzi cercando delle stringhe letterali nell'index (fra cui quella che dichiara la
              versione attesa, in fondo). Nominarle qui sposta il taglio e la preview esce
              DOPPIA - successo scrivendo questa release, e lo script se n'e' accorto. -->
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);"></span>
-        <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);"></span>
+          <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
+        </div>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
     </div>
@@ -4550,7 +4566,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.876"></script>
+<script src="js/app.js?v=6.877"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4574,7 +4590,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.876'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.877'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
