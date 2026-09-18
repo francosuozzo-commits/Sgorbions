@@ -1,6 +1,68 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.909 - LA VISTA TABELLARE DELLE FIGURINE PER ALBUM: VIA UNA COLONNA VUOTA, TORNA UNA CHE
+//          MANCAVA (Franco: «togliere la colonna "Figurina per album di partenza"; aggiungere la
+//          colonna "Famiglia", dopo la colonna "Nome"»). 🔴 Sono la stessa domanda vista dai due
+//          lati - «questa colonna ha qualcosa da dire, qui?» - e tutte e due avevano gia' una
+//          risposta scritta nel file. «Di partenza» collega una VERSIONE al suo articolo
+//          d'origine, e la v6.370 aveva gia' tolto Versione e Tipologia dalle da-attaccare con la
+//          ragione scritta: una da-incollare non e' una versione di niente. Quella colonna, larga
+//          420px, non poteva che restare vuota su ogni riga: e' la terza della stessa famiglia.
+//          📏 E la colonna Famiglia c'ERA (v6.844) e non si vedeva: la condizione chiedeva solo
+//          alla SERIE («dichiari delle famiglie?»), e nelle pagine di TDA che vivono sulla serie
+//          contenitore quella lista e' vuota per costruzione. Adesso chiede anche agli ARTICOLI -
+//          la forma che questa stessa funzione usa gia' per Taglia (v6.362), Anno (v6.753) e
+//          Categoria (v6.152). La spunta della serie resta: risponde a «qui si POSSONO mettere
+//          famiglie» e apre la colonna anche quando nessuno l'ha ancora compilata.
+//          ⚠️ Intestazione e cella nascono adesso da una bandierina sola con un nome
+//          (`_cPartenza`): erano la stessa condizione scritta due volte, e toglierne una sola non
+//          da' errore - sposta di un posto tutte le colonne dopo. Modificato il solo js/app.js.
+// v6.908 - I CHANGE DELLA TESTATA DIVISI IN DUE: FRONTALI E DI RETRO (Franco, foto alla mano:
+//          «farei quindi 2 elenchi, uno affianco all'altro, mettendo sopra di essi i titoletti:
+//          CHANGE FRONTALI e "CHANGE DI RETRO"»). 🔴 IL MODO SBAGLIATO ERA IL PRIMO CHE VENIVA IN
+//          MENTE: i tipi di retro si chiamano tutti «RETRO qualcosa», quindi un confronto sul NOME
+//          avrebbe dato le stesse due liste - giuste oggi e false al primo tipo battezzato
+//          diversamente. Il lato lo dice `_changeDiRetro` (v6.792) guardando cosa c'e' dall'altro
+//          capo del collegamento, piu' il flag «Retro bianco».
+//          📌 La divisione la dichiara la VERSIONE (`partiDi`), come `corpoHTML` per gli errori di
+//          stampa (v6.534): gli altri quattro riquadri non cambiano di una virgola. E la domanda si
+//          fa dove gli articoli ci sono ancora - nel pannello arrivano i soli conteggi.
+//          ⚠️ Una divisione che non divide torna `null` e si torna all'elenco unico: nella sezione
+//          Retro il lato non esiste (quell'articolo E' la faccia), e finirebbero tutti sotto
+//          «CHANGE FRONTALI» - un titolo falso su ogni riga. E' la lezione della v6.574.
+//          📏 La somma delle due parti fa il totale che il titolo del riquadro dice gia'.
+//          Modificato il solo js/app.js.
+// v6.907 - LE NUMERICHE DELLA PAGINA DELLA SERIE: IL NOME UNA VOLTA SOLA, E UN TITOLO SOPRA
+//          (Franco: «il primo numero e' sempre "N TDA set base"; mettiamo solo N set base», «tutti
+//          e 5 i contatori sulla stessa riga», «la sezione non ha un titolo: NUMERICHE ARTICOLI
+//          DELLA SERIE»). 🔴 La riga del set base ha gia' detto due cose opposte, tutte e due
+//          chieste da Franco: «160 set base» (v6.067) e «160 figurine set base» (v6.622). Ma e' la
+//          v6.622 STESSA ad aver introdotto la griglia a due colonne dell'hub, col nome della
+//          tipologia nella PRIMA: da quel momento la riga dice «Figurine con retro | 160 Figurine
+//          con retro set base». La ragione scritta allora e' stata resa falsa dalla release che
+//          l'ha scritta - due meta' che non si sono viste.
+//          📌 Il ramo SENZA versioni non si tocca: li' «set base» non si scrive affatto (v6.698) e
+//          il nome e' l'unica etichetta che quel numero ha. Toglierlo lascerebbe «100» da solo.
+//          📌 Il titolo e' viola e non lime perche' i due titoletti interni sono lime: «tutti i
+//          conteggi sono lime, il viola e' solo per i titoli grandi» (Franco). E si scrive solo se
+//          sotto c'e' qualcosa, se no e' l'etichetta orfana della v6.672.
+//          📏 Sulla riga dei cinque contatori il guadagno vero e' il nome tolto (~155px misurati
+//          sulla foto): il `gap` sceso da 1.4 a 0.9rem aiuta, ma da solo non sarebbe bastato. E
+//          resta `flex-wrap`: «ci stanno» e' vero per la serie che si guarda, non per tutte.
+//          Modificato index.html e js/app.js.
+// v6.906 - IL PULSANTE «SFOGLIA L'ALBUM» STA DOVE DEVE STARE, E SOLO LI' (Franco, baco: «si vede
+//          nella sezione alta di TUTTE le pagine di TDA; doveva esserci solo in quella degli
+//          album», e poi: «mettiamolo anche dentro la form di sola lettura dell'album, in basso a
+//          sx»). 📏 LA CAUSA: il pulsante vive nella TESTATA della serie, e la testata resta a
+//          schermo anche dentro una sezione (v6.859). Non e' nato oggi - ed e' la v6.869 ad averlo
+//          perfino SPOSTATO di lato dentro una sezione, cioe' curato dove non doveva esserci.
+//          🔴 Le domande diventano DUE e restano due: «questa serie ha un album da sfogliare?» e
+//          «sono in un posto dove offrirlo ha senso?». Sull'hub e negli Album si', altrove no.
+//          🔄 E in fondo alla scheda in lettura il pulsante si SPOSTA, non si aggiunge: stava sotto
+//          la griglia del tab Pagine (v6.888), e lasciandolo li' se ne vedrebbero DUE insieme
+//          appena aperto quel tab - il doppione della v6.863. Da fuori si vede da tutti i tab.
+//          ⬜ Sulla card della griglia c'era gia' dalla v6.881. Modificato il solo js/app.js.
 // v6.905 - IL NOME DELLA TIPOLOGIA UNA VOLTA SOLA, E IL SOTTOTITOLO SEMPRE LIME (Franco).
 //          🔴 Il titolo di sezione taceva gia' in tre casi (v6.688, v6.695, v6.729): ogni volta
 //          che la testata cominciava a dire quella parola, questa riga aggiungeva la SUA
