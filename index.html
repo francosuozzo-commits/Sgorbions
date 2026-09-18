@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.898">
+<link rel="stylesheet" href="css/style.css?v=6.900">
 
 
 <style>
@@ -401,6 +401,9 @@
    attaccata agli ultimi numeroni verdi"). Sul desktop il valore e' quello di sempre. */
 #hero-desc-main { margin-top:-1.4rem; }
 #hero-tagline   { margin-top:-2.2rem; }
+/* ⬜ v6.900 - la riga che introduce i numeroni esiste solo sul telefono: sul desktop i numeri
+   stanno ai LATI del logo, e una frase che li annuncia non avrebbe niente sotto di se'. */
+#hero-intro-numeri { display:none; }
 /* 🆕 v6.897 (Franco: «nella versione mobile, nella home page, la frase che dice "questo e' il
    database non ufficiale degli Sgorbions" mettila in alto, sopra agli score verdi»).
    📌 SI SPOSTA CON `order`, NON CON IL MARKUP: `#hero` e' gia' una colonna flex, quindi basta
@@ -430,6 +433,7 @@
 @media (max-width:860px) {
   #hero-desc-main { order:-1; margin:0 0 0.2rem; }
   #hero-tagline   { order:-1; margin:0 0 0.9rem; }
+  #hero-intro-numeri { display:block; }
 }
 
 /* v5.948 — TELEFONO: come sul desktop, numeri a SINISTRA e a DESTRA del logo. Per farceli stare
@@ -442,9 +446,21 @@
 @media (max-width:860px) {
   /* v6.019 — su telefono la disposizione è la STESSA del desktop (scelta di Franco): quattro
      lati, non due colonne. Cambiano solo le misure. Le tre righe restano dichiarate a lettere. */
-  .hero-top { grid-template-columns:auto minmax(0,1fr) auto;
-              grid-template-areas:"sx logo dx";
-              gap:0.5rem 0.4rem; align-items:center; margin-bottom:1rem; }
+  /* 🔄 v6.900 (Franco: «la immagine Hero mettila prima dei 12 score verdi») - SU TELEFONO IL
+     LOGO VA SOPRA, E I NUMERONI SOTTO.
+     🔴 Fino a qui la disposizione del telefono era quella del desktop - "sx logo dx", scelta
+     della v6.019 - e i sei numeri di sinistra si leggevano PRIMA del logo. Franco l'ha guardata e
+     ha chiesto il contrario: prima l'immagine, poi una riga che introduce, poi i dodici numeri.
+     📌 LE AREE SI RIDICHIARANO, non si tolgono: la griglia le nomina a lettere e i suoi figli le
+     cercano per nome. Passando a una colonna sola senza ridichiararle, ognuno sarebbe caduto dove
+     capita - e senza nessun errore. E' la trappola che la v6.591 ha gia' pagato con l'h1 del logo.
+     ⚠️ E le due sponde restano DUE, una sotto l'altra: fonderle in un elenco solo avrebbe voluto
+     dire riscrivere `_contatoriHome`, che le riempie separate dalla v6.815 perche' ognuna ha il
+     suo ordine, deciso da Franco guardando lo schermo. Qui cambia dove stanno, non cosa sono. */
+  .hero-top { grid-template-columns:minmax(0,1fr);
+              grid-template-areas:"logo" "intro" "sx" "dx";
+              gap:0.2rem; align-items:center; margin-bottom:1rem; }
+  #hero-intro-numeri { grid-area:intro; margin:0.6rem 0 0.2rem; }
   /* 🆕 v6.591 — la POSIZIONE nella griglia passa all'h1 (e' lui il figlio della
      griglia), le MISURE restano sull'immagine. Il !important sulle misure serve
      ancora, per la stessa ragione della v5.948: il CSS del sito impone
@@ -1241,6 +1257,16 @@ button.back-btn { color:#ffffff; }
        il difetto che la v6.812 ha tolto dal profilo, e qui era l'ultimo posto dove viveva.
        📌 Le due sponde restano, vuote: `hero-stats` (sei a sinistra, Serie compresa) e
        `hero-stats-right` (cinque a destra). Gli id `stat-<tipologia>` nascono da `ARTICOLI`. -->
+  <!-- 🆕 v6.900 (Franco: «e prima degli score verdi scrivi questa frase "In questo sito
+       troverai..."») - LA RIGA DI INTRODUZIONE AI NUMERONI.
+       ⚠️ VIVE DENTRO LA GRIGLIA DELL'HERO, e prende un'area sua: la griglia ha tre aree
+       dichiarate a lettere ("sx logo dx"), e un figlio senza area cadrebbe nella prima cella
+       libera - cioe' addosso ai numeri - senza dare nessun errore. E' la trappola che la v6.591
+       ha gia' pagato con l'h1 del logo.
+       ⬜ E SUL DESKTOP NON SI VEDE: Franco l'ha chiesta per la versione mobile, e sul desktop i
+       numeroni stanno ai LATI del logo - una riga che li introduce non avrebbe niente sotto di
+       se'. La accende la media query, come tutto il resto di questa release. -->
+  <p class="hero-desc" id="hero-intro-numeri" data-i18n="hero.introNumeri">In questo sito troverai...</p>
   <div class="hero-stats-side hero-stats-left" id="hero-stats" style="display:none;"></div>
   <!-- v6.019 — via il margin-bottom:1rem del logo. Con i numeroni ai soli fianchi non dava
        fastidio; ora che la riga di mezzo è centrata verticalmente, quel margine fa parte della
@@ -4779,7 +4805,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.898"></script>
+<script src="js/app.js?v=6.900"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4803,7 +4829,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.898'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.900'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
