@@ -1573,6 +1573,42 @@ footer {
   }
   .nav-links a:last-child { border-bottom: none; }
 
+  /* 🆕 v6.876 (Franco) — L'ORDINE DELLE VOCI NEL PANINO, dettato da lui una per una:
+     Home, Inventario, Ricerca, Blog, Mia lista, Ciò che cerco, Liste, Classifica, Esci.
+     Newsletter e Contatti non erano nella sua lista; chiesto dove metterle, ha risposto
+     «Contatti, prima di esci», e Newsletter le sta davanti.
+
+     🔴 SI RIORDINA CON `order`, NON SPOSTANDO IL MARKUP, E LA RAGIONE È MISURATA: `.nav-links`
+     è UN elenco solo. Sopra gli 860px è la navbar del desktop, sotto diventa questo pannello.
+     Spostare i tag avrebbe riordinato ANCHE il desktop — cioè disfatto in silenzio la fila che
+     la v6.853 ha messo a posto misurandola (la casella di ricerca dopo «Contatti», da admin, con
+     tutte e nove le voci accese). Franco ha chiesto il menù del TELEFONO: queste righe stanno
+     dentro la media query, quindi è l'unico posto che cambiano.
+
+     ⚠️ E L'ORDINE VA DATO A TUTTE, NON SOLO A QUELLE CHE SI SPOSTANO: il valore di partenza è
+     `order:0`, quindi una voce lasciata senza numero non resta dov'è — salta in cima a tutte
+     quelle numerate. È il difetto che non dà errore e che si vede solo aprendo il menu.
+
+     📌 Le due voci nascoste qui sotto (`#nav-search`, la casella del desktop, e
+     `#nav-search-mini`) non hanno un numero e non serve: `display:none` le toglie dal flusso
+     flex, quindi non occupano nessuna posizione.
+
+     ⚠️ `.nav-links a:last-child` (la riga sopra) guarda il MARKUP, non l'ordine visivo. Regge
+     perché l'ultimo tag è `#nav-logout-link`, che è anche l'ultima voce di Franco. Se un domani
+     l'ultima voce diventasse un'altra, quel bordo resterebbe sulla riga sbagliata — e
+     `prova-v6876` §3 tiene scritto che le due cose devono coincidere. */
+  .nav-links a[data-page="home"] { order: 1; }
+  .nav-links #nav-catalog        { order: 2; }
+  .nav-links #nav-search-link    { order: 3; }
+  .nav-links #nav-blog           { order: 4; }
+  .nav-links #nav-mialista-link  { order: 5; }
+  .nav-links #nav-wishlist       { order: 6; }
+  .nav-links #nav-wantlist       { order: 7; }
+  .nav-links #nav-classifica     { order: 8; }
+  .nav-links #nav-newsletter-btn { order: 9; }
+  .nav-links a[data-page="contact"] { order: 10; }
+  .nav-links #nav-logout-link    { order: 11; }
+
   #navbar .nav-logo img { height: 30px; }
 }
 
