@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.898 - SU TELEFONO SALGONO TUTTE E DUE LE FRASI, NON UNA (Franco: «dovevi spostare anche la
+//          seconda»). 🔴 La v6.897 aveva preso la richiesta alla lettera: Franco ne aveva nominata
+//          una sola, ma le due righe sotto il logo sono un blocco dalla v6.068 - il margine
+//          negativo della seconda esiste apposta per tenerle insieme - e separarle si e' visto
+//          subito. «Eccetera eccetera» voleva dire il blocco.
+//          📌 Stesso `order` per tutte e due: a parita' vince l'ordine del markup, che le tiene
+//          gia' nel verso giusto. Modificato il solo index.html.
 // v6.897 - SU TELEFONO LA FRASE DELLA HOME SALE SOPRA I NUMERONI VERDI (Franco). 📌 Si sposta con
 //          `order` dentro la media query, non spostando il markup: `#hero` e' gia' una colonna
 //          flex, e muovere il <p> l'avrebbe alzata anche sul DESKTOP, dove Franco non ha chiesto
@@ -28900,7 +28907,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.897';
+const JS_VERSION = 'v6.898';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
