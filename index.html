@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.900">
+<link rel="stylesheet" href="css/style.css?v=6.901">
 
 
 <style>
@@ -218,8 +218,19 @@
 
    Le colonne laterali restano più basse del logo (due voci contro ~440px), perciò la riga di
    mezzo la detta il logo e i fianchi non allungano la pagina. */
-.hero-top { position:relative; display:grid; grid-template-columns:1fr auto 1fr;
-            grid-template-areas:"sx logo dx";
+/* 🔄 v6.901 (Franco: «la modifica di posizione della immagine Hero vale anche per il desktop»)
+   - IL LOGO VA SOPRA ANCHE QUI. Era "sx logo dx" dalla v6.019, cioe' i numeri ai due lati; adesso
+   il logo sta in cima, sotto la frase che introduce, e sotto ancora i dodici numeri.
+   🔴 MA LE DUE SPONDE RESTANO AFFIANCATE, e questa e' una scelta che va dichiarata perche' non
+   e' la copia della versione telefono. Sul telefono stanno una sotto l'altra perche' non c'e'
+   larghezza; qui ce ne sono 1280px, e impilarle avrebbe fatto un hero altissimo con meta' schermo
+   vuota ai lati - cioe' esattamente «lo spazio sfruttato male» che Franco ha gia' segnalato due
+   volte oggi. La richiesta era sulla POSIZIONE dell'immagine, non sulla forma dei numeri.
+   ⬜ E se le volesse incolonnate anche qui, e' una riga: `"logo" "intro" "sx" "dx"`.
+   📌 Le aree si ridichiarano tutte e quattro: la griglia le nomina a lettere e i figli le
+   cercano per nome - una lasciata fuori cadrebbe dove capita, senza nessun errore (v6.591). */
+.hero-top { position:relative; display:grid; grid-template-columns:1fr 1fr;
+            grid-template-areas:"logo logo" "intro intro" "sx dx";
             align-items:center; justify-items:center;
             gap:0.9rem 1.5rem; width:100%; max-width:1280px; margin:0 auto 1.75rem; }
 /* 🆕 v6.591 — L'<h1> che avvolge il logo non deve portarsi dietro lo stile del browser.
@@ -401,9 +412,17 @@
    attaccata agli ultimi numeroni verdi"). Sul desktop il valore e' quello di sempre. */
 #hero-desc-main { margin-top:-1.4rem; }
 #hero-tagline   { margin-top:-2.2rem; }
-/* ⬜ v6.900 - la riga che introduce i numeroni esiste solo sul telefono: sul desktop i numeri
-   stanno ai LATI del logo, e una frase che li annuncia non avrebbe niente sotto di se'. */
-#hero-intro-numeri { display:none; }
+/* 🔄 v6.901 (Franco: «la frase "in questo sito troverai" mettila anche nella versione
+   desktop») - LA RIGA SI VEDE OVUNQUE.
+   🔴 LA v6.900 L'AVEVA SPENTA SUL DESKTOP, E LA RAGIONE SCRITTA ERA GIUSTA PER UN'ORA: «li' i
+   numeri stanno ai LATI del logo, e una frase che li annuncia non avrebbe niente sotto di se'».
+   Vero finche' la griglia era "sx logo dx"; da questa release i numeri stanno SOTTO anche sul
+   desktop, quindi la frase ha di nuovo qualcosa da annunciare. ⚠️ La riga non e' stata tradita,
+   e' decaduta insieme al motivo che l'aveva prodotta - e si toglie invece di lasciarla li' a
+   dire il falso.
+   📌 Adesso l'area basta a posizionarla, e non serve piu' nessuna accensione per schermata:
+   una regola in meno da tenere in due posti. */
+#hero-intro-numeri { grid-area:intro; }
 /* 🆕 v6.897 (Franco: «nella versione mobile, nella home page, la frase che dice "questo e' il
    database non ufficiale degli Sgorbions" mettila in alto, sopra agli score verdi»).
    📌 SI SPOSTA CON `order`, NON CON IL MARKUP: `#hero` e' gia' una colonna flex, quindi basta
@@ -433,7 +452,6 @@
 @media (max-width:860px) {
   #hero-desc-main { order:-1; margin:0 0 0.2rem; }
   #hero-tagline   { order:-1; margin:0 0 0.9rem; }
-  #hero-intro-numeri { display:block; }
 }
 
 /* v5.948 — TELEFONO: come sul desktop, numeri a SINISTRA e a DESTRA del logo. Per farceli stare
@@ -457,10 +475,13 @@
      ⚠️ E le due sponde restano DUE, una sotto l'altra: fonderle in un elenco solo avrebbe voluto
      dire riscrivere `_contatoriHome`, che le riempie separate dalla v6.815 perche' ognuna ha il
      suo ordine, deciso da Franco guardando lo schermo. Qui cambia dove stanno, non cosa sono. */
-  .hero-top { grid-template-columns:minmax(0,1fr);
-              grid-template-areas:"logo" "intro" "sx" "dx";
-              gap:0.2rem; align-items:center; margin-bottom:1rem; }
-  #hero-intro-numeri { grid-area:intro; margin:0.6rem 0 0.2rem; }
+  /* ⬜ v6.901 - QUESTO BLOCCO NON COMANDA PIU' LA DISPOSIZIONE, e la riga resta com'era prima
+     della v6.900: piu' sotto, dentro la stessa soglia, il blocco della v6.833 riscrive colonne e
+     aree e vince. Cambiare qui e non la' e' esattamente l'errore che la v6.900 ha fatto. */
+  .hero-top { grid-template-columns:auto minmax(0,1fr) auto;
+              grid-template-areas:"sx logo dx";
+              gap:0.5rem 0.4rem; align-items:center; margin-bottom:1rem; }
+  #hero-intro-numeri { margin:0.6rem 0 0.2rem; }   /* 🔄 v6.901 - l'area la dichiara la regola di base */
   /* 🆕 v6.591 — la POSIZIONE nella griglia passa all'h1 (e' lui il figlio della
      griglia), le MISURE restano sull'immagine. Il !important sulle misure serve
      ancora, per la stessa ragione della v5.948: il CSS del sito impone
@@ -485,8 +506,17 @@
    ⚠️ Sta DOPO il blocco della v5.948 e dentro la stessa soglia: a parità di specificità vince
    l'ultima regola scritta, ed è questa. */
 @media (max-width:860px) {
+  /* 🔴 v6.901 - E L'ORDINE NUOVO VA SCRITTO QUI, NON PIU' SU. La v6.900 aveva messo
+     "logo" "intro" "sx" "dx" nel blocco della v5.948, piu' in alto: questo blocco - nato con la
+     v6.833, dentro la STESSA soglia e dopo - lo scavalcava, e a parita' di specificita' vince
+     l'ultima regola scritta. 📏 Quindi sul telefono la v6.900 non ha spostato niente: si vedeva
+     ancora "sx" "logo" "dx", cioe' il logo in mezzo ai numeri.
+     ⚠️ E `prova-v6900` era VERDE perche' guardava il PRIMO blocco, non quello che vince - lo
+     stesso difetto della v6.886, ripetuto dopo averlo scritto nel documento la mattina stessa.
+     `prova-v6833` invece cercava «l'ULTIMO blocco a 860px che parla di .hero-top», e infatti e'
+     stata lei ad accorgersene. */
   .hero-top { grid-template-columns:minmax(0,1fr);
-              grid-template-areas:"sx" "logo" "dx";
+              grid-template-areas:"logo" "intro" "sx" "dx";
               gap:0.9rem 0; }
   #hero .hero-top .hero-logo-img { max-width:300px !important; }
   .hero-stats-left, .hero-stats-right {
@@ -4805,7 +4835,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.900"></script>
+<script src="js/app.js?v=6.901"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4829,7 +4859,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.900'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.901'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
