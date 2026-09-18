@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.877 - LA DATA "ONLINE DAL" VA SOTTO LA VERSIONE, nella navbar del desktop (Franco). Erano
+//          affiancate su una riga sola sotto il logo; adesso sono due righe, e il dettaglio JS/CSS
+//          dell'admin resta accanto al numero perche' e' la stessa informazione.
+//          🔴 L'INTERLINEA E' UN VINCOLO: la barra e' alta 64px fissi e il logo ne occupa 36. Due
+//          righe da 0,7rem a interlinea normale ne vorrebbero 31 dei 27 che restano, cioe'
+//          sfonderebbero; a 1.05 ne occupano 23,5. `prova-v6877` rifa' il conto leggendo i valori
+//          dal file, cosi' diventa rossa PRIMA che si veda a schermo.
+//          📌 Il div resta subito dopo il logo: le regole del telefono (v5.865, v5.878) ci si
+//          agganciano per posizione. Su telefono la data resta spenta com'era. Modificato index.html.
 // v6.876 - L'ORDINE DELLE VOCI NEL MENU DEL TELEFONO, dettato da Franco una per una (Home, Inventario,
 //          Ricerca, Blog, Mia lista, Cio' che cerco, Liste, Classifica, Esci; Contatti prima dell'ultima,
 //          Newsletter davanti a Contatti). 🔴 Riordinato con `order` DENTRO la media query dei 860px e non
@@ -28694,7 +28703,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.876';
+const JS_VERSION = 'v6.877';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
