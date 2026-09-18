@@ -275,6 +275,110 @@ body {
 #rc-btn:hover { opacity: 1; }
 #rc-btn:disabled { cursor: default; opacity: 0.55; }
 
+/* 🆕 v6.879 — IL VESTITO DEI COMANDI DELLO SFOGLIATORE, IN UN POSTO SOLO.
+   Nasce perche' Franco ne ha chiesto un secondo («manca il tasto per tornare indietro») accanto a
+   «Vai all'album», che dalla v6.864 portava il suo stile scritto a mano dentro l'index. Due
+   pillole gemelle con lo stile copiato divergono al primo ritocco — e qui si vedono una sopra
+   l'altra, quindi la differenza si noterebbe subito.
+   ⚠️ I colori sono bianco trasparente e non le variabili del tema: quella finestra ha lo sfondo
+   nero pieno (rgba(0,0,0,0.92)), e `--border` / `--muted` ci si leggerebbero appena. E' la stessa
+   ragione per cui il modale non porta `modal-overlay` (v6.806).
+   📌 E STA QUI, NEL FOGLIO, non accanto alle regole del modale che vivono in linea nell'index:
+   quelle ci stanno per una ragione scaduta (v6.809 diceva «il deploy porta su SOLO index.html e
+   js/app.js», vero fino alla v6.430 e falso dalla v6.431). Il posto giusto per una regola nuova e'
+   il foglio, §5. */
+.sfoglia-cmd {
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+  color: var(--text); border-radius: 8px; padding: 0.35rem 0.8rem;
+  font-family: var(--font-ui); font-size: 0.8rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  transition: background 0.2s;
+}
+.sfoglia-cmd:hover { background: rgba(255,255,255,0.2); }
+
+/* 🆕 v6.880 — L'ETICHETTA LUNGA VA A CAPO INVECE DI ALLARGARE LA COLONNA.
+   📏 Misurato: «Vai a tutti gli album di questa serie» sono 37 caratteri, che a 0,8rem su una
+   riga sola fanno ~250px — il doppio abbondante delle altre due pillole. La colonna dei comandi
+   sta a SINISTRA della pagina che si sfoglia, e la cornice della pagina è `min(70vw, 1100px)`
+   (v6.868): su un telefono da 390px quei 250px in piu' spingerebbero la pagina fuori dallo
+   schermo. Con il ritorno a capo la colonna resta larga quanto era.
+   ⚠️ `align-items:flex-start` sul testo: la pillola cresce in altezza, e con il centraggio
+   ereditato la freccia o l'icona resterebbero a mezz'aria in mezzo a due righe. */
+.sfoglia-cmd.lunga {
+  white-space: normal; max-width: 9.5rem; text-align: left;
+  align-items: flex-start; line-height: 1.25;
+}
+
+/* 🆕 v6.886 — LA SCHEDA A UNA COLONNA SOLA (Franco, sulla scheda dell'album).
+   La colonna delle foto sparisce e i tre tab prendono tutta la larghezza. 📌 E' una classe e non
+   uno stile in linea scritto da JavaScript: la forma della scheda è una regola, e `prova-v6637`
+   pretende da tempo che il verso dei comandi delle foto si decida nel foglio — vale anche per la
+   sua griglia. */
+#fig-detail-griglia.scheda-una-colonna { grid-template-columns: 1fr; }
+
+/* 🔴 v6.887 — E QUESTA RIGA ESISTE PERCHÉ QUELLA QUI SOPRA, DA SOLA, NON FACEVA NIENTE.
+   Franco, guardando la v6.886: «non hai aumentato la dimensione delle foto delle pagine». Aveva
+   ragione, e la causa non era la miniatura: era che la scheda non si era mai allargata.
+   📏 MISURATO NEL FOGLIO, non dedotto: dentro `@media (min-width: 861px)` c'è
+   `#fig-detail-modal .modal > div:nth-child(2) { grid-template-columns: 1fr 740px !important; }`
+   (v6.550, per far crescere le foto nella scheda in lettura). Un `!important` batte qualunque
+   regola che non ce l'abbia, **a prescindere dalla specificità**: la classe della v6.886 perdeva
+   su ogni schermo sopra gli 860px, cioè su tutti quelli dove il problema esiste.
+   ⚠️ E NON BASTAVA AGGIUNGERE `!important`: a parità di `!important` decide la specificità, e
+   quella regola vale (1 id, 1 classe, 1 elemento) contro (1 id, 1 classe) della mia. Serve un id
+   in più — da qui `#fig-detail-modal` davanti.
+   🔴 LA LEZIONE, ed è più grande del caso: `prova-v6886` era VERDE. Pretendeva che la regola
+   ESISTESSE nel foglio, e c'era. Una regola giusta che perde da un'altra passa qualunque
+   controllo sulla sua esistenza — è la stessa famiglia di `_bottoneSfogliaSuArticolo`, la
+   funzione che esisteva e non chiamava nessuno (v6.881), e delle 398 suite verdi col baco dentro
+   della v6.856. Il §1 di `prova-v6887` misura chi VINCE, non chi c'è. */
+@media (min-width: 861px) {
+  #fig-detail-modal #fig-detail-griglia.scheda-una-colonna { grid-template-columns: 1fr !important; }
+}
+
+/* 🆕 v6.886 — LE DUE FACCE, PORTATE NEL TAB «GENERALE».
+   🔴 I COMANDI TORNANO IN RIGA, e la ragione è che quella per cui si erano impilati è scaduta:
+   la v6.866 li aveva messi in colonna perché in metà di una colonna da 320px non ci stavano
+   affiancati. Qui la riga è larga quanto la scheda, e tenerli in colonna vorrebbe dire una pila
+   di tastini accanto a una foto grande — lo stesso spazio sprecato che questa release toglie, in
+   piccolo. ⚠️ La regola vive QUI e non in uno stile in linea: è la pretesa di `prova-v6637`.
+   📌 `slot-stretto` resta: quella classe dice «le due facce si dividono la riga», ed è ancora
+   vero. Toglierla per disimpilare i comandi avrebbe buttato via anche la spartizione. */
+/* 🔄 v6.887 — UN TETTO ALLE DUE FACCE. Con la scheda a una colonna la riga è larga oltre
+   1200px: `flex:1` su ciascuna faccia le avrebbe portate a ~600px l'una, cioè due copertine
+   giganti e il tab Generale che ricomincia sotto lo schermo — lo stesso difetto che la v6.866
+   era venuta a togliere, rovesciato. 📌 Franco ha chiesto di SPOSTARLE, non di ingrandirle: a
+   660px la coppia resta larga quanto la colonna da cui viene, e tutto lo spazio guadagnato va
+   dove serviva, cioè alle pagine. */
+/* 🔄 v6.891 (Franco: «e poi sono enormi; falle piu' piccole del 30%») — 660 → 462px, che è
+   esattamente il 70% di prima: il numero non è stato scelto a occhio, è il suo.
+   📌 E lo spazio sopra è dichiarato qui, non con una riga vuota nel markup: Franco l'ha chiesto
+   («lascia chiaramente uno spazio») perché separa due cose diverse — i campi finiscono, le foto
+   cominciano. Un margine è una regola; un <br> è un ritocco che il primo che tocca la scheda
+   toglie senza sapere cosa stava tenendo separato. */
+.fe-foto-larghe { max-width: 462px; margin: 2rem 0 1rem; }
+
+/* 🆕 v6.889 (Franco: «hai sfruttato male lo spazio del primo tab Generale; l'etichetta dei campi
+   è tutta a sx, mentre il valore è tutto a dx; metti tutti i campi a sx nel complesso; non importa
+   se la parte destra del tab rimane vuota») — I CAMPI STANNO IN UNA COLONNA, NON SU UNA RIGA LUNGA.
+   🔴 LA CAUSA È UNA REGOLA GIUSTA CHE HA CAMBIATO CONTESTO: `.detail-row` è
+   `justify-content: space-between` da sempre, ed è la cosa giusta in una colonna da 600px —
+   etichetta a sinistra, valore a destra, e l'occhio li lega. La v6.886 ha portato quel tab a
+   ~1200px, e la stessa regola ha messo etichetta e valore ai due capi di uno schermo: due colonne
+   di testo che non si guardano. ⚠️ Nessuno ha sbagliato — è la riga che si è allargata sotto una
+   regola scritta per una riga stretta.
+   ✅ LA CORREZIONE È UN TETTO, NON UN ALLINEAMENTO NUOVO: la riga torna larga quanto era, e dentro
+   quel tetto etichetta e valore stanno esattamente come stanno su ogni altra scheda del sito. Se
+   avessi cambiato `justify-content` avrei ottenuto una TERZA disposizione, diversa da quella che
+   Franco vede dappertutto — e la scheda dell'album avrebbe avuto un aspetto tutto suo.
+   📌 660px sono gli stessi delle due copertine qui sopra: i campi e le foto incolonnano il
+   bordo destro invece di finire in due punti diversi.
+   ⬜ E il tab PAGINE resta a tutta larghezza: là lo spazio serve, ed è il motivo per cui la
+   v6.886 esiste. Il tetto è chiesto solo al Generale. */
+#fig-detail-griglia.scheda-una-colonna #fe-tab-generale .detail-row,
+#fig-detail-griglia.scheda-una-colonna #fe-tab-generale .form-group { max-width: 660px; }
+.fe-foto-larghe .fig-slot.slot-stretto .fig-cmd { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+
 /* ===== PAGES ===== */
 .page { display: none; padding-top: 56px; min-height: 100vh; position: relative; z-index: 1; }
 .page.active { display: block; }
@@ -552,6 +656,19 @@ body {
   cursor: pointer; white-space: nowrap; text-align: center; transition: all 0.2s;
 }
 .btn-foto:hover { background: var(--action-admin-hover); border-color: var(--action-admin-hover); }
+
+/* 🔴 v6.886 — QUESTA RIGA STA QUI SOTTO, E NON ACCANTO ALLE SUE SORELLE, PER UNA RAGIONE CHE
+   QUESTO FILE HA GIÀ PAGATO. Tre suite cercano «la prima `.btn-foto` del foglio» per misurarne
+   colore e forma: una regola che contenga `.btn-foto {` scritta PRIMA di quella base gliela ruba,
+   e quelle suite si accendono dicendo che il fondo non è più arancione — cioè fallendo per una
+   ragione che non c'entra niente con quello che è cambiato.
+   📏 È successo davvero scrivendo questa release, ed era già scritto: la v6.872 aveva incontrato
+   lo stesso muro e l'aveva annotato («tre suite cercano la prima `.btn-foto` del foglio, e messa
+   prima gliela rubava»). L'avviso c'era e non è bastato a non ripeterlo — quindi adesso sta anche
+   QUI, dove si scrive una regola nuova, e non solo dove è nato.
+   📌 Cosa fa: nel tab «Generale» dell'album i comandi delle foto stanno in riga e su una riga
+   larga, quindi possono essere un filo più grandi di quando erano impilati in 160px. */
+.fe-foto-larghe .fig-slot.slot-stretto .fig-cmd .btn-foto { font-size: 0.75rem; padding: 5px 9px; }
 
 /* 🆕 v6.662 (Franco: *"il tasto rimuovi foto dovrebbe avere lo stesso colore (roseo)
    degli altri tasti di eliminazione del sito"*) — L'ECCEZIONE DENTRO LA FILA DELLA FOTO.
