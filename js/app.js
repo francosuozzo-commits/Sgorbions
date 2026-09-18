@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.901 - ANCHE SUL DESKTOP IL LOGO VA SOPRA I NUMERONI, E LA FRASE SI VEDE OVUNQUE (Franco).
+//          🔴 MA LE DUE SPONDE RESTANO AFFIANCATE, e non e' la copia della versione telefono: la'
+//          stanno una sotto l'altra perche' non c'e' larghezza, qui ce ne sono 1280px e impilarle
+//          avrebbe fatto un hero altissimo con meta' schermo vuota - cioe' «lo spazio sfruttato
+//          male» che Franco ha gia' segnalato due volte oggi. La richiesta era sulla POSIZIONE
+//          dell'immagine, non sulla forma dei numeri.
+//          ⚠️ E la riga della v6.900 che spegneva la frase sul desktop se n'e' andata: la sua
+//          ragione («li' i numeri stanno ai LATI») e' decaduta con la griglia, un'ora dopo essere
+//          stata scritta. Non e' stata tradita, e' scaduta - e si toglie invece di lasciarla a
+//          dire il falso. Modificato il solo index.html.
 // v6.900 - SU TELEFONO IL LOGO VA SOPRA I NUMERONI, CON UNA RIGA CHE LI INTRODUCE (Franco: «la
 //          immagine Hero mettila prima dei 12 score verdi», «e prima degli score verdi scrivi
 //          questa frase "In questo sito troverai..."»). La griglia dell'hero passa a una colonna
@@ -28926,7 +28936,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.900';
+const JS_VERSION = 'v6.901';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
