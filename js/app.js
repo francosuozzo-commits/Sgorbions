@@ -1,6 +1,47 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.905 - IL NOME DELLA TIPOLOGIA UNA VOLTA SOLA, E IL SOTTOTITOLO SEMPRE LIME (Franco).
+//          🔴 Il titolo di sezione taceva gia' in tre casi (v6.688, v6.695, v6.729): ogni volta
+//          che la testata cominciava a dire quella parola, questa riga aggiungeva la SUA
+//          condizione. Da quando il sottotitolo della testata scrive `getSectionLabel` nel suo
+//          ramo `else` (v6.774), i casi coprono tutto - quindi il muto non e' piu' un'eccezione,
+//          e' la regola. Nessuno dei due ha sbagliato: si sono incontrati.
+//          ⬜ L'elemento resta nel markup ed e' un debito dichiarato: si toglie coi suoi tre
+//          chiamanti quando si sara' GUARDATO a schermo che non parla piu' in nessuna strada.
+//          🔄 E via l'azzurro dalla parola «Sottoserie»: l'aveva chiesto Franco stesso nella
+//          v6.774, e lo cambia lui adesso - la stessa riga diceva due colori a seconda di dove si
+//          era, e un colore che cambia senza che cambi il significato distrae invece di informare.
+//          Cade anche lo <span>, non solo il colore. Modificato il solo js/app.js.
+// v6.904 - IL PULSANTE DELLO SFOGLIA ALBUM VA SU DUE RIGHE: PIU' ALTO E MENO LARGO (Franco).
+//          📌 Il tetto e' `20ch`, cioe' venti caratteri per riga, e non un numero di pixel: il
+//          carattere e' quello del pulsante, quindi il tetto si ridimensiona da solo con la taglia.
+//          In pixel avrebbe funzionato su una delle tre e dato tre righe sulla piccola.
+//          📏 La frase italiana fa 33 caratteri e si spezza in 14 + 19; l'inglese 31 in 13 + 18.
+//          Due righe in tutte e due le lingue, senza nessun <br> scritto a mano - che sarebbe
+//          stato un punto di rottura in una lingua sola. Modificato il solo js/app.js.
+// v6.903 - I DUE SALTI AI CAPI NELLA FINESTRA DELLA PAGINA, E UN TASTO SPENTO CHE SEMBRA SPENTO
+//          (Franco). 📏 La freccia sull'ultima pagina ERA gia' spenta - `disabled`, e premendola
+//          non succede niente - ma nel foglio non esisteva nessuna regola `:disabled` per
+//          `.btn-foto`: lo stato c'era e non arrivava a chi guarda.
+//          ⬜ E non si fanno sparire: un comando che va e viene fa ballare la riga, e qui la riga
+//          tiene la foto (v6.806, v6.860, v6.868). Si fanno VEDERE spente.
+//          📌 I due salti stanno ai LATI delle frecce, come i quattro comandi di riga della
+//          griglia (v6.871): il verso lo dice la posizione. E sono una funzione sola per i due
+//          capi. ⚠️ Non riscrivono l'album - portano lo sguardo - quindi niente conferma, niente
+//          messaggio, e non entrano fra i comandi riservati. Modificato index.html, css/style.css,
+//          js/app.js.
+// v6.902 - «ELIMINA FOTO» ANCHE NELLA FINESTRA DELLA SINGOLA PAGINA (Franco). 🔴 E' ROSA, al
+//          contrario dei tre comandi che gli stanno accanto: il rosa dice «questo cancella»
+//          (v6.601/v6.603) e gli altri si annullano ripremendo, questo no. ⚠️ E sta in fondo:
+//          un comando che cancella alla stessa distanza dal dito di uno che sposta si preme per
+//          sbaglio mentre si sfoglia.
+//          🔴 Chiede conferma e la domanda NOMINA la pagina (v6.204), e dice anche cosa NON fa:
+//          la foto resta su Cloudinary, si toglie dall'elenco. La parola «elimina» promette piu'
+//          di quello che succede.
+//          🔴 E dopo si decide cosa resta a schermo - la parte che la griglia non ha: se era
+//          l'ultima pagina la finestra si chiude, se no si resta su una pagina VERA invece che su
+//          un indice che non esiste piu'. Modificato index.html, js/app.js.
 // v6.901 - ANCHE SUL DESKTOP IL LOGO VA SOPRA I NUMERONI, E LA FRASE SI VEDE OVUNQUE (Franco).
 //          🔴 MA LE DUE SPONDE RESTANO AFFIANCATE, e non e' la copia della versione telefono: la'
 //          stanno una sotto l'altra perche' non c'e' larghezza, qui ce ne sono 1280px e impilarle
@@ -28936,7 +28977,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.901';
+const JS_VERSION = 'v6.909';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -30531,7 +30572,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -30620,7 +30661,7 @@ const i18n = {
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with backs) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in your list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in your list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
@@ -33145,7 +33186,7 @@ function updateNavUser() {
   // 🔄 v6.890 - i comandi che RISCRIVONO l'album dentro l'anteprima sono tre, e si accendono
   //    insieme: cambiare la foto e spostare la pagina sono la stessa cosa dal punto di vista di
   //    chi puo' farla. Un elenco, non tre righe gemelle.
-  ['pagina-grande-cambia', 'pagina-grande-su', 'pagina-grande-giu'].forEach(id => {
+  ['pagina-grande-cambia', 'pagina-grande-su', 'pagina-grande-giu', 'pagina-grande-elimina'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = currentUser?.isAdmin ? '' : 'none';
   });
@@ -37234,6 +37275,14 @@ const VERSIONI_ARTICOLO = [
     //    scritto diversamente perche' smetta di valere, in silenzio.
     idListaSerie: 'series-front-change-types-input',
     idListaSerieRetro: 'series-retro-change-types-input',
+    // 🆕 v6.908 (Franco) - IL RIQUADRO DEI CHANGE DELLA TESTATA SI DIVIDE IN DUE ELENCHI
+    //    affiancati, «CHANGE FRONTALI» e «CHANGE DI RETRO». Lo dichiara la VERSIONE, come
+    //    `corpoHTML` per gli errori di stampa (v6.534) e `pieHTML` per le versioni (v6.333): chi
+    //    disegna non sa che cosa ci finira' dentro, e le altre quattro versioni non cambiano.
+    // ⚠️ E' l'unica versione che la dichiara: il lato di un errore di stampa ha gia' il suo posto
+    //    (il corpo a due sezioni della ricerca, v6.534), l'omaggio e le variazioni un lato non ce
+    //    l'hanno proprio.
+    partiDi: items => _partiChangePerLato(items),
     // v6.266 - il PLURALE del titolo fisso del riquadro. Vedi la riga dell'omaggio.
     pluraleIt: 'Change', pluraleEn: 'Changes',
     // v6.267 - la coda della dicitura del raggruppamento, dettata da Franco. Vedi l'omaggio.
@@ -43035,18 +43084,28 @@ function renderSeriesMeta(s) {
     const _nomeNum = (g.base.length === 1) ? nm.s : nm.p;
     if (g.base.length) m.push(colonna(BULLET, g.base,
       (_altreVersioni
-        // 🔄 v6.622 (Franco: *«la numerica "160 set base" diventa "160 figurine set base"»* e
-        // *«per i retro, "72 set base" diventa "72 retro set base"»*)
-        // 🔴 QUI STAVA LA v6.067, CHE ERA DI FRANCO, e diceva l'opposto: «via il nome
-        // dell'oggetto — la sezione la si sta gia' guardando, e il suo nome e' scritto sopra».
-        // 📌 Era vero NEL SUO CONTESTO: dentro una sezione il nome sta in alto e ripeterlo non
-        // aggiunge niente. Ma la stessa riga si vede anche nella PAGINA DELLA SERIE, dove le
-        // cinque categorie stanno una sotto l'altra — e li' il nome non ripete, distingue.
-        // Messo davanti alla scelta «solo nell'hub o ovunque», Franco ha detto ovunque.
-        // ⚠️ Il nome viene da «nm.p», cioe' il PLURALE gia' nella lingua corrente: il
-        // descrittore lo porta con se', e una sezione nuova non ha bisogno di una riga qui.
-        // 📌 Plurale e non singolare: «160 figurine set base», «72 retro set base».
-        ? (_nomeNum + (it ? ' set base' : ' base set'))
+        // 🔄 v6.907 (Franco: «nelle numeriche della pagina della serie, il primo numero e' sempre
+        //    "N TDA set base" - esempio: 160 Figurine con retro set base - mettiamo solo N set
+        //    base», e poi: «questo va fatto per tutte le pagine di TDA che hanno quella
+        //    numerica») - VIA IL NOME DELLA TIPOLOGIA DA QUESTA RIGA.
+        // 🔴 QUI STAVA LA v6.622, CHE ERA DI FRANCO, e diceva l'opposto - e prima ancora la
+        //    v6.067, che diceva quello che si scrive oggi. E' la terza volta che questa riga
+        //    cambia idea, quindi la ragione va scritta e non dedotta.
+        // 📏 LA MISURA CHE CHIUDE LA QUESTIONE: dalla v6.622 l'hub disegna una GRIGLIA A DUE
+        //    COLONNE, e la prima colonna E' IL NOME DELLA TIPOLOGIA (`_pfx`, un `<div
+        //    class="hub-cat-name">`). Quindi la riga legge «Figurine con retro | 160 Figurine con
+        //    retro set base ...»: il nome due volte sulla STESSA RIGA, a pochi centimetri. Il
+        //    commento della v6.622 diceva «li' il nome non ripete, distingue» - era vero quando
+        //    l'etichetta a sinistra non c'era, ed e' diventato falso nella stessa release che
+        //    quella colonna l'ha introdotta. Nessuno dei due ha sbagliato: si sono incontrati,
+        //    esattamente come il titolo della sezione e il sottotitolo della testata (v6.905).
+        // ⚠️ E DENTRO UNA SEZIONE VALE LO STESSO, per richiesta esplicita di Franco: li' il nome
+        //    della tipologia sta nella testata, che dalla v6.859 resta a schermo sempre. E'
+        //    parola per parola l'argomento della v6.067.
+        // 📌 IL RAMO SENZA VERSIONI NON SI TOCCA: li' «set base» non si scrive affatto (v6.698 -
+        //    una distinzione si scrive solo se distingue), e il nome e' l'UNICA etichetta che
+        //    quel numero ha. Toglierlo anche di la' lascerebbe «100» da solo.
+        ? (it ? 'set base' : 'base set')
         : _nomeNum),
       false, nm.f, 'var(--type-base)'));
     if (g.variation.length) m.push(colonna(BULLET, g.variation,
@@ -43236,7 +43295,29 @@ function renderSeriesMeta(s) {
     // ⚠️ Le righe diventano «display:contents»: non sono piu' contenitori, sono due celle
     // della griglia. E le numeriche vanno avvolte in un contenitore loro, o finirebbero
     // una per colonna — la griglia conta le CELLE, non le righe che uno immagina.
-    metaEl.innerHTML = '<div class="hub-wrap" style="display:grid;grid-template-columns:max-content 1fr;gap:0.35rem 1.4rem;width:100%;align-items:start;">' +
+    // 🆕 v6.907 (Franco: «la sezione delle numeriche della pagina della serie non ha un titolo;
+    //    glielo darei: "NUMERICHE ARTICOLI DELLA SERIE"») - LE PAROLE SONO SUE, compreso il
+    //    maiuscolo: non si scrivono con un `text-transform`, perche' quello e' un effetto e questa
+    //    e' la frase che ha dettato.
+    // 📌 IL VIOLA E NON IL LIME, ed e' una regola gia' scritta e non una preferenza di oggi: «tutti
+    //    i conteggi sono lime, il viola e' solo per i titoli grandi» (Franco, 25 agosto, citata
+    //    dalla v6.421 due schermate piu' su). Qui sotto i due titoletti dell'hub - «Numeriche per
+    //    sottoserie» e «Numeriche per tipologia di articolo» - sono lime: lasciare lime anche
+    //    questo avrebbe dato tre titoli dello stesso colore, uno dentro l'altro, senza piu' un
+    //    ordine leggibile. Il viola dice «questa e' la sezione», il lime «questo e' un suo pezzo».
+    // ⚠️ `width:100%` PERCHE' IL CONTENITORE E' UN FLEX: `#detail-meta` e' `display:flex` con
+    //    `flex-wrap`, quindi due figli si metterebbero AFFIANCO - il titolo a sinistra e tutte le
+    //    numeriche a destra. La griglia qui sotto ha la stessa riga per la stessa ragione.
+    // 🔴 E SI SCRIVE SOLO SE C'E' QUALCOSA DA INTITOLARE: su una serie senza articoli `_blocchiHub`
+    //    torna vuoto, e un titolo sopra il nulla sarebbe l'«etichetta orfana» che la v6.672 ha gia'
+    //    fatto togliere una volta. Per questo il corpo si costruisce PRIMA e si guarda.
+    const _corpoHub = _blocchiHub(cats, sezRows, _pfx, BULLET, colonna);
+    metaEl.innerHTML = (_corpoHub
+        ? '<div class="hub-numeriche-titolo" style="width:100%;color:var(--accent3);font-weight:800;'
+          + 'font-size:1.05em;letter-spacing:0.06em;margin:0 0 0.35rem;">'
+          + (it ? 'NUMERICHE ARTICOLI DELLA SERIE' : 'SERIES ITEM COUNTS') + '</div>'
+        : '') +
+      '<div class="hub-wrap" style="display:grid;grid-template-columns:max-content 1fr;gap:0.35rem 1.4rem;width:100%;align-items:start;">' +
       // 🔄 v6.672 (Franco: *"«niente piu' etichette con lo zero» significa NIENTE. Invece hai
       //    solo omesso il conteggio, lasciando una etichetta orfana di numero"*).
       // 🔴 IL TITOLO DELLA SEZIONE LO SCRIVE QUESTO PUNTO, NON `sezRows`. La v6.671 ha tolto
@@ -43246,7 +43327,11 @@ function renderSeriesMeta(s) {
       // ⚠️ `sezRows(c)` si chiama UNA volta e il risultato si tiene: chiamarla due volte - una
       //    per sapere se e' vuota, una per disegnarla - vorrebbe dire ricontare tutti gli
       //    articoli della serie a ogni apertura dell'hub.
-      _blocchiHub(cats, sezRows, _pfx, BULLET, colonna) +
+      // ⚠️ v6.907 - E PER LA STESSA IDENTICA RAGIONE QUI C'E' `_corpoHub` E NON UNA SECONDA
+      //    CHIAMATA: il titolo qui sopra ha bisogno di sapere se il corpo e' vuoto, e chiederlo
+      //    ricostruendolo avrebbe contato due volte tutti gli articoli della serie a ogni
+      //    apertura. La riga sopra descriveva il pericolo; questa release ci e' passata accanto.
+      _corpoHub +
       '</div>';
     posizionaTestataSerie();   // v5.936 — dopo il render: qui la descrizione torna in coda al blocco eroe
     try { _applicaChiusuraTestata(); } catch(e) {}   // v6.001
@@ -43760,9 +43845,25 @@ function _scriviTitoloSezione(testo) {
   if (!el) return;
   // dentro un gruppo la testata dice gia' «Tipologia Gruppo»: ripeterlo qui e' la stessa parola
   // due volte a due centimetri, il difetto chiuso dalla v6.688 e dalla v6.695.
-  const _muto = !!_sottoserieAttiva || !!_tdaSenzaSerie();
-  el.textContent = _muto ? '' : (testo || '');
-  el.style.display = _muto ? 'none' : '';
+  // 🔄 v6.905 (Franco: «il nome della TDA ora compare 2 volte nella pagina → leverei la seconda»)
+  //    - E ADESSO TACE SEMPRE.
+  // 🔴 LA CAUSA E' UNA REGOLA GIUSTA CHE HA CAMBIATO CONTESTO, non un difetto di questa riga.
+  //    Questo titolo diceva il nome della tipologia da sempre, ed era l'unico a dirlo. Poi il
+  //    SOTTOTITOLO DELLA TESTATA ha cominciato a dirlo pure lui: la v6.774 gli ha dato il nome
+  //    della sottoserie, e il suo ramo `else` scrive `getSectionLabel(currentSection)`, cioe'
+  //    esattamente questa stessa parola, due centimetri piu' su. Nessuno dei due ha sbagliato: si
+  //    sono incontrati.
+  // 📌 E' la stessa forma delle v6.688, v6.695 e v6.729, che hanno chiuso lo stesso incontro nei
+  //    tre casi in cui era gia' capitato - e ognuna aveva aggiunto la SUA condizione a questa
+  //    riga. Alla quarta le condizioni coprono tutto: quando la testata parla, e la testata parla
+  //    sempre. Quindi il muto non e' piu' un caso particolare, e' la regola.
+  // ⬜ L'ELEMENTO RESTA NEL MARKUP, ED E' UN DEBITO DICHIARATO: se davvero non si vede mai piu',
+  //    va tolto insieme ai suoi tre chiamanti (v6.804 sui campi morti). Non si toglie oggi perche'
+  //    non l'ho potuto GUARDARE a schermo, e togliere un elemento che forse in qualche strada
+  //    ancora parla e' peggio che lasciarlo muto. `prova-v6905` tiene scritto questo stato: il
+  //    giorno che qualcuno lo riaccende, deve farlo apposta.
+  el.textContent = '';
+  el.style.display = 'none';
 }
 
 // 🔄 v6.869 - entrando in una sezione il pulsante cambia lato (vedi `_mostraSfogliaAlbum`), quindi
@@ -44170,7 +44271,19 @@ function _vestiTestataPerSezione(s) {
       const coda = _sottoserieInUnaSolaTDA(currentSeriesId)
         ? _sottoserieAttiva
         : getSectionLabel(currentSection) + ' ' + _sottoserieAttiva;
-      sub.innerHTML = '<span style="color:var(--nome-entita);">' + etichetta + '</span> ' + esc(coda);
+      // 🔄 v6.905 (Franco: «il sottotitolo lo abbiamo fatto azzurro per le sottoserie e lime per
+      //    le TDA → usiamo sempre il lime») — VIA L'AZZURRO SULLA PAROLA «Sottoserie».
+      // 🔴 L'AZZURRO ERA STATO CHIESTO DA FRANCO STESSO nella v6.774 («lo scriverei nello stesso
+      //    azzurro del nome della serie»), e la riga sopra lo dichiarava «detto due volte». Non e'
+      //    una correzione di un errore: e' un cambio di idea, e sta scritto cosi' perche' domani
+      //    non sembri che qualcuno abbia disfatto una decisione senza saperlo.
+      // 📌 LA RAGIONE CHE HA DATO E' LA COERENZA FRA DUE SCHERMATE: la stessa riga diceva due
+      //    colori a seconda di dove si era — azzurro dentro una sottoserie, lime dentro una
+      //    tipologia — e un colore che cambia senza che cambi il significato non informa, distrae.
+      // ⚠️ E cade lo `<span>`, non solo il colore: uno `<span>` senza stile sarebbe l'involucro
+      //    rimasto senza la ragione che l'aveva prodotto. Resta `innerHTML` perche' la coda va
+      //    comunque scappata (le sottoserie vere hanno apostrofi e virgole).
+      sub.innerHTML = esc(etichetta) + ' ' + esc(coda);
     } else {
       sub.textContent = getSectionLabel(currentSection);
     }
@@ -46191,6 +46304,42 @@ function _raggrCounts(items, v) {
 function _raggrLabel(t) {
   return t || (currentLang === 'it' ? '(Senza tipo)' : '(No type)');
 }
+
+// 🆕 v6.908 (Franco, foto alla mano: «le numeriche della foto afferiscono alle tipologie di change
+//    di FCR; questi elenchi andrebbero divisi in 2 parti: 1) Change frontali 2) Change posteriori»,
+//    e poi: «farei quindi 2 elenchi, uno affianco all'altro, mettendo sopra di essi i titoletti:
+//    CHANGE FRONTALI e "CHANGE DI RETRO"») — IL RIQUADRO DEI CHANGE SI DIVIDE IN DUE.
+// 🔴 LA DOMANDA «da che parte sta questo change?» NON SI RISCRIVE QUI: la sa `_changeDiRetro`
+//    (v6.792), che e' la stessa che vestono la card, la scheda e il tipo ereditato dal retro. E la
+//    sua regola non e' il nome del tipo - «TITOLO RETRO NERO» e «RETRO AZZURRO SENZA CORNICE» si
+//    somigliano, ma a dirlo e' cosa c'e' dall'altro capo del collegamento, piu' il flag «Retro
+//    bianco» per l'unico articolo che un record di retro non ce l'ha (REMO SCEMO).
+// 📌 I CONTEGGI SONO GLI STESSI DI PRIMA, PARTIZIONATI: si chiama `_raggrCounts` due volte sugli
+//    stessi articoli divisi in due mucchi, quindi la somma delle due parti e' esattamente il
+//    numero che il titolo del riquadro dice gia' («115 in totale»). Se un giorno non tornasse,
+//    vorrebbe dire che un articolo e' finito in tutti e due o in nessuno - ed e' il §12-bis.
+// ⚠️ UNA DIVISIONE CHE NON DIVIDE NON E' UNA DIVISIONE, e qui torna `null`: nella sezione Retro
+//    `_changeDiRetro` tace per costruzione (quell'articolo E' la faccia), quindi finirebbero tutti
+//    sotto «CHANGE FRONTALI» - un titolo che dice il falso su ogni riga. E' la lezione della
+//    v6.574, dove il corpo per lato degli errori di stampa aveva lasciato la sezione Retro senza
+//    nessuna pillola per un mese: chi disegna, con `null`, torna all'elenco unico di sempre.
+function _partiChangePerLato(items) {
+  const v = VERSIONI_ARTICOLO.find(x => x.chiave === 'change');
+  if (!v) return null;
+  const figs = getData('figurines', []);
+  const idx = new Map(figs.map(x => [x.id, x]));
+  const davanti = [], dietro = [];
+  for (const f of items) {
+    if (!f[v.campo]) continue;
+    (_changeDiRetro(f, figs, idx) ? dietro : davanti).push(f);
+  }
+  if (!davanti.length || !dietro.length) return null;
+  const it = currentLang === 'it';
+  return [
+    { titolo: it ? 'CHANGE FRONTALI' : 'FRONT CHANGES', pairs: _raggrCounts(davanti, v) },
+    { titolo: it ? 'CHANGE DI RETRO' : 'BACK CHANGES',  pairs: _raggrCounts(dietro,  v) },
+  ];
+}
 // 📌 v6.079, e vale ancora: il tipo di change viene da una lista configurata sulla serie, il
 // tipo di ERRORE DI STAMPA e' testo libero (`opzioniTipo: null` nell'elenco). Nel riquadro comparira'
 // quindi esattamente cio' che e' stato scritto, refusi e maiuscole comprese - il che e' anche il modo
@@ -46315,8 +46464,8 @@ function _cfgRaggr(v) {
   };
 }
 // Guscio: i punti che chiamavano le due funzioni di prima passano di qui, con la versione in piu'.
-function _raggrPanelHTML(v, pairs, open, clickable, toggleFn, perColonna) {
-  return _specchiettoTipiHTML(pairs, open, clickable, toggleFn, _cfgRaggr(v), perColonna);
+function _raggrPanelHTML(v, pairs, open, clickable, toggleFn, perColonna, parti) {
+  return _specchiettoTipiHTML(pairs, open, clickable, toggleFn, _cfgRaggr(v), perColonna, parti);
 }
 
 // 🆕 v6.270 - il triangolino INVISIBILE ma ingombrante, per i riquadri che un filtro acceso
@@ -46404,7 +46553,7 @@ function _chipTipoHTML(o) {
           + `<span ${_inib ? '' : `onclick="event.stopPropagation();${o.onAdd}"`} title="${_inib ? '' : titoloPiu}" style="cursor:${_inib ? 'default' : 'pointer'};padding:0.15rem 0.5rem;border-left:1px solid ${active ? 'rgba(0,0,0,0.28)' : 'var(--border)'};color:${fg};font-weight:700;">${segno}</span>`
           + `</span>`;
 }
-function _specchiettoTipiHTML(pairs, open, clickable, toggleFn, C, perColonna) {
+function _specchiettoTipiHTML(pairs, open, clickable, toggleFn, C, perColonna, parti) {
   const it = (currentLang === 'it');
   const total = pairs.reduce((s, p) => s + p[1], 0);
   const title = C.titoloClick(it);
@@ -46560,16 +46709,44 @@ header += `</div>`;
       // Nome del tipo in MAIUSCOLO: e' come compare gia' sulle card (typeIndicatorHTML,
       // v5.783), quindi qui e li' si riconosce la stessa cosa senza doverci pensare.
       const numero = v => `<span style="color:var(--text);font-weight:700;">${v}</span>`;
-      const righe = pairs.map(([ct, n]) =>
-        `<div><span style="color:${C.colore(ct)};">${esc((C.label(ct) || '').toUpperCase())}</span> ` + numero(n) + `</div>`);
       // v6.018 (Franco) - qui le colonne sono da 5, non da 8 come nei Retro: i tipi di change
       // sono pochi e con nomi lunghi, quindi cinque righe bastano e la colonna resta stretta.
       const PER_COLONNA = perColonna || 5; // v6.079 - su telefono lo decide chi chiama, vedi _righePerColonna()
-      const colonne = [];
-      for (let x = 0; x < righe.length; x += PER_COLONNA) colonne.push(righe.slice(x, x + PER_COLONNA));
-      const corpo = colonne
-        .map(c => `<div style="display:flex;flex-direction:column;">${c.join('')}</div>`)
-        .join('');
+      // 🔄 v6.908 - LE COLONNE DIVENTANO UNA FUNZIONE DELL'ELENCO, e non e' zelo: da questa
+      //    release lo stesso riquadro puo' disegnare DUE elenchi (i change frontali e quelli di
+      //    retro), e il taglio in colonne da cinque vale dentro ognuno dei due. Scriverlo due
+      //    volte avrebbe voluto dire due tagli da tenere allineati - e il secondo si sarebbe
+      //    dimenticato il giorno che Franco chiede sei righe invece di cinque.
+      const corpoDi = elenco => {
+        const righe = elenco.map(([ct, n]) =>
+          `<div><span style="color:${C.colore(ct)};">${esc((C.label(ct) || '').toUpperCase())}</span> ` + numero(n) + `</div>`);
+        const colonne = [];
+        for (let x = 0; x < righe.length; x += PER_COLONNA) colonne.push(righe.slice(x, x + PER_COLONNA));
+        return colonne
+          .map(c => `<div style="display:flex;flex-direction:column;">${c.join('')}</div>`)
+          .join('');
+      };
+      // 🆕 v6.908 (Franco, foto alla mano: «le numeriche della foto afferiscono alle tipologie di
+      //    change di FCR; questi elenchi andrebbero divisi in 2 parti: 1) Change frontali 2) Change
+      //    posteriori», e poi: «farei quindi 2 elenchi, uno affianco all'altro, mettendo sopra di
+      //    essi i titoletti: CHANGE FRONTALI e "CHANGE DI RETRO"») - DUE ELENCHI, DUE TITOLI.
+      // 📌 LE PARTI LE PORTA CHI DISEGNA, NON QUESTA FUNZIONE: il riquadro riceve gia' i conteggi
+      //    fatti (`pairs`) e il lato non e' ricavabile da quelli - e' un fatto dell'ARTICOLO, e
+      //    qui gli articoli non ci sono piu'. Chi li ha e' `renderSpecchiettiTop`, che infatti
+      //    chiede la divisione al descrittore (`partiDi`) e la passa. E' la stessa scelta di
+      //    `corpoHTML` (v6.534) e `pieHTML` (v6.333): lo dichiara il DESCRITTORE, il pannello non
+      //    sa cosa ci finira' dentro - e gli altri quattro riquadri non cambiano di una virgola.
+      // ⚠️ UNA DIVISIONE CHE NON DIVIDE NON E' UNA DIVISIONE: se una delle due parti e' vuota si
+      //    torna all'elenco unico. E' la lezione della v6.574, dove il corpo per lato degli errori
+      //    di stampa lasciava la sezione Retro senza nessuna pillola per un mese - li' il lato non
+      //    esiste, perche' quell'articolo E' la faccia. `partiDi` torna `null` e qui non si entra.
+      const corpo = (parti && parti.length > 1)
+        ? parti.map(p => `<div style="display:flex;flex-direction:column;">`
+            + `<div style="color:${C.titoloColore || 'var(--text)'};font-weight:700;font-size:0.76rem;`
+            + `letter-spacing:0.06em;margin-bottom:0.3rem;">${esc(p.titolo)}</div>`
+            + `<div style="display:flex;gap:0 1.6rem;align-items:flex-start;flex-wrap:wrap;">${corpoDi(p.pairs)}</div>`
+            + `</div>`).join('')
+        : corpoDi(pairs);
       return `<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:0.8rem 0.9rem;box-sizing:border-box;width:max-content;max-width:100%;">`
         + header
         + `<div style="display:flex;gap:0 1.6rem;align-items:flex-start;flex-wrap:wrap;font-size:0.82rem;line-height:1.45;margin-top:0.45rem;">${corpo}</div></div>`;
@@ -46823,7 +47000,13 @@ function renderSpecchiettiTop() {
     f.seriesId === currentSeriesId && f.section === currentSection && _delGruppoAttivo(f));
   // v6.266 - un riquadro per versione con un tipo, e l'ordine e' quello di `VERSIONI_ARTICOLO`:
   // lo stesso della griglia, delle colonne e dei badge. Non c'e' un secondo posto che lo decida.
-  const perVersione = _VERSIONI_CON_TIPO.map(v => ({ v, pairs: _raggrCounts(dellaSezione, v) }));
+  // 🆕 v6.908 - E, PER CHI LA DICHIARA, LA DIVISIONE IN PARTI. Il lato di un change e' un fatto
+  //    dell'ARTICOLO, quindi la domanda si fa QUI, dove gli articoli ci sono ancora: dentro il
+  //    pannello ci arrivano i soli conteggi, e da quelli il lato non si ricava piu'.
+  // 📌 Chi non dichiara `partiDi` passa `null` e disegna esattamente come prima: gli altri quattro
+  //    riquadri di questa riga non cambiano di una virgola.
+  const perVersione = _VERSIONI_CON_TIPO.map(v => ({ v, pairs: _raggrCounts(dellaSezione, v),
+                                                     parti: v.partiDi ? v.partiDi(dellaSezione) : null }));
   // v6.079 - anche le CATEGORIE entrano qui: erano il terzo nodo a se', ed e' per questo che i
   // riquadri finivano su due righe pur essendo affiancati fra loro. Un contenitore, tre pannelli.
   // I conteggi restano quelli di sempre: i filtri si', la ricerca no (v5.986).
@@ -46842,11 +47025,11 @@ function renderSpecchiettiTop() {
   const larg = el.clientWidth || (el.parentElement && el.parentElement.clientWidth) || 0;
   const colCat = _righePerColonna(larg, cat.map(p => _retroCatLabel(p[0])), cat.length);
   const html = (cat.length ? _retroCatPanelHTML(cat, mob ? _specTopAperti.cat : true, false, mob ? 'toggleSpecTopCat' : null, colCat) : '')
-             + perVersione.map(({ v, pairs }) => {
+             + perVersione.map(({ v, pairs, parti }) => {
                  if (!pairs.length) return '';
                  const col = _righePerColonna(larg, pairs.map(p => _raggrLabel(p[0])), pairs.length);
                  return _raggrPanelHTML(v, pairs, mob ? _raggr(v.chiave).apertoTop : true, false,
-                                        mob ? `_toggleSpecTopRaggr('${v.chiave}')` : null, col);
+                                        mob ? `_toggleSpecTopRaggr('${v.chiave}')` : null, col, parti);
                }).join('');
   el.innerHTML = html;
   el.style.flexDirection = mob ? 'column' : 'row';
@@ -51891,6 +52074,23 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     : '';
   const _codaAzioniDetail = html => (isAdmin && html) ? '' : html;
 
+  // 🆕 v6.906 (Franco: «il tasto "Clicca qui per sfogliare l'album" mettiamolo anche dentro la
+  //    form di sola lettura dell'album; direi in basso a sx») - IN FONDO ALLA SCHEDA, A SINISTRA.
+  // 📌 LA CONDIZIONE NON SI RISCRIVE: la sa `_bottoneSfogliaSuArticolo` - album dichiarato della
+  //    serie E con delle pagine - la stessa che risponde per la card della griglia. E' la terza
+  //    volta che questa domanda serve in un posto nuovo e la terza volta che non si duplica.
+  // 🔄 E IL PULSANTE SI SPOSTA, NON SI AGGIUNGE: la v6.888 lo aveva messo sotto la griglia DENTRO
+  //    il tab Pagine. Lasciandolo li' e mettendone un altro qui, chi apre il tab Pagine se ne
+  //    troverebbe DUE a schermo insieme, a pochi centimetri - che e' esattamente il doppione che
+  //    Franco ha fatto togliere nella v6.863 («e' presente 2 volte; rimuovere la occorrenza piu'
+  //    in basso»). Qui fuori si vede da TUTTI i tab, quindi non si perde niente: si guadagna.
+  // ⚠️ Sta PRIMA di `_codaAzioniDetail`, cioe' sopra «Segnala errore»: quella resta l'ultima cosa
+  //    della scheda per decisione della v6.079, ed e' della scheda intera - questo e' dell'album.
+  const _sfogliaCodaDetail = () => {
+    const b = _bottoneSfogliaSuArticolo(f);
+    return b ? '<div style="display:flex;justify-content:flex-start;margin-top:1rem;">' + b + '</div>' : '';
+  };
+
   let bottomButtons = '';
   // 🔴 v6.364 (Franco: *"vedo ancora il pulsante Elimina e Clona sulla scheda di una figurina di
   // una serie col flag a false"*) - IL QUARTO BLOCCO, che la v6.361 aveva mancato.
@@ -51980,7 +52180,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       '<div id="figdetail-tab-generale">' + rows.join('') + '</div>' +
       (_pagLett ? '<div id="figdetail-tab-pagine" style="display:none;">' + _pagLett + '</div>' : '') +
       '<div id="figdetail-tab-ebay" style="display:none;">' + ebayRows.join('') + '</div>' +
-      _codaAzioniDetail(bottomButtons);
+      _sfogliaCodaDetail() + _codaAzioniDetail(bottomButtons);
     // v6.103 - dopo l'innerHTML, altrimenti i due contenitori non esistono ancora.
     if (f.forSale) riempiEbayVistaLettura(f);
   } else {
@@ -51999,7 +52199,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + _tabLett2
       + '<div id="figdetail-tab-generale">' + rows.join('') + '</div>'
       + (_pagLett2 ? '<div id="figdetail-tab-pagine" style="display:none;">' + _pagLett2 + '</div>' : '')
-      + _codaAzioniDetail(bottomButtons);
+      + _sfogliaCodaDetail() + _codaAzioniDetail(bottomButtons);
   }
   // 🆕 v6.529 - il markup c'e': si caricano le foto grandi di lato e si scambiano quando
   // arrivano. Vale per TUTTE le `img[data-grande]` della scheda.
@@ -54945,7 +55145,18 @@ function _bottoneSfogliaHTML(taglia, idAlbum) {
     //    sa piu' la ragione - quella che questo file va a caccia di togliere.
     // 📌 Resta `inline-flex` con il centraggio: serve al pulsante, non all'icona, ed e' cio'
     //    che tiene la frase in mezzo quando va a capo nella taglia piccola.
-    + 'display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:1.15;">'
+    // 🔄 v6.904 (Franco: «il tasto "clicca qui per sfogliare l'album" lo vorrei col testo su due
+    //    righe; quindi tasto più alto e meno largo») — IL TETTO È IN `ch`, NON IN PIXEL.
+    // 📌 `20ch` vuol dire «venti caratteri per riga», e il carattere è quello del pulsante: il
+    //    tetto si ridimensiona da solo con la taglia. Un valore in pixel avrebbe funzionato su una
+    //    delle tre e avrebbe dato tre righe sulla piccola e una sola sulla grossa — cioè tre
+    //    numeri da tarare per ottenere la stessa cosa.
+    // 📏 La frase italiana fa 33 caratteri e si spezza in «Clicca qui per» (14) e «sfogliare
+    //    l'album !» (19); l'inglese fa 31 e si spezza in 13 e 18. Due righe in tutte e due le
+    //    lingue, senza nessun `<br>` scritto a mano — che sarebbe stato un punto di rottura in una
+    //    lingua sola, e il primo a romperlo sarebbe stato un cambio di parole.
+    + 'display:inline-flex;align-items:center;justify-content:center;text-align:center;'
+    + 'white-space:normal;max-width:20ch;line-height:1.25;">'
     // ⚠️ LO SPAZIO PRIMA DEL «!» NON E' UN REFUSO: e' la regola che Franco ha dato nella
     //    v6.390 (*«nel sito vedo che abbiamo dei ! che non hanno uno spazio prima, possiamo
     //    metterlo sempre?»*), e vale in tutte e due le lingue - il sito scrive gia' «Welcome !»
@@ -54961,10 +55172,25 @@ function _mostraSfogliaAlbum() {
   // 📌 I posti sono DUE e la condizione e' UNA (v6.863: erano tre): la testata della serie, qui, e
   //    la scheda dell'album dichiarato, che la disegna `_bottoneSfogliaSuArticolo` chiedendo alla
   //    stessa funzione.
+  // 🔴 v6.906 (Franco, baco: «il tasto "clicca qui per sfogliare album" si vede nella sezione alta
+  //    di TUTTE le pagine di TDA; doveva esserci solo in quella degli album») - E ADESSO LA
+  //    DOMANDA E' DUE, non una.
+  // 📏 LA CAUSA, MISURATA: il pulsante vive nella TESTATA della serie, e la testata resta a
+  //    schermo anche dentro una sezione (v6.859). Quindi entrando in Bustine, in Retro o in
+  //    Spille se lo portava dietro. ⚠️ Non e' un difetto nato oggi: e' la v6.859 che ha messo il
+  //    pulsante in un contenitore che non sparisce, e nessuno si e' chiesto cosa dovesse fare
+  //    dentro le altre sezioni - la v6.869 lo ha perfino SPOSTATO di lato dentro una sezione,
+  //    cioe' lo ha curato in un posto dove non doveva esserci.
+  // 📌 LE DUE DOMANDE SONO DIVERSE e vanno tenute diverse: «questa serie ha un album da
+  //    sfogliare?» (`alb`) e «sono in un posto dove offrirlo ha senso?». Sull'hub della serie
+  //    ha senso - e' li' che uno arriva per sfogliare, ed e' la richiesta della v6.806 - dentro
+  //    gli Album pure, perche' e' la casa di quell'album. In Bustine no.
+  const quiCiSta = !currentSection || currentSection === 'albums';
   const serie = document.getElementById('sfoglia-album-serie');
   if (serie) {
-    serie.innerHTML = alb ? _bottoneSfogliaHTML('grossa') : '';
-    serie.style.display = alb ? '' : 'none';
+    const mostra = alb && quiCiSta;
+    serie.innerHTML = mostra ? _bottoneSfogliaHTML('grossa') : '';
+    serie.style.display = mostra ? '' : 'none';
   }
   // 🆕 v6.869 (Franco: «nella pagina degli Album ... sposta quello rimasto lì, alla destra della
   //    foto, e fai in modo che il suo lato inferiore combaci con il lato inferiore della foto») -
@@ -55269,12 +55495,13 @@ function _bloccoPagineLettura(f) {
         + '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.2rem;">' + (i + 1) + '</div>'
         + _miniaturaPaginaHTML(p, i, it)
         + '</div>').join('')
-    + '</div>'
-    // 📌 E il pulsante sotto la griglia: si guardano le pagine, poi si sfoglia. La condizione
-    //    non si riscrive - la sa `_bottoneSfogliaSuArticolo`, la stessa che risponde per la card.
-    + (_bottoneSfogliaSuArticolo(f)
-        ? '<div style="display:flex;justify-content:center;margin-top:0.8rem;">' + _bottoneSfogliaSuArticolo(f) + '</div>'
-        : '');
+    + '</div>';
+  // 🗑️ v6.906 - QUI STAVA IL PULSANTE «Clicca qui per sfogliare l'album», sotto la griglia, messo
+  //    dalla v6.888. Adesso sta in fondo alla scheda, a sinistra (`_sfogliaCodaDetail`), dove
+  //    Franco l'ha chiesto - e da li' si vede da tutti i tab, non solo da questo.
+  // 📌 Non e' stato aggiunto e basta: due pulsanti identici a pochi centimetri, visibili insieme
+  //    appena si apre il tab Pagine, sono il doppione che la v6.863 ha gia' fatto togliere una
+  //    volta. Chi cerca qui la riga della v6.888 la trova spiegata, invece di non trovarla.
 }
 
 function _bloccoPagineEdit(f) {
@@ -55455,6 +55682,60 @@ async function handlePagineScelte(ev) {
 // ⚠️ Ai capi non si fa niente, e i tasti sono spenti: la pagina 1 non ha una precedente con cui
 //    scambiarsi. Lo spegnimento e' in `_disegnaSfoglia`... no: in `apriPaginaGrande`, insieme a
 //    quello delle frecce di navigazione, che e' l'unico punto che sa su quale pagina siamo.
+// 🆕 v6.902 (Franco: «aggiungi il tasto Elimina foto anche nella pagina di singola foto») -
+// TOGLIERE LA PAGINA CHE SI STA GUARDANDO.
+// 🔴 SI CHIEDE CONFERMA, al contrario dello spostamento: quello si annulla ripremendo, questo
+//    no - la pagina esce dall'album e non c'e' un tasto che la rimette. E' la regola delle
+//    eliminazioni (v6.601/v6.603), e la domanda NOMINA il numero della pagina invece di dire
+//    «sei sicuro»: «tolgo la pagina 7» e «tolgo una pagina» sono due cose diverse per chi preme
+//    (v6.204).
+// ⚠️ LA FOTO SU CLOUDINARY NON SI TOCCA: si toglie l'indirizzo dall'elenco delle pagine, il file
+//    resta dov'e'. E' quello che fa gia' `pagineRimuovi`, ed e' scritto qui perche' la parola
+//    «elimina» promette di piu' di quello che succede.
+// 🔴 E DOPO BISOGNA DECIDERE COSA RESTA A SCHERMO, che e' la parte che la griglia non ha:
+//    la' si ridisegna e basta, qui c'e' una finestra aperta su una pagina che non esiste piu'.
+//    ⬜ Se era l'ultima pagina dell'album, la finestra si chiude - non c'e' piu' niente da
+//    guardare. ⬜ Se era l'ultima della fila, si torna a quella prima; se no, al suo posto c'e'
+//    gia' la successiva e si resta li'. In tutti e due i casi si resta su una pagina VERA, che e'
+//    la cosa che l'indice da solo non garantisce.
+// 🆕 v6.903 (Franco) - VAI ALLA PRIMA O ALL'ULTIMA PAGINA.
+// 📌 UNA FUNZIONE SOLA PER I DUE CAPI, come `_frecciaPagina` e `_saltoPagina` della griglia:
+//    differiscono per il verso e per niente altro, e due funzioni gemelle sarebbero due posti da
+//    tenere allineati il giorno che quel gesto cambia.
+// ⚠️ NON riscrive niente: porta solo lo sguardo. Per questo non chiede conferma, non manda
+//    messaggi e non entra fra i comandi riservati all'admin - al contrario dei quattro che gli
+//    stanno sopra nella barra del titolo.
+function paginaGrandeCapo(verso) {
+  const pag = _pagineDi(_figSlotF);
+  if (!pag.length) return;
+  apriPaginaGrande(verso < 0 ? 0 : pag.length - 1);
+}
+
+async function paginaGrandeElimina() {
+  const pag = _pagineDi(_figSlotF);
+  const i = _pagGrandeQui;
+  if (i < 0 || i >= pag.length) return;
+  const it = currentLang === 'it';
+  if (!confirm(it ? ('Vuoi togliere la pagina ' + (i + 1) + ' di ' + pag.length + ' da questo album?\n\nLa foto resta su Cloudinary: si toglie dall\'elenco delle pagine.')
+                  : ('Remove page ' + (i + 1) + ' of ' + pag.length + ' from this album?\n\nThe photo stays on Cloudinary: it is removed from the page list.'))) return;
+  await pagineRimuovi(i);
+  // \uD83C\uDD95 v6.902 (Franco: \u00ABquando cancello una pagina mostra un messaggio che lo dice\u00BB).
+  // \u26A0\uFE0F IL MESSAGGIO ARRIVA PRIMA DEL BIVIO, non dentro un ramo: se la pagina era l'ULTIMA
+  //    dell'album la finestra si chiude, e un messaggio scritto dopo quel `return` non lo
+  //    vedrebbe nessuno - proprio nel caso in cui serve di piu', perche' la finestra sparisce e
+  //    resta solo la griglia vuota.
+  // \uD83D\uDCCC E dice QUANTE ne restano: \u00ABtolta\u00BB da sola non lo dice, e chi sta ripulendo un album di
+  //    trentacinque pagine vuole vedere il conto scendere (v6.204).
+  const restano = _pagineDi(_figSlotF);
+  toast(it ? ('\uD83D\uDDD1\uFE0F Pagina ' + (i + 1) + ' tolta: ne restano ' + restano.length)
+           : ('\uD83D\uDDD1\uFE0F Page ' + (i + 1) + ' removed: ' + restano.length + ' left'), 'success');
+  // \u2B1C Se non ne resta nessuna la finestra si chiude: non c'e' piu' niente da guardare.
+  if (!restano.length) { closeModal('pagina-grande-modal'); return; }
+  // \u2B1C Se no si resta su una pagina VERA: al posto di quella tolta c'e' gia' la successiva, e se
+  //    era l'ultima della fila si torna a quella prima. L'indice da solo non lo garantisce.
+  apriPaginaGrande(Math.min(i, restano.length - 1));
+}
+
 async function paginaGrandeSposta(verso) {
   const i = _pagGrandeQui;
   const j = i + verso;
@@ -55549,6 +55830,12 @@ function apriPaginaGrande(i) {
   const giu = document.getElementById('pagina-grande-giu');
   if (su) su.disabled = (i === 0);
   if (giu) giu.disabled = (i === pag.length - 1);
+  // 🆕 v6.903 - e i due salti ai capi si spengono dove si spegne la freccia dello stesso verso:
+  //    sulla prima pagina «vai alla prima» non porta da nessuna parte.
+  const primo = document.getElementById('pagina-grande-primo');
+  const ultimo = document.getElementById('pagina-grande-ultimo');
+  if (primo) primo.disabled = (i === 0);
+  if (ultimo) ultimo.disabled = (i === pag.length - 1);
   m.classList.remove('hidden');
 }
 
@@ -62947,7 +63234,22 @@ function renderBulkEditView() {
   const _cSoloExtra = allItems.length > 0 && allItems.every(_eProdottoExtraSerie);
   // 🆕 v6.844 (Franco: «usa il campo Famiglie») - la colonna Famiglia, dove la serie ne ha. Calcolata una volta:
   //    intestazione e cella la leggono tutte e due (lezione del `_cMostraNumero`, v6.657).
-  const _cFamiglia = TDA_CON_FAMIGLIA.includes(currentSection) && _famiglieSerie(currentSeriesId).length > 0;
+  // 🔄 v6.909 (Franco: «nella VT della pagina delle FPA ... aggiungere la colonna "Famiglia", dopo
+  //    la colonna "Nome"») - LA COLONNA C'ERA E NON SI VEDEVA, e la causa non era la posizione.
+  // 📏 MISURATO: la condizione chiedeva SOLO alla serie («questa serie dichiara delle famiglie?»),
+  //    e le famiglie stanno su `s.famiglie`, cioe' sulla serie che si sta guardando. Nelle pagine
+  //    di TDA raggiunte dall'hub - quelle che vivono sulla SERIE CONTENITORE - quella lista e'
+  //    vuota per costruzione, quindi la colonna non compariva nemmeno sugli articoli che una
+  //    famiglia scritta ce l'hanno.
+  // 📌 E LA FORMA DELLA CORREZIONE E' QUELLA CHE QUESTA FUNZIONE USA GIA' PER ALTRE TRE COLONNE
+  //    (Taglia v6.362, Anno v6.753, Categoria v6.152): la domanda non e' «in che sezione sono» ne'
+  //    «cosa dichiara la serie», e' «QUESTI OGGETTI quel campo ce l'hanno?». La spunta della serie
+  //    resta perche' risponde a una domanda diversa e utile - «qui si POSSONO mettere famiglie» -
+  //    e apre la colonna anche quando nessuno l'ha ancora compilata.
+  // ⚠️ La posizione non si tocca: la colonna nasce gia' dopo il Nome (v6.844 la mise dopo l'Anno,
+  //    e l'Anno c'e' solo sugli articoli senza serie), che e' dove Franco la chiede.
+  const _cFamiglia = TDA_CON_FAMIGLIA.includes(currentSection)
+    && (_famiglieSerie(currentSeriesId).length > 0 || allItems.some(f => (f.famiglia || '').trim()));
   // 🆕 v6.657 (Franco: «la colonna N. non va mostrata se nella serie il flag "Senza
   //    numeri" e' TRUE») — LA DOMANDA IN UN POSTO SOLO, E CHIEDE ANCHE ALLA SERIE.
   // 🔴 `_serieHaNumeri()` esisteva gia' e questa vista non la chiamava: decideva con una
@@ -62995,6 +63297,19 @@ function renderBulkEditView() {
   // domanda che ne ha gia' una - ed e' cosi' che nascono i difetti di questo file.
   const _cAttaccare = currentSection === 'attaccare'
     && !_daAttaccareModificaVietata({ section: 'attaccare', seriesId: currentSeriesId });
+  // 🗑️ v6.909 (Franco: «nella VT della pagina delle FPA ... togliere la colonna "Figurina per album
+  //    di partenza"») - E LA RAGIONE E' GIA' SCRITTA QUINDICI RIGHE PIU' SU, nella v6.370: «una
+  //    da-incollare non e' una versione di niente (v6.358: e' la stessa figurina in un'altra forma
+  //    fisica, non una sua variante)». Il campo «di partenza» e' il collegamento di una VERSIONE al
+  //    suo articolo d'origine: dove le versioni non esistono, quella colonna non puo' che restare
+  //    vuota su ogni riga - ed e' larga 420px, cioe' si porta via mezza tabella per non dire niente.
+  // 📌 La v6.370 aveva tolto per questo motivo Versione e Tipologia e si era fermata li'. Questa e'
+  //    la terza colonna della stessa famiglia, trovata da Franco guardando lo schermo: «una colonna
+  //    che non puo' che restare vuota e' peggio di una assente» (v6.362, e prima ancora v5.981).
+  // ⚠️ IL CAMPO SUL RECORD NON SI TOCCA e la scheda nemmeno: si toglie una COLONNA che non ha
+  //    niente da mostrare, non un dato. Se un giorno una da-attaccare diventasse la versione di
+  //    qualcosa, e' la v6.370 a dover cambiare per prima - e questa riga con lei.
+  const _cPartenza = isAdmin && !_cSoloExtra && currentSection !== 'attaccare';
   // I suggerimenti della Categoria, uno per TIPO: in una tabella le righe possono appartenere a
   // tipi diversi (Extra serie aperta senza filtro), e un elenco unico proporrebbe a un Cartoncino
   // le categorie dei Poster. Si emettono una volta e le righe puntano al proprio.
@@ -63137,7 +63452,7 @@ function renderBulkEditView() {
                tipo dentro quella versione. -->
           ${_cVersione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Tipologia' : 'Type'}</th>` : ''}
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${(currentLang === 'it') ? 'Rarità' : 'Rarity'}</th>
-          ${(isAdmin && !_cSoloExtra) ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);min-width:420px;">${_etichettaDiPartenza(currentSection)}</th>` : ''}
+          ${_cPartenza ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);min-width:420px;">${_etichettaDiPartenza(currentSection)}</th>` : ''}
           ${_cTaglia ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Taglia</th>' : ''}
           ${_ordinaPerCreazione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;">${currentLang === 'it' ? 'Data creazione' : 'Created on'}</th>` : ''}
           ${!isAdmin ? `
@@ -63300,7 +63615,7 @@ function renderBulkEditView() {
             return `<td style="padding:4px;"><input data-field="${_cT}" data-id="${f.id}" value="${esc(_val)}" style="width:140px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`;
           })()}
           ${isAdmin ? `<td style="padding:4px;text-align:center;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0, null, 'center')}
-          ${(isAdmin && !_cSoloExtra) ? (_eProdottoExtraSerie(f) ? '<td></td>' : _eBase(f) ? readCell('', 420) :  `<td style="padding:4px;min-width:420px;"><input data-field="_figPartenza" data-id="${f.id}" list="${_idListaPartenza(f)}" value="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? '— nessuna —' : '— none —'}" title="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;font-size:0.72rem;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;" onfocus="this.select()" onchange="saveBulkCell(this)"></td>`) : ''}
+          ${_cPartenza ? (_eProdottoExtraSerie(f) ? '<td></td>' : _eBase(f) ? readCell('', 420) :  `<td style="padding:4px;min-width:420px;"><input data-field="_figPartenza" data-id="${f.id}" list="${_idListaPartenza(f)}" value="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? '— nessuna —' : '— none —'}" title="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;font-size:0.72rem;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;" onfocus="this.select()" onchange="saveBulkCell(this)"></td>`) : ''}
           ${_cTaglia ? (isAdmin
             ? '<td style="padding:4px;">' + (!_mostraTaglia(f, currentSeries) ? '' : _eProdottoExtraSerie(f)
                 ? _selectTagliaHTML(f.size, 'bulk-size-'+f.id, 'saveBulkCell(this)', 'width:96px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;', f.tipoProdotto)
