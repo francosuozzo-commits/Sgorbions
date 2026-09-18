@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.875">
+<link rel="stylesheet" href="css/style.css?v=6.876">
 
 
 <style>
@@ -2294,7 +2294,21 @@ di tutte le serie</button>
             <h3 style="font-family:var(--font-ui);font-size:1.05rem;margin-bottom:0.75rem;" data-i18n="profile.myMessages.title">I miei messaggi con lo staff</h3>
             <div id="profile-my-messages-list"></div>
           </div>
-          <div id="profile-danger-zone" style="margin-top:2rem;padding-top:1.25rem;border-top:1px solid rgba(var(--danger-rgb),0.25);">
+          <!-- 🆕 v6.876 (Franco: «metti il tasto di logout anche nella form profilo», «prima di
+               cancella utente») — ESCI, NEL PROFILO.
+               🔴 STA FUORI DALLA ZONA ROSSA, e non è una sfumatura: `#profile-danger-zone` ha il
+               bordo del pericolo e dentro ci vive una cosa sola, irreversibile. Uscire dal sito
+               non è pericoloso e non cancella niente — metterlo là dentro avrebbe detto il
+               contrario col solo colore, e il colore qui parla prima delle parole (v6.601/v6.603).
+               Sta SUBITO SOPRA, che è dove Franco l'ha chiesto.
+               📌 RIUSA `.btn-logout` e la chiave `nav.logout`, non ne inventa di nuove: è lo stesso
+               comando che sta in navbar e nel panino. Una classe nuova avrebbe dato tre vestiti
+               alla stessa azione, e una chiave nuova avrebbe messo la parola «Esci» in due posti
+               del dizionario - la seconda copia che questo file passa le giornate a togliere. -->
+          <div id="profile-logout-wrap" style="margin-top:2rem;">
+            <button class="btn-logout" onclick="logout()" style="font-size:0.85rem;padding:6px 14px;cursor:pointer;" data-i18n="nav.logout">Esci</button>
+          </div>
+          <div id="profile-danger-zone" style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid rgba(var(--danger-rgb),0.25);">
             <button class="btn-danger-ghost" onclick="openDeleteAccountModal()" style="font-size:0.85rem;padding:6px 14px;cursor:pointer;" data-i18n="profile.deleteAccount">🗑️ Elimina il mio account</button>
           </div>
         </div>
@@ -4536,7 +4550,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.875"></script>
+<script src="js/app.js?v=6.876"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4560,7 +4574,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.875'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.876'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
