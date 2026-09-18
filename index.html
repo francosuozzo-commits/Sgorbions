@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.877">
+<link rel="stylesheet" href="css/style.css?v=6.878">
 
 
 <style>
@@ -1159,6 +1159,28 @@ button.back-btn { color:#ffffff; }
   <div id="mobile-version-bar"><span id="nav-app-version-mobile"></span></div>
 </div>
 <div id="page-home" class="page active">
+  <!-- 🆕 v6.878 (Franco: «un pulsante che se premuto comanda lo svuotamento della cache del
+       browser», «sia desktop che mobile», «solo admin», «in alto a sx solo nella homepage»,
+       «piccolo, quindi chiamalo RC») — RC: RICARICA SALTANDO LA CACHE.
+       🔴 STA DENTRO `#page-home`, ED E' LA META' DELLA RICHIESTA CHE IL CODICE RISOLVE DA SOLO:
+       `.page` e' `display:none` e `.page.active` e' `display:block`, quindi fuori dalla home
+       questo pulsante non esiste PER COSTRUZIONE. L'alternativa era accenderlo e spegnerlo da
+       `showPage` — ma le pagine perdono `active` anche da `openSeriesDetail`, che showPage non
+       la chiama: sarebbero stati due punti da tenere allineati, e il secondo si dimentica.
+       Cosi' la condizione «solo in home» non ha nessun punto di chiamata.
+       📌 `position:fixed`, quindi il posto nel DOM non decide dove si vede: sta dentro la home
+       per la REGOLA di visibilita', e in alto a sinistra per il CSS. Le due cose non si
+       ostacolano.
+       ⚠️ L'ANGOLO IN ALTO A SINISTRA E' LIBERO PER COSTRUZIONE, e non per fortuna: ci stava la
+       targhetta «SITO IN COSTRUZIONE» (v6.064/065), uscita nella v6.588, e la striscia della
+       versione su telefono e' allineata a DESTRA proprio perche' quel posto resti sgombro
+       (v5.878). Qui sotto, su telefono, c'e' quella striscia: RC le sta sopra (z-index 100
+       contro 99) nella sua meta' vuota.
+       ⬜ La visibilita' per l'ADMIN non sta qui ma in `updateNavUser()`, dove si accendono tutti
+       gli altri comandi riservati: due condizioni diverse, due posti, ognuno dove si sa
+       rispondere. Il `display:none` scritto qui e' lo stato di partenza. -->
+  <button id="rc-btn" onclick="ricaricaSaltandoLaCache(this)" style="display:none;"
+          data-i18n-title="rc.title" title="Ricarica il sito saltando la cache del browser">RC</button>
   <!-- HERO -->
   <section id="hero">
     <!-- v6.019 — i numeroni ATTORNO al logo, due per lato (Franco). Fino alla v6.018 stavano in
@@ -4566,7 +4588,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.877"></script>
+<script src="js/app.js?v=6.878"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4590,7 +4612,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.877'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.878'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
