@@ -1,6 +1,22 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.897 - SU TELEFONO LA FRASE DELLA HOME SALE SOPRA I NUMERONI VERDI (Franco). 📌 Si sposta con
+//          `order` dentro la media query, non spostando il markup: `#hero` e' gia' una colonna
+//          flex, e muovere il <p> l'avrebbe alzata anche sul DESKTOP, dove Franco non ha chiesto
+//          niente. 🔴 E la seconda riga («Fatto con 💚...») va sistemata insieme: portava un
+//          margine NEGATIVO che serviva a tenerla attaccata alla prima, e senza quella davanti
+//          l'avrebbe tirata su dentro i numeroni - una rottura in silenzio su una riga che nessuno
+//          ha toccato. Il suo margine esce dallo stile in linea, come la v6.183 fece per l'altra.
+//          Modificato il solo index.html.
+// v6.896 - «INVERTI ORDINE PAGINE» NEL TAB PAGINE (Franco). Rovescia l'elenco e salva da
+//          `_salvaPagine` come tutto il resto, col rimbalzo della v6.101 se la scrittura fallisce.
+//          ⚠️ `slice()` prima di `reverse()`: `reverse` lavora sull'array STESSO, e senza la copia
+//          rovescerebbe l'elenco del record prima di sapere se la scrittura va a buon fine - il
+//          rimbalzo rimetterebbe un array gia' rovesciato, cioe' non rimetterebbe niente.
+//          📌 Compare da DUE pagine in su: invertire un elenco di uno non fa niente. E non e'
+//          rosa e non chiede conferma - il rosa dice «questo cancella» (v6.601), e invertire si
+//          annulla ripremendo. Modificato il solo js/app.js.
 // v6.895 - VIA L'ICONA DEL LIBRO DAL PULSANTE (Franco). \U0001f534 E con lei se ne va la struttura che
 //          serviva solo a tenerla sotto: i due <span> e `flex-direction:column` esistevano per una
 //          ragione sola (in un flex il testo nudo e l'emoji sono UN elemento anonimo, quindi per
@@ -28884,7 +28900,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.895';
+const JS_VERSION = 'v6.897';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -55309,6 +55325,19 @@ function _bloccoPagineEdit(f) {
           + 'onclick="pagineSfondoTutte()">\u2728 '
           + (it ? 'Rimuovi sfondo da tutte' : 'Remove background from all') + '</button>'
         : '')
+    // \U0001f195 v6.896 (Franco: «mettimi un bottone, nel tab pagine, che si chiama "Inverti ordine
+    //    pagine", che inverte l'ordine di tutte le pagine»).
+    // ⚠️ COMPARE DA DUE PAGINE IN SU, non da una: invertire un elenco di uno non fa niente, e un
+    //    comando che non fa niente e' peggio di un comando che non c'e' (v6.171). E' la stessa
+    //    soglia di «Rimuovi sfondo da tutte», alzata di uno perche' qui la soglia vera e' due.
+    // 📌 NON E' ROSA e NON CHIEDE CONFERMA, ed e' una decisione, non una dimenticanza: il rosa
+    //    di questo sito dice «questo cancella» (v6.601/v6.603), e invertire non cancella niente -
+    //    ripremendo si torna esattamente da dove si e' partiti. Una conferma davanti a un gesto
+    //    che si annulla da solo insegna solo a premere «si» senza leggere.
+    + (pag.length > 1
+        ? '<button type="button" class="btn-foto" style="flex:1;" onclick="pagineInverti()">\u2195\uFE0F '
+          + (it ? 'Inverti ordine pagine' : 'Reverse page order') + '</button>'
+        : '')
     + '</div>'
     + (righe || '<p style="font-size:0.82rem;color:var(--muted);font-style:italic;margin:0;">'
         + (it ? 'Nessuna pagina ancora.' : 'No pages yet.') + '</p>')
@@ -55485,6 +55514,29 @@ async function pagineAlCapo(i, verso) {
   const [presa] = nuove.splice(i, 1);
   if (verso < 0) nuove.unshift(presa); else nuove.push(presa);
   if (await _salvaPagine(nuove)) _ridisegnaPagine();
+}
+
+// 🆕 v6.896 (Franco) - INVERTIRE L'ORDINE DI TUTTE LE PAGINE.
+// 📌 PASSA DA `_salvaPagine` COME TUTTO IL RESTO: scrive su Firestore e, se la scrittura
+//    fallisce, rimette l'ordine di prima e lo dice (v6.101). Un riordino che vive solo a schermo
+//    si perde chiudendo la scheda, ed e' la bugia piu' facile da non notare.
+// ⚠️ `slice()` PRIMA DI `reverse()`, e non e' pignoleria: `reverse` lavora sull'array STESSO,
+//    quindi senza la copia rovescerebbe l'elenco del record ancora prima di sapere se la
+//    scrittura andra' a buon fine - e il rimbalzo di `_salvaPagine` rimetterebbe un array gia'
+//    rovesciato, cioe' non rimetterebbe niente. E' lo stesso motivo per cui tutte le altre
+//    funzioni di questo blocco lavorano su `pag.slice()`.
+// 📌 E il messaggio nomina QUANTE pagine sono state girate: «invertito» da solo non dice su
+//    cosa ha lavorato, e chi ha trentacinque pagine vuole vedere il trentacinque (v6.204).
+async function pagineInverti() {
+  const pag = _pagineDi(_figSlotF);
+  if (pag.length < 2) return;
+  const nuove = pag.slice().reverse();
+  if (await _salvaPagine(nuove)) {
+    _ridisegnaPagine();
+    const it = currentLang === 'it';
+    toast(it ? ('\u2195\uFE0F Ordine invertito: ' + pag.length + ' pagine')
+             : ('\u2195\uFE0F Order reversed: ' + pag.length + ' pages'), 'success');
+  }
 }
 
 async function pagineSposta(i, verso) {
