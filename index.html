@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.895">
+<link rel="stylesheet" href="css/style.css?v=6.897">
 
 
 <style>
@@ -400,8 +400,22 @@
    v6.183 lo porta qui perche' su telefono serve il segno opposto (Franco: "la frase inizia
    attaccata agli ultimi numeroni verdi"). Sul desktop il valore e' quello di sempre. */
 #hero-desc-main { margin-top:-1.4rem; }
+#hero-tagline   { margin-top:-2.2rem; }
+/* 🆕 v6.897 (Franco: «nella versione mobile, nella home page, la frase che dice "questo e' il
+   database non ufficiale degli Sgorbions" mettila in alto, sopra agli score verdi»).
+   📌 SI SPOSTA CON `order`, NON CON IL MARKUP: `#hero` e' gia' una colonna flex, quindi basta
+   dire a quella riga di venire prima. Spostare il <p> nell'HTML l'avrebbe messa sopra i numeri
+   anche sul DESKTOP, dove Franco non ha chiesto niente e dove la frase sta sotto il logo da
+   sempre. Una riga di CSS dentro la media query cambia solo la schermata nominata.
+   🔴 E LA SECONDA RIGA VA SISTEMATA INSIEME, se no si rompe in silenzio: «Fatto con 💚...»
+   porta un margine NEGATIVO che serviva a tenerla attaccata alla frase di sopra (v6.068).
+   Portata via quella, quel margine la tirerebbe su dentro i numeroni verdi - e nessuno avrebbe
+   toccato la riga che si rompe. Su telefono prende lo stesso distacco che aveva la prima.
+   ⚠️ E il margine della frase spostata cambia di senso: prima serviva a staccarla dai numeri che
+   aveva SOPRA, adesso serve a staccarla dai numeri che ha SOTTO. */
 @media (max-width:860px) {
-  #hero-desc-main { margin-top:0.9rem; }
+  #hero-desc-main { order:-1; margin:0 0 0.8rem; }
+  #hero-tagline   { margin-top:0.9rem; }
 }
 
 /* v5.948 — TELEFONO: come sul desktop, numeri a SINISTRA e a DESTRA del logo. Per farceli stare
@@ -1245,7 +1259,11 @@ button.back-btn { color:#ffffff; }
          scavalcare solo con `!important`, e un `!important` messo per aggirare una riga che
          controlliamo noi e' una toppa, non una regola. -->
     <p class="hero-desc" id="hero-desc-main" data-i18n="hero.desc">Il database non ufficiale dedicato alla leggendaria serie italiana degli anni '90.</p>
-    <p class="hero-desc" style="margin-top:-2.2rem;" data-i18n="hero.tagline">Fatto con 💚 da collezionisti, per collezionisti.</p>
+    <!-- 🔄 v6.897 - IL MARGINE ESCE DALLO STILE IN LINEA, ed e' la stessa medicina della v6.183
+         sulla riga qui sopra: su telefono serve un valore diverso, e uno stile in linea si puo'
+         scavalcare solo con `!important` - una toppa messa per aggirare una riga che controlliamo
+         noi. Il `-2.2rem` del desktop non cambia di un pixel: cambia solo dove e' scritto. -->
+    <p class="hero-desc" id="hero-tagline" data-i18n="hero.tagline">Fatto con 💚 da collezionisti, per collezionisti.</p>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
     <div class="hero-cta">
       
@@ -4747,7 +4765,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.895"></script>
+<script src="js/app.js?v=6.897"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4771,7 +4789,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.895'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.897'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
