@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.901">
+<link rel="stylesheet" href="css/style.css?v=6.909">
 
 
 <style>
@@ -1622,7 +1622,20 @@ di tutte le serie</button>
               </div>
             </div>
           </div>
-          <div id="detail-meta" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;margin:0.4rem 0 0.6rem;font-size:0.82rem;color:var(--text);"></div>
+          <!-- 🔄 v6.907 (Franco: «proviamo a mettere tutti e 5 i contatori sulla stessa riga»,
+               foto alla mano: «256 Figurine con retro set base · 339 variazioni non ufficiali ·
+               115 change» stavano sulla prima riga e gli altri due andavano a capo) — LO SPAZIO
+               FRA UNA NUMERICA E L'ALTRA SCENDE DA 1.4rem A 0.9rem.
+               📏 IL GUADAGNO VERO NON È QUESTO: è la riga del set base, che nella stessa release
+               smette di ripetere il nome della tipologia («256 Figurine con retro set base» →
+               «256 set base»). Misurato sulla foto di Franco, sono ~155px su cinque voci che ne
+               chiedevano ~790 in un contenitore da ~760: senza quella, nessun `gap` bastava.
+               ⚠️ E RESTA `flex-wrap`, non diventa `nowrap`: la larghezza di queste cinque voci
+               dipende dai nomi delle versioni e dai numeri della serie, quindi «ci stanno» è vero
+               per la serie che si sta guardando e non per tutte. Con `nowrap` la riga sfonderebbe
+               la colonna invece di andare a capo — un guasto peggiore di quello che risolve.
+               📌 Il gap VERTICALE (0.7rem) non si tocca: serve quando la riga va a capo davvero. -->
+          <div id="detail-meta" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 0.9rem;margin:0.4rem 0 0.6rem;font-size:0.82rem;color:var(--text);"></div>
         </div>
       </div>
       <!-- v5.993 — niente contenitore attorno a descrizione e "Mostra tutto": posizionaDescrizioneSerie()
@@ -4383,6 +4396,15 @@ di tutte le serie</button>
            meta' e' peggio di una riga in piu'. -->
       <button type="button" id="pagina-grande-su" onclick="paginaGrandeSposta(-1)" class="btn-foto" style="display:none;margin-left:auto;margin-right:0.3rem;white-space:nowrap;">&#11013;&#65039; <span data-i18n="pagina.spostaSx">Sposta a sinistra di una posizione</span></button>
       <button type="button" id="pagina-grande-giu" onclick="paginaGrandeSposta(1)" class="btn-foto" style="display:none;margin-right:0.6rem;white-space:nowrap;">&#10145;&#65039; <span data-i18n="pagina.spostaDx">Sposta a destra di una posizione</span></button>
+      <!-- 🆕 v6.902 (Franco: «aggiungi il tasto Elimina foto anche nella pagina di singola
+           foto») - E QUESTO E' ROSA, al contrario dei tre che gli stanno accanto.
+           🔴 Il rosa di questo sito dice «questo cancella» (v6.601/v6.603), e la classe e' quella
+           del cestino di riga della griglia: `btn-foto elimina`. Gli altri comandi di questa
+           barra spostano o sostituiscono - si annullano ripremendo o ricaricando - questo toglie
+           una pagina dall'album, e non c'e' un tasto che la rimette.
+           ⚠️ E sta in FONDO, dopo gli altri: un comando che cancella accanto a uno che sposta, alla
+           stessa distanza dal dito, e' il modo di premerlo per sbaglio mentre si sfoglia. -->
+      <button type="button" id="pagina-grande-elimina" onclick="paginaGrandeElimina()" class="btn-foto elimina" style="display:none;margin-right:0.6rem;white-space:nowrap;">&#128465;&#65039; <span data-i18n="pagina.elimina">Elimina foto</span></button>
       <label id="pagina-grande-cambia" class="btn-foto" style="display:none;margin-right:0.6rem;cursor:pointer;white-space:nowrap;">&#128247; <span data-i18n="foto.cambia">Cambia foto</span>
         <input type="file" accept="image/*" style="display:none;" onchange="paginaGrandeCambiaFoto(event)">
       </label>
@@ -4412,11 +4434,22 @@ di tutte le serie</button>
          l'imbottitura (4rem) e la barra del titolo (~3,3rem). Nove lasciano un margine, cosi' non
          compare una barra di scorrimento dentro la finestra. -->
     <div style="display:flex;align-items:center;justify-content:center;gap:0.6rem;">
+      <!-- 🆕 v6.903 (Franco: «metti anche i tasti "Vai a prima pagina" e "Vai a ultima
+           pagina"») - I DUE SALTI AI CAPI, ai LATI delle frecce.
+           📌 Stanno piu' all'esterno delle frecce, non piu' all'interno, e il verso lo dice la
+           posizione: il salto all'inizio e' il piu' a sinistra di tutti, quello alla fine il piu'
+           a destra. E' la stessa disposizione dei quattro comandi di riga della griglia
+           (v6.871), dove i salti abbracciano le frecce. Un ordine diverso nei due posti sarebbe
+           stato due modi di dire lo stesso gesto.
+           ⚠️ E questi NON riscrivono l'album: portano solo lo sguardo, come le frecce accanto.
+           Quindi non entrano nell'elenco dei comandi da admin e non chiedono conferma. -->
+      <button type="button" id="pagina-grande-primo" onclick="paginaGrandeCapo(-1)" class="btn-foto" style="flex-shrink:0;" data-i18n-title="pagina.primo" title="Vai a prima pagina">&#9198;</button>
       <button type="button" id="pagina-grande-prec" onclick="paginaGrandeVai(-1)" class="btn-foto" style="flex-shrink:0;">&#11013;&#65039;</button>
       <div id="pagina-grande-cornice" style="flex:1;min-width:0;max-width:min(70vw, 1100px);height:calc(90vh - 9rem);display:flex;align-items:center;justify-content:center;">
         <img id="pagina-grande-img" alt="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;background:var(--card2);display:block;">
       </div>
       <button type="button" id="pagina-grande-succ" onclick="paginaGrandeVai(1)" class="btn-foto" style="flex-shrink:0;">&#10145;&#65039;</button>
+      <button type="button" id="pagina-grande-ultimo" onclick="paginaGrandeCapo(1)" class="btn-foto" style="flex-shrink:0;" data-i18n-title="pagina.ultimo" title="Vai a ultima pagina">&#9197;</button>
     </div>
   </div>
 </div>
@@ -4835,7 +4868,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.901"></script>
+<script src="js/app.js?v=6.909"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4859,7 +4892,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.901'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.909'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
