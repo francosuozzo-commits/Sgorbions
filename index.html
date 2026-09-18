@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.897">
+<link rel="stylesheet" href="css/style.css?v=6.898">
 
 
 <style>
@@ -413,9 +413,23 @@
    toccato la riga che si rompe. Su telefono prende lo stesso distacco che aveva la prima.
    ⚠️ E il margine della frase spostata cambia di senso: prima serviva a staccarla dai numeri che
    aveva SOPRA, adesso serve a staccarla dai numeri che ha SOTTO. */
+/* 🔄 v6.898 (Franco: «dovevi spostare anche la seconda frase, quella che dice "fatto col cuore
+   da collezionisti per collezionisti"») - SALGONO TUTTE E DUE.
+   🔴 LA v6.897 AVEVA PRESO LA RICHIESTA ALLA LETTERA E AVEVA SBAGLIATO. Franco aveva nominato
+   una frase sola («questo e' il database non ufficiale... eccetera eccetera»), e le due righe sotto
+   il logo sono una cosa sola da sempre - la v6.068 le tratta come un blocco, e il margine negativo
+   della seconda esiste apposta per tenerle insieme. Spostarne una e lasciare l'altra le ha
+   separate, e si e' visto subito.
+   📌 «Eccetera eccetera» voleva dire proprio quello: il blocco, non la prima riga.
+   📌 LO STESSO `order` PER TUTTE E DUE, non -2 e -1: a parita' di `order` vince l'ordine del
+   markup, che le tiene gia' nel verso giusto. Due numeri diversi sarebbero stati due cose da
+   mantenere allineate per ottenere l'ordine che c'e' gia'.
+   ⚠️ E i margini si dichiarano tutti e due qui: il `-2.2rem` del desktop tiene la seconda
+   attaccata alla prima sfruttando i margini automatici del <p>, e sopra i numeroni serve invece
+   un distacco dichiarato - poco fra le due righe, di piu' prima dei numeri. */
 @media (max-width:860px) {
-  #hero-desc-main { order:-1; margin:0 0 0.8rem; }
-  #hero-tagline   { margin-top:0.9rem; }
+  #hero-desc-main { order:-1; margin:0 0 0.2rem; }
+  #hero-tagline   { order:-1; margin:0 0 0.9rem; }
 }
 
 /* v5.948 — TELEFONO: come sul desktop, numeri a SINISTRA e a DESTRA del logo. Per farceli stare
@@ -4765,7 +4779,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.897"></script>
+<script src="js/app.js?v=6.898"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4789,7 +4803,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.897'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.898'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
