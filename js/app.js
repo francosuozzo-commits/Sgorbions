@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.874 - LA SEZIONE LISTE NON ELENCA PIU' LE SERIE IN ARRIVO, INVISIBILI E IL CONTENITORE (Franco: «la
+//          sezione liste elenca anche le serie che sono in arrivo o invisibili», e «come sempre, va esclusa
+//          anche la serie contenitori»). La pagina e i TRE export leggevano `getData`, che toglie le
+//          nascoste SOLO a chi non e' admin e le IN ARRIVO a nessuno: la stessa pagina diceva cose diverse
+//          secondo chi guardava. Due porte nuove, `_serieDelleListe` e `_articoliDelleListe`, che partono
+//          dalla cache grezza ed escludono per APPARTENENZA a una serie esclusa (v6.811), non per
+//          inclusione. ⚠️ Qui il contenitore esce, mentre nei contatori i suoi articoli si contano
+//          (v6.813): le due domande sono diverse, e la wantlist elenca PER SERIE. Modificato js/app.js.
 // v6.873 - «ELIMINA TUTTE LE FOTO», E LA FINESTRELLA SI SFOGLIA (Franco: «affianco ad Aggiungi pagine e
 //          Rimuovi sfondo a tutte, aggiungi un terzo pulsante (rosa) Elimina tutte le foto», e «sarebbe
 //          bello che si possa scorrere le pagine anche dalla finestrella»). Il terzo tasto e' rosa perche'
@@ -28665,7 +28673,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.873';
+const JS_VERSION = 'v6.874';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -56839,10 +56847,43 @@ function _articoliDaContare(tuttiGliArticoli, tutteLeSerie) {
 // ⚠️ La Classifica è il caso peggiore: `backfillPublicScores` lo lancia un ADMIN, e scriveva in
 //    Firestore i punteggi di tutti col filtro dell'admin — cioè senza togliere niente.
 // 📌 Chi conta un numero nuovo chiede questa funzione. Le pagine che MOSTRANO articoli (inventario,
-//    pagina della serie, wantlist, export) non passano di qui: quelle sono viste, non contatori.
+//    pagina della serie) non passano di qui: quelle sono viste, non contatori.
+// 🔄 v6.874 — LA WANTLIST E I SUOI EXPORT SONO USCITI DA QUESTO ELENCO, e non perche' abbiano
+//    cambiato natura: perche' la loro domanda non e' «cosa mostro», e' «cosa ti manca». Una serie
+//    IN ARRIVO non si puo' collezionare, quindi non puo' mancare a nessuno. Chiedono a
+//    `_articoliDelleListe`, qui sotto, che e' una domanda a se' e non questa.
 function _articoliDaContareSito() {
   return _articoliDaContare(Array.isArray(_cache.figurines) ? _cache.figurines : [],
                             Array.isArray(_cache.series) ? _cache.series : []);
+}
+
+// 🆕 v6.874 (Franco) — LE SERIE E GLI ARTICOLI CHE ENTRANO NELLE LISTE. Segnalazione sua:
+//    *«la sezione liste elenca anche le serie che sono in arrivo o invisibili»*, e poi, sul
+//    contenitore: *«come sempre, va esclusa anche la serie contenitori»*.
+// 🔴 QUI IL CONTENITORE ESCE, E LA v6.813 DICE IL CONTRARIO PER I CONTATORI: la' i suoi articoli
+//    SI CONTANO (*«ne vanno solo conteggiati gli articoli»*) e a mancare e' la sua riga. Le due
+//    risposte divergono perche' le domande sono diverse, ed e' la ragione per cui questa funzione
+//    esiste invece di riusare `_articoliDaContare`: la wantlist elenca PER SERIE — riquadro,
+//    spunte, ordinamento, colonna dell'Excel — e una riga che non e' una serie li' non ha un
+//    posto dove stare. Farle condividere una funzione sola avrebbe unito due verita' destinate
+//    a litigare al primo cambio, che e' la lezione della v6.813 letta al contrario.
+// ⚠️ SI ESCLUDE PER APPARTENENZA A UNA SERIE ESCLUSA, e NON si include per appartenenza a una
+//    serie ammessa — la stessa disciplina della v6.811. Un articolo il cui `seriesId` non
+//    corrisponde a nessuna serie conosciuta oggi resta in lista; con l'inclusione sparirebbe **in
+//    silenzio**, e nessuno se ne accorgerebbe guardando lo schermo.
+// 📌 SI PARTE DALLA CACHE GREZZA e non da `getData`: quella toglie le nascoste **solo a chi non e'
+//    admin**, e le IN ARRIVO non le toglie a nessuno. Era esattamente il difetto segnalato — la
+//    stessa pagina diceva cose diverse a Franco e a un visitatore (v6.811, v6.824).
+function _serieDelleListe() {
+  return _serieDaContare(Array.isArray(_cache.series) ? _cache.series : []);
+}
+
+function _articoliDelleListe() {
+  const serie = Array.isArray(_cache.series) ? _cache.series : [];
+  const fuori = new Set();
+  for (const s of serie) if (!_serieStatoContabile(s) || s.serieContenitore) fuori.add(s.id);
+  return (Array.isArray(_cache.figurines) ? _cache.figurines : [])
+    .filter(f => !f.invisibile && !fuori.has(f.seriesId));
 }
 
 // 🆕 v6.815 — la firma dell'ultimo elenco disegnato: serve a NON ridisegnare i riquadri a ogni
@@ -64100,14 +64141,19 @@ function _contaPerCompletezza(f, s) { return _articoliCompletezza(s).includes(f.
 function renderWantlist() {
   if (!currentUser) { showPage('home'); return; }
   const el = document.getElementById('wantlist-content');
-  const allFigs = getData('figurines', []);
+  // 🆕 v6.874 (Franco: *«la sezione liste elenca anche le serie che sono in arrivo o
+  // invisibili»*) — LE DUE PORTE DELLA PAGINA SONO `_articoliDelleListe` e `_serieDelleListe`.
+  // Erano `getData`, che toglie le nascoste **solo a chi non e' admin** e le IN ARRIVO a
+  // nessuno: la stessa pagina diceva cose diverse secondo chi guardava, e in tutti e due i casi
+  // offriva serie che non si possono collezionare.
+  const allFigs = _articoliDelleListe();
   const owned = getOwned();
   // Le numeriche di default considerano solo le figurine base (non variazioni/change);
   // le variazioni/change sono incluse nell'export solo se l'utente attiva l'opzione dedicata
   const isBaseItem = isBaseFigurine;
 
   const missing = allFigs.filter(f => !owned.includes(f.id) && isBaseItem(f));
-  const series = getData('series', []);
+  const series = _serieDelleListe();
 
   // Series where user has everything (or has items but none missing)
   const completeSeries = series.slice().sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999)).filter(s => {
@@ -64124,7 +64170,7 @@ function renderWantlist() {
       const incOwned = prefs[s.id]?.includeOwned !== false;
       return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;">
         <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.35rem;">
-          <span style="font-family:var(--font-display);font-size:1.2rem;">${s.name} <span class="card-badge" style="color:var(--success);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'&&_eBase(f)); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
+          <span style="font-family:var(--font-display);font-size:1.2rem;">${s.name} <span class="card-badge" style="color:var(--success);">✓ (${(() => { const figs = allFigs.filter(f=>f.seriesId===s.id&&f.section==='figurines'&&_eBase(f)); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
           <!-- v6.292 (Franco) - la spunta sta QUI, ultimo figlio della riga del nome:
                spinta a destra dal margine automatico, e senza una riga tutta sua il
                riquadro e' piu' basso di una riga. -->
@@ -64391,7 +64437,7 @@ function renderWantlist() {
       const incOwned = prefs[s.id]?.includeOwned !== false;
       return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;">
         <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.35rem;">
-          <span style="font-family:var(--font-display);font-size:1.2rem;">${s.name} <span class="card-badge" style="color:var(--success);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'&&_eBase(f)); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
+          <span style="font-family:var(--font-display);font-size:1.2rem;">${s.name} <span class="card-badge" style="color:var(--success);">✓ (${(() => { const figs = allFigs.filter(f=>f.seriesId===s.id&&f.section==='figurines'&&_eBase(f)); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
           <!-- v6.292 (Franco) - la spunta sta QUI, ultimo figlio della riga del nome:
                spinta a destra dal margine automatico, e senza una riga tutta sua il
                riquadro e' piu' basso di una riga. -->
@@ -64544,8 +64590,11 @@ function _rigaExport(nomeSerie, f) {
 
 async function exportOwnedIncomplete(btn) {
   // Export owned figs only for series where user does NOT have all stickers
-  const allFigs = getData('figurines', []);
-  const series = getData('series', []);
+  // 🔄 v6.874 — l'EXPORT 2 passa dalle stesse due porte degli altri due. Era rimasto indietro
+  //    nella prima stesura di questa release: gli export sono TRE, non due, e il terzo si trova
+  //    solo cercando i chiamanti, non ricordandoli.
+  const allFigs = _articoliDelleListe();
+  const series = _serieDelleListe();
   const owned = getOwned();
   const prefs = getWantlistPrefs();
 
@@ -64590,12 +64639,14 @@ async function exportOwnedIncomplete(btn) {
 
 async function exportOwnedList() {
   if (!currentUser) return;
-  const allFigs = getData('figurines', []);
+  // 🔄 v6.874 — stessa porta della pagina: un Excel che elencasse serie che la pagina non mostra
+  //    sarebbe la seconda risposta alla stessa domanda, e nessuno se ne accorgerebbe a schermo.
+  const allFigs = _articoliDelleListe();
   const owned = getOwned();
   // 🔄 v6.716 - non piu' "figurine e carte" per tutti: ognuno chiede alla SUA serie.
   // ⚠️ `series` sale di una riga perche' adesso serve PRIMA: era sotto, e messo sotto
   //    darebbe un `series` non ancora definito - l'errore che questa release chiude altrove.
-  const series = getData('series', []);
+  const series = _serieDelleListe();   // 🔄 v6.874
   const ownedFigs = allFigs.filter(f => owned.includes(f.id)
     && _contaPerCompletezza(f, series.find(x => x.id === f.seriesId)) && isBaseFigurine(f));
   // 🗑️ v6.285 - qui c'era una mappa `sectionLabels` scritta a mano, con CINQUE articoli su
@@ -64641,7 +64692,9 @@ async function exportOwnedList() {
 }
 
 async function exportWantlist(btn) {
-  const allFigs = getData('figurines', []).filter(f => f.section === 'figurines');
+  // 🔄 v6.874 — anche la guardia: se contasse su un elenco piu' largo di quello esportato, direbbe
+  //    «ti manca qualcosa» e poi consegnerebbe un file vuoto.
+  const allFigs = _articoliDelleListe().filter(f => f.section === 'figurines');
   const owned = getOwned();
   const missing = allFigs.filter(f => !owned.includes(f.id));
   if (!missing.length) {
@@ -64653,10 +64706,10 @@ async function exportWantlist(btn) {
 }
 async function _exportWantlistImpl() {
   if (!currentUser) return;
-  const allFigs = getData('figurines', []);
+  const allFigs = _articoliDelleListe();   // 🔄 v6.874
   const owned = getOwned();
   const missing = allFigs.filter(f => !owned.includes(f.id));
-  const series = getData('series', []);
+  const series = _serieDelleListe();       // 🔄 v6.874
   // 🗑️ v6.285 - qui c'era una mappa `sectionLabels` scritta a mano, con CINQUE articoli su
   // sette: `carte` e `attaccare` cadevano sul ripiego e uscivano dal file chiamati "Figurina".
   // Adesso l'etichetta la da' `_etichettaArticoloSing()`, che legge `ARTICOLI`.
