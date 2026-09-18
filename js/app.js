@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.878 - IL PULSANTE «RC»: RICARICA IL SITO SALTANDO LA CACHE (Franco: «sia desktop che mobile»,
+//          «solo admin», «in alto a sx solo nella homepage», «piccolo, quindi chiamalo RC»).
+//          🔴 NON preme CTRL+SHIFT+R e non svuota la cache del browser: nessun JavaScript puo' farlo.
+//          Quello che fa e' richiedere alla RETE i file di questo sito con `cache:'reload'`, che
+//          RISCRIVE le voci vecchie, e poi ricaricare - per l'uso che conta («ho pubblicato e vedo
+//          ancora la versione di prima») l'effetto e' lo stesso. 📌 L'elenco dei file si legge dal
+//          documento, non e' scritto a mano: un file nuovo entra da se'. 📌 «Solo in home» non ha
+//          punti di chiamata - il pulsante vive dentro `#page-home`, che fuori dalla home e'
+//          `display:none`. Modificato index.html, css/style.css, js/app.js.
 // v6.877 - LA DATA "ONLINE DAL" VA SOTTO LA VERSIONE, nella navbar del desktop (Franco). Erano
 //          affiancate su una riga sola sotto il logo; adesso sono due righe, e il dettaglio JS/CSS
 //          dell'admin resta accanto al numero perche' e' la stessa informazione.
@@ -28703,7 +28712,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.877';
+const JS_VERSION = 'v6.878';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -30319,7 +30328,7 @@ const i18n = {
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message !',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
 'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.spille':'Pins','catalog.attaccare':'Album stickers','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','catalog.backToSeries':'Series','form.series.firstNumber':'First sticker N.','form.series.lastNumber':'Last sticker N.','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
-'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','nav.mialista':'My list',
+'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','rc.title':'Reload the site bypassing the browser cache','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
 'hero.challenge':'Challenge others','hero.challengeDesc':'Who has the highest-scoring list? You can also choose to appear anonymously.',
@@ -30428,7 +30437,7 @@ const i18n = {
 
 
 
-'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','nav.mialista':'Mia lista',
+'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','rc.title':'Ricarica il sito saltando la cache del browser','nav.mialista':'Mia lista',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista con maggior punteggio? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.','hero.descShort':'Il database non ufficiale della leggendaria serie italiana anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','hero.cta2':'Inizia a collezionare gli Sgorbions',
@@ -32849,8 +32858,63 @@ function _aggiornaRicercaNavbar() {
   const box = document.getElementById('nav-search');
   if (box) box.style.display = '';
 }
+// 🆕 v6.878 (Franco) — «RC»: RICARICA IL SITO SALTANDO LA CACHE DEL BROWSER.
+// 🔴 E LA PRIMA COSA DA SCRIVERE E' QUELLO CHE **NON** FA, perche' la richiesta diceva
+//    «CTRL+SHIFT+R» e una pagina web quel tasto non lo puo' premere: nessun JavaScript puo'
+//    svuotare la cache HTTP del browser, ne' quella delle immagini di altri siti. Non e' un
+//    limite di questo codice, e' il confine della sandbox — se ci fosse un modo, ce l'avrebbe
+//    anche chi vuole farti del male. `location.reload(true)` esisteva e i browser moderni lo
+//    IGNORANO in silenzio: scriverlo avrebbe dato un pulsante che sembra funzionare.
+// ✅ QUELLO CHE SI PUO' FARE, E CHE RISOLVE IL PROBLEMA VERO: si richiedono alla RETE i file di
+//    QUESTO sito con `cache:'reload'`, che non e' un giro attorno alla cache ma la **riscrive**
+//    — la voce vecchia viene sostituita da quella appena scaricata. Poi si ricarica. Per l'unico
+//    uso che conta («ho pubblicato e vedo ancora la versione di prima») l'effetto e' lo stesso
+//    di CTRL+SHIFT+R.
+// 📌 L'ELENCO DEI FILE NON E' SCRITTO A MANO: si legge dal documento (`script[src]`,
+//    `link[rel=stylesheet]`). Un elenco scritto qui sarebbe corto di uno il giorno che nasce un
+//    file nuovo, e nessuno se ne accorgerebbe — il difetto che questo documento registra piu'
+//    spesso di ogni altro. Cosi' un file nuovo entra da se'.
+// ⚠️ SOLO I FILE DEL SITO: Google Fonts, Cloudinary e gli SDK stanno su altri domini, e una
+//    richiesta `cache:'reload'` verso un'altra origine non aggiorna niente che ci riguardi.
+// 📌 E L'INDIRIZZO DELLA PAGINA ENTRA PER PRIMO, perche' e' quello che conta davvero: e'
+//    l'`index.html` vecchio a chiedere il `js/app.js` vecchio col suo `?v=` vecchio. Rinfrescare
+//    l'index e' cio' che rompe la catena; gli altri si rinfrescano per sicurezza.
+async function ricaricaSaltandoLaCache(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '\u2026'; }
+  try {
+    // 1. La cache dei service worker: e' l'unica che una pagina PUO' cancellare davvero.
+    //    ⬜ Oggi questo sito non registra nessun service worker (misurato), quindi non trovera'
+    //    niente. Si fa lo stesso: il giorno che ne nascesse uno, questo pulsante lo terrebbe in
+    //    conto senza che nessuno si ricordi di tornare qui.
+    if (window.caches && caches.keys) {
+      const nomi = await caches.keys();
+      await Promise.all(nomi.map(n => caches.delete(n)));
+    }
+    // 2. I file del sito, riscaricati dalla rete e RISCRITTI nella cache del browser.
+    const risorse = [location.pathname + '?rc=' + Date.now()];
+    document.querySelectorAll('script[src], link[rel="stylesheet"][href]').forEach(el => {
+      const u = el.getAttribute('src') || el.getAttribute('href');
+      // relativo = roba nostra; un indirizzo assoluto e' di un altro dominio
+      if (u && !/^(https?:)?\/\//i.test(u)) risorse.push(u);
+    });
+    await Promise.all(risorse.map(u => fetch(u, { cache: 'reload' }).catch(() => null)));
+  } catch (e) {
+    console.error('RC', e);
+  }
+  // 3. ⚠️ `location.reload()` e BASTA, senza argomenti: il vecchio `reload(true)` e' deprecato e
+  //    i browser lo ignorano. A questo punto la cache porta gia' i file nuovi, quindi una
+  //    ricarica normale li prende.
+  location.reload();
+}
+
 function updateNavUser() {
   _aggiornaRicercaNavbar();   // v6.341 - vale per tutti e due i rami, quindi sta prima del bivio
+  // 🆕 v6.878 — RC si accende per il solo admin. Sta PRIMA del bivio come la riga qui sopra e
+  //    per la stessa ragione: la risposta e' una sola per tutti e due i rami, e scriverla due
+  //    volte sarebbe darle due posti in cui divergere. La condizione «solo in home» non e' qui:
+  //    la risolve il DOM, perche' il pulsante vive dentro `#page-home`.
+  const rcBtn = document.getElementById('rc-btn');
+  if (rcBtn) rcBtn.style.display = currentUser?.isAdmin ? '' : 'none';
   const guestNav = document.getElementById('guest-nav');
   const userNav = document.getElementById('user-nav');
   const addSeriesBtn = document.getElementById('admin-add-series-btn');
