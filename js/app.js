@@ -1,6 +1,20 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.876 - L'ORDINE DELLE VOCI NEL MENU DEL TELEFONO, dettato da Franco una per una (Home, Inventario,
+//          Ricerca, Blog, Mia lista, Cio' che cerco, Liste, Classifica, Esci; Contatti prima dell'ultima,
+//          Newsletter davanti a Contatti). 🔴 Riordinato con `order` DENTRO la media query dei 860px e non
+//          spostando il markup: `.nav-links` e' un elenco solo, e sopra gli 860px e' la navbar del desktop
+//          — spostare i tag avrebbe disfatto in silenzio la fila che la v6.853 aveva misurato. ⚠️ Il numero
+//          si da' a TUTTE le voci: il valore di partenza e' 0, quindi una lasciata senza salta in cima.
+//          🆕 E IL TASTO «ESCI» ENTRA NELLA FORM DEL PROFILO (Franco: «prima di cancella utente»), SOPRA
+//          la zona rossa e non dentro: uscire dal sito non e' pericoloso, e il bordo del pericolo avrebbe
+//          detto il contrario col solo colore. Riusa `.btn-logout` e la chiave `nav.logout` — stesso
+//          comando della navbar e del panino, un vestito solo e una parola sola.
+//          📌 E «Esci» NON e' una parola nuova: il dizionario dice gia' `'nav.logout':'Esci'` in italiano
+//          e `'Logout'` in inglese. Il «Logout» scritto nell'index e' il ripiego che `applyI18n`
+//          riscrive all'avvio — la trappola del §5 del documento, letta al contrario.
+//          Modificato index.html, css/style.css.
 // v6.875 - LA SERIE CONTENITORE TORNA NELLE LISTE, E LA FUNZIONE DOPPIA SE NE VA (Franco: «rimetti la serie
 //          contenitore nelle liste»). Degli articoli senza serie una lista si fa: sono articoli veri, che
 //          si possiedono o mancano. ⚠️ Nel contatore SERIE resta fuori (v6.813): «le serie sono N» e «di
@@ -28680,7 +28694,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.875';
+const JS_VERSION = 'v6.876';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
