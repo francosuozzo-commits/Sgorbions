@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.875 - LA SERIE CONTENITORE TORNA NELLE LISTE, E LA FUNZIONE DOPPIA SE NE VA (Franco: «rimetti la serie
+//          contenitore nelle liste»). Degli articoli senza serie una lista si fa: sono articoli veri, che
+//          si possiedono o mancano. ⚠️ Nel contatore SERIE resta fuori (v6.813): «le serie sono N» e «di
+//          cosa puoi fare una lista» sono due domande, e il contenitore e' l'UNICO caso in cui divergono.
+//          🗑️ E `_articoliDelleListe` e' uscita: rimesso il contenitore era diventata identica a
+//          `_articoliDaContareSito` carattere per carattere. Le Liste chiedono quella, e per gli ARTICOLI
+//          la regola del sito e' adesso davvero una sola. Modificato js/app.js.
 // v6.874 - LA SEZIONE LISTE NON ELENCA PIU' LE SERIE IN ARRIVO, INVISIBILI E IL CONTENITORE (Franco: «la
 //          sezione liste elenca anche le serie che sono in arrivo o invisibili», e «come sempre, va esclusa
 //          anche la serie contenitori»). La pagina e i TRE export leggevano `getData`, che toglie le
@@ -28673,7 +28680,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.874';
+const JS_VERSION = 'v6.875';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -56848,42 +56855,41 @@ function _articoliDaContare(tuttiGliArticoli, tutteLeSerie) {
 //    Firestore i punteggi di tutti col filtro dell'admin — cioè senza togliere niente.
 // 📌 Chi conta un numero nuovo chiede questa funzione. Le pagine che MOSTRANO articoli (inventario,
 //    pagina della serie) non passano di qui: quelle sono viste, non contatori.
-// 🔄 v6.874 — LA WANTLIST E I SUOI EXPORT SONO USCITI DA QUESTO ELENCO, e non perche' abbiano
+// 🔄 v6.874 — LA WANTLIST E I SUOI EXPORT SONO ENTRATI IN QUESTO ELENCO, e non perche' abbiano
 //    cambiato natura: perche' la loro domanda non e' «cosa mostro», e' «cosa ti manca». Una serie
-//    IN ARRIVO non si puo' collezionare, quindi non puo' mancare a nessuno. Chiedono a
-//    `_articoliDelleListe`, qui sotto, che e' una domanda a se' e non questa.
+//    IN ARRIVO non si puo' collezionare, quindi non puo' mancare a nessuno.
+// 🔄 v6.875 (Franco: «rimetti la serie contenitore nelle liste») — E ADESSO LA CHIEDONO DAVVERO,
+//    invece di avere una funzione loro. La v6.874 aveva scritto `_articoliDelleListe`, che si
+//    distingueva da questa per una cosa sola: toglieva anche gli articoli del CONTENITORE.
+//    Rimesso il contenitore, le due funzioni tornavano identiche carattere per carattere — cioe'
+//    la seconda copia, il difetto che questo file passa le giornate a togliere. E' uscita.
+// 🔴 RESTA UNA COSA SOLA CHE LE LISTE CHIEDONO A PARTE, ed e' `_serieDelleListe`: quali SERIE
+//    fanno una riga. Li' il contenitore c'e', nel contatore SERIE no (v6.813). E' l'unico punto
+//    in cui le due domande divergono, ed e' scritto in una funzione di due righe invece che in
+//    un ramo dentro questa.
 function _articoliDaContareSito() {
   return _articoliDaContare(Array.isArray(_cache.figurines) ? _cache.figurines : [],
                             Array.isArray(_cache.series) ? _cache.series : []);
 }
 
-// 🆕 v6.874 (Franco) — LE SERIE E GLI ARTICOLI CHE ENTRANO NELLE LISTE. Segnalazione sua:
-//    *«la sezione liste elenca anche le serie che sono in arrivo o invisibili»*, e poi, sul
-//    contenitore: *«come sempre, va esclusa anche la serie contenitori»*.
-// 🔴 QUI IL CONTENITORE ESCE, E LA v6.813 DICE IL CONTRARIO PER I CONTATORI: la' i suoi articoli
-//    SI CONTANO (*«ne vanno solo conteggiati gli articoli»*) e a mancare e' la sua riga. Le due
-//    risposte divergono perche' le domande sono diverse, ed e' la ragione per cui questa funzione
-//    esiste invece di riusare `_articoliDaContare`: la wantlist elenca PER SERIE — riquadro,
-//    spunte, ordinamento, colonna dell'Excel — e una riga che non e' una serie li' non ha un
-//    posto dove stare. Farle condividere una funzione sola avrebbe unito due verita' destinate
-//    a litigare al primo cambio, che e' la lezione della v6.813 letta al contrario.
-// ⚠️ SI ESCLUDE PER APPARTENENZA A UNA SERIE ESCLUSA, e NON si include per appartenenza a una
-//    serie ammessa — la stessa disciplina della v6.811. Un articolo il cui `seriesId` non
-//    corrisponde a nessuna serie conosciuta oggi resta in lista; con l'inclusione sparirebbe **in
-//    silenzio**, e nessuno se ne accorgerebbe guardando lo schermo.
+// 🆕 v6.874 (Franco) — LE SERIE CHE FANNO UNA RIGA NELLE LISTE. Segnalazione sua: *«la sezione
+//    liste elenca anche le serie che sono in arrivo o invisibili»*.
 // 📌 SI PARTE DALLA CACHE GREZZA e non da `getData`: quella toglie le nascoste **solo a chi non e'
 //    admin**, e le IN ARRIVO non le toglie a nessuno. Era esattamente il difetto segnalato — la
 //    stessa pagina diceva cose diverse a Franco e a un visitatore (v6.811, v6.824).
+// 🔄 v6.875 (Franco: «rimetti la serie contenitore nelle liste») — IL CONTENITORE C'E'.
+// 🔴 QUINDI QUESTA NON E' `_serieDaContare`, ED E' L'UNICO PUNTO DEL SITO IN CUI LE DUE DOMANDE
+//    DIVERGONO. Il contatore SERIE dice «le serie sono N» e il contenitore non e' una serie
+//    (v6.813): li' la sua riga non c'e'. Qui la domanda e' «di cosa puoi fare una lista», e degli
+//    articoli senza serie una lista si fa — sono articoli veri, che si possiedono o mancano.
+// ⚠️ LA TENTAZIONE DA NON SEGUIRE E' SCRIVERE `_serieDaContare` ANCHE QUI perche' «e' la stessa
+//    cosa»: sembrano la stessa domanda e per due release lo sono state. Il contenitore e' l'unico
+//    caso in cui divergono, ed e' esattamente il caso che questa riga esiste per tenere separato.
+// 📌 Lo stato resta il pezzo in comune (`_serieStatoContabile`), chiesto da tutte e due: cosi' le
+//    due domande possono divergere SOLO sul contenitore, e uno stato nuovo entra in tutte e due
+//    insieme.
 function _serieDelleListe() {
-  return _serieDaContare(Array.isArray(_cache.series) ? _cache.series : []);
-}
-
-function _articoliDelleListe() {
-  const serie = Array.isArray(_cache.series) ? _cache.series : [];
-  const fuori = new Set();
-  for (const s of serie) if (!_serieStatoContabile(s) || s.serieContenitore) fuori.add(s.id);
-  return (Array.isArray(_cache.figurines) ? _cache.figurines : [])
-    .filter(f => !f.invisibile && !fuori.has(f.seriesId));
+  return (Array.isArray(_cache.series) ? _cache.series : []).filter(_serieStatoContabile);
 }
 
 // 🆕 v6.815 — la firma dell'ultimo elenco disegnato: serve a NON ridisegnare i riquadri a ogni
@@ -64142,11 +64148,13 @@ function renderWantlist() {
   if (!currentUser) { showPage('home'); return; }
   const el = document.getElementById('wantlist-content');
   // 🆕 v6.874 (Franco: *«la sezione liste elenca anche le serie che sono in arrivo o
-  // invisibili»*) — LE DUE PORTE DELLA PAGINA SONO `_articoliDelleListe` e `_serieDelleListe`.
+  // invisibili»*) — LE DUE PORTE DELLA PAGINA SONO `_articoliDaContareSito` e `_serieDelleListe`.
   // Erano `getData`, che toglie le nascoste **solo a chi non e' admin** e le IN ARRIVO a
   // nessuno: la stessa pagina diceva cose diverse secondo chi guardava, e in tutti e due i casi
   // offriva serie che non si possono collezionare.
-  const allFigs = _articoliDelleListe();
+  // 🔄 v6.875 — la prima e' la STESSA dei contatori: rimesso il contenitore (Franco), la funzione
+  // che le Liste avevano per se' era diventata identica a quella, cioe' la seconda copia.
+  const allFigs = _articoliDaContareSito();
   const owned = getOwned();
   // Le numeriche di default considerano solo le figurine base (non variazioni/change);
   // le variazioni/change sono incluse nell'export solo se l'utente attiva l'opzione dedicata
@@ -64593,7 +64601,7 @@ async function exportOwnedIncomplete(btn) {
   // 🔄 v6.874 — l'EXPORT 2 passa dalle stesse due porte degli altri due. Era rimasto indietro
   //    nella prima stesura di questa release: gli export sono TRE, non due, e il terzo si trova
   //    solo cercando i chiamanti, non ricordandoli.
-  const allFigs = _articoliDelleListe();
+  const allFigs = _articoliDaContareSito();
   const series = _serieDelleListe();
   const owned = getOwned();
   const prefs = getWantlistPrefs();
@@ -64641,7 +64649,7 @@ async function exportOwnedList() {
   if (!currentUser) return;
   // 🔄 v6.874 — stessa porta della pagina: un Excel che elencasse serie che la pagina non mostra
   //    sarebbe la seconda risposta alla stessa domanda, e nessuno se ne accorgerebbe a schermo.
-  const allFigs = _articoliDelleListe();
+  const allFigs = _articoliDaContareSito();
   const owned = getOwned();
   // 🔄 v6.716 - non piu' "figurine e carte" per tutti: ognuno chiede alla SUA serie.
   // ⚠️ `series` sale di una riga perche' adesso serve PRIMA: era sotto, e messo sotto
@@ -64694,7 +64702,7 @@ async function exportOwnedList() {
 async function exportWantlist(btn) {
   // 🔄 v6.874 — anche la guardia: se contasse su un elenco piu' largo di quello esportato, direbbe
   //    «ti manca qualcosa» e poi consegnerebbe un file vuoto.
-  const allFigs = _articoliDelleListe().filter(f => f.section === 'figurines');
+  const allFigs = _articoliDaContareSito().filter(f => f.section === 'figurines');
   const owned = getOwned();
   const missing = allFigs.filter(f => !owned.includes(f.id));
   if (!missing.length) {
@@ -64706,7 +64714,7 @@ async function exportWantlist(btn) {
 }
 async function _exportWantlistImpl() {
   if (!currentUser) return;
-  const allFigs = _articoliDelleListe();   // 🔄 v6.874
+  const allFigs = _articoliDaContareSito();   // 🔄 v6.874
   const owned = getOwned();
   const missing = allFigs.filter(f => !owned.includes(f.id));
   const series = _serieDelleListe();       // 🔄 v6.874
