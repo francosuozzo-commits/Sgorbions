@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.878">
+<link rel="stylesheet" href="css/style.css?v=6.895">
 
 
 <style>
@@ -888,6 +888,15 @@ button.back-btn { color:#ffffff; }
    nel foglio — dove sarebbe stata giustissima e non sarebbe MAI arrivata sul sito, lasciando il
    rettangolo nero esattamente dov'era. E in silenzio: la rete di sicurezza in fondo all'index
    confronta la versione di app.js, non quella del CSS.
+   🔄 v6.879 — QUELLA RAGIONE È SCADUTA, E LA FRASE QUI SOPRA RESTA SOLO COME STORIA. Dalla
+   v6.431 le cartelle `_upload_` contengono anche `css/style.css`, e il push lo porta su come gli
+   altri due (Franco: «meglio trattare tutti i file allo stesso modo»; §4-D e §5 del documento).
+   ⚠️ Quindi una regola NUOVA va nel foglio, non qui: la classe `.sfoglia-cmd` di questa release
+   ci sta. Queste regole del modale non sono state spostate — sarebbe un trasloco che non c'entra
+   con quello che Franco ha chiesto — ma il motivo per cui stanno qui non vale più, e lasciarlo
+   scritto senza questa nota avrebbe mandato il prossimo a mettere il CSS nel posto sbagliato
+   credendo di seguire una regola. È il difetto della v6.372: la seconda copia di cui non si sa
+   l'esistenza, qui nella forma di una ragione che nessuno ha più verificato.
    📌 Non porta `modal-overlay` per scelta: quella classe ha la sfocatura, la partenza in alto e lo
    `z-index` 2000, e qui servono il nero pieno, il centro e lo strato più alto. */
 #sfoglia-album-modal {
@@ -4222,18 +4231,103 @@ di tutte le serie</button>
      apre DA DENTRO un'altra finestra, quindi deve stare sopra per forza - non e' una preferenza.
      ⚠️ Non si e' spostato il markup piu' in basso nel file: l'ordine nel documento e' un modo
      fragile di dire «sopra», e la prossima finestra scritta sotto lo rovescerebbe in silenzio. -->
+<!-- 🔄 v6.882 (Franco: «la finestra usata per la prw della pagina dell'album aperta cliccando
+     sulla foto della pagina, la vorrei grande quanto la finestra della pagina SFOGLIA L'ALBUM»)
+     — LA PAGINA PRENDE LO STESSO SPAZIO DELLO SFOGLIATORE.
+     📏 I numeri sono i SUOI, non inventati: lo sfogliatore tiene la pagina in una cornice
+     `min(70vw, 1100px)` (v6.868), e da oggi questa immagine ha lo stesso tetto.
+     ⚠️ MA IL TETTO E' UN `max-width`, NON UNA LARGHEZZA FISSA, e la differenza e' quello che
+     salva il telefono: la cornice dello sfogliatore e' `flex-shrink:0`, perche' li' la finestra e'
+     a schermo pieno e non ha altro attorno. Qui invece l'immagine sta in un modale con due frecce
+     ai lati e 2rem di imbottitura per parte: 70vw fissi su un telefono da 390px, piu' frecce e
+     bordi, uscirebbero dallo schermo. Con `flex:1` + `min-width:0` l'immagine prende quello che
+     c'e' e si ferma al tetto, quindi sul desktop e' grande come lo sfogliatore e sul telefono si
+     comporta come prima.
+     📏 E L'ALTEZZA NON PUO' ESSERE LA STESSA AL CENTIMETRO, e va detto invece di far finta:
+     lo sfogliatore usa `calc(100vh - 10rem)` e non ha ne' titolo ne' cornice. Qui sopra
+     l'immagine ci sono la barra del titolo e l'imbottitura del modale, e `.modal` si ferma
+     comunque a `max-height:90vh`. `calc(90vh - 8rem)` e' lo spazio che resta davvero: su uno
+     schermo alto 900px fa ~682px contro i ~740 dello sfogliatore. Era 70vh, cioe' 630. -->
 <div class="modal-overlay hidden" id="pagina-grande-modal" style="z-index:2100;">
-  <div class="modal" style="max-width:min(760px, 92vw);">
-    <div class="modal-header">
+  <div class="modal" style="max-width:min(96vw, 1400px);">
+    <div class="modal-header" style="flex-wrap:wrap;gap:0.4rem;">
       <h2 class="modal-title" id="pagina-grande-titolo">Pagina</h2>
+      <!-- 🆕 v6.885 (Franco: «mi serve un tasto che permetta di cambiare la foto; ma lo vorrei
+           nella finestra di anteprima della foto, non nella griglia delle pagine album»).
+           📌 STA NELLA BARRA DEL TITOLO e non sotto l'immagine, e non e' estetica: sotto avrebbe
+           aggiunto una riga alla finestra, e la v6.884 - scritta un'ora fa sulla segnalazione di
+           Franco - esiste proprio per tenere questa finestra sempre della stessa misura. Un
+           comando in testa non tocca la cornice.
+           📌 E' UN `<label>` CON DENTRO UN `input file` NASCOSTO, come «Aggiungi pagine»: e' il
+           modo in cui questo sito apre il selettore dei file, e un secondo modo sarebbe un
+           secondo comportamento da tenere allineato.
+           ⬜ NON SERVE UNA GUARDIA «solo admin»: questa finestra si apre SOLO dalla griglia delle
+           pagine, che vive dentro la scheda di modifica dell'album. Misurato - `apriPaginaGrande`
+           ha due chiamanti, la miniatura di quella griglia e la freccia della finestra stessa.
+           Se un domani nascesse una terza strada, la guardia andrebbe aggiunta: `prova-v6885`
+           §4 conta i chiamanti e diventa rossa. -->
+      <!-- 🔴 v6.888 - ADESSO LA GUARDIA SERVE, e la v6.885 lo aveva previsto per iscritto. Li'
+           c'era scritto «non serve una guardia "solo admin": questa finestra si apre SOLO dalla
+           griglia delle pagine, dentro la scheda di modifica», e `prova-v6885` §4 contava i
+           chiamanti apposta. Questa release apre l'anteprima anche dalla scheda in LETTURA, cioè
+           a chiunque: senza guardia, un visitatore si troverebbe il tasto per cambiare la foto.
+           📌 Parte NASCOSTO e lo accende `updateNavUser`, dove si accendono tutti gli altri
+           comandi riservati - non una riga a parte qui. -->
+      <!-- 🆕 v6.890 (Franco: «i 2 tasti di scambio foto con quella precedente e successiva,
+           mettili anche nella finestra di dettaglio della singola pagina»).
+           ⚠️ QUESTI DUE NON SONO LE FRECCE CHE LA FINESTRA HA GIA'. Quelle, ai lati della pagina,
+           SFOGLIANO: portano alla pagina prima o dopo. Questi SPOSTANO: scambiano la pagina che si
+           sta guardando con la sua vicina, e cambiano l'album. Sono due gesti opposti sullo stesso
+           verso, quindi vanno tenuti lontani: la navigazione resta ai lati dell'immagine, lo
+           spostamento sta quassu' fra i comandi, e i due titoli lo dicono a parole.
+           📌 PARTONO NASCOSTI come «Cambia foto» e per la stessa ragione della v6.888: questa
+           finestra si apre anche dalla scheda in sola lettura, cioe' a chiunque, e lo spostamento
+           riscrive l'album. Li accende `updateNavUser`. -->
+      <!-- 🔄 v6.892 (Franco: «i 2 tasti di scambio posto, quando sono mostrati nella finestra
+           della pagina di dettaglio, mostrali con una etichetta») - LE PAROLE, NON SOLO LA FRECCIA.
+           🔴 E' la meta' che mancava alla v6.890. Li' avevo scritto che due gesti opposti sullo
+           stesso verso si distinguono con il POSTO - la navigazione ai lati della pagina, lo
+           spostamento nella barra del titolo - ed era vero ma non bastava: due frecce uguali a un
+           centimetro l'una dall'altra restano due frecce uguali. Il titolo al passaggio del mouse
+           c'era gia', e su un telefono il passaggio del mouse non esiste.
+           ⚠️ Le etichette sono lunghe, e la barra del titolo va a capo invece di schiacciarle:
+           `flex-wrap` sulla riga, e `white-space:nowrap` su ognuna perche' una frase spezzata a
+           meta' e' peggio di una riga in piu'. -->
+      <button type="button" id="pagina-grande-su" onclick="paginaGrandeSposta(-1)" class="btn-foto" style="display:none;margin-left:auto;margin-right:0.3rem;white-space:nowrap;">&#11013;&#65039; <span data-i18n="pagina.spostaSx">Sposta a sinistra di una posizione</span></button>
+      <button type="button" id="pagina-grande-giu" onclick="paginaGrandeSposta(1)" class="btn-foto" style="display:none;margin-right:0.6rem;white-space:nowrap;">&#10145;&#65039; <span data-i18n="pagina.spostaDx">Sposta a destra di una posizione</span></button>
+      <label id="pagina-grande-cambia" class="btn-foto" style="display:none;margin-right:0.6rem;cursor:pointer;white-space:nowrap;">&#128247; <span data-i18n="foto.cambia">Cambia foto</span>
+        <input type="file" accept="image/*" style="display:none;" onchange="paginaGrandeCambiaFoto(event)">
+      </label>
       <button class="modal-close" onclick="closeModal('pagina-grande-modal')">&#10005;</button>
     </div>
     <!-- 🔄 v6.873 (Franco: «sarebbe bello che si possa scorrere le pagine anche dalla finestrella») —
          le due frecce ai lati della pagina, come nello sfogliatore (v6.865). La pagina sta in mezzo e
          prende quello che avanza, quindi le frecce non si spostano fra una pagina e l'altra. -->
-    <div style="display:flex;align-items:center;gap:0.6rem;">
+    <!-- 🔴 v6.884 (Franco: «come mai la prima foto usa una finestra piu' alta? posso capire che
+         quella foto e' meno larga, ma cosi' fai spostare le frecce e anche l'occhio di chi
+         guarda») - LA PAGINA VIVE IN UNA CORNICE DI MISURA FISSA.
+         🔴 E' LO STESSO IDENTICO DIFETTO CHE LA v6.868 HA TOLTO DALLO SFOGLIATORE, un piano piu'
+         in la'. Li' le frecce erano attaccate all'immagine; qui l'immagine era l'unica cosa che
+         dava un'altezza alla riga. In tutti e due i casi la conseguenza e' la stessa: ogni
+         scansione ha una forma sua, quindi la finestra cambiava misura a ogni pagina e i comandi
+         si spostavano sotto il dito. La prima pagina e' piu' stretta delle altre, quindi era
+         l'altezza a crescere - e Franco l'ha visto subito.
+         ⚠️ NON E' STATO RIFATTO IL RAGIONAMENTO: e' stata riusata la ricetta della v6.868, che
+         era gia' scritta e gia' misurata. Rifarlo da capo sarebbe stato il modo di arrivare a una
+         seconda soluzione per lo stesso problema.
+         📌 LA CORNICE HA ALTEZZA FISSA E LARGHEZZA ELASTICA, e la differenza con lo sfogliatore
+         e' voluta: la' la finestra e' a schermo pieno e la cornice puo' essere `flex-shrink:0`,
+         qui ci sono due frecce e l'imbottitura del modale, e una larghezza fissa su un telefono
+         uscirebbe dallo schermo (la ragione gia' scritta nella v6.882). Quello che faceva ballare
+         la finestra era l'ALTEZZA: quella e' fissa, e tanto basta.
+         📏 `calc(90vh - 9rem)`: `.modal` si ferma a 90vh, e sopra la cornice ci sono
+         l'imbottitura (4rem) e la barra del titolo (~3,3rem). Nove lasciano un margine, cosi' non
+         compare una barra di scorrimento dentro la finestra. -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:0.6rem;">
       <button type="button" id="pagina-grande-prec" onclick="paginaGrandeVai(-1)" class="btn-foto" style="flex-shrink:0;">&#11013;&#65039;</button>
-      <img id="pagina-grande-img" alt="" style="flex:1;min-width:0;max-height:70vh;object-fit:contain;border-radius:8px;background:var(--card2);display:block;">
+      <div id="pagina-grande-cornice" style="flex:1;min-width:0;max-width:min(70vw, 1100px);height:calc(90vh - 9rem);display:flex;align-items:center;justify-content:center;">
+        <img id="pagina-grande-img" alt="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;background:var(--card2);display:block;">
+      </div>
       <button type="button" id="pagina-grande-succ" onclick="paginaGrandeVai(1)" class="btn-foto" style="flex-shrink:0;">&#10145;&#65039;</button>
     </div>
   </div>
@@ -4355,7 +4449,20 @@ di tutte le serie</button>
         <button id="fig-detail-exit-btn" class="modal-close" style="display:none;" onclick="esciDaSchedaFigurina()" title="Chiudi e torna alla griglia">✕</button>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 320px;gap:2rem;align-items:start;">
+    <!-- 🆕 v6.886 (Franco: «cambiamo la struttura della pagina della scheda album; lo spazio e'
+         sfruttato male; mettiamo le 2 foto dell'album nella sezione principale, il tab Generale;
+         si allargano quindi tutti e 3 i tab») - LA GRIGLIA HA UN ID, E UNA SECONDA FORMA.
+         🔴 LA SECONDA COLONNA E' LA COLONNA DELLE FOTO, larga 320px e alta quanto le foto. Su
+         una scheda ALBUM quelle foto sono due e le pagine sono decine: la colonna restava quasi
+         vuota per tutta l'altezza del tab, e i tre tab lavoravano in 1fr - cioe' in meno spazio
+         di quello che c'e'. Con le foto dentro il Generale, la colonna non serve piu' e i tab
+         prendono tutta la larghezza.
+         ⚠️ CAMBIA SOLO PER GLI ALBUM, e non e' prudenza: su una figurina la colonna delle foto e'
+         piena e la scheda e' corta - non c'e' nessuno spazio sprecato da recuperare. Franco ha
+         nominato la scheda ALBUM, e una modifica a tutte le schede sarebbe stata un'altra cosa.
+         La classe la mette e la toglie `openFigDetail`, che e' l'unico punto che sa che record
+         sta aprendo. -->
+    <div id="fig-detail-griglia" style="display:grid;grid-template-columns:1fr 320px;gap:2rem;align-items:start;">
       <!-- v5.874 — contenitore per le righe che su TELEFONO vanno SOPRA le foto (Numero, Nome).
            Sul desktop resta vuoto e il CSS lo tiene nascosto: nessun effetto. -->
       <div id="fig-detail-top"></div>
@@ -4546,19 +4653,71 @@ di tutte le serie</button>
      portato. Risultato: il visore stava SEMPRE aperto, sopra ogni pagina, anche in rete. Adesso
      tutto lo stile sta nel foglio (`#sfoglia-album-modal`) e `.hidden` esiste per davvero. -->
 <div id="sfoglia-album-modal" class="hidden">
-  <button type="button" onclick="chiudiSfogliaAlbum()" aria-label="Chiudi" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text);font-size:2rem;line-height:1;cursor:pointer;">&times;</button>
   <!-- 🔄 v6.865 (Franco: «il bottone "vai all'album" avevo detto a sx della foto corrente, non
        affianco alle frecce») - IL TASTO STA ACCANTO ALLA FOTO, non nella riga dei comandi.
        📌 Foto e tasto in una riga sola, allineati in mezzo: cosi' il tasto resta accanto alla
        pagina qualunque altezza abbia, e le frecce restano quello che sono - la navigazione.
        ⚠️ La riga non stringe la foto: `max-width:100%` della foto guarda la riga, che occupa
        tutta la larghezza disponibile. -->
-  <div style="display:flex;align-items:center;gap:1rem;max-width:100%;">
+  <!-- 🔄 v6.893 (Franco: «e' normale che la x nella finestra SFOGLIA L'ALBUM sia cosi' in alto a
+       dx? c'e' molto nero prima. non si puo' mettere piu' vicina?») - LA × SEGUE IL CONTENUTO,
+       NON LO SCHERMO.
+       📏 La causa, misurata: la × era `position:absolute` con `top:1rem;right:1rem` dentro un
+       contenitore `inset:0`, cioe' ancorata all'ANGOLO DELLO SCHERMO. La pagina invece sta in una
+       cornice `min(70vw, 1100px)` centrata: su un monitor largo fra il bordo della foto e quello
+       dello schermo ci sono centinaia di pixel di nero, e la × stava dall'altra parte di quel
+       vuoto. Non era sbagliata: era ancorata alla cosa sbagliata.
+       ✅ Adesso la riga della pagina e' `position:relative` e la × le sta appesa, in alto a destra:
+       resta a filo del bordo destro della foto su qualunque schermo, senza nessun numero da
+       tarare. ⚠️ `-2.4rem` la porta nella fascia nera SOPRA la cornice, che esiste sempre: la
+       cornice e' `calc(100vh - 10rem)`, quindi cinque rem restano libere fra le due estremita'.
+       ⬜ E LA FOTO NON SI TOCCA, che e' la condizione che Franco ha posto: la cornice mantiene
+       `min(70vw, 1100px)` e `calc(100vh - 10rem)`, le stesse misure della v6.868. Qui si sposta
+       un pulsante, non si ridisegna la finestra. -->
+  <div style="position:relative;display:flex;align-items:center;gap:1rem;max-width:100%;">
+    <button type="button" onclick="chiudiSfogliaAlbum()" aria-label="Chiudi" style="position:absolute;top:-2.4rem;right:0;background:none;border:none;color:var(--text);font-size:2rem;line-height:1;cursor:pointer;">&times;</button>
     <!-- 🆕 v6.864 (Franco) — «Vai all'album»: piccolo, accanto alla foto (v6.865), e apre la scheda
          dell'album che si sta sfogliando. ⚠️ Niente `btn-foto`: non e' un comando della foto, e
          `prova-v6456` conta quelli che portano quella classe (lezione della v6.806, stesso posto). -->
-    <button type="button" id="sfoglia-album-vai" onclick="vaiAllAlbumSfogliato()"
-            style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.35rem 0.8rem;font-family:var(--font-ui);font-size:0.8rem;cursor:pointer;margin-right:0.6rem;">↗️ <span data-i18n="sfoglia.vaiAlbum">Vai all'album</span></button>
+    <!-- 🆕 v6.879 (Franco: «nella finestra SFOGLIA ALBUM manca il tasto per tornare indietro»,
+         «cioè da dove arrivi») — I DUE COMANDI IN COLONNA, A SINISTRA DELLA PAGINA.
+         🔴 IL TASTO DI USCITA C'ERA GIÀ: la «×» in alto a destra, più il tasto Esc. Il difetto
+         non era che mancasse la strada, era che non si VEDEVA — una × in un angolo, su uno sfondo
+         nero pieno, a schermo intero. Aggiungere un comando con su scritto cosa fa non è un
+         doppione: è la stessa azione (`chiudiSfogliaAlbum`, una funzione sola) con due modi di
+         arrivarci, uno per chi la cerca e uno per chi la trova.
+         📌 «INDIETRO» E NON «CHIUDI», ed è la parola di Franco: lo sfogliatore è uno STRATO
+         sopra la pagina, quindi chiudendolo si torna esattamente da dove si è arrivati — la serie
+         o la scheda dell'album — senza che il codice debba ricordarselo.
+         ⚠️ E non può nominare la destinazione, al contrario degli altri «indietro» del sito, che
+         dicono dove vanno («Serie», «Sezioni», «Inventario»): le strade che portano qui sono DUE e
+         chi apre non passa l'informazione. Nominarne una sarebbe falso su metà dei casi.
+         📌 I due comandi condividono `.sfoglia-cmd` (nel foglio): erano uno stile scritto a mano,
+         e due pillole gemelle una sopra l'altra divergono al primo ritocco. -->
+    <div style="display:flex;flex-direction:column;gap:0.4rem;margin-right:0.6rem;">
+      <button type="button" id="sfoglia-album-indietro" onclick="chiudiSfogliaAlbum()"
+              class="sfoglia-cmd">← <span data-i18n="sfoglia.indietro">Indietro</span></button>
+      <button type="button" id="sfoglia-album-vai" onclick="vaiAllAlbumSfogliato()"
+              class="sfoglia-cmd">↗️ <span data-i18n="sfoglia.vaiAlbum">Vai all'album</span></button>
+      <!-- 🆕 v6.880 (Franco: «metti anche un tasto che si chiama "Vai a tutti gli album di questa
+           serie"; se cliccato porta alla pagina ALBUM della serie»).
+           📌 LA CLASSE HA UN SECONDO PEZZO, `lunga`, e serve a una cosa misurata: questa etichetta
+           e' lunga quasi il triplo delle altre due, e `.sfoglia-cmd` porta `white-space:nowrap`.
+           A riga unica il tasto misurerebbe ~250px e si mangerebbe la larghezza della pagina che
+           si sta sfogliando - su un telefono la caccerebbe fuori dallo schermo. Va a capo dentro
+           una larghezza fissata, cosi' la colonna resta larga come prima.
+           🔄 v6.883 (Franco: «accorciamo il testo del nuovo tasto a "Vai agli album della
+           serie"») - L'ETICHETTA E' PASSATA DA 37 A 26 CARATTERI. La classe `lunga` resta: a
+           0,8rem anche 26 caratteri fanno ~175px su una riga sola, piu' del tetto di 9,5rem, e
+           la pillola continua ad andare a capo invece di allargare la colonna.
+           ⚠️ E la serie NON si legge da `currentSeriesId`: si prende dal RECORD dell'album che si
+           sta sfogliando. Allo sfogliatore si arriva anche dalla scheda di un album aperta dalla
+           ricerca globale (v6.097), e li' la pagina sotto puo' essere di un'altra serie - il
+           tasto avrebbe portato altrove senza dare nessun errore. E' la stessa scelta della
+           v6.864, che tiene l'ID e non l'oggetto. -->
+      <button type="button" id="sfoglia-album-tutti" onclick="vaiAgliAlbumDellaSerie()"
+              class="sfoglia-cmd lunga">📚 <span data-i18n="sfoglia.tuttiAlbum">Vai agli album della serie</span></button>
+    </div>
   <!-- 🔄 v6.865 (Franco: «le frecce mettile a dx e sx invece che sotto») - LA NAVIGAZIONE STA AI
        DUE LATI DELLA PAGINA: il gesto e' dove si guarda, e sotto l'immagine costringeva a
        scendere con l'occhio per cambiare pagina. Sotto resta il solo contatore. -->
@@ -4588,7 +4747,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.878"></script>
+<script src="js/app.js?v=6.895"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4612,7 +4771,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.878'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.895'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
