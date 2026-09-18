@@ -257,6 +257,24 @@ body {
 }
 .btn-logout:hover { background: rgba(var(--danger-rgb),0.1); }
 
+/* 🆕 v6.878 (Franco) — «RC»: il comando che ricarica saltando la cache. Piccolo, in alto a
+   sinistra, e `fixed` perche' resti dov'e' anche scorrendo: chi lo preme di solito e' gia' in
+   fondo a una pagina a chiedersi perche' non vede la modifica appena pubblicata.
+   📌 L'arancione e' `--action-admin`, lo stesso di tutti gli altri comandi riservati: non e'
+   decorazione, e' la lingua con cui questo sito dice «questo lo vedi solo tu» (v6.858/v6.866).
+   ⚠️ z-index 100: sopra la striscia della versione del telefono (99, dentro
+   `#construction-banner`) e sotto la navbar (1000), che non deve mai essere coperta. */
+#rc-btn {
+  position: fixed; top: 70px; left: 10px; z-index: 100;
+  background: var(--action-admin); color: #ffffff;
+  border: 0; border-radius: 6px;
+  font-family: var(--font-ui); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.06em;
+  padding: 2px 7px; line-height: 1.25; cursor: pointer; opacity: 0.85;
+  transition: opacity 0.2s;
+}
+#rc-btn:hover { opacity: 1; }
+#rc-btn:disabled { cursor: default; opacity: 0.55; }
+
 /* ===== PAGES ===== */
 .page { display: none; padding-top: 56px; min-height: 100vh; position: relative; z-index: 1; }
 .page.active { display: block; }
