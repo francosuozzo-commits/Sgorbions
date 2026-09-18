@@ -1,6 +1,25 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.900 - SU TELEFONO IL LOGO VA SOPRA I NUMERONI, CON UNA RIGA CHE LI INTRODUCE (Franco: «la
+//          immagine Hero mettila prima dei 12 score verdi», «e prima degli score verdi scrivi
+//          questa frase "In questo sito troverai..."»). La griglia dell'hero passa a una colonna
+//          sola: logo, frase, sponda sinistra, sponda destra.
+//          📌 LE AREE SI RIDICHIARANO, non si tolgono: la griglia le nomina a lettere e i figli le
+//          cercano per nome - passando a una colonna senza ridichiararle, ognuno sarebbe caduto
+//          dove capita, e senza nessun errore (la trappola della v6.591 con l'h1 del logo).
+//          ⚠️ Le due sponde restano DUE, una sotto l'altra: fonderle avrebbe voluto dire
+//          riscrivere `_contatoriHome`, che le tiene separate dalla v6.815 perche' ognuna ha il
+//          suo ordine, deciso da Franco. Qui cambia dove stanno, non cosa sono.
+//          ⬜ E la frase esiste solo sul telefono: sul desktop i numeri stanno ai lati del logo.
+//          Modificato index.html, js/app.js.
+// v6.899 - LA RICERCA GLOBALE NON RESTITUISCE PIU' LE SERIE IN ARRIVO (Franco). 📏 Stesso difetto
+//          della v6.874 e stessa causa: `getData('series')` toglie le nascoste solo a chi non e'
+//          admin e le IN ARRIVO a nessuno. La ricerca e' nata prima di quella regola.
+//          ⚠️ E li' faceva piu' danno che altrove: una serie in arrivo non si puo' aprire
+//          (v6.587), quindi il risultato portava a un box che non si preme - non una riga di
+//          troppo, una riga che non fa niente. Adesso passa dalle porte di tutti gli altri.
+//          Modificato il solo js/app.js.
 // v6.898 - SU TELEFONO SALGONO TUTTE E DUE LE FRASI, NON UNA (Franco: «dovevi spostare anche la
 //          seconda»). 🔴 La v6.897 aveva preso la richiesta alla lettera: Franco ne aveva nominata
 //          una sola, ma le due righe sotto il logo sono un blocco dalla v6.068 - il margine
@@ -28907,7 +28926,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.898';
+const JS_VERSION = 'v6.900';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -30522,7 +30541,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message !',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.spille':'Pins','catalog.attaccare':'Album stickers','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','catalog.backToSeries':'Series','form.series.firstNumber':'First sticker N.','form.series.lastNumber':'Last sticker N.','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.introNumeri':'On this site you will find...','hero.tagline':'Made with 💚 by collectors, for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.spille':'Pins','catalog.attaccare':'Album stickers','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','catalog.backToSeries':'Series','form.series.firstNumber':'First sticker N.','form.series.lastNumber':'Last sticker N.','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','rc.title':'Reload the site bypassing the browser cache','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
@@ -30621,7 +30640,7 @@ const i18n = {
 'newsletter.title':'Invia Newsletter','newsletter.subject':'Articolo','newsletter.subject.ph':'es. Nuova serie aggiunta !','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate',
 'classifica.best':'Di chi è la lista con punteggio rarità maggiore ?','classifica.levels':'Livelli di Collezionista Sgorbions',
 'admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio rarità minimo','admin.levels.save':'Salva livello',
-'hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.',
+'hero.introNumeri':'In questo sito troverai...','hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.',
 
 
 
@@ -40442,8 +40461,21 @@ function renderCatalogSearch(q) {
   if (resultsEl) resultsEl.style.display = '';
   if (grid) grid.style.display = 'none';
 
-  const allSeries = getData('series', []).sort((a,b) => (a.order??9999)-(b.order??9999));
-  const allFigs = getData('figurines', []);
+  // 🔴 v6.899 (Franco: «nei risultati della ricerca globale sono uscite due serie che sono in
+  //    arrivo; avevamo detto che non devono uscire quelle in arrivo») - LA RICERCA PASSA DALLE
+  //    PORTE DI TUTTI GLI ALTRI.
+  // 📏 E' lo stesso difetto della v6.874, nello stesso punto del sito e per la stessa ragione:
+  //    `getData('series')` toglie le NASCOSTE solo a chi non e' admin, e le IN ARRIVO non le toglie
+  //    a nessuno. La ricerca globale e' nata prima di quella regola e nessuno c'e' tornato sopra.
+  // ⚠️ E QUI FA PIU' DANNO CHE ALTROVE: una serie in arrivo non si puo' aprire (`_serieBloccata`,
+  //    v6.587), quindi il risultato che compare porta a un box che non si preme. Non e' solo una
+  //    riga di troppo: e' una riga che non fa niente.
+  // 📌 `_serieDelleListe` porta ancora il nome del posto dove e' nata (v6.874), e da oggi
+  //    risponde a due: la domanda che fa - «quali serie si mostrano a chi naviga» - e' la stessa.
+  //    ⬜ Rinominarla toccherebbe tre suite senza cambiare niente di quello che fa: e' un debito
+  //    dichiarato, non una svista.
+  const allSeries = _serieDelleListe().sort((a,b) => (a.order??9999)-(b.order??9999));
+  const allFigs = _articoliDaContareSito();
 
   // Cerca in serie (nome, descrizione) e negli oggetti.
   // v6.049 (Franco) - LE DUE RICERCHE CERCAVANO IN CAMPI DIVERSI. Quella dentro una sezione aveva
