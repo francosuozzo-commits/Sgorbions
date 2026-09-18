@@ -657,6 +657,29 @@ body {
 }
 .btn-foto:hover { background: var(--action-admin-hover); border-color: var(--action-admin-hover); }
 
+/* 🔴 v6.903 (Franco: «quando sono in ultima pagina si vede la freccia di dx; non dovrebbe
+   esserci, essendo l'ultima pagina») — UN TASTO SPENTO DEVE SEMBRARE SPENTO.
+   📏 LA CAUSA, MISURATA: quella freccia E' spenta da sempre — `_disegnaSfoglia` e
+   `apriPaginaGrande` le mettono `disabled`, e premendola non succede niente — ma nel foglio non
+   esisteva nessuna regola `:disabled` per `.btn-foto` né per i comandi dello sfogliatore. Lo
+   stato c'era e non arrivava a chi guarda.
+   ⬜ E NON SI FANNO SPARIRE, che sarebbe stata la lettura letterale della richiesta: un comando
+   che va e viene fa ballare la riga, e qui la riga tiene la foto (v6.806, v6.860, v6.868). Si
+   fanno VEDERE spente — il tasto resta dov'è, e si capisce perché non risponde.
+   ⚠️ `cursor:not-allowed` come gli altri due `:disabled` già nel foglio (`.btn-primary`,
+   `.btn-danger`): il segno che il sito usa già per dire la stessa cosa, non un terzo modo.
+   📌 E vale anche per il rosa: `.btn-foto.elimina` eredita da qui, quindi «Elimina foto» spento
+   non sembra premibile più degli altri. */
+.btn-foto:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-foto:disabled:hover { background: var(--action-admin); border-color: var(--action-admin); }
+.sfoglia-cmd:disabled { opacity: 0.35; cursor: not-allowed; }
+.sfoglia-cmd:disabled:hover { background: rgba(255,255,255,0.12); }
+/* ⚠️ Le due frecce dello sfogliatore portano lo stile IN LINEA (v6.865) e non una classe: per
+   spegnerle serve nominarle per id, o la regola qui sopra non le raggiunge. ⬜ Dichiarato invece
+   che sistemato: dargli una classe e' un lavoro a parte, e questa release deve solo farle vedere
+   spente. */
+#sfoglia-album-prec:disabled, #sfoglia-album-succ:disabled { opacity: 0.35; cursor: not-allowed; }
+
 /* 🔴 v6.886 — QUESTA RIGA STA QUI SOTTO, E NON ACCANTO ALLE SUE SORELLE, PER UNA RAGIONE CHE
    QUESTO FILE HA GIÀ PAGATO. Tre suite cercano «la prima `.btn-foto` del foglio» per misurarne
    colore e forma: una regola che contenga `.btn-foto {` scritta PRIMA di quella base gliela ruba,
