@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.909">
+<link rel="stylesheet" href="css/style.css?v=6.914">
 
 
 <style>
@@ -218,19 +218,27 @@
 
    Le colonne laterali restano più basse del logo (due voci contro ~440px), perciò la riga di
    mezzo la detta il logo e i fianchi non allungano la pagina. */
-/* 🔄 v6.901 (Franco: «la modifica di posizione della immagine Hero vale anche per il desktop»)
-   - IL LOGO VA SOPRA ANCHE QUI. Era "sx logo dx" dalla v6.019, cioe' i numeri ai due lati; adesso
-   il logo sta in cima, sotto la frase che introduce, e sotto ancora i dodici numeri.
-   🔴 MA LE DUE SPONDE RESTANO AFFIANCATE, e questa e' una scelta che va dichiarata perche' non
-   e' la copia della versione telefono. Sul telefono stanno una sotto l'altra perche' non c'e'
-   larghezza; qui ce ne sono 1280px, e impilarle avrebbe fatto un hero altissimo con meta' schermo
-   vuota ai lati - cioe' esattamente «lo spazio sfruttato male» che Franco ha gia' segnalato due
-   volte oggi. La richiesta era sulla POSIZIONE dell'immagine, non sulla forma dei numeri.
-   ⬜ E se le volesse incolonnate anche qui, e' una riga: `"logo" "intro" "sx" "dx"`.
+/* 🔄 v6.911 (Franco: «i numeri verdi della home, per il dsk, possiamo disporli su 2 righe? ora
+   sono 3 righe con uno spazio centrale che non serve; forse arriva dal fatto che prima c'era in
+   mezzo la hero, ma ora la hero l'abbiamo messa sopra») - LE DUE SPONDE SI IMPILANO, E I DODICI
+   NUMERI STANNO SU DUE RIGHE.
+   📌 LA DIAGNOSI DI FRANCO E' ESATTA, e vale la pena scriverlo: quel vuoto in mezzo e' il posto
+   dove stava il LOGO fino alla v6.901 (griglia "sx logo dx", v6.019). Portato il logo sopra, le
+   due sponde sono rimaste affiancate per inerzia, con in mezzo lo spazio di una cosa che se n'era
+   andata. Tre righe erano il disegno di due colonne da sei, non una scelta sull'altezza.
+   ⬜ E QUESTA RIGA ERA GIA' SCRITTA QUI, dalla v6.901: «se le volesse incolonnate anche qui, e'
+   una riga: "logo" "intro" "sx" "dx"». Era una previsione, ed e' diventata la richiesta. Si e'
+   fatto esattamente quello, piu' la forma delle sponde qui sotto.
+   🗄️ LA v6.901 DICEVA IL CONTRARIO, con una ragione che oggi decade: «impilarle avrebbe fatto un
+   hero altissimo con meta' schermo vuota ai lati». Era vero finche' ogni sponda era alta TRE
+   righe: due sponde impilate avrebbero fatto sei righe. Con le sponde alte UNA riga (v6.911,
+   regola `.hero-stats-left/right` qui sotto) le righe totali sono due, meno delle tre di prima, e
+   la larghezza la usano tutta invece di lasciare un buco in mezzo. La ragione non e' stata
+   tradita: e' decaduta insieme al disegno che la reggeva.
    📌 Le aree si ridichiarano tutte e quattro: la griglia le nomina a lettere e i figli le
    cercano per nome - una lasciata fuori cadrebbe dove capita, senza nessun errore (v6.591). */
-.hero-top { position:relative; display:grid; grid-template-columns:1fr 1fr;
-            grid-template-areas:"logo logo" "intro intro" "sx dx";
+.hero-top { position:relative; display:grid; grid-template-columns:minmax(0,1fr);
+            grid-template-areas:"logo" "intro" "sx" "dx";
             align-items:center; justify-items:center;
             gap:0.9rem 1.5rem; width:100%; max-width:1280px; margin:0 auto 1.75rem; }
 /* 🆕 v6.591 — L'<h1> che avvolge il logo non deve portarsi dietro lo stile del browser.
@@ -261,10 +269,23 @@
    📌 E il giorno che nasce una tipologia nuova la griglia le apre una TERZA colonna a destra
    invece di sfasare le righe: è il seguito visivo del setaccio della v6.283.
    ⚠️ E STA QUI, NON IN `css/style.css`: il deploy porta su solo `index.html` e `js/app.js`, e una
-   regola scritta là sarebbe correttissima e non arriverebbe mai sul sito (lezione della v6.809). */
+   regola scritta là sarebbe correttissima e non arriverebbe mai sul sito (lezione della v6.809).
+   🔄 v6.911 - DA TRE RIGHE A UNA, PER SPONDA. Con le due sponde impilate (regola `.hero-top` qui
+   sopra) una riga per sponda fa DUE righe in tutto, che e' quello che Franco ha chiesto; erano
+   tre, con in mezzo il vuoto lasciato dal logo.
+   🔴 RESTA `grid-auto-flow:column`, e non diventa un `repeat(6, ...)`: le colonne continuano ad
+   aggiungersi da se', quindi una tipologia nuova entra sulla STESSA riga invece di aprirne una
+   seconda - e «due righe» resta vero per costruzione, non finche' le voci sono sei. E' lo stesso
+   ragionamento della v6.815, girato di novanta gradi.
+   📌 `grid-auto-columns:minmax(0,1fr)` le fa larghe uguali e permette al testo di stringersi:
+   senza il `minmax(0,...)` una voce dal nome lungo allargherebbe la sua colonna e le altre no.
+   📌 E l'ordine di lettura diventa quello del DOM, da sinistra a destra - lo stesso ordine che
+   `_contatoriHome` scrive dalla v6.815, cioe' quello deciso da Franco. Su una riga sola non c'e'
+   piu' un «prima colonna, poi seconda» da conservare. */
 .hero-stats-left, .hero-stats-right {
-  display:grid; grid-template-rows:repeat(3, auto); grid-auto-flow:column;
-  justify-content:center; align-items:start; gap:0.7rem 1.4rem; }
+  display:grid; grid-template-rows:auto; grid-auto-flow:column;
+  grid-auto-columns:minmax(0,1fr);
+  justify-content:center; align-items:start; gap:0.7rem 1.4rem; width:100%; }
 
 /* 🆕 v6.816 (Franco) — I COLORI DELLE ISTRUZIONI DI IMPORT. Sue parole, 14 settembre:
    ISTRUZIONI in BLU; «I dettagli del file da caricare:», «Significato delle Colonne», i nomi
@@ -407,11 +428,31 @@
   #nav-search-link { display:block; }
 }
 
-/* v6.068 - le due righe sotto il logo salgono verso di lui. Il margine stava IN LINEA sul <p>;
-   v6.183 lo porta qui perche' su telefono serve il segno opposto (Franco: "la frase inizia
-   attaccata agli ultimi numeroni verdi"). Sul desktop il valore e' quello di sempre. */
-#hero-desc-main { margin-top:-1.4rem; }
-#hero-tagline   { margin-top:-2.2rem; }
+/* 🔄 v6.910 (Franco: «la frase "Il database non ufficiale dedicato alla leggendaria serie italiana
+   degli anni '90. Fatto con 💚 da collezionisti, per collezionisti" avevo chiesto che fosse messa
+   sopra la Hero», «sia desktop che mobile») - LE DUE RIGHE STANNO SOPRA IL LOGO, SEMPRE.
+   🔴 SUL TELEFONO C'ERANO GIA', e questa e' una misura fatta sul sito servito, non un ricordo:
+   la v6.897/898 le aveva alzate con `order:-1` dentro la media query dell'860. Sul DESKTOP
+   restavano in fondo, sotto i dodici numeroni - a 1536px la prima riga stava a 541px dall'alto e
+   il logo a 79. Quindi di questa richiesta mancava una meta' sola, ed e' quella che si fa qui.
+   📌 E L'`order` ESCE DALLA MEDIA QUERY invece di essere copiato in una seconda: la regola diventa
+   la stessa alle due larghezze e non restano due posti da tenere allineati. E' la medicina della
+   v6.901, che per «In questo sito troverai...» ha tolto l'accensione per schermata.
+   ⚠️ E I MARGINI NEGATIVI DELLA v6.068 SE NE VANNO INSIEME A LORO, se no si rompe in silenzio.
+   `-1.4rem` e `-2.2rem` servivano a tirare le due righe SU verso il logo che avevano sopra; da
+   sopra il logo tirerebbero il blocco dentro la navbar. Il distacco si dichiara, come gia' si fa
+   sul telefono: poco fra le due righe, di piu' prima dell'immagine.
+   🔴 E SALGONO TUTTE E DUE, che e' la lezione della v6.898: sono un blocco dalla v6.068 - il
+   margine negativo della seconda esisteva apposta per tenerla attaccata alla prima - e muoverne
+   una sola le separa. Si e' gia' visto a schermo una volta.
+   🗄️ LA STORIA DI QUESTA RIGA, perche' i commenti che argomentavano il contrario non restano
+   accanto al codice nuovo (lezione della v6.350): v6.068 le due righe salivano verso il logo che
+   stava SOPRA; v6.183 il margine usciva dallo stile in linea perche' sul telefono serviva il segno
+   opposto; v6.897 le alzava sopra i numeroni sul solo telefono - «Spostare il <p> nell'HTML
+   l'avrebbe messa sopra i numeri anche sul DESKTOP, dove Franco non ha chiesto niente»; v6.898
+   alzava anche la seconda. Da oggi quella frase e' decaduta: sul desktop Franco ha chiesto. */
+#hero-desc-main { order:-1; margin:0 0 0.2rem; }
+#hero-tagline   { order:-1; margin:0 0 0.9rem; }
 /* 🔄 v6.901 (Franco: «la frase "in questo sito troverai" mettila anche nella versione
    desktop») - LA RIGA SI VEDE OVUNQUE.
    🔴 LA v6.900 L'AVEVA SPENTA SUL DESKTOP, E LA RAGIONE SCRITTA ERA GIUSTA PER UN'ORA: «li' i
@@ -422,37 +463,26 @@
    dire il falso.
    📌 Adesso l'area basta a posizionarla, e non serve piu' nessuna accensione per schermata:
    una regola in meno da tenere in due posti. */
-#hero-intro-numeri { grid-area:intro; }
-/* 🆕 v6.897 (Franco: «nella versione mobile, nella home page, la frase che dice "questo e' il
-   database non ufficiale degli Sgorbions" mettila in alto, sopra agli score verdi»).
-   📌 SI SPOSTA CON `order`, NON CON IL MARKUP: `#hero` e' gia' una colonna flex, quindi basta
-   dire a quella riga di venire prima. Spostare il <p> nell'HTML l'avrebbe messa sopra i numeri
-   anche sul DESKTOP, dove Franco non ha chiesto niente e dove la frase sta sotto il logo da
-   sempre. Una riga di CSS dentro la media query cambia solo la schermata nominata.
-   🔴 E LA SECONDA RIGA VA SISTEMATA INSIEME, se no si rompe in silenzio: «Fatto con 💚...»
-   porta un margine NEGATIVO che serviva a tenerla attaccata alla frase di sopra (v6.068).
-   Portata via quella, quel margine la tirerebbe su dentro i numeroni verdi - e nessuno avrebbe
-   toccato la riga che si rompe. Su telefono prende lo stesso distacco che aveva la prima.
-   ⚠️ E il margine della frase spostata cambia di senso: prima serviva a staccarla dai numeri che
-   aveva SOPRA, adesso serve a staccarla dai numeri che ha SOTTO. */
-/* 🔄 v6.898 (Franco: «dovevi spostare anche la seconda frase, quella che dice "fatto col cuore
-   da collezionisti per collezionisti"») - SALGONO TUTTE E DUE.
-   🔴 LA v6.897 AVEVA PRESO LA RICHIESTA ALLA LETTERA E AVEVA SBAGLIATO. Franco aveva nominato
-   una frase sola («questo e' il database non ufficiale... eccetera eccetera»), e le due righe sotto
-   il logo sono una cosa sola da sempre - la v6.068 le tratta come un blocco, e il margine negativo
-   della seconda esiste apposta per tenerle insieme. Spostarne una e lasciare l'altra le ha
-   separate, e si e' visto subito.
-   📌 «Eccetera eccetera» voleva dire proprio quello: il blocco, non la prima riga.
-   📌 LO STESSO `order` PER TUTTE E DUE, non -2 e -1: a parita' di `order` vince l'ordine del
-   markup, che le tiene gia' nel verso giusto. Due numeri diversi sarebbero stati due cose da
-   mantenere allineate per ottenere l'ordine che c'e' gia'.
-   ⚠️ E i margini si dichiarano tutti e due qui: il `-2.2rem` del desktop tiene la seconda
-   attaccata alla prima sfruttando i margini automatici del <p>, e sopra i numeroni serve invece
-   un distacco dichiarato - poco fra le due righe, di piu' prima dei numeri. */
-@media (max-width:860px) {
-  #hero-desc-main { order:-1; margin:0 0 0.2rem; }
-  #hero-tagline   { order:-1; margin:0 0 0.9rem; }
-}
+/* 🔄 v6.912 (Franco: «c'e' troppo spazio nero prima dei numeri, tra la frase e i numeri; riduci
+   quello spazio») - IL MARGINE DELLA FRASE SI DICHIARA, E VALE ANCHE SUL DESKTOP.
+   📏 MISURATO SULLA PREVIEW a 1536px, prima di toccare: il <p> portava i margini di default del
+   browser - 24px sopra e 40px sotto - e con i 14.4px di `gap` della griglia facevano 49px di nero
+   fra la frase e la prima riga di numeri. Il valore non e' stato scelto da nessuno: era quello che
+   il browser mette a un paragrafo qualunque.
+   📌 I VALORI SONO QUELLI CHE IL TELEFONO USA GIA' dalla v6.900, e la riga che li dichiarava
+   dentro la media query e' stata tolta: una regola sola per le due larghezze, invece di due
+   posti da tenere allineati. E' la stessa medicina della v6.901 e della v6.910.
+   ⚠️ E LO SPAZIO NON VA A ZERO: sotto restano i 14.4px di `gap` della griglia, che e' quello che
+   tiene distinte la frase e la fila di numeri. Azzerare anche quello le farebbe sembrare la stessa
+   cosa. */
+#hero-intro-numeri { grid-area:intro; margin:0.6rem 0 0.2rem; }
+/* 📌 v6.910 - QUI C'ERA LA MEDIA QUERY DELL'860 CHE ALZAVA LE DUE RIGHE SUL SOLO TELEFONO
+   (v6.897/898). Non e' stata cancellata: le sue due regole sono salite di qualche riga, fuori da
+   qualunque soglia, perche' adesso valgono anche sul desktop. Cercarla qui e non trovarla e' il
+   comportamento giusto - `order:-1` c'e' ancora, una volta sola e per tutte le larghezze.
+   ⚠️ E `.hero-top` non deve prendere un `order` suo: basterebbe un `order:-2` nato domani per
+   rimettere il logo davanti, e le due righe tornerebbero sotto senza che nessuno abbia toccato
+   la regola qui sopra. */
 
 /* v5.948 — TELEFONO: come sul desktop, numeri a SINISTRA e a DESTRA del logo. Per farceli stare
    il logo si stringe (190px invece di 320): in una cornice da 397px restano ~80px per lato ai
@@ -481,7 +511,9 @@
   .hero-top { grid-template-columns:auto minmax(0,1fr) auto;
               grid-template-areas:"sx logo dx";
               gap:0.5rem 0.4rem; align-items:center; margin-bottom:1rem; }
-  #hero-intro-numeri { margin:0.6rem 0 0.2rem; }   /* 🔄 v6.901 - l'area la dichiara la regola di base */
+  /* 🔄 v6.912 - QUI C'ERA IL MARGINE DELLA FRASE, valido sul solo telefono. E' salito nella regola
+     di base, perche' Franco ha chiesto lo stesso spazio ridotto anche sul desktop: stessi valori,
+     un posto solo. */
   /* 🆕 v6.591 — la POSIZIONE nella griglia passa all'h1 (e' lui il figlio della
      griglia), le MISURE restano sull'immagine. Il !important sulle misure serve
      ancora, per la stessa ragione della v5.948: il CSS del sito impone
@@ -1321,18 +1353,18 @@ button.back-btn { color:#ffffff; }
          nemmeno li': la riga della griglia e' stata tolta, non lasciata vuota. -->
   </div>
 </div>
-    <!-- v6.068 (Franco) — le due righe salgono verso il logo. Il margine negativo si mette sulla
-         PRIMA: la seconda ne ha gia' uno suo (-2.2rem) che la tiene attaccata alla prima, e
-         toccando quello si sarebbe allargato lo spazio fra le due invece di alzarle insieme. -->
-    <!-- v6.183 (Franco) - il margine negativo NON sta piu' in linea ma nel CSS qui sopra
-         (#hero-desc-main), perche' su telefono va cambiato di segno: uno stile in linea si puo'
-         scavalcare solo con `!important`, e un `!important` messo per aggirare una riga che
-         controlliamo noi e' una toppa, non una regola. -->
+    <!-- 🔄 v6.910 - QUESTE DUE RIGHE SI LEGGONO SOPRA IL LOGO, ma nel markup stanno ancora QUI,
+         sotto la griglia dei numeroni. Non e' una svista: le alza `order:-1` nel CSS in cima al
+         file, e da questa release vale a tutte le larghezze (prima era solo sotto gli 860px).
+         📌 Spostare i due <p> piu' su nell'HTML darebbe lo stesso risultato a schermo e toglierebbe
+         una regola - ma `#hero` e' una colonna flex, quindi il posto a schermo lo decide comunque
+         l'`order`: con i tag spostati E l'`order` in piedi si guarderebbero in due punti per
+         capire una cosa sola. Si tiene il markup fermo e si guarda il CSS.
+         🗄️ v6.068 / v6.183 / v6.897: qui c'erano tre commenti sul margine NEGATIVO che teneva le
+         due righe attaccate al logo di sopra. Quel margine non esiste piu' - da sopra il logo
+         tirerebbe il blocco dentro la navbar - e i commenti sono stati riscritti invece di
+         restare a spiegare un codice che non c'e'. -->
     <p class="hero-desc" id="hero-desc-main" data-i18n="hero.desc">Il database non ufficiale dedicato alla leggendaria serie italiana degli anni '90.</p>
-    <!-- 🔄 v6.897 - IL MARGINE ESCE DALLO STILE IN LINEA, ed e' la stessa medicina della v6.183
-         sulla riga qui sopra: su telefono serve un valore diverso, e uno stile in linea si puo'
-         scavalcare solo con `!important` - una toppa messa per aggirare una riga che controlliamo
-         noi. Il `-2.2rem` del desktop non cambia di un pixel: cambia solo dove e' scritto. -->
     <p class="hero-desc" id="hero-tagline" data-i18n="hero.tagline">Fatto con 💚 da collezionisti, per collezionisti.</p>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
     <div class="hero-cta">
@@ -4868,7 +4900,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.909"></script>
+<script src="js/app.js?v=6.914"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4892,7 +4924,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.909'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.914'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
