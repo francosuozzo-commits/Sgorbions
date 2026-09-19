@@ -1664,6 +1664,15 @@ body {
 .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.9rem; }
 .data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .data-table.compact td, .data-table.compact th { padding: 0.3rem 0.75rem; font-size: 0.82rem; }
+/* 🔄 v6.935 — LA TABELLA DELLA SCHEDA GSC PRENDE DI `compact` SOLO LE RIGHE STRETTE.
+   Franco ha chiesto meno interlinea (« riduci interlinea tra le righe della tabella»), non un
+   testo più piccolo: `compact` fa tutte e due le cose, e qui la seconda andava disfatta.
+   🔴 Le due misure qui sotto NON sono inventate: sono quelle che `.data-table td` e
+   `.data-table th` hanno vent'otto righe più su, cioè esattamente ciò che questa tabella
+   mostrava fino alla v6.934. Se un giorno quelle cambiano, queste due restano indietro —
+   è il prezzo di annullare metà di una classe, ed è scritto qui perché si sappia. */
+#gsc-esito .data-table.compact td { font-size: 0.9rem; }
+#gsc-esito .data-table.compact th { font-size: 0.85rem; }
 .tbl-btn {
   font-family: var(--font-ui); font-size: 0.85rem; padding: 5px 12px;
   border-radius: 6px; cursor: pointer; transition: all 0.15s; border: 1px solid;
