@@ -1,6 +1,148 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.944 - 👪 LA FAMIGLIA DIVENTA UN RAGGRUPPAMENTO: riquadro nella testata E filtro nella
+//          ricerca (Franco: «aggiungi un altro contenitore, analogo graficamente a quelli
+//          esistenti per change ed errori di stampa, dedicato al raggruppamento delle fcr per
+//          famiglia», «aggiungiamo una sezione dedicata alle famiglie, anche alla form di
+//          ricerca (da mostrare solo se la serie ha famiglie)»). Modificato il solo js/app.js.
+//          🔴 UN DESCRITTORE, DUE RIQUADRI: `_RAGGR_FAMIGLIA` sta accanto a `_RAGGR_VERSIONE` e
+//          da lì nascono sia il riquadro della testata sia quello cliccabile della ricerca, con
+//          la stessa funzione di disegno degli altri cinque. Scritti a mano sarebbero stati due
+//          elenchi di famiglie, due ordinamenti e due modi di contare.
+//          🔴 E IL FILTRO NON COSTA UNA RIGA: il setaccio applica ogni raggruppamento che
+//          dichiara `valoreDi`. Era già scritto, aspettava solo qualcuno che lo dichiarasse.
+//          📌 «SOLO SE LA SERIE HA FAMIGLIE» È UNA CONSEGUENZA, non una condizione: `valoreDi`
+//          torna `undefined` per chi famiglia non ne ha, e un riquadro senza pillole non si
+//          disegna (v5.711). Oggi lo vede la sola serie 3, che ha due famiglie e 212 articoli
+//          che le usano — misurato sul sito, non dedotto.
+//          ⚠️ Le parole dei titoli escono dalla formula di tutti i riquadri («Filtra per la
+//          famiglia», «Articoli per famiglia»): sono testo pubblico e Franco può cambiarle.
+// v6.943 - 🧮 LE NUMERICHE DELLA PAGINA PER GOOGLE CONTANO PER SOTTOSERIE, DOVE CE NE SONO
+//          (Franco: «hai messo una numerica unica per fcr; No. dovresti fare come fai nella
+//          pagina delle fcr di quella serie: contare per sottoserie anziché per tda»).
+//          Modificato il solo js/app.js.
+//          📏 MISURATO SUL SITO: su Sgorbions Holidays la pagina della serie dice «Figurine
+//          Metal 30 · Clear 30 · White 1 · Tatuaggi 59 · Trasferelli 32 · Carte d'identità 36»,
+//          e tiene per tipologia solo ciò che sottoserie non ne ha (Album, Bustine). Questa
+//          pagina diceva «Figurine con retro 61»: un numero che sul sito non c'è da nessuna parte.
+//          🔴 La domanda si fa PER TIPOLOGIA, non una volta per la serie — dentro Holidays le
+//          figurine si spacchettano e le bustine no — e la fa `_sottoserieUsate`, la stessa
+//          funzione delle griglie della v6.941. Righe e griglie devono dire gli stessi gruppi.
+//          ⚠️ Dentro una sottoserie le versioni si contano con `_dividiPerVersione`, quella del
+//          sito: una sottoserie può avere change, variazioni ed errori di stampa come una
+//          tipologia, e in quel caso la riga si scompone come le altre.
+// v6.942 - 🧰 «CHANGE FRONTALI» E «CHANGE DI RETRO» DIVENTANO DUE SCATOLE (Franco: «falli
+//          diventare due contenitori, nei quali queste due etichette le scrivi dentro al bordo
+//          superiore, come facciamo nella maschera di ricerca»). Modificato il solo js/app.js.
+//          📌 L'etichetta sul bordo non è una somiglianza a occhio: sono le stesse due righe di
+//          `_STILE_ETICHETTA`, cioè del titolo dei riquadri della ricerca (v6.331).
+//          🔴 Il fondo dell'etichetta è `--card`, quello del riquadro che contiene le scatole:
+//          con un fondo qualunque il bordo le passerebbe dietro e si vedrebbe attraverso.
+//          ⚠️ Gli altri cinque riquadri non cambiano di un pixel: la forma nuova vale solo dove
+//          il descrittore dichiara una divisione in parti (`partiDi`, v6.908), cioè oggi sui
+//          soli change delle figurine con retro.
+// v6.941 - 🗂️ UNA GRIGLIA PER SOTTOSERIE, E NIENTE «DALLA N. ALLA N.» DOVE NUMERI NON
+//          CE NE SONO (Franco: «se la serie ha sottoserie, allora devi fare + griglie: una per
+//          sottoserie, e prima di ogni griglia deve esserci il nome della sottoserie, usa il
+//          solito colore lime», «se la serie non ha numeri, non devi scrivere "da n. a n."»).
+//          Modificato il solo js/app.js.
+//          🔴 QUALI SOTTOSERIE E IN CHE ORDINE lo dice `_sottoserieUsate`, la stessa
+//          funzione dei tab del sito e della ricerca globale: i suoi chiamanti passano da nove
+//          a dieci, e tre prove contano apposta quel numero.
+//          🔴 E la riga dei numeri la decide `_haNumero`, che guarda il flag della serie,
+//          quello del singolo pezzo e la tipologia.
+//          📏 MISURATO, NON DEDOTTO: la pagina che cambia è quella di Sgorbions Holidays —
+//          61 figurine, zero numeri, tre sottoserie (Metal, Clear, White). Serie 1, 2 e 3 non
+//          hanno sottoserie e restano identiche: una griglia sola e nessun titolo.
+//          🧹 E porta una pulizia: dentro `_GSC_CSS` c'erano sequenze `\U0001F...` scritte
+//          a mano nelle righe di continuazione dei commenti. Lì dentro sono TESTO, e finivano
+//          nel CSS servito da Google. Le ha trovate `prova-v6374` §E7.
+// v6.940 - 🖼️ LE FIGURINE SDRAIATE STANNO A MEZZA ALTEZZA NELLA GRIGLIA DELLE PAGINE PER
+//          GOOGLE (Franco: « le figurine sdraiate riusciresti a metterle a mezza altezza, rispetto
+//          alla altezza di una figurina verticale? al momento pareggiamo al lato superiore»).
+//          Modificato il solo js/app.js. UNA PAROLA: `margin-top:auto` sulla foto.
+//          🔴 La card e' un flex in colonna e la riga del numero ha gia' un margine
+//          automatico in cima: con un secondo, i due si dividono lo spazio libero in parti
+//          uguali e la foto finisce in mezzo. Le verticali non si spostano di un pixel - sono
+//          loro a fare l'altezza della riga, e spazio libero non ne hanno.
+//          ⚠️ E RESTA APERTA UNA COSA CHE NON E' QUESTA: la card dichiara
+//          `width="240" height="424"` per TUTTE le foto, sdraiate comprese. Quei due numeri
+//          servono a riservare lo spazio prima che la foto arrivi, e su una sdraiata sono
+//          falsi: la pagina si assesta con uno scatto quando la foto si carica, e Google lo
+//          misura (CLS). Si chiude solo sapendo le dimensioni vere di ogni foto.
+// v6.939 - ✂️ «160 figurine» E NON «160 figurine per album set base» (Franco: « una cosa valida
+//          per entrambe le pagine: per la TDA fpa, scrivi solo "160 figurine"»). Modificato il
+//          solo js/app.js.
+//          Nasce `_NUM_NOME_CORTO`: il nome corto di una tipologia DENTRO UNA NUMERICA, in un
+//          posto solo per la pagina della serie e per le pagine di Google. Oggi ha una voce
+//          sola, `attaccare`; le altre undici tipologie continuano a usare il loro nome.
+//          🔴 La tipologia NON e' stata rinominata: «Figurine per album» resta il suo nome
+//          nella colonna di sinistra, nella testata, nelle tendine e nei filtri. Qui si accorcia
+//          la sola etichetta di un numero, che ha il nome lungo a pochi centimetri (v6.907).
+//          ⚠️ Le fpa non hanno versioni (misurato: base = items su tutte e tre le serie), quindi
+//          questa riga passa sempre dal ramo «senza altre versioni» della v6.937.
+// v6.938 - 🎨 LE PAGINE PER GOOGLE PRENDONO DUE COSE DALLA PAGINA DELLA SERIE (Franco: « il
+//          colore del nome della serie allinealo alla pagina del sito (azzurro)», « la frase
+//          NUMERICHE ARTICOLI DELLA SERIE va aggiunta anche li»). Modificato il solo js/app.js.
+//          • il titolo prende `--nome-entita`, l'azzurro dei nomi delle entità (v6.399);
+//          • sopra i numeri compare la frase della v6.907, in inglese «SERIES ITEM COUNTS» come
+//            nel sito, e solo se sotto c'è qualcosa (v6.672).
+//          🔴 I DUE COLORI SI LEGGONO DAL BROWSER VIVO (`_gscColoriDalSito`), non riscritti
+//          dentro `_GSC_CSS`: sono file statici, e una copia sbagliata lì non la vedrebbe
+//          nessuno. È la medicina della v6.372, già in uso per i colori dei tipi.
+// v6.937 - 🔁 LE PAGINE PER GOOGLE PARLANO COME LE NUMERICHE DEL SITO (Franco: « allinea le
+//          pagine serie per la gsc alle ultime modifiche fatte alle numeriche»). Modificato il
+//          solo js/app.js.
+//          • «totali» al posto di «in totale» (v6.930), «total» in inglese.
+//          • «set base» senza il nome della tipologia davanti (v6.907): il nome sta già nella
+//            colonna di sinistra, e la riga lo diceva due volte a pochi centimetri.
+//          • le voci di una tipologia stanno su UNA riga: `gap` da 1.4 a 0.9rem, come la v6.907.
+//            🔴 Il guadagno vero però è il nome tolto qui sopra, non il gap — misurato allora
+//            sul sito (~155px), e vale qui per la stessa ragione.
+//          • 🔴 E UNA QUARTA, CHE FRANCO NON AVEVA IN MENTE: il totale non si scrive se non c'è
+//            nient'altro da sommare (v6.699). Le pagine dicevano «100 tatuaggi · 100 in totale».
+//          🔴 Le parole sono COPIATE da `sezRows`, non scelte di nuovo: sono testo pubblico, e
+//          le decide Franco — qui si è solo andati a prendere quelle che lui ha già deciso.
+// v6.936 - 🗑️ VIA L'ORDINE ALFABETICO DELLA TABELLA GSC (Franco: « ho cambiato idea; ordina
+//          per l'ordinamento serie standard»). Modificato il solo js/app.js.
+//          La tabella torna a seguire `_gscPiano`, che è già nell'ordine dell'Inventario
+//          (`order`). L'ordine standard non si riscrive sulla vista: ci sarebbe due volte.
+//          🔴 Le righe strette (`compact`) e il carattere di sempre RESTANO: erano l'altra
+//          metà della v6.935, e quella metà non è stata revocata.
+// v6.935 - 📏 LA TABELLA DELLA SCHEDA GSC: RIGHE STRETTE E ORDINATE PER SERIE (Franco:
+//          « riduci interlinea tra le righe della tabella», « ordina le righe per colonna SERIE»).
+//          Modificati js/app.js e css/style.css.
+//          • le righe prendono la classe `compact`, che esiste dalla Newsletter e vale 0.3rem
+//            di padding invece di 0.75rem. Il CARATTERE torna alla misura di sempre con due
+//            righe in style.css: `compact` fa due cose, e qui ne serviva una sola.
+//          • l'ordine alfabetico sta nella VISTA, non in `_gscPiano`: le pagine e la sitemap
+//            continuano a uscire nell'ordine dell'Inventario, che è quello del sito. Le due
+//            lingue di una serie restano appaiate, italiano sopra.
+// v6.934 - 📐 LA TABELLA DELLA SCHEDA GSC CRESCE DEL 25% (Franco: « allargare la larghezza
+//          della tabella della gsc, di un fattore 25%»). Modificato il solo js/app.js.
+//          Il blocco di `renderAdminGsc` passa da `max-width:1100px` a `1375px`; la tabella è
+//          `width:100%`, quindi cresce con lui e non ha un numero proprio da tenere allineato.
+//          🔴 I quattro blocchi di TESTO si tengono i loro 1100px: è stata chiesta la tabella,
+//          e una riga di prosa larga 1375 si legge peggio di una larga 1100.
+// v6.933 - 🔍 LA RICERCA GLOBALE TORNA A CHI HA FATTO LOGIN (Franco, rileggendo il backlog:
+//          «3. casella RG da sloggato -> NO»). Modificato il solo js/app.js.
+//          🔄 E' LA REVOCA DELLA v6.807, che l'aveva aperta a tutti su richiesta sua («rendi la
+//          buca della ricerca globale visibile a tutti»). La decisione e' sua in tutte e due le
+//          direzioni, e vale l'ultima: qui si scrive solo perche' la ragione vecchia resti
+//          leggibile accanto alla nuova, e nessuno la «ripristini» credendo di correggere.
+//          🔴 E I PUNTI D'ACCESSO SONO TRE, NON UNO: la casella (`#nav-search`, oltre i 1500px),
+//          il tasto 🔍 (`#nav-search-mini`, fra 860 e 1500) e la voce del panino
+//          (`#nav-search-link`, sotto gli 860). Spegnerne uno solo avrebbe lasciato il comando
+//          raggiungibile stringendo la finestra - la stessa forma del buco della busta (v6.914).
+//          🔴 E LA PORTA E' CHIUSA ANCHE DA DENTRO: `_ricercaGlobale` e `openRicercaGlobaleModal`
+//          escono subito senza utente. La guardia sta in `_ricercaGlobale` e non nei suoi due
+//          chiamanti, perche' li' passano tutte le strade - comprese quelle che nasceranno.
+//          ⚠️ ONESTA': QUI NON SI PROTEGGE NESSUN DATO. L'Inventario e' pubblico e la sua casella
+//          resta a disposizione di tutti; questa e' una scelta di prodotto, non una fix di
+//          sicurezza, e scriverla come tale sarebbe stato comodo e falso.
+//          ⚠️ Sotto gli 860px la casella resta nascosta anche a chi e' entrato: quella riga del
+//          CSS ha `!important` e risponde a un'altra domanda - «c'e' spazio?».
 // v6.932 - 🎨 LE SCRITTE SMORTE DELLA HOME DIVENTANO BIANCHE, E I TITOLI DELLE CARD AZZURRI
 //          (Franco: «puoi mettere tutte le scritte che oggi nella homepage sono nere, in bianco?
 //          numeri degli score / le frasi / e le descrizioni delle card in basso. per le card in
@@ -29446,7 +29588,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.932';
+const JS_VERSION = 'v6.944';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33646,7 +33788,15 @@ function ricercaGlobaleDaNavbar() {
 }
 // 🆕 v6.852 - la finestrella del telefono. Si chiude prima di cercare: se restasse aperta
 // coprirebbe i risultati, ed è la stessa ragione per cui il panino si chiude (v6.808).
+// 🔴 v6.933 - LA PORTA E' CHIUSA ANCHE DA DENTRO. Nascondere i tre comandi basta a chi guarda lo
+//    schermo, non a chi chiama la funzione da un'altra strada - ed e' la lezione della busta
+//    (v6.914): un'icona sopravvissuta a una condizione scritta altrove apriva un pannello intero.
+// ⚠️ ONESTA': QUI NON SI PROTEGGE NESSUN DATO. La ricerca globale porta all'Inventario, che e'
+//    pubblico, e la sua casella («Cerca serie…») resta a disposizione di tutti. Questa guardia non
+//    e' sicurezza, e' coerenza: un comando che non si deve vedere non deve nemmeno rispondere, cosi'
+//    il giorno che un quarto punto lo chiami il comportamento e' gia' deciso in un posto solo.
 function openRicercaGlobaleModal() {
+  if (!currentUser) return;
   try { if (typeof closeNavMenu === 'function') closeNavMenu(); } catch (e) {}
   const m = document.getElementById('rg-modal');
   if (m) m.classList.remove('hidden');
@@ -33660,6 +33810,11 @@ function ricercaGlobaleDaModal() {
   _ricercaGlobale(q);
 }
 function _ricercaGlobale(testo) {
+  // 🔴 v6.933 - LA GUARDIA STA QUI, dove passano TUTTE le strade: la casella della navbar
+  //    (`ricercaGlobaleDaNavbar`) e la finestrella (`ricercaGlobaleDaModal`). Metterla nei due
+  //    chiamanti avrebbe voluto dire due copie della stessa regola, e la terza strada che nasce
+  //    domani non ne avrebbe nessuna.
+  if (!currentUser) return;
   const q = (testo || '').trim();
   if (!q) return;   // a casella vuota non si va da nessuna parte: sarebbe un salto di pagina senza motivo
   // 🆕 v6.808 - SU TELEFONO IL PANINO SI CHIUDE, e non e' un dettaglio: dalla v6.808 la casella
@@ -33689,9 +33844,27 @@ function _ricercaGlobale(testo) {
 //    diventa il panino, e una casella di testo in mezzo alle voci del menu non si potrebbe premere.
 //    Quindi «visibile a tutti» vuol dire su desktop, e su telefono la ricerca resta quella
 //    dell'Inventario.
+// 🔄 v6.933 (Franco, rileggendo il backlog: «3. casella RG da sloggato -> NO») - LA RICERCA
+//    GLOBALE TORNA A CHI HA FATTO LOGIN. E' la revoca della v6.807, che l'aveva aperta a tutti
+//    su sua richiesta («rendi la buca della ricerca globale visibile a tutti»): la decisione e'
+//    sua in tutte e due le direzioni, e qui vale l'ultima.
+// 🔴 E I PUNTI D'ACCESSO SONO TRE, NON UNO. Alla stessa ricerca si arriva dalla casella
+//    (`#nav-search`, oltre i 1500px), dal tasto 🔍 (`#nav-search-mini`, fra 860 e 1500) e dalla
+//    voce del panino (`#nav-search-link`, sotto gli 860). Spegnerne uno solo avrebbe lasciato il
+//    comando raggiungibile stringendo la finestra - ed e' esattamente la forma del buco della
+//    busta (v6.914), dove un'icona sopravviveva a una condizione scritta altrove.
+// 📌 `display = ''` E NON UN VALORE: da loggato si restituisce la parola al CSS, che sa quale dei
+//    tre mostrare a quella larghezza. Scrivere `'flex'` o `'block'` avrebbe congelato qui una
+//    decisione che vive in tre media query, e il giorno che una cambia questo resterebbe indietro.
+// ⚠️ La casella resta nascosta sotto gli 860px anche a chi e' entrato: li' `.nav-links` diventa il
+//    panino, e quella riga del CSS ha `!important`, che batte lo stile in linea. E' una domanda
+//    diversa - «c'e' spazio?» - e continua a risponderla il CSS.
 function _aggiornaRicercaNavbar() {
-  const box = document.getElementById('nav-search');
-  if (box) box.style.display = '';
+  const puoCercare = !!currentUser;
+  ['nav-search', 'nav-search-mini', 'nav-search-link'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.style.display = puoCercare ? '' : 'none';
+  });
 }
 // 🆕 v6.878 (Franco) — «RC»: RICARICA IL SITO SALTANDO LA CACHE DEL BROWSER.
 // 🔴 E LA PRIMA COSA DA SCRIVERE E' QUELLO CHE **NON** FA, perche' la richiesta diceva
@@ -38753,7 +38926,40 @@ const _RAGGR_VERSIONE = {
 // livello sopra: si sceglie una versione, poi semmai un tipo dentro di essa.
 // ⚠️ Il riquadro della TESTATA continua a ciclare `_VERSIONI_CON_TIPO` e non questa lista: li'
 // sta la fotografia della serie, e la scomposizione per versione la danno gia' i box delle serie.
-const _RAGGRUPPAMENTI = [_RAGGR_VERSIONE, ..._VERSIONI_CON_TIPO];
+// 🆕 v6.944 (Franco: «aggiungi un altro contenitore, analogo graficamente a quelli esistenti per
+//    change ed errori di stampa, dedicato al raggruppamento delle fcr per famiglia» e «aggiungiamo
+//    una sezione dedicata alle famiglie anche alla form di ricerca, da mostrare solo se la serie
+//    ha famiglie») — LA FAMIGLIA DIVENTA UN RAGGRUPPAMENTO, e i due riquadri nascono da qui.
+// 🔴 PERCHÉ UN DESCRITTORE E NON DUE PEZZI DI DISEGNO: i riquadri della testata e quelli della
+//    ricerca li costruisce già la stessa macchina (`_raggrPanelHTML`) a partire da una di queste
+//    dichiarazioni. Scrivendo i due riquadri a mano sarebbero nati due elenchi di famiglie, due
+//    ordinamenti e due modi di contare — e il giorno che divergono nessuno se ne accorge, perché
+//    uno sta nella testata e l'altro dentro il box della ricerca.
+// 🔴 E IL FILTRO VIENE GRATIS, che è l'altra metà della richiesta: il setaccio (`getCurrentlyFiltered
+//    Items`) applica ogni raggruppamento che dichiari `valoreDi`. Non c'è una riga di filtro nuova.
+// 📌 «SOLO SE LA SERIE HA FAMIGLIE» NON È UNA CONDIZIONE SCRITTA A MANO, è una conseguenza:
+//    `valoreDi` torna `undefined` per chi la famiglia non ce l'ha, `_raggrCounts` salta gli
+//    `undefined`, e un riquadro senza pillole non si disegna (regola di sempre, v5.711). Dove
+//    nessuno ha una famiglia il riquadro non esiste — e non perché qualcuno l'abbia spento.
+// ⚠️ LE PAROLE DEI TITOLI NON SONO NUOVE: escono dalla formula che vale per tutti i riquadri
+//    («Filtra per ...», v6.267/6.327) e dal `titoloFisso` degli altri. Sono testo pubblico, quindi
+//    se Franco le vuole diverse si cambiano queste due righe.
+// 📌 L'AZZURRO È QUELLO DEI NOMI DELLE ENTITÀ (`--nome-entita`, v6.399): una famiglia è un nome,
+//    come il nome di una serie. Non è un colore nuovo — è quello che il sito usa già per i nomi.
+const _RAGGR_FAMIGLIA = {
+  chiave: 'famiglia',
+  it: 'Famiglia', en: 'Family',
+  codaRaggrIt: 'famiglia', codaRaggrEn: 'family',
+  titoloFissoIt: 'Articoli per famiglia', titoloFissoEn: 'Items by family',
+  chipMinIt: 'famiglia', chipMinEn: 'family',
+  colore: 'var(--nome-entita)',
+  raggrParolaIt: 'famiglia', raggrParolaEn: 'family',
+  // 🔴 `undefined` e non stringa vuota: è quello che fa sparire il riquadro dove famiglie non ce
+  //    ne sono. Con la stringa vuota nascerebbe una pillola «(Senza tipo)» su TUTTE le serie, e
+  //    sarebbe un filtro che non filtra niente offerto a tutti.
+  valoreDi: f => (f.famiglia || '').trim() || undefined,
+};
+const _RAGGRUPPAMENTI = [_RAGGR_VERSIONE, _RAGGR_FAMIGLIA, ..._VERSIONI_CON_TIPO];
 
 // 🆕 v6.329 (Franco) - L'ORDINE DEI RIQUADRI DEI RISULTATI, dichiarato in un posto solo:
 // versioni, categorie, change, omaggio, errori di stampa.
@@ -38766,7 +38972,11 @@ const _RAGGRUPPAMENTI = [_RAGGR_VERSIONE, ..._VERSIONI_CON_TIPO];
 // `_VERSIONI_CON_TIPO`. La coda si deriva, quindi una sesta versione con un `campoTipo` entra qui
 // da se' - e `prova-v6329.js` pretende che nessun raggruppamento resti fuori da questo elenco:
 // uno che non c'e' non da' errore, semplicemente non si disegna.
-const _ORDINE_RIQUADRI = ['versione', 'categoria', ..._VERSIONI_CON_TIPO.map(v => v.chiave)];
+// 🆕 v6.944 — la famiglia sta SUBITO DOPO LA VERSIONE, e prima dei tipi: è un taglio degli
+//    articoli («di che famiglia sono»), come la versione, mentre i tre riquadri che seguono
+//    tagliano dentro una versione sola. Sta prima della categoria perché quella vive nei soli
+//    Retro, dove famiglie non ce ne sono: i due non si incontrano mai.
+const _ORDINE_RIQUADRI = ['versione', 'famiglia', 'categoria', ..._VERSIONI_CON_TIPO.map(v => v.chiave)];
 
 // 🆕 v6.234 — I DUE LIVELLI DELL'ORDINAMENTO DELLE FIGURINE, ricavati dall'elenco.
 //
@@ -42927,6 +43137,31 @@ function getSectionLabel(section) {
   if (!a) return section;
   return currentLang === 'it' ? a.it : a.en;
 }
+// 🆕 v6.939 (Franco: «per la TDA fpa, scrivi solo "160 figurine" (e non "160 figurine per album
+//    set base")») — IL NOME CORTO DI UNA TIPOLOGIA, QUANDO STA DENTRO UNA NUMERICA.
+// 🔴 PERCHE' NON SI RINOMINA LA TIPOLOGIA: «Figurine per album» e' il suo nome, e lo dicono la
+//    colonna di sinistra dell'hub, la testata, le tendine e i filtri. Qui si accorcia SOLO il
+//    nome che fa da etichetta a un numero — e proprio perche' accanto c'e' gia' il nome lungo,
+//    a pochi centimetri: e' la stessa ragione della v6.907, che ha tolto la tipologia da
+//    «160 Figurine con retro set base».
+// 📌 UN POSTO SOLO PER DUE FAMIGLIE DI NUMERI: la pagina della serie (`sezRows`) e le pagine per
+//    Google (`_gscNumeriche`). Franco l'ha chiesto «per entrambe le pagine», e due tabelle di
+//    nomi corti sarebbero divergenti alla prima aggiunta.
+// ⚠️ LE MAIUSCOLE SONO QUELLE DI UN'ETICHETTA, non del testo: chi scrive in minuscolo (le pagine
+//    per Google) applica `.toLowerCase()` come faceva col nome lungo. Al contrario non si puo'.
+// ⚠️ E L'INGLESE NON E' UNA TRADUZIONE AUTOMATICA: «Figurine per album» diventa «Figurine»
+//    togliendo la coda, «Album stickers» diventa «Stickers» togliendo la TESTA. Nessuna regola
+//    meccanica le copre tutte e due, quindi le due forme si dichiarano.
+const _NUM_NOME_CORTO = {
+  attaccare: { it: { s: 'Figurina', p: 'Figurine' }, en: { s: 'Sticker', p: 'Stickers' } },
+};
+function _numNomeCorto(sez, uno, it) {
+  const c = _NUM_NOME_CORTO[sez || 'figurines'];
+  if (!c) return null;
+  const l = it ? c.it : c.en;
+  return uno ? l.s : l.p;
+}
+
 // 🆕 v6.801 - UN'ETICHETTA SCRITTA A MANO PUO' RESTARE, MA IL BUCO NO.
 // 🔴 IL PROBLEMA MISURATO: tre schermate hanno un dizionario di sezioni SCRITTO A MANO, e
 //    conoscono CINQUE tipologie su DODICI (una ne conosce sette). Le altre non sparivano: uscivano
@@ -44004,7 +44239,13 @@ function renderSeriesMeta(s) {
       + g.free.length + g.printError.length;
     // 🆕 v6.741 - IL SINGOLARE QUANDO E' UNO: «1 felpa», non «1 Felpe». E' la regola
     //    che Franco ha posto alla v6.688 per le card, e che questa riga non seguiva.
-    const _nomeNum = (g.base.length === 1) ? nm.s : nm.p;
+    // 🔄 v6.939 (Franco: «per la TDA fpa, scrivi solo "160 figurine"») — IL NOME CORTO, quando
+    //    la tipologia ne ha uno. Vedi _NUM_NOME_CORTO: è un posto solo per tutte e due le
+    //    famiglie di numeri, questa e quella delle pagine per Google.
+    // ⚠️ NIENTE APICI INVERSI IN QUESTE RIGHE: questo pezzo viene RITAGLIATO da prova-v6907 e
+    //    infilato in un template literal, e un apice inverso lo chiude. Preso al primo lancio.
+    const _nomeNum = _numNomeCorto(sez2, g.base.length === 1, it)
+      || ((g.base.length === 1) ? nm.s : nm.p);
     if (g.base.length) m.push(colonna(BULLET, g.base,
       (_altreVersioni
         // 🔄 v6.907 (Franco: «nelle numeriche della pagina della serie, il primo numero e' sempre
@@ -47751,16 +47992,35 @@ header += `</div>`;
       //    torna all'elenco unico. E' la lezione della v6.574, dove il corpo per lato degli errori
       //    di stampa lasciava la sezione Retro senza nessuna pillola per un mese - li' il lato non
       //    esiste, perche' quell'articolo E' la faccia. `partiDi` torna `null` e qui non si entra.
+      // 🔄 v6.942 (Franco: «"CHANGE FRONTALI" e "CHANGE DI RETRO" falli diventare due contenitori,
+      //    nei quali queste due etichette le scrivi dentro al bordo superiore, come facciamo nella
+      //    maschera di ricerca») — LE DUE PARTI DIVENTANO DUE SCATOLE.
+      // 📌 Lo stile dell'etichetta è quello che questa stessa funzione usa già per il titolo dei
+      //    riquadri della ricerca (`_STILE_ETICHETTA`, v6.331): stessa posizione, stesso modo di
+      //    bucare il bordo. Non è una somiglianza a occhio, sono le stesse due righe.
+      // 🔴 IL FONDO DELL'ETICHETTA DEVE ESSERE QUELLO SU CUI POGGIA, o il bordo le passa dietro
+      //    e si vede attraverso la scritta. Qui è `--card`, cioè il fondo del riquadro grande che
+      //    contiene le due scatole — non quello della pagina.
+      // ⚠️ `margin-top:0.45rem` sul contenitore delle due: l'etichetta sborda di mezza riga sopra
+      //    il bordo, e senza quel respiro finirebbe sotto le pillole del titolo.
       const corpo = (parti && parti.length > 1)
-        ? parti.map(p => `<div style="display:flex;flex-direction:column;">`
-            + `<div style="color:${C.titoloColore || 'var(--text)'};font-weight:700;font-size:0.76rem;`
-            + `letter-spacing:0.06em;margin-bottom:0.3rem;">${esc(p.titolo)}</div>`
+        ? parti.map(p => `<div style="position:relative;border:1px solid var(--border2);`
+            + `border-radius:var(--radius-lg);padding:0.75rem 0.8rem 0.55rem;box-sizing:border-box;">`
+            + `<div style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);`
+            + `background:var(--card);padding:0 0.4rem;max-width:calc(100% - 1.8rem);white-space:nowrap;`
+            + `overflow:hidden;color:${C.titoloColore || 'var(--text)'};font-weight:700;`
+            + `font-size:0.76rem;letter-spacing:0.06em;">${esc(p.titolo)}</div>`
             + `<div style="display:flex;gap:0 1.6rem;align-items:flex-start;flex-wrap:wrap;">${corpoDi(p.pairs)}</div>`
             + `</div>`).join('')
         : corpoDi(pairs);
+      // 🔄 v6.942 — CON LE DUE SCATOLE SERVE PIÙ ARIA, e solo con quelle: l'etichetta sborda di
+      //    mezza riga sopra il bordo, quindi la prima scatola deve partire più in basso, e le due,
+      //    se vanno a capo, non possono restare attaccate. Senza parti il riquadro resta identico
+      //    a com'era — e sono cinque riquadri su sei a passare di lì.
+      const _aria = (parti && parti.length > 1);
       return `<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:0.8rem 0.9rem;box-sizing:border-box;width:max-content;max-width:100%;">`
         + header
-        + `<div style="display:flex;gap:0 1.6rem;align-items:flex-start;flex-wrap:wrap;font-size:0.82rem;line-height:1.45;margin-top:0.45rem;">${corpo}</div></div>`;
+        + `<div style="display:flex;gap:${_aria ? '1rem 1.6rem' : '0 1.6rem'};align-items:flex-start;flex-wrap:wrap;font-size:0.82rem;line-height:1.45;margin-top:${_aria ? '0.85rem' : '0.45rem'};">${corpo}</div></div>`;
     }
     // 🔄 v6.515 - `_chipTutte` sale di un blocco: nasceva dentro l'`if (clickable)` come
     // `const`, quindi era invisibile al punto dove si compone `body`. Adesso vive quanto
@@ -48063,7 +48323,23 @@ function renderSpecchiettiTop() {
   // sua misura, quindi non serve disegnare per sapere quanto spazio c'e'.
   const larg = el.clientWidth || (el.parentElement && el.parentElement.clientWidth) || 0;
   const colCat = _righePerColonna(larg, cat.map(p => _retroCatLabel(p[0])), cat.length);
+  // 🆕 v6.944 (Franco: «aggiungi un altro contenitore, analogo graficamente a quelli esistenti
+  //    per change ed errori di stampa, dedicato al raggruppamento delle fcr per famiglia») — IL
+  //    RIQUADRO DELLE FAMIGLIE NELLA TESTATA.
+  // 📌 Si disegna con la stessa funzione degli altri (`_raggrPanelHTML`) e dallo stesso
+  //    descrittore che alimenta il riquadro della ricerca: è «analogo graficamente» per
+  //    costruzione, non per somiglianza rifatta a mano.
+  // 🔴 QUI NON C'È NESSUNA CONDIZIONE SULLA SERIE, ed è voluto: se in questa sezione nessuno ha
+  //    una famiglia l'elenco esce vuoto e il riquadro non si disegna — la stessa regola che vale
+  //    per gli altri cinque. Una riga `if (serie ha famiglie)` sarebbe una seconda risposta alla
+  //    domanda a cui `valoreDi` risponde già, e le due potrebbero divergere.
+  const perFamiglia = _raggrCounts(dellaSezione, _RAGGR_FAMIGLIA);
+  const colFam = _righePerColonna(larg, perFamiglia.map(p => _raggrLabel(p[0])), perFamiglia.length);
   const html = (cat.length ? _retroCatPanelHTML(cat, mob ? _specTopAperti.cat : true, false, mob ? 'toggleSpecTopCat' : null, colCat) : '')
+             + (perFamiglia.length
+                 ? _raggrPanelHTML(_RAGGR_FAMIGLIA, perFamiglia, mob ? _raggr('famiglia').apertoTop : true,
+                                   false, mob ? `_toggleSpecTopRaggr('famiglia')` : null, colFam, null)
+                 : '')
              + perVersione.map(({ v, pairs, parti }) => {
                  if (!pairs.length) return '';
                  const col = _righePerColonna(larg, pairs.map(p => _raggrLabel(p[0])), pairs.length);
@@ -62073,13 +62349,25 @@ function _gscIndirizzi(s) {
 //    un nome, e' una proprieta' della tipologia. Il suo ripiego pero' e' quello giusto -
 //    Franco ha confermato «set base» per tutte e otto le altre - quindi una tipologia nuova
 //    nasce con la frase giusta invece che con un buco.
+// 🔄 v6.937 (Franco: « allinea le pagine serie per la gsc alle ultime modifiche fatte alle
+//    numeriche») — LE DUE PAROLE SONO QUELLE DEL SITO, COPIATE DA DOVE LE SCRIVE LUI.
+// • `setBase` non prende più la tipologia: è la v6.907, e l'argomento è lo stesso qui — il
+//   nome sta già nella colonna di sinistra (`.cat`), a pochi centimetri, e la riga diceva
+//   «160 Figurine con retro set base» accanto a «Figurine con retro».
+// • `totale` perde l'«in»: è la v6.930, e in inglese resta `total` come nel sito.
+// 🔴 LE QUATTRO PAROLE NON SONO STATE SCELTE QUI: `set base`/`base set` e `totali`/`total`
+//    sono, lettera per lettera, quelle di `sezRows` in questo stesso file. Sceglierle di nuovo
+//    sarebbe stato il modo di farle divergere alla prossima volta che Franco cambia idea.
+// ⚠️ Resta l'unico punto in cui le due famiglie di numeri non possono condividere il codice:
+//    `sezRows` disegna colonne cliccabili dentro il sito, qui esce HTML statico per Google.
+//    Condividere le PAROLE è quanto si può, e `prova-v6937` le confronta con quelle di là.
 const _GSC_PAROLE = {
-  it: { setBase: p => p + ' set base',
+  it: { setBase: 'set base',
         standard: n => n === 1 ? 'versione standard' : 'versioni standard',
-        totale: 'in totale', locale: 'it-IT' },
-  en: { setBase: p => p + ' base set',
+        totale: 'totali', locale: 'it-IT' },
+  en: { setBase: 'base set',
         standard: n => n === 1 ? 'standard version' : 'standard versions',
-        totale: 'in total', locale: 'en-US' },
+        totale: 'total', locale: 'en-US' },
 };
 
 const _GSC_CSS = `:root{--bg:#1a1333;--card:#241a45;--dim:#b3a8d4;--txt:#f2eeff;--acc:#ffd166}
@@ -62091,37 +62379,63 @@ a{color:var(--acc)}
 .bc a{color:var(--dim)}
 header{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-start;margin-bottom:1.6rem}
 header img{border-radius:10px;background:var(--card);flex-shrink:0}
-/* \U0001F534 v6.636 (Franco: «le 6 pagine devono avere la stessa struttura») — IL BLOCCO DI
+/* 🔴 v6.636 (Franco: «le 6 pagine devono avere la stessa struttura») — IL BLOCCO DI
    DESTRA SI RESTRINGE INVECE DI ANDARE A CAPO. Era largo quanto il suo contenuto, e accanto
    alla copertina restano 852px: misurati, la serie 2 ne chiedeva 933 e finiva SOTTO la foto,
    la serie 3 ne chiedeva 832 e ci stava per venti pixel. La struttura della pagina dipendeva
    da quanti articoli ha la serie.
-   \u2022 flex:1 1 0 -> la base non e' piu' il contenuto ma zero: prende lo spazio che c'e'.
-   \u2022 min-width:0 -> senza, un figlio flex non scende mai sotto la larghezza minima del
+   • flex:1 1 0 -> la base non e' piu' il contenuto ma zero: prende lo spazio che c'e'.
+   • min-width:0 -> senza, un figlio flex non scende mai sotto la larghezza minima del
      suo contenuto, e la riga delle numeriche lo impedirebbe. E' la trappola classica del
      flexbox: «flex:1» da solo non basta, e non da' nessun segnale.
-   \u26a0\ufe0f NIENTE APICI INVERSI QUI DENTRO: questo commento vive in una template literal,
+   ⚠️ NIENTE APICI INVERSI QUI DENTRO: questo commento vive in una template literal,
      e un apice inverso la CHIUDE. Scritto la prima volta con gli apici, ha rotto app.js —
      e nessuna delle 219 prove se n'e' accorta, perche' leggono il testo e non lo eseguono.
-   \u26a0\ufe0f NON si e' allargato il contenitore ne' rimpicciolita la copertina: sarebbero
+   ⚠️ NON si e' allargato il contenitore ne' rimpicciolita la copertina: sarebbero
    rimedi tarati sui numeri di oggi, e la prima serie che cresce li scavalca. */
 header > div{flex:1 1 0;min-width:0}
 .titolo{display:flex;align-items:baseline;gap:.7rem;flex-wrap:wrap}
-h1{font-size:2rem;margin:.2rem 0 .4rem;line-height:1.15}
+h1{font-size:2rem;margin:.2rem 0 .4rem;line-height:1.15;color:var(--nome)}
 .anno{font-size:.88rem;color:var(--txt);letter-spacing:2px;text-transform:uppercase}
+.numt{color:var(--viola);font-weight:800;font-size:1.05em;letter-spacing:.06em;margin:.9rem 0 0}
 .num{display:grid;grid-template-columns:max-content 1fr;gap:.35rem 1.4rem;align-items:start;margin:.9rem 0 1.1rem;font-size:.92rem}
 .cat{font-weight:700;color:var(--txt)}
-.vv{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.35rem 1.4rem}
+.vv{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.35rem .9rem}
 .pal{display:inline-block;width:9px;height:9px;border-radius:2px;background:currentColor;margin-right:7px;vertical-align:.05em}
 h2{font-size:1.35rem;margin:2.2rem 0 .3rem}
+/* 🆕 v6.941 — IL NOME DELLA SOTTOSERIE SOPRA LA SUA GRIGLIA, lime (Franco: «usa il
+   solito colore lime»). È l'accento del sito, quello dei titoletti dell'hub, e come gli altri
+   due arriva dal browser vivo invece di essere ricopiato qui: vedi _gscColoriDalSito.
+   🔴 Più piccolo dell'h2 che gli sta sopra e più grande del testo: fra «Tutte le figurine
+   della serie» e le figurine c'è un gradino, e i due titoli non devono sembrare dello stesso
+   rango. Stessa ragione per cui nel sito il titolo grande è viola e i titoletti sono lime —
+   tre titoli dello stesso colore uno dentro l'altro non hanno più un ordine.
+   ⚠️ NIENTE EMOJI SCRITTE COME CODICE DI CARATTERE IN QUESTE RIGHE: qui dentro sono TESTO, e
+   finirebbero così com'erano nel CSS servito da Google. Le righe che aprono un commento le
+   scusa il §E7 di prova-v6374; queste, che lo continuano, no. */
+h3.ss{color:var(--lime);font-size:1.05rem;margin:1.8rem 0 .5rem;letter-spacing:.02em}
 .hint{color:var(--dim);font-size:.9rem;margin:0 0 1.1rem}
 .g{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.9rem}
 .c{background:var(--card);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
-.c img{width:100%;height:auto;display:block;background:#2f2456}
+/* 🔄 v6.940 — LA FOTO STA A MEZZA ALTEZZA, non incollata in cima (Franco: «le figurine
+   sdraiate riusciresti a metterle a mezza altezza, rispetto alla altezza di una figurina
+   verticale? al momento pareggiamo al lato superiore»).
+   🔴 COME FUNZIONA, ed e' il motivo per cui basta una parola: la card e' un flex in
+   colonna, e la riga del numero ha gia' un margin-top:auto che spinge numero e nome in fondo.
+   Mettendone un SECONDO qui, i due si dividono lo spazio libero in parti UGUALI: meta' sopra
+   la foto, meta' fra la foto e il testo. Cioe' la foto finisce in mezzo.
+   ⚠️ E le verticali non si muovono di un pixel: sono loro a decidere l'altezza della
+   riga, quindi spazio libero non ne hanno e non c'e' niente da dividere.
+   📌 Niente align-items:center ne' justify-content: il primo centra in ORIZZONTALE (la
+   foto e' gia' larga quanto la card), il secondo sposterebbe anche il testo, che deve restare
+   in fondo. Due margini automatici fanno la cosa giusta e non ne spostano altre.
+   ⚠️ NIENTE APICI INVERSI QUI DENTRO: questo commento vive in una template literal, e
+   un apice inverso la CHIUDE. Preso di nuovo scrivendo proprio questa riga. */
+.c img{width:100%;height:auto;display:block;background:#2f2456;margin-top:auto}
 .c .n{display:block;padding:.5rem .55rem 0;font-size:.78rem;color:var(--acc);font-weight:800;margin-top:auto}
 .c .nm{display:block;padding:0 .55rem .6rem;font-weight:700;font-size:.83rem;line-height:1.25}
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #2a2044;color:var(--dim);font-size:.88rem;text-align:center}
-/* \U0001F534 v6.638 — L'INVITO AL SITO. Franco: «quell'hyperlink in alto e' troppo
+/* 🔴 v6.638 — L'INVITO AL SITO. Franco: «quell'hyperlink in alto e' troppo
    piccolo. chi lo vede??». Il colore e' --acc su fondo scuro, cioe' il contrario
    dei link della pagina: un bottone non si legge, si vede. */
 .invito{margin:1.5rem 0 2rem;text-align:center}
@@ -62135,6 +62449,23 @@ footer a{color:var(--dim);text-decoration:underline}`;
 //    stampa)»). ⚠️ Il badge della card continua a escluderli: i due numeri divergono, ed e' voluto.
 // 📌 I colori si leggono dal browser VIVO con `getComputedStyle`, non da `style.css`: e' la
 //    medicina della v6.372, dove `--danger` era dichiarata due volte e a vincere era l'index.
+// 🔴 v6.938 — LE DUE VARIABILI CHE QUESTE PAGINE PRENDONO IN PRESTITO DAL SITO, in un posto
+//    solo. Non stanno dentro `_GSC_CSS` apposta: lì sarebbero due valori scritti a mano accanto
+//    ai loro originali, cioè la «seconda copia di cui non si sa l'esistenza».
+// 📌 `--nome` è l'azzurro dei NOMI DELLE ENTITÀ (`--nome-entita`, v6.399): il titolo di questa
+//    pagina è il nome di una serie, esattamente come nella pagina del sito.
+// 📌 `--viola` è `--accent3`, quello dei titoli grandi.
+// ⚠️ IL RIPIEGO È DICHIARATO: se una variabile non si legge si usa il colore del testo, che è
+//    quello che queste pagine avevano fino a ieri. Meglio un titolo bianco che uno invisibile.
+function _gscColoriDalSito() {
+  const radice = getComputedStyle(document.documentElement);
+  const v = (n) => (radice.getPropertyValue(n) || '').trim() || 'var(--txt)';
+  // 🆕 v6.941 — `--lime` è `--accent`, l'accento del sito: quello dei titoletti dell'hub,
+  //    e quello che Franco chiama «il solito colore lime».
+  return ':root{--nome:' + v('--nome-entita') + ';--viola:' + v('--accent3')
+       + ';--lime:' + v('--accent') + '}';
+}
+
 function _gscNumeriche(s, L) {
   const P = _GSC_PAROLE[L];
   const radice = getComputedStyle(document.documentElement);
@@ -62148,24 +62479,83 @@ function _gscNumeriche(s, L) {
   //    avere non deve comparire nemmeno a zero.
   // 📌 Il salto delle categorie VUOTE resta due righe piu' sotto ed e' un'altra cosa: li'
   //    si tace di cio' che non c'e' ANCORA, qui di cio' che non ci sara' mai.
-  const righe = PRODOTTI_INVENTARIO.filter(sez => _tipologiaAmmessa(sez, s.id)).map(sez => {
-    const g = tipiPresenti(s.id, sez);
-    if (!g.items.length) return '';   // una categoria vuota non si annuncia a un visitatore
+  // 🆕 v6.943 (Franco: «hai messo una numerica unica per fcr; No. dovresti fare come fai nella
+  //    pagina delle fcr di quella serie: contare per sottoserie anziché per tda») — DOVE CI SONO
+  //    SOTTOSERIE, LE RIGHE SONO LE SOTTOSERIE.
+  // 📏 MISURATO SUL SITO, non dedotto: su Sgorbions Holidays la pagina della serie elenca
+  //    «Figurine Metal 30 · Figurine Clear 30 · Figurine White 1 · Tatuaggi 59 · Trasferelli 32
+  //    · Carte d'identità 36», e tiene per tipologia solo ciò che sottoserie non ne ha (Album,
+  //    Bustine). Questa pagina diceva invece «Figurine con retro 61»: un numero che sul sito non
+  //    compare da nessuna parte.
+  // 🔴 CHI SONO E IN CHE ORDINE LO DICE `_sottoserieUsate`, la stessa funzione delle griglie qui
+  //    sotto (v6.941), dei tab del sito e della ricerca globale. Le righe dei numeri e le griglie
+  //    devono per forza dire gli stessi gruppi: se si dividessero, la pagina conterebbe una cosa
+  //    e ne mostrerebbe un'altra.
+  // 📌 E la domanda si fa PER TIPOLOGIA, non una volta per la serie: in Holidays le figurine si
+  //    spacchettano e le bustine no. È lo stesso comportamento dell'hub.
+  const rigaHTML = (nome, g, sez) => {
     const m = [];
+    // 🔴 v6.937 — LE DUE REGOLE DELLA RIGA BASE, prese da `sezRows` e non inventate qui.
+    //    • senza altre versioni, «set base» non distingue niente: distingue da COSA? È la
+    //      v6.698, e là la riga torna a portare il nome della tipologia. «100» da solo non si
+    //      capirebbe, quindi il nome non si toglie: si toglie la parola che non serve.
+    //    • singolare con un pezzo solo (v6.688): «1 figurina», non «1 figurine». Le due forme
+    //      le dà `getSectionLabelSingular`/`getSectionLabel`, cioè la stessa coppia del sito.
+    // ⚠️ `_tipoProdottoCorrente` non esiste qui — questa è la pagina di una SERIE, non di una
+    //    tipologia — quindi il nome viene dalla sezione, come faceva prima questa stessa riga.
+    const _altreVersioni = g.variation.length + g.unofficial.length + g.change.length
+      + g.free.length + g.printError.length;
     if (g.base.length) m.push(voce(g.base.length,
       (['bustine', 'albums', 'extras'].includes(sez) ? P.standard(g.base.length)
-                                                     : P.setBase(getSectionLabel(sez).toLowerCase())),
+        : _altreVersioni ? P.setBase
+        // 🔄 v6.939 — lo stesso nome corto della pagina del sito, dallo stesso posto. Qui va in
+        //    minuscolo perché è la convenzione di queste righe, come lo era il nome lungo.
+        : (_numNomeCorto(sez, g.base.length === 1, L === 'it')
+           || (g.base.length === 1 ? getSectionLabelSingular(sez) : getSectionLabel(sez))).toLowerCase()),
       tinta('--type-base')));
     if (g.variation.length) m.push(voce(g.variation.length, _etichettaConteggio('variation', g.variation.length, L === 'it'), tinta('--type-official')));
     if (g.unofficial.length) m.push(voce(g.unofficial.length, _etichettaConteggio('unofficialVariation', g.unofficial.length, L === 'it'), tinta('--type-unofficial')));
     if (g.change.length) m.push(voce(g.change.length, _etichettaConteggio('change', g.change.length, L === 'it'), tinta('--type-change')));
     if (g.free.length) m.push(voce(g.free.length, _etichettaConteggio('free', g.free.length, L === 'it'), tinta('--type-free')));
     if (g.printError.length) m.push(voce(g.printError.length, _etichettaConteggio('printError', g.printError.length, L === 'it'), tinta('--type-printerror')));
-    if (g.items.length) m.push(voce(g.items.length, P.totale, tinta('--accent')));
-    return '      <div class="cat">' + _gscEsc(getSectionLabel(sez)) + '</div>\n'
+    // 🔄 v6.937 — IL TOTALE SOLO SE SOMMA QUALCOSA (v6.699): con una riga sola non somma,
+    //    RIPETE. «100 tatuaggi» e «100 totali» sono lo stesso numero detto due volte, e su
+    //    queste pagine lo leggeva anche chi arriva da Google.
+    // 🔴 Stessa variabile della riga base, non un secondo conto: due domande identiche con
+    //    due somme scritte a mano divergono al primo ritocco.
+    if (g.items.length && _altreVersioni) m.push(voce(g.items.length, P.totale, tinta('--accent')));
+    return '      <div class="cat">' + _gscEsc(nome) + '</div>\n'
          + '      <div class="vv">' + m.join('') + '</div>\n';
+  };
+
+  const righe = PRODOTTI_INVENTARIO.filter(sez => _tipologiaAmmessa(sez, s.id)).flatMap(sez => {
+    const g = tipiPresenti(s.id, sez);
+    if (!g.items.length) return [];   // una categoria vuota non si annuncia a un visitatore
+    const sotto = _sottoserieUsate(s, g.items);
+    // 📌 Senza sottoserie la riga è quella di sempre, col nome della tipologia: è il caso delle
+    //    serie 1, 2 e 3 e, dentro Holidays, di Album e Bustine.
+    if (!sotto.length) return [rigaHTML(getSectionLabel(sez), g, sez)];
+    // ⚠️ `_dividiPerVersione` e non un secondo conto a mano: è la funzione che il sito usa per
+    //    spaccare un gruppo nelle sue versioni, e qui serve esattamente quella — dentro una
+    //    sottoserie possono esserci change, variazioni ed errori di stampa come in una tipologia.
+    return sotto.map(v => {
+      const suoi = g.items.filter(f => String(f.subseries || '').trim() === v);
+      return suoi.length ? rigaHTML(_etichettaSottoserie(v), _dividiPerVersione(suoi), sez) : '';
+    });
   }).filter(Boolean);
-  return '    <div class="num">\n' + righe.join('') + '    </div>\n';
+  // 🆕 v6.938 (Franco: «la frase NUMERICHE ARTICOLI DELLA SERIE va aggiunta anche li») — LE
+  //    PAROLE SONO LE SUE, quelle della v6.907, e in inglese quelle che il sito ha già:
+  //    «SERIES ITEM COUNTS». Non sono state scelte qui, sono state copiate da dove le scrive lui.
+  // 🔴 IL MAIUSCOLO È SCRITTO, NON UN `text-transform`: quello è un effetto, e questa è la frase
+  //    che Franco ha dettato. Stessa ragione della v6.907, parola per parola.
+  // 🔴 E SI SCRIVE SOLO SE C'È QUALCOSA DA INTITOLARE (v6.672): se tutte le categorie sono vuote
+  //    `righe` è vuoto, e un titolo sopra il nulla è l'«etichetta orfana» che Franco ha già fatto
+  //    togliere una volta. Per questo si guarda `righe.length`, non la serie.
+  // 📌 Il viola e non il lime: «tutti i conteggi sono lime, il viola è solo per i titoli grandi»
+  //    (Franco). Il colore arriva da `_gscColoriDalSito`, cioè dal browser vivo.
+  if (!righe.length) return '';
+  return '    <div class="numt">' + (L === 'it' ? 'NUMERICHE ARTICOLI DELLA SERIE' : 'SERIES ITEM COUNTS') + '</div>\n'
+       + '    <div class="num">\n' + righe.join('') + '    </div>\n';
 }
 
 // 🔴 IL PARAGRAFO LO SCRIVE FRANCO (v6.626/628), e se il campo e' vuoto non c'e' paragrafo:
@@ -62257,7 +62647,14 @@ function _gscPagina(s, L) {
     + '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
     + '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
     + '<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">\n'
-    + '<style>\n' + _GSC_CSS + '\n</style>\n</head>\n<body>\n<div class="wrap">\n\n'
+    // 🔴 v6.938 — I DUE COLORI DEL SITO ENTRANO DA QUI, LETTI DAL BROWSER VIVO. È la medicina
+    //    della v6.372, già in uso per i colori dei tipi in `_gscNumeriche`: scrivere `#4db8ff`
+    //    dentro `_GSC_CSS` sarebbe la seconda copia di un valore che vive nell'index, e il
+    //    giorno che l'azzurro cambia queste pagine resterebbero indietro senza che niente lo
+    //    dica — sono file statici, e nessuno le rilegge.
+    // ⚠️ Vanno DOPO `_GSC_CSS`, non prima: è il `:root` che arriva per ultimo a vincere, e
+    //    quello statico dichiara già le altre variabili della pagina.
+    + '<style>\n' + _GSC_CSS + '\n' + _gscColoriDalSito() + '\n</style>\n</head>\n<body>\n<div class="wrap">\n\n'
     // ⚠️ «Serie» non e' un link: `/serie/` non esiste. L'altra lingua invece si': e' l'unico
     //    posto dove un lettore la cerca, e per Google e' il link che rende vivi gli hreflang.
     + '<nav class="bc"><a href="/">figurineSgorbions.it</a> › ' + (L === 'it' ? 'Serie' : 'Series')
@@ -62274,10 +62671,44 @@ function _gscPagina(s, L) {
              + _gscEsc(testo).replace(/\n/g, '<br>\n') + '</p>\n\n' : '')
     + '<h2>' + (L === 'it' ? 'Tutte le figurine della ' : 'All the stickers in ')
     + _gscEsc(nome.replace(/^Sgorbions\s+serie\b/i, L === 'it' ? 'Serie' : 'Series')) + '</h2>\n'
-    + '<p class="hint">' + (L === 'it' ? 'Dalla n. ' : 'From no. ')
-    + _gscEsc(basi[0] ? basi[0].number : '?') + (L === 'it' ? ' alla n. ' : ' to no. ')
-    + _gscEsc(basi[n - 1] ? basi[n - 1].number : '?') + '.</p>\n'
-    + '<ul class="g">\n' + basi.map(card).join('\n') + '\n</ul>\n\n' + invito
+    // 🔄 v6.941 (Franco: «se la serie non ha numeri, non devi scrivere "da n. a n."») — LA
+    //    RIGA SI SCRIVE SOLO SE C'È UN NUMERO DA SCRIVERE. Su Sgorbions Holidays usciva
+    //    «Dalla n.  alla n. .»: il flag `noNumbers` sulla serie è acceso e nessuna delle 61
+    //    figurine ha un numero (misurato sui dati veri, non dedotto).
+    // 🔴 LA DOMANDA LA FA `_haNumero`, che è la stessa del sito: tiene conto del flag della
+    //    serie, di `noNumber` sul singolo pezzo e di come la tipologia usa il numero. Scrivere
+    //    qui la condizione a mano sarebbe stata una quarta copia di quella regola, giusta oggi
+    //    e vecchia il giorno che una delle altre due condizioni cambia.
+    + (() => {
+      const conNum = basi.filter(_haNumero);
+      if (!conNum.length) return '';
+      return '<p class="hint">' + (L === 'it' ? 'Dalla n. ' : 'From no. ')
+        + _gscEsc(conNum[0].number) + (L === 'it' ? ' alla n. ' : ' to no. ')
+        + _gscEsc(conNum[conNum.length - 1].number) + '.</p>\n';
+    })()
+    // 🆕 v6.941 (Franco: «se la serie ha sottoserie, allora devi fare + griglie: una per
+    //    sottoserie, e prima di ogni griglia deve esserci il nome della sottoserie, usa il
+    //    solito colore lime») — LE GRIGLIE DIVENTANO UNA PER SOTTOSERIE.
+    // 🔴 QUALI E IN CHE ORDINE LO DICE `_sottoserieUsate`, la stessa funzione dei tab del
+    //    sito e della ricerca globale. Un elenco calcolato qui sarebbe il decimo punto che
+    //    risponde alla stessa domanda con parole sue, e i gruppi di questa pagina potrebbero
+    //    non essere quelli che il visitatore trova entrando nel sito — senza nessun errore.
+    // ⚠️ E GLI ORFANI RESTANO LA RETE anche qui: chi ha una sottoserie scritta male finisce
+    //    in un blocco col suo nome, chi non ce l'ha in «Set principale». Nessuno sparisce dalla
+    //    pagina pubblica, che è la cosa che conterebbe di più sbagliare.
+    // 📌 Senza sottoserie la pagina resta ESATTAMENTE com'era: una griglia sola e nessun
+    //    titolo. È il caso delle serie 1, 2 e 3, cioè di tre pagine su cinque.
+    + (() => {
+      const sotto = _sottoserieUsate(s, basi);
+      if (!sotto.length) return '<ul class="g">\n' + basi.map(card).join('\n') + '\n</ul>\n';
+      return sotto.map(v => {
+        const suoi = basi.filter(f => String(f.subseries || '').trim() === v);
+        if (!suoi.length) return '';
+        return '<h3 class="ss">' + _gscEsc(_etichettaSottoserie(v)) + '</h3>\n'
+             + '<ul class="g">\n' + suoi.map(card).join('\n') + '\n</ul>\n';
+      }).filter(Boolean).join('\n');
+    })()
+    + '\n' + invito
     // 🔄 il footer e' quello della homepage. Il link alla privacy funziona dalla v6.627 in poi.
     + '<footer>\n  <p>2026 <a href="/">figurinesgorbions.it</a> — '
     + '<a href="/#privacy">Privacy Policy</a></p>\n</footer>\n\n</div>\n</body>\n</html>\n';
@@ -62409,9 +62840,27 @@ function _gscAnteprima() {
   catch (e) { el.innerHTML = '<p style="color:var(--danger);">' + _gscEsc(e.message) + '</p>'; return; }
   const it = currentLang === 'it';
   const rip = p.filter(x => x.ripiego), vuote = p.filter(x => x.senzaTesto);
+  // 🗑️ v6.936 (Franco: « ho cambiato idea; ordina per l'ordinamento serie standard») — VIA
+  //    L'ORDINE ALFABETICO DELLA v6.935, e la tabella torna a seguire `_gscPiano`, cioè
+  //    l'ordine dell'Inventario: quello di `order`, lo stesso con cui le serie stanno nel sito.
+  // 🔴 NON C'È UN `sort` NUOVO QUI SOTTO, E NON È UNA DIMENTICANZA: l'ordine standard il
+  //    piano ce l'ha già. Riscriverlo qui — un `sort` per `order` sulla vista — sarebbe una
+  //    SECONDA copia dello stesso criterio, e il giorno che le serie si riordinano nella console
+  //    la tabella e le pagine direbbero due cose diverse senza nessun errore. Si toglie, non si
+  //    sostituisce.
+  // 📌 La v6.935 resta scritta qui accanto perché la richiesta era vera in tutte e due le
+  //    direzioni, a un'ora di distanza: chi leggerà questo punto non deve poter credere che
+  //    l'alfabetico fosse una svista da «ripristinare».
   el.innerHTML =
     '<p style="color:var(--text);margin:0 0 .6rem;">' + p.length + (it ? ' pagine' : ' pages') + '</p>'
-    + '<table class="data-table" style="width:100%;"><thead><tr>'
+    // 🔄 v6.935 (Franco: « riduci interlinea tra le righe della tabella») — `compact` esiste da
+    // sempre e fa esattamente questo: 0.3rem di padding invece di 0.75rem. Scriverne una nuova
+    // qui sarebbe stata la terza tabella stretta del progetto con la sua misura personale.
+    // ⚠️ `compact` però fa DUE cose: stringe le righe E rimpicciolisce il carattere. Qui ne
+    // serviva una sola, e il carattere torna alla sua misura in style.css (#gsc-esito) —
+    // rimpicciolire il testo sarebbe il contrario della v6.934, che ha appena allargato questa
+    // tabella del 25% perché si leggesse meglio.
+    + '<table class="data-table compact" style="width:100%;"><thead><tr>'
     // 🔄 v6.634 - PRIMA LA SERIE, POI IL FILE. La prima colonna e' quella con cui si
     // CERCA la riga, e chi guarda questa tabella pensa «la serie 2», non
     // «en-series-sgorbions-series-2.html»: il nome del file e' la conseguenza, e stava
@@ -62458,20 +62907,29 @@ function _gscGenera() {
   _gscAnteprima();
 }
 
+// 🔄 v6.934 (Franco: « allargare la larghezza della tabella della gsc, di un fattore 25%») —
+//    IL LIMITE DEL BLOCCO PASSA DA 1100 A 1375px, che è esattamente +25%: la tabella è
+//    `width:100%`, quindi cresce insieme a lui e non ha un numero suo da tenere allineato.
+// 🔴 I BLOCCHI DI TESTO SI TENGONO I LORO 1100px, uno per uno. Allargando il solo
+//    contenitore si sarebbero allungate anche le righe delle spiegazioni: è stata chiesta la
+//    TABELLA, e una riga di prosa lunga 1375px si legge peggio di una lunga 1100.
+// ⚠️ Il tetto vero è più in su: `#admin-panel` è `max-width:1500px;width:94vw`. I 1375 ci
+//    stanno dentro, ma un domani +25% ancora (1719) NON ci starebbe, e la tabella resterebbe
+//    ferma a 1500 senza che nessun errore lo dica.
 function renderAdminGsc() {
   const el = document.getElementById('admin-gsc-content');
   if (!el) return;
   const it = currentLang === 'it';
   el.innerHTML =
-    '<div style="max-width:1100px;">'
+    '<div style="max-width:1375px;">'
     + '<h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">🔍 Google Search Console</h3>'
-    + '<p style="color:var(--text);font-size:0.85rem;margin-bottom:1.5rem;">'
+    + '<p style="color:var(--text);font-size:0.85rem;margin-bottom:1.5rem;max-width:1100px;">'
     + (it ? 'Le pagine pubbliche delle serie, quelle che Google indicizza. Una per serie e per lingua.'
           : 'The public series pages, the ones Google indexes. One per series and language.')
     + '</p>'
     + '<h4 style="font-family:var(--font-ui);color:var(--text);margin-bottom:.4rem;">'
     + (it ? '1. Genera le pagine delle serie' : '1. Generate the series pages') + '</h4>'
-    + '<p class="form-hint" style="margin-bottom:.8rem;">'
+    + '<p class="form-hint" style="margin-bottom:.8rem;max-width:1100px;">'
     + (it ? 'Il testo di ogni pagina si scrive nella scheda della serie, tab Descrizioni. Le serie in costruzione non entrano.'
           : 'Each page text is written in the series form, Descriptions tab. Series under construction are excluded.')
     + '</p>'
@@ -62479,13 +62937,13 @@ function renderAdminGsc() {
     + (it ? '👁️ Vedi cosa verrà generato' : '👁️ Preview') + '</button>'
     + '<button class="btn-primary" onclick="_gscGenera()">'
     + (it ? '⬇️ Genera e scarica' : '⬇️ Generate and download') + '</button>'
-    + '<p class="form-hint" style="margin-top:.8rem;">'
+    + '<p class="form-hint" style="margin-top:.8rem;max-width:1100px;">'
     + (it ? '⚠️ Ogni file va messo nella cartella che la colonna «Dove va» indica: e\' quella che la pagina dichiara nel proprio canonical. Caricato piatto nella root risponde lo stesso, e il canonical mente.'
           : '⚠️ Each file goes in the folder shown in the «Goes to» column: it is the one the page declares in its own canonical. Uploaded flat in the root it still answers, and the canonical lies.')
     + '</p>'
     + '<h4 style="font-family:var(--font-ui);color:var(--text);margin:1.6rem 0 .4rem;">'
     + (it ? '2. La sitemap' : '2. The sitemap') + '</h4>'
-    + '<p class="form-hint" style="margin-bottom:.8rem;">'
+    + '<p class="form-hint" style="margin-bottom:.8rem;max-width:1100px;">'
     + (it ? 'Le stesse pagine piu\' la home, prese da dove vengono le pagine: una serie nascosta non ci puo\' finire. Va nella root, accanto a robots.txt. Rigenerala ogni volta che una serie entra o esce.'
           : 'The same pages plus the home, taken from where the pages come from: a hidden series cannot end up in it. It goes in the root, next to robots.txt. Regenerate it whenever a series comes in or out.')
     + '</p>'
