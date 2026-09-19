@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.925">
+<link rel="stylesheet" href="css/style.css?v=6.929">
 
 
 <style>
@@ -476,6 +476,50 @@
    tiene distinte la frase e la fila di numeri. Azzerare anche quello le farebbe sembrare la stessa
    cosa. */
 #hero-intro-numeri { grid-area:intro; margin:0.6rem 0 0.2rem; }
+
+/* 🔄 v6.928 (Franco: «la miniatura la mettiamo in alto a dx, invece che in basso a dx; il tasto
+   "opzioni admin" lo metti alla sx della miniatura (condivideranno il tetto), e lo chiami solo
+   "Opzioni"») - LA MINIATURA DELLA SERIE TORNA IN CIMA.
+   🗄️ ED E' UN RITORNO, non una novita': fino alla v6.720 stava proprio li'. Quella release la
+   mando' in basso con una ragione scritta - «alla v6.719 stava nella riga del titolo perche' come
+   colonna spariva sotto i 560px; adesso su telefono e' spenta di proposito, quindi puo' tornare
+   dove si vede meglio». Oggi Franco guarda la stessa testata e decide il contrario: il posto in
+   basso a destra e' quello che tiene occupato lo spazio accanto alle NUMERICHE, ed e' quello che
+   serve. La ragione della v6.720 non e' stata tradita: e' stata superata da un'altra esigenza.
+   🔴 E SI SCRIVE QUI, NON IN `css/style.css`: la regola arriva dopo il <link> e ha un tipo in
+   piu', quindi vince per ordine e per specificita' (§5, stessa medicina della v6.420).
+   📌 L'ALTEZZA NON STA QUI: la decide `_miniaturaNellaRigaDelTitolo()` misurando la riga del
+   titolo, perche' quella riga e' alta quanto il titolo della serie - che cambia da serie a serie e
+   va a capo quando e' lungo. Un numero scritto qui sarebbe giusto per una serie sola. */
+.series-title-area .series-cover-mini { grid-row: 1; align-self: start; }
+
+/* 🔴 v6.928 — E LE NUMERICHE ARRIVANO FINO AL BORDO, con una riga sola.
+   📏 È il guadagno vero di aver spostato la miniatura: stando lei nella PRIMA riga e le numeriche
+   nella SECONDA, le due non si incontrano più, e il blocco dei conteggi può prendersi anche la
+   terza colonna — 128px in più, che sono esattamente quelli che al totale servivano per stare in
+   linea con gli altri quattro (Franco, con la foto: «quando è possibile metterlo sulla stessa riga
+   degli altri contatori, perché non lo mettiamo?»).
+   🗑️ E QUESTA RIGA MANDA IN PENSIONE LA v6.927, che lo stesso risultato lo inseguiva misurando lo
+   spazio libero a schermo: una funzione di misura, un osservatore di ridimensionamento e una
+   bandierina contro i giri infiniti, che nella preview non attaccavano mai al momento giusto. Con
+   la miniatura in alto il problema non si risolve: SPARISCE. Vale la pena ricordarlo — quando una
+   cura diventa una macchina, conviene guardare di nuovo il problema.
+   ⚠️ `2 / -1` e non `2 / 4`: se un domani la griglia prende una quarta colonna, «fino alla fine»
+   resta vero senza che nessuno debba tornare qui. */
+.series-title-area #detail-meta { grid-column: 2 / -1; }
+
+/* 🔴 v6.929 (Franco: «il pulsante opzioni cade sopra la miniatura; deve finire prima che la
+   miniatura inizi») — LA RIGA DEL TITOLO SI FERMA PRIMA DELLA TERZA COLONNA.
+   📏 LA CAUSA, misurata: quella riga ha `grid-column: 1 / -1` (css/style.css, riga della v6.861),
+   cioe' si prende TUTTE le colonne. Finche' la miniatura stava in basso non dava fastidio a
+   nessuno; da quando sta in cima, le due cose condividono la prima riga e il tasto — spinto a
+   destra da `justify-content:space-between` — finisce proprio SOPRA la foto. 📏 Misurato: tasto
+   1696→1827, miniatura 1731→1827.
+   📌 E' lo stesso difetto della v6.928 visto dall'altro lato: quella ha tolto la sovrapposizione
+   fra i CONTEGGI e la miniatura dichiarando dove arrivano, questa fa lo stesso per il TITOLO.
+   ⚠️ Il titolo lungo non ci perde: va a capo un po' prima, dentro la sua colonna, invece di
+   passare sotto la foto. */
+.series-title-area .series-info > div:first-child { grid-column: 1 / 3; }
 /* 📌 v6.910 - QUI C'ERA LA MEDIA QUERY DELL'860 CHE ALZAVA LE DUE RIGHE SUL SOLO TELEFONO
    (v6.897/898). Non e' stata cancellata: le sue due regole sono salite di qualche riga, fuori da
    qualunque soglia, perche' adesso valgono anche sul desktop. Cercarla qui e non trovarla e' il
@@ -1620,9 +1664,19 @@ di tutte le serie</button>
                  telefono» (v5.822). Sulle voci combatterebbe col `display` che decide
                  app.js; sul tasto basta, perche' senza tasto il pannello non si apre. -->
             <div id="detail-admin-menu" style="position:relative;flex-shrink:0;">
+              <!-- 🔄 v6.928 (Franco: «lo chiami solo "Opzioni"») — il tasto perde la parola
+                   «admin». 📌 Non perde niente in chiarezza: lo vede solo chi è amministratore
+                   (`display:none` fino a prova contraria, più la regola «niente amministrazione
+                   da telefono» della v5.822), quindi quella parola diceva a chi lo guarda una
+                   cosa che sapeva già. E accanto alla miniatura, da questa release, lo spazio
+                   conta.
+                   ⚠️ E IL COMMENTO STA QUI, NON FRA GLI ATTRIBUTI DEL TASTO: infilato là dentro
+                   spezza il tag, e il browser si perde gli attributi che seguono. Scrivendolo
+                   così si sono accese due suite in un colpo (`prova-v6621`, `prova-v6644`) — che
+                   hanno fatto il loro mestiere, perché cercavano proprio quelle classi. -->
               <button id="detail-admin-btn" onclick="_toggleMenuAdminSerie()"
                       class="btn-primary btn-admin admin-anche-telefono"
-                      style="display:none;">⚙️ Opzioni admin ▾</button>
+                      style="display:none;">⚙️ Opzioni ▾</button>
               <!-- 🆕 v6.745 (Franco: "un bottone admin-like in alto a dx... dove c'e' il tasto
                    equipollente della form della serie") - LA CONFIGURAZIONE DELLA TIPOLOGIA STA DOVE
                    STA QUELLA DELLA SERIE.
@@ -4967,7 +5021,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.925"></script>
+<script src="js/app.js?v=6.929"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4991,7 +5045,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.925'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.929'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
