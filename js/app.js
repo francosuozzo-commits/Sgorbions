@@ -1,6 +1,86 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.914 - 🔒 USCIRE BUTTA VIA LA PAGINA, E LA CONSOLE ADMIN CHIEDE CHI SEI (Franco, con due foto:
+//          «da sloggato vedo la icona della busta da lettere, che se premuta porta alla admin
+//          console; come e' possibile avere un buco cosi grosso?»). Modificato js/app.js.
+//          🔴 IL BUCO ERA TRIPLO, e nessuno dei tre pezzi da solo bastava a farlo vedere.
+//          1. `logout()` azzerava `currentUser` e ridisegnava la navbar, e BASTA: i dati
+//             riservati restavano in memoria (`_cache.users`, `_cache.contact_messages`,
+//             `_cache.segnalazioni`, `_cache.eventi`, piu' quello che i tab avevano gia' disegnato
+//             nel DOM e la copia in `sessionStorage`). Adesso l'uscita RICARICA la pagina: butta
+//             via tutto per costruzione, senza un elenco di cose da azzerare che invecchia.
+//          2. `showAdminTab()` non chiedeva niente a nessuno: la chiamava il pulsante della busta
+//             e apriva il Pannello Admin a chiunque. Adesso se non sei admin torna alla home.
+//          3. `updateNavUser()` aveva DUE LISTE DIVERSE nei due rami: il ramo ospite non nominava
+//             `nav-msg-btn` ne' `nav-reply-btn`, quindi restavano accesi dopo un'uscita senza
+//             ricarica. Adesso i comandi riservati partono spenti PRIMA del bivio e li riaccende
+//             solo chi ne ha diritto.
+//          ⚠️ E LA PRIMA LETTURA DEL DIFETTO ERA SBAGLIATA: «le regole Firestore chiudono quelle
+//          collezioni, il pannello si apre vuoto». La seconda foto di Franco mostra il pannello
+//          con dentro i messaggi e gli indirizzi e-mail veri. Le regole del server valgono per le
+//          letture NUOVE; quei dati erano gia' in casa dal tempo in cui l'admin era loggato.
+//          ⬜ Chi poteva vederli: chi apre lo STESSO browser dopo l'uscita dell'admin - non un
+//          estraneo da fuori, per cui Firestore risponde 403 come sempre (§15.2).
+//          📌 Il saluto «Arrivederci!» si mostra ora DOPO la ricarica (`_salutoDopoUscita`):
+//          tenerlo prima avrebbe voluto dire lasciare i dati in memoria per altri quattro secondi.
+// v6.913 - I DODICI NUMERI DELLA HOME SI VEDONO ANCHE DA NON LOGGATI (Franco: «pensavo di mostrare
+//          questi numeroni anche a chi non e' ancora loggato, cosi da invogliare le persone» - e
+//          alla domanda: «tutti e 12», «certo che la frase rimane anche per loro»). Modificato
+//          js/app.js.
+//          🔴 ERA UNA RIGA SOLA A SPEGNERLI: `mostraNumeroniHero(false)` nel ramo ospite di
+//          `updateNavUser`. I DATI C'ERANO GIA', misurato e non supposto: sono la stessa fonte
+//          (`_cache.series` / `_cache.figurines`) che alimenta il carosello della home, che la
+//          v6.051 mostra proprio a chi arriva senza account, e `renderHomeStats` non ha nessuna
+//          guardia sul login - girava gia' e scriveva dentro due riquadri spenti.
+//          📌 LA CHIAMATA ESCE DAI DUE RAMI E NE RESTA UNA SOLA, fuori dall'`if`: «i numeri si
+//          vedono» smette di essere una risposta alla domanda «chi sei». Con due punti, per
+//          spegnerli di nuovo a meta' sarebbe bastato toccare il ramo sbagliato.
+//          📌 Nessun numero e' riservato, e la regola della v6.811 vale identica per tutti: fuori
+//          le serie IN ARRIVO, quelle nascoste e gli articoli invisibili.
+// v6.912 - MENO NERO FRA «IN QUESTO SITO TROVERAI...» E I NUMERI (Franco: «c'e' troppo spazio nero
+//          prima dei numeri, tra la frase e i numeri; riduci quello spazio»). Modificato
+//          index.html (solo CSS).
+//          📏 MISURATO SULLA PREVIEW a 1536px prima di toccare: il <p> portava i margini di
+//          DEFAULT del browser - 24px sopra, 40px sotto - e con i 14.4px di `gap` della griglia
+//          facevano 49px di nero. Quel valore non l'aveva scelto nessuno.
+//          📌 I valori sono quelli che il telefono usa gia' dalla v6.900, e la riga che li
+//          dichiarava dentro la media query e' stata tolta: un posto solo per le due larghezze.
+//          ⚠️ Lo spazio NON va a zero: restano i 14.4px di `gap`, che tengono distinte la frase e
+//          la fila di numeri.
+// v6.911 - I DODICI NUMERI DELLA HOME SU DUE RIGHE SUL DESKTOP (Franco: «i numeri verdi della
+//          home, per il dsk, possiamo disporli su 2 righe? ora sono 3 righe con uno spazio
+//          centrale che non serve; forse arriva dal fatto che prima c'era in mezzo la hero, ma
+//          ora la hero l'abbiamo messa sopra»). Modificato index.html (solo CSS).
+//          📌 LA SUA DIAGNOSI E' ESATTA: quel vuoto in mezzo e' il posto dove stava il LOGO fino
+//          alla v6.901 (griglia "sx logo dx", v6.019). Portato il logo sopra, le due sponde sono
+//          rimaste affiancate per inerzia, con in mezzo lo spazio di una cosa che se n'era andata.
+//          ⬜ E LA RIGA DA CAMBIARE ERA GIA' SCRITTA NELL'INDEX dalla v6.901: «se le volesse
+//          incolonnate anche qui, e' una riga: "logo" "intro" "sx" "dx"». Era una previsione, ed e'
+//          diventata la richiesta.
+//          🔴 LE SPONDE PASSANO DA TRE RIGHE A UNA, e restano `grid-auto-flow:column`: le colonne
+//          si aggiungono da se', quindi una tipologia nuova entra sulla stessa riga invece di
+//          aprirne una seconda. «Due righe» resta vero per costruzione, non finche' le voci sono
+//          sei - lo stesso ragionamento della v6.815, girato di novanta gradi.
+//          🗄️ E LA RAGIONE DELLA v6.901 DECADE senza essere tradita: «impilarle avrebbe fatto un
+//          hero altissimo» era vero con le sponde alte tre righe (sei in tutto); con le sponde
+//          alte una riga le righe sono due, meno delle tre di prima.
+// v6.910 - LE DUE RIGHE DELLA HOME SALGONO SOPRA IL LOGO ANCHE SUL DESKTOP (Franco: «la frase "Il
+//          database non ufficiale... Fatto con 💚 da collezionisti, per collezionisti" avevo
+//          chiesto che fosse messa sopra la Hero», «sia desktop che mobile»). Modificato
+//          index.html (solo CSS).
+//          🔴 SUL TELEFONO C'ERANO GIA', e la misura viene dal sito SERVITO e non da un ricordo:
+//          la v6.897/898 le aveva alzate con `order:-1` dentro la media query dell'860, e a
+//          1536px la prima riga stava a 541px dall'alto mentre il logo stava a 79. Di questa
+//          richiesta mancava quindi una meta' sola - il desktop - e chiederne conferma avrebbe
+//          voluto dire far ripetere a Franco una cosa gia' detta due volte.
+//          📌 L'`order` ESCE DALLA MEDIA QUERY invece di essere copiato in una seconda: una
+//          regola sola per le due larghezze, nessun posto da tenere allineato (v6.901).
+//          ⚠️ E I MARGINI NEGATIVI DELLA v6.068 ESCONO CON LORO: `-1.4rem` e `-2.2rem` tiravano
+//          le righe SU verso il logo che stava sopra; da sopra il logo tirerebbero il blocco
+//          dentro la navbar. Il distacco si dichiara, come si faceva gia' sul telefono.
+//          ⬜ «In questo sito troverai...» non e' stata toccata: si vedeva gia' su tutte e due le
+//          schermate dalla v6.901, e lo dice la misura fatta sul sito vero.
 // v6.909 - LA VISTA TABELLARE DELLE FIGURINE PER ALBUM: VIA UNA COLONNA VUOTA, TORNA UNA CHE
 //          MANCAVA (Franco: «togliere la colonna "Figurina per album di partenza"; aggiungere la
 //          colonna "Famiglia", dopo la colonna "Nome"»). 🔴 Sono la stessa domanda vista dai due
@@ -29039,7 +29119,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.909';
+const JS_VERSION = 'v6.914';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31445,6 +31525,26 @@ let _returnToErroriAfterSave = false;
 //  NAVIGATION
 // ============================================================
 function showAdminTab(tab) {
+  // 🔴 v6.914 (Franco, segnalazione: «da sloggato vedo la icona della busta da lettere, che se
+  //    premuta porta alla admin console; come e' possibile avere un buco cosi grosso?») - LA
+  //    PORTA CHIEDE CHI SEI.
+  // 📏 MISURATO, e il buco era doppio. (1) Questa funzione non chiedeva NIENTE: la chiamava il
+  //    pulsante della busta (`nav-msg-btn`, `onclick="showAdminTab('contacts')"`) e apriva il
+  //    pannello a chiunque. (2) Il pulsante restava acceso dopo il logout, perche' il ramo ospite
+  //    di `updateNavUser` accendeva e spegneva una lista DIVERSA da quella del ramo utente - vedi
+  //    la riga della v6.914 la' dentro.
+  // 🔴 E LE DUE COSE SI COPRIVANO A VICENDA: il pulsante non si vedeva quasi mai da ospite (solo
+  //    dopo un logout senza ricaricare), quindi la porta aperta non la trovava nessuno.
+  // 🔴 E I DATI SI VEDEVANO DAVVERO - la foto di Franco mostra il Pannello Admin aperto da
+  //    sloggato con i messaggi ricevuti e gli indirizzi e-mail veri dentro. La prima lettura di
+  //    questo difetto («le regole Firestore chiudono quelle collezioni, il pannello si apre
+  //    vuoto») era SBAGLIATA, e va scritto perche' e' il tipo di errore piu' pericoloso: le
+  //    regole del server riguardano le letture NUOVE, e quei dati erano gia' in memoria dal
+  //    tempo in cui l'admin era loggato. `logout()` non li buttava via - vedi la riga della
+  //    v6.914 dentro `logout()`, che e' la meta' piu' importante di questa correzione.
+  // ⬜ Chi poteva vederli: chi apre lo STESSO browser dopo l'uscita dell'admin. Non un estraneo
+  //    da fuori, per cui Firestore risponde 403 come sempre (§15.2). Resta un difetto grave.
+  if (!currentUser || !currentUser.isAdmin) { showPage('home'); return; }
   // Show page-profile but hide profile content, show only admin panel
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const profilePage = document.getElementById('page-profile');
@@ -33100,15 +33200,43 @@ async function logout() {
 
   currentUser = null;
   LOCAL.set('currentUser', null);
-  updateNavUser();
-  updateOwnedCounter();
-  showPage('home');
-  const welcomeEl = document.getElementById('hero-welcome-msg');
-  if (welcomeEl) {
-    welcomeEl.style.display = '';
-    welcomeEl.textContent = currentLang === 'it' ? 'Arrivederci! A presto 👋' : 'Logged out. See you soon! 👋';
-    setTimeout(() => { welcomeEl.style.display = 'none'; }, 4000);
-  }
+
+  // 🔴 v6.914 (Franco, con la foto del Pannello Admin aperto DA SLOGGATO, con dentro i messaggi
+  //    ricevuti e gli indirizzi e-mail veri: «come e' possibile avere un buco cosi grosso?») -
+  //    USCIRE BUTTA VIA LA PAGINA, NON SOLO LA SESSIONE.
+  // 📏 IL DIFETTO, MISURATO E NON DEDOTTO. Fin qui `logout()` azzerava `currentUser` e ridisegnava
+  //    la navbar, e basta. I dati riservati restavano dov'erano: `_cache.users`,
+  //    `_cache.contact_messages`, `_cache.segnalazioni`, `_cache.eventi` (li riempie
+  //    `_loadAdminOnlyData`), piu' tutto cio' che i tab della console avevano gia' disegnato nel
+  //    DOM e la copia in `sessionStorage`. Le regole Firestore non c'entrano: riguardano le
+  //    letture NUOVE, e quella roba era gia' in casa.
+  // 🔴 SI RICARICA LA PAGINA, e non si svuotano le variabili a mano. Un elenco di cose da
+  //    azzerare e' un elenco da tenere allineato: basta un tab della console che domani metta in
+  //    memoria una collezione in piu' e quella resta dentro, senza che nessuno se ne accorga. La
+  //    ricarica butta via memoria, DOM e badge per COSTRUZIONE - la stessa medicina del setaccio
+  //    della v6.283, dove la risposta giusta non era «aggiungi la tipologia all'elenco».
+  // 📌 IL SALUTO SI SPOSTA DOPO LA RICARICA (`_salutoDopoUscita`, in fondo al file): scritto qui
+  //    verrebbe cancellato dalla ricarica stessa, e tenere la pagina viva quattro secondi per
+  //    farlo leggere vorrebbe dire lasciare i dati in memoria per quattro secondi.
+  // ⚠️ La chiave del saluto si scrive DOPO lo `sessionStorage.clear()`, non prima.
+  try { sessionStorage.clear(); } catch(e) {}
+  try { sessionStorage.setItem('sgorbions_uscita', '1'); } catch(e) {}
+  location.reload();
+}
+
+// 🆕 v6.914 — il saluto dell'uscita, mostrato al caricamento successivo. Vedi `logout()`.
+function _salutoDopoUscita() {
+  let flag = null;
+  try {
+    flag = sessionStorage.getItem('sgorbions_uscita');
+    if (flag) sessionStorage.removeItem('sgorbions_uscita');
+  } catch(e) {}
+  if (!flag) return;
+  const el = document.getElementById('hero-welcome-msg');
+  if (!el) return;
+  el.style.display = '';
+  el.textContent = currentLang === 'it' ? 'Arrivederci! A presto 👋' : 'Logged out. See you soon! 👋';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 // 🆕 v6.341 (Franco: *"una piccola casella di ricerca che fa partire la stessa ricerca globale che
 // abbiamo sotto Inventario, nella navbar, dopo Contatti. Solo per admin e solo da desktop"*).
@@ -33242,6 +33370,25 @@ function updateNavUser() {
   //    la risolve il DOM, perche' il pulsante vive dentro `#page-home`.
   const rcBtn = document.getElementById('rc-btn');
   if (rcBtn) rcBtn.style.display = currentUser?.isAdmin ? '' : 'none';
+  // 🔴 v6.914 — TUTTI I COMANDI RISERVATI PARTONO SPENTI, A OGNI GIRO, PRIMA DEL BIVIO.
+  // 📏 IL DIFETTO CHE QUESTA RIGA CHIUDE, misurato sulla segnalazione di Franco: i due rami qui
+  //    sotto accendevano e spegnevano DUE LISTE DIVERSE. Il ramo utente decideva `nav-msg-btn` e
+  //    `nav-reply-btn` guardando `isAdmin`; il ramo ospite non li nominava affatto. Quindi un
+  //    admin che usciva SENZA ricaricare si ritrovava la busta ancora accesa in una navbar che
+  //    diceva «Accedi / Registrati» - ed e' esattamente la foto che Franco ha mandato.
+  // 🔴 NON SI AGGIUNGONO DUE RIGHE AL RAMO OSPITE: sarebbe la stessa malattia curata un'altra
+  //    volta sola. Due elenchi che devono restare speculari divergono al primo comando nuovo, e
+  //    il ramo che nessuno guarda tutti i giorni e' proprio quello dell'ospite. Qui si spegne
+  //    TUTTO e si riaccende solo cio' che serve: un comando nuovo nasce spento per chi non deve
+  //    vederlo, anche se chi lo scrive si dimentica di questo punto.
+  // 📌 Ognuno di questi viene riacceso piu' sotto da chi ne ha il diritto - `nav-reply-btn` per
+  //    l'utente NON admin, gli altri per l'admin - e `nav-quota-warning-btn` da
+  //    `_checkReadQuotaWarning()`, che gira dopo.
+  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-quota-warning-btn',
+   'admin-add-series-btn', 'nav-wantlist', 'nav-js-version-wrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
   // 🆕 v6.888 - e «Cambia foto» nell'anteprima di una pagina: dalla v6.888 quella finestra si
   //    apre anche dalla scheda in LETTURA, quindi a chiunque. Stessa riga, stesso posto, stessa
   //    ragione di quella qui sopra.
@@ -33257,6 +33404,21 @@ function updateNavUser() {
   const addSeriesBtn = document.getElementById('admin-add-series-btn');
   const wantlistLink = document.getElementById('nav-wantlist');
   const btnCollect = document.getElementById('btn-start-collecting');
+  // 🆕 v6.913 (Franco: «pensavo di mostrare questi numeroni anche a chi non e' ancora loggato,
+  //    cosi da invogliare le persone» - e alla domanda: «tutti e 12», «certo che la frase rimane
+  //    anche per loro») - I DODICI NUMERI SI VEDONO SEMPRE.
+  // 📌 LA CHIAMATA ESCE DAI DUE RAMI E NE RESTA UNA SOLA, QUI. Prima era `true` fra le cose
+  //    dell'utente e `false` fra quelle dell'ospite: due punti, e per spegnerli di nuovo a meta'
+  //    sarebbe bastato che qualcuno toccasse il ramo sbagliato. Adesso «si vedono» e' una
+  //    decisione scritta una volta, fuori dalla domanda «chi sei».
+  // 🔴 E I DATI CI SONO GIA' DA NON LOGGATI, misurato e non supposto: e' la stessa fonte
+  //    (`_cache.series` / `_cache.figurines`, riempite da `loadAllData`) che alimenta il carosello
+  //    della home, che la v6.051 mostra proprio a chi arriva senza account. `renderHomeStats` non
+  //    ha nessuna guardia sul login: girava gia', e scriveva dentro due riquadri spenti.
+  // 📌 Nessun numero e' riservato: sono conteggi dell'inventario, gli stessi che un ospite vede
+  //    entrando nelle pagine pubbliche. E la regola della v6.811 vale identica per tutti - fuori
+  //    le serie IN ARRIVO, quelle nascoste e gli articoli invisibili.
+  mostraNumeroniHero(true);
   if (currentUser) {
     guestNav.style.display = 'none';
     userNav.style.display = 'flex';
@@ -33272,7 +33434,8 @@ function updateNavUser() {
     if (btnCollect) btnCollect.style.display = 'none';
     const homeContent = document.getElementById('home-logged-in-content');
     if (homeContent) homeContent.style.display = '';
-    mostraNumeroniHero(true);   // v5.935 — due colonne, una per lato dell'immagine
+    // 🗄️ v6.913 — qui c'era `mostraNumeroniHero(true)` (v5.935): è salita fuori dall'`if`, perché
+    //    da questa release i numeri si vedono anche da non loggati.
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = '';
     document.getElementById('nav-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
     const bellBtn = document.getElementById('nav-bell-btn');
@@ -33317,7 +33480,9 @@ function updateNavUser() {
     const quotaBtn2 = document.getElementById('nav-quota-warning-btn');
     if (quotaBtn2) quotaBtn2.style.display = 'none';
     ['nav-catalog','nav-blog','nav-classifica','nav-wishlist','nav-mialista-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
-    mostraNumeroniHero(false);
+    // 🔴 v6.913 — QUI C'ERA `mostraNumeroniHero(false)`, ed è la riga che questa release toglie:
+    //    era l'unico motivo per cui un ospite non vedeva i dodici numeri. Non è stata sostituita
+    //    da un `true` — la decisione sta fuori dall'`if`, dove non dipende più da chi guarda.
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = 'none';
   }
   // v6.079 - il pallino delle segnalazioni si decide qui, dove si decide tutto il resto della
@@ -33325,6 +33490,10 @@ function updateNavUser() {
   try { aggiornaPallinoErrori(); } catch(e) { console.error('aggiornaPallinoErrori', e); }
 }
 updateNavUser();
+// 🆕 v6.914 — se il caricamento precedente e' finito con un'uscita, qui si mostra il saluto.
+// 📌 Sta accanto a `updateNavUser()` perche' risponde alla stessa domanda: com'e' la pagina per
+//    chi la sta guardando adesso.
+try { _salutoDopoUscita(); } catch(e) { console.error('_salutoDopoUscita', e); }
 
 // ============================================================
 //  SERIES
