@@ -1,6 +1,22 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.916 - 🔒 I PRIVILEGI NON SI LEGGONO PIU' DA `localStorage`. Modificato js/app.js; nasce
+//          `sicurezza/misura-scritture.js`.
+//          📏 IL DIFETTO: all'avvio `let currentUser = LOCAL.get('currentUser')` legge una stringa
+//          che vive nel browser del visitatore e che chiunque riscrive con F12 - `isAdmin:true`
+//          compreso. Il controllo che doveva smentirla (`onAuthStateChanged`) rileggeva l'utente
+//          dal server SOLO se l'`authUid` non combaciava: un iscritto vero, col suo uid vero, non
+//          veniva smentito da nessuno e si vedeva tutta la console.
+//          ✅ Adesso il flag parte SEMPRE spento e lo riaccende solo la rilettura dal server, che
+//          ora avviene sempre. Il resto del profilo (nome, avatar, uid) resta in `localStorage`:
+//          serve a non far lampeggiare la navbar, e non e' un permesso.
+//          ⬜ I DATI reggevano comunque: le regole Firestore decidono chi e' admin guardando
+//          `admin_uids` sul SERVER (§15.2). Si apriva l'INTERFACCIA, piu' i dati gia' in memoria.
+//          📌 COSTA UNA LETTURA FIRESTORE IN PIU' PER AVVIO, e solo per chi ha fatto login: e' il
+//          prezzo, dichiarato. Una lettura non e' cara; un admin finto si'.
+//          🔎 E NASCE LA MISURA DELLE SCRITTURE (`sicurezza/misura-scritture.js`): fin qui si era
+//          misurato solo cosa un ospite puo' LEGGERE. Nessuno aveva mai provato a SCRIVERE.
 // v6.915 - 🔒 LE ALTRE DUE PORTE, TROVATE DA UNA PROVA CHE PARTE DA UNA DOMANDA (Franco: «inutile
 //          avere 500 suite relative a cose disegnate a monte, e poi avere un buco del genere. non
 //          vale la pena costruire un set di controlli di tipologia Penetration test?»). Modificato
@@ -29136,7 +29152,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.915';
+const JS_VERSION = 'v6.916';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -29320,7 +29336,16 @@ async function initFirebase() {
       try {
         if (!fbUser) {
           if (currentUser) { currentUser = null; LOCAL.set('currentUser', null); }
-        } else if (!currentUser || currentUser.authUid !== fbUser.uid) {
+        } else {
+          // 🔒 v6.916 — SI RILEGGE SEMPRE DAL SERVER, e qui c'era un `else if` con la condizione
+          //    `!currentUser || currentUser.authUid !== fbUser.uid`.
+          // 📏 Quella condizione saltava la rilettura proprio nel caso che conta: un iscritto
+          //    vero, con la sua sessione vera, che si fosse scritto `isAdmin:true` in
+          //    `localStorage` teneva l'uid giusto - quindi l'`else if` non entrava, e il valore
+          //    falso restava in piedi per tutta la visita. La difesa c'era e guardava altrove.
+          // 📌 COSTA UNA LETTURA FIRESTORE IN PIU' PER AVVIO, e solo per chi ha fatto login: e'
+          //    il prezzo dichiarato, e va confrontato con `_checkReadQuotaWarning` se un giorno
+          //    le letture diventassero un problema. Una lettura non e' cara; un admin finto si'.
           const user = await _findUserByAuthUid(fbUser.uid);
           if (user) { currentUser = user; LOCAL.set('currentUser', user); }
           else { currentUser = null; LOCAL.set('currentUser', null); }
@@ -31139,7 +31164,25 @@ function setLang(lang, byUser = false) {
 // ============================================================
 //  APP STATE
 // ============================================================
-let currentUser = LOCAL.get('currentUser') || null;
+// 🔒 v6.916 — I PRIVILEGI NON SI LEGGONO DA `localStorage`, E QUESTA RIGA LO DICEVA.
+// 📏 IL DIFETTO, misurato sul codice e non supposto: `LOCAL.get('currentUser')` legge una stringa
+//    che vive nel browser del visitatore, e che chiunque riscrive con F12 in dieci secondi -
+//    `isAdmin: true` compreso. Il controllo che dovrebbe smentirla (`onAuthStateChanged`, piu'
+//    sotto) rileggeva l'utente dal server SOLO quando l'`authUid` non combaciava: un iscritto
+//    vero, col suo uid vero, si scriveva `isAdmin:true` e non veniva smentito da nessuno.
+// ✅ ADESSO IL FLAG PARTE SEMPRE SPENTO e lo riaccende solo la rilettura dal server. Il resto
+//    (nome, avatar, uid) resta: serve a non far lampeggiare la navbar, e non e' un permesso.
+// ⬜ I DATI reggevano comunque - le regole Firestore decidono chi e' admin guardando la
+//    collezione `admin_uids` sul SERVER (§15.2), non il browser. Quello che si apriva era
+//    l'INTERFACCIA: tutti i comandi riservati, e i dati gia' in memoria. E' la stessa famiglia
+//    del buco della v6.914: una difesa che sta dalla parte sbagliata.
+// 📌 FALLIRE VERSO IL BASSO: se il server non risponde, si resta utenti normali. Il contrario -
+//    fidarsi finche' qualcuno non smentisce - e' esattamente cio' che questa riga faceva.
+let currentUser = (() => {
+  const u = LOCAL.get('currentUser') || null;
+  if (u && u.isAdmin) u.isAdmin = false;
+  return u;
+})();
 let _realAdmin = null; // traccia l'admin originale durante l'impersonificazione (vedi isImpersonating)
 let currentSeriesId = null;
 // v6.054 (Franco) - UN VALORE SOLO per i due filtri sulla foto: null | 'senza' | 'con'.
