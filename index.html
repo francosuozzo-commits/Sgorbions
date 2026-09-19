@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.929">
+<link rel="stylesheet" href="css/style.css?v=6.932">
 
 
 <style>
@@ -520,6 +520,55 @@
    ⚠️ Il titolo lungo non ci perde: va a capo un po' prima, dentro la sua colonna, invece di
    passare sotto la foto. */
 .series-title-area .series-info > div:first-child { grid-column: 1 / 3; }
+
+/* ═══ 🎨 v6.932 (Franco: «puoi mettere tutte le scritte che oggi nella homepage sono nere, in
+   bianco? numeri degli score / le frasi / e le descrizioni delle card in basso. per le card in
+   basso, magari mettine il titolo nel solito azzurro serie») ═══════════════════════════════
+   📏 MISURATO NELLA PREVIEW, non cercato a occhio: un giro su tutti i nodi di testo della home
+   ha trovato UN SOLO colore smorto, `var(--muted)` (#8b7aaa), in tre famiglie di scritte — le
+   tre frasi dell'hero, le dodici etichette sotto i numeroni, e le descrizioni delle cinque card
+   in fondo. Nient'altro nella home e' scuro: i numeri sono gia' lime, il carosello gia' chiaro.
+   📌 `--muted` e' il grigio delle note a margine, e su queste tre famiglie non lo era: sono la
+   frase che presenta il sito, il NOME di ogni numero (senza il quale il numero non dice niente)
+   e la riga che spiega cosa fa ogni card. Restano grigie le note vere, altrove nel sito.
+   ⚠️ SI SCRIVE QUI, e non in `css/style.css`: quel foglio non sta nella cartella di lavoro (§5),
+   e questo blocco arriva dopo il <link>, quindi vince per ordine a parita' di specificita'. */
+
+/* 🔴 LE TRE FRASI DELL'HERO. Sono `.hero-desc`: «Il database non ufficiale…», «Fatto con 💚…» e
+   «In questo sito troverai…». La classe vive solo nella home, ma il selettore resta legato
+   all'hero per non sorprendere nessuno il giorno che qualcuno la riusasse altrove. */
+#hero .hero-desc { color: var(--text); }
+
+/* 🔴 LE DODICI ETICHETTE SOTTO I NUMERONI. ⚠️ Si passa da `.hero-stats-side`, come fa gia' tutto
+   il resto di questo blocco: `.stat-num` e `.stat-label` sono usati ANCHE ALTROVE (il profilo ha
+   le sue), e una regola nuda sulla classe li avrebbe schiariti tutti. E' l'avvertenza scritta
+   qui sopra dalla v6.019, e qui si paga di nuovo. */
+.hero-stats-side .stat-label { color: var(--text); }
+
+/* 🔴 LE CINQUE CARD IN FONDO: descrizione bianca, titolo nell'azzurro delle serie.
+   📌 L'azzurro e' `var(--info)` (#4db8ff), lo stesso del titolo di una serie e dell'etichetta
+   della legenda (v6.922): si punta la VARIABILE, non il colore, cosi' il giorno che quell'azzurro
+   cambia, cambia anche qui e nessuno deve ricordarsene.
+   ⚠️ E IL `color:var(--muted)` E' USCITO DAI CINQUE `<p>`: era scritto INLINE, e un colore inline
+   batte qualunque selettore — la regola qui sotto sarebbe stata verde e invisibile. Toglierlo
+   lascia un posto solo a decidere, che e' anche il motivo per cui la regola sta qui. */
+#home-how-grid h3 { color: var(--info); }
+#home-how-grid p  { color: var(--text); }
+
+/* 🔴 v6.932 (Franco: «anche "ricerca in tutto il sito"») — IL SEGNAPOSTO DELLA CASELLA DI RICERCA.
+   📏 MISURATO: non era una scelta del sito. Nessun campo del sito ha una regola `::placeholder`,
+   quindi il colore era quello di DEFAULT DEL BROWSER - `rgb(117,117,117)`, un grigio medio deciso
+   da Chrome. Cercarlo fra i colori del sito non lo avrebbe trovato: non c'era scritto da nessuna
+   parte. È lo stesso inganno della versione smorzata dall'alfa, con un'altra faccia.
+   📌 SONO DUE CAMPI E NON UNO: la casella della navbar e quella della finestrella (`#rg-modal-input`)
+   dicono la STESSA frase - la seconda è il ricambio della prima sotto i 1500px (v6.853). Cambiarne
+   uno solo avrebbe fatto dire la stessa cosa in due modi a seconda di quanto è larga la finestra.
+   ⚠️ `opacity:1` serve: Firefox applica da sé un'opacità ridotta al segnaposto, e senza questa riga
+   il colore arriverebbe giusto e spento.
+   ⬜ Gli altri campi di ricerca del sito («Cerca serie…», «Cerca…») restano al grigio di default:
+   non erano nella richiesta, e lì il segnaposto è davvero un suggerimento di passaggio. */
+#nav-search-input::placeholder,
+#rg-modal-input::placeholder { color: var(--text); opacity: 1; }
 /* 📌 v6.910 - QUI C'ERA LA MEDIA QUERY DELL'860 CHE ALZAVA LE DUE RIGHE SUL SOLO TELEFONO
    (v6.897/898). Non e' stata cancellata: le sue due regole sono salite di qualche riga, fuori da
    qualunque soglia, perche' adesso valgono anche sul desktop. Cercarla qui e non trovarla e' il
@@ -1175,10 +1224,13 @@ button.back-btn { color:#ffffff; }
              versione attesa, in fondo). Nominarle qui sposta il taglio e la preview esce
              DOPPIA - successo scrivendo questa release, e lo script se n'e' accorto. -->
         <div style="display:flex;align-items:center;gap:0.5rem;">
-          <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);"></span>
-          <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
+          <!-- 🎨 v6.932 (Franco: «anche la versione e il nome utente») - ERANO BIANCHI SMORZATI DALL'ALFA
+               (0,5 e 0,4), non grigi: a schermo la differenza non si vede, e il risultato era lo
+               stesso - una scritta che si legge a fatica. Adesso portano `--text` pieno. -->
+          <span id="nav-app-version" style="font-size:0.7rem;color:var(--text);font-family:var(--font-ui);"></span>
+          <span id="nav-js-version-wrap" style="font-size:0.65rem;color:var(--text);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         </div>
-        <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
+        <span class="nav-online" style="font-size:0.7rem;color:var(--text);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
     </div>
     <div class="nav-links">
@@ -1277,7 +1329,10 @@ button.back-btn { color:#ffffff; }
       <button class="btn-register" onclick="openAuth('register')" data-i18n="nav.register">Registrati</button>
     </div>
     <div id="user-nav" style="display:none;">
-      <span id="nav-username" style="font-family:var(--font-ui);color:var(--muted);font-size:1.05rem;"></span>
+      <!-- 🎨 v6.932 (Franco: «anche la versione e il nome utente») - IL NOME DI CHI E' ENTRATO ERA
+           `--muted`, cioe' il grigio delle note che si possono saltare. E' la riga che dice a
+           chi guarda CHI E', e su una navbar scura si leggeva peggio di tutto il resto. -->
+      <span id="nav-username" style="font-family:var(--font-ui);color:var(--text);font-size:1.05rem;"></span>
       <!-- v6.079 (Franco) — pallino rosso SOLO ADMIN: c'è finché la sezione Errori ha qualcosa da
            segnalare. Cliccandolo si va lì. Lo accende aggiornaPallinoErrori(), che chiede il conto
            alla stessa funzione che disegna quella pagina — così non possono dire cose diverse. -->
@@ -1496,33 +1551,37 @@ button.back-btn { color:#ffffff; }
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('catalog')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">📖</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.1.title">Browse the Inventory</h3>
-          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.1.desc">Explore all Sgorbions series and figurines, complete with photos and descriptions.</p>
+          <p style="font-size:0.88rem;" data-i18n="how.1.desc">Explore all Sgorbions series and figurines, complete with photos and descriptions.</p>
         </div>
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="openDemoToggleModal()" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">✅</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.2.title">Build Your List</h3>
-          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.2.desc">Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.</p>
+          <p style="font-size:0.88rem;" data-i18n="how.2.desc">Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.</p>
         </div>
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('contact')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">🤝</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.3.title">Connect & Ask</h3>
-          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.3.desc">Post questions and get answers from the owner and fellow collectors.</p>
+          <p style="font-size:0.88rem;" data-i18n="how.3.desc">Post questions and get answers from the owner and fellow collectors.</p>
         </div>
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('profile')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">👤</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.4.title">Your Profile</h3>
-          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.4.desc">Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.</p>
+          <p style="font-size:0.88rem;" data-i18n="how.4.desc">Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.</p>
         </div>
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('classifica')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">🏆</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="hero.challenge">Sfida gli altri</h3>
-          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="hero.challengeDesc">Chi ha la lista con maggior punteggio? Puoi anche scegliere di apparire in modo anonimo.</p>
+          <p style="font-size:0.88rem;" data-i18n="hero.challengeDesc">Chi ha la lista con maggior punteggio? Puoi anche scegliere di apparire in modo anonimo.</p>
         </div>
       </div>
     </div>
   </section>
   <div style="max-width:1100px;margin:1.5rem auto 0;padding:0 2rem;">
-    <div style="font-size:0.88rem;font-family:var(--font-body);color:var(--muted);text-align:left;background:rgba(255,255,255,0.04);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:1rem 1.25rem;">
+    <!-- 🎨 v6.932 (Franco: «anche il testo della nota e del footer») — LA NOTA ERA `--muted`.
+         📌 E' il riquadro con la riga lime a sinistra e «NOTA:» in testa: chi lo legge lo legge
+         apposta, e il grigio delle note a margine lo trattava come una postilla da saltare. Il
+         «NOTA:» resta lime, che e' il richiamo, e il testo diventa leggibile come il resto. -->
+    <div style="font-size:0.88rem;font-family:var(--font-body);color:var(--text);text-align:left;background:rgba(255,255,255,0.04);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:1rem 1.25rem;">
       <span data-i18n-html="hero.nota"><strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell'amministratore, e non pretendono di essere un'informazione ufficiale.</span>
     </div>
   </div>
@@ -1979,14 +2038,18 @@ di tutte le serie</button>
              quindi il tasto li' non si vedrebbe" - vale per la testata CHIUDIBILE, non per la riga
              dei comandi in alto a destra, che in un box resta. -->
       </div>
-      <div id="admin-add-item-btn" style="display:none;align-self:stretch;">
-        <div style="display:flex;align-items:stretch;gap:0.75rem;flex-wrap:wrap;height:100%;">
-          <!-- v6.104/105 (§12.1, tappa 2) — "+ Aggiungi" apre LA SCHEDA vuota. E' l'unico dei sette
-               punti che CREA; gli altri sei modificano e passano tutti da apriModificaItem().
-               v6.110 — la finestra non esiste piu': cancellata da qui e da app.js. -->
-          <button class="btn-primary btn-admin" onclick="openNuovoItem()" id="admin-add-label" data-i18n="catalog.add">+ Aggiungi</button>
-        </div>
-      </div>
+      <!-- 🗑️ v6.931 (Franco: «il tasto "Aggiungi figurina", spostalo dalla sua attuale posizione e
+           mettilo sulla riga dei tasti presenti all'interno delle sezioni "classifica" ed "ebay";
+           fai lo stesso per tutti i tasti equipollenti a questo (delle differenti TDA)») — QUI
+           STAVA «+ Aggiungi», ed e' sceso nella riga dei riquadri admin, piu' in basso.
+           📌 E I TASTI EQUIPOLLENTI SONO LUI: il pulsante e' UNO SOLO per tutte le sezioni, e a
+           cambiare e' la sola etichetta, che `aggiornaTestiRicercaSezione` scrive con il nome della
+           tipologia («+ Aggiungi figurina», «+ Aggiungi cartoncino»...). Spostarlo una volta lo
+           sposta per tutte le TDA - e' quello che si compra da un markup solo riusato (v6.373).
+           🗑️ E CON LUI SE NE VA LA v6.373, «il pulsante alto quanto il titolo della pagina»: era
+           l'allineamento fra il tasto e il titolo che gli stava accanto. Adesso accanto al titolo
+           non c'e' piu', quindi `align-items:stretch` su questa riga non allinea piu' niente - ma
+           resta scritto li' perche' la riga ha ancora due gruppi che possono andare a capo. -->
     </div>
     <!-- v5.796 — blocchi admin Classifica/Ebay spostati SOTTO i risultati di ricerca (vedi sotto) -->
     <!-- 🆕 v6.333 (Franco) — LA CORNICE E' BLU, del blu delle AZIONI UTENTE (`--action`, quello
@@ -2126,6 +2189,26 @@ di tutte le serie</button>
          resta come segnavia per chi cercasse i due <div> dove stavano da sempre (v5.988). -->
     <!-- v5.796 — blocchi admin Classifica/Ebay: qui, SOTTO i risultati di ricerca a cui si applicano, prima della griglia/vista tabellare -->
     <div style="display:flex;flex-wrap:wrap;gap:1.5rem;margin-bottom:1rem;">
+      <!-- 🆕 v6.931 (Franco) — «+ AGGIUNGI <TIPOLOGIA>» ARRIVA QUI, PRIMO DEI TRE RIQUADRI.
+           📌 Stessa forma degli altri due, e non per simmetria: sono tutti e tre comandi da
+           amministratore che agiscono su QUESTA sezione, e finora uno dei tre stava in cima e due
+           in fondo. Il riquadro grigio e l'etichetta sopra sono il segno che il sito usa per dire
+           «questo lo vedi perche' sei admin» (v5.796).
+           🔴 IL TASTO E' UNO SOLO PER TUTTE LE TIPOLOGIE, e l'etichetta gliela scrive
+           `aggiornaTestiRicercaSezione` col nome della tipologia in cui si e' entrati: percio' la
+           richiesta «fai lo stesso per tutti i tasti equipollenti» non ha aggiunto una riga.
+           ⚠️ E IL SUO `display` LO DECIDE IL JS: il tasto sparisce quando la tipologia non e'
+           ammessa in questa serie o quando la creazione e' vietata (v6.822), mentre gli altri due
+           riquadri si accendono per ogni admin. Tre condizioni diverse, tre righe diverse. -->
+      <div>
+        <div id="admin-add-item-title" data-i18n="admin.catalogo" style="display:none;font-size:0.75rem;color:var(--text);margin-bottom:0.3rem;">Catalogo</div>
+        <div id="admin-add-item-btn" style="display:none;gap:0.75rem;flex-wrap:wrap;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">
+          <!-- v6.104/105 (§12.1, tappa 2) — "+ Aggiungi" apre LA SCHEDA vuota. E' l'unico dei sette
+               punti che CREA; gli altri sei modificano e passano tutti da apriModificaItem().
+               v6.110 — la finestra non esiste piu': cancellata da qui e da app.js. -->
+          <button class="btn-primary btn-admin" onclick="openNuovoItem()" id="admin-add-label" data-i18n="catalog.add" style="font-size:0.9rem;padding:0.4rem 1.1rem;">+ Aggiungi</button>
+        </div>
+      </div>
       <div>
         <div id="admin-classifica-title" data-i18n="admin.classifica" style="display:none;font-size:0.75rem;color:var(--text);margin-bottom:0.3rem;">Classifica</div>
         <div id="admin-classifica-btn-wrap" style="display:none;gap:0.75rem;flex-wrap:wrap;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">
@@ -3140,9 +3223,14 @@ di tutte le serie</button>
 </div>
 
 <!-- ==================== FOOTER ==================== -->
+<!-- 🎨 v6.932 (Franco: «anche il testo della nota e del footer») — IL FOOTER ERA `--muted`, riga e
+     link. ⚠️ E QUESTO FOOTER NON E' DELLA SOLA HOME: sta fuori dalle `.page`, quindi si vede
+     identico su tutte. La richiesta e' nata guardando la homepage, ma la riga e' una sola per
+     tutto il sito: schiarirla qui la schiarisce ovunque, che e' l'unico modo di tenerla coerente.
+     📌 Il link resta sottolineato: e' quello a dire che si puo' premere, non il colore. -->
 <footer>
-  <div id="footer-copy-row" style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.88rem;font-family:var(--font-ui);">
-    <span>2026 figurinesgorbions.it</span><span class="footer-sep"> — </span><a onclick="showPage('privacy')" data-page="privacy" data-i18n="nav.privacy" style="color:var(--muted);text-decoration:underline;cursor:pointer;">Privacy Policy</a>
+  <div id="footer-copy-row" style="text-align:center;padding:1.5rem;color:var(--text);font-size:0.88rem;font-family:var(--font-ui);">
+    <span>2026 figurinesgorbions.it</span><span class="footer-sep"> — </span><a onclick="showPage('privacy')" data-page="privacy" data-i18n="nav.privacy" style="color:var(--text);text-decoration:underline;cursor:pointer;">Privacy Policy</a>
   </div>
 </footer>
 
@@ -5021,7 +5109,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.929"></script>
+<script src="js/app.js?v=6.932"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5045,7 +5133,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.929'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.932'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
