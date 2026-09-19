@@ -1,6 +1,24 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.917 - 🕵️ L'ANONIMATO DELLA CLASSIFICA ERA FINTO: il nome stava in una collezione pubblica.
+//          Modificato js/app.js.
+//          📏 MISURATO SUL SITO VERO, da anonimo e con una richiesta REST: `public_profiles` ha
+//          `allow read: if true` - la legge chiunque, anche senza account - e `_syncPublicProfile`
+//          ci scriveva `username` e `avatar` SEMPRE, anche con `isAnonymous` acceso. L'anonimato
+//          viveva solo a schermo (`renderClassifica` nasconde il nome). Bastava leggere la
+//          collezione per avere nome e faccia di chi aveva chiesto di non comparire.
+//          ⬜ NESSUN DANNO IN CORSO: i profili erano dodici e gli anonimi ZERO. Chiuso prima che
+//          servisse, ed e' il motivo per cui non c'e' stato niente da ripulire.
+//          🔴 I CAMPI SI SCRIVONO VUOTI, NON SI OMETTONO: il salvataggio usa `{ merge: true }`,
+//          quindi un campo assente non cancella quello gia' in rete - lo lascia intatto.
+//          🔴 E IL FILTRO DELLA CLASSIFICA NON PRETENDE PIU' L'USERNAME: pretendendolo, gli
+//          anonimi sarebbero SPARITI invece di comparire senza nome - il contrario di quello che
+//          Franco promette a chi spunta la casella. Il nome vero, per l'admin e per l'interessato,
+//          si chiede a `users` (collezione chiusa) o a `currentUser`.
+//          📌 Nella collezione pubblica restano `authUid` e il punteggio: il primo serve alle
+//          regole (`isOwner`) e non e' una credenziale. Che sia in chiaro e' scritto qui perche'
+//          qualcuno possa chiederselo.
 // v6.916 - 🔒 I PRIVILEGI NON SI LEGGONO PIU' DA `localStorage`. Modificato js/app.js; nasce
 //          `sicurezza/misura-scritture.js`.
 //          📏 IL DIFETTO: all'avvio `let currentUser = LOCAL.get('currentUser')` legge una stringa
@@ -29152,7 +29170,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.916';
+const JS_VERSION = 'v6.917';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -29724,15 +29742,32 @@ async function _syncPublicProfile(user) {
   if (!user || !user.id || !db) return;
   try {
     const { doc, setDoc } = window._fb;
+    // 🔒 v6.917 — CHI SCEGLIE DI APPARIRE ANONIMO NON HA PIU' IL NOME IN UNA COLLEZIONE PUBBLICA.
+    // 📏 IL DIFETTO, misurato sul sito vero e non dedotto: `public_profiles` ha
+    //    `allow read: if true` — la legge chiunque, anche senza account, con una richiesta REST —
+    //    e questa funzione ci scriveva `username` e `avatar` SEMPRE, anche con `isAnonymous`
+    //    acceso. L'anonimato viveva solo a schermo (`renderClassifica` nasconde il nome), quindi
+    //    bastava leggere la collezione per avere nome e faccia di chi aveva chiesto di non
+    //    comparire. Una promessa fatta all'utente e mantenuta in un posto solo.
+    // ⬜ Nessun danno in corso: il 19 settembre 2026 i profili erano dodici e gli anonimi ZERO.
+    //    Si e' chiuso prima che servisse, ed e' il motivo per cui si e' potuto chiudere senza
+    //    dover ripulire niente.
+    // 🔴 I CAMPI SI SCRIVONO VUOTI, NON SI OMETTONO, e qui sta la trappola: il salvataggio usa
+    //    `{ merge: true }`, quindi un campo assente NON cancella quello che c'e' gia' sul server -
+    //    lo lascia intatto. Omettere `username` per un anonimo avrebbe lasciato in rete il nome
+    //    scritto l'ultima volta, e la prova sarebbe stata verde guardando il codice.
+    // 📌 L'`authUid` resta: serve alle regole (`isOwner`) e non e' una credenziale. Ma e' un dato
+    //    interno in una collezione pubblica, ed e' scritto qui perche' qualcuno se lo richieda.
+    const _anon = !!user.isAnonymous;
     const publicData = {
       id: user.id,
       authUid: user.authUid || null,
-      username: user.username || '',
-      avatar: user.avatar || null,
+      username: _anon ? '' : (user.username || ''),
+      avatar: _anon ? null : (user.avatar || null),
       nationalityCode: user.nationalityCode || '',
       nationalityName: user.nationalityName || '',
       joined: user.joined || null,
-      isAnonymous: !!user.isAnonymous
+      isAnonymous: _anon
     };
     await setDoc(doc(db, 'public_profiles', user.id), publicData, { merge: true });
   } catch(e) {
@@ -64991,7 +65026,24 @@ async function renderClassifica() {
     renderClassificaLevels(levelsEl);
   }
 
-  const users = getData('public_profiles', []).filter(u => u && u.id && u.username);
+  // 🔴 v6.917 — IL FILTRO NON PRETENDE PIU' L'USERNAME, e senza questa riga la release di sopra
+  //    avrebbe fatto SPARIRE gli anonimi dalla classifica invece di nasconderne il nome: da questa
+  //    release un profilo anonimo il nome in `public_profiles` non ce l'ha. Non e' quello che
+  //    Franco ha promesso a chi spunta la casella — «puoi scegliere di apparire in modo anonimo»
+  //    vuol dire comparire, senza nome.
+  // 📌 E IL NOME VERO, DOVE SERVE, SI CHIEDE ALTROVE: l'admin e l'interessato lo trovano in
+  //    `users` (collezione chiusa, che l'admin puo' leggere) o in `currentUser`. La riga sotto lo
+  //    ricuce, e chi non ha diritto di vederlo non lo trova in nessuna delle due strade.
+  const _profiliPubblici = getData('public_profiles', []).filter(u => u && u.id);
+  const users = _profiliPubblici.map(u => {
+    if (u.username) return u;
+    if (currentUser && u.id === currentUser.id) return { ...u, username: currentUser.username, avatar: currentUser.avatar };
+    if (currentUser?.isAdmin) {
+      const vero = getData('users', []).find(x => x && x.id === u.id);
+      if (vero) return { ...u, username: vero.username, avatar: vero.avatar };
+    }
+    return { ...u, username: '' };
+  });
 
   // Calculate score for each user (già pre-calcolato e pubblicato in
   // public_profiles da _updatePublicScore, non serve più leggere i dettagli
