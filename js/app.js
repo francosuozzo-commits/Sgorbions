@@ -1,6 +1,77 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.929 - 📐 IL TASTO «OPZIONI» FINISCE PRIMA CHE LA MINIATURA COMINCI (Franco: «il pulsante
+//          opzioni cade sopra la miniatura; deve finire prima che la miniatura inizi»). Modificato
+//          index.html (solo CSS).
+//          📏 LA CAUSA, misurata: la riga del titolo ha `grid-column: 1 / -1`, cioe' si prende
+//          TUTTE le colonne. Finche' la miniatura stava in basso non dava fastidio a nessuno; da
+//          quando sta in cima (v6.928) le due cose condividono la prima riga, e il tasto - spinto
+//          a destra da `justify-content:space-between` - finisce SOPRA la foto. Tasto 1696->1827,
+//          miniatura 1731->1827.
+//          📌 E' lo stesso difetto della v6.928 visto dall'altro lato: quella ha tolto la
+//          sovrapposizione fra i CONTEGGI e la miniatura dichiarando fin dove arrivano, questa fa
+//          lo stesso per il TITOLO.
+//          ⚠️ Il titolo lungo non ci perde: va a capo un po' prima, dentro la sua colonna, invece
+//          di passare sotto la foto.
+// v6.928 - 🖼️ LA MINIATURA DELLA SERIE TORNA IN ALTO A DESTRA, E IL TASTO SI CHIAMA «OPZIONI»
+//          (Franco: «la miniatura la mettiamo in alto a dx, invece che in basso a dx; il tasto
+//          "opzioni admin" lo metti alla sx della miniatura (condivideranno il tetto), e lo chiami
+//          solo "Opzioni"; ma devi fare in modo che il contenitore della foto non caschi sopra la
+//          linea del contenitore delle numeriche; se cio' accade, rimpicciolisci la foto della
+//          miniatura»). Modificati index.html e js/app.js.
+//          🗄️ ED E' UN RITORNO: fino alla v6.720 la miniatura stava proprio in alto a destra.
+//          Quella release la mando' in basso con una ragione scritta, e oggi quella ragione e'
+//          superata da un'altra esigenza - il posto in basso e' quello che tiene occupato lo
+//          spazio accanto alle NUMERICHE, ed e' lo spazio che serve al totale (v6.927).
+//          🔴 LA MINIATURA DEVE STARE DENTRO LA RIGA DEL TITOLO, se no allunga la riga e spinge le
+//          numeriche piu' in basso: si prenderebbe proprio lo spazio verticale che Franco voleva
+//          liberare. L'altezza si MISURA (la riga del titolo e' alta quanto il nome della serie,
+//          che cambia e va a capo), e sotto i 48px non si scende: un francobollo non si capisce.
+//          🔄 E LA DOMANDA DELLE NUMERICHE CAMBIA FORMA: non piu' «la miniatura sta sotto?» ma
+//          «si incontrano?». Con la miniatura in alto, la condizione della v6.927 sarebbe
+//          diventata falsa sempre - e la fila non si sarebbe allargata mai, proprio mentre lo
+//          spazio a destra e' libero del tutto.
+//          📌 «Opzioni admin» -> «Opzioni»: lo vede solo un amministratore, quindi quella parola
+//          diceva a chi lo guarda una cosa che sapeva gia'.
+// v6.927 - 📐 IL TOTALE STA IN LINEA CON GLI ALTRI, QUANDO LO SPAZIO C'E' (Franco, con la foto e
+//          il cerchio rosso attorno al totale: «quando e possibile metterlo sulla stessa riga
+//          degli altri contatori, perche non lo mettiamo? cosi rimane spazio verso il basso», e
+//          la precisazione che conta: «non supera il bordo destro della miniatura della foto della
+//          serie. attenzione che ho detto la FINE della miniatura, non l'inizio»). Modificato
+//          js/app.js.
+//          📏 LA MISURA CHE SPIEGA TUTTO, presa sul sito vero (serie 1, Figurine con retro):
+//          `#detail-meta` finisce a 1187px, la miniatura va da 1219 a 1315 - ma in VERTICALE parte
+//          a 298, mentre la prima fila delle numeriche sta fra 225 e 263. 🔴 Alla quota delle
+//          numeriche la miniatura NON C'E' ANCORA: quei 128px sono liberi, ed e' quello che Franco
+//          vede a occhio. Al totale ne servono ~115.
+//          🔴 PERCHE' NON BASTAVA ALLARGARE LA COLONNA: piu' in basso, alla quota dei riquadri
+//          («Versioni omaggio per tipo», «Numeri per sottoserie»), la miniatura c'e'. Una colonna
+//          piu' larga ci finirebbe sotto. Lo spazio e' libero solo in cima, e solo la prima fila
+//          puo' prenderselo: per questo le voci vanno in una fila loro e i riquadri restano fuori.
+//          📌 E SI MISURA, NON SI INDOVINA: la miniatura e' `align-self:end`, quindi quanto sta in
+//          basso dipende dall'altezza della foto grande, che cambia da serie a serie. Si guarda
+//          dove sono davvero le due cose e si allarga solo se non si incontrano. Se un domani la
+//          testata diventa corta e la miniatura risale, la larghezza torna a zero e tutto resta
+//          com'era - il ripiego e' il comportamento di sempre.
+//          ⬜ E IL COMPORTAMENTO C'ERA GIA' DOVE LO SPAZIO BASTAVA: sui Retro della serie 1 il
+//          totale era gia' in linea. Il contenitore e' `flex-wrap` da sempre; mancava solo la
+//          larghezza.
+// v6.926 - 🔢 LE NUMERICHE DELLE VERSIONI SCENDONO SULLE SOTTOSERIE (Franco: «ricordati che nella
+//          schermata della serie al momento non ti ho fatto mettere le numeriche delle versioni»,
+//          poi il via: «vai con la seconda»). E' il punto 17 della TODO, aperto dal 12 settembre.
+//          Modificato js/app.js.
+//          📌 SOLO DOVE C'E' QUALCOSA OLTRE LA BASE, ed e' la scelta di Franco fra le due che gli
+//          ho messo davanti: dove esiste il solo set base, un elenco di una voce sola ripeterebbe
+//          il numero che sta gia' sulla riga del nome (regola della v6.698).
+//          🔴 LA DIVISIONE PER VERSIONE PRENDE UN NOME (`_dividiPerVersione`): da questa release la
+//          chiedono in due, `tipiPresenti` e le righe delle sottoserie. Scriverla due volte
+//          sarebbe stato il difetto che questo progetto paga piu' spesso - due definizioni di
+//          «cos'e' una variazione» che divergono al primo campo nuovo, e a schermo due numeri che
+//          non tornano senza nessun errore.
+//          ⬜ E UNA RIGA SPARISCE DA SE', prevista dalla v6.778: quella delle Spille sopravviveva
+//          proprio perche' le sottoserie non spacchettavano. Adesso e' la somma di quelle che le
+//          stanno sotto. Era scritto allora, e oggi si avvera.
 // v6.925 - ✂️ «LEGENDA VERSIONI» ERA TAGLIATA IN UN ALTRO POSTO (Franco, con la foto: «io ancora
 //          la vedo tagliata»). Modificato js/app.js.
 //          🔴 LA v6.924 HA CURATO IL POSTO SBAGLIATO, e la foto lo dice: il riquadro tagliato e'
@@ -29294,7 +29365,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.925';
+const JS_VERSION = 'v6.929';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -43368,9 +43439,13 @@ function _etichettaConteggio(chiave, quanti, it) {
 //    quella variabile puo' essere rimasta accesa da una navigazione di prima) non glielo
 //    passa, e continua a vedere la sezione intera.
 // 📌 Il ripiego e' il comportamento di sempre: senza terzo argomento non cambia niente.
-function tipiPresenti(seriesId, section, box) {
-  const items = getData('figurines', []).filter(f => f.seriesId === seriesId && f.section === section
-    && (!box || (f.tipoProdotto || '') === box));
+// 🆕 v6.926 — LA DIVISIONE PER VERSIONE HA UN NOME, e non e' una pulizia: da questa release la
+// chiedono in DUE. `tipiPresenti` la faceva per una sezione intera; le righe delle SOTTOSERIE
+// hanno bisogno della stessa divisione su un altro mucchio di articoli.
+// 🔴 Scriverla due volte sarebbe stato il difetto che questo progetto paga piu' spesso: due
+// definizioni di «cos'e' una variazione» che divergono al primo campo nuovo, ognuna giusta nel suo
+// punto e diversa dall'altra - e a schermo due numeri che non tornano, senza nessun errore.
+function _dividiPerVersione(items) {
   return {
     items,
     // 🔴 v6.235 - QUI C'ERA L'OTTAVA COPIA A MANO DI `_eBase`, la quaterna di negazioni riscritta.
@@ -43383,6 +43458,12 @@ function tipiPresenti(seriesId, section, box) {
     free:       items.filter(f => f.isFreeVersion),   // v6.235
     printError: items.filter(f => f.isPrintError)
   };
+}
+
+function tipiPresenti(seriesId, section, box) {
+  const items = getData('figurines', []).filter(f => f.seriesId === seriesId && f.section === section
+    && (!box || (f.tipoProdotto || '') === box));
+  return _dividiPerVersione(items);
 }
 
 // v5.932 (Franco) — DOVE VA LA DESCRIZIONE DELLA SERIE.
@@ -43479,6 +43560,47 @@ function posizionaTestataSerie() {
   _setupSeriesDescToggle(desc.textContent || '');
   _caroselloSerieMostra(heroInner);
 }
+
+// 🗑️ v6.928 — QUI VIVEVANO TRE FUNZIONI CHE NON SERVONO PIU', E VALE LA PENA DIRE PERCHE'.
+// La v6.927 misurava lo spazio libero a destra delle numeriche e allargava la loro fila di tanto
+// quanto: serviva perche' la miniatura stava in BASSO a destra, cioe' proprio accanto ai riquadri,
+// e lo spazio era libero solo in cima. Erano una misura, un osservatore di ridimensionamento e una
+// bandierina contro i giri infiniti — e nella preview non attaccavano mai al momento giusto.
+// 🔴 SPOSTANDO LA MINIATURA IN ALTO (richiesta di Franco, questa release) il problema SPARISCE
+// invece di essere risolto: miniatura e numeriche stanno in due righe diverse della griglia, non
+// si incontrano mai, e al blocco delle numeriche basta dire che puo' arrivare fino al bordo -
+// `#detail-meta { grid-column: 2 / -1 }`, una riga di CSS nell'index.
+// 📌 E' la lezione piu' cara di questa sessione: mezz'ora di misure, osservatori e bandierine per
+// un problema che una diversa disposizione toglie di mezzo in una riga. Quando una cura diventa
+// una macchina, conviene guardare di nuovo il problema.
+
+// 🆕 v6.928 (Franco: «devi fare in modo che il contenitore della foto non caschi sopra la linea
+// del contenitore delle numeriche; se cio' accade, rimpicciolisci la foto della miniatura»).
+// 📌 LA MINIATURA STA NELLA RIGA DEL TITOLO, E DEVE STARCI DENTRO. Da sola e' alta 128px (96 per
+// l'aspetto 3/4) mentre la riga del titolo ne misura una sessantina: senza questa riga la
+// miniatura allungherebbe la riga e spingerebbe le numeriche piu' in basso - cioe' si prenderebbe
+// proprio lo spazio verticale che Franco voleva liberare.
+// 🔴 E L'ALTEZZA SI MISURA, non si scrive: la riga del titolo e' alta quanto il nome della serie,
+// che cambia da serie a serie e va a capo quando e' lungo. Un numero fisso sarebbe giusto per una
+// serie sola. Qui si guarda quanto misura DAVVERO il blocco del titolo e si ritaglia la foto su
+// quello.
+// ⚠️ E C'E' UN FONDO: sotto i 48px la miniatura non si capirebbe piu' cosa sia. Se la riga del
+// titolo e' cosi' bassa, meglio una foto un po' piu' alta del titolo che un francobollo
+// illeggibile - e in quel caso le numeriche scendono di qualche pixel, che e' il male minore.
+// 🔁 v6.928 — LE DUE MISURE SI RIFANNO OGNI VOLTA CHE IL BLOCCO DELLE NUMERICHE CAMBIA, e non a
+// tempo. 📏 Provato nella preview, ed e' il motivo per cui questo osservatore esiste: chiamate
+// dentro `posizionaTestataSerie`, anche dopo due `requestAnimationFrame` e dopo 60 e 300
+// millesimi, le misure non attaccavano - mentre le STESSE funzioni chiamate a mano un istante
+// dopo funzionavano. Il blocco viene riscritto piu' volte durante l'apertura di una sezione, e
+// ogni riscrittura fa una fila nuova, senza larghezza.
+// 🔴 ASPETTARE «UN PO' DI PIU'» NON E' UNA CURA: e' indovinare un numero che sara' sbagliato su
+// una macchina piu' lenta o con la rete piu' pigra. Qui si guarda il FATTO - il contenuto e'
+// cambiato - invece del tempo.
+// 📌 E l'osservatore si mette UNA VOLTA SOLA: `#detail-meta` e' sempre lo stesso elemento, viene
+// riscritto dentro. Uno per ogni apertura sarebbe una perdita che nessuno noterebbe mai.
+// ⚠️ Non si innesca da solo: le due funzioni toccano lo `style` della fila e la larghezza della
+// miniatura, non i FIGLI del blocco, e l'osservatore guarda solo quelli.
+
 
 // v6.071 - il contenitore del carosello della serie si crea UNA VOLTA e poi si riusa. Non sta
 // nell'index perche' il suo posto e' in coda al blocco eroe, che questa funzione ricompone di
@@ -43715,7 +43837,12 @@ function renderSeriesMeta(s) {
     //    un `flex-wrap`, quindi una voce larga quanto la riga manda a capo se stessa e chi
     //    viene dopo: e' il modo di andare a capo che non richiede di sapere quante voci ci
     //    sono ne' dove sta il taglio.
-    return `<div style="display:flex;flex-direction:column;gap:1px;${rigaIntera ? 'flex-basis:100%;' : ''}">${riga1}${riga2}</div>`;
+    // 🆕 v6.927 — LA CLASSE SERVE A RICONOSCERE UNA VOCE DA FUORI: «queste sono le voci, questi
+    //    sono i riquadri». Nata per una macchina che la v6.928 ha poi tolto di mezzo, resta
+    //    perche' costa nulla e il giorno che serve distinguerle c'e' gia' - riconoscerle dalla
+    //    stringa del loro `style` legherebbe una regola di disegno a una di layout, e la prima
+    //    riformattazione le separerebbe in silenzio.
+    return `<div class="num-voce" style="display:flex;flex-direction:column;gap:1px;${rigaIntera ? 'flex-basis:100%;' : ''}">${riga1}${riga2}</div>`;
   };
 
   // 🔄 v6.671 - I NOMI VENGONO DAL DESCRITTORE, e qui c'era la SESTA lista di sezioni
@@ -43912,6 +44039,44 @@ function renderSeriesMeta(s) {
       //    nome: 24» in mezzo alle versioni si legge come un'altra versione.
       // 📌 LA PAROLA «sottoserie» NON STA PIU' SU OGNI RIGA: la dice il titolo del blocco,
       //    una volta sola. E' la regola della v6.852 - «era la stessa parola due volte».
+      // 🆕 v6.926 (Franco: «ricordati che nella schermata della serie al momento non ti ho fatto
+      //    mettere le numeriche delle versioni», poi il via: «vai con la seconda») - UNA
+      //    SOTTOSERIE SPACCHETTA LE SUE VERSIONI, COME FA UNA TIPOLOGIA.
+      // 📌 SOLO DOVE C'E' QUALCOSA OLTRE LA BASE, ed e' la scelta di Franco fra le due che gli ho
+      //    messo davanti: dove esiste il solo set base, un elenco di una voce sola ripeterebbe il
+      //    numero che sta gia' sulla riga del nome. E' la regola della v6.698 - una distinzione si
+      //    scrive solo se distingue - su un altro schermo.
+      // 🔴 LE ETICHETTE E I COLORI SONO QUELLI DELLE TIPOLOGIE, presi dalle stesse funzioni
+      //    (`_etichettaConteggio`, `--type-*`): due elenchi che dicono la stessa cosa con parole
+      //    diverse sarebbero due cose diverse per chi guarda.
+      // ⬜ E UNA RIGA CHE QUESTA RELEASE FA SPARIRE, prevista dalla v6.778: la riga delle Spille
+      //    sopravviveva proprio perche' le sottoserie non spacchettavano. Adesso e' la somma di
+      //    quelle che le stanno sotto, e se ne va da se'. Era scritto allora.
+      if (_qui.length) {
+        const _capo = colonna(BULLET, _qui, _etichettaSottoserie(v),
+          false, nm.f, COL_CATEGORIA, true, true);
+        const _gv = _dividiPerVersione(_qui);
+        const _altre = _gv.variation.length + _gv.unofficial.length + _gv.change.length
+          + _gv.free.length + _gv.printError.length;
+        if (!_altre) return _capo;
+        const _pezzi = [];
+        if (_gv.base.length) _pezzi.push(colonna(BULLET, _gv.base,
+          (it ? 'set base' : 'base set'), false, nm.f, 'var(--type-base)'));
+        if (_gv.variation.length) _pezzi.push(colonna(BULLET, _gv.variation,
+          _etichettaConteggio('variation', _gv.variation.length, it), false, true, 'var(--type-official)'));
+        if (_gv.unofficial.length) _pezzi.push(colonna(BULLET, _gv.unofficial,
+          _etichettaConteggio('unofficialVariation', _gv.unofficial.length, it), false, true, 'var(--type-unofficial)'));
+        if (_gv.change.length) _pezzi.push(colonna(BULLET, _gv.change,
+          _etichettaConteggio('change', _gv.change.length, it), false, false, 'var(--type-change)'));
+        if (_gv.free.length) _pezzi.push(colonna(BULLET, _gv.free,
+          _etichettaConteggio('free', _gv.free.length, it), false, false, 'var(--type-free)'));
+        if (_gv.printError.length) _pezzi.push(colonna(BULLET, _gv.printError,
+          _etichettaConteggio('printError', _gv.printError.length, it), false, false, 'var(--type-printerror)'));
+        // 📌 Le versioni stanno RIENTRATE sotto il nome della sottoserie: il rientro e' l'unica
+        //    cosa che dice «queste appartengono a quella», senza scrivere una parola in piu'.
+        return _capo + '<div style="display:flex;flex-wrap:wrap;gap:0.2rem 1rem;'
+          + 'padding-left:1.1rem;flex-basis:100%;">' + _pezzi.join('') + '</div>';
+      }
       return _qui.length ? colonna(BULLET, _qui, _etichettaSottoserie(v),
         false, nm.f, COL_CATEGORIA, true, true) : '';
     }).filter(Boolean);
