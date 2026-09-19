@@ -1,6 +1,21 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.925 - ✂️ «LEGENDA VERSIONI» ERA TAGLIATA IN UN ALTRO POSTO (Franco, con la foto: «io ancora
+//          la vedo tagliata»). Modificato js/app.js.
+//          🔴 LA v6.924 HA CURATO IL POSTO SBAGLIATO, e la foto lo dice: il riquadro tagliato e'
+//          quello dei FILTRI, non la testata della serie. Quel riquadro e' `unaRiga` (v6.357),
+//          cioe' `flex-wrap:nowrap` PIU' `overflow-x:auto`: in una fila che non va a capo e che
+//          scorre, il permesso di spezzarsi non serve a niente - il piede resta largo, finisce
+//          oltre il bordo e l'`overflow` lo taglia. Si leggeva «Legenda versio».
+//          ✅ QUANDO LA FILA SCORRE, IL PIEDE ESCE DALLA FILA: va su una riga sua allineata a
+//          destra, lo stesso posto che la v6.515 ha dato al comando «Tutte». Dove la fila va a
+//          capo da se' - tutti gli altri riquadri - il piede resta in linea, com'e' sempre stato.
+//          📌 La differenza la dichiara il DESCRITTORE (`unaRiga`), non il pannello: e' la stessa
+//          bandierina che decide se le pillole vanno a capo, quindi chi rendera' scorrevole un
+//          altro riquadro si portera' dietro anche questa senza doverla ricordare.
+//          ⬜ La v6.924 non si disfa: il permesso di andare a capo serve dove il piede resta in
+//          linea, ed e' li' che continua a valere.
 // v6.924 - ↩️ «LEGENDA VERSIONI» PUO' ANDARE A CAPO (Franco: «la voce "legenda versioni" e
 //          tagliata; valuta di scriverla su 2 righe»). Modificato js/app.js.
 //          📏 LA CAUSA: il piede del riquadro aveva `white-space:nowrap` E `flex-shrink:0`, cioe'
@@ -29279,7 +29294,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.924';
+const JS_VERSION = 'v6.925';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -47629,7 +47644,22 @@ header += `</div>`;
     // in chi non prevedeva che di lati non ce ne fosse nessuno.
     const _corpoSuo = C.corpoHTML ? C.corpoHTML(C) : '';
     const _corpoRiquadro = _corpoSuo ? _corpoSuo : (C.cappelloHTML ? C.cappelloHTML() : '')
-      + (_corpoSuo ? '' : `<div style="display:flex;flex-wrap:${C.unaRiga ? 'nowrap' : 'wrap'};align-items:center;gap:0.4rem;${C.unaRiga ? 'overflow-x:auto;' : ''}${_etichettaSulBordo ? '' : 'margin-top:0.6rem;'}">${chips}`
+      // 🔴 v6.925 — QUANDO LA FILA SCORRE, A SCORRERE SONO LE SOLE PILLOLE.
+      // 📏 La foto di Franco: nel pannello dei filtri si leggeva «Legenda versio». Quel riquadro e'
+      //    `unaRiga` (v6.357), cioe' `flex-wrap:nowrap` PIU' `overflow-x:auto`, e il piede stava
+      //    dentro quella fila: restava largo, finiva oltre il bordo, e l'`overflow` lo tagliava.
+      // ⚠️ LA CURA NON PUO' ESSERE UNA FASCIA SUA: la v6.356 ha messo il piede DENTRO la riga
+      //    delle pillole apposta, «per non prendersi una fascia sua», e `prova-v6333` lo pretende.
+      //    Una fascia l'ha il comando «TUTTE» (v6.515), che la fila la COMANDA invece di farne
+      //    parte - sono due inquilini diversi dello stesso angolo.
+      // ✅ Quindi le pillole vanno in una scatola LORO, che scorre, e il piede resta accanto nella
+      //    stessa riga, fuori dallo scorrimento: in fondo a destra ci sta ancora, e non si taglia
+      //    piu'. `min-width:0` sulla scatola e' obbligatorio - senza, un figlio flex non si
+      //    stringe sotto il suo contenuto e a scorrere non comincia nessuno.
+      + (_corpoSuo ? '' : (C.unaRiga
+        ? `<div style="display:flex;align-items:center;gap:0.4rem;${_etichettaSulBordo ? '' : 'margin-top:0.6rem;'}">`
+          + `<div style="display:flex;flex-wrap:nowrap;align-items:center;gap:0.4rem;overflow-x:auto;min-width:0;flex:1;">${chips}</div>`
+        : `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;${_etichettaSulBordo ? '' : 'margin-top:0.6rem;'}">${chips}`)
       // 🔄 v6.924 (Franco: «la voce "legenda versioni" è tagliata; valuta di scriverla su 2
       //    righe») — IL PIEDE PUÒ ANDARE A CAPO.
       // 📏 LA CAUSA, letta qui: `white-space:nowrap` più `flex-shrink:0` vuol dire «non ti
@@ -47641,6 +47671,8 @@ header += `</div>`;
       //    schermo largo, e sarebbe stato falso in inglese, dove la frase è più corta.
       // ⚠️ `flex-shrink:0` RESTA: serve a non far schiacciare il piede dalle pillole che gli
       //    stanno accanto. È il permesso di spezzarsi che mancava, non quello di stringersi.
+      // 📌 Il piede e' uno solo e sta sempre nello stesso posto - in fondo a destra, dentro la
+      //    riga (v6.356). Cambia cosa gli sta accanto: le pillole nude, o la scatola che scorre.
       + (C.pieHTML ? `<span style="margin-left:auto;padding-left:0.6rem;flex-shrink:0;white-space:normal;text-align:right;">${C.pieHTML()}</span>` : '')
       + `</div>`)
       // 🆕 v6.515 (Franco: *"TUTTE mettilo in fondo a dx nel blocco filtri"*) — IL COMANDO
