@@ -1,6 +1,23 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.915 - 🔒 LE ALTRE DUE PORTE, TROVATE DA UNA PROVA CHE PARTE DA UNA DOMANDA (Franco: «inutile
+//          avere 500 suite relative a cose disegnate a monte, e poi avere un buco del genere. non
+//          vale la pena costruire un set di controlli di tipologia Penetration test?»). Modificato
+//          js/app.js; nasce `prove/prova-sicurezza.js`.
+//          🔴 IL SETACCIO HA TROVATO SUBITO DUE COSE che nessuno aveva chiesto di cercare:
+//          1. `adminTab()` non chiedeva niente. La v6.914 aveva chiuso `showAdminTab`, che e' la
+//             porta dei pulsanti - ma i quattordici tab della console chiamano QUESTA, e da riga
+//             di comando disegnava i messaggi ricevuti dentro il pannello. Una porta chiusa e una
+//             aperta sullo stesso stanzino.
+//          2. `showPage` conosceva una domanda sola, «sei loggato?». La pagina NEWSLETTER - quella
+//             che manda le e-mail a tutti gli iscritti - stava fra le «protette», quindi un
+//             iscritto qualunque poteva aprirla da riga di comando. Adesso c'e' anche
+//             `adminPages`, e sono due domande diverse.
+//          📌 IL SETACCIO NON HA UN ELENCO SCRITTO A MANO: i comandi riservati li ricava
+//          dall'index (sono quelli che nascono `display:none` nella navbar) e le porte dai loro
+//          `onclick`. Un comando nuovo entra nel giro da solo, una porta nuova senza guardia
+//          accende il rosso. E' il setaccio della v6.283 applicato ai permessi.
 // v6.914 - 🔒 USCIRE BUTTA VIA LA PAGINA, E LA CONSOLE ADMIN CHIEDE CHI SEI (Franco, con due foto:
 //          «da sloggato vedo la icona della busta da lettere, che se premuta porta alla admin
 //          console; come e' possibile avere un buco cosi grosso?»). Modificato js/app.js.
@@ -29119,7 +29136,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.914';
+const JS_VERSION = 'v6.915';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32255,6 +32272,14 @@ function showPage(page) {
     openAuth('login');
     return;
   }
+  // 🔴 v6.915 — «SERVE IL LOGIN» E «SERVE ESSERE ADMIN» SONO DUE DOMANDE, e qui ce n'era una sola.
+  // 📏 Trovato dal setaccio di `prova-sicurezza`, che censisce i comandi nascosti della navbar e
+  //    guarda dove portano: `nav-newsletter-btn` (acceso al solo admin) porta a
+  //    `showPage('newsletter')`, e questa funzione chiedeva soltanto che ci fosse UN utente. Un
+  //    iscritto qualunque, da riga di comando, apriva la pagina che manda le e-mail a tutti.
+  // 📌 Il pulsante nascosto non e' una difesa: e' un modo di non offrire una cosa, non di negarla.
+  const adminPages = ['newsletter'];
+  if (adminPages.includes(page) && !currentUser.isAdmin) { showPage('home'); return; }
   // Traccia la pagina da cui si arriva, per poter tornare indietro dal profilo
   // (es. pulsante "← Torna a Inventario") invece di andare sempre alla Home
   const currentActiveEl = document.querySelector('.page.active');
@@ -49945,6 +49970,14 @@ function renderMyCollection(ownedFigs) {
 //  ADMIN
 // ============================================================
 function adminTab(tab) {
+  // 🔴 v6.915 — LA SECONDA PORTA DELLA CONSOLE, trovata dal setaccio di `prova-sicurezza`.
+  // 📌 La v6.914 aveva messo la guardia su `showAdminTab`, che e' la porta che i pulsanti usano.
+  //    Ma i quattordici tab della console chiamano QUESTA, e questa non chiedeva niente: da riga
+  //    di comando `adminTab('contacts')` disegnava i messaggi ricevuti dentro il pannello senza
+  //    passare da nessun controllo. Una porta chiusa e una aperta sullo stesso stanzino.
+  // ⚠️ Non basta che il pannello sia nascosto: questa funzione SCRIVE nel DOM, e quello che scrive
+  //    resta li' anche se il contenitore e' spento - basta rileggerlo.
+  if (!currentUser || !currentUser.isAdmin) return;
   document.querySelectorAll('.admin-tab').forEach(b => {
     const t = b.getAttribute('onclick')?.match(/adminTab\('(\w+)'\)/)?.[1];
     b.classList.toggle('active', t === tab);
