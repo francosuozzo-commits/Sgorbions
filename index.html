@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.917">
+<link rel="stylesheet" href="css/style.css?v=6.919">
 
 
 <style>
@@ -2537,6 +2537,16 @@ di tutte le serie</button>
                tabella qui sopra, questa si MODIFICA: le spunte si salvano su Firestore.
                Righe e colonne si ricavano da `PRODOTTI_INVENTARIO` e `VERSIONI_ARTICOLO`. -->
           <div id="admin-versioni-articolo"></div>
+          <!-- 🆕 v6.918 (Franco: «rendimi autonomo. Crea un campo dove io possa mettere il valore
+               delle definizioni da usare nelle legende [...] mi devi dare la possibilita' di farlo
+               anche in Inglese, quindi servono 2 campi [...] il posto migliore e' la form della
+               TDA, dato che il valore puo cambiare TDA per TDA [...] se la TDA ha versioni
+               omaggio, allora mi mostri i 2 campi, altrimenti no»).
+               📌 STA QUI, SOTTO LA TABELLA DELLE VERSIONI, e non e' una scelta di comodo: quella
+               tabella dice QUALI versioni esistono per ogni articolo, e questo blocco dice COSA
+               SONO. Le due domande si guardano, e chi spegne una casella vede sparire il campo
+               della definizione che non serve piu'. -->
+          <div id="admin-legende-definizioni"></div>
           <!-- 🆕 v6.234 — da chi può nascere ogni versione. SOLA LETTURA: descrive com'è
                fatto il modello, non cosa contiene questa collezione. È il descrittore
                stampato, come la prima tabella. -->
@@ -4900,7 +4910,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.917"></script>
+<script src="js/app.js?v=6.919"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4924,7 +4934,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.917'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.919'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
