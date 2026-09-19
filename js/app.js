@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.920 - 🔒 `impersonateUser` CHIEDE CHI SEI, E LE CHIAVI DEI SERVIZI ESTERNI SONO CENSITE
+//          (Franco: «ora fai il punto 2: impersonateUser e le chiavi dei servizi esterni»).
+//          Modificato js/app.js; nasce `prove/prova-sicurezza-chiavi.js`.
+//          🔴 `impersonateUser` cambia l'identita' con cui il sito lavora e non guardava
+//          `currentUser`. ⬜ Non era sfruttabile - la prima cosa che fa e' leggere `users`, che un
+//          non-admin non puo' scaricare - ma quella e' una difesa che poggia su un caso fortunato.
+//          🔎 E LE CHIAVI NEL CLIENT SONO QUATTRO, censite e dichiarate una per una: la `apiKey`
+//          di Firebase (identifica il progetto, non autorizza niente), il cloud e il PRESET
+//          UNSIGNED di Cloudinary, e le tre di EmailJS. Le ultime due famiglie non sono segreti
+//          rubati: stanno nel sorgente per disegno. Ma dicono cosa un estraneo puo' FARE, ed e'
+//          li' che la prova guarda - con la ragione scritta accanto a ciascuna.
 // v6.919 - 📖 I CAMPI DELLE LEGENDE MOSTRANO LA FRASE DI OGGI, E UN PULSANTE LA PORTA DENTRO
 //          (Franco: «li hai gia popolati tu, con i valori in uso oggi?»). Modificato js/app.js.
 //          🔴 LA RISPOSTA E' NO, E RIEMPIRLI SAREBBE STATO IL MODO OVVIO E SBAGLIATO: al primo
@@ -29209,7 +29220,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.919';
+const JS_VERSION = 'v6.920';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -51353,6 +51364,17 @@ function isImpersonating() {
 }
 
 function impersonateUser(userId) {
+  // 🔴 v6.920 — CHIEDE CHI SEI, e fin qui non lo chiedeva a nessuno.
+  // 📏 Trovata dalla mappa delle scritture (`prova-sicurezza-scritture`, 19 settembre): un
+  //    comando che cambia l'identita' con cui il sito lavora, e che non guardava `currentUser`.
+  // ⬜ NON ERA SFRUTTABILE, e va detto per non far sembrare questa riga piu' di quello che e':
+  //    la prima cosa che fa e' leggere `users`, che un non-admin non puo' nemmeno scaricare
+  //    (§15.2) - quindi la `find` non trovava niente e la funzione usciva. Ma quella e' una
+  //    difesa che poggia su un caso fortunato: il giorno che `users` finisse in memoria per
+  //    un'altra ragione, qui non ci sarebbe stato piu' niente a fermare nessuno.
+  // 📌 E `stopImpersonation` non ha bisogno della stessa riga: esce se `_realAdmin` e' vuoto, e
+  //    quel campo lo riempie solo questa funzione. La porta e' una.
+  if (!currentUser || !currentUser.isAdmin) return;
   const user = getData('users', []).find(u => u.id === userId);
   if (!user || user.isAdmin) return;
   const msg = (currentLang === 'it' ? 'Impersonare ' : 'Impersonate ') + user.username + '?';
