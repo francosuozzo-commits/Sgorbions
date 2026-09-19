@@ -1,6 +1,45 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.919 - 📖 I CAMPI DELLE LEGENDE MOSTRANO LA FRASE DI OGGI, E UN PULSANTE LA PORTA DENTRO
+//          (Franco: «li hai gia popolati tu, con i valori in uso oggi?»). Modificato js/app.js.
+//          🔴 LA RISPOSTA E' NO, E RIEMPIRLI SAREBBE STATO IL MODO OVVIO E SBAGLIATO: al primo
+//          salvataggio quelle frasi diventerebbero COPIE, e il dizionario - che resta la fonte per
+//          tutte le tipologie che Franco non tocca - smetterebbe di contare senza che nessuno
+//          l'abbia deciso. E' «la seconda copia di cui non si sa l'esistenza» (v6.372),
+//          moltiplicata per undici tipologie, sei versioni e due lingue.
+//          ✅ QUELLO CHE SERVIVA DAVVERO era non fargli riscrivere tutto a mano: il segnaposto di
+//          ogni campo vuoto E' la frase che il sito dice oggi, e un pulsante per tipologia
+//          («parti dalle frasi di oggi») la porta dentro i campi quando e' lui a volerlo. Il
+//          congelamento diventa un gesto, invece di un effetto collaterale.
+//          📌 Il pulsante riempie SOLO i campi vuoti e non salva niente: chi ha gia' scritto non
+//          si vede sovrascrivere, e resta il passo in cui uno cambia idea.
+//          ⚠️ E il segnaposto e' la frase SENZA TAG, con le virgolette scappate: dentro un
+//          attributo HTML i tag non si vedrebbero e una virgoletta lo chiuderebbe a meta'.
+// v6.918 - 📖 LE DEFINIZIONI DELLE LEGENDE LE SCRIVE FRANCO, PER TIPOLOGIA E IN DUE LINGUE
+//          (Franco: «rendimi autonomo. Crea un campo dove io possa mettere il valore delle
+//          definizioni da usare nelle legende [...] mi devi dare la possibilita' di farlo anche in
+//          Inglese, quindi servono 2 campi [...] il posto migliore e' la form della TDA, dato che
+//          il valore puo cambiare TDA per TDA [...] se la TDA ha versioni omaggio, allora mi
+//          mostri i 2 campi, altrimenti no»). Modificati index.html e js/app.js.
+//          🔴 NASCE DA UN DEBITO CHE NON SI POTEVA PAGARE SENZA DI LUI: dalla v6.787 la
+//          «Variazione ufficiale» esiste anche sugli ALBUM, dove e' una copertina diversa, ma la
+//          legenda dice «variante di RETRO documentata». Le parole a schermo le sceglie Franco
+//          (v6.754), e il difetto e' rimasto aperto per settimane in attesa di una frase. La
+//          risposta giusta non era chiedergli la frase: era dargli il posto dove scriverla.
+//          📌 I CAMPI COMPAIONO SOLO PER LE VERSIONI CHE QUELLA TIPOLOGIA HA - stessa fonte della
+//          tabella delle versioni (`VERSIONI_PER_TDA`), che sta qualche riga sopra nella stessa
+//          schermata: chi spegne una casella vede sparire il campo che non serve piu'.
+//          📌 VIVONO IN `settings/legende`, come le altre configurazioni del sito: quella
+//          collezione e' aperta in lettura (serve: la legenda la legge anche un visitatore) e
+//          scrivibile dal solo admin. NON in `localStorage`, dove vive la tabella delle versioni:
+//          quella e' configurazione di lavoro, questa e' testo che deve vedere il mondo.
+//          🔴 UN CAMPO VUOTO USA LA FRASE DI SEMPRE, e il salvataggio rilegge TUTTO lo schermo:
+//          tenendo solo i campi pieni, svuotarne uno non avrebbe nessun effetto - un comando che
+//          non risponde.
+//          ⚠️ E LA VOCE CON UNA DEFINIZIONE PERDE IL `data-i18n-html`: quell'attributo dice ad
+//          `applyI18n()` di riscrivere il contenuto dal DIZIONARIO al cambio lingua, cioe' di
+//          cancellare la frase di Franco.
 // v6.917 - 🕵️ L'ANONIMATO DELLA CLASSIFICA ERA FINTO: il nome stava in una collezione pubblica.
 //          Modificato js/app.js.
 //          📏 MISURATO SUL SITO VERO, da anonimo e con una richiesta REST: `public_profiles` ha
@@ -29170,7 +29209,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.917';
+const JS_VERSION = 'v6.919';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -30608,6 +30647,7 @@ async function loadAllData() {
   // v6.173 - si aggiorna il tetto per il PROSSIMO caricamento, adesso che i dati ci sono. Senza
   // `await` di proposito: e' una rifinitura per il giro dopo, non deve rallentare questo.
   _aggiornaTimeoutDaConfigurazione();
+  _caricaLegendeDefinizioni();   // v6.918 - le definizioni scritte da Franco, per la legenda
   // 🔴 v6.851 - E QUI MANCAVANO DA SEMPRE LE ALTRE DUE, scritte e mai chiamate da nessuno.
   // L'ordine delle tipologie e il numero di colonne della griglia si salvano su Firestore, ma il
   // sito li legge da `LOCAL`, che scrive **solo il browser dove si e' premuto Salva**: su ogni
@@ -37107,6 +37147,195 @@ function renderAdminTipoArticolo() {
 // ⚠️ NON C'E' NESSUN "SALVA" AUTOMATICO A OGNI SPUNTA. Si spunta e poi si salva, come le griglie:
 // una scrittura per clic su una tabella di 35 caselle sarebbe 35 scritture, e soprattutto non
 // lascerebbe modo di cambiare idea a meta'.
+// ============================================================
+// 🆕 v6.918 — LE DEFINIZIONI DELLE LEGENDE LE SCRIVE FRANCO, PER TIPOLOGIA E IN DUE LINGUE
+// ============================================================
+// Franco: *«rendimi autonomo. Crea un campo dove io possa mettere il valore delle definizioni da
+// usare nelle legende [...] mi devi dare la possibilita' di farlo anche in Inglese. Quindi servono
+// 2 campi [...] il posto migliore e' la form della TDA, dato che il valore puo cambiare TDA per
+// TDA [...] se la TDA ha versioni omaggio, allora mi mostri i 2 campi (ita - eng) altrimenti no»*.
+//
+// 🔴 NASCE DA UN DEBITO CHE NON SI POTEVA PAGARE SENZA DI LUI. Dalla v6.787 la «Variazione
+//    ufficiale» esiste anche sugli ALBUM, dove e' una copertina diversa - ma la legenda diceva
+//    (e dice, finche' i campi non si compilano) «variante di RETRO documentata». Falso sugli
+//    album. Le parole a schermo le sceglie Franco (v6.754), quindi il difetto e' rimasto aperto
+//    per settimane in attesa di una frase. La risposta giusta non era chiedergli la frase: era
+//    dargli il posto dove scriverla, e tutte le prossime.
+//
+// 📌 DOVE VIVONO: in `settings`, documento `legende`, come le altre configurazioni del sito
+//    (`generali`, `griglie`, `email`). Quella collezione e' aperta in LETTURA a tutti - serve,
+//    perche' la legenda la legge anche un visitatore - e scrivibile dal solo admin (§15.2).
+// ⚠️ E NON in `localStorage`, dove vive la tabella delle versioni qui sotto: quella e' una
+//    configurazione di lavoro di Franco, questa e' testo che deve vedere il mondo.
+//
+// 🔴 IL DEFAULT NON SPARISCE: una definizione vuota vuol dire «usa quella del dizionario», non
+//    «non scrivere niente». Il giorno che Franco svuota un campo, la legenda torna alla frase di
+//    sempre invece di mostrare una riga muta.
+let _LEGENDE_DEF = null;   // { 'albums.variation': { it: '...', en: '...' }, ... }
+
+async function _caricaLegendeDefinizioni() {
+  try {
+    const docs = await fsGetAll('settings');
+    const d = docs.find(x => x.id === 'legende');
+    _LEGENDE_DEF = (d && d.voci) || {};
+  } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
+}
+
+// Le voci di legenda di una tipologia: la base c'e' sempre, le altre le dice `VERSIONI_PER_TDA`.
+// 📌 E' la stessa fonte della tabella qui sotto: se una tipologia non ha l'Omaggio, il campo della
+//    sua definizione non nasce - che e' esattamente quello che Franco ha chiesto.
+function _vociLegendaDellaTDA(sez) {
+  return ['base'].concat(_versioniDellaTDA(sez));
+}
+
+// 🆕 v6.919 (Franco: «li hai gia popolati tu, con i valori in uso oggi?») — NO, E NON SI POPOLANO.
+// 🔴 RIEMPIRE I CAMPI CON LE FRASI DI OGGI SAREBBE STATO IL MODO OVVIO E SBAGLIATO: al primo
+//    salvataggio quelle frasi diventerebbero COPIE, e il dizionario — che resta la fonte per tutte
+//    le tipologie che Franco non tocca — smetterebbe di contare senza che nessuno l'abbia deciso.
+//    E' «la seconda copia di cui non si sa l'esistenza» (v6.372), moltiplicata per undici
+//    tipologie, sei versioni e due lingue.
+// ✅ QUELLO CHE SERVIVA DAVVERO era non fargli riscrivere tutto a mano. Quindi: la frase di oggi
+//    si VEDE, come segnaposto del campo vuoto, e un pulsante per tipologia la porta dentro i campi
+//    quando e' lui a volerlo. Il congelamento diventa un gesto, invece di un effetto collaterale.
+// 📌 La voce di legenda non si chiama sempre come la versione: sui retro e' `retroChange`,
+//    `retroFree`… La traduzione fra le due sta qui, in un posto solo.
+// ⚠️ LA MAIUSCOLA LA FA `_maiuscola`, NON DUE RIGHE SCRITTE QUI. Erano sei copie a mano quando la
+//    v6.711 le ha raccolte in una funzione, e `prova-v6711` le CONTA: scrivendo la settima si e'
+//    accesa al primo giro, che e' esattamente il suo mestiere.
+function _voceLegendaDi(sez, ch) {
+  return (sez === 'retros') ? ('retro' + _maiuscola(ch)) : ch;
+}
+function _fraseLegendaOggi(sez, ch) {
+  const k = 'items.filterLegend.' + _voceLegendaDi(sez, ch);
+  return {
+    it: (i18n.it && i18n.it[k]) || '',
+    en: (i18n.en && i18n.en[k]) || ''
+  };
+}
+
+// Il testo scritto da Franco per (tipologia, voce) nella lingua corrente, o null se non c'e'.
+function _legendaDefinizione(sez, voce) {
+  const v = _LEGENDE_DEF && _LEGENDE_DEF[sez + '.' + voce];
+  if (!v) return null;
+  const testo = (currentLang === 'it') ? v.it : v.en;
+  return (testo && testo.trim()) ? testo.trim() : null;
+}
+
+function renderAdminLegendeDefinizioni() {
+  const box = document.getElementById('admin-legende-definizioni');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const def = _LEGENDE_DEF || {};
+  const etichetta = ch => {
+    if (ch === 'base') return it ? 'Versione base' : 'Base version';
+    const v = VERSIONI_ARTICOLO.find(x => x.chiave === ch);
+    return v ? (it ? v.it : v.en) : ch;
+  };
+  const sezioni = Object.keys(VERSIONI_PER_TDA).filter(s => _vociLegendaDellaTDA(s).length > 1);
+
+  // 🆕 v6.919 — IL SEGNAPOSTO E' LA FRASE CHE IL SITO DICE OGGI, non un invito generico.
+  // 📌 Cosi' Franco legge quello che c'e' e scrive solo dove e' sbagliato: sugli Album la
+  //    Variazione ufficiale dice «variante di RETRO», ed e' li' che si vede il difetto.
+  // ⚠️ Nel segnaposto i tag non si vedrebbero comunque: si tolgono, e le virgolette si scappano,
+  //    o chiuderebbero l'attributo a meta'.
+  const _nudo = t2 => (t2 || '').replace(/<[^>]*>/g, '').replace(/"/g, '&quot;');
+  const campo = (sez, ch, lingua) => {
+    const val = (def[sez + '.' + ch] || {})[lingua] || '';
+    const oggi = _fraseLegendaOggi(sez, ch)[lingua] || '';
+    return '<textarea id="legdef-' + sez + '-' + ch + '-' + lingua + '" rows="2" '
+      + 'style="width:100%;font-size:0.82rem;padding:4px 6px;border-radius:6px;'
+      + 'border:1px solid var(--border);background:var(--bg2);color:var(--text);resize:vertical;" '
+      + 'placeholder="' + _nudo(oggi) + '">'
+      + val.replace(/</g, '&lt;') + '</textarea>';
+  };
+
+  box.innerHTML =
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">📖 '
+      + (it ? 'Definizioni delle legende' : 'Glossary definitions') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it
+        ? 'Qui si scrive <strong>cosa significa</strong> ogni versione, tipologia per tipologia — perché la '
+          + 'stessa parola non vuol dire la stessa cosa dappertutto: una <em>Variazione ufficiale</em> su una '
+          + 'figurina è un retro diverso, su un album è una copertina diversa. '
+          + 'Compaiono solo le versioni che quella tipologia ha, secondo la tabella qui sopra. '
+          + '<strong>Un campo lasciato vuoto usa la frase di sempre.</strong> Le frasi accettano il grassetto '
+          + 'con <code>&lt;strong&gt;</code>.'
+        : 'Here you write <strong>what each version means</strong>, per item type. Only the versions that type '
+          + 'has are shown. <strong>An empty field keeps the default sentence.</strong>') +
+    '</p>' +
+    sezioni.map(sez =>
+      '<div style="margin-bottom:1.1rem;border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;">'
+      + '<div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-bottom:0.5rem;">'
+      + '<span style="font-weight:700;color:var(--accent3);">' + getSectionLabel(sez) + '</span>'
+      // 🆕 v6.919 — il pulsante che porta dentro i campi le frasi di oggi, per questa tipologia.
+      // 📌 E' un GESTO di Franco, non un effetto del primo salvataggio: finche' non lo preme, le
+      //    frasi restano quelle del dizionario e continuano a valere anche se domani cambiano.
+      + '<button class="btn-admin" onclick="legendeCopiaFrasiDiOggi(\'' + sez + '\')" '
+      + 'style="font-size:0.75rem;padding:2px 8px;">'
+      + (it ? '✍️ parti dalle frasi di oggi' : '✍️ start from today’s sentences') + '</button>'
+      + '</div>'
+      + _vociLegendaDellaTDA(sez).map(ch =>
+          '<div style="margin-bottom:0.6rem;">'
+          + '<div style="font-size:0.85rem;color:var(--accent);margin-bottom:0.2rem;">' + etichetta(ch) + '</div>'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">'
+          // ⚠️ v6.437 — NIENTE `--muted` DENTRO UNA SCHERMATA DA AMMINISTRATORE: su questo fondo
+          //    quel grigio non si legge, e `prova-v6437` conta i grigi rimasti. Ci sono cascato
+          //    scrivendo questa schermata, e la prova l'ha preso al primo giro.
+          + '<div><div style="font-size:0.72rem;color:var(--text);opacity:0.75;">🇮🇹 ITALIANO</div>' + campo(sez, ch, 'it') + '</div>'
+          + '<div><div style="font-size:0.72rem;color:var(--text);opacity:0.75;">🇬🇧 ENGLISH</div>' + campo(sez, ch, 'en') + '</div>'
+          + '</div></div>').join('')
+      + '</div>').join('') +
+    '<button class="btn-primary btn-admin" onclick="salvaLegendeDefinizioni()">'
+      + (it ? '💾 Salva le definizioni' : '💾 Save definitions') + '</button>' +
+    '<div id="legende-definizioni-feedback" style="font-size:0.85rem;margin-top:0.4rem;display:none;"></div>';
+}
+
+// 🆕 v6.919 — porta le frasi di oggi dentro i campi di UNA tipologia, e non salva niente:
+// Franco le legge, le corregge e poi decide. Un pulsante che salvasse da solo toglierebbe il
+// passo in cui uno cambia idea.
+function legendeCopiaFrasiDiOggi(sez) {
+  if (!currentUser?.isAdmin) return;
+  _vociLegendaDellaTDA(sez).forEach(ch => {
+    const oggi = _fraseLegendaOggi(sez, ch);
+    ['it', 'en'].forEach(lingua => {
+      const el = document.getElementById('legdef-' + sez + '-' + ch + '-' + lingua);
+      // ⚠️ NON si sovrascrive quello che Franco ha gia' scritto: il pulsante riempie i vuoti.
+      if (el && !el.value.trim()) el.value = oggi[lingua] || '';
+    });
+  });
+  toast(currentLang === 'it'
+    ? 'Frasi di oggi messe nei campi vuoti. Correggi e poi salva.'
+    : 'Today’s sentences copied into the empty fields. Edit, then save.', 'success');
+}
+
+async function salvaLegendeDefinizioni() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const fb = document.getElementById('legende-definizioni-feedback');
+  const voci = {};
+  // 🔴 SI RILEGGE DALLO SCHERMO TUTTO, non solo quello che e' cambiato: cosi' un campo svuotato
+  //    da Franco viene salvato VUOTO, e la legenda torna alla frase di sempre. Tenendo solo i
+  //    campi pieni, svuotarne uno non avrebbe nessun effetto - e sarebbe un comando che non
+  //    risponde, il difetto peggiore di una schermata.
+  Object.keys(VERSIONI_PER_TDA).forEach(sez => _vociLegendaDellaTDA(sez).forEach(ch => {
+    const vIt = (document.getElementById('legdef-' + sez + '-' + ch + '-it')?.value || '').trim();
+    const vEn = (document.getElementById('legdef-' + sez + '-' + ch + '-en')?.value || '').trim();
+    if (vIt || vEn) voci[sez + '.' + ch] = { it: vIt, en: vEn };
+  }));
+  try {
+    await fsSave('settings', { id: 'legende', voci });
+    _LEGENDE_DEF = voci;
+    if (fb) {
+      fb.style.display = 'block';
+      fb.textContent = it ? '✅ Salvato. La legenda lo dice da subito.' : '✅ Saved.';
+      setTimeout(() => { fb.style.display = 'none'; }, 4000);
+    }
+  } catch (e) {
+    console.error('salvaLegendeDefinizioni', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
+}
+
 function renderAdminVersioniArticolo() {
   const box = document.getElementById('admin-versioni-articolo');
   if (!box) return;
@@ -45687,6 +45916,18 @@ function openFilterLegendModal() {
   const ul = document.getElementById('filter-legend-list');
   if (ul) ul.innerHTML = _VOCI_LEGENDA[sez].map(k => {
     const chiave = 'items.filterLegend.' + k;
+    // 🆕 v6.918 — SE FRANCO HA SCRITTO UNA DEFINIZIONE PER QUESTA TIPOLOGIA, VINCE LA SUA.
+    // 📌 La chiave della definizione e' quella della VERSIONE, non quella della voce di legenda:
+    //    sui retro le voci si chiamano `retroChange`, `retroFree`… ma la versione di cui parlano
+    //    e' sempre `change`, `free`. La traduzione fra le due esiste gia' ed e'
+    //    `_VERSIONE_DI_VOCE_LEGENDA`, scritta a mano nella v6.420 apposta per non dedurla da come
+    //    e' scritta la chiave. Qui si riusa, invece di rifare quel ragionamento.
+    // 🔴 E SI GUARDA `currentSection`, NON `sez`: `sez` ripiega su `figurines` per le tipologie
+    //    che non hanno una legenda propria (gli Album, per esempio), ed e' proprio quel ripiego la
+    //    ragione per cui la frase e' falsa sugli album. La definizione, invece, si cerca per la
+    //    tipologia in cui si sta davvero guardando.
+    const _sezVera = currentSection || 'figurines';
+    const _suo = _legendaDefinizione(_sezVera, _VERSIONE_DI_VOCE_LEGENDA[k] || k);
     // 🆕 v6.420 (Franco) - IL COLOR CODE ENTRA NELLE DUE LEGENDE.
     // 🔴 IL COLORE STA NELLO `style` DEL <li>, NON DENTRO IL TESTO, ED E' L'UNICO MODO CHE REGGE.
     // Queste voci portano `data-i18n-html`: al primo cambio lingua `applyI18n()` riscrive il loro
@@ -45696,6 +45937,13 @@ function openFilterLegendModal() {
     // 📌 Lo `style` dell'elemento invece `applyI18n()` non lo tocca: riscrive cio' che c'e'
     // DENTRO, non l'attributo. Il colore sopravvive perche' non abita nel contenuto.
     const col = _COLORE_TIPO[_VERSIONE_DI_VOCE_LEGENDA[k]] || 'var(--text)';
+    // ⚠️ v6.918 — CON UNA DEFINIZIONE SCRITTA DA FRANCO, LA VOCE PERDE IL `data-i18n-html`, e non
+    //    e' una svista: quell'attributo dice ad `applyI18n()` di riscrivere il contenuto pescando
+    //    dal DIZIONARIO al prossimo cambio lingua - cioe' di cancellare la frase di Franco. Le due
+    //    lingue della sua definizione ci sono gia' (`_legendaDefinizione` legge quella corrente), e
+    //    il modale si ridisegna a ogni apertura. E' la stessa trappola del colore (v6.420), presa
+    //    dall'altro lato: li' si perdeva l'attributo, qui si perderebbe il testo.
+    if (_suo) return `<li style="--legenda-colore:${col};">${_suo}</li>`;
     return `<li data-i18n-html="${chiave}" style="--legenda-colore:${col};">${t(chiave)}</li>`;
   }).join('');
   document.getElementById('filter-legend-modal').classList.remove('hidden');
@@ -50067,7 +50315,7 @@ function adminTab(tab) {
   const tabEl = document.getElementById('admin-' + tab);
   if (tabEl) { tabEl.classList.add('active'); }
   if (tab === 'series') renderAdminSeries();
-  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminPartenzeVersione();
+  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione();
     renderCampiMassiviConfig(); _aggiornaCampiMassiviDaConfigurazione().then(renderCampiMassiviConfig); }   // v6.842: qui, non in Impostazioni   // v6.221, v6.233, v6.234
   if (tab === 'figurines') renderAdminFigs();
   if (tab === 'contacts') { renderAdminContacts(); updateMsgBadge(); }
