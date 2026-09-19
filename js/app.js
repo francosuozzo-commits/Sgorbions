@@ -1,6 +1,65 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.924 - ↩️ «LEGENDA VERSIONI» PUO' ANDARE A CAPO (Franco: «la voce "legenda versioni" e
+//          tagliata; valuta di scriverla su 2 righe»). Modificato js/app.js.
+//          📏 LA CAUSA: il piede del riquadro aveva `white-space:nowrap` E `flex-shrink:0`, cioe'
+//          «non ti spezzare e non stringerti». In un riquadro stretto quelle due insieme non
+//          lasciano nessuna via d'uscita al testo, e quello che avanza esce fuori.
+//          📌 NON SI IMPONGONO DUE RIGHE: si toglie il divieto di andare a capo. Dove lo spazio
+//          c'e', «Legenda versioni» resta su una riga; dove manca, si spezza invece di essere
+//          tagliata. Un `<br>` a mano avrebbe fatto due righe anche su uno schermo largo, e
+//          sarebbe stato sbagliato in inglese, dove la frase e' piu' corta.
+//          ⚠️ `flex-shrink:0` RESTA: serve a non far schiacciare il piede dalle pillole che gli
+//          stanno accanto. Mancava il permesso di SPEZZARSI, non quello di stringersi.
+// v6.923 - 🔵 L'ETICHETTA DELLA LEGENDA TORNA AZZURRA (Franco, con la foto della legenda davanti:
+//          «la etichetta la facciamo colorata, nel solito azzurro che usiamo per il titolo della
+//          serie»). Modificato index.html (solo CSS).
+//          🔴 REVOCA LA v6.420, che era una richiesta sua («usiamo il color code anche nelle due
+//          legende») e aveva la ragione scritta: «un colore unico su un elenco di versioni dice:
+//          queste sei cose sono la stessa cosa». E' una decisione nuova, presa guardando lo
+//          schermo, e sta scritta perche' domani non sembri disfatta per distrazione.
+//          📌 E LA SUA FOTO MOSTRA PERCHE' LA SCELTA NON ERA QUELLA CHE SEMBRAVA: con le
+//          definizioni compilate, la legenda non aveva PIU' NESSUNA etichetta - fino alla v6.921
+//          il campo sostituiva la riga intera, nome compreso. Il color code non si vedeva gia'
+//          piu': la scelta era fra «azzurro» e «niente», non fra «azzurro» e «sei colori».
+//          ⬜ Il colore della versione non si perde: resta sulle card, nei filtri e nei titoli dei
+//          riquadri della ricerca - che e' quello che la riga in cima alla legenda promette.
+// v6.922 - ✂️ IL NOME DELLA VERSIONE ESCE DALLA DEFINIZIONE (Franco: «come mai nel campo, nel
+//          suggerimento che hai messo per il valore delle definizioni, e presente la parola da
+//          definire? non rischiamo che si ripeta?»). Modificato js/app.js.
+//          🔴 AVEVA RAGIONE, ED ERA UN DIFETTO VERO. Le frasi del dizionario sono fatte cosi':
+//          «<strong>Variazione ufficiale</strong>: variante di retro documentata…» - il nome sta
+//          DENTRO il testo. Chiedendo a Franco di riscriverlo in ogni campo gli si chiedeva di
+//          mantenere una COPIA del nome, per undici tipologie e due lingue: al primo scritto
+//          diverso, la legenda avrebbe chiamato la stessa versione in due modi. E il giorno che il
+//          sito avesse messo il nome davanti da se', sarebbe uscito DOPPIO - il rischio che lui ha
+//          nominato prima che esistesse.
+//          ✅ Adesso il campo contiene la SOLA definizione, e il nome lo mette la legenda pescando
+//          da `VERSIONI_ARTICOLO`, che e' dove il nome vive gia'. Una fonte sola.
+//          📌 Il segnaposto e il pulsante «parti dalle frasi di oggi» mostrano la frase di oggi
+//          SENZA il nome: il taglio si fa sul `</strong>:` del dizionario, non sul primo «:» che
+//          capita - dentro una definizione i due punti ci possono stare.
+//          📌 E la schermata lo DICE, non lo lascia capire: «scrivi solo la definizione, senza
+//          ripetere il nome della versione».
+//          ⬜ A schermo la riga resta identica: nome in grassetto, due punti, definizione.
+// v6.921 - 🗂️ IL PANNELLO «TIPO DI ARTICOLO» SI DIVIDE IN SOTTO-TAB (Franco: «non mi piace come e
+//          diventato il pannello TDA; c'e troppa roba. non possiamo organizzarlo a sotto tab? uno
+//          per TDA e, se serve, uno generale? oppure uno per argomento? cosi sembra un lenzuolo
+//          sempre piu lungo»). Modificati index.html e js/app.js.
+//          📌 SOTTO-TAB PER ARGOMENTO, ed e' una scelta fra le tre che ha nominato lui: qui dentro
+//          vivono CINQUE tabelle che rispondono a cinque domande diverse, e tutte e cinque parlano
+//          di tutte le tipologie insieme. Un sotto-tab per TDA le avrebbe spezzate in undici
+//          pezzi, e per rispondere a «quali tipologie hanno l'Omaggio?» sarebbe toccato aprirne
+//          undici.
+//          ⬜ LA SUA SECONDA IDEA - uno per TDA - VIVE DOVE SERVIVA: dentro le Definizioni, che e
+//          il blocco che ha fatto traboccare il lenzuolo, si sceglie UNA tipologia da una tendina.
+//          🔴 MA I RIQUADRI SI DISEGNANO TUTTI, e solo uno e' visibile: il salvataggio rilegge
+//          dallo schermo ogni tipologia (v6.918, ed e' cio' che fa funzionare un campo svuotato).
+//          Disegnandone uno solo, le definizioni delle altre dieci si CANCELLEREBBERO al primo
+//          salvataggio, senza che niente lo dica. La tendina cambia cosa si guarda, non cosa esiste.
+//          📌 E le cinque tabelle si disegnano tutte all'apertura del tab: farlo al clic del
+//          sotto-tab vorrebbe dire che «aggiorna dati» ne rinfresca una sola.
 // v6.920 - 🔒 `impersonateUser` CHIEDE CHI SEI, E LE CHIAVI DEI SERVIZI ESTERNI SONO CENSITE
 //          (Franco: «ora fai il punto 2: impersonateUser e le chiavi dei servizi esterni»).
 //          Modificato js/app.js; nasce `prove/prova-sicurezza-chiavi.js`.
@@ -29220,7 +29279,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.920';
+const JS_VERSION = 'v6.924';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -37216,11 +37275,36 @@ function _vociLegendaDellaTDA(sez) {
 function _voceLegendaDi(sez, ch) {
   return (sez === 'retros') ? ('retro' + _maiuscola(ch)) : ch;
 }
+// 🆕 v6.922 (Franco: «come mai nel suggerimento che hai messo per il valore delle definizioni e
+//    presente la parola da definire? non rischiamo che si ripeta?») — IL NOME DELLA VERSIONE NON
+//    STA DENTRO LA DEFINIZIONE.
+// 🔴 AVEVA RAGIONE, ED ERA UN DIFETTO VERO. Le frasi del dizionario sono fatte cosi':
+//    «<strong>Variazione ufficiale</strong>: variante di retro documentata…» - cioe' il nome della
+//    versione E' dentro il testo. Chiedendo a Franco di riscriverlo in ogni campo gli si chiedeva
+//    di mantenere UNA COPIA del nome, per undici tipologie e due lingue: al primo che scriveva
+//    diverso, la legenda avrebbe chiamato la stessa versione in due modi. E se un giorno il sito
+//    avesse messo il nome davanti da se', sarebbe uscito DOPPIO - il rischio che lui ha nominato.
+// ✅ ADESSO IL CAMPO CONTIENE LA SOLA DEFINIZIONE, e il nome lo mette la legenda, preso da dove il
+//    nome vive gia': `VERSIONI_ARTICOLO`. Una fonte sola, e niente da tenere allineato.
+function _nomeVersione(ch, lingua) {
+  if (ch === 'base') return (lingua === 'it') ? 'Versione base' : 'Base version';
+  const v = VERSIONI_ARTICOLO.find(x => x.chiave === ch);
+  return v ? ((lingua === 'it') ? v.it : v.en) : ch;
+}
+
+// La frase di oggi, SENZA il nome e senza i due punti che lo seguono: e' la parte che Franco
+// riscrive. ⚠️ Il taglio si fa sul `</strong>:` del dizionario, non sul primo «:» che capita -
+// dentro una definizione i due punti ci possono stare, e taglierebbero nel mezzo di una frase.
 function _fraseLegendaOggi(sez, ch) {
   const k = 'items.filterLegend.' + _voceLegendaDi(sez, ch);
+  const _soloDef = t2 => {
+    const s = t2 || '';
+    const i = s.indexOf('</strong>:');
+    return (i >= 0) ? s.slice(i + '</strong>:'.length).trim() : s;
+  };
   return {
-    it: (i18n.it && i18n.it[k]) || '',
-    en: (i18n.en && i18n.en[k]) || ''
+    it: _soloDef(i18n.it && i18n.it[k]),
+    en: _soloDef(i18n.en && i18n.en[k])
   };
 }
 
@@ -37237,11 +37321,7 @@ function renderAdminLegendeDefinizioni() {
   if (!box) return;
   const it = currentLang === 'it';
   const def = _LEGENDE_DEF || {};
-  const etichetta = ch => {
-    if (ch === 'base') return it ? 'Versione base' : 'Base version';
-    const v = VERSIONI_ARTICOLO.find(x => x.chiave === ch);
-    return v ? (it ? v.it : v.en) : ch;
-  };
+  const etichetta = ch => _nomeVersione(ch, it ? 'it' : 'en');
   const sezioni = Object.keys(VERSIONI_PER_TDA).filter(s => _vociLegendaDellaTDA(s).length > 1);
 
   // 🆕 v6.919 — IL SEGNAPOSTO E' LA FRASE CHE IL SITO DICE OGGI, non un invito generico.
@@ -37270,12 +37350,36 @@ function renderAdminLegendeDefinizioni() {
           + 'figurina è un retro diverso, su un album è una copertina diversa. '
           + 'Compaiono solo le versioni che quella tipologia ha, secondo la tabella qui sopra. '
           + '<strong>Un campo lasciato vuoto usa la frase di sempre.</strong> Le frasi accettano il grassetto '
-          + 'con <code>&lt;strong&gt;</code>.'
+          + 'con <code>&lt;strong&gt;</code>.<br>'
+          // 🆕 v6.922 — si dice a schermo, non solo nel codice: il nome non va riscritto.
+          + '🔴 <strong>Scrivi solo la definizione, senza ripetere il nome della versione</strong>: quello '
+          + 'lo mette il sito da sé, in grassetto e seguito dai due punti. Esempio: <em>variante di '
+          + 'copertina documentata e ad alta tiratura</em>, non <em>«Variazione ufficiale: variante di…»</em>.'
         : 'Here you write <strong>what each version means</strong>, per item type. Only the versions that type '
-          + 'has are shown. <strong>An empty field keeps the default sentence.</strong>') +
+          + 'has are shown. <strong>An empty field keeps the default sentence.</strong><br>'
+          + '🔴 <strong>Write only the definition — do not repeat the version name</strong>: the site adds it '
+          + 'itself, in bold, followed by a colon.') +
     '</p>' +
-    sezioni.map(sez =>
-      '<div style="margin-bottom:1.1rem;border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;">'
+    // 🆕 v6.921 — SI SCEGLIE UNA TIPOLOGIA DALLA TENDINA, e si vede solo la sua (Franco: «uno per
+    //    TDA [...] così sembra un lenzuolo sempre più lungo»).
+    // 🔴 MA I RIQUADRI SI DISEGNANO TUTTI, e solo uno e' VISIBILE: il salvataggio rilegge dallo
+    //    schermo ogni tipologia e ogni voce (v6.918, ed e' cio' che fa funzionare un campo
+    //    svuotato). Disegnandone uno solo, le definizioni delle altre dieci non sarebbero in
+    //    pagina - e salvando si CANCELLEREBBERO, senza che niente lo dica. La tendina cambia cosa
+    //    si guarda, non cosa esiste.
+    '<div style="margin-bottom:0.9rem;">'
+      + '<label style="font-size:0.85rem;color:var(--text);margin-right:0.5rem;">'
+      + (it ? 'Tipologia:' : 'Item type:') + '</label>'
+      + '<select id="legdef-scelta-tda" onchange="legendeMostraTDA(this.value)" '
+      + 'style="font-size:0.88rem;padding:4px 8px;border-radius:6px;border:1px solid var(--border);'
+      + 'background:var(--bg2);color:var(--text);">'
+      + sezioni.map((sez, i) => '<option value="' + sez + '"' + (i === 0 ? ' selected' : '') + '>'
+          + getSectionLabel(sez) + '</option>').join('')
+      + '</select></div>' +
+    sezioni.map((sez, i) =>
+      '<div class="legdef-tda" id="legdef-blocco-' + sez + '"'
+      + (i === 0 ? '' : ' style="display:none;"') + '>'
+      + '<div style="margin-bottom:1.1rem;border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;">'
       + '<div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-bottom:0.5rem;">'
       + '<span style="font-weight:700;color:var(--accent3);">' + getSectionLabel(sez) + '</span>'
       // 🆕 v6.919 — il pulsante che porta dentro i campi le frasi di oggi, per questa tipologia.
@@ -37295,10 +37399,32 @@ function renderAdminLegendeDefinizioni() {
           + '<div><div style="font-size:0.72rem;color:var(--text);opacity:0.75;">🇮🇹 ITALIANO</div>' + campo(sez, ch, 'it') + '</div>'
           + '<div><div style="font-size:0.72rem;color:var(--text);opacity:0.75;">🇬🇧 ENGLISH</div>' + campo(sez, ch, 'en') + '</div>'
           + '</div></div>').join('')
-      + '</div>').join('') +
+      + '</div></div>').join('') +
     '<button class="btn-primary btn-admin" onclick="salvaLegendeDefinizioni()">'
       + (it ? '💾 Salva le definizioni' : '💾 Save definitions') + '</button>' +
     '<div id="legende-definizioni-feedback" style="font-size:0.85rem;margin-top:0.4rem;display:none;"></div>';
+}
+
+// 🆕 v6.921 — la tendina delle Definizioni: cambia QUALE riquadro si guarda.
+// 📌 I riquadri restano tutti in pagina (vedi la ragione dove si disegnano): questa funzione
+//    tocca solo il `display`, e il salvataggio continua a vedere ogni campo di ogni tipologia.
+function legendeMostraTDA(sez) {
+  document.querySelectorAll('.legdef-tda').forEach(el => {
+    el.style.display = (el.id === 'legdef-blocco-' + sez) ? '' : 'none';
+  });
+}
+
+// 🆕 v6.921 — i sotto-tab del pannello «Tipo di articolo».
+// 📌 Le cinque tabelle sono gia' tutte disegnate quando si apre il tab: qui si sceglie quale si
+//    guarda. Disegnarle solo all'apertura del sotto-tab avrebbe voluto dire che «aggiorna dati»
+//    ne rinfresca una sola, e le altre quattro resterebbero ferme senza dirlo.
+function tdaSubTab(nome) {
+  document.querySelectorAll('.tda-sub').forEach(el => {
+    el.style.display = (el.id === 'tda-sub-' + nome) ? '' : 'none';
+  });
+  document.querySelectorAll('.admin-subtab').forEach(b => {
+    b.classList.toggle('active', (b.getAttribute('onclick') || '').indexOf("'" + nome + "'") >= 0);
+  });
 }
 
 // 🆕 v6.919 — porta le frasi di oggi dentro i campi di UNA tipologia, e non salva niente:
@@ -38408,7 +38534,7 @@ const _RAGGR_VERSIONE = {
   // qui dentro, sotto le pillole che quella legenda definisce, cioe' l'ha promosso a comando - e
   // il colore era rimasto quello di prima. Non e' una scelta estetica: un elemento che cambia
   // mestiere e non cambia veste continua a dichiarare il mestiere vecchio.
-  pieHTML: () => `<button onclick="openFilterLegendModal()" title="${currentLang === 'it' ? 'Cosa significano questi termini?' : 'What do these terms mean?'}" style="background:none;border:none;color:var(--text);font-size:0.75rem;text-decoration:underline;cursor:pointer;padding:0;font-family:inherit;">${currentLang === 'it' ? 'Legenda versioni' : 'Versions glossary'}</button>`,
+  pieHTML: () => `<button onclick="openFilterLegendModal()" title="${currentLang === 'it' ? 'Cosa significano questi termini?' : 'What do these terms mean?'}" style="background:none;border:none;color:var(--text);font-size:0.75rem;text-decoration:underline;cursor:pointer;padding:0;font-family:inherit;white-space:normal;text-align:right;line-height:1.25;">${currentLang === 'it' ? 'Legenda versioni' : 'Versions glossary'}</button>`,
   valoreDi: f => _chiaveTipo(f),
   etichettaDi: val => {
     // 🔄 v6.475 (Franco: *"la pillola «Base» etichettala «Versioni base»"*, poi al
@@ -45954,7 +46080,15 @@ function openFilterLegendModal() {
     //    lingue della sua definizione ci sono gia' (`_legendaDefinizione` legge quella corrente), e
     //    il modale si ridisegna a ogni apertura. E' la stessa trappola del colore (v6.420), presa
     //    dall'altro lato: li' si perdeva l'attributo, qui si perderebbe il testo.
-    if (_suo) return `<li style="--legenda-colore:${col};">${_suo}</li>`;
+    // 🔴 v6.922 — IL NOME LO METTE LA LEGENDA, non Franco dentro il campo. Le frasi del dizionario
+    //    se lo portano dentro («<strong>Variazione ufficiale</strong>: …»), e chiedere di
+    //    riscriverlo in ogni definizione sarebbe chiedere di mantenerne una copia. Qui si prende
+    //    da `VERSIONI_ARTICOLO`, che e' dove il nome vive.
+    // 📌 La riga a schermo resta identica a com'era: nome in grassetto, due punti, definizione.
+    if (_suo) {
+      const _nome = _nomeVersione(_VERSIONE_DI_VOCE_LEGENDA[k] || k, currentLang === 'it' ? 'it' : 'en');
+      return `<li style="--legenda-colore:${col};"><strong>${_nome}</strong>: ${_suo}</li>`;
+    }
     return `<li data-i18n-html="${chiave}" style="--legenda-colore:${col};">${t(chiave)}</li>`;
   }).join('');
   document.getElementById('filter-legend-modal').classList.remove('hidden');
@@ -47496,7 +47630,18 @@ header += `</div>`;
     const _corpoSuo = C.corpoHTML ? C.corpoHTML(C) : '';
     const _corpoRiquadro = _corpoSuo ? _corpoSuo : (C.cappelloHTML ? C.cappelloHTML() : '')
       + (_corpoSuo ? '' : `<div style="display:flex;flex-wrap:${C.unaRiga ? 'nowrap' : 'wrap'};align-items:center;gap:0.4rem;${C.unaRiga ? 'overflow-x:auto;' : ''}${_etichettaSulBordo ? '' : 'margin-top:0.6rem;'}">${chips}`
-      + (C.pieHTML ? `<span style="margin-left:auto;padding-left:0.6rem;flex-shrink:0;white-space:nowrap;">${C.pieHTML()}</span>` : '')
+      // 🔄 v6.924 (Franco: «la voce "legenda versioni" è tagliata; valuta di scriverla su 2
+      //    righe») — IL PIEDE PUÒ ANDARE A CAPO.
+      // 📏 LA CAUSA, letta qui: `white-space:nowrap` più `flex-shrink:0` vuol dire «non ti
+      //    spezzare e non stringerti». In un riquadro stretto quelle due righe insieme non
+      //    lasciano nessuna via d'uscita al testo, e quello che avanza esce fuori.
+      // 📌 NON SI IMPONGONO DUE RIGHE: si toglie il divieto di andare a capo. Dove lo spazio
+      //    c'è, «Legenda versioni» resta su una riga sola; dove manca, si spezza invece di
+      //    essere tagliata. Un `<br>` scritto a mano avrebbe fatto due righe anche su uno
+      //    schermo largo, e sarebbe stato falso in inglese, dove la frase è più corta.
+      // ⚠️ `flex-shrink:0` RESTA: serve a non far schiacciare il piede dalle pillole che gli
+      //    stanno accanto. È il permesso di spezzarsi che mancava, non quello di stringersi.
+      + (C.pieHTML ? `<span style="margin-left:auto;padding-left:0.6rem;flex-shrink:0;white-space:normal;text-align:right;">${C.pieHTML()}</span>` : '')
       + `</div>`)
       // 🆕 v6.515 (Franco: *"TUTTE mettilo in fondo a dx nel blocco filtri"*) — IL COMANDO
       // SU UNA RIGA SUA, ALLINEATO A DESTRA. Non è un angolo nuovo: è lo stesso «in fondo a
