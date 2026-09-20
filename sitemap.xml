@@ -1,18 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- sitemap.xml — v6.589, 5 settembre 2026.
-     UNA riga sola, e non e' pigrizia: `showPage` in app.js tiene catalogo, blog, classifica e
-     altre cinque pagine DIETRO IL LOGIN, e Googlebot e' sempre un visitatore sloggato. Elencarle
-     significherebbe offrire a Google sei indirizzi che rispondono tutti con lo stesso riquadro
-     di accesso.
-     🔴 Il giorno in cui questo file sara' GENERATO dai dati, dovra' leggere dalla stessa sorgente
-     del sito: la regola «salta le serie invisibili» vive dentro getData (v6.584) e un generatore
-     non ci passa. Riscriverla qui a mano sarebbe una seconda copia, e il sintomo di uno sbaglio
-     sarebbe Google che indicizza una serie che il sito nasconde — senza nessun errore. -->
+<!-- generata dalla scheda GSC (v6.643). NON si scrive a mano: le pagine che
+     elenca vengono da _gscPiano, la stessa fonte che le costruisce. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://figurinesgorbions.it/</loc>
-    <lastmod>2026-09-05</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <lastmod>2026-09-20</lastmod>
+  </url>
+  <url>
+    <loc>https://figurinesgorbions.it/serie/sgorbions-serie-1/</loc>
+    <lastmod>2026-09-20</lastmod>
+  </url>
+  <url>
+    <loc>https://figurinesgorbions.it/en/series/sgorbions-series-1/</loc>
+    <lastmod>2026-09-20</lastmod>
+  </url>
+  <url>
+    <loc>https://figurinesgorbions.it/serie/sgorbions-serie-2/</loc>
+    <lastmod>2026-09-20</lastmod>
+  </url>
+  <url>
+    <loc>https://figurinesgorbions.it/en/series/sgorbions-series-2/</loc>
+    <lastmod>2026-09-20</lastmod>
+  </url>
+  <url>
+    <loc>https://figurinesgorbions.it/serie/sgorbions-serie-3/</loc>
+    <lastmod>2026-09-20</lastmod>
+  </url>
+  <url>
+    <loc>https://figurinesgorbions.it/en/series/sgorbions-series-3/</loc>
+    <lastmod>2026-09-20</lastmod>
+  </url>
+  <url>
+    <loc>https://figurinesgorbions.it/serie/sgorbions-holidays/</loc>
+    <lastmod>2026-09-20</lastmod>
+  </url>
+  <url>
+    <loc>https://figurinesgorbions.it/en/series/sgorbions-holidays/</loc>
+    <lastmod>2026-09-20</lastmod>
+  </url>
+  <url>
+    <loc>https://figurinesgorbions.it/serie/spille/</loc>
+    <lastmod>2026-09-20</lastmod>
+  </url>
+  <url>
+    <loc>https://figurinesgorbions.it/en/series/spille/</loc>
+    <lastmod>2026-09-20</lastmod>
   </url>
 </urlset>
