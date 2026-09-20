@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.946">
+<link rel="stylesheet" href="css/style.css?v=6.947">
 
 
 <style>
@@ -237,8 +237,19 @@
    tradita: e' decaduta insieme al disegno che la reggeva.
    📌 Le aree si ridichiarano tutte e quattro: la griglia le nomina a lettere e i figli le
    cercano per nome - una lasciata fuori cadrebbe dove capita, senza nessun errore (v6.591). */
-.hero-top { position:relative; display:grid; grid-template-columns:minmax(0,1fr);
-            grid-template-areas:"logo" "intro" "sx" "dx";
+/* 🔄 v6.947 (Franco: «possiamo provare a mettere i numeroni su una sola riga?») — LE DUE
+   SPONDE VANNO SULLA STESSA RIGA. Erano due righe perché le aree `sx` e `dx` stavano una sotto
+   l'altra in una griglia a UNA colonna (v6.911); adesso la griglia ne ha due e quella riga le
+   ospita entrambe. Ogni sponda resta com'era — `grid-auto-flow:column`, sei voci — quindi
+   dodici numeri su una riga sola.
+   🔴 E «una riga» resta vero per COSTRUZIONE, non finché le voci sono sei: una tipologia nuova
+   si aggiunge come colonna dentro la sua sponda, non apre una riga.
+   ⚠️ QUESTA È LA REGOLA DEL DESKTOP. Sul telefono le aree sono ridichiarate due volte dentro
+   `@media (max-width:860px)` e restano impilate: là dodici colonne non ci stanno. Toccare solo
+   questa è la scelta, non una dimenticanza — ed è la trappola che il commento del logo qui sotto
+   segnala da sempre («E VA FATTO IN DUE POSTI»), girata al contrario. */
+.hero-top { position:relative; display:grid; grid-template-columns:auto auto;
+            grid-template-areas:"logo logo" "intro intro" "sx dx"; justify-content:center;
             align-items:center; justify-items:center;
             gap:0.9rem 1.5rem; width:100%; max-width:1280px; margin:0 auto 1.75rem; }
 /* 🆕 v6.591 — L'<h1> che avvolge il logo non deve portarsi dietro lo stile del browser.
@@ -251,7 +262,14 @@
    dell'860 (v5.948), piu' sotto. Cambiarne uno solo avrebbe dato una home giusta sul
    desktop e scomposta sul telefono — ed e' esattamente il difetto che la v6.585 aveva
    gia' pagato col timbro «IN ARRIVO !». */
-.hero-top .hero-h1 { grid-area:logo; margin:0; padding:0; font-size:inherit; font-weight:inherit; }
+/* 🔄 v6.947 — `grid-area:logo` SI SPOSTA SULLA RIGA, non sta più sull'h1. Dalla v6.947
+   l'h1 vive dentro `.hero-riga-logo` insieme ai due inviti, quindi il figlio diretto della
+   griglia è quel div: l'area lasciata sull'h1 non la vedrebbe nessuno, e la riga finirebbe
+   nella prima cella libera — cioè in mezza pagina, con un pulsante a capo. È la stessa
+   trappola della v6.591, quando l'area passò dall'immagine all'h1.
+   🔴 E VA FATTO IN DUE POSTI: la stessa assegnazione vive anche nella media query dell'860. */
+.hero-top .hero-riga-logo { grid-area:logo; width:100%; }
+.hero-top .hero-h1 { margin:0; padding:0; font-size:inherit; font-weight:inherit; }
 .hero-top .hero-logo-img { margin-top:0; }
 .hero-stats-left   { grid-area:sx; }
 .hero-stats-right  { grid-area:dx; }
@@ -286,6 +304,19 @@
   display:grid; grid-template-rows:auto; grid-auto-flow:column;
   grid-auto-columns:minmax(0,1fr);
   justify-content:center; align-items:start; gap:0.7rem 1.4rem; width:100%; }
+/* 🔄 v6.947 (Franco: «sacrifichiamo "Altri articoli" per fare in modo di usare sempre una sola
+   riga per il titolo di tutti gli altri») — SUL DESKTOP OGNI COLONNA È LARGA QUANTO IL SUO NOME.
+   📏 Misurato: con `minmax(0,1fr)` le colonne sono tutte uguali e strette (77px con undici
+   voci), e «Figurine per album» e «Figurine con retro» andavano a capo lo stesso — togliere
+   «Altri articoli» da solo non bastava. Con `max-content` ognuna prende la larghezza che le
+   serve e nessuna va a capo: misurate tutte e undici, una riga ciascuna.
+   🔴 E LE DUE SPONDE NON SONO PIÙ LARGHE UGUALI, ma ognuna quanto il suo contenuto: la riga
+   esce centrata e compatta invece che stirata da un bordo all'altro.
+   ⚠️ SOLO SOPRA GLI 860px. Sul telefono le colonne restano `1fr`: là `max-content` vorrebbe più
+   larghezza di quanta ce ne sia, e la fila uscirebbe dallo schermo. */
+@media (min-width:861px){
+  .hero-stats-left, .hero-stats-right { grid-auto-columns:max-content; width:auto; }
+}
 
 /* 🆕 v6.816 (Franco) — I COLORI DELLE ISTRUZIONI DI IMPORT. Sue parole, 14 settembre:
    ISTRUZIONI in BLU; «I dettagli del file da caricare:», «Significato delle Colonne», i nomi
@@ -312,11 +343,20 @@
 .hero-stats-side .stat-item { display:block; text-align:center; }
 .hero-stats-side .stat-num { display:block; text-align:center; line-height:1.1; margin:0; }
 .hero-stats-side .stat-label { display:block; text-align:center; margin:2px 0 0; white-space:nowrap; }
+/* 🔄 v6.947 — SU UNA RIGA SOLA LE ETICHETTE DEVONO POTER ANDARE A CAPO. Con dodici colonne
+   al posto di sei ognuna è larga la metà, e `nowrap` faceva uscire le due lunghe dalla loro
+   colonna: «Figurine per album» e «Figurine con retro» si toccavano. È la stessa forma del
+   `minmax(0,1fr)` di poco sopra — una voce dal nome lungo non deve decidere per le altre.
+   📌 Il CORPO non si tocca: Franco ha chiesto più piccoli i numeri, non le etichette. Qui si
+   concede solo di andare a capo. */
+@media (min-width:861px){
+  .hero-stats-side .stat-label { white-space:normal; line-height:1.15; }
+}
 /* v6.063 (Franco) — numeroni un filo piu' piccoli: 2.53rem -> 2.2rem e 0.98 -> 0.88 (circa -12%).
    I valori originali stanno in css/style.css; qui si sovrascrivono soltanto quelli DENTRO l'hero
    (.hero-stats-side), perche' .stat-num e .stat-label sono usati anche altrove e non e' detto che
    debbano rimpicciolirsi anche li'. Sul telefono non si tocca niente: li' sono gia' 1.6rem. */
-.hero-stats-side .stat-num   { font-size:2.2rem; }
+.hero-stats-side .stat-num   { font-size:1.7rem; }
 .hero-stats-side .stat-label { font-size:0.88rem; }
 
 /* v6.183 (Franco: "nel mobile i numeroni verdi della homepage sono sin troppo grandi").
@@ -333,7 +373,7 @@
    Franco ha scelto 1,4rem, cioe' un filo SOTTO il valore previsto: la stessa proporzione (-12%)
    con cui la v6.063 aveva ridotto quelli del desktop. */
 @media (max-width:860px) {
-  .hero-stats-side .stat-num   { font-size:1.4rem; }
+  .hero-stats-side .stat-num   { font-size:1.15rem; }
   .hero-stats-side .stat-label { font-size:0.7rem; }
 }
 
@@ -451,8 +491,10 @@
    opposto; v6.897 le alzava sopra i numeroni sul solo telefono - «Spostare il <p> nell'HTML
    l'avrebbe messa sopra i numeri anche sul DESKTOP, dove Franco non ha chiesto niente»; v6.898
    alzava anche la seconda. Da oggi quella frase e' decaduta: sul desktop Franco ha chiesto. */
-#hero-desc-main { order:-1; margin:0 0 0.2rem; }
-#hero-tagline   { order:-1; margin:0 0 0.9rem; }
+/* 🗑️ v6.947 — QUI STAVANO `#hero-desc-main` e `#hero-tagline` con il loro `order:-1`.
+   Adesso i due <p> vivono dentro `.hero-due-righe`, e l'ordine lo chiede il contenitore: un
+   `order` su un elemento che non e' piu' figlio diretto del flex non fa niente, e lasciarlo
+   avrebbe raccontato una regola che non e' piu' in vigore. */
 /* 🔄 v6.901 (Franco: «la frase "in questo sito troverai" mettila anche nella versione
    desktop») - LA RIGA SI VEDE OVUNQUE.
    🔴 LA v6.900 L'AVEVA SPENTA SUL DESKTOP, E LA RAGIONE SCRITTA ERA GIUSTA PER UN'ORA: «li' i
@@ -611,7 +653,8 @@
      griglia), le MISURE restano sull'immagine. Il !important sulle misure serve
      ancora, per la stessa ragione della v5.948: il CSS del sito impone
      width:65% e max-width:320px. */
-  #hero .hero-top .hero-h1 { grid-area:logo; justify-self:stretch; }
+  #hero .hero-top .hero-riga-logo { grid-area:logo; justify-self:stretch; }
+  #hero .hero-top .hero-h1 { justify-self:stretch; }
   #hero .hero-top .hero-logo-img {
               max-width:190px !important; width:100% !important; margin:0 auto !important;
               margin-top:0 !important; }
@@ -1182,7 +1225,176 @@ button.back-btn { color:#ffffff; }
    desktop. Franco lo ha visto e va bene. */
 :root { --etichetta-retro: #bfae91; }
 :root { --nome-entita: #4db8ff; }  /* v6.399 - azzurro. Stesso valore di --info, che il sito gia usa */
+/* 🆕 v6.947 (Franco: «registrati o accedi è viola ma il viola è dei titoli; che ne dici di un
+   giallo acceso?») — IL GIALLO DELL'INVITO A ENTRARE.
+   🔴 NON È UN GIALLO NUOVO: è `#ffd166`, quello del pulsante «Vai al sito Internet
+   figurineSgorbions.it !» delle dieci pagine per Google (`--acc` dentro `_GSC_CSS`). Là dice
+   «entra nel sito», qui dice «entra nel sito»: stesso mestiere, stessa tinta, nei due versi.
+   ⚠️ E NON SI RIUSA `--warn` (#ffb400): quel giallo significa già «attenzione», e un invito a
+   registrarsi colorato da avviso dice al visitatore la cosa sbagliata. Nemmeno `#ffd84d`, che
+   è `COL_CATEGORIA`, il giallo con cui il sito scrive «CATEGORIA:» sulle card. */
+:root { --invito: #ffd166; }
 
+
+/* 🆕 v6.947 — LA VETRINA DELLA HOME (fascia delle serie + griglia sfumata).
+   🔴 L'INVITO È GRANDE PERCHÉ FRANCO L'HA CHIESTO GRANDE («stesso messaggio, più grande, sopra
+   la fascia»): è la frase che deve far entrare, non una nota a piè di pagina. */
+/* 🔄 v6.947 — VIOLA, NON LIME (Franco: «ok che il lime è dei numeri, allora il nome del sito
+   e "registrati o accedi" non devono essere lime»). È la sua regola del 25 agosto: «tutti i
+   conteggi sono lime, il viola è solo per i titoli grandi» — e questo è un titolo che non conta
+   niente. Non azzurro: `--nome-entita` dice «questa parola è il nome di un'entità del catalogo».
+   🔄 v6.947 — ED È UN <button> (Franco: «deve portare alla form di login-registrazione»):
+   qui si azzera l'aspetto che il browser dà ai bottoni e si tiene solo il dito. */
+.vetrina-invito{font-family:var(--font-ui);font-weight:800;font-size:1.45rem;letter-spacing:.02em;
+  text-align:center;color:var(--invito);margin:0 0 1rem;
+  display:block;width:100%;background:none;border:0;padding:0;cursor:pointer;}
+.vetrina-invito:hover{text-decoration:underline;}
+/* 🔄 v6.947 — DA GRIGLIA A FILA CHE SCORRE. Con dieci serie la griglia andava a capo e la
+   fascia si mangiava due righe; una fila che scorre ne occupa sempre una, qualunque sia il
+   numero delle serie — è vero per costruzione, non finché sono dieci.
+   📌 Le proprietà sono quelle del carosello della home (`#home-carosello`): scorrimento
+   morbido e aggancio a scatti. Copiare la ricetta invece del risultato è la stessa scelta
+   fatta per la larghezza. */
+.vetrina-serie{display:flex;gap:1rem;overflow-x:auto;scroll-behavior:smooth;
+  scroll-snap-type:x mandatory;padding:.2rem .4rem .8rem;margin:0;}
+.vetrina-card{flex:0 0 150px;scroll-snap-align:start;}
+/* 📌 Aperta la griglia di una serie la fila non c'entra più: torna un blocco normale, o le
+   duecento figurine scorrerebbero di lato invece di andare a capo. */
+.vetrina-serie.aperta{display:block;overflow:visible;scroll-snap-type:none;}
+.vetrina-largo{position:relative;}
+.vetrina-freccia{position:absolute;top:50%;transform:translateY(-50%);z-index:2;border:none;
+  background:rgba(0,0,0,.55);color:var(--text);font-size:1.4rem;line-height:1;padding:.5rem .6rem;
+  border-radius:999px;cursor:pointer;}
+#vetrina-prec{left:-6px;} #vetrina-succ{right:-6px;}
+.vetrina-serie.aperta ~ .vetrina-freccia,.vetrina-largo:has(.aperta) .vetrina-freccia{display:none;}
+/* 🔄 v6.947 (Franco: «la fascia falla larga quanto il carosello») — STESSA RICETTA DEL
+   CAROSELLO, NON UN NUMERO NUOVO. È il blocco che allarga il carosello in css/style.css (lo si
+   trova cercando `carosello` fra le media query dell'861), riga per
+   riga: il margine al 50% più la traslazione all'indietro servono a uscire dal contenitore
+   stretto (`.section-inner`, 1100px), e `calc(100vw - 4rem)` è la finestra meno i margini che
+   ci sono davvero — la home ne ha 2rem per lato, come le schede.
+   ⚠️ Copiare `96vw` da un'altra griglia è già costato una release (v6.461): sfondava a
+   destra, perché il numero era giusto in un contorno diverso. Qui si copia la RICETTA e le
+   due larghezze restano uguali anche il giorno che quella cambia.
+   📌 Sotto gli 861px non si applica, come per il carosello: là la fascia occupa già tutto. */
+@media (min-width:861px){
+  .vetrina-largo{width:min(1800px,calc(100vw - 4rem));max-width:1800px;
+    margin-left:50%;margin-right:0;transform:translateX(-50%);}
+}
+/* 📌 La card della serie è un <button>: si clicca con il dito e con la tastiera, e un lettore di
+   schermo la annuncia come comando. Un contenitore muto con un `onclick` avrebbe l'aspetto giusto e nessuna di
+   queste tre cose. */
+.vetrina-card{display:flex;flex-direction:column;align-items:center;gap:.5rem;background:var(--card);
+  border:1px solid var(--border);border-radius:12px;padding:.8rem .6rem;cursor:pointer;
+  font:inherit;color:inherit;transition:transform .15s ease,border-color .15s ease;}
+.vetrina-card:hover{transform:translateY(-3px);border-color:var(--accent);}
+.vetrina-nome{font-family:var(--font-ui);font-weight:800;font-size:.92rem;line-height:1.2;
+  color:var(--nome-entita);text-align:center;}
+.vetrina-card img{width:100%;height:auto;display:block;border-radius:8px;}
+.vetrina-nocop{display:block;width:100%;aspect-ratio:3/4;border-radius:8px;background:var(--card2);}
+/* 🔄 v6.947 (Franco: «la scritta col numero di articoli della serie, nella sua card, in
+   bianco»). Era `--muted`, cioè il grigio di ciò che conta poco: quel numero invece è
+   l'argomento — dice quanta roba c'è dietro quella copertina. */
+.vetrina-conta{font-size:.82rem;color:var(--text);}
+
+/* la griglia che si apre dentro la fascia */
+.vetrina-serie.aperta{display:block;}
+.vetrina-testa{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.9rem;}
+/* 🔄 v6.947 (Franco: «il bottone torna alle serie, bianco come tutti i bottoni di ritorno
+   del sito») — NON UN BIANCO SCRITTO QUI: LA CLASSE `.back-btn` DEL SITO.
+   🔴 Un colore ricopiato sarebbe giusto oggi e diverso il giorno che Franco cambia i
+   bottoni di ritorno — e cambierebbe dappertutto tranne che qui, senza nessun errore. Con
+   la classe vera questo bottone è uno di quelli, non uno che gli somiglia.
+   📌 Resta solo il margine: `.back-btn` ne porta 1,5rem sotto, che dentro la riga del
+   titolo aprirebbe un buco. */
+.vetrina-torna{margin-bottom:0;}
+.vetrina-titolo{font-family:var(--font-ui);font-weight:800;font-size:1.05rem;color:var(--nome-entita);}
+.vetrina-griglia{list-style:none;padding:0;margin:0;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.7rem;}
+.vetrina-fig{position:relative;background:var(--card);border-radius:10px;overflow:hidden;
+  display:flex;flex-direction:column;cursor:pointer;}
+.vetrina-fig img{width:100%;height:auto;display:block;margin-top:auto;}
+.vetrina-fig .vetrina-nofoto{display:block;width:100%;aspect-ratio:3/4;background:var(--card2);}
+.vetrina-fig .vetrina-n{display:block;padding:.4rem .5rem 0;font-size:.72rem;font-weight:800;
+  color:var(--accent);margin-top:auto;}
+.vetrina-fig img + .vetrina-nm{margin-top:auto;}
+.vetrina-fig .vetrina-nm{display:block;padding:0 .5rem .5rem;font-weight:700;font-size:.76rem;line-height:1.2;}
+/* 🔴 LO SFUMATO È COSMETICO, ED È DICHIARATO NEL COMMENTO DI `_vetrinaFigCard`: la foto sta
+   nella pagina, il filtro la nasconde all'occhio e non al sorgente. Va bene perché dietro non
+   c'è niente di riservato — quelle foto sono già pubbliche sulle pagine per Google.
+   📌 `filter` e non un'immagine sfocata a parte: una seconda immagine vorrebbe dire caricarne
+   due per figurina e tenerle allineate. */
+.vetrina-fig.sfumata img{filter:blur(7px) saturate(.5);}
+.vetrina-fig.sfumata .vetrina-nm,.vetrina-fig.sfumata .vetrina-n{filter:blur(3px);}
+.vetrina-velo{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:.5rem;font-family:var(--font-ui);font-weight:800;font-size:.72rem;
+  line-height:1.25;color:var(--text);background:rgba(10,8,20,.66);}
+/* 🔄 v6.947 (Franco: «la scritta "registrati o accedi per vedere" sulle card delle figurine
+   non si legge molto in viola») — SUL VELO LA FRASE È BIANCA, E IL VELO È PIÙ FITTO (.55 → .66).
+   🔴 QUI LA STESSA FRASE HA UN COLORE DIVERSO DALL'INVITO, ED È VOLUTO. Sotto la fascia quel
+   testo sta su un fondo piatto e scuro, e il viola si legge; qui sta sopra una FOTO sfocata,
+   che è chiara, colorata e diversa a ogni card. Un colore che dipende da cosa c'è sotto non è
+   un colore, è una scommessa — e le copertine non le sceglie il codice.
+   📌 Il bianco non ruba nessun significato: il lime è dei conteggi, il viola dei titoli
+   grandi, l'azzurro dei nomi. Il bianco è il colore del testo e basta. */
+/* 📌 v6.947 — il velo porta LA STESSA FRASE dell'invito, quindi porta anche lo stesso
+   colore: due tinte per una frase sola sarebbero due decisioni da tenere uguali. */
+@media (max-width:640px){
+  .vetrina-invito{font-size:1.15rem;}
+  .vetrina-serie{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.7rem;}
+  .vetrina-griglia{grid-template-columns:repeat(auto-fill,minmax(95px,1fr));gap:.5rem;}
+}
+
+/* 🆕 v6.947 — IL NOME DEL SITO SOPRA IL LOGO (Franco: «il sito non dice come si chiama, nella
+   home»; «mettila sopra al logo, non sotto»).
+   🔴 `order:-2` lo mette sopra tutto: `#hero` è una colonna flex e il posto a schermo lo decide
+   l'ordine, non la riga nell'HTML — è la stessa medicina della v6.910 per le due frasi.
+   📌 Non ripete «il database non ufficiale»: quella frase sta nella riga subito sotto, e dirla
+   due volte di fila sarebbe rumore. Qui c'è solo il nome, che è quello che mancava. */
+/* 🗑️ v6.947 — lo stile della riga del nome se n'è andato con la riga. */
+/* 🔄 v6.947 — LE DUE FRASI SU UNA RIGA SOLA. L'`order:-1` si sposta dal singolo <p> al loro
+   contenitore: dentro un flex, l'ordine lo chiede il figlio diretto di `#hero`, che adesso è il
+   div. I due <p> restano due, con le loro chiavi di dizionario. */
+.hero-due-righe{order:-1;display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;
+  gap:.2rem .7rem;margin:0 0 .7rem;}
+.hero-due-righe .hero-desc{margin:0;}
+.hero-due-righe .hero-desc + .hero-desc::before{content:'\00B7';margin-right:.7rem;color:var(--muted);}
+/* 🆕 v6.947 — I DUE INVITI AI LATI DEL LOGO, uno a specchio dell'altro.
+   ⚠️ `flex-wrap` non è decorativo: sotto una certa larghezza i tre pezzi non ci stanno in riga e
+   devono impilarsi, o il logo si riduce a un francobollo. */
+.hero-riga-logo{display:flex;align-items:center;justify-content:center;gap:1.6rem;flex-wrap:wrap;}
+.hero-riga-logo .hero-h1{margin:0;}
+.hero-cta-lato{white-space:normal;max-width:230px;font-size:1.05rem;padding:.75rem 1.4rem;}
+/* 🆕 v6.947 — IL NOME IN BARRA. Sotto gli 860px si spegne: là lo spazio non c'è. */
+#navbar{position:relative;}
+#navbar .nav-nome-sito{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;
+  /* 🔄 v6.947 (Franco: «il titolo nella navbar è ancora piccolo; almeno il doppio del
+     font») — 1,72rem, cioè esattamente il doppio di .86. 📏 La barra è alta 64px fissi e il
+     testo ne occupa 27,5: ci sta senza spingere, e il centro è vuoto fino a 1245px. */
+  font-family:var(--font-ui);font-weight:800;font-size:1.72rem;color:var(--accent3);
+  white-space:nowrap;pointer-events:none;}
+@media (max-width:860px){
+  .hero-riga-logo{gap:.8rem;}
+  .hero-cta-lato{font-size:.95rem;padding:.6rem 1rem;max-width:150px;}
+  .nav-nome-sito{display:none;}
+}
+
+/* 🆕 v6.947 (Franco: «lo scopo era tirare su tutto il resto») — L'ARIA SOTTO LA BARRA.
+   📏 Misurato, non stimato: fra il fondo della navbar e la prima riga dell'hero c'erano 79px, e
+   non erano di nessuno — 56 di `.page` (lo stacco che ogni pagina lascia sotto la barra fissa) più
+   32 di `.section` sull'hero. La barra è alta 64px e `#page-home` comincia già sotto di lei: quei
+   56 non sono distanza di sicurezza, sono spazio vuoto.
+   ✅ Con 16 + 8 ne restano 22, e tutto sale di 58px: la fascia comincia a 402 invece che a 460.
+   🔴 SI SCRIVE SUGLI ID, NON SULLE CLASSI: `.page` e `.section` vestono tutte le schermate del
+   sito, e stringerle qui vorrebbe dire stringerle ovunque — compresi i posti dove quell'aria
+   serve. Qui si tocca la sola home, che è quella che Franco sta guardando.
+   ⚠️ E solo sopra gli 860px: sul telefono la barra si comporta diversamente (hamburger, altezze
+   proprie) e quello stacco non è stato misurato. Toccarlo alla cieca è il modo di rompere una
+   schermata che nessuno sta guardando. */
+@media (min-width:861px){
+  #page-home{padding-top:16px;}
+  #hero{padding-top:8px;}
+}
 </style>
 </head>
 <body>
@@ -1342,6 +1554,17 @@ button.back-btn { color:#ffffff; }
       <button class="btn-logout" onclick="logout()" data-i18n="nav.logout">Logout</button>
     </div>
   </div>
+  <!-- 🔄 v6.947 (Franco: «il nome del sito, in home, da sloggati, mettilo nella navbar, tanto
+       è vuota al centro») — IL NOME SALE IN BARRA E LASCIA L'HERO.
+       📏 Misurato: l'hero passa da 405 a 374px, e sono trenta pixel guadagnati dove servono —
+       sopra la fascia. La barra è alta 64px fissi e li occupa comunque: il nome non ne costa uno.
+       🔴 STA FUORI DALLA `.nav-brand` E CENTRATO IN ASSOLUTO, non infilato fra i figli: le
+       regole del telefono agganciano il blocco della versione PER POSIZIONE (`.nav-logo + div`),
+       e un elemento in mezzo le avrebbe staccate in silenzio. In più il centro vero della barra
+       non coincide con nessun elemento del flex: qui lo si prende, non lo si insegue.
+       ⚠️ `pointer-events:none` perché è una scritta, non un comando: sopra ci passa il mouse
+       diretto a ciò che c'è sotto. -->
+  <span class="nav-nome-sito">figurineSgorbions.it</span>
 </nav>
 
 <!-- ==================== HOME PAGE ==================== -->
@@ -1457,7 +1680,19 @@ button.back-btn { color:#ffffff; }
        ⚠️ Il margine e il corpo di <h1> sono azzerati nel CSS qui sopra: senza, il logo si
        sposta e si rimpicciolisce. E' l'unico modo in cui questa release puo' rompere
        qualcosa, e si vede a occhio. -->
-  <h1 class="hero-h1"><img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions — le figurine italiane anni '90" style="max-width:440px;width:100%;margin:0 auto;display:block;"></h1>
+  <!-- 🆕 v6.947 (Franco: «il pulsante "inizia a collezionare gli sgorbions" prova a metterlo
+       alla dx di hero, con una sua copia a specchio a sx») — DUE INVITI, UNO PER LATO DEL LOGO.
+       🔴 E QUELLO SOTTO IL CAROSELLO SE N'E' ANDATO: sarebbero state tre copie dello stesso
+       invito nella stessa pagina. Non e' un ripensamento della v6.072, e' la stessa decisione
+       portata dove Franco l'ha chiesta.
+       ⚠️ DUE ELEMENTI CON LO STESSO `data-i18n` e id diversi: il dizionario riempie ogni
+       elemento che porta la chiave, quindi la copia si traduce da se'. Gli id restano distinti
+       perche' un id doppio e' un documento non valido e `getElementById` ne vedrebbe uno solo. -->
+  <div class="hero-riga-logo">
+    <button class="btn-primary hero-cta-lato" id="btn-start-collecting-sx" onclick="openAuth('register')" data-i18n="hero.cta2">Inizia a collezionare gli Sgorbions</button>
+  <h1 class="hero-h1"><img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="figurineSgorbions.it — il database degli Sgorbions" style="max-width:360px;width:100%;margin:0 auto;display:block;"></h1>
+    <button class="btn-primary hero-cta-lato" id="btn-start-collecting-dx" onclick="openAuth('register')" data-i18n="hero.cta2">Inizia a collezionare gli Sgorbions</button>
+  </div>
   <div class="hero-stats-side hero-stats-right" id="hero-stats-right" style="display:none;">
     <!-- v5.940 — "Mia lista / Totale Inventario" tolto dai numeroni della home (Franco).
          Il dato resta nel profilo e nel contatore in navbar; updateOwnedCounter regge l'assenza
@@ -1478,13 +1713,63 @@ button.back-btn { color:#ffffff; }
          due righe attaccate al logo di sopra. Quel margine non esiste piu' - da sopra il logo
          tirerebbe il blocco dentro la navbar - e i commenti sono stati riscritti invece di
          restare a spiegare un codice che non c'e'. -->
-    <p class="hero-desc" id="hero-desc-main" data-i18n="hero.desc">Il database non ufficiale dedicato alla leggendaria serie italiana degli anni '90.</p>
-    <p class="hero-desc" id="hero-tagline" data-i18n="hero.tagline">Fatto con 💚 da collezionisti, per collezionisti.</p>
+    <!-- 🗑️ v6.947 — QUI STAVA IL NOME DEL SITO, nato in questa stessa release e salito in
+         barra poche ore dopo (Franco: «tanto è vuota al centro»). La barra lo mostra senza
+         costare un pixel all'hero; qui ne costava trenta, proprio sopra la fascia. -->
+    <!-- 🔄 v6.947 (Franco: «mettila su una sola riga») — LE DUE FRASI IN UN CONTENITORE SOLO.
+         Senza involucro restano due figli della colonna flex, cioe' due righe: `display:inline`
+         su un figlio flex non lo rende in linea. Il separatore e' un punto mediano scritto nel
+         CSS, cosi' le due frasi restano due voci del dizionario e non una stringa sola. -->
+    <div class="hero-due-righe">
+      <p class="hero-desc" id="hero-desc-main" data-i18n="hero.desc">Il database non ufficiale dedicato alla leggendaria serie italiana degli anni '90.</p>
+      <p class="hero-desc" id="hero-tagline" data-i18n="hero.tagline">Fatto con 💚 da collezionisti, per collezionisti.</p>
+    </div>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
     <div class="hero-cta">
       
     </div>
     
+  </section>
+
+  <!-- 🆕 v6.947 — LA VETRINA: la fascia delle serie per chi non ha fatto login.
+       Franco: «una fascia, sotto al carosello, con le sole copertine delle serie; sopra alla foto
+       il nome della serie; sotto alla foto le numeriche; foto cliccabile; al click apro la nostra
+       griglia delle fcr mostrando però schede alterne buone-sfumate (una sì una no)».
+       🔴 NASCE `display:none` e la accende `renderHomeSeries()`, come il carosello qui sopra:
+       una fascia vuota con un invito sopra sarebbe un'etichetta orfana, e a chi ha fatto login
+       non deve comparire affatto.
+       🔴 IL CONTENITORE SI CHIAMA `home-series-grid` E NON È UN NOME NUOVO: `renderHomeSeries()`
+       lo cercava da chissà quando senza trovarlo. Il codice c'era, il posto no. -->
+  <!-- 🔄 v6.947 (Franco: «alzala un po'; avvicinala agli score») — IL MARGINE NEGATIVO MANGIA
+       LO SPAZIO CHE LA SEZIONE LASCIA SOTTO L'HERO. 📏 Misurato: fra il fondo dei numeri e la
+       prima copertina c'erano 54px (28 di margine della griglia dell'hero più 32 di padding
+       della sezione); con -2rem ne restano una ventina.
+       📌 Non è un numero inventato: è lo stesso -2rem con cui il carosello qui sotto risolve
+       lo stesso problema dalla v6.063. -->
+  <section class="section" id="home-vetrina-sez" style="display:none;padding-top:0;margin-top:-2rem;">
+    <div class="section-inner">
+      <!-- 🔄 v6.947 (Franco: «mettila sotto le serie, così le alziamo ancora un po'») —
+           L'INVITO STA SOTTO LA FASCIA. Non è solo spazio guadagnato: le copertine salgono
+           sopra la piega, e la frase arriva dopo aver fatto vedere qualcosa, che è la stessa
+           ragione per cui «Esplora l'Inventario» era sceso sotto il carosello (v6.062). -->
+      <!-- 🔴 v6.947 — È UN <button>, NON UN <p> CON UN `onclick`: un bottone lo raggiunge il
+           TAB, lo aziona INVIO, e un lettore di schermo lo annuncia come comando. Un paragrafo
+           cliccabile ha l'aspetto giusto e nessuna delle tre cose — è la stessa ragione per cui
+           le card della fascia sono bottoni.
+           🔄 v6.947 (Franco: «in quel caso la scritta viola la metti sopra») — È RISALITO SOPRA
+           LA FILA. Era sceso sotto per alzare le copertine; con la fila a carosello le
+           copertine sono già alte, e l'invito torna dove si comincia a leggere. -->
+      <button type="button" class="vetrina-invito" id="vetrina-invito" onclick="vetrinaChiediAccesso()">Registrati o accedi per vedere</button>
+      <!-- 🆕 v6.947 (Franco: «la fascia occupa 2 righe; non puoi farla a carosello così che
+           occupi sempre una sola riga») — LA FILA SCORRE, NON VA A CAPO.
+           📌 Le frecce e il contenitore sono quelli del carosello qui sotto, non una seconda
+           invenzione: stessa forma, stesso posto, stesso mestiere. -->
+      <div class="vetrina-largo">
+        <button type="button" class="vetrina-freccia" id="vetrina-prec" aria-label="Precedente" onclick="vetrinaScorri(-1)">&#8249;</button>
+        <div id="home-series-grid" class="vetrina-serie"></div>
+        <button type="button" class="vetrina-freccia" id="vetrina-succ" aria-label="Successivo" onclick="vetrinaScorri(1)">&#8250;</button>
+      </div>
+    </div>
   </section>
 
   <!-- CAROSELLO (v6.051) — vetrina di figurine a caso. Sta FUORI dal blocco riservato a chi ha
@@ -1531,11 +1816,14 @@ button.back-btn { color:#ffffff; }
            veniva il pulsante e perche' c'era passato. -->
       <!-- v6.072 (Franco) — anche "Inizia a collezionare" scende qui: i due inviti stanno
            insieme, dopo l'assaggio. Nell'hero restavano prima di aver fatto vedere qualcosa. -->
-      <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;margin-top:1.2rem;">
-        <button class="btn-primary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Inizia a collezionare gli Sgorbions</button>
-      </div>
+      <!-- 🗑️ v6.947 — QUI STAVA "Inizia a collezionare gli Sgorbions", sceso sotto il
+           carosello con la v6.072. Dalla v6.947 ce ne sono due ai lati del logo (Franco), e
+           tenerne una terza qui avrebbe voluto dire lo stesso invito tre volte in una pagina. -->
     </div>
   </section>
+
+
+
 
   <!-- LOGGED IN CONTENT -->
   <div id="home-logged-in-content" style="display:none;">
@@ -5109,7 +5397,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.946"></script>
+<script src="js/app.js?v=6.947"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5133,7 +5421,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.946'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.947'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
