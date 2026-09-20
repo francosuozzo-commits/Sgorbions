@@ -1,6 +1,27 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.946 - 🏷️ LE SOTTOSEZIONI PER CATEGORIA NELLE PAGINE PER GOOGLE (Franco: «nella sezione
+//          dedicata ai retro, puoi elencare i retro per categoria ed indicare il nome della
+//          categoria prima di ogni sottosezione? tanto la categoria c'è per ogni retro»).
+//          Modificato il solo js/app.js.
+//          🔴 LA REGOLA NON NOMINA I RETRO: `_gscPartiPerCategoria` spezza un blocco ovunque una
+//          categoria ci sia, e oggi i retro sono la risposta che i dati danno a quella domanda.
+//          📏 MISURATO SUL SITO VIVO, non dedotto: `category` è pieno SOLO sui retro, e lì al
+//          100% — serie 1 72/72 in 6 categorie, serie 2 247/247 in 9, serie 3 155/155 in 31.
+//          Su figurine, album, bustine, spille, tatuaggi, trasferelli e cartoncini è vuoto su
+//          tutti. Un `if (sez === 'retros')` darebbe oggi lo stesso risultato, e domani sarebbe
+//          la ragione per cui una pagina non cambia quando Franco popola un'altra tipologia.
+//          🔴 CHI SONO E IN CHE ORDINE lo dice `_retroCatCounts`, la stessa funzione dei due
+//          riquadri «Retro per categoria» del sito (alfabetico, `localeCompare('it')`). Un
+//          `sort` scritto qui sarebbe un secondo criterio accanto a quello.
+//          ⚠️ E la domanda «vale la pena spezzare?» è quella di `_categorieDannoUnRiquadro`: se
+//          l'unico gruppo è quello senza categoria non si spezza, perché «(Senza categoria)»
+//          sopra l'intera griglia direbbe solo che un campo non è in uso.
+//          🎨 Nasce `h4.cat`, e il suo giallo è `COL_CATEGORIA` — la costante con cui il sito
+//          scrive «CATEGORIA:» sulle card. Non è una variabile CSS, quindi non passa da
+//          `getComputedStyle`: la nomina `_gscColoriDalSito`, che è il posto dove questa pagina
+//          prende in prestito i colori del sito invece di ricopiarli.
 // v6.945 - 🗂️ LA PAGINA PER GOOGLE MOSTRA TUTTI GLI ARTICOLI, NON PIÙ LE SOLE FIGURINE
 //          (Franco: «tutti gli articoli in versione base, senza distinzione di TDA; se la serie
 //          non ha sottoserie, metti una sezione per tda; se la serie ha sottoserie, metti una
@@ -29620,7 +29641,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.945';
+const JS_VERSION = 'v6.946';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -62451,6 +62472,20 @@ h2{font-size:1.35rem;margin:2.2rem 0 .3rem}
    finirebbero così com'erano nel CSS servito da Google. Le righe che aprono un commento le
    scusa il §E7 di prova-v6374; queste, che lo continuano, no. */
 h3.ss{color:var(--lime);font-size:1.05rem;margin:1.8rem 0 .5rem;letter-spacing:.02em}
+/* 🆕 v6.946 — IL NOME DELLA CATEGORIA SOPRA LA SUA SOTTOSEZIONE (Franco: «indicare il nome
+   della categoria prima di ogni sottosezione»). Piu' piccolo dell'h3 che gli sta sopra: i due
+   titoli non devono sembrare dello stesso rango, ed e' la stessa ragione per cui l'h3 e' piu'
+   piccolo dell'h2. Quattro livelli di titolo in pagina, quattro misure.
+   🔴 IL GIALLO E' QUELLO CHE IL SITO USA PER LA CATEGORIA (la costante COL_CATEGORIA, cioe'
+   la riga CATEGORIA: delle card), e arriva da li' invece di essere ricopiato: vedi
+   _gscColoriDalSito. Scritto qui sarebbe la seconda copia di un valore che vive in app.js.
+   📌 Niente text-transform: i nomi delle categorie nei dati sono GIA' maiuscoli
+   (CERTIFICATO, DIPLOMA), e una trasformazione direbbe due volte la stessa cosa — tacendo il
+   giorno che Franco ne scrive una in minuscolo apposta.
+   ⚠️ QUI DENTRO NON C'E' UN SOLO APICE INVERSO, e la prima stesura ne aveva tre: questo
+   commento vive in una template literal, e il primo apice la CHIUDE. E' la quarta volta in due
+   giorni, l'ultima proprio scrivendo la riga che lo vieta. */
+h4.cat{color:var(--categoria);font-size:.92rem;font-weight:800;letter-spacing:.03em;margin:1.4rem 0 .4rem}
 .hint{color:var(--dim);font-size:.9rem;margin:0 0 1.1rem}
 .g{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.9rem}
 .c{background:var(--card);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
@@ -62510,8 +62545,12 @@ function _gscColoriDalSito() {
   const v = (n) => (radice.getPropertyValue(n) || '').trim() || 'var(--txt)';
   // 🆕 v6.941 — `--lime` è `--accent`, l'accento del sito: quello dei titoletti dell'hub,
   //    e quello che Franco chiama «il solito colore lime».
+  // 🆕 v6.946 — `--categoria` NON viene dal CSS ma da `COL_CATEGORIA`, la costante di
+  //    questo stesso file: è il giallo con cui il sito scrive «CATEGORIA:» sulle card, e non è
+  //    una variabile CSS, quindi `getComputedStyle` non la conosce. Nominarla qui è un
+  //    riferimento; scriverne il valore dentro `_GSC_CSS` sarebbe la seconda copia.
   return ':root{--nome:' + v('--nome-entita') + ';--viola:' + v('--accent3')
-       + ';--lime:' + v('--accent') + '}';
+       + ';--lime:' + v('--accent') + ';--categoria:' + COL_CATEGORIA + '}';
 }
 
 function _gscNumeriche(s, L) {
@@ -62652,6 +62691,34 @@ const GSC_FIGURINE = ['attaccare', 'figurines'];
 // 📌 Un blocco senza pezzi base non nasce: una tipologia che ha solo varianti non ha niente da
 //    disegnare, e un titolo sopra una griglia vuota è l'«etichetta orfana» che Franco ha già
 //    fatto togliere una volta (v6.672).
+// 🆕 v6.946 (Franco: «nella sezione dedicata ai retro, puoi elencare i retro per categoria ed
+//    indicare il nome della categoria prima di ogni sottosezione? tanto la categoria c'è per
+//    ogni retro») — UN BLOCCO SI SPEZZA NELLE SUE CATEGORIE.
+// 🔴 LA REGOLA NON NOMINA I RETRO, E NON È UNA SVISTA. Franco ha chiesto i retro perché è lì che
+//    la categoria c'è; la domanda però si fa ai DATI, e la risposta oggi sono proprio i retro.
+// 📏 MISURATO IL 20 SETTEMBRE SUL SITO VIVO, non dedotto: il campo `category` è pieno **solo**
+//    sui retro, e lì al 100% — serie 1 72/72 in 6 categorie, serie 2 247/247 in 9, serie 3
+//    155/155 in 31. Su figurine, album, bustine, spille, tatuaggi, trasferelli e carte
+//    d'identità è vuoto su tutti. Un `if (sez === 'retros')` darebbe oggi lo stesso identico
+//    risultato, e il giorno che Franco popola la categoria di un'altra tipologia sarebbe la
+//    ragione per cui quella pagina non cambia — senza nessun errore.
+// 🔴 L'ORDINE E IL RAGGRUPPAMENTO LI FA `_retroCatCounts`, la stessa funzione dei due riquadri
+//    «Retro per categoria» del sito: alfabetico con `localeCompare('it')`. Un `sort` scritto qui
+//    sarebbe un secondo criterio accanto a quello, destinato a divergere.
+// ⚠️ La domanda «vale la pena spezzare?» è quella di `_categorieDannoUnRiquadro`: se l'unico
+//    gruppo è quello senza categoria, spezzare vorrebbe dire scrivere «(Senza categoria)» sopra
+//    l'intera griglia — cioè dire al lettore che un campo non è in uso.
+// 📌 Se invece qualcuno la categoria ce l'ha e qualcun altro no, il gruppo vuoto SI mostra: è la
+//    regola della v5.987, e senza di lui i pezzi delle sottosezioni non sommerebbero al totale.
+function _gscPartiPerCategoria(pezzi) {
+  const gruppi = _retroCatCounts(pezzi);
+  if (!gruppi.length || (gruppi.length === 1 && gruppi[0][0] === '')) return [];
+  return gruppi.map(([cat]) => ({
+    etichetta: _retroCatLabel(cat),
+    pezzi: pezzi.filter(f => (f.category || '').trim() === cat),
+  }));
+}
+
 function _gscBlocchi(s, L) {
   const fuori = [];
   let figurineFatte = false;
@@ -62671,7 +62738,8 @@ function _gscBlocchi(s, L) {
     const sotto = _sottoserieUsate(s, g.items);
     if (!sotto.length) {
       if (g.base.length) {
-        fuori.push({ etichetta: etichettaTipo, sez, pezzi: ordina(g.base) });
+        const pezzi = ordina(g.base);
+        fuori.push({ etichetta: etichettaTipo, sez, pezzi, parti: _gscPartiPerCategoria(pezzi) });
         if (eFigurina) figurineFatte = true;
       }
       continue;
@@ -62681,7 +62749,8 @@ function _gscBlocchi(s, L) {
       if (!suoi.length) continue;
       const base = _dividiPerVersione(suoi).base;
       if (base.length) {
-        fuori.push({ etichetta: _etichettaSottoserie(v), sez, pezzi: ordina(base) });
+        const pezzi = ordina(base);
+        fuori.push({ etichetta: _etichettaSottoserie(v), sez, pezzi, parti: _gscPartiPerCategoria(pezzi) });
         if (eFigurina) figurineFatte = true;
       }
     }
@@ -62840,11 +62909,20 @@ function _gscPagina(s, L) {
     //    la quarta copia di quella regola.
     + blocchi.map(b => {
       const conNum = b.pezzi.filter(_haNumero);
+      const griglia = pezzi => '<ul class="g">\n' + pezzi.map(f => card(f, b.sez)).join('\n') + '\n</ul>\n';
       return '<h3 class="ss">' + _gscEsc(b.etichetta) + '</h3>\n'
         + (conNum.length ? '<p class="hint">' + (L === 'it' ? 'Dalla n. ' : 'From no. ')
             + _gscEsc(conNum[0].number) + (L === 'it' ? ' alla n. ' : ' to no. ')
             + _gscEsc(conNum[conNum.length - 1].number) + '.</p>\n' : '')
-        + '<ul class="g">\n' + b.pezzi.map(f => card(f, b.sez)).join('\n') + '\n</ul>\n';
+        // 🆕 v6.946 — DOVE C'È UNA CATEGORIA, IL BLOCCO SI SPEZZA nelle sue sottosezioni. Chi
+        //    sono e in che ordine lo dice `_gscPartiPerCategoria`, che gira su `_retroCatCounts`
+        //    — la stessa funzione dei riquadri «Retro per categoria» del sito.
+        // 🔴 LE CARD NON CAMBIANO: sono le stesse, ripartite. La somma delle sottosezioni fa il
+        //    blocco, e la somma dei blocchi fa il numero del titolo — che è `n`, contato sui
+        //    `pezzi` e non sulle parti, quindi i due non possono divergere.
+        + (b.parti.length
+            ? b.parti.map(p => '<h4 class="cat">' + _gscEsc(p.etichetta) + '</h4>\n' + griglia(p.pezzi)).join('\n')
+            : griglia(b.pezzi));
     }).join('\n')
     + '\n' + invito
     // 🔄 il footer e' quello della homepage. Il link alla privacy funziona dalla v6.627 in poi.
