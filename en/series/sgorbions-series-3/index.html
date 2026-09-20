@@ -66,6 +66,20 @@ h2{font-size:1.35rem;margin:2.2rem 0 .3rem}
    finirebbero così com'erano nel CSS servito da Google. Le righe che aprono un commento le
    scusa il §E7 di prova-v6374; queste, che lo continuano, no. */
 h3.ss{color:var(--lime);font-size:1.05rem;margin:1.8rem 0 .5rem;letter-spacing:.02em}
+/* 🆕 v6.946 — IL NOME DELLA CATEGORIA SOPRA LA SUA SOTTOSEZIONE (Franco: «indicare il nome
+   della categoria prima di ogni sottosezione»). Piu' piccolo dell'h3 che gli sta sopra: i due
+   titoli non devono sembrare dello stesso rango, ed e' la stessa ragione per cui l'h3 e' piu'
+   piccolo dell'h2. Quattro livelli di titolo in pagina, quattro misure.
+   🔴 IL GIALLO E' QUELLO CHE IL SITO USA PER LA CATEGORIA (la costante COL_CATEGORIA, cioe'
+   la riga CATEGORIA: delle card), e arriva da li' invece di essere ricopiato: vedi
+   _gscColoriDalSito. Scritto qui sarebbe la seconda copia di un valore che vive in app.js.
+   📌 Niente text-transform: i nomi delle categorie nei dati sono GIA' maiuscoli
+   (CERTIFICATO, DIPLOMA), e una trasformazione direbbe due volte la stessa cosa — tacendo il
+   giorno che Franco ne scrive una in minuscolo apposta.
+   ⚠️ QUI DENTRO NON C'E' UN SOLO APICE INVERSO, e la prima stesura ne aveva tre: questo
+   commento vive in una template literal, e il primo apice la CHIUDE. E' la quarta volta in due
+   giorni, l'ultima proprio scrivendo la riga che lo vieta. */
+h4.cat{color:var(--categoria);font-size:.92rem;font-weight:800;letter-spacing:.03em;margin:1.4rem 0 .4rem}
 .hint{color:var(--dim);font-size:.9rem;margin:0 0 1.1rem}
 .g{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.9rem}
 .c{background:var(--card);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
@@ -104,8 +118,7 @@ footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #2a2044;color:var
 .invito{margin:1.5rem 0 2rem;text-align:center}
 .vai{display:inline-block;background:var(--acc);color:#1a1333;font-weight:800;font-size:1.05rem;padding:.75rem 1.5rem;border-radius:10px;text-decoration:none}
 footer a{color:var(--dim);text-decoration:underline}
-:root{--nome:;--viola:;--lime:;--categoria:#ffd84d}
-h4.cat{color:var(--categoria);font-size:.92rem;font-weight:800;letter-spacing:.03em;margin:1.4rem 0 .4rem}
+:root{--nome:#4db8ff;--viola:#c84bff;--lime:#b5ff2e;--categoria:#ffd84d}
 </style>
 </head>
 <body>
@@ -120,15 +133,15 @@ h4.cat{color:var(--categoria);font-size:.92rem;font-weight:800;letter-spacing:.0
     <div class="numt">SERIES ITEM COUNTS</div>
     <div class="num">
       <div class="cat">Album stickers</div>
-      <div class="vv"><span class="v" style="color:"><span class="pal"></span>256 stickers</span></div>
+      <div class="vv"><span class="v" style="color:#ffffff"><span class="pal"></span>256 stickers</span></div>
       <div class="cat">Stickers with backs</div>
-      <div class="vv"><span class="v" style="color:"><span class="pal"></span>256 base set</span><span class="v" style="color:"><span class="pal"></span>339 unofficial variations</span><span class="v" style="color:"><span class="pal"></span>115 changes</span><span class="v" style="color:"><span class="pal"></span>14 print errors</span><span class="v" style="color:"><span class="pal"></span>724 total</span></div>
+      <div class="vv"><span class="v" style="color:#ffffff"><span class="pal"></span>256 base set</span><span class="v" style="color:#fff275"><span class="pal"></span>339 unofficial variations</span><span class="v" style="color:#ff9ecb"><span class="pal"></span>115 changes</span><span class="v" style="color:#ff6464"><span class="pal"></span>14 print errors</span><span class="v" style="color:#b5ff2e"><span class="pal"></span>724 total</span></div>
       <div class="cat">Retros</div>
-      <div class="vv"><span class="v" style="color:"><span class="pal"></span>155 base set</span><span class="v" style="color:"><span class="pal"></span>107 changes</span><span class="v" style="color:"><span class="pal"></span>5 print errors</span><span class="v" style="color:"><span class="pal"></span>267 total</span></div>
+      <div class="vv"><span class="v" style="color:#ffffff"><span class="pal"></span>155 base set</span><span class="v" style="color:#ff9ecb"><span class="pal"></span>107 changes</span><span class="v" style="color:#ff6464"><span class="pal"></span>5 print errors</span><span class="v" style="color:#b5ff2e"><span class="pal"></span>267 total</span></div>
       <div class="cat">Albums</div>
-      <div class="vv"><span class="v" style="color:"><span class="pal"></span>2 standard versions</span></div>
+      <div class="vv"><span class="v" style="color:#ffffff"><span class="pal"></span>2 standard versions</span></div>
       <div class="cat">Wrappers</div>
-      <div class="vv"><span class="v" style="color:"><span class="pal"></span>5 standard versions</span></div>
+      <div class="vv"><span class="v" style="color:#ffffff"><span class="pal"></span>5 standard versions</span></div>
     </div>
   </div>
 </header>

@@ -66,6 +66,20 @@ h2{font-size:1.35rem;margin:2.2rem 0 .3rem}
    finirebbero così com'erano nel CSS servito da Google. Le righe che aprono un commento le
    scusa il §E7 di prova-v6374; queste, che lo continuano, no. */
 h3.ss{color:var(--lime);font-size:1.05rem;margin:1.8rem 0 .5rem;letter-spacing:.02em}
+/* 🆕 v6.946 — IL NOME DELLA CATEGORIA SOPRA LA SUA SOTTOSEZIONE (Franco: «indicare il nome
+   della categoria prima di ogni sottosezione»). Piu' piccolo dell'h3 che gli sta sopra: i due
+   titoli non devono sembrare dello stesso rango, ed e' la stessa ragione per cui l'h3 e' piu'
+   piccolo dell'h2. Quattro livelli di titolo in pagina, quattro misure.
+   🔴 IL GIALLO E' QUELLO CHE IL SITO USA PER LA CATEGORIA (la costante COL_CATEGORIA, cioe'
+   la riga CATEGORIA: delle card), e arriva da li' invece di essere ricopiato: vedi
+   _gscColoriDalSito. Scritto qui sarebbe la seconda copia di un valore che vive in app.js.
+   📌 Niente text-transform: i nomi delle categorie nei dati sono GIA' maiuscoli
+   (CERTIFICATO, DIPLOMA), e una trasformazione direbbe due volte la stessa cosa — tacendo il
+   giorno che Franco ne scrive una in minuscolo apposta.
+   ⚠️ QUI DENTRO NON C'E' UN SOLO APICE INVERSO, e la prima stesura ne aveva tre: questo
+   commento vive in una template literal, e il primo apice la CHIUDE. E' la quarta volta in due
+   giorni, l'ultima proprio scrivendo la riga che lo vieta. */
+h4.cat{color:var(--categoria);font-size:.92rem;font-weight:800;letter-spacing:.03em;margin:1.4rem 0 .4rem}
 .hint{color:var(--dim);font-size:.9rem;margin:0 0 1.1rem}
 .g{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.9rem}
 .c{background:var(--card);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
@@ -104,8 +118,7 @@ footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #2a2044;color:var
 .invito{margin:1.5rem 0 2rem;text-align:center}
 .vai{display:inline-block;background:var(--acc);color:#1a1333;font-weight:800;font-size:1.05rem;padding:.75rem 1.5rem;border-radius:10px;text-decoration:none}
 footer a{color:var(--dim);text-decoration:underline}
-:root{--nome:;--viola:;--lime:;--categoria:#ffd84d}
-h4.cat{color:var(--categoria);font-size:.92rem;font-weight:800;letter-spacing:.03em;margin:1.4rem 0 .4rem}
+:root{--nome:#4db8ff;--viola:#c84bff;--lime:#b5ff2e;--categoria:#ffd84d}
 </style>
 </head>
 <body>
@@ -120,15 +133,15 @@ h4.cat{color:var(--categoria);font-size:.92rem;font-weight:800;letter-spacing:.0
     <div class="numt">NUMERICHE ARTICOLI DELLA SERIE</div>
     <div class="num">
       <div class="cat">Figurine per album</div>
-      <div class="vv"><span class="v" style="color:"><span class="pal"></span>256 figurine</span></div>
+      <div class="vv"><span class="v" style="color:#ffffff"><span class="pal"></span>256 figurine</span></div>
       <div class="cat">Figurine con retro</div>
-      <div class="vv"><span class="v" style="color:"><span class="pal"></span>256 set base</span><span class="v" style="color:"><span class="pal"></span>256 variazioni ufficiali</span><span class="v" style="color:"><span class="pal"></span>1 change</span><span class="v" style="color:"><span class="pal"></span>26 versioni omaggio</span><span class="v" style="color:"><span class="pal"></span>1 errore di stampa</span><span class="v" style="color:"><span class="pal"></span>540 totali</span></div>
+      <div class="vv"><span class="v" style="color:#ffffff"><span class="pal"></span>256 set base</span><span class="v" style="color:#9be89b"><span class="pal"></span>256 variazioni ufficiali</span><span class="v" style="color:#ff9ecb"><span class="pal"></span>1 change</span><span class="v" style="color:#b98cff"><span class="pal"></span>26 versioni omaggio</span><span class="v" style="color:#ff6464"><span class="pal"></span>1 errore di stampa</span><span class="v" style="color:#b5ff2e"><span class="pal"></span>540 totali</span></div>
       <div class="cat">Retro</div>
-      <div class="vv"><span class="v" style="color:"><span class="pal"></span>247 set base</span><span class="v" style="color:"><span class="pal"></span>50 versioni omaggio</span><span class="v" style="color:"><span class="pal"></span>7 errori di stampa</span><span class="v" style="color:"><span class="pal"></span>304 totali</span></div>
+      <div class="vv"><span class="v" style="color:#ffffff"><span class="pal"></span>247 set base</span><span class="v" style="color:#b98cff"><span class="pal"></span>50 versioni omaggio</span><span class="v" style="color:#ff6464"><span class="pal"></span>7 errori di stampa</span><span class="v" style="color:#b5ff2e"><span class="pal"></span>304 totali</span></div>
       <div class="cat">Album</div>
-      <div class="vv"><span class="v" style="color:"><span class="pal"></span>2 versioni standard</span></div>
+      <div class="vv"><span class="v" style="color:#ffffff"><span class="pal"></span>2 versioni standard</span></div>
       <div class="cat">Bustine</div>
-      <div class="vv"><span class="v" style="color:"><span class="pal"></span>1 versione standard</span></div>
+      <div class="vv"><span class="v" style="color:#ffffff"><span class="pal"></span>1 versione standard</span></div>
     </div>
   </div>
 </header>
@@ -339,9 +352,9 @@ Le figurine vanno dalla n. 161 alla n. 416.</p>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784960945/keebbf1fgsgycssw2umk.png" alt="figurina per album CLARA NIAGARA, n. 352 — Sgorbions serie 2" loading="lazy"><span class="n">352</span><span class="nm">CLARA NIAGARA</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784960979/oxzzsdxhjguf0bpxcmuv.png" alt="figurina per album DANIELE GONFIAVELE, n. 353 — Sgorbions serie 2" loading="lazy"><span class="n">353</span><span class="nm">DANIELE GONFIAVELE</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784961012/k21lswfpzwurykn14qfy.png" alt="figurina per album ROSARIO ACQUARIO, n. 354 — Sgorbions serie 2" loading="lazy"><span class="n">354</span><span class="nm">ROSARIO ACQUARIO</span></li>
-<li class="c"><span class="n">355</span><span class="nm">ECTÒR CUCADÒR</span></li>
-<li class="c"><span class="n">356</span><span class="nm">VASCO DE LAMA</span></li>
-<li class="c"><span class="n">357</span><span class="nm">MADONNA CICCONA</span></li>
+<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1787851344/of5vzgazdda5nbvvvweo.png" alt="figurina per album ECTÒR CUCADÒR, n. 355 — Sgorbions serie 2" loading="lazy"><span class="n">355</span><span class="nm">ECTÒR CUCADÒR</span></li>
+<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1787851309/rtyxeywra4wa1cgvmhay.png" alt="figurina per album VASCO DE LAMA, n. 356 — Sgorbions serie 2" loading="lazy"><span class="n">356</span><span class="nm">VASCO DE LAMA</span></li>
+<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1787851279/fzha2dlgkix7sa15lsz9.png" alt="figurina per album MADONNA CICCONA, n. 357 — Sgorbions serie 2" loading="lazy"><span class="n">357</span><span class="nm">MADONNA CICCONA</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784961142/gwk62daytriqav8agsju.png" alt="figurina per album MAURIZIO DENTIFRIZIO, n. 358 — Sgorbions serie 2" loading="lazy"><span class="n">358</span><span class="nm">MAURIZIO DENTIFRIZIO</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784961177/yofzr6ppzqlonhwmofo3.png" alt="figurina per album AGNESE CHIAVE INGLESE, n. 359 — Sgorbions serie 2" loading="lazy"><span class="n">359</span><span class="nm">AGNESE CHIAVE INGLESE</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1787851244/ubinjo4lown9tyz5g4nh.png" alt="figurina per album ZACCARIA FALEGNAMERIA, n. 360 — Sgorbions serie 2" loading="lazy"><span class="n">360</span><span class="nm">ZACCARIA FALEGNAMERIA</span></li>
