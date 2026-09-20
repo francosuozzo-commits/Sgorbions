@@ -1,6 +1,38 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.945 - 🗂️ LA PAGINA PER GOOGLE MOSTRA TUTTI GLI ARTICOLI, NON PIÙ LE SOLE FIGURINE
+//          (Franco: «tutti gli articoli in versione base, senza distinzione di TDA; se la serie
+//          non ha sottoserie, metti una sezione per tda; se la serie ha sottoserie, metti una
+//          sezione per sottoserie»). Modificato il solo js/app.js.
+//          🔴 NASCE `_gscBlocchi`, E FA LO STESSO GIRO DI `_gscNumeriche`: stesso
+//          `PRODOTTI_INVENTARIO`, stesso `_tipologiaAmmessa`, stesso `tipiPresenti`, stesso
+//          `_sottoserieUsate`, stesso `_dividiPerVersione`. Ogni riga di numeri ha sotto la sua
+//          griglia, e le due cose non possono più dire gruppi diversi.
+//          📏 MISURATO SUI DATI VERI, non dedotto: la griglia leggeva `section === 'figurines'`,
+//          quindi su Sgorbions Holidays lasciava fuori 59 tatuaggi, 32 trasferelli e 36 carte
+//          d'identità che le numeriche contavano, e su Spille — che una sezione `figurines` non
+//          ce l'ha proprio — usciva una pagina vuota col titolo «tutte le 0 figurine».
+//          🔴 UNA SOLA SEZIONE «FIGURINE» (Franco: «se mostriamo le fcr mostrandone solo il
+//          fronte, allora non serve mostrarle anche come sezione fcr»): `GSC_FIGURINE` tiene la
+//          prima tipologia di figurina che la serie ha davvero, nell'ordine dell'Inventario.
+//          Su serie 1, 2 e 3 è la fpa; su Holidays, che la fpa non ce l'ha, è la fcr.
+//          ⚠️ È l'unico punto in cui numeri e griglie non si corrispondono uno a uno, ed è
+//          voluto: le numeriche contano due tipologie, la pagina ne disegna una faccia sola.
+//          🔄 L'INTESTAZIONE PERDE IL NOME DELLA SERIE (Franco: «non serve ripetere il nome
+//          della serie dentro la pagina, visto che sta già nel titolo»): «Tutti gli articoli»,
+//          «All the items». Con lei se ne va la scorciatoia «Sgorbions serie N» → «Serie N»,
+//          che era il suo unico chiamante.
+//          🔄 La card sa di che tipologia è: l'`alt` prende il nome da `getSectionLabelSingular`
+//          (diceva «La figurina» anche di una spilla) e il numero si scrive solo se `_haNumero`
+//          dice di sì.
+//          🔴 E QUEL NUMERO CHE SPARISCE HA PORTATO VIA IL SECONDO MARGINE AUTOMATICO su cui
+//          poggia la v6.940: nelle tipologie senza numero la foto sdraiata finiva appoggiata al
+//          testo invece che a mezza altezza. 📏 Misurato nel browser su un retro dentro una
+//          riga alta 290px: prima sopra 126 / sotto 43, dopo 63 / 106. Rimesso con
+//          `.c img + .nm{margin-top:auto}`, che si accende solo quando la riga del numero manca.
+//          🗑️ Via anche `width="240" height="424"` dalle card: era buono per una forma sola, e
+//          i retro sono sdraiati (1220x893) e le spille quadrate (473x477).
 // v6.944 - 👪 LA FAMIGLIA DIVENTA UN RAGGRUPPAMENTO: riquadro nella testata E filtro nella
 //          ricerca (Franco: «aggiungi un altro contenitore, analogo graficamente a quelli
 //          esistenti per change ed errori di stampa, dedicato al raggruppamento delle fcr per
@@ -29588,7 +29620,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.944';
+const JS_VERSION = 'v6.945';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -62362,10 +62394,15 @@ function _gscIndirizzi(s) {
 //    `sezRows` disegna colonne cliccabili dentro il sito, qui esce HTML statico per Google.
 //    Condividere le PAROLE è quanto si può, e `prova-v6937` le confronta con quelle di là.
 const _GSC_PAROLE = {
-  it: { setBase: 'set base',
+  // 🆕 v6.945 (Franco: «una sezione chiamata semplicemente "Figurine"») — LA PAROLA DELLA
+  //    GRIGLIA UNICA DELLE FIGURINE. In inglese è `stickers`, che è la parola con cui queste
+  //    pagine hanno sempre chiamato le figurine nel titolo, non una scelta nuova.
+  // ⚠️ Maiuscola: questa è un'INTESTAZIONE, non una voce di conteggio. Le altre parole di
+  //    questo dizionario stanno dentro una riga di numeri e vanno in minuscolo.
+  it: { figurine: 'Figurine', setBase: 'set base',
         standard: n => n === 1 ? 'versione standard' : 'versioni standard',
         totale: 'totali', locale: 'it-IT' },
-  en: { setBase: 'base set',
+  en: { figurine: 'Stickers', setBase: 'base set',
         standard: n => n === 1 ? 'standard version' : 'standard versions',
         totale: 'total', locale: 'en-US' },
 };
@@ -62433,6 +62470,17 @@ h3.ss{color:var(--lime);font-size:1.05rem;margin:1.8rem 0 .5rem;letter-spacing:.
    un apice inverso la CHIUDE. Preso di nuovo scrivendo proprio questa riga. */
 .c img{width:100%;height:auto;display:block;background:#2f2456;margin-top:auto}
 .c .n{display:block;padding:.5rem .55rem 0;font-size:.78rem;color:var(--acc);font-weight:800;margin-top:auto}
+/* 🔴 v6.945 — IL SECONDO MARGINE AUTOMATICO QUANDO IL NUMERO NON C'E'. La v6.940 mette
+   la foto a mezza altezza con DUE margini automatici: uno sull'immagine e uno sulla riga del
+   numero, che si dividono lo spazio libero in parti uguali. Dalla v6.945 il numero si scrive
+   solo se il pezzo ce l'ha, e nelle tipologie che numero non ne hanno — retro, album,
+   bustine, spille — il secondo margine spariva con lui: restava quello dell'immagine da
+   solo, e la foto invece di stare in mezzo finiva appoggiata al testo.
+   📏 MISURATO NEL BROWSER su un retro sdraiato dentro una griglia alta 290px: prima
+   sopra 126 / sotto 43, cioe' tutto lo spazio in cima. Il selettore prende il nome SOLO
+   quando segue subito l'immagine, cioe' esattamente quando la riga del numero manca.
+   ⚠️ NIENTE APICI INVERSI QUI DENTRO: questo commento vive in una template literal. */
+.c img + .nm{margin-top:auto}
 .c .nm{display:block;padding:0 .55rem .6rem;font-weight:700;font-size:.83rem;line-height:1.25}
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #2a2044;color:var(--dim);font-size:.88rem;text-align:center}
 /* 🔴 v6.638 — L'INVITO AL SITO. Franco: «quell'hyperlink in alto e' troppo
@@ -62562,13 +62610,96 @@ function _gscNumeriche(s, L) {
 //    nessun testo generato «per sicurezza», che sarebbe finito in pagina proprio quando nessuno
 //    guarda. ⚠️ In inglese, se il testo manca, si ripiega sull'italiano — scelta di Franco — ma
 //    il paragrafo esce con `lang="it"`, cosi' Google sa che quel blocco non e' inglese.
+// 🔴 v6.945 (Franco: «se mostriamo le fcr mostrandone solo il fronte, allora non serve mostrarle
+//    anche come sezione fcr; basta solo la sezione fpa. direi quindi di usare una sezione
+//    chiamata semplicemente "Figurine", dove mostri le figurine base») — LE DUE TIPOLOGIE DI
+//    FIGURINA SONO UNA GRIGLIA SOLA.
+// 📌 Sono lo stesso personaggio guardato da due parti: la «figurina per album» è il fronte
+//    incollato, la «figurina con retro» ha un dietro — ma qui si mostra la versione base, che
+//    del retro fa vedere solo il davanti. Due griglie con gli stessi 160 nomi e la stessa
+//    faccia: il lettore le legge come un errore, e Google come contenuto duplicato.
+// ⚠️ NON è un elenco di preferenze: è l'ORDINE di `PRODOTTI_INVENTARIO`, cioè quello del sito.
+//    Vince la prima che quella serie ha davvero. Su serie 1, 2 e 3 è la fpa, come ha chiesto
+//    Franco; su Sgorbions Holidays la fpa non esiste e vince la fcr, che è l'unica figurina
+//    che quella serie possiede — una regola che nominasse la fpa e basta l'avrebbe cancellata.
+const GSC_FIGURINE = ['attaccare', 'figurines'];
+
+// 🆕 v6.945 (Franco: «tutti gli articoli in versione base, senza distinzione di TDA; se la
+//    serie non ha sottoserie, metti una sezione per tda; se la serie ha sottoserie, metti una
+//    sezione per sottoserie») — I BLOCCHI DELLA PAGINA, IN UN POSTO SOLO.
+// 🔴 QUESTO GIRO È, RIGA PER RIGA, QUELLO DI `_gscNumeriche`: stesso `PRODOTTI_INVENTARIO`,
+//    stesso `_tipologiaAmmessa`, stesso `tipiPresenti`, stesso `_sottoserieUsate`, stesso
+//    `_dividiPerVersione`. Non è una somiglianza, è il requisito: le righe dei numeri e le
+//    griglie devono dire gli stessi gruppi nello stesso ordine, o la pagina conta una cosa e
+//    ne mostra un'altra — senza nessun errore, che è il modo peggiore di sbagliare.
+// ⚠️ L'UNICO PUNTO IN CUI LE DUE COSE NON COINCIDONO È `GSC_FIGURINE`, ed è voluto e dichiarato:
+//    le numeriche continuano a contare «Figurine per album» e «Figurine con retro» su due
+//    righe — sono due tipologie diverse, con versioni diverse — mentre le griglie ne disegnano
+//    una sola, perché le facce da vedere sono le stesse.
+// ⚠️ LA DOMANDA SULLE SOTTOSERIE SI FA PER TIPOLOGIA, NON UNA VOLTA PER LA SERIE. Franco l'ha
+//    detta al livello della serie («se la serie ha sottoserie»), ma i dati dicono che dentro
+//    una serie convivono le due cose: su Sgorbions Holidays figurine, tatuaggi, trasferelli e
+//    carte d'identità le sottoserie ce l'hanno, album e bustine no. Chiesta una volta sola per
+//    la serie, quei sei articoli sarebbero finiti insieme nel blocco degli orfani, senza nome.
+//    Chiesta per tipologia escono col loro: «Album» e «Bustine». È anche ciò che fanno già le
+//    numeriche qui sopra e l'hub del sito.
+// 🔴 «VERSIONE BASE» È `g.base`, NON «il record che non deriva da un altro». Le due cose non
+//    coincidono: su serie 1 le 160 «Figurine per album» sono tutte record derivati, e a
+//    guardare `baseFigurineId` quella tipologia sarebbe sparita dalla pagina pur avendo un
+//    numero scritto sopra. `tipiPresenti` è la funzione che risponde a questa domanda per
+//    tutto il sito, e dentro ha `_eBase` — la quaterna di negazioni che la v6.235 ha smesso
+//    di ricopiare a mano dopo OTTO copie.
+// 📌 Un blocco senza pezzi base non nasce: una tipologia che ha solo varianti non ha niente da
+//    disegnare, e un titolo sopra una griglia vuota è l'«etichetta orfana» che Franco ha già
+//    fatto togliere una volta (v6.672).
+function _gscBlocchi(s, L) {
+  const fuori = [];
+  let figurineFatte = false;
+  // 📌 L'ordine dentro il blocco è quello del numero, come da sempre. I non numerati hanno
+  //    tutti la stessa chiave (0) e restano nell'ordine in cui arrivano.
+  const ordina = a => a.slice().sort((x, y) => (+x.number || 0) - (+y.number || 0));
+  for (const sez of PRODOTTI_INVENTARIO) {
+    if (!_tipologiaAmmessa(sez, s.id)) continue;
+    const eFigurina = GSC_FIGURINE.includes(sez);
+    if (eFigurina && figurineFatte) continue;
+    const g = tipiPresenti(s.id, sez);
+    if (!g.items.length) continue;
+    // 🔴 L'etichetta della tipologia si chiede QUI e non a `getSectionLabel` direttamente,
+    //    perché per le figurine non è il nome della tipologia ma la parola sola di Franco.
+    //    Le sottoserie, quando ci sono, se la prendono lo stesso: quel nome viene dai dati.
+    const etichettaTipo = eFigurina ? _GSC_PAROLE[L].figurine : getSectionLabel(sez);
+    const sotto = _sottoserieUsate(s, g.items);
+    if (!sotto.length) {
+      if (g.base.length) {
+        fuori.push({ etichetta: etichettaTipo, sez, pezzi: ordina(g.base) });
+        if (eFigurina) figurineFatte = true;
+      }
+      continue;
+    }
+    for (const v of sotto) {
+      const suoi = g.items.filter(f => String(f.subseries || '').trim() === v);
+      if (!suoi.length) continue;
+      const base = _dividiPerVersione(suoi).base;
+      if (base.length) {
+        fuori.push({ etichetta: _etichettaSottoserie(v), sez, pezzi: ordina(base) });
+        if (eFigurina) figurineFatte = true;
+      }
+    }
+  }
+  return fuori;
+}
+
 function _gscPagina(s, L) {
   const U = _gscIndirizzi(s);
   const F = getData('figurines', []);
-  const tutti = F.filter(f => f.seriesId === s.id);
-  const basi = tutti.filter(f => (f.section || 'figurines') === 'figurines' && !f.baseFigurineId)
-                    .sort((a, b) => (+a.number || 0) - (+b.number || 0));
-  const n = basi.length;
+  // 🆕 v6.945 (Franco: « tutti gli articoli in versione base, senza distinzione di TDA; se la
+  //    serie non ha sottoserie, metti una sezione per tda; se la serie ha sottoserie, metti una
+  //    sezione per sottoserie») — LA PAGINA NON È PIÙ UNA GRIGLIA SOLA.
+  // 🔴 `n` non si conta più a parte: è la somma dei blocchi, cioè delle carte che la pagina
+  //    disegna davvero. Contarlo per conto suo sarebbe la seconda risposta alla stessa domanda,
+  //    e il titolo potrebbe promettere un numero che la griglia sotto non mantiene.
+  const blocchi = _gscBlocchi(s, L);
+  const n = blocchi.reduce((t, b) => t + b.pezzi.length, 0);
   // 🆕 v6.645 - IL NOME CHE SI LEGGE, non quello che fa da chiave. `_gscPiano` mette
   //    `currentLang = L` prima di chiamare questa funzione, quindi `_nomeSerie` risponde
   //    gia' nella lingua della pagina che si sta scrivendo.
@@ -62583,12 +62714,15 @@ function _gscPagina(s, L) {
   const inItaliano = L === 'en' && !testoEn;
   // ⚠️ Il NOME della serie non si traduce nemmeno in inglese: e' un nome proprio, ed e' come la
   //    si cerca. Si traduce cio' che gli sta intorno.
-  const titolo = L === 'it' ? nome + ' — tutte le ' + n + ' figurine | figurineSgorbions.it'
-                            : nome + ' — all ' + n + ' stickers | figurineSgorbions.it';
+  // 🔴 v6.945 — «ARTICOLI» E NON «FIGURINE»: da adesso la pagina elenca tutte le tipologie,
+  //    e su Spille «figurine» era falso alla lettera — il titolo diceva «tutte le 0 figurine»
+  //    perché quella serie una sezione `figurines` non ce l'ha proprio.
+  const titolo = L === 'it' ? nome + ' — tutti i ' + n + ' articoli | figurineSgorbions.it'
+                            : nome + ' — all ' + n + ' items | figurineSgorbions.it';
   const meta = L === 'it'
-    ? 'Elenco completo delle ' + n + ' figurine della ' + nome + (s.year ? ' (Topps, ' + s.year + ')' : '')
+    ? 'Elenco completo dei ' + n + ' articoli della ' + nome + (s.year ? ' (Topps, ' + s.year + ')' : '')
       + ': numeri, nomi, foto, retri, varianti ed errori di stampa.'
-    : 'Complete list of the ' + n + ' stickers in ' + nome + (s.year ? ' (Topps, ' + s.year + ')' : '')
+    : 'Complete list of the ' + n + ' items in ' + nome + (s.year ? ' (Topps, ' + s.year + ')' : '')
       + ': numbers, names, photos, backs, variations and print errors.';
   const cop = s.img || '';
   // 🔴 v6.638 — SCRITTO QUI E BASTA, stampato in due posti. Due stringhe uguali a
@@ -62615,14 +62749,27 @@ function _gscPagina(s, L) {
   // 🔴 LE CARD NON SONO LINK (Franco, 7 settembre: «iniziamo senza i link alle figurine»):
   //    puntavano alle pagine per figurina, che non esistono. Il giorno che si fanno, qui torna
   //    l'`<a href>` e nel CSS la regola `.c a`.
-  const card = f => {
+  // 🔄 v6.945 — LA CARD SA DI CHE TIPOLOGIA È, e sono tre cose che prima non poteva sapere
+  //    perché nella griglia entravano solo le figurine.
+  // • L'`alt` porta il nome della tipologia, preso da `getSectionLabelSingular`, cioè dalla
+  //   stessa coppia di etichette del sito: diceva «La figurina» anche di una spilla.
+  // • Il numero si scrive solo se `_haNumero` dice di sì — la stessa domanda della riga
+  //   «Dalla n. alla n.». Su Holidays la riga del numero usciva vuota, con il suo padding.
+  // 🔴 E QUI SE NE VA `width="240" height="424"`, che era un numero scritto a mano buono per
+  //    una sola forma. Misurate le foto vere: i retro sono SDRAIATI (1220x893), le spille sono
+  //    QUADRATE (473x477). Il CSS le disegna già bene (`.c img{width:100%;height:auto}`), quindi
+  //    quei due attributi non servivano a disegnare: servivano a prenotare lo spazio prima che la
+  //    foto arrivi, e prenotato male è peggio che non prenotato — la pagina salta nel verso
+  //    sbagliato. Un rapporto vero non ce l'abbiamo: i dati non tengono le misure dell'immagine.
+  const card = (f, sez) => {
     const foto = _fotoFigurina(f, F) || '';
-    const alt = L === 'it' ? 'La figurina ' + f.name + ', n. ' + f.number + ' della ' + nome
-                           : 'The sticker ' + f.name + ', no. ' + f.number + ' from ' + nome;
+    const num = _haNumero(f);
+    const alt = getSectionLabelSingular(sez) + ' ' + f.name
+      + (num ? (L === 'it' ? ', n. ' : ', no. ') + f.number : '') + ' — ' + nome;
     return '<li class="c">'
       + (foto ? '<img src="' + _gscEsc(foto.replace(_GSC_PRE, _GSC_PRE + 'w_240,q_auto,f_auto/'))
-            + '" alt="' + _gscEsc(alt) + '" loading="lazy" width="240" height="424">' : '')
-      + '<span class="n">' + _gscEsc(f.number) + '</span>'
+            + '" alt="' + _gscEsc(alt) + '" loading="lazy">' : '')
+      + (num ? '<span class="n">' + _gscEsc(f.number) + '</span>' : '')
       + '<span class="nm">' + _gscEsc(f.name) + '</span></li>';
   };
   return '<!DOCTYPE html>\n<html lang="' + L + '">\n<head>\n<meta charset="UTF-8">\n'
@@ -62669,45 +62816,36 @@ function _gscPagina(s, L) {
     + '  </div>\n</header>\n\n' + invito
     + (testo ? '<p' + (inItaliano ? ' lang="it"' : '') + '>'
              + _gscEsc(testo).replace(/\n/g, '<br>\n') + '</p>\n\n' : '')
-    + '<h2>' + (L === 'it' ? 'Tutte le figurine della ' : 'All the stickers in ')
-    + _gscEsc(nome.replace(/^Sgorbions\s+serie\b/i, L === 'it' ? 'Serie' : 'Series')) + '</h2>\n'
-    // 🔄 v6.941 (Franco: «se la serie non ha numeri, non devi scrivere "da n. a n."») — LA
-    //    RIGA SI SCRIVE SOLO SE C'È UN NUMERO DA SCRIVERE. Su Sgorbions Holidays usciva
-    //    «Dalla n.  alla n. .»: il flag `noNumbers` sulla serie è acceso e nessuna delle 61
-    //    figurine ha un numero (misurato sui dati veri, non dedotto).
-    // 🔴 LA DOMANDA LA FA `_haNumero`, che è la stessa del sito: tiene conto del flag della
-    //    serie, di `noNumber` sul singolo pezzo e di come la tipologia usa il numero. Scrivere
-    //    qui la condizione a mano sarebbe stata una quarta copia di quella regola, giusta oggi
-    //    e vecchia il giorno che una delle altre due condizioni cambia.
-    + (() => {
-      const conNum = basi.filter(_haNumero);
-      if (!conNum.length) return '';
-      return '<p class="hint">' + (L === 'it' ? 'Dalla n. ' : 'From no. ')
-        + _gscEsc(conNum[0].number) + (L === 'it' ? ' alla n. ' : ' to no. ')
-        + _gscEsc(conNum[conNum.length - 1].number) + '.</p>\n';
-    })()
-    // 🆕 v6.941 (Franco: «se la serie ha sottoserie, allora devi fare + griglie: una per
-    //    sottoserie, e prima di ogni griglia deve esserci il nome della sottoserie, usa il
-    //    solito colore lime») — LE GRIGLIE DIVENTANO UNA PER SOTTOSERIE.
-    // 🔴 QUALI E IN CHE ORDINE LO DICE `_sottoserieUsate`, la stessa funzione dei tab del
-    //    sito e della ricerca globale. Un elenco calcolato qui sarebbe il decimo punto che
-    //    risponde alla stessa domanda con parole sue, e i gruppi di questa pagina potrebbero
-    //    non essere quelli che il visitatore trova entrando nel sito — senza nessun errore.
-    // ⚠️ E GLI ORFANI RESTANO LA RETE anche qui: chi ha una sottoserie scritta male finisce
-    //    in un blocco col suo nome, chi non ce l'ha in «Set principale». Nessuno sparisce dalla
-    //    pagina pubblica, che è la cosa che conterebbe di più sbagliare.
-    // 📌 Senza sottoserie la pagina resta ESATTAMENTE com'era: una griglia sola e nessun
-    //    titolo. È il caso delle serie 1, 2 e 3, cioè di tre pagine su cinque.
-    + (() => {
-      const sotto = _sottoserieUsate(s, basi);
-      if (!sotto.length) return '<ul class="g">\n' + basi.map(card).join('\n') + '\n</ul>\n';
-      return sotto.map(v => {
-        const suoi = basi.filter(f => String(f.subseries || '').trim() === v);
-        if (!suoi.length) return '';
-        return '<h3 class="ss">' + _gscEsc(_etichettaSottoserie(v)) + '</h3>\n'
-             + '<ul class="g">\n' + suoi.map(card).join('\n') + '\n</ul>\n';
-      }).filter(Boolean).join('\n');
-    })()
+    // 🔄 v6.945 (Franco: «io andrei con la C: non serve ripetere il nome della serie dentro la
+    //    pagina, visto che sta già nel titolo») — L'INTESTAZIONE PERDE IL NOME DELLA SERIE.
+    // 📌 Diceva «Tutti gli articoli della Serie 1», e il nome sta nell'h1 due dita più su.
+    //    Su Spille usciva «Tutti gli articoli della Spille» e su Holidays «della Sgorbions
+    //    Holidays»: la scorciatoia che accorciava il nome conosceva solo la forma «Sgorbions
+    //    serie N», quindi leggeva bene su tre pagine su cinque.
+    // 🔴 E QUI SE NE VA ANCHE QUELLA SCORCIATOIA, con il punto che la usava. Lasciarla viva
+    //    senza chiamanti sarebbe stata una regola che nessuno applica e che il prossimo legge
+    //    credendola in vigore.
+    + '<h2>' + (L === 'it' ? 'Tutti gli articoli' : 'All the items') + '</h2>\n'
+    // 🆕 v6.945 — UNA GRIGLIA PER BLOCCO, e i blocchi li decide `_gscBlocchi`.
+    // 🔴 QUI NON SI SCEGLIE PIÙ NIENTE: prima questo punto chiedeva da sé le sottoserie e
+    //    tirava su le sole figurine. Adesso srotola l'elenco che le NUMERICHE hanno già
+    //    deciso — stessa funzione, stesso ordine, stesse etichette — quindi ogni numero
+    //    scritto là sopra ha sotto la sua griglia, e le due cose non possono divergere.
+    // 🔄 LA RIGA «DALLA N. ALLA N.» È SCESA DENTRO IL BLOCCO (era una sola, in testa alla
+    //    pagina). Con più tipologie in pagina i numerati sono una parte: su serie 1 hanno un
+    //    numero le figurine e non i retro, gli album, le bustine. In cima diceva «Dalla n. 1
+    //    alla n. 160» sopra a tutto, compreso ciò che un numero non ce l'ha.
+    // 🔴 La domanda la fa sempre `_haNumero`, che è quella del sito (flag della serie,
+    //    `noNumber` del pezzo, e come la tipologia usa il numero): scritta a mano qui sarebbe
+    //    la quarta copia di quella regola.
+    + blocchi.map(b => {
+      const conNum = b.pezzi.filter(_haNumero);
+      return '<h3 class="ss">' + _gscEsc(b.etichetta) + '</h3>\n'
+        + (conNum.length ? '<p class="hint">' + (L === 'it' ? 'Dalla n. ' : 'From no. ')
+            + _gscEsc(conNum[0].number) + (L === 'it' ? ' alla n. ' : ' to no. ')
+            + _gscEsc(conNum[conNum.length - 1].number) + '.</p>\n' : '')
+        + '<ul class="g">\n' + b.pezzi.map(f => card(f, b.sez)).join('\n') + '\n</ul>\n';
+    }).join('\n')
     + '\n' + invito
     // 🔄 il footer e' quello della homepage. Il link alla privacy funziona dalla v6.627 in poi.
     + '<footer>\n  <p>2026 <a href="/">figurinesgorbions.it</a> — '
