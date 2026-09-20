@@ -85,6 +85,17 @@ h3.ss{color:var(--lime);font-size:1.05rem;margin:1.8rem 0 .5rem;letter-spacing:.
    un apice inverso la CHIUDE. Preso di nuovo scrivendo proprio questa riga. */
 .c img{width:100%;height:auto;display:block;background:#2f2456;margin-top:auto}
 .c .n{display:block;padding:.5rem .55rem 0;font-size:.78rem;color:var(--acc);font-weight:800;margin-top:auto}
+/* 🔴 v6.945 — IL SECONDO MARGINE AUTOMATICO QUANDO IL NUMERO NON C'E'. La v6.940 mette
+   la foto a mezza altezza con DUE margini automatici: uno sull'immagine e uno sulla riga del
+   numero, che si dividono lo spazio libero in parti uguali. Dalla v6.945 il numero si scrive
+   solo se il pezzo ce l'ha, e nelle tipologie che numero non ne hanno — retro, album,
+   bustine, spille — il secondo margine spariva con lui: restava quello dell'immagine da
+   solo, e la foto invece di stare in mezzo finiva appoggiata al testo.
+   📏 MISURATO NEL BROWSER su un retro sdraiato dentro una griglia alta 290px: prima
+   sopra 126 / sotto 43, cioe' tutto lo spazio in cima. Il selettore prende il nome SOLO
+   quando segue subito l'immagine, cioe' esattamente quando la riga del numero manca.
+   ⚠️ NIENTE APICI INVERSI QUI DENTRO: questo commento vive in una template literal. */
+.c img + .nm{margin-top:auto}
 .c .nm{display:block;padding:0 .55rem .6rem;font-weight:700;font-size:.83rem;line-height:1.25}
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #2a2044;color:var(--dim);font-size:.88rem;text-align:center}
 /* 🔴 v6.638 — L'INVITO AL SITO. Franco: «quell'hyperlink in alto e' troppo
@@ -93,8 +104,8 @@ footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #2a2044;color:var
 .invito{margin:1.5rem 0 2rem;text-align:center}
 .vai{display:inline-block;background:var(--acc);color:#1a1333;font-weight:800;font-size:1.05rem;padding:.75rem 1.5rem;border-radius:10px;text-decoration:none}
 footer a{color:var(--dim);text-decoration:underline}
-:root{--nome:var(--txt);--viola:var(--txt);--lime:var(--txt)}
-.c img + .nm{margin-top:auto}
+:root{--nome:;--viola:;--lime:;--categoria:#ffd84d}
+h4.cat{color:var(--categoria);font-size:.92rem;font-weight:800;letter-spacing:.03em;margin:1.4rem 0 .4rem}
 </style>
 </head>
 <body>

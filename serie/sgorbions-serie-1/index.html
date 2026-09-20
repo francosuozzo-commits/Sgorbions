@@ -85,6 +85,17 @@ h3.ss{color:var(--lime);font-size:1.05rem;margin:1.8rem 0 .5rem;letter-spacing:.
    un apice inverso la CHIUDE. Preso di nuovo scrivendo proprio questa riga. */
 .c img{width:100%;height:auto;display:block;background:#2f2456;margin-top:auto}
 .c .n{display:block;padding:.5rem .55rem 0;font-size:.78rem;color:var(--acc);font-weight:800;margin-top:auto}
+/* 🔴 v6.945 — IL SECONDO MARGINE AUTOMATICO QUANDO IL NUMERO NON C'E'. La v6.940 mette
+   la foto a mezza altezza con DUE margini automatici: uno sull'immagine e uno sulla riga del
+   numero, che si dividono lo spazio libero in parti uguali. Dalla v6.945 il numero si scrive
+   solo se il pezzo ce l'ha, e nelle tipologie che numero non ne hanno — retro, album,
+   bustine, spille — il secondo margine spariva con lui: restava quello dell'immagine da
+   solo, e la foto invece di stare in mezzo finiva appoggiata al testo.
+   📏 MISURATO NEL BROWSER su un retro sdraiato dentro una griglia alta 290px: prima
+   sopra 126 / sotto 43, cioe' tutto lo spazio in cima. Il selettore prende il nome SOLO
+   quando segue subito l'immagine, cioe' esattamente quando la riga del numero manca.
+   ⚠️ NIENTE APICI INVERSI QUI DENTRO: questo commento vive in una template literal. */
+.c img + .nm{margin-top:auto}
 .c .nm{display:block;padding:0 .55rem .6rem;font-weight:700;font-size:.83rem;line-height:1.25}
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #2a2044;color:var(--dim);font-size:.88rem;text-align:center}
 /* 🔴 v6.638 — L'INVITO AL SITO. Franco: «quell'hyperlink in alto e' troppo
@@ -93,8 +104,8 @@ footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #2a2044;color:var
 .invito{margin:1.5rem 0 2rem;text-align:center}
 .vai{display:inline-block;background:var(--acc);color:#1a1333;font-weight:800;font-size:1.05rem;padding:.75rem 1.5rem;border-radius:10px;text-decoration:none}
 footer a{color:var(--dim);text-decoration:underline}
-:root{--nome:var(--txt);--viola:var(--txt);--lime:var(--txt)}
-.c img + .nm{margin-top:auto}
+:root{--nome:;--viola:;--lime:;--categoria:#ffd84d}
+h4.cat{color:var(--categoria);font-size:.92rem;font-weight:800;letter-spacing:.03em;margin:1.4rem 0 .4rem}
 </style>
 </head>
 <body>
@@ -299,12 +310,21 @@ Le figurine vanno dalla n. 1 alla n. 160.</p>
 </ul>
 
 <h3 class="ss">Retro</h3>
+<h4 class="cat">CERTIFICATO</h4>
 <ul class="g">
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784845797/rvbolshveowogpf1yj0m.png" alt="retro CERTIFICATO DI ANTIPATICO — Sgorbions serie 1" loading="lazy"><span class="nm">CERTIFICATO DI ANTIPATICO</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784845883/sijvrpxtzp8xzqzqoqoh.png" alt="retro CERTIFICATO DI BUONO A NULLA — Sgorbions serie 1" loading="lazy"><span class="nm">CERTIFICATO DI BUONO A NULLA</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784846003/qtweesxjw63j3ycqqudc.png" alt="retro CERTIFICATO DI CANAGLIA — Sgorbions serie 1" loading="lazy"><span class="nm">CERTIFICATO DI CANAGLIA</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784846110/moee88f3mkdhxwyj5mz5.png" alt="retro CERTIFICATO DI MANIGOLDO — Sgorbions serie 1" loading="lazy"><span class="nm">CERTIFICATO DI MANIGOLDO</span></li>
+</ul>
+
+<h4 class="cat">DIPLOMA</h4>
+<ul class="g">
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784846229/iojdoozz76u59obycpzh.png" alt="retro DIPLOMA DELLA SCUOLA DEI COLPI DURI — Sgorbions serie 1" loading="lazy"><span class="nm">DIPLOMA DELLA SCUOLA DEI COLPI DURI</span></li>
+</ul>
+
+<h4 class="cat">PERMESSO</h4>
+<ul class="g">
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1783278553/pa6nz3mhc1gadyvye5bk.png" alt="retro PERMESSO DEL CATTIVO GUSTO — Sgorbions serie 1" loading="lazy"><span class="nm">PERMESSO DEL CATTIVO GUSTO</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784871143/dssyfps0sinu0ofrswcm.png" alt="retro PERMESSO DI ACCAPARRARSI LA TV — Sgorbions serie 1" loading="lazy"><span class="nm">PERMESSO DI ACCAPARRARSI LA TV</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784871194/r2empehukyjegyseyisi.png" alt="retro PERMESSO DI AVERE LA FACCIA TOSTA — Sgorbions serie 1" loading="lazy"><span class="nm">PERMESSO DI AVERE LA FACCIA TOSTA</span></li>
@@ -331,6 +351,10 @@ Le figurine vanno dalla n. 1 alla n. 160.</p>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784872316/jzurstye0bzrcyvvvwux.png" alt="retro PERMESSO DI USARE INUTILMENTE IL TELEFONO — Sgorbions serie 1" loading="lazy"><span class="nm">PERMESSO DI USARE INUTILMENTE IL TELEFONO</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784871314/axuoohm8dyoxknajkgka.png" alt="retro PERMESSO DI BRUTO — Sgorbions serie 1" loading="lazy"><span class="nm">PERMESSO DI BRUTO</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784871843/l7dunfdi3mkz9jelibxg.png" alt="retro PERMESSO DI MANGIARE TRA I PASTI — Sgorbions serie 1" loading="lazy"><span class="nm">PERMESSO DI MANGIARE TRA I PASTI</span></li>
+</ul>
+
+<h4 class="cat">PREMIO</h4>
+<ul class="g">
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784873026/qctsgukihot6tzq6comb.png" alt="retro PREMIO DEL COCCO DELLA MAESTRA — Sgorbions serie 1" loading="lazy"><span class="nm">PREMIO DEL COCCO DELLA MAESTRA</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784873265/jlax3a9xi4mtg8vhpqvt.png" alt="retro PREMIO DELLA SPAZZATURA — Sgorbions serie 1" loading="lazy"><span class="nm">PREMIO DELLA SPAZZATURA</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1783283637/llvdpgz5whzoyu5adqlh.png" alt="retro PREMIO DI CAROGNA — Sgorbions serie 1" loading="lazy"><span class="nm">PREMIO DI CAROGNA</span></li>
@@ -354,6 +378,10 @@ Le figurine vanno dalla n. 1 alla n. 160.</p>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784873598/itwk4saqtgkcpoz6r9ts.png" alt="retro PREMIO DI MIGLIOR ATTORE — Sgorbions serie 1" loading="lazy"><span class="nm">PREMIO DI MIGLIOR ATTORE</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784873651/vl8cail0mpyquabdb5in.png" alt="retro PREMIO DI PAPPAGALLO — Sgorbions serie 1" loading="lazy"><span class="nm">PREMIO DI PAPPAGALLO</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784904076/fcktoi3sdl3uj180vpcb.png" alt="retro PREMIO DI SCEMO TOTALE — Sgorbions serie 1" loading="lazy"><span class="nm">PREMIO DI SCEMO TOTALE</span></li>
+</ul>
+
+<h4 class="cat">RICERCATO</h4>
+<ul class="g">
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1783701717/q13quqlxl8tpxkizlwkg.png" alt="retro RICERCATA PER CRUDELTÀ MENTALE E NON — Sgorbions serie 1" loading="lazy"><span class="nm">RICERCATA PER CRUDELTÀ MENTALE E NON</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784904472/h4byzjedximtmm4xsuw0.png" alt="retro RICERCATO PER DELITTO IMPUNITO — Sgorbions serie 1" loading="lazy"><span class="nm">RICERCATO PER DELITTO IMPUNITO</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784904592/m8jp8gqc7xoiv1bcrnzz.png" alt="retro RICERCATO PER ECCESSO DI ZELO — Sgorbions serie 1" loading="lazy"><span class="nm">RICERCATO PER ECCESSO DI ZELO</span></li>
@@ -371,6 +399,10 @@ Le figurine vanno dalla n. 1 alla n. 160.</p>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784905997/whjqufftglisepgqgtht.png" alt="retro RICERCATO PER PORTO D'ARMI IMPROPRIE (ARTIGLI) — Sgorbions serie 1" loading="lazy"><span class="nm">RICERCATO PER PORTO D'ARMI IMPROPRIE (ARTIGLI)</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784906035/ylondgcgep18xnewbnih.png" alt="retro RICERCATO PER SCHERZI DA PRETE — Sgorbions serie 1" loading="lazy"><span class="nm">RICERCATO PER SCHERZI DA PRETE</span></li>
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784906074/tftf1tlfj9undzmkumsi.png" alt="retro RICERCATO PER TRATTA DEGLI SCHIAVI — Sgorbions serie 1" loading="lazy"><span class="nm">RICERCATO PER TRATTA DEGLI SCHIAVI</span></li>
+</ul>
+
+<h4 class="cat">RICETTA</h4>
+<ul class="g">
 <li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784906100/zegnapx6rto65jkckdyi.png" alt="retro RICETTA CONTRO ALLERGIA — Sgorbions serie 1" loading="lazy"><span class="nm">RICETTA CONTRO ALLERGIA</span></li>
 </ul>
 
