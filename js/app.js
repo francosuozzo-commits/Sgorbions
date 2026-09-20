@@ -1,6 +1,32 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.947 - 🪟 LA VETRINA DELLA HOME PER CHI NON HA FATTO LOGIN (Franco: «una fascia, sotto al
+//          carosello, con le sole copertine delle serie (solito filtro di visibilità); sopra alla
+//          foto il nome della serie; sotto alla foto le numeriche; foto cliccabile; al click apro
+//          la nostra griglia delle fcr mostrando però schede alterne buone-sfumate (una sì una
+//          no); su ogni figurina sfumata il messaggio (registrati o accedi per vedere); stesso
+//          messaggio, più grande, sopra la fascia»). Modificati index.html e js/app.js.
+//          🔴 LA FASCIA NON PORTA DA NESSUNA PARTE, ed è il suo pregio: non linka le pagine per
+//          Google, non apre una rotta, non tocca `showPage`. La griglia si apre DENTRO la fascia
+//          stessa e l'unica uscita in avanti è il login. Nasce dalla riserva di Franco: «un conto
+//          è che trovano la pagina e che essa faccia ponte al sito; un conto è che ci arriva al
+//          sito poi non entri perché si limiti a navigarne una sezione che non richiede auth».
+//          🔄 `renderHomeSeries` ESISTEVA GIÀ E NON DISEGNAVA NIENTE: cercava un
+//          `#home-series-grid` che nell'index non c'era, quindi usciva alla prima riga. Quattro
+//          chiamanti, zero effetti. Adesso quel contenitore c'è, ed è questa fascia.
+//          🔴 NASCE `_serieDaMostrareAlPubblico`, e `_gscSerie` diventa il suo chiamante: Franco
+//          ha voluto la fascia e le pagine per Google con lo stesso filtro, e «lo stesso» vuol
+//          dire una funzione, non due che oggi si somigliano.
+//          ⚠️ LO SFUMATO È UNA SFOCATURA CSS, NON UNA SERRATURA: la foto sta nella pagina e chi
+//          legge il sorgente la trova. È dichiarato nel codice e va bene così — quelle stesse
+//          foto sono già pubbliche sulle pagine per Google. Il giorno in cui dietro ci fosse
+//          qualcosa di riservato, questa scelta andrebbe rifatta.
+//          📌 L'alternanza nitida/sfumata è sull'INDICE, non a caso: a caso la stessa figurina
+//          sarebbe nitida e sfumata a turno, e a chi guarda sembrerebbe un difetto.
+//          📌 Se una serie le figurine con retro non ce le ha — le Spille — la griglia prende il
+//          primo blocco della sua pagina per Google: un clic che non mostra niente è peggio di
+//          una copertina che non si clicca.
 // v6.946 - 🏷️ LE SOTTOSEZIONI PER CATEGORIA NELLE PAGINE PER GOOGLE (Franco: «nella sezione
 //          dedicata ai retro, puoi elencare i retro per categoria ed indicare il nome della
 //          categoria prima di ogni sottosezione? tanto la categoria c'è per ogni retro»).
@@ -29641,7 +29667,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.946';
+const JS_VERSION = 'v6.947';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32162,6 +32188,14 @@ function _aggiornaFraseHome() {
   p.textContent = t(chiave);
 }
 
+// 🔄 v6.947 (Franco: «il nome del sito nella navbar non deve vedersi nella homepage; come
+//    abbiamo fatto per l'hero; altrimenti c'è 2 volte») — IL NOME SEGUE IL LOGO.
+// 📌 È la stessa domanda già risposta qui per il logo, e per la stessa ragione: in home quella
+//    roba c'è già, grande, dentro l'hero. Due funzioni che chiedono «siamo in home?» sarebbero due
+//    risposte da tenere uguali; una sola non può divergere.
+// ⚠️ Il `display` si scrive, non si toglie: `''` rimette quello del foglio di stile, e sotto gli
+//    860px è `none` — così il nome resta spento sul telefono anche fuori dalla home, che è dove
+//    lo spazio non c'è.
 function _aggiornaLogoNavbar() {
   const logo = document.querySelector('#navbar .nav-logo');
   if (!logo) return;
@@ -32170,6 +32204,13 @@ function _aggiornaLogoNavbar() {
   const inHome = !!attiva && attiva.id === 'page-home'
     && (!dettaglioSerie || dettaglioSerie.style.display === 'none');
   logo.style.display = inHome ? 'none' : '';
+  // 🔄 v6.947 — IL NOME SI SPEGNE DA LOGGATI, NON IN HOME. Per un'ora la regola era
+  //    l'opposta, perché il nome stava anche nell'hero e in home si sarebbe letto due volte.
+  //    Adesso vive solo qui, quindi in home ci deve stare — è l'unico posto che lo dice.
+  // ⚠️ Da loggati il menu si riempie (Inventario, Blog, Liste, Classifica...) e il centro
+  //    della barra non è più vuoto: lì il nome finirebbe sopra le voci.
+  const nome = document.querySelector('#navbar .nav-nome-sito');
+  if (nome) nome.style.display = (typeof currentUser !== 'undefined' && currentUser) ? 'none' : '';
 }
 
 // ============================================================
@@ -42689,15 +42730,148 @@ function seriesCardHTML(s) {
   </div>`;
 }
 
-function renderHomeSeries() {
+// ============================================================
+//  🆕 v6.947 — LA VETRINA DELLA HOME, per chi non è ancora entrato
+// ============================================================
+// Franco: «una fascia, sotto al carosello, con le sole copertine delle serie (solito filtro di
+// visibilità); sopra alla foto il nome della serie; sotto alla foto le numeriche; foto
+// cliccabile; al click apro la nostra griglia delle fcr mostrando però schede alterne
+// buone-sfumate (una sì una no); su ogni figurina sfumata il messaggio (registrati o accedi per
+// vedere); stesso messaggio, più grande, sopra la fascia».
+//
+// 🔴 QUESTA FASCIA NON PORTA DA NESSUNA PARTE, ED È IL SUO PREGIO. Non linka le pagine per
+//    Google, non apre una sezione navigabile: la griglia si apre DENTRO la fascia stessa, e
+//    l'unico modo di uscirne in avanti è il login. La preoccupazione di Franco, parole sue:
+//    «un conto è che trovano la pagina e che essa faccia ponte al sito; un conto è che ci arriva
+//    al sito poi non entri perché si limiti a navigarne una sezione che non richiede auth».
+//
+// ⚠️ LO SFUMATO È UNA SFOCATURA CSS, NON UNA SERRATURA: la foto sta nella pagina e chi guarda
+//    il sorgente la trova. È dichiarato e va bene così — quelle stesse foto sono già pubbliche
+//    sulle pagine per Google. Il giorno in cui dietro ci fosse qualcosa di riservato, questa
+//    riga smetterebbe di essere accettabile e la scelta andrebbe rifatta.
+
+// 📌 Le due frasi le ha scritte Franco. Stanno qui e non nel dizionario perché sono di questa
+//    vetrina e di nient'altro; il giorno che servissero altrove, si spostano in `i18n`.
+const VETRINA_INVITO = { it: 'Registrati o accedi per vedere', en: 'Register or sign in to see' };
+const VETRINA_TORNA  = { it: '‹ Torna alle serie', en: '‹ Back to the series' };
+
+// 🔴 UNA SOLA COSA DA CLICCARE, E PORTA AL LOGIN. Card nitida o sfumata non fa differenza: chi
+//    tocca una figurina sta chiedendo di vederla, e la risposta è sempre la stessa porta.
+function vetrinaChiediAccesso() { openAuth('register'); }
+
+// 📌 La riga corta sotto la copertina (Franco: «riga corta»). Il numero è quello che il sito
+//    conta già per la card della serie — `senzaErroriDiStampa` — quindi non può dire una cifra
+//    diversa da quella che il visitatore trova entrando.
+function _vetrinaConteggio(s) {
+  const n = _quantiArticoli(s);
+  return n.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US')
+    + ' ' + (currentLang === 'it' ? 'articoli' : 'items');
+}
+
+function _vetrinaSerieCard(s) {
+  // 🔄 v6.947 (Franco: «usa il nome breve delle serie, nella card») — `_nomeSerieCard` con
+  //    `sempreCorto`, che è la funzione con cui il sito scrive il nome sulle card della
+  //    serie. Ripiega da sé sul nome lungo dove il corto non c'è, quindi non serve un `if`.
+  // 📌 `alt` e nome visibile restano la stessa stringa: se un domani divergessero, la foto
+  //    racconterebbe a Google una serie e lo schermo un'altra.
+  const nome = esc(_nomeSerieCard(s, true));
+  const cop = s.img || '';
+  return '<button type="button" class="vetrina-card" data-serie="' + esc(s.id) + '"'
+    + ' onclick="vetrinaApriSerie(this.dataset.serie)">'
+    + '<span class="vetrina-nome">' + nome + '</span>'
+    + (cop ? '<img src="' + esc(cop) + '" alt="' + nome + '" loading="lazy">'
+           : '<span class="vetrina-nocop"></span>')
+    + '<span class="vetrina-conta">' + esc(_vetrinaConteggio(s)) + '</span>'
+    + '</button>';
+}
+
+// 🔴 QUALI ARTICOLI FINISCONO IN GRIGLIA: le figurine con retro in versione base, che è quello
+//    che Franco ha chiesto («la nostra griglia delle fcr»).
+// ⚠️ E se la serie le figurine con retro non ce le ha — è il caso delle Spille, che hanno solo
+//    spille — si prende il PRIMO blocco della sua pagina per Google. Senza questa riga la
+//    vetrina delle Spille si aprirebbe vuota: un clic che non mostra niente è peggio di una
+//    copertina che non si clicca.
+function _vetrinaPezzi(s) {
+  const g = tipiPresenti(s.id, 'figurines');
+  const base = g.base.length ? g.base : ((_gscBlocchi(s, currentLang === 'it' ? 'it' : 'en')[0] || {}).pezzi || []);
+  return base.slice().sort((a, b) => (+a.number || 0) - (+b.number || 0));
+}
+
+// 🔴 UNA SÌ UNA NO, E L'ALTERNANZA È SULL'INDICE, non a caso: a caso cambierebbe a ogni
+//    ridisegno, e la stessa figurina sarebbe nitida e sfumata a turno — che a chi guarda sembra
+//    un difetto, non un invito.
+function _vetrinaFigCard(f, sfumata, figs) {
+  const foto = _fotoFigurina(f, figs) || '';
+  const num = _haNumero(f);
+  const it = currentLang === 'it';
+  return '<li class="vetrina-fig' + (sfumata ? ' sfumata' : '') + '" onclick="vetrinaChiediAccesso()">'
+    + (foto ? '<img src="' + esc(foto) + '" alt="' + esc(f.name || '') + '" loading="lazy">' : '<span class="vetrina-nofoto"></span>')
+    + (sfumata ? '<span class="vetrina-velo">' + esc(VETRINA_INVITO[it ? 'it' : 'en']) + '</span>' : '')
+    + (num ? '<span class="vetrina-n">' + esc(f.number) + '</span>' : '')
+    + '<span class="vetrina-nm">' + esc(f.name || '') + '</span></li>';
+}
+
+// 🔴 LA GRIGLIA SI APRE DENTRO LA FASCIA, non in una pagina nuova: niente rotta, niente URL,
+//    niente `showPage`. Così non esiste un indirizzo che un motore o un visitatore possa
+//    raggiungere da fuori, e «tornare indietro» è un bottone, non la cronologia del browser.
+// 🆕 v6.947 — LE FRECCE DELLA FILA. Scorre di una schermata per volta, come il carosello.
+// 📌 `scrollBy` e non un indice ricordato: l'unico stato è dove si trova la barra, e quello
+//    lo sa già il browser. Un contatore nostro andrebbe tenuto allineato a mano ogni volta che
+//    la fila cambia — e cambia da sé il giorno che nasce una serie.
+// ⚠️ `- 40` non è un vezzo: lasciando una striscia della card successiva si capisce che la
+//    fila continua, invece di sembrare finita a ogni scatto.
+function vetrinaScorri(verso) {
+  const fila = document.getElementById('home-series-grid');
+  if (!fila) return;
+  fila.scrollBy({ left: verso * Math.max(160, fila.clientWidth - 40), behavior: 'smooth' });
+}
+
+function vetrinaApriSerie(id) {
   const grid = document.getElementById('home-series-grid');
-  if (!grid) return;
-  const series = getData('series', []).slice(0, 3);
-  if (!series.length) {
-    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🎴</div><p class="empty-title">${t('catalog.empty')}</p></div>`;
-    return;
-  }
-  grid.innerHTML = series.map(s => seriesCardHTML(s)).join('');
+  const s = getData('series', []).find(x => x.id === id);
+  if (!grid || !s) return;
+  const it = currentLang === 'it';
+  const figs = getData('figurines', []);
+  const pezzi = _vetrinaPezzi(s);
+  grid.classList.add('aperta');
+  grid.innerHTML =
+    '<div class="vetrina-testa">'
+    + '<button type="button" class="back-btn vetrina-torna" onclick="renderHomeSeries()">' + esc(VETRINA_TORNA[it ? 'it' : 'en']) + '</button>'
+    + '<span class="vetrina-titolo">' + esc(_nomeSerie(s)) + '</span>'
+    + '</div>'
+    // 🆕 v6.947 (Franco: «il link viola che c'è sotto alla griglia delle figurine, lo
+    //    metterei anche sopra di essa») — L'INVITO STA SOPRA E SOTTO.
+    // 📌 Quello sotto è il <button> fisso della sezione; questo nasce e muore con la griglia,
+    //    quindi non porta un `id`: due elementi con lo stesso id sono un documento non valido, e
+    //    `getElementById` ne vedrebbe uno solo — proprio quello che `renderHomeSeries` riempie.
+    // 🔴 Con 256 figurine la griglia è lunga: chi arriva in fondo ha già deciso, chi guarda
+    //    dall'alto no. L'invito serve dove si comincia a guardare, non solo dove si smette.
+    + '<button type="button" class="vetrina-invito" onclick="vetrinaChiediAccesso()">'
+    + esc(VETRINA_INVITO[it ? 'it' : 'en']) + '</button>'
+    + '<ul class="vetrina-griglia">'
+    + pezzi.map((f, i) => _vetrinaFigCard(f, i % 2 === 1, figs)).join('')
+    + '</ul>';
+  grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// 🔄 v6.947 — `renderHomeSeries` ESISTEVA GIÀ E NON DISEGNAVA NIENTE: cercava un
+//    `#home-series-grid` che nell'index non c'era più, quindi usciva alla prima riga. Era codice
+//    morto con quattro chiamanti — il tipo di cosa che si legge credendo che funzioni.
+//    Adesso quel contenitore c'è, ed è questa fascia.
+// 🔴 SI MOSTRA SOLO A CHI NON È ENTRATO. Chi ha fatto login ha l'Inventario vero, con la ricerca
+//    e la sua lista: una vetrina con metà figurine sfumate sarebbe un passo indietro.
+function renderHomeSeries() {
+  const sez = document.getElementById('home-vetrina-sez');
+  const grid = document.getElementById('home-series-grid');
+  if (!sez || !grid) return;
+  const serie = (typeof currentUser !== 'undefined' && currentUser) ? [] : _serieDellaVetrina();
+  if (!serie.length) { sez.style.display = 'none'; grid.innerHTML = ''; return; }
+  const it = currentLang === 'it';
+  sez.style.display = '';
+  const invito = document.getElementById('vetrina-invito');
+  if (invito) invito.textContent = VETRINA_INVITO[it ? 'it' : 'en'];
+  grid.classList.remove('aperta');
+  grid.innerHTML = serie.map(_vetrinaSerieCard).join('');
 }
 
 // ============================================================
@@ -59315,8 +59489,37 @@ function renderHomeStats() {
   const _serieTutte = Array.isArray(_cache.series) ? _cache.series : [];
   const _figTutte = Array.isArray(_cache.figurines) ? _cache.figurines : [];
   const users = getData('public_profiles', []);
-  const _serieContate = _serieDaContare(_serieTutte);
-  const figs = _articoliDaContare(_figTutte, _serieTutte);
+  // 🔄 v6.947 (Franco: «lo score della serie deve indicare lo stesso numero delle card, quindi
+  //    includi le serie in arrivo») — I NUMERONI CONTANO QUELLO CHE LA VETRINA MOSTRA.
+  // 🔴 RIBALTA LA v6.811, E NON È UNA SVISTA: là Franco aveva chiesto «tutti non vedono, nei
+  //    contatori, IN ARRIVO e INVISIBILI», e allora la home non mostrava le serie in arrivo da
+  //    nessuna parte. Dalla v6.947 la fascia le mostra: un contatore che dice «5 serie» sopra
+  //    dieci copertine è una bugia che si vede a occhio nudo.
+  // 📌 È la STESSA funzione della fascia, non una regola parallela: se un domani cambia chi
+  //    entra in vetrina, il numero la segue da sé.
+  // ⚠️ LE INVISIBILI RESTANO FUORI — quella metà della v6.811 non è cambiata — e gli articoli
+  //    si tolgono ancora PER APPARTENENZA A UNA SERIE ESCLUSA, non per appartenenza a una
+  //    inclusa: un articolo il cui `seriesId` non corrisponde a nessuna serie continua a essere
+  //    contato, invece di sparire in silenzio da dodici numeri (v6.811).
+  const _serieContate = _serieDellaVetrina();
+  // 🔄 v6.947 (Franco: «non contare gli errori di stampa nei contatori della hero») — I
+  //    NUMERONI E LE CARD CONTANO ALLO STESSO MODO. 📏 Misurato prima di cambiare: «Figurine
+  //    con retro» diceva 2473 con gli errori di stampa e ne dice 2458 senza. In home i due
+  //    modi di contare stavano a pochi centimetri — i numeroni con, le card della vetrina
+  //    senza — e nessuno dei due era sbagliato: erano due domande diverse nello stesso posto.
+  // 📌 `senzaErroriDiStampa` è la stessa funzione che usa la card della serie: adesso c'è
+  //    una sola risposta, e il giorno che quella regola impara qualcosa la impara anche qui.
+  // ⚠️ QUI NON SI CHIAMA `_articoliDaContare`, E VA DETTO PERCHÉ. Quella funzione toglie anche
+  //    le serie IN ARRIVO, che è giusto per tutti i contatori tranne questo: la vetrina della home
+  //    le mostra. Le si è provato ad aggiungere un terzo argomento, ed è stato peggio — cinque
+  //    banchi la ritagliano dal sorgente cercando la sua FIRMA, e cambiarla li rompe tutti e
+  //    cinque senza che nessuno di loro parli del difetto vero. Meglio una riga in più qui, che
+  //    dichiara la sua differenza, che una firma che cambia sotto cinque prove.
+  // 🔴 LA FORMA RESTA QUELLA DELLA v6.811: si esclude per appartenenza a una serie esclusa,
+  //    non si include per appartenenza a una inclusa. Un articolo il cui `seriesId` non
+  //    corrisponde a nessuna serie continua a essere contato, invece di sparire in silenzio.
+  const _fuoriDaiNumeri = new Set(_serieTutte.filter(s => _statoSerie(s) === 'nascosta').map(s => s.id));
+  const figs = senzaErroriDiStampa(_figTutte.filter(f => !f.invisibile && !_fuoriDaiNumeri.has(f.seriesId)));
 
   // 🆕 v6.815 (Franco) — UN NUMERONE PER TIPOLOGIA, AL POSTO DEL SECCHIO.
   // 🔴 I RIQUADRI SI DISEGNANO QUI, NON NELL'INDEX: erano sei, scritti a mano, ognuno con una
@@ -59354,9 +59557,19 @@ function renderHomeStats() {
   animateCount(document.getElementById('stat-series'), _serieContate.length);
   // 📌 Ogni numerone conta la SUA tipologia, e la fetta si chiede con la stessa domanda per tutte:
   //    niente più «tutto ciò che non è…», che è la forma in cui un secchio rinasce.
+  // 🔄 v6.947 (Franco: «gli score a 0 non mostrarli») — UN NUMERONE A ZERO SI SPEGNE.
+  // 📌 Si nasconde la voce, non si toglie dall'elenco: le celle le costruisce il blocco qui
+  //    sopra una volta sola (`_firma`), e rifarle a ogni giro vorrebbe dire ridisegnare dodici
+  //    riquadri per un numero che cambia. Con `grid-auto-flow:column` una voce nascosta non
+  //    occupa la sua colonna, quindi la riga si richiude da sé.
+  // ⚠️ «Serie» non si spegne mai: se fosse zero non ci sarebbe niente in pagina, e un numerone
+  //    mancante sarebbe l'ultimo dei problemi.
   for (const sez of _tutti) {
-    animateCount(document.getElementById('stat-' + sez),
-      figs.filter(f => (f.section || 'figurines') === sez).length);
+    const _el = document.getElementById('stat-' + sez);
+    const _n = figs.filter(f => (f.section || 'figurines') === sez).length;
+    const _voce = _el && _el.closest('.stat-item');
+    if (_voce) _voce.style.display = _n ? '' : 'none';
+    animateCount(_el, _n);
   }
   animateCount(document.getElementById('stat-users'), users.length);
   animateCount(document.getElementById('stat-langs'), contaLingueSito());
@@ -62345,14 +62558,78 @@ function _gscConPanniGooglebot(fn) {
   finally { currentUser = utente; currentLang = lingua; }
 }
 
+// 🆕 v6.947 — QUALI SERIE SI MOSTRANO A CHI NON È ENTRATO, IN UN POSTO SOLO.
+// 📌 Il filtro e' letto dai DATI, non da un elenco scritto qui: il giorno che una serie esce
+//    dalla costruzione entra da se'. Franco, 7 settembre: «per le serie in costruzione non
+//    facciamo nulla in Google».
+// 🔄 v6.668 - «in arrivo» e non «ha il flag»: una serie IN COMPLETAMENTO si apre e si
+//    naviga, quindi la sua pagina per Google ci vuole. Restano fuori solo le une e le altre
+//    di sempre.
+// 🔴 v6.947 — E DA ADESSO RISPONDE A DUE DOMANDE, NON A UNA: quali serie hanno una pagina per
+//    Google, e quali compaiono nella fascia della home per un visitatore sloggato. Franco le ha
+//    volute identiche («il solito filtro di visibilità... oggi sono cinque, le stesse delle
+//    pagine per Google»), e identiche vuol dire UNA funzione, non due che oggi si somigliano.
+//    ⚠️ Le invisibili non sono nominate qui e non è una dimenticanza: `getData('series')` le
+//    toglie da sé a chi non è admin (v6.584), e riscrivere quella condizione qui sarebbe la
+//    seconda copia di una regola che vive dentro la lettura dei dati.
+// 🔴 v6.947 — L'ORDINE SI METTE QUI PERCHE' L'ELENCO CHE ARRIVA NON E' ORDINATO PER CHI NON HA
+//    FATTO LOGIN. 📏 Misurato il 20 settembre, non dedotto: da admin `getData('series')` torna
+//    1, 2, 3, serie 4, Stamps, Holidays... cioe' `order` 0,1,2,3,4,5; da sloggato torna
+//    «serie 3, Mega 2, Kakkones, Mega 1, serie 1...», un ordine che non e' nessuno dei due. E'
+//    stabile dentro la sessione, quindi non e' casuale: e' un altro ordine, e finora non se n'era
+//    accorto nessuno perche' nessuna schermata elencava le serie a un visitatore sloggato.
+// ⚠️ Questa riga cura il sintomo dove si vede, non la causa: il perche' quella lettura perda
+//    l'ordine sta dentro `getData`, ed e' un lavoro suo.
+// 📌 `?? 9999` e non `|| 9999`: `order` della prima serie vale **0**, e con `||` finirebbe in
+//    fondo insieme a chi l'ordine non ce l'ha.
+function _serieOrdinate(elenco) {
+  return elenco.slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+}
+
+// 🔴 v6.947 — QUANTI ARTICOLI HA UNA SERIE, per la card della vetrina e per decidere se la serie
+//    ha qualcosa da mostrare. `senzaErroriDiStampa` e' la stessa domanda che fa `seriesCardHTML`:
+//    il numero della vetrina non puo' dire una cifra diversa da quella che il visitatore trova
+//    entrando.
+function _quantiArticoli(s) {
+  return senzaErroriDiStampa(getData('figurines', []).filter(f => f.seriesId === s.id)).length;
+}
+
+// 🆕 v6.947 (Franco: «in questa fascia metti anche le serie IN ARRIVO; poco importa se quando
+//    entrano saranno indicate come TALI; tanto il numero da mettere nella card lo hai») —
+//    LA VETRINA MOSTRA PIU' SERIE DELLE PAGINE PER GOOGLE, ED E' VOLUTO.
+// 🔴 LE DUE REGOLE SI SONO SEPARATE, E VA DETTO PERCHE': per un'ora sono state la stessa
+//    funzione, perche' Franco le aveva volute identiche. Adesso non lo sono piu', e la ragione
+//    e' una decisione sua del 7 settembre che NON e' cambiata: «per le serie in costruzione non
+//    facciamo nulla in Google». La fascia e' casa sua e puo' mostrare quello che vuole; una
+//    pagina indicizzata di una serie che non c'e' ancora, no.
+// ⚠️ NIENTE SERIE VUOTE: una card che annuncia «0 articoli» dice al visitatore che non c'e'
+//    niente da vedere, che e' l'opposto del mestiere di questa fascia. 📏 Misurato: sono tre —
+//    Stamps, Kakkones e Kakkones 2 — e restano fuori finche' restano vuote, da se'.
+// 🔴 E LE INVISIBILI SI TOLGONO A MANO, perche' `getData` NON le toglie. 📏 Misurato da
+//    sloggato: «Kakkones 2» ha `invisibile: true` ed e' nell'elenco che arriva. Finora non si
+//    vedeva perche' era anche «in arrivo», e il filtro di Google la scartava per quell'altro
+//    motivo: una protezione che reggeva per caso. Da qui in poi la fascia mostra anche le «in
+//    arrivo», quindi quel caso sarebbe diventato vero.
+function _serieDellaVetrina() {
+  // 🔴 v6.947 — LA DOMANDA SULLE NASCOSTE SI FA A `_statoSerie`, NON AL CAMPO. La prima
+  //    stesura scriveva `!s.invisibile`, e `prova-v6668` l'ha bocciata: in questo sito quel campo
+  //    si legge in UN posto solo, perché lo stato di una serie è una cosa sola e `statoSerie`
+  //    scritto a mano vince sul flag. Due letture divergono il giorno che una delle due impara
+  //    qualcosa — ed è esattamente ciò che stava per succedere qui.
+  return _serieOrdinate(getData('series', []).filter(s =>
+    _statoSerie(s) !== 'nascosta' && !s.serieContenitore && _quantiArticoli(s) > 0));
+}
+
+// 📌 Il nome resta `_gscSerie` perché è così che la chiamano la scheda GSC, `_gscPiano` e le
+//    sue prove: la regola si è spostata, il chiamante no.
 function _gscSerie() {
-  // 📌 Il filtro e' letto dai DATI, non da un elenco scritto qui: il giorno che una serie esce
-  //    dalla costruzione entra da se'. Franco, 7 settembre: «per le serie in costruzione non
-  //    facciamo nulla in Google».
-  // 🔄 v6.668 - «in arrivo» e non «ha il flag»: una serie IN COMPLETAMENTO si apre e si
-  //    naviga, quindi la sua pagina per Google ci vuole. Restano fuori solo le une e le altre
-  //    di sempre.
-  return getData('series', []).filter(s => _statoSerie(s) !== 'in-arrivo' && !s.serieContenitore);
+  // 🔴 v6.947 — IL FILTRO TORNA QUI, e `!s.invisibile` è una toppa a un buco che reggeva
+  //    per caso: `getData` le invisibili non le toglie (misurato), e finora le scartava il
+  //    filtro delle «in arrivo» perché l'unica invisibile è anche in arrivo. Una serie
+  //    pubblicata e resa invisibile avrebbe avuto la sua pagina su Google — esattamente il
+  //    guasto che il commento della vecchia `sitemap.xml` diceva di temere.
+  return _serieOrdinate(getData('series', []).filter(s =>
+    _statoSerie(s) !== 'nascosta' && _statoSerie(s) !== 'in-arrivo' && !s.serieContenitore));
 }
 
 const _GSC_PRE = 'https://res.cloudinary.com/ddpsge9d8/image/upload/';
