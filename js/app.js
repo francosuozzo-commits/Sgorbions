@@ -1,6 +1,22 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.949 - 🔗 LE CARD DELLE DIECI PAGINE PER GOOGLE DIVENTANO LINK ALLA SCHEDA
+//          (Franco: «in quella pagina servono più motivi per cliccare, quindi più punti in cui
+//          cliccare»). Modificati index.html e js/app.js, piu' le dieci pagine e la sitemap.
+//          📏 I punti cliccabili per pagina passano da DUE (i bottoni «Vai al sito») a uno per
+//          card: 242 sulla serie 1, 1430 sulle cinque italiane, altrettanti sulle inglesi.
+//          🔴 E MANTENGONO LA PROMESSA: la prima idea era che la foto sembrasse ingrandirsi e
+//          invece portasse al sito. Chi clicca per vedere una foto e si ritrova altrove torna
+//          indietro subito, e quel rimbalzo Google lo misura proprio sulle pagine che stiamo
+//          cercando di far salire. Il link e' dichiarato — contorno all'hover per chi ha un
+//          mouse, una riga sotto il titolo per chi non ce l'ha.
+//          🔴 L'indirizzo lo scrive `_gscIndirizzoScheda` e nessun altro: la forma `#f/…/…`
+//          vive in `_SCHEDA_HASH` (v6.948), e una stringa a mano sarebbe la seconda copia.
+//          ⚠️ E' ASSOLUTO ALLA RADICE (`/#f/…`): queste pagine vivono in `/serie/<slug>/`, e
+//          senza la barra il frammento verrebbe letto come un'ancora della pagina stessa.
+//          ⚠️ `.c a` si prende il flex in colonna: i due margini automatici che mettono la
+//          foto a mezza altezza (v6.940, v6.945) stanno DENTRO il link.
 // v6.948 - 🃏 LA SCHEDA DI UN ARTICOLO, APERTA DA UN INDIRIZZO E CON UNA LETTURA MIRATA
 //          (Franco: «un visitatore di quelle pagine deve avere un vero motivo per cliccare sul
 //          tasto che porta al sito» e, sui 6,4 secondi del caricamento, «sono troppi.
@@ -29924,7 +29940,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.948';
+const JS_VERSION = 'v6.949';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -62906,6 +62922,20 @@ function _gscSerie() {
     _statoSerie(s) !== 'nascosta' && _statoSerie(s) !== 'in-arrivo' && !s.serieContenitore));
 }
 
+// 🆕 v6.949 — L'INDIRIZZO DI UNA SCHEDA, IN UN POSTO SOLO.
+// 🔴 La forma `#f/<idSerie>/<idArticolo>` è dichiarata dalla v6.948 in `_SCHEDA_HASH`, che è
+//    l'espressione con cui il sito la RICONOSCE. Questa funzione è l'unico punto che la
+//    SCRIVE, e sta qui accanto a `_gscIndirizzi` per la stessa ragione per cui quella esiste:
+//    gli indirizzi in un posto solo, perché due copie della stessa stringa divergono al primo
+//    ritocco — e un link rotto su mille card non lo vede nessuno finché non lo vede Google.
+// ⚠️ È UN INDIRIZZO ASSOLUTO ALLA RADICE, non relativo: queste pagine vivono in
+//    `/serie/<slug>/`, e un `#f/…` senza la barra davanti verrebbe letto come un frammento
+//    DELLA PAGINA STESSA — cioè il clic non porterebbe da nessuna parte, senza nessun errore.
+// 📌 `prova-v6949` pretende che il link cominci per `/#f/` proprio per questo.
+function _gscIndirizzoScheda(s, f) {
+  return '/#f/' + s.id + '/' + f.id;
+}
+
 const _GSC_PRE = 'https://res.cloudinary.com/ddpsge9d8/image/upload/';
 
 const _gscEsc = x => String(x == null ? '' : x)
@@ -63038,8 +63068,28 @@ h3.ss{color:var(--lime);font-size:1.05rem;margin:1.8rem 0 .5rem;letter-spacing:.
    giorni, l'ultima proprio scrivendo la riga che lo vieta. */
 h4.cat{color:var(--categoria);font-size:.92rem;font-weight:800;letter-spacing:.03em;margin:1.4rem 0 .4rem}
 .hint{color:var(--dim);font-size:.9rem;margin:0 0 1.1rem}
+/* 🆕 v6.949 — la riga che dice che le card si cliccano. Stesso aspetto della hint e classe
+   diversa: vedi il commento nel codice che la scrive. */
+.apri{color:var(--dim);font-size:.9rem;margin:0 0 1.1rem}
 .g{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.9rem}
 .c{background:var(--card);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+/* 🆕 v6.949 — LA REGOLA DEL LINK DENTRO LA CARD, quella che il commento del 7 settembre
+   nominava, e non e' decorativa: e' il link a prendersi il flex in colonna, non piu' l'elemento
+   di lista. 🔴 PERCHE': i due margini automatici della v6.940 e della v6.945 — quelli che
+   mettono la foto a mezza altezza — stanno sull'immagine e sulla riga del numero, cioe' DENTRO
+   il link. Se il contenitore flex restasse l'elemento di lista, il link diventerebbe il suo
+   unico figlio e quei due margini si troverebbero in un blocco normale: la foto tornerebbe
+   appiccicata in cima, su ogni card, senza nessun errore.
+   ⚠️ L'EREDITA' DEL COLORE NON E' PIGNOLERIA: la regola dei link di questa stessa pagina
+   renderebbe GIALLI il numero e il nome di tutte le card. Il giallo qui significa «entra nel
+   sito», ed e' del bottone: un nome giallo direbbe una cosa che non e' vera.
+   📌 IL CONTORNO ALL'HOVER dichiara che si puo' cliccare, per chi ha un mouse. Chi non ce
+   l'ha lo legge nella riga sotto il titolo: due strade per la stessa informazione, perche' la
+   prima meta' dei visitatori arriva da un telefono.
+   ⚠️ NIENTE APICI INVERSI QUI DENTRO: questo commento vive in una template literal, e il primo
+   apice la CHIUDE. Preso di nuovo scrivendo proprio questo blocco — e' la quinta volta. */
+.c a{display:flex;flex-direction:column;height:100%;color:inherit;text-decoration:none}
+.c a:hover{outline:2px solid var(--acc);outline-offset:-2px;border-radius:10px}
 /* 🔄 v6.940 — LA FOTO STA A MEZZA ALTEZZA, non incollata in cima (Franco: «le figurine
    sdraiate riusciresti a metterle a mezza altezza, rispetto alla altezza di una figurina
    verticale? al momento pareggiamo al lato superiore»).
@@ -63381,16 +63431,33 @@ function _gscPagina(s, L) {
   //    quei due attributi non servivano a disegnare: servivano a prenotare lo spazio prima che la
   //    foto arrivi, e prenotato male è peggio che non prenotato — la pagina salta nel verso
   //    sbagliato. Un rapporto vero non ce l'abbiamo: i dati non tengono le misure dell'immagine.
+  // 🆕 v6.949 — LE CARD SONO LINK, ED È IL GIORNO CHE IL COMMENTO QUI SOPRA ASPETTAVA DAL
+  //    7 SETTEMBRE: «puntavano alle pagine per figurina, che non esistono. Il giorno che si
+  //    fanno, qui torna l'`<a href>` e nel CSS la regola `.c a`». Le schede esistono dalla
+  //    v6.948, e questo è quel giorno.
+  // 🔴 PERCHE' ESISTONO. Franco, 21 settembre: «in quella pagina servono più motivi per
+  //    cliccare, quindi più punti in cui cliccare». 📏 Erano DUE per pagina (i due bottoni
+  //    «Vai al sito»); adesso sono uno per card — 242 sulla serie 1, 1430 sulle cinque
+  //    italiane, altrettanti sulle inglesi.
+  // ⚠️ E MANTENGONO LA PROMESSA. La prima idea era che la foto sembrasse ingrandirsi e invece
+  //    portasse al sito: chi clicca per vedere una foto grande e si ritrova altrove torna
+  //    indietro subito, e quel rimbalzo Google lo misura proprio sulle pagine che stiamo
+  //    cercando di far salire. Il link è dichiarato — cursore a mano, la card si solleva, e
+  //    una riga sotto il titolo lo dice a parole per chi non ha un mouse.
+  // 🔴 L'INDIRIZZO LO COSTRUISCE `_gscIndirizzoScheda`, NON QUESTA RIGA: la forma `#f/…/…` vive
+  //    in `_SCHEDA_HASH` dentro l'app, e una stringa scritta a mano qui sarebbe la seconda
+  //    copia di quella forma — quella che il giorno del primo ritocco comincia a mentire senza
+  //    che nessun errore lo dica.
   const card = (f, sez) => {
     const foto = _fotoFigurina(f, F) || '';
     const num = _haNumero(f);
     const alt = getSectionLabelSingular(sez) + ' ' + f.name
       + (num ? (L === 'it' ? ', n. ' : ', no. ') + f.number : '') + ' — ' + nome;
-    return '<li class="c">'
+    return '<li class="c"><a href="' + _gscEsc(_gscIndirizzoScheda(s, f)) + '">'
       + (foto ? '<img src="' + _gscEsc(foto.replace(_GSC_PRE, _GSC_PRE + 'w_240,q_auto,f_auto/'))
             + '" alt="' + _gscEsc(alt) + '" loading="lazy">' : '')
       + (num ? '<span class="n">' + _gscEsc(f.number) + '</span>' : '')
-      + '<span class="nm">' + _gscEsc(f.name) + '</span></li>';
+      + '<span class="nm">' + _gscEsc(f.name) + '</span></a></li>';
   };
   return '<!DOCTYPE html>\n<html lang="' + L + '">\n<head>\n<meta charset="UTF-8">\n'
     + '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
@@ -63446,6 +63513,20 @@ function _gscPagina(s, L) {
     //    senza chiamanti sarebbe stata una regola che nessuno applica e che il prossimo legge
     //    credendola in vigore.
     + '<h2>' + (L === 'it' ? 'Tutti gli articoli' : 'All the items') + '</h2>\n'
+    // 🆕 v6.949 — LA RIGA CHE DICE A PAROLE CHE LE CARD SI CLICCANO, e sta qui perche' il
+    //    contorno all'hover lo vede solo chi ha un mouse: piu' di meta' di chi arriva da Google
+    //    e' su un telefono, e per loro il link sarebbe invisibile fino al dito.
+    // 📌 Una volta sola, in testa a tutte le griglie: ripeterla sopra ogni blocco direbbe sei
+    //    volte la stessa cosa nella stessa pagina — e Google lo legge come riempitivo.
+    // 🔴 CLASSE SUA (`apri`) E NON `hint`, e non e' un vezzo: `prova-v6941` §3a pretende che su
+    //    una serie senza numeri in pagina non ci sia NESSUNA `class="hint"`, perche' quella
+    //    classe la porta la riga «Dalla n. X alla n. Y» — e una hint vuota era proprio il
+    //    difetto che quella suite guarda. Riusando `hint` qui, l'asserzione sarebbe diventata
+    //    rossa su una cosa giusta, e l'unico modo di farla tornare verde sarebbe stato
+    //    indebolirla. 📌 Una prova che si aggira per comodita' non protegge piu' niente.
+    + '<p class="apri">' + (L === 'it'
+        ? 'Clicca un articolo per aprirlo sul sito, con il suo retro e le sue versioni.'
+        : 'Click an item to open it on the website, with its back and its versions.') + '</p>\n'
     // 🆕 v6.945 — UNA GRIGLIA PER BLOCCO, e i blocchi li decide `_gscBlocchi`.
     // 🔴 QUI NON SI SCEGLIE PIÙ NIENTE: prima questo punto chiedeva da sé le sottoserie e
     //    tirava su le sole figurine. Adesso srotola l'elenco che le NUMERICHE hanno già
