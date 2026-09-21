@@ -1,6 +1,41 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.952 - 🏠 LE CINQUE NOTE DI FRANCO SULLA HOME. Modificati index.html e js/app.js.
+//          1. 🔴 LA FASCIA: le due frecce si accendono SOLO se c'e' da scorrere, e la fila si
+//             centra quando ci sta tutta. 📏 Misurato nel browser, ed e' l'unico modo per aver
+//             capito quale delle tre cause fosse: su uno schermo da 2560 il contenitore e'
+//             1620px e le dieci card ne occupano 1479 — i 141 che avanzano stavano tutti a
+//             destra, e la freccia sinistra finiva sopra la prima card. `scrollWidth` e
+//             `clientWidth` erano UGUALI: non c'era niente da scorrere, e due bottoni che non
+//             scorrono niente non devono esserci. Su schermo stretto tornano da se'.
+//             ⚠️ `justify-content:safe center` e non `center`: col solo `center`, quando il
+//             contenuto e' piu' largo il browser taglia la parte iniziale e non si raggiunge
+//             piu' nemmeno scorrendo.
+//          2. i due «Inizia a collezionare» diventano UNO: resta quello di DESTRA, con una
+//             freccia ↗ verso i tasti Accedi/Registrati, che stanno in alto a destra. Messo a
+//             sinistra, avrebbe puntato fuori dalla pagina.
+//          3. 🔴 L'INVITO DELLA FASCIA DIVENTA «Le Serie Sgorbions: registrati o accedi per
+//             vederle!», e la costante SI SDOPPIA: la stessa frase alimentava anche l'invito
+//             sopra la griglia aperta, che parla delle FIGURINE di una serie. Allungando
+//             l'unica costante, li' sarebbe uscito «Le Serie Sgorbions» sopra delle figurine —
+//             una frase giusta nel posto sbagliato, che nessuna prova avrebbe preso.
+//          4. piu' spazio fra i numeroni e quell'invito (il margine sta sull'invito, non sui
+//             numeroni: quella riga la vede anche chi ha fatto login, e li' non c'e' fascia).
+//          5. «Le figurine» centrato sopra il carosello. 🔴 RIBALTA LA v6.065, che non era una
+//             svista: quel titolo fu tolto con un argomento scritto, «le figurine si spiegano
+//             da sole». Da allora la home ha imparato a parlare — sopra c'e' la fascia delle
+//             SERIE — e senza una parola qui le due file sembrano la stessa cosa che continua.
+//             Il titolo non spiega piu' le figurine: le distingue dalle serie.
+//          🔴 6. (NON CHIESTO, TROVATO STRADA FACENDO) LE FIGURINE DELLA GRIGLIA NON SI
+//             VEDEVANO — «sono totalmente nere», difetto vivo dalla v6.947. Due cause in una
+//             riga: le foto erano le ORIGINALI (misurate 1288 KB l'una, 160 per serie) e il
+//             `loading="lazy"` non scattava mai, perche' un'immagine non caricata vale altezza
+//             zero, una card alta zero non entra nel viewport, e senza viewport il lazy non
+//             parte. ✅ Miniature `w_240` e lazy tolto, piu' `aspect-ratio` nel CSS che prenota
+//             lo spazio prima che la foto arrivi.
+//          📌 E la frase delle card sfumate resta corta: usava la stessa costante dell'invito
+//             della fascia, e allungandola sarebbe uscita dentro un velo largo 150px.
 // v6.951 - 🔘 IL BOTTONE PERDE LA PAROLA «Internet» (Franco: «"visitando il sito Internet
 //          figurineSgorbions.it" diventa "visitando il sito figurineSgorbions.it"»).
 //          Modificati index.html e js/app.js, piu' le dieci pagine.
@@ -29976,7 +30011,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.951';
+const JS_VERSION = 'v6.952';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31642,7 +31677,7 @@ const i18n = {
 'hero.challenge':'Challenge others','hero.challengeDesc':'Who has the highest-scoring list? You can also choose to appear anonymously.',
 'hero.desc':'The unofficial database dedicated to the legendary Italian sticker series of the \'90s.','hero.descShort':'The unofficial database of the legendary Italian \'90s series.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
-'hero.cta1':'Explore the Sgorbions Inventory !','hero.cta2':'Start collecting Sgorbions',
+'hero.cta1':'Explore the Sgorbions Inventory !','home.figurine':'The stickers','hero.cta2':'Start collecting Sgorbions',
 'hero.stat1':'Series','hero.stat3':'Collectors','hero.statLangs':'Site languages',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
 'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
@@ -31748,7 +31783,7 @@ const i18n = {
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','rc.title':'Ricarica il sito saltando la cache del browser','nav.mialista':'Mia lista',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista con maggior punteggio? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.','hero.descShort':'Il database non ufficiale della leggendaria serie italiana anni \'90.',
-    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','hero.cta2':'Inizia a collezionare gli Sgorbions',
+    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Le figurine','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Serie','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
@@ -43078,7 +43113,23 @@ function seriesCardHTML(s) {
 
 // 📌 Le due frasi le ha scritte Franco. Stanno qui e non nel dizionario perché sono di questa
 //    vetrina e di nient'altro; il giorno che servissero altrove, si spostano in `i18n`.
-const VETRINA_INVITO = { it: 'Registrati o accedi per vedere', en: 'Register or sign in to see' };
+// 🔄 v6.952 (Franco: «la scritta "Registrati o accedi per vedere" diventa "Le Serie Sgorbions:
+//    registrati o accedi per vederle !"») — DUE FRASI, NON PIU' UNA.
+// 🔴 ERANO LA STESSA COSTANTE IN DUE POSTI CHE DICONO COSE DIVERSE: il bottone sopra la fascia
+//    parla delle SERIE, quello che nasce sopra la griglia aperta parla delle FIGURINE di quella
+//    serie. Allungando l'unica costante, sopra la griglia sarebbe uscito «Le Serie Sgorbions»
+//    mentre a schermo c'erano le figurine — una frase giusta nel posto sbagliato, che nessuna
+//    prova avrebbe preso.
+// 📌 Quella della griglia resta corta apposta: sta sopra una fila di figurine, e la sua
+//    lunghezza la decide lo spazio, non il gusto.
+// ⚠️ LO SPAZIO PRIMA DEL «!» NON E' UN REFUSO: e' la regola che Franco ha chiesto il 24 agosto
+//    («nel sito vedo che abbiamo dei ! che non hanno uno spazio prima. possiamo metterlo
+//    sempre?»), e `prova-v6390` la conta. La sua nota del 22 settembre scriveva «vederle!»
+//    attaccato — la regola generale vince sulla svista di battitura, e questa riga sta qui
+//    perche' il prossimo che la legge non la «sistemi».
+const VETRINA_INVITO = { it: 'Le Serie Sgorbions: registrati o accedi per vederle !',
+                         en: 'The Sgorbions Series: register or sign in to see them !' };
+const VETRINA_INVITO_GRIGLIA = { it: 'Registrati o accedi per vedere', en: 'Register or sign in to see' };
 const VETRINA_TORNA  = { it: '‹ Torna alle serie', en: '‹ Back to the series' };
 
 // 🔴 UNA SOLA COSA DA CLICCARE, E PORTA AL LOGIN. Card nitida o sfumata non fa differenza: chi
@@ -43131,8 +43182,29 @@ function _vetrinaFigCard(f, sfumata, figs) {
   const num = _haNumero(f);
   const it = currentLang === 'it';
   return '<li class="vetrina-fig' + (sfumata ? ' sfumata' : '') + '" onclick="vetrinaChiediAccesso()">'
-    + (foto ? '<img src="' + esc(foto) + '" alt="' + esc(f.name || '') + '" loading="lazy">' : '<span class="vetrina-nofoto"></span>')
-    + (sfumata ? '<span class="vetrina-velo">' + esc(VETRINA_INVITO[it ? 'it' : 'en']) + '</span>' : '')
+    // 🔴 v6.952 — DUE DIFETTI IN UNA RIGA, E TUTTI E DUE MISURATI. Franco: «quando clicco su
+    //    di una serie, le card non sfumate non mostrano alcuna immagine. sono totalmente nere».
+    //    Vivo dalla v6.947.
+    // 1. 📏 LE FOTO ERANO QUELLE ORIGINALI: l'URL usciva da `_fotoFigurina` senza nessuna
+    //    trasformazione — misurato, **1288 KB l'una**. Con 160 card sono oltre 100 MB per
+    //    aprire una serie. Adesso passa da `cloudinaryUrl`, come fa il resto del sito e come
+    //    fanno le dieci pagine per Google (che chiedono `w_240`).
+    // 2. 🔴 `loading="lazy"` QUI NON SCATTAVA MAI. 📏 Misurato sul sito vivo: `naturalWidth` 0
+    //    e `currentSrc` VUOTO, cioe' il browser non aveva nemmeno cominciato a scaricare; la
+    //    stessa URL con `fetch` rispondeva 200, e togliendo l'attributo le foto comparivano
+    //    all'istante. Non e' il peso e non e' la rete: e' che l'immagine non caricata vale
+    //    altezza ZERO, la card resta alta zero, e una card alta zero non entra mai nel
+    //    viewport — un cerchio che si chiude da solo, senza un errore da nessuna parte.
+    // ⚠️ Il rimedio e' DOPPIO apposta: lo spazio si prenota nel CSS con `aspect-ratio` (cosi'
+    //    la card e' alta anche prima della foto), e qui si toglie il lazy. Con le miniature il
+    //    conto e' sostenibile; col lazy da solo, il difetto restava.
+    + (foto ? '<img src="' + esc(cloudinaryUrl(foto, 'w_240,q_auto,f_auto')) + '" alt="' + esc(f.name || '') + '">' : '<span class="vetrina-nofoto"></span>')
+    // 🔴 v6.952 — IL VELO PRENDE LA FRASE CORTA (Franco: «la frase sulle card sfumate,
+    //    ovviamente, rimane invariata»). 📌 «Ovviamente» per lui, non per il codice: questa
+    //    riga usava la STESSA costante del bottone sopra la fascia, quindi allungando quella
+    //    sarebbe uscito «Le Serie Sgorbions…» su ogni figurina sfumata — dentro un velo largo
+    //    150px. Se n'e' accorto lui guardando, non una prova.
+    + (sfumata ? '<span class="vetrina-velo">' + esc(VETRINA_INVITO_GRIGLIA[it ? 'it' : 'en']) + '</span>' : '')
     + (num ? '<span class="vetrina-n">' + esc(f.number) + '</span>' : '')
     + '<span class="vetrina-nm">' + esc(f.name || '') + '</span></li>';
 }
@@ -43173,7 +43245,7 @@ function vetrinaApriSerie(id) {
     // 🔴 Con 256 figurine la griglia è lunga: chi arriva in fondo ha già deciso, chi guarda
     //    dall'alto no. L'invito serve dove si comincia a guardare, non solo dove si smette.
     + '<button type="button" class="vetrina-invito" onclick="vetrinaChiediAccesso()">'
-    + esc(VETRINA_INVITO[it ? 'it' : 'en']) + '</button>'
+    + esc(VETRINA_INVITO_GRIGLIA[it ? 'it' : 'en']) + '</button>'
     + '<ul class="vetrina-griglia">'
     + pezzi.map((f, i) => _vetrinaFigCard(f, i % 2 === 1, figs)).join('')
     + '</ul>';
@@ -43186,6 +43258,30 @@ function vetrinaApriSerie(id) {
 //    Adesso quel contenitore c'è, ed è questa fascia.
 // 🔴 SI MOSTRA SOLO A CHI NON È ENTRATO. Chi ha fatto login ha l'Inventario vero, con la ricerca
 //    e la sua lista: una vetrina con metà figurine sfumate sarebbe un passo indietro.
+// 🆕 v6.952 (Franco: «la fascia prelogin non ha un contenuto centrato rispetto alle due sue
+//    freccie di scorrimento. la freccia di sx sta sopra a un album mentre tra l'ultimo album e
+//    la freccia dx c'e' molto spazio nero») — LE FRECCE SI ACCENDONO SOLO SE C'E' DA SCORRERE.
+// 📏 MISURATO NEL BROWSER prima di toccare niente, ed e' l'unico modo per aver capito quale
+//    delle tre cause possibili fosse: su uno schermo da 2560 il contenitore e' largo 1620px e
+//    le dieci card ne occupano 1479. Avanzano 141px, tutti a DESTRA, perche' la fila e'
+//    allineata a sinistra; e la freccia sinistra, che sta al bordo del CONTENITORE, finisce
+//    sopra la prima card. Le due cose che Franco ha visto sono lo stesso difetto ai due capi.
+// 🔴 E LA CURA NON E' SPOSTARE LE FRECCE: e' che su quello schermo non servono. `scrollWidth`
+//    e `clientWidth` erano uguali — non c'era niente da scorrere, e due bottoni che non
+//    scorrono niente non devono esserci. Su uno schermo stretto tornano da se'.
+// ⚠️ Si chiama dopo ogni disegno E al ridimensionamento: la risposta dipende dalla larghezza
+//    della finestra, quindi calcolarla una volta sola sarebbe vera finche' nessuno tocca niente.
+function _vetrinaFrecce() {
+  const largo = document.querySelector('.vetrina-largo');
+  const grid = document.getElementById('home-series-grid');
+  if (!largo || !grid) return;
+  // 📌 Il margine di un pixel non e' superstizione: con il gap e i bordi il conto puo' uscire
+  //    per frazioni, e senza quel pixel le frecce comparirebbero su una fascia che sta tutta
+  //    dentro. E' lo stesso motivo per cui il sito confronta le larghezze con una tolleranza.
+  largo.classList.toggle('senza-scorrimento', grid.scrollWidth <= grid.clientWidth + 1);
+}
+window.addEventListener('resize', () => { try { _vetrinaFrecce(); } catch (e) {} });
+
 function renderHomeSeries() {
   const sez = document.getElementById('home-vetrina-sez');
   const grid = document.getElementById('home-series-grid');
@@ -43198,6 +43294,8 @@ function renderHomeSeries() {
   if (invito) invito.textContent = VETRINA_INVITO[it ? 'it' : 'en'];
   grid.classList.remove('aperta');
   grid.innerHTML = serie.map(_vetrinaSerieCard).join('');
+  // 🆕 v6.952 — dopo il disegno, si ridecide se le frecce servono.
+  _vetrinaFrecce();
 }
 
 // ============================================================
