@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.947">
+<link rel="stylesheet" href="css/style.css?v=6.948">
 
 
 <style>
@@ -2607,6 +2607,20 @@ di tutte le serie</button>
   <section class="section">
     <div class="section-inner" style="max-width:620px;">
       <div id="unsubscribe-content" style="text-align:center;padding:2rem 0;"></div>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== SCHEDA DI UN ARTICOLO (v6.948) ==================== -->
+<!-- 🔴 UNA `.page` COME LE ALTRE, e non un modale: le pagine si riconoscono chiedendo al DOM
+     se esiste `#page-<nome>` (v6.627), quindi questa entra nel giro da se', senza nessun
+     elenco scritto a mano da tenere allineato.
+     ⚠️ E NON E' FRA QUELLE CHE CHIEDONO IL LOGIN: ci si arriva da una pagina per Google, cioe'
+     da sloggati. E' la porta, non la stanza — quello che nasconde lo nasconde il disegno. -->
+<div id="page-scheda" class="page">
+  <section class="section">
+    <div class="section-inner">
+      <div id="scheda-content"></div>
     </div>
   </section>
 </div>
@@ -5397,7 +5411,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.947"></script>
+<script src="js/app.js?v=6.948"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5421,7 +5435,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.947'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.948'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 

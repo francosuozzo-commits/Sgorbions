@@ -1,6 +1,23 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.948 - 🃏 LA SCHEDA DI UN ARTICOLO, APERTA DA UN INDIRIZZO E CON UNA LETTURA MIRATA
+//          (Franco: «un visitatore di quelle pagine deve avere un vero motivo per cliccare sul
+//          tasto che porta al sito» e, sui 6,4 secondi del caricamento, «sono troppi.
+//          inaccettabile»). Modificati index.html e js/app.js.
+//          🔴 `#f/<idSerie>/<idArticolo>` apre UNA figurina leggendo UN documento, senza
+//          aspettare il catalogo. 📏 Misurato: il catalogo intero ~6.400 ms (16 serie, 4.708
+//          articoli, 2,4 MB); il solo documento della serie 1, chiesto da se', 238-444 ms su
+//          tre giri. Venti volte piu' in fretta.
+//          🔴 E' L'UNICO POSTO DEL SITO DOVE FRONTE E RETRO STANNO INSIEME: il legame esiste
+//          nei dati dalla v6.358 e non lo vedeva nessuno, perche' figurine e retri abitano due
+//          sezioni diverse. 📏 Sulla serie 1 ce l'hanno 531 figurine su 572.
+//          🔒 Da sloggato le altre versioni si CONTANO e non si mostrano (Franco: «dillo»), e i
+//          due pulsanti portano al login. Le parole sono quelle che il sito usa gia' — «Mia
+//          lista» e «Cio' che cerco» —: «Ce l'ho» e' il linguaggio che la v5.381 ha abolito.
+//          ⚠️ E' UNA TENDA, NON UNA SERRATURA, ed e' dichiarato nel codice: il catalogo e'
+//          pubblico in lettura (§15.2), quindi quelle versioni sono gia' nel browser.
+//          ⬜ I LINK SULLE CARD DELLE DIECI PAGINE NON CI SONO ANCORA: sono la release dopo.
 // v6.947 - 🪟 LA VETRINA DELLA HOME PER CHI NON HA FATTO LOGIN (Franco: «una fascia, sotto al
 //          carosello, con le sole copertine delle serie (solito filtro di visibilità); sopra alla
 //          foto il nome della serie; sotto alla foto le numeriche; foto cliccabile; al click apro
@@ -28824,6 +28841,17 @@ function apriPaginaDaHash() {
     // 🔴 Se una disiscrizione e' in sospeso, quella strada ha gia' deciso dove mandare
     // l'utente (la pagina, o il login che la precede): qui non si tocca niente.
     if (pendingUnsubTarget()) return false;
+    // 🆕 v6.948 — SE LA SCHEDA E' APERTA, QUI NON SI TOCCA NIENTE. Questa funzione gira DOPO
+    //    `loadAllData()`, cioe' sei secondi dopo che la scheda si e' gia' disegnata: senza
+    //    questa riga il visitatore verrebbe portato altrove mentre sta guardando la figurina
+    //    per cui e' arrivato. Il controllo sotto lo scarterebbe da se', ma per caso: cambia
+    //    il giorno che quel controllo cambia.
+    // ⚠️ `typeof` E NON IL NOME NUDO: `prova-v6627` ritaglia QUESTA funzione dal sorgente e la
+    //    esegue da sola, senza il resto del file. Col nome nudo la variabile non esiste in quel
+    //    contesto, l'eccezione si mangia tutte le rotte e la suite si accende su cose che
+    //    funzionano. 📌 La suite ha fatto il suo mestiere: il difetto non era nel codice vivo,
+    //    ma il codice vivo era scritto in un modo che rendeva la prova cieca.
+    if (typeof _schedaCorrente !== 'undefined' && _schedaCorrente) return false;
     const nome = (window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
     if (!nome || !/^[a-z]+$/.test(nome)) return false;
     // alias: le parole che una persona scrive, portate ai nomi veri delle pagine.
@@ -28835,6 +28863,235 @@ function apriPaginaDaHash() {
     showPage(pagina);
     return true;
   } catch (e) { console.warn('apriPaginaDaHash', e.message); return false; }
+}
+
+// ============================================================================
+//  🆕 v6.948 — LA SCHEDA DI UN ARTICOLO, E LA LETTURA MIRATA CHE LA APRE
+// ============================================================================
+// 🔴 PERCHE' ESISTE. Franco, 21 settembre: «un visitatore di quelle pagine deve avere un vero
+//    motivo per cliccare sul tasto che porta al sito». Le dieci pagine per Google mostrano tutto
+//    il visibile di una serie, quindi chi le trova non ha nessuna ragione di entrare: la scheda
+//    e' quella ragione, perche' e' l'unico posto dove una figurina si ricompone INTERA —
+//    fronte e retro insieme, la famiglia, le sue altre versioni.
+// 📏 MISURATO, non dedotto: nella serie 1 il sito ha 960 articoli e la pagina per Google ne
+//    mostra 242. Le altre 718 — varianti, change, omaggi — Google non le ha mai viste.
+//
+// 🔴 E PERCHE' LA LETTURA E' MIRATA. Franco, stessa sessione: «6,4 secondi sono troppi.
+//    inaccettabile».
+// 📏 Misurato sul sito vivo: `loadAllData()` impiega ~6.400 ms (sedici serie, 4.708 articoli,
+//    2,4 MB) prima che si veda qualcosa. Il documento della SOLA serie 1, chiesto da se',
+//    arriva in 238-444 ms su tre giri. Venti volte piu' in fretta.
+// 📌 Quindi la scheda non passa dalla porta grande: chiede UN documento con `fsGet`, che
+//    esiste dalla v6.176, e disegna. Il resto del catalogo continua a caricarsi dietro, e
+//    quando arriva accende il ritorno alla serie — che e' l'unica cosa che gli serve.
+// ⚠️ NON rende il sito piu' veloce per chi entra dalla home: lo AGGIRA per chi arriva da fuori.
+//    Detto qui perche' il giorno che qualcuno misurera' la home e la trovera' ancora a 6 secondi
+//    non deve credere che questa release non abbia funzionato.
+
+// 🔴 LA FORMA DELL'INDIRIZZO, e perche' porta gli id e non i nomi.
+//    `#f/<idSerie>/<idArticolo>` — esempio: #f/B8YNfd4pqHtf3UIqcvef/03kEmpc6UMrjt8Say7gl
+// 📌 Uno slug leggibile (`#f/sgorbions-serie-1/96`) sarebbe piu' bello, ma per tradurlo in un
+//    documento bisogna prima AVERE l'elenco delle serie: cioe' aspettare i 6,4 secondi che
+//    questa release esiste per evitare. Con l'id la lettura e' diretta.
+// ⚠️ E non si perde niente lato Google: il frammento non viene MAI trasmesso al server e non
+//    e' indicizzabile — la stessa proprieta' su cui si appoggia `#unsubscribe`.
+// 🔴 I DUE ID LI SA GIA' LA PAGINA STATICA quando la genera: sono nei dati che ha in mano.
+const _SCHEDA_HASH = /^#f\/([A-Za-z0-9_-]{4,64})\/([A-Za-z0-9_-]{4,64})$/;
+
+// 🔴 LO STATO STA IN UNA VARIABILE SOLA, e non in tre: `_schedaCorrente` e' `null` quando la
+//    scheda non e' aperta, e altrimenti tiene la serie, l'articolo e il momento in cui e'
+//    arrivato. Tre variabili separate (aperta? quale? con quali dati?) sono tre cose che
+//    possono dire il falso l'una dell'altra.
+let _schedaCorrente = null;
+
+function _schedaDallIndirizzo() {
+  const m = (window.location.hash || '').match(_SCHEDA_HASH);
+  return m ? { idSerie: m[1], idArt: m[2] } : null;
+}
+
+// 🔴 LE ALTRE VERSIONI SI CONTANO SUL NOME, NON SUL NUMERO. Le figurine numerate si
+//    riconoscerebbero anche dal numero, ma spille, retro, album e bustine un numero non ce
+//    l'hanno (`_haNumero`) — e proprio le spille sono il caso vero: «ABBASSO LE DIETE» esiste
+//    in SEI versioni, distinte dalla sottoserie, e nessuna ha un numero.
+// ⚠️ Stessa sezione, sempre: un retro non e' «un'altra versione» di una figurina, e' un'altra
+//    faccia. Quello lo porta `retroId`, qui sotto.
+function _altreVersioni(art, items) {
+  if (!art) return [];
+  return (items || []).filter(x => x && x.id !== art.id
+    && x.section === art.section && (x.name || '') === (art.name || ''));
+}
+
+// 🔴 IL RETRO PASSA DA `retroId`, che e' il legame che i dati hanno gia'. Nel sito le figurine
+//    stanno nella sezione «Figurine» e i retri in «Retro»: due griglie, due tab, e il legame
+//    non lo vede mai nessuno. 📏 Misurato sulla serie 1: 531 figurine su 572 ce l'hanno, cioe'
+//    il 93%. La scheda e' il primo posto del sito in cui quel legame diventa qualcosa da vedere.
+function _retroDi(art, items) {
+  if (!art || !art.retroId) return null;
+  return (items || []).find(x => x && x.id === art.retroId) || null;
+}
+
+// 🔴 LA LETTURA MIRATA. Un documento, non il catalogo.
+// ⚠️ `fsGet` torna `null` sia se il documento non c'e' sia se Firestore ha risposto male: il
+//    chiamante non distingue i due casi e non deve — in tutti e due la scheda non si apre e
+//    l'utente finisce sulla home, che e' la cosa giusta da fare e l'unica onesta da dire.
+async function _leggiArticoloMirato(idSerie, idArt) {
+  const serie = await fsGet('series', idSerie);
+  if (!serie) return null;
+  const items = serie.items || [];
+  const art = items.find(x => x && x.id === idArt);
+  if (!art) return null;
+  return { serie, art, items };
+}
+
+// 🔴 SI CHIAMA DUE VOLTE, E NON E' UNO SPRECO. La prima appena Firestore e' pronto — prima
+//    dell'attesa di `onAuthStateChanged` e di `loadAllData` — quando ancora NON si sa se c'e'
+//    un utente: la scheda esce con i due pulsanti che portano al login, che e' il
+//    comportamento giusto per chi non e' entrato. La seconda quando la sessione e' nota, e se
+//    l'utente c'era i pulsanti diventano veri.
+// 📌 La seconda chiamata NON rilegge niente: ridisegna gli stessi dati gia' in mano. Una
+//    seconda `fsGet` sarebbe una seconda lettura fatturata per mostrare le stesse cose.
+async function apriSchedaDaHash() {
+  const q = _schedaDallIndirizzo();
+  if (!q) return false;
+  try {
+    const trovato = await _leggiArticoloMirato(q.idSerie, q.idArt);
+    if (!trovato) {
+      // ⚠️ Niente toast: chi arriva da un link vecchio non ha fatto niente di male e non
+      //    capirebbe un messaggio d'errore. Si toglie il frammento e si resta sulla home.
+      try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+      return false;
+    }
+    _schedaCorrente = trovato;
+    showPage('scheda');
+    renderScheda();
+    return true;
+  } catch (e) {
+    console.error('apriSchedaDaHash', e);
+    return false;
+  }
+}
+
+// 🔴 IL RITORNO DIPENDE DA COSA C'E' IN MANO, e la domanda si fa al catalogo, non a un flag:
+//    se le serie sono arrivate si torna dentro la serie, altrimenti alla home. Un flag
+//    «catalogo pronto» sarebbe una seconda verita' accanto a `getData('series')`.
+function chiudiScheda() {
+  const s = _schedaCorrente;
+  _schedaCorrente = null;
+  try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+  const caricato = (getData('series', []) || []).length > 0;
+  if (caricato && s && s.serie && s.serie.id) {
+    showPage('catalog');
+    try { openSeriesDetail(s.serie.id); } catch (e) { console.warn('chiudiScheda', e.message); }
+    return;
+  }
+  showPage('home');
+}
+
+function renderScheda() {
+  const el = document.getElementById('scheda-content');
+  if (!el || !_schedaCorrente) return;
+  const { serie, art, items } = _schedaCorrente;
+  const it = currentLang === 'it';
+  const num = _haNumero(art);
+  const retro = _retroDi(art, items);
+  const versioni = _altreVersioni(art, items);
+  const foto = _fotoFigurina(art, items) || '';
+  const fotoRetro = retro ? (_fotoFigurina(retro, items) || '') : '';
+  const entrato = !!currentUser;
+
+  // 🔴 IL TITOLO PORTA `fullName`, NON `name` (decisione di Franco, 21 settembre). E la ragione
+  //    e' misurata: le cinque «LILLY PUNTASPILLI» e le sei «ABBASSO LE DIETE» hanno tutte lo
+  //    stesso `name`. Col nome corto, cinque schede diverse si chiamerebbero uguale — e chi
+  //    arriva da Google non avrebbe modo di sapere quale sta guardando.
+  const titolo = (num ? art.number + ' · ' : '') + (art.fullName || art.name || '');
+
+  // 🔴 LA RIGA DELLA FAMIGLIA SPARISCE QUANDO IL CAMPO E' VUOTO (Franco: «sì sparisce»).
+  // 📏 Misurato su tutte le serie: 1266 figurine su 2632 non ce l'hanno — la famiglia e'
+  //    finita solo nelle serie 1 e 2. Una riga «Famiglia: —» insegnerebbe milleduecento volte
+  //    che il sito non sa le cose; il giorno che il campo si riempie, la riga torna da se'.
+  const righe = [];
+  if (art.famiglia) righe.push([it ? 'Famiglia' : 'Family', art.famiglia]);
+  // 🔴 LA PAROLA NON SI RISCRIVE QUI: la dice `_parolaSottoserie`, che e' l'unico posto in cui
+  //    vive. 📌 Me l'ha insegnato `prova-v6781`, che le copie di quella parola le CONTA: la
+  //    stesura prima ne scriveva una nuova a mano, e la suite si e' accesa dicendo esattamente
+  //    cosa fare — «falla passare da `_parolaSottoserie`».
+  if (art.subseries) righe.push([_parolaSottoserie(), art.subseries]);
+  if (art.category) righe.push([it ? 'Categoria' : 'Category', art.category]);
+
+  const fotoBox = (src, etichetta) => !src ? '' :
+    '<figure style="margin:0;text-align:center;">'
+    + '<img src="' + _gscEsc(cloudinaryUrl(src, 'w_420,q_auto,f_auto')) + '" alt="' + _gscEsc(etichetta + ' — ' + titolo) + '"'
+    + ' style="max-width:100%;border-radius:12px;background:var(--card2);display:block;margin:0 auto;">'
+    + '<figcaption style="color:var(--muted);font-size:.82rem;margin-top:.4rem;">' + _gscEsc(etichetta) + '</figcaption>'
+    + '</figure>';
+
+  el.innerHTML =
+    '<div style="max-width:900px;margin:0 auto;">'
+    + '<p style="margin:0 0 .6rem;"><a href="javascript:void(0)" onclick="chiudiScheda()" style="color:var(--muted);text-decoration:none;font-size:.9rem;">&larr; '
+    + _gscEsc(serie.name || '') + '</a></p>'
+    + '<h1 style="color:var(--nome-entita);font-size:1.6rem;line-height:1.2;margin:.2rem 0 1rem;">' + _gscEsc(titolo) + '</h1>'
+    + '<div style="display:flex;gap:1.2rem;flex-wrap:wrap;align-items:flex-start;margin-bottom:1.2rem;">'
+    + fotoBox(foto, it ? 'Fronte' : 'Front')
+    + fotoBox(fotoRetro, it ? 'Retro' : 'Back')
+    + '</div>'
+    + (righe.length
+        ? '<dl style="display:grid;grid-template-columns:max-content 1fr;gap:.35rem 1.2rem;margin:0 0 1.4rem;font-size:.95rem;">'
+          + righe.map(r => '<dt style="color:var(--muted);">' + _gscEsc(r[0]) + '</dt>'
+                         + '<dd style="margin:0;color:var(--text);">' + _gscEsc(r[1]) + '</dd>').join('')
+          + '</dl>'
+        : '')
+    // 🔴 LE ALTRE VERSIONI SI CONTANO SEMPRE E SI MOSTRANO SOLO A CHI E' ENTRATO
+    //    (Franco, 21 settembre: «4. dillo»). Il numero non e' contenuto regalato: e' la
+    //    ragione per bussare. Tacerlo lascerebbe il visitatore convinto di aver gia' visto
+    //    tutto — che e' esattamente il difetto che questa release esiste per chiudere.
+    // ⚠️ E' UNA TENDA, NON UNA SERRATURA, ed e' dichiarato: `series` e' pubblica in lettura
+    //    (§15.2, misurato da sloggato il 5 settembre), quindi quelle versioni sono GIA' nel
+    //    browser di chi guarda. Vale come vale lo sfumato della vetrina della home: serve a
+    //    chi vuole vedere, non contro chi vuole frugare. Il giorno che dietro ci fosse
+    //    qualcosa di riservato, questa scelta andrebbe rifatta — non ritoccata.
+    + (versioni.length
+        ? (entrato
+            ? '<h2 style="color:var(--accent3);font-size:1.1rem;margin:1.4rem 0 .6rem;">'
+              + (it ? 'Le altre versioni' : 'The other versions') + '</h2>'
+              + '<ul style="list-style:none;padding:0;margin:0 0 1.4rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.7rem;">'
+              + versioni.map(v => '<li style="background:var(--card2);border-radius:10px;padding:.55rem .6rem;font-size:.85rem;">'
+                  + _gscEsc(v.fullName || v.name || '') + '</li>').join('')
+              + '</ul>'
+            : '<p style="color:var(--accent);font-weight:700;margin:1.4rem 0 .6rem;">'
+              + (it ? 'Questa ha altre ' + versioni.length + ' versioni.' : 'This one has ' + versioni.length + ' more versions.')
+              + '</p>')
+        : '')
+    // 🔴 I DUE PULSANTI PORTANO I NOMI CHE IL SITO USA GIA', e non se ne sceglie di nuovi:
+    //    `owned.toggle` dice «Mia lista» e la pagina della wishlist si chiama «Ciò che cerco».
+    // ⚠️ «Ce l'ho» NON si puo' usare: e' il linguaggio che la v5.381 ha abolito apposta
+    //    (Franco: rinominato «Ce l'ho» in «Mia lista» ovunque, «da possesso a lista personale»).
+    //    Era la prima parola che veniva in mente, ed era quella sbagliata.
+    // 📌 E un terzo pulsante «Mi manca» non c'e', perche' nel sito non e' un'azione: e' il
+    //    complemento di «Mia lista», ed e' cosi' che la pagina «Le mie liste» lo esporta.
+    + '<div style="display:flex;gap:.7rem;flex-wrap:wrap;margin:1.6rem 0 0;">'
+    + '<button class="btn-primary" onclick="schedaAzione(\'lista\')">'
+    + (it ? 'Mia lista' : 'My list') + '</button>'
+    + '<button class="btn-primary" onclick="schedaAzione(\'cerco\')">'
+    + (it ? 'Ciò che cerco' : 'What I am looking for') + '</button>'
+    + '</div>'
+    + (entrato ? '' :
+        '<p style="color:var(--invito);font-size:.92rem;margin:.9rem 0 0;">'
+        + (it ? 'Registrati o accedi per segnare le tue e costruire la tua lista.'
+              : 'Register or sign in to mark yours and build your list.') + '</p>')
+    + '</div>';
+}
+
+// 🔴 DA SLOGGATO I DUE PULSANTI NON FINGONO DI FUNZIONARE: aprono il login. E' il punto in cui
+//    tutta questa strada doveva arrivare — la pagina di Google porta alla scheda, la scheda
+//    porta qui.
+// ⚠️ Da loggato, per ora, portano dove quelle cose vivono gia' (l'Inventario e «Ciò che
+//    cerco»): scrivere qui una seconda strada per mettere un articolo in lista sarebbe una
+//    copia del meccanismo che esiste sulle card, e le due divergerebbero al primo ritocco.
+//    Quando la scheda dovra' farlo davvero, si chiamera' QUELLA funzione, non se ne scrivera'
+//    un'altra.
+function schedaAzione(quale) {
+  if (!currentUser) { openAuth('login'); return; }
+  showPage(quale === 'cerco' ? 'wishlist' : 'catalog');
 }
 
 function pendingUnsubTarget() {
@@ -29667,7 +29924,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.947';
+const JS_VERSION = 'v6.948';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -29840,6 +30097,18 @@ async function initFirebase() {
   window._fbAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential, fbDeleteAuthUser, reauthenticateWithPopup, updatePassword };
   console.log('Firebase ready');
 
+  // 🆕 v6.948 — LA SCHEDA PARTE QUI, E IL PUNTO E' TUTTO. Sotto ci sono l'attesa di
+  //    `onAuthStateChanged` e `loadAllData()`, che insieme fanno i ~6.400 ms misurati: chi
+  //    arriva da una pagina per Google resterebbe davanti a una pagina che si riempie, dopo
+  //    aver lasciato un file statico che si era aperto subito.
+  // 🔴 NIENTE `await`: la scheda si apre per conto suo quando il suo documento arriva
+  //    (238-444 ms misurati), e l'avvio continua. Con l'await, la scheda sarebbe veloce e
+  //    tutto il resto del sito la aspetterebbe — cioe' si sposterebbe il ritardo.
+  // ⚠️ Qui l'utente NON e' ancora noto: la scheda esce con i due pulsanti che portano al
+  //    login, ed e' giusto per chi non e' entrato. Per chi e' entrato la ridisegna la riga
+  //    che sta dopo l'attesa della sessione.
+  try { apriSchedaDaHash(); } catch (e) { console.warn('apriSchedaDaHash', e.message); }
+
   // Verifica che il currentUser eventualmente salvato in localStorage
   // corrisponda a una sessione Firebase Auth realmente attiva in questo
   // browser. Senza questo controllo, un currentUser rimasto in cache (es.
@@ -29869,6 +30138,11 @@ async function initFirebase() {
       resolve();
     });
   });
+
+  // 🆕 v6.948 — LA SECONDA PASSATA DELLA SCHEDA, e non rilegge niente: ridisegna i dati che
+  //    ha gia' in mano, ora che si sa CHI sta guardando. Una seconda lettura sarebbe fatturata
+  //    per mostrare le stesse cose.
+  if (_schedaCorrente) { try { renderScheda(); } catch (e) { console.warn('renderScheda', e.message); } }
 
   await loadAllData();
 
