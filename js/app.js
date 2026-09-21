@@ -1,6 +1,32 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.950 - 🎨 LE SEI NOTE DI FRANCO SULLE PAGINE PER GOOGLE. Modificati index.html e
+//          js/app.js, piu' le dieci pagine.
+//          1. la riga di navigazione in alto passa da smorta a BIANCA: porta l'unico link
+//             all'altra lingua, quello che per Google tiene vivi i due hreflang.
+//          2. «English» -> «English version» + la bandierina del sito (e, simmetrico,
+//             «Italiano» -> «Versione italiana»). Le bandiere sono i file di /flags/, non
+//             emoji: su Windows le emoji delle bandiere escono come due lettere.
+//          3. la pagina da 1100 a 1280px. 📏 Misurato: la riga «Figurine con retro» della
+//             serie 1 chiedeva 734px e ne aveva 700, quindi andava a capo. I PARAGRAFI
+//             restano a 1100 — e' stata chiesta la pagina, non le righe di prosa.
+//          4. il bottone dice cosa si trova di la' invece di dove porta.
+//          5. «Tutti gli articoli» prende l'azzurro dei nomi delle entita'.
+//          6. l'invito a cliccare scende SOTTO OGNI SEZIONE e parla la sua lingua:
+//             «Clicca una figurina per aprirla», «Clicca un retro per aprirlo».
+//          🔴 LA PAROLA E' QUELLA DEL TITOLO DEL BLOCCO, non quella del descrittore (Franco:
+//          «perche mi parli di fcr piuttosto che fpa? mica su quella pagina si parla solo di
+//          figurine?»): il titolo dice «Figurine» perche' `_gscBlocchi` fonde le tipologie di
+//          figurine sotto una parola sola, e la frase non deve nominare una distinzione che
+//          quella pagina non fa.
+//          🔴 Il GENERE viene dal descrittore (`genere`), non dalla desinenza: «retro» finisce
+//          in -o ed e' maschile, «bustina» e' femminile — una regola sulla desinenza
+//          sbaglierebbe al primo caso nuovo.
+//          ⚠️ E «con il suo retro» resta solo dove il retro c'e': sotto una sezione «Retro»
+//          avrebbe detto «Clicca un retro per aprirlo, con il suo retro».
+//          7. (fuori dalle sei) nella SCHEDA l'invito «Registrati o accedi» sale SOPRA i due
+//             pulsanti (Franco): stava dopo il gesto che spiega.
 // v6.949 - 🔗 LE CARD DELLE DIECI PAGINE PER GOOGLE DIVENTANO LINK ALLA SCHEDA
 //          (Franco: «in quella pagina servono più motivi per cliccare, quindi più punti in cui
 //          cliccare»). Modificati index.html e js/app.js, piu' le dieci pagine e la sitemap.
@@ -29084,16 +29110,21 @@ function renderScheda() {
     //    Era la prima parola che veniva in mente, ed era quella sbagliata.
     // 📌 E un terzo pulsante «Mi manca» non c'e', perche' nel sito non e' un'azione: e' il
     //    complemento di «Mia lista», ed e' cosi' che la pagina «Le mie liste» lo esporta.
-    + '<div style="display:flex;gap:.7rem;flex-wrap:wrap;margin:1.6rem 0 0;">'
+    // 🔄 v6.950 (Franco: «mettilo in giallo sopra i pulsanti») — L'INVITO SALE SOPRA I DUE
+    //    PULSANTI. Stava sotto, cioe' dopo il gesto che spiega: chi arriva da una pagina per
+    //    Google legge dall'alto, e la ragione per premere deve stare PRIMA del bottone.
+    // 📌 Il giallo e' `--invito`, la tinta che sulle dieci pagine dice gia' «entra nel sito»:
+    //    stesso mestiere, stessa tinta, nei due versi.
+    + (entrato ? '' :
+        '<p style="color:var(--invito);font-size:.92rem;margin:1.6rem 0 .6rem;">'
+        + (it ? 'Registrati o accedi per segnare le tue e costruire la tua lista.'
+              : 'Register or sign in to mark yours and build your list.') + '</p>')
+    + '<div style="display:flex;gap:.7rem;flex-wrap:wrap;margin:' + (entrato ? '1.6rem' : '0') + ' 0 0;">'
     + '<button class="btn-primary" onclick="schedaAzione(\'lista\')">'
     + (it ? 'Mia lista' : 'My list') + '</button>'
     + '<button class="btn-primary" onclick="schedaAzione(\'cerco\')">'
     + (it ? 'Ciò che cerco' : 'What I am looking for') + '</button>'
     + '</div>'
-    + (entrato ? '' :
-        '<p style="color:var(--invito);font-size:.92rem;margin:.9rem 0 0;">'
-        + (it ? 'Registrati o accedi per segnare le tue e costruire la tua lista.'
-              : 'Register or sign in to mark yours and build your list.') + '</p>')
     + '</div>';
 }
 
@@ -29940,7 +29971,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.949';
+const JS_VERSION = 'v6.950';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -62932,6 +62963,39 @@ function _gscSerie() {
 //    `/serie/<slug>/`, e un `#f/…` senza la barra davanti verrebbe letto come un frammento
 //    DELLA PAGINA STESSA — cioè il clic non porterebbe da nessuna parte, senza nessun errore.
 // 📌 `prova-v6949` pretende che il link cominci per `/#f/` proprio per questo.
+// 🆕 v6.950 (Franco: «la frase va messa sotto alle singole sezioni, usando la parola della TDA
+//    di quella sezione al posto della parola "Articolo"») — L'INVITO PARLA LA LINGUA DELLA
+//    SEZIONE IN CUI STA.
+// 🔴 E LA PAROLA E' QUELLA DEL TITOLO DEL BLOCCO, NON QUELLA DEL DESCRITTORE. Me l'ha fatto
+//    notare Franco: «perche mi parli di fcr piuttosto che fpa? mica su quella pagina si parla
+//    solo di figurine?». 📏 Verificato sulla pagina: il titolo dice «Figurine», perche'
+//    `_gscBlocchi` fonde apposta tutte le tipologie di figurine sotto una parola sola (v6.945).
+//    Scrivere «Clicca una figurina con retro» sotto un titolo che dice «Figurine» avrebbe
+//    nominato una distinzione che quella pagina non fa.
+// 🔴 IL GENERE NON SI INDOVINA DALLA DESINENZA: sta gia' nel descrittore (`genere`), e ci sta
+//    dal giorno che le tipologie sono nate. «tatuaggio» finisce in -o ed e' maschile,
+//    «carta d'identita'» finisce in -a ed e' femminile, ma «retro» finisce in -o ed e' maschile
+//    mentre «bustina» e' femminile: una regola sulla desinenza sbaglierebbe al primo caso nuovo.
+// ⚠️ «CON IL SUO RETRO» SOLO DOVE IL RETRO C'E'. Sotto una sezione «Retro» la frase direbbe
+//    «Clicca un retro per aprirlo, con il suo retro»: una sciocchezza che nessuna prova avrebbe
+//    preso, perche' la frase sarebbe stata grammaticalmente giusta.
+// 📌 In inglese il genere non serve, ma serve l'articolo: `an album`, `an item`.
+function _gscInvitoBlocco(sez, L) {
+  const a = ARTICOLI[sez] || {};
+  const figurina = GSC_FIGURINE.includes(sez);
+  const conRetro = sez === 'figurines';
+  if (L === 'it') {
+    const parola = figurina ? 'figurina' : (a.itSing || 'articolo');
+    const f = figurina ? true : (a.genere || 'm') === 'f';
+    return 'Clicca ' + (f ? 'una ' : 'un ') + parola + ' per ' + (f ? 'aprirla' : 'aprirlo')
+      + ' sul sito, con ' + (conRetro ? 'il suo retro e le sue versioni.' : 'le sue versioni.');
+  }
+  const parola = figurina ? 'sticker' : (a.enSing || 'item');
+  const art = /^[aeiou]/i.test(parola) ? 'an ' : 'a ';
+  return 'Click ' + art + parola + ' to open it on the website, with '
+    + (conRetro ? 'its back and its versions.' : 'its versions.');
+}
+
 function _gscIndirizzoScheda(s, f) {
   return '/#f/' + s.id + '/' + f.id;
 }
@@ -63012,10 +63076,27 @@ const _GSC_PAROLE = {
 const _GSC_CSS = `:root{--bg:#1a1333;--card:#241a45;--dim:#b3a8d4;--txt:#f2eeff;--acc:#ffd166}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--txt);font-family:Nunito,system-ui,sans-serif;line-height:1.55}
-.wrap{max-width:1100px;margin:0 auto;padding:1.5rem 1.1rem 4rem}
+/* 🔄 v6.950 (Franco: «la pagina, nel suo complesso, potrebbe essere un poco piu larga; per
+   intenderci, per la serie 1 sarebbe bello se i totali rientrassero nella riga dei conteggi»)
+   — DA 1100 A 1280px. 📏 Misurato nel browser sulla serie 1: la riga «Figurine con retro»
+   chiedeva 734px e ne aveva 700, quindi andava a capo. Con 1280 la colonna delle numeriche
+   passa a ~880 e i totali rientrano.
+   🔴 I PARAGRAFI DI TESTO RESTANO A 1100 (vedi .wrap p piu' sotto): e' stata chiesta la
+   PAGINA, e una riga di prosa lunga 1280 si legge peggio di una lunga 1100. E' la stessa
+   scelta della v6.934 sulla tabella della scheda GSC. */
+.wrap{max-width:1280px;margin:0 auto;padding:1.5rem 1.1rem 4rem}
+/* 🆕 v6.950 — il testo di presentazione non cresce con la pagina. Si nomina il solo figlio
+   diretto: le righe dentro le card non c'entrano. */
+.wrap > p{max-width:1100px}
 a{color:var(--acc)}
-.bc{font-size:.85rem;color:var(--dim);margin-bottom:1.4rem}
-.bc a{color:var(--dim)}
+/* 🔄 v6.950 (Franco: «la scritta in alto va in bianco») — LA RIGA DI NAVIGAZIONE ERA SMORTA.
+   📌 Non e' solo estetica: quella riga porta l'unico collegamento all'altra lingua, ed e' il
+   link che per Google tiene vivi i due hreflang. Smorto, non lo vedeva nessuno. */
+.bc{font-size:.85rem;color:var(--txt);margin-bottom:1.4rem}
+.bc a{color:var(--txt)}
+/* 🆕 v6.950 — la bandierina accanto al link dell'altra lingua. Altezza in em cosi' cresce
+   con il testo, e vertical-align per stare sulla riga invece che sul fondo. */
+.bc img{height:.95em;width:auto;vertical-align:-.08em;margin-right:.3em;border-radius:2px}
 header{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-start;margin-bottom:1.6rem}
 header img{border-radius:10px;background:var(--card);flex-shrink:0}
 /* 🔴 v6.636 (Franco: «le 6 pagine devono avere la stessa struttura») — IL BLOCCO DI
@@ -63041,7 +63122,10 @@ h1{font-size:2rem;margin:.2rem 0 .4rem;line-height:1.15;color:var(--nome)}
 .cat{font-weight:700;color:var(--txt)}
 .vv{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.35rem .9rem}
 .pal{display:inline-block;width:9px;height:9px;border-radius:2px;background:currentColor;margin-right:7px;vertical-align:.05em}
-h2{font-size:1.35rem;margin:2.2rem 0 .3rem}
+/* 🔄 v6.950 (Franco: «"Tutti gli articoli" va in azzurro serie») — L'AZZURRO E' QUELLO DEI
+   NOMI DELLE ENTITA' del sito, e arriva dal browser vivo come gli altri tre: vedi
+   _gscColoriDalSito. Scritto qui sarebbe la seconda copia di un valore che vive nell'index. */
+h2{font-size:1.35rem;margin:2.2rem 0 .3rem;color:var(--nome)}
 /* 🆕 v6.941 — IL NOME DELLA SOTTOSERIE SOPRA LA SUA GRIGLIA, lime (Franco: «usa il
    solito colore lime»). È l'accento del sito, quello dei titoletti dell'hub, e come gli altri
    due arriva dal browser vivo invece di essere ricopiato qui: vedi _gscColoriDalSito.
@@ -63415,7 +63499,12 @@ function _gscPagina(s, L) {
   //    argomentava perche' «Accedi» in inglese non diventava «Enter». In italiano «Accedi»
   //    non c'e' piu', e una spiegazione vecchia e' piu' pericolosa di una regola vecchia —
   //    la regola la vede una prova, la spiegazione no.
-    + (L === 'it' ? 'Vai al sito Internet figurineSgorbions.it !' : 'Go to the website figurineSgorbions.it !') + '</a></div>\n\n';
+    // 🔄 v6.950 (Franco) — IL BOTTONE DICE COSA SI TROVA DI LA', non dove porta. La vecchia
+    //    frase nominava un indirizzo; questa promette la ragione per cliccare, che e' il punto
+    //    su cui gira tutta la giornata: «un visitatore di quelle pagine deve avere un vero
+    //    motivo per cliccare sul tasto che porta al sito».
+    + (L === 'it' ? 'Vedi la serie al completo, visitando il sito Internet figurineSgorbions.it !'
+                  : 'See the whole series on the figurineSgorbions.it website !') + '</a></div>\n\n';
   // 🔴 LE CARD NON SONO LINK (Franco, 7 settembre: «iniziamo senza i link alle figurine»):
   //    puntavano alle pagine per figurina, che non esistono. Il giorno che si fanno, qui torna
   //    l'`<a href>` e nel CSS la regola `.c a`.
@@ -63493,7 +63582,17 @@ function _gscPagina(s, L) {
     //    posto dove un lettore la cerca, e per Google e' il link che rende vivi gli hreflang.
     + '<nav class="bc"><a href="/">figurineSgorbions.it</a> › ' + (L === 'it' ? 'Serie' : 'Series')
     + ' › ' + _gscEsc(nome) + ' · <a href="' + (L === 'it' ? U.en : U.it) + '">'
-    + (L === 'it' ? 'English' : 'Italiano') + '</a></nav>\n\n<header>\n'
+    // 🔄 v6.950 (Franco: «"English" diventa "English version" + la bandierina che usiamo per
+    //    la lingua Inglese») — IL LINK DELL'ALTRA LINGUA SI SPIEGA E SI FA VEDERE.
+    // 📌 Simmetrico: sulla pagina inglese il link verso l'italiana dice «Versione italiana»
+    //    con la bandiera italiana. Due pagine che si rimandano a vicenda devono dirlo nello
+    //    stesso modo, o una delle due sembra un'altra cosa.
+    // 🔴 LE BANDIERE SONO QUELLE DEL SITO, non emoji: le emoji delle bandiere su Windows non
+    //    si disegnano e uscirebbero due lettere dentro un riquadro.
+    // ⚠️ INDIRIZZO ASSOLUTO, come per i link delle card: queste pagine vivono in
+    //    /serie/<slug>/, e un percorso relativo cercherebbe le bandiere dentro quella cartella.
+    + '<img src="/flags/' + (L === 'it' ? 'gb' : 'it') + '.png" alt="" width="20" height="15">'
+    + (L === 'it' ? 'English version' : 'Versione italiana') + '</a></nav>\n\n<header>\n'
     + (cop ? '  <img src="' + _gscEsc(cop.replace(_GSC_PRE, _GSC_PRE + 'w_380,q_auto,f_auto/'))
            + '" alt="' + (L === 'it' ? 'La copertina della ' : 'The cover of ') + _gscEsc(nome)
            + '" width="190" height="264">\n' : '')
@@ -63513,20 +63612,6 @@ function _gscPagina(s, L) {
     //    senza chiamanti sarebbe stata una regola che nessuno applica e che il prossimo legge
     //    credendola in vigore.
     + '<h2>' + (L === 'it' ? 'Tutti gli articoli' : 'All the items') + '</h2>\n'
-    // 🆕 v6.949 — LA RIGA CHE DICE A PAROLE CHE LE CARD SI CLICCANO, e sta qui perche' il
-    //    contorno all'hover lo vede solo chi ha un mouse: piu' di meta' di chi arriva da Google
-    //    e' su un telefono, e per loro il link sarebbe invisibile fino al dito.
-    // 📌 Una volta sola, in testa a tutte le griglie: ripeterla sopra ogni blocco direbbe sei
-    //    volte la stessa cosa nella stessa pagina — e Google lo legge come riempitivo.
-    // 🔴 CLASSE SUA (`apri`) E NON `hint`, e non e' un vezzo: `prova-v6941` §3a pretende che su
-    //    una serie senza numeri in pagina non ci sia NESSUNA `class="hint"`, perche' quella
-    //    classe la porta la riga «Dalla n. X alla n. Y» — e una hint vuota era proprio il
-    //    difetto che quella suite guarda. Riusando `hint` qui, l'asserzione sarebbe diventata
-    //    rossa su una cosa giusta, e l'unico modo di farla tornare verde sarebbe stato
-    //    indebolirla. 📌 Una prova che si aggira per comodita' non protegge piu' niente.
-    + '<p class="apri">' + (L === 'it'
-        ? 'Clicca un articolo per aprirlo sul sito, con il suo retro e le sue versioni.'
-        : 'Click an item to open it on the website, with its back and its versions.') + '</p>\n'
     // 🆕 v6.945 — UNA GRIGLIA PER BLOCCO, e i blocchi li decide `_gscBlocchi`.
     // 🔴 QUI NON SI SCEGLIE PIÙ NIENTE: prima questo punto chiedeva da sé le sottoserie e
     //    tirava su le sole figurine. Adesso srotola l'elenco che le NUMERICHE hanno già
@@ -63546,6 +63631,10 @@ function _gscPagina(s, L) {
         + (conNum.length ? '<p class="hint">' + (L === 'it' ? 'Dalla n. ' : 'From no. ')
             + _gscEsc(conNum[0].number) + (L === 'it' ? ' alla n. ' : ' to no. ')
             + _gscEsc(conNum[conNum.length - 1].number) + '.</p>\n' : '')
+        // 🆕 v6.950 — L'INVITO STA SOTTO OGNI SEZIONE, e parla la sua lingua: vedi
+        //    `_gscInvitoBlocco`. 🔴 DOPO la riga dei numeri e PRIMA della griglia: prima il
+        //    fatto, poi l'istruzione, e l'istruzione attaccata alla cosa che descrive.
+        + '<p class="apri">' + _gscEsc(_gscInvitoBlocco(b.sez, L)) + '</p>' + String.fromCharCode(10)
         // 🆕 v6.946 — DOVE C'È UNA CATEGORIA, IL BLOCCO SI SPEZZA nelle sue sottosezioni. Chi
         //    sono e in che ordine lo dice `_gscPartiPerCategoria`, che gira su `_retroCatCounts`
         //    — la stessa funzione dei riquadri «Retro per categoria» del sito.
