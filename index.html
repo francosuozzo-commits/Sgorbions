@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.951">
+<link rel="stylesheet" href="css/style.css?v=6.952">
 
 
 <style>
@@ -1245,18 +1245,39 @@ button.back-btn { color:#ffffff; }
    niente. Non azzurro: `--nome-entita` dice «questa parola è il nome di un'entità del catalogo».
    🔄 v6.947 — ED È UN <button> (Franco: «deve portare alla form di login-registrazione»):
    qui si azzera l'aspetto che il browser dà ai bottoni e si tiene solo il dito. */
+/* 🔄 v6.952 (Franco: «lascia piu spazio tra questa scritta e i numeroni verdi sopra») — IL
+   MARGINE DI SOPRA NASCE QUI. Era `margin:0 0 1rem`, cioe' zero in alto: l'invito si appoggiava
+   alla riga dei dodici numeroni e le due cose sembravano un blocco solo.
+   📌 Il margine sta sull'INVITO e non sui numeroni: quella riga la usa anche chi ha fatto
+   login, e li' sotto non c'e' nessuna fascia da staccare. */
 .vetrina-invito{font-family:var(--font-ui);font-weight:800;font-size:1.45rem;letter-spacing:.02em;
-  text-align:center;color:var(--invito);margin:0 0 1rem;
+  text-align:center;color:var(--invito);margin:2.2rem 0 1rem;
   display:block;width:100%;background:none;border:0;padding:0;cursor:pointer;}
 .vetrina-invito:hover{text-decoration:underline;}
+/* 🆕 v6.952 — il titolo sopra il carosello delle figurine. Stessa famiglia e stesso peso
+   dell'invito della fascia, colore diverso: quello invita a entrare (giallo), questo intitola
+   (viola). Due mestieri, due tinte. */
+.carosello-titolo{font-family:var(--font-ui);font-weight:800;font-size:1.45rem;letter-spacing:.02em;
+  text-align:center;color:var(--accent3);margin:0 0 1rem;}
 /* 🔄 v6.947 — DA GRIGLIA A FILA CHE SCORRE. Con dieci serie la griglia andava a capo e la
    fascia si mangiava due righe; una fila che scorre ne occupa sempre una, qualunque sia il
    numero delle serie — è vero per costruzione, non finché sono dieci.
    📌 Le proprietà sono quelle del carosello della home (`#home-carosello`): scorrimento
    morbido e aggancio a scatti. Copiare la ricetta invece del risultato è la stessa scelta
    fatta per la larghezza. */
+/* 🔄 v6.952 (Franco) — LA FILA SI CENTRA QUANDO CI STA TUTTA. 📏 Misurato: su uno schermo da
+   2560 le dieci card occupano 1479px in un contenitore di 1620, e i 141 che avanzano stavano
+   tutti a destra perché la fila era allineata a sinistra.
+   🔴 `safe center` E NON `center`: con il solo `center`, il giorno che il contenuto è PIÙ LARGO
+   del contenitore, il browser taglia la parte iniziale e quella non si raggiunge più nemmeno
+   scorrendo. La parola `safe` dice «centra, ma se non ci sta torna ad allineare a sinistra» —
+   cioè esattamente il comportamento di prima nel caso in cui quel comportamento era giusto. */
 .vetrina-serie{display:flex;gap:1rem;overflow-x:auto;scroll-behavior:smooth;
-  scroll-snap-type:x mandatory;padding:.2rem .4rem .8rem;margin:0;}
+  scroll-snap-type:x mandatory;padding:.2rem .4rem .8rem;margin:0;justify-content:safe center;}
+/* 🆕 v6.952 — le due frecce spariscono quando non c'è niente da scorrere. La classe la mette
+   `_vetrinaFrecce`, che confronta la larghezza del contenuto con quella visibile: due bottoni
+   che non scorrono niente non devono esserci, e quello di sinistra copriva pure una card. */
+.vetrina-largo.senza-scorrimento .vetrina-freccia{display:none;}
 .vetrina-card{flex:0 0 150px;scroll-snap-align:start;}
 /* 📌 Aperta la griglia di una serie la fila non c'entra più: torna un blocco normale, o le
    duecento figurine scorrerebbero di lato invece di andare a capo. */
@@ -1313,7 +1334,25 @@ button.back-btn { color:#ffffff; }
   grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.7rem;}
 .vetrina-fig{position:relative;background:var(--card);border-radius:10px;overflow:hidden;
   display:flex;flex-direction:column;cursor:pointer;}
-.vetrina-fig img{width:100%;height:auto;display:block;margin-top:auto;}
+/* 🔴 v6.952 — LO SPAZIO DELLA FOTO SI PRENOTA PRIMA CHE LA FOTO ARRIVI, e senza questa riga
+   NON ARRIVAVA MAI. Difetto vivo dalla v6.947 e visto da Franco: «quando clicco su di una
+   serie, le card non sfumate non mostrano alcuna immagine. sono totalmente nere».
+   📏 MISURATO sul sito vivo, non dedotto: le immagini avevano `naturalWidth` 0 e `currentSrc`
+   VUOTO — cioe' il browser non aveva nemmeno cominciato a scaricarle. La stessa URL chiesta con
+   `fetch` rispondeva 200 e 589 KB, e caricata in un `new Image()` fuori dal DOM veniva su
+   1006x1403. Togliendo `loading="lazy"` compariva all'istante.
+   🔴 LA CATENA: `height:auto` su un'immagine non ancora caricata vale ZERO; con la card alta
+   zero il browser non la considera mai vicina al viewport, quindi il lazy non scatta; e se non
+   scatta l'immagine resta a zero. Un cerchio che si chiude da solo, e nessun errore da nessuna
+   parte. 📌 E il rimedio non e' togliere il lazy (sarebbero 160 richieste in un colpo): e'
+   dare all'immagine un'altezza PRIMA di averla, che e' esattamente cio' che `aspect-ratio` fa.
+   ⚠️ `contain` e non `cover`: le figurine sono 1006x1403, cioe' 0,717 contro lo 0,75 del
+   riquadro — con `cover` si perderebbe una striscia, e su una figurina la striscia in basso e'
+   dove sta il nome stampato.
+   📌 Il 3/4 non e' scelto qui: e' quello che `.vetrina-nofoto` usa gia' per il buco della foto
+   mancante, due righe piu' sotto. Le card con foto e quelle senza restano alte uguali. */
+.vetrina-fig img{width:100%;height:auto;display:block;margin-top:auto;
+  aspect-ratio:3/4;object-fit:contain;}
 .vetrina-fig .vetrina-nofoto{display:block;width:100%;aspect-ratio:3/4;background:var(--card2);}
 .vetrina-fig .vetrina-n{display:block;padding:.4rem .5rem 0;font-size:.72rem;font-weight:800;
   color:var(--accent);margin-top:auto;}
@@ -1689,9 +1728,17 @@ button.back-btn { color:#ffffff; }
        elemento che porta la chiave, quindi la copia si traduce da se'. Gli id restano distinti
        perche' un id doppio e' un documento non valido e `getElementById` ne vedrebbe uno solo. -->
   <div class="hero-riga-logo">
-    <button class="btn-primary hero-cta-lato" id="btn-start-collecting-sx" onclick="openAuth('register')" data-i18n="hero.cta2">Inizia a collezionare gli Sgorbions</button>
+    <!-- 🗑️ v6.952 (Franco: «i due tasti "inizia a collezionare gli sgorbions": uno buttalo ed
+         uno potresti farlo diventare un tasto freccia che punta ai tasti Accedi/Registrati») —
+         QUI STAVA IL GEMELLO DI SINISTRA, e se n'è andato. Erano due copie dello stesso invito
+         a due dita di distanza: la seconda non aggiungeva una ragione, aggiungeva un bottone. -->
   <h1 class="hero-h1"><img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="figurineSgorbions.it — il database degli Sgorbions" style="max-width:360px;width:100%;margin:0 auto;display:block;"></h1>
-    <button class="btn-primary hero-cta-lato" id="btn-start-collecting-dx" onclick="openAuth('register')" data-i18n="hero.cta2">Inizia a collezionare gli Sgorbions</button>
+    <!-- 🔄 v6.952 — IL SUPERSTITE È QUELLO DI DESTRA, E NON È INDIFFERENTE: i tasti
+         Accedi/Registrati stanno in alto A DESTRA, quindi la freccia che li indica parte da
+         qui e sale verso di loro. Messa a sinistra, punterebbe fuori dalla pagina.
+         📌 Smette di ripetere un invito e comincia a far vedere DOVE si entra: la freccia è
+         un carattere (↗), non un'immagine — cresce col testo e non chiede un file in più. -->
+    <button class="btn-primary hero-cta-lato" id="btn-start-collecting-dx" onclick="openAuth('register')"><span data-i18n="hero.cta2">Inizia a collezionare gli Sgorbions</span> <span aria-hidden="true">&#8599;</span></button>
   </div>
   <div class="hero-stats-side hero-stats-right" id="hero-stats-right" style="display:none;">
     <!-- v5.940 — "Mia lista / Totale Inventario" tolto dai numeroni della home (Franco).
@@ -1759,7 +1806,7 @@ button.back-btn { color:#ffffff; }
            🔄 v6.947 (Franco: «in quel caso la scritta viola la metti sopra») — È RISALITO SOPRA
            LA FILA. Era sceso sotto per alzare le copertine; con la fila a carosello le
            copertine sono già alte, e l'invito torna dove si comincia a leggere. -->
-      <button type="button" class="vetrina-invito" id="vetrina-invito" onclick="vetrinaChiediAccesso()">Registrati o accedi per vedere</button>
+      <button type="button" class="vetrina-invito" id="vetrina-invito" onclick="vetrinaChiediAccesso()">Le Serie Sgorbions: registrati o accedi per vederle !</button>
       <!-- 🆕 v6.947 (Franco: «la fascia occupa 2 righe; non puoi farla a carosello così che
            occupi sempre una sola riga») — LA FILA SCORRE, NON VA A CAPO.
            📌 Le frecce e il contenitore sono quelli del carosello qui sotto, non una seconda
@@ -1780,6 +1827,16 @@ button.back-btn { color:#ffffff; }
        sezione lascia sotto l'hero. E' un numero da occhio, non da misura: se serve si ritocca. -->
   <section class="section" id="home-carosello-sez" style="display:none;padding-top:0;margin-top:-2rem;">
     <div class="section-inner">
+      <!-- 🆕 v6.952 (Franco: «prima del carosello delle figurine, metti una scritta centrale
+           "Le figurine"») — IL TITOLO TORNA.
+           🔴 E RIBALTA LA v6.065, che non era una svista: quel titolo («Un assaggio
+           dall'Inventario») fu tolto con un argomento scritto — «le figurine si spiegano da
+           sole». Da allora pero' la home ha imparato a parlare: sopra c'e' la fascia delle
+           SERIE con il suo invito, e senza una parola qui le due file sembrano la stessa cosa
+           che continua. Il titolo non spiega piu' le figurine: le distingue dalle serie.
+           📌 Viola come gli altri titoli grandi (regola di Franco del 25 agosto: «il viola e'
+           solo per i titoli grandi»), e centrato come ha chiesto. -->
+      <h2 class="carosello-titolo" data-i18n="home.figurine">Le figurine</h2>
       <!-- v6.065 (Franco) — via il titolo "Un assaggio dall'Inventario": le figurine si spiegano
            da sole, e una riga di titolo sopra una fila di immagini e' spazio che non aggiunge
            niente. Tolte anche le due voci dal dizionario: una chiave che nessuno usa piu' e' una
@@ -5411,7 +5468,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.951"></script>
+<script src="js/app.js?v=6.952"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5435,7 +5492,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.951'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.952'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
