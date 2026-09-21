@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.951 - 🔘 IL BOTTONE PERDE LA PAROLA «Internet» (Franco: «"visitando il sito Internet
+//          figurineSgorbions.it" diventa "visitando il sito figurineSgorbions.it"»).
+//          Modificati index.html e js/app.js, piu' le dieci pagine.
+//          📌 In inglese non c'era niente da togliere: «website» la parola la porta gia' dentro,
+//          e la frase resta «See the whole series on the figurineSgorbions.it website !».
 // v6.950 - 🎨 LE SEI NOTE DI FRANCO SULLE PAGINE PER GOOGLE. Modificati index.html e
 //          js/app.js, piu' le dieci pagine.
 //          1. la riga di navigazione in alto passa da smorta a BIANCA: porta l'unico link
@@ -29971,7 +29976,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.950';
+const JS_VERSION = 'v6.951';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -63503,7 +63508,10 @@ function _gscPagina(s, L) {
     //    frase nominava un indirizzo; questa promette la ragione per cliccare, che e' il punto
     //    su cui gira tutta la giornata: «un visitatore di quelle pagine deve avere un vero
     //    motivo per cliccare sul tasto che porta al sito».
-    + (L === 'it' ? 'Vedi la serie al completo, visitando il sito Internet figurineSgorbions.it !'
+    // 🔄 v6.951 (Franco) — VIA LA PAROLA «Internet». Diceva «visitando il sito Internet
+    //    figurineSgorbions.it !»: un sito e' un sito, e la parola in piu' invecchia la frase.
+    //    📌 In inglese non c'era niente da togliere — «website» la parola la porta gia' dentro.
+    + (L === 'it' ? 'Vedi la serie al completo, visitando il sito figurineSgorbions.it !'
                   : 'See the whole series on the figurineSgorbions.it website !') + '</a></div>\n\n';
   // 🔴 LE CARD NON SONO LINK (Franco, 7 settembre: «iniziamo senza i link alle figurine»):
   //    puntavano alle pagine per figurina, che non esistono. Il giorno che si fanno, qui torna
