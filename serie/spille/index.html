@@ -81,8 +81,28 @@ h3.ss{color:var(--lime);font-size:1.05rem;margin:1.8rem 0 .5rem;letter-spacing:.
    giorni, l'ultima proprio scrivendo la riga che lo vieta. */
 h4.cat{color:var(--categoria);font-size:.92rem;font-weight:800;letter-spacing:.03em;margin:1.4rem 0 .4rem}
 .hint{color:var(--dim);font-size:.9rem;margin:0 0 1.1rem}
+/* 🆕 v6.949 — la riga che dice che le card si cliccano. Stesso aspetto della hint e classe
+   diversa: vedi il commento nel codice che la scrive. */
+.apri{color:var(--dim);font-size:.9rem;margin:0 0 1.1rem}
 .g{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.9rem}
 .c{background:var(--card);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+/* 🆕 v6.949 — LA REGOLA DEL LINK DENTRO LA CARD, quella che il commento del 7 settembre
+   nominava, e non e' decorativa: e' il link a prendersi il flex in colonna, non piu' l'elemento
+   di lista. 🔴 PERCHE': i due margini automatici della v6.940 e della v6.945 — quelli che
+   mettono la foto a mezza altezza — stanno sull'immagine e sulla riga del numero, cioe' DENTRO
+   il link. Se il contenitore flex restasse l'elemento di lista, il link diventerebbe il suo
+   unico figlio e quei due margini si troverebbero in un blocco normale: la foto tornerebbe
+   appiccicata in cima, su ogni card, senza nessun errore.
+   ⚠️ L'EREDITA' DEL COLORE NON E' PIGNOLERIA: la regola dei link di questa stessa pagina
+   renderebbe GIALLI il numero e il nome di tutte le card. Il giallo qui significa «entra nel
+   sito», ed e' del bottone: un nome giallo direbbe una cosa che non e' vera.
+   📌 IL CONTORNO ALL'HOVER dichiara che si puo' cliccare, per chi ha un mouse. Chi non ce
+   l'ha lo legge nella riga sotto il titolo: due strade per la stessa informazione, perche' la
+   prima meta' dei visitatori arriva da un telefono.
+   ⚠️ NIENTE APICI INVERSI QUI DENTRO: questo commento vive in una template literal, e il primo
+   apice la CHIUDE. Preso di nuovo scrivendo proprio questo blocco — e' la quinta volta. */
+.c a{display:flex;flex-direction:column;height:100%;color:inherit;text-decoration:none}
+.c a:hover{outline:2px solid var(--acc);outline-offset:-2px;border-radius:10px}
 /* 🔄 v6.940 — LA FOTO STA A MEZZA ALTEZZA, non incollata in cima (Franco: «le figurine
    sdraiate riusciresti a metterle a mezza altezza, rispetto alla altezza di una figurina
    verticale? al momento pareggiamo al lato superiore»).
@@ -149,94 +169,95 @@ footer a{color:var(--dim);text-decoration:underline}
 <div class="invito"><a class="vai" href="/">Vai al sito Internet figurineSgorbions.it !</a></div>
 
 <h2>Tutti gli articoli</h2>
+<p class="apri">Clicca un articolo per aprirlo sul sito, con il suo retro e le sue versioni.</p>
 <h3 class="ss">4.1 CM senza nome</h3>
 <ul class="g">
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788813711/fkwotmuyyzxpg9npa5yq.png" alt="spilla SONO UNA BOMBA — Spille" loading="lazy"><span class="nm">SONO UNA BOMBA</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788816661/vmmt5eixsxbiu2ckq7c5.png" alt="spilla SONO IL VERO BATMAN — Spille" loading="lazy"><span class="nm">SONO IL VERO BATMAN</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788814721/nm9pcehcxkne2qvxio5z.png" alt="spilla SONO SCOPPIATO — Spille" loading="lazy"><span class="nm">SONO SCOPPIATO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788816728/zpc4iojvotrmkibz03om.png" alt="spilla SONO UN DRAGO — Spille" loading="lazy"><span class="nm">SONO UN DRAGO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788816453/cqiqfl9wkqcksry8mmwt.png" alt="spilla SONO UN ROCKETTARO — Spille" loading="lazy"><span class="nm">SONO UN ROCKETTARO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788815387/dvvm03mvowcijwudvska.png" alt="spilla SONO UN GENIO — Spille" loading="lazy"><span class="nm">SONO UN GENIO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788815558/cl9iaedbbgqdb0ztfywb.png" alt="spilla AMO IL JAZZ — Spille" loading="lazy"><span class="nm">AMO IL JAZZ</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788815773/v5waqjoaf9bjnuckfwha.png" alt="spilla SONO UN MOSTRO ! — Spille" loading="lazy"><span class="nm">SONO UN MOSTRO !</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788815996/gbzucfz5vyedbect4y5t.png" alt="spilla ABBASSO LE DIETE — Spille" loading="lazy"><span class="nm">ABBASSO LE DIETE</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788816566/tolxdfrb8waumqcqeg0l.png" alt="spilla Acne! No Grazie — Spille" loading="lazy"><span class="nm">Acne! No Grazie</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788816999/t4kndn8mfikl0iglth9d.png" alt="spilla SONO ECOLOGICO — Spille" loading="lazy"><span class="nm">SONO ECOLOGICO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788817218/f42yriybylhdbfjizz4z.png" alt="spilla STRAZIAMI MA DI BACI SAZIAMI — Spille" loading="lazy"><span class="nm">STRAZIAMI MA DI BACI SAZIAMI</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788817838/bcjprtqjxfrrplee0apr.png" alt="spilla AMO LA NATURA — Spille" loading="lazy"><span class="nm">AMO LA NATURA</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788817928/xszuk71ew8c3varamy4b.png" alt="spilla Scuola! No Grazie — Spille" loading="lazy"><span class="nm">Scuola! No Grazie</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788818033/dyel8z55zqvglx7llq5e.png" alt="spilla NON VEDO, NON SENTO, NON PARLO. — Spille" loading="lazy"><span class="nm">NON VEDO, NON SENTO, NON PARLO.</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788818268/cc0avk8dltllccssyldj.png" alt="spilla CHE PIACERE VEDERTI — Spille" loading="lazy"><span class="nm">CHE PIACERE VEDERTI</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788818604/tvoiccdr4gnq9pckjytw.png" alt="spilla STAPPAMI — Spille" loading="lazy"><span class="nm">STAPPAMI</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788818739/v98ofw9ornz6i7s6s5rg.png" alt="spilla SONO GOLOSO — Spille" loading="lazy"><span class="nm">SONO GOLOSO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788818835/aik1m4yuv2ywxnc2gokp.png" alt="spilla Nucleare! No Grazie — Spille" loading="lazy"><span class="nm">Nucleare! No Grazie</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788819075/nvc97uwbxbmu6tooyx2a.png" alt="spilla SONO COTTO DI TE — Spille" loading="lazy"><span class="nm">SONO COTTO DI TE</span></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrphydyqgvv8d"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788813711/fkwotmuyyzxpg9npa5yq.png" alt="spilla SONO UNA BOMBA — Spille" loading="lazy"><span class="nm">SONO UNA BOMBA</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrpqmo5v316vi"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788816661/vmmt5eixsxbiu2ckq7c5.png" alt="spilla SONO IL VERO BATMAN — Spille" loading="lazy"><span class="nm">SONO IL VERO BATMAN</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrq3lez981fvx"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788814721/nm9pcehcxkne2qvxio5z.png" alt="spilla SONO SCOPPIATO — Spille" loading="lazy"><span class="nm">SONO SCOPPIATO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrq7o6hhp2wcz"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788816728/zpc4iojvotrmkibz03om.png" alt="spilla SONO UN DRAGO — Spille" loading="lazy"><span class="nm">SONO UN DRAGO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrqfr958r3ek9"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788816453/cqiqfl9wkqcksry8mmwt.png" alt="spilla SONO UN ROCKETTARO — Spille" loading="lazy"><span class="nm">SONO UN ROCKETTARO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrqhvde7howwe"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788815387/dvvm03mvowcijwudvska.png" alt="spilla SONO UN GENIO — Spille" loading="lazy"><span class="nm">SONO UN GENIO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrqlixc8gxrvh"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788815558/cl9iaedbbgqdb0ztfywb.png" alt="spilla AMO IL JAZZ — Spille" loading="lazy"><span class="nm">AMO IL JAZZ</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrqq4u1w3lrav"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788815773/v5waqjoaf9bjnuckfwha.png" alt="spilla SONO UN MOSTRO ! — Spille" loading="lazy"><span class="nm">SONO UN MOSTRO !</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrqtpqz5fcgqb"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788815996/gbzucfz5vyedbect4y5t.png" alt="spilla ABBASSO LE DIETE — Spille" loading="lazy"><span class="nm">ABBASSO LE DIETE</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrr7544yxo7lg"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788816566/tolxdfrb8waumqcqeg0l.png" alt="spilla Acne! No Grazie — Spille" loading="lazy"><span class="nm">Acne! No Grazie</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrrgeqeb3symy"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788816999/t4kndn8mfikl0iglth9d.png" alt="spilla SONO ECOLOGICO — Spille" loading="lazy"><span class="nm">SONO ECOLOGICO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrrl4ieb165kd"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788817218/f42yriybylhdbfjizz4z.png" alt="spilla STRAZIAMI MA DI BACI SAZIAMI — Spille" loading="lazy"><span class="nm">STRAZIAMI MA DI BACI SAZIAMI</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrryeonkfobz2"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788817838/bcjprtqjxfrrplee0apr.png" alt="spilla AMO LA NATURA — Spille" loading="lazy"><span class="nm">AMO LA NATURA</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrs0c96g0f6ew"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788817928/xszuk71ew8c3varamy4b.png" alt="spilla Scuola! No Grazie — Spille" loading="lazy"><span class="nm">Scuola! No Grazie</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrs2ksmx2pvrv"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788818033/dyel8z55zqvglx7llq5e.png" alt="spilla NON VEDO, NON SENTO, NON PARLO. — Spille" loading="lazy"><span class="nm">NON VEDO, NON SENTO, NON PARLO.</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrs7m4j0t2ksc"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788818268/cc0avk8dltllccssyldj.png" alt="spilla CHE PIACERE VEDERTI — Spille" loading="lazy"><span class="nm">CHE PIACERE VEDERTI</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrsetq1uk09kz"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788818604/tvoiccdr4gnq9pckjytw.png" alt="spilla STAPPAMI — Spille" loading="lazy"><span class="nm">STAPPAMI</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrshq9cm12t0g"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788818739/v98ofw9ornz6i7s6s5rg.png" alt="spilla SONO GOLOSO — Spille" loading="lazy"><span class="nm">SONO GOLOSO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrsjrq76c4553"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788818835/aik1m4yuv2ywxnc2gokp.png" alt="spilla Nucleare! No Grazie — Spille" loading="lazy"><span class="nm">Nucleare! No Grazie</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrsowu6mpwenj"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788819075/nvc97uwbxbmu6tooyx2a.png" alt="spilla SONO COTTO DI TE — Spille" loading="lazy"><span class="nm">SONO COTTO DI TE</span></a></li>
 </ul>
 
 <h3 class="ss">4,1 CM con nome</h3>
 <ul class="g">
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789225479/jomc4qbuu9zornusvf5w.png" alt="spilla Abbasso La Caccia — Spille" loading="lazy"><span class="nm">Abbasso La Caccia</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789223354/pkpixvorzelr0xw6bmaf.png" alt="spilla SONO UN DIVO — Spille" loading="lazy"><span class="nm">SONO UN DIVO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788818534/mlzmnvtlaqaclywkiutj.png" alt="spilla SONO FUORI DI MELONE — Spille" loading="lazy"><span class="nm">SONO FUORI DI MELONE</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789222580/nnkpbetesaij4zcnqxj0.png" alt="spilla SONO UN DURO — Spille" loading="lazy"><span class="nm">SONO UN DURO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789233706/fc9f1foeougnajzgkyup.png" alt="spilla ABBASSO LE DIETE — Spille" loading="lazy"><span class="nm">ABBASSO LE DIETE</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789308071/es7mcbesevhamxwvqqem.png" alt="spilla Acne! No Grazie — Spille" loading="lazy"><span class="nm">Acne! No Grazie</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789306971/po9o8bg1wdalpkhbzzlx.png" alt="spilla AMO IL JAZZ — Spille" loading="lazy"><span class="nm">AMO IL JAZZ</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789307268/a4ky50x2tamqdfqnrzbo.png" alt="spilla AMO LA NATURA — Spille" loading="lazy"><span class="nm">AMO LA NATURA</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789233390/konq9szc6ltvdfj1zngm.png" alt="spilla CHE PIACERE VEDERTI — Spille" loading="lazy"><span class="nm">CHE PIACERE VEDERTI</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789225244/dejjh1wqhzrtnnpd74dn.png" alt="spilla NON VEDO, NON SENTO, NON PARLO. — Spille" loading="lazy"><span class="nm">NON VEDO, NON SENTO, NON PARLO.</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789233524/h3wvhosx983ze1bjrt3t.png" alt="spilla Nucleare! No Grazie — Spille" loading="lazy"><span class="nm">Nucleare! No Grazie</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789132182/nvg9slzg43qvazn3vsnv.png" alt="spilla Scuola! No Grazie — Spille" loading="lazy"><span class="nm">Scuola! No Grazie</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789294548/ejb5xb9dcyr31oqea8en.png" alt="spilla SONO COTTO DI TE — Spille" loading="lazy"><span class="nm">SONO COTTO DI TE</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789295029/vfqbg03yeta5uawtuswc.png" alt="spilla SONO GOLOSO — Spille" loading="lazy"><span class="nm">SONO GOLOSO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789304661/ujwg3yaiihwripwifcvz.png" alt="spilla SONO IL VERO BATMAN — Spille" loading="lazy"><span class="nm">SONO IL VERO BATMAN</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789225130/qplqvmsbejivdm13qo3s.png" alt="spilla SONO SCOPPIATO — Spille" loading="lazy"><span class="nm">SONO SCOPPIATO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789235250/padhkvrye5sqdictz75z.png" alt="spilla SONO UN DRAGO — Spille" loading="lazy"><span class="nm">SONO UN DRAGO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789307476/fc9s6khca43fiqxhknxr.png" alt="spilla SONO UN GENIO — Spille" loading="lazy"><span class="nm">SONO UN GENIO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789302548/d8jv2fc1malnwhzhor8o.png" alt="spilla SONO UN MOSTRO ! — Spille" loading="lazy"><span class="nm">SONO UN MOSTRO !</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789307724/jwpc1ch2imuwdvcprajz.png" alt="spilla Sono un Rockettaro — Spille" loading="lazy"><span class="nm">Sono un Rockettaro</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789222893/wjfosxy3ss0zpeiwfeem.png" alt="spilla STAPPAMI — Spille" loading="lazy"><span class="nm">STAPPAMI</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789294899/d31kog0rkvmwtpxh4o5q.png" alt="spilla STRAZIAMI MA DI BACI SAZIAMI — Spille" loading="lazy"><span class="nm">STRAZIAMI MA DI BACI SAZIAMI</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789235401/b79gv15w0iqobdosu2te.png" alt="spilla SONO UNA BOMBA — Spille" loading="lazy"><span class="nm">SONO UNA BOMBA</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789302633/c8gdijdbncx9cvncopf7.png" alt="spilla SONO ECOLOGICO — Spille" loading="lazy"><span class="nm">SONO ECOLOGICO</span></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrpjpvnewkrnc"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789225479/jomc4qbuu9zornusvf5w.png" alt="spilla Abbasso La Caccia — Spille" loading="lazy"><span class="nm">Abbasso La Caccia</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrqag48omh35a"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789223354/pkpixvorzelr0xw6bmaf.png" alt="spilla SONO UN DIVO — Spille" loading="lazy"><span class="nm">SONO UN DIVO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrsdbfxytixy2"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788818534/mlzmnvtlaqaclywkiutj.png" alt="spilla SONO FUORI DI MELONE — Spille" loading="lazy"><span class="nm">SONO FUORI DI MELONE</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrsspjtatdywj"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789222580/nnkpbetesaij4zcnqxj0.png" alt="spilla SONO UN DURO — Spille" loading="lazy"><span class="nm">SONO UN DURO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwylrfsoo0l75"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789233706/fc9f1foeougnajzgkyup.png" alt="spilla ABBASSO LE DIETE — Spille" loading="lazy"><span class="nm">ABBASSO LE DIETE</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwypn7eyfasdc"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789308071/es7mcbesevhamxwvqqem.png" alt="spilla Acne! No Grazie — Spille" loading="lazy"><span class="nm">Acne! No Grazie</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwyqp0dwb2ha9"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789306971/po9o8bg1wdalpkhbzzlx.png" alt="spilla AMO IL JAZZ — Spille" loading="lazy"><span class="nm">AMO IL JAZZ</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwys24vta0v3t"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789307268/a4ky50x2tamqdfqnrzbo.png" alt="spilla AMO LA NATURA — Spille" loading="lazy"><span class="nm">AMO LA NATURA</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwyuypi9ueeko"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789233390/konq9szc6ltvdfj1zngm.png" alt="spilla CHE PIACERE VEDERTI — Spille" loading="lazy"><span class="nm">CHE PIACERE VEDERTI</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwyw3zua5d9ht"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789225244/dejjh1wqhzrtnnpd74dn.png" alt="spilla NON VEDO, NON SENTO, NON PARLO. — Spille" loading="lazy"><span class="nm">NON VEDO, NON SENTO, NON PARLO.</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwyyfisy42hdz"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789233524/h3wvhosx983ze1bjrt3t.png" alt="spilla Nucleare! No Grazie — Spille" loading="lazy"><span class="nm">Nucleare! No Grazie</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwz3v3i1yr8ic"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789132182/nvg9slzg43qvazn3vsnv.png" alt="spilla Scuola! No Grazie — Spille" loading="lazy"><span class="nm">Scuola! No Grazie</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwz608eapxg5w"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789294548/ejb5xb9dcyr31oqea8en.png" alt="spilla SONO COTTO DI TE — Spille" loading="lazy"><span class="nm">SONO COTTO DI TE</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwzf40ezv1kgs"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789295029/vfqbg03yeta5uawtuswc.png" alt="spilla SONO GOLOSO — Spille" loading="lazy"><span class="nm">SONO GOLOSO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwzkv28lo0omd"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789304661/ujwg3yaiihwripwifcvz.png" alt="spilla SONO IL VERO BATMAN — Spille" loading="lazy"><span class="nm">SONO IL VERO BATMAN</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwzm5qbs09bvm"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789225130/qplqvmsbejivdm13qo3s.png" alt="spilla SONO SCOPPIATO — Spille" loading="lazy"><span class="nm">SONO SCOPPIATO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwzptktgq0j9o"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789235250/padhkvrye5sqdictz75z.png" alt="spilla SONO UN DRAGO — Spille" loading="lazy"><span class="nm">SONO UN DRAGO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwzrjnnng2s1j"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789307476/fc9s6khca43fiqxhknxr.png" alt="spilla SONO UN GENIO — Spille" loading="lazy"><span class="nm">SONO UN GENIO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwzu0r06ssp7a"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789302548/d8jv2fc1malnwhzhor8o.png" alt="spilla SONO UN MOSTRO ! — Spille" loading="lazy"><span class="nm">SONO UN MOSTRO !</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwzxbtcn4rf0h"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789307724/jwpc1ch2imuwdvcprajz.png" alt="spilla Sono un Rockettaro — Spille" loading="lazy"><span class="nm">Sono un Rockettaro</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtwzzw3r8agthr"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789222893/wjfosxy3ss0zpeiwfeem.png" alt="spilla STAPPAMI — Spille" loading="lazy"><span class="nm">STAPPAMI</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtx04cl2o87r8k"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789294899/d31kog0rkvmwtpxh4o5q.png" alt="spilla STRAZIAMI MA DI BACI SAZIAMI — Spille" loading="lazy"><span class="nm">STRAZIAMI MA DI BACI SAZIAMI</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtyg71vfphtpp0"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789235401/b79gv15w0iqobdosu2te.png" alt="spilla SONO UNA BOMBA — Spille" loading="lazy"><span class="nm">SONO UNA BOMBA</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtygguv7516x6v"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789302633/c8gdijdbncx9cvncopf7.png" alt="spilla SONO ECOLOGICO — Spille" loading="lazy"><span class="nm">SONO ECOLOGICO</span></a></li>
 </ul>
 
 <h3 class="ss">3,7 CM classiche</h3>
 <ul class="g">
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788807497/yirb1v8mro7exm7sctbn.png" alt="spilla Abbasso la Caccia — Spille" loading="lazy"><span class="nm">Abbasso la Caccia</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788807671/avc4cdk9ejuqlatbrrw2.png" alt="spilla ABBASSO LE DIETE — Spille" loading="lazy"><span class="nm">ABBASSO LE DIETE</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788807723/p1qcihtiiudkt6d0gtc4.png" alt="spilla Acne! No Grazie — Spille" loading="lazy"><span class="nm">Acne! No Grazie</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788807775/o0nrwinqzuxz0bkzbtjp.png" alt="spilla AMO IL JAZZ — Spille" loading="lazy"><span class="nm">AMO IL JAZZ</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788807975/zbnphp1ejyfkycnmyav7.png" alt="spilla AMO LA NATURA — Spille" loading="lazy"><span class="nm">AMO LA NATURA</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788809535/mqqneuuh36iw5dq9f5dj.png" alt="spilla CHE PIACERE VEDERTI — Spille" loading="lazy"><span class="nm">CHE PIACERE VEDERTI</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788809981/uhnpnvz9jvxxbrtumbll.png" alt="spilla NON VEDO, NON SENTO, NON PARLO. — Spille" loading="lazy"><span class="nm">NON VEDO, NON SENTO, NON PARLO.</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788810049/vdbp1eudv3jokwmgnux3.png" alt="spilla Nucleare! No Grazie — Spille" loading="lazy"><span class="nm">Nucleare! No Grazie</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788810343/dzffvytuesz98vwsrufa.png" alt="spilla Scuola! No Grazie — Spille" loading="lazy"><span class="nm">Scuola! No Grazie</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788810599/z38sg7digcattvy83dqx.png" alt="spilla SONO COTTO DI TE — Spille" loading="lazy"><span class="nm">SONO COTTO DI TE</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788810653/bqjb1fitkqugr4ezkrgg.png" alt="spilla SONO ECOLOGICO — Spille" loading="lazy"><span class="nm">SONO ECOLOGICO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788810731/aqhipkmbqlnh1ciw6zbn.png" alt="spilla SONO FUORI DI MELONE — Spille" loading="lazy"><span class="nm">SONO FUORI DI MELONE</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788810779/flxosob00w29wqpdabki.png" alt="spilla SONO GOLOSO — Spille" loading="lazy"><span class="nm">SONO GOLOSO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788817512/gqf9nkzzot6hnurom1ot.png" alt="spilla SONO IL VERO BATMAN — Spille" loading="lazy"><span class="nm">SONO IL VERO BATMAN</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811128/pw4sjjx8m3ioa8mkhtpt.png" alt="spilla SONO SCOPPIATO — Spille" loading="lazy"><span class="nm">SONO SCOPPIATO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811221/aag3dgxj4wwogdzwdbie.png" alt="spilla SONO UN DIVO — Spille" loading="lazy"><span class="nm">SONO UN DIVO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811284/utpidz8d3vlv38huhdns.png" alt="spilla SONO UN DRAGO — Spille" loading="lazy"><span class="nm">SONO UN DRAGO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811404/cs5zzwajzodj44cdvomj.png" alt="spilla SONO UN DURO — Spille" loading="lazy"><span class="nm">SONO UN DURO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811456/dphzwlfky5mf4of0ceej.png" alt="spilla SONO UN GENIO — Spille" loading="lazy"><span class="nm">SONO UN GENIO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811697/dddgvgrip7fck97rja7i.png" alt="spilla SONO UN MOSTRO ! — Spille" loading="lazy"><span class="nm">SONO UN MOSTRO !</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811862/ugrfl3pdzryixphqgplc.png" alt="spilla Sono un Rockettaro — Spille" loading="lazy"><span class="nm">Sono un Rockettaro</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811937/unifqwfgnlug1shhwxef.png" alt="spilla SONO UNA BOMBA — Spille" loading="lazy"><span class="nm">SONO UNA BOMBA</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788812056/vwazrcswehh7fqizwfos.png" alt="spilla STAPPAMI — Spille" loading="lazy"><span class="nm">STAPPAMI</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788812174/frbdaferwed6a1ltrghm.png" alt="spilla STRAZIAMI MA DI BACI SAZIAMI — Spille" loading="lazy"><span class="nm">STRAZIAMI MA DI BACI SAZIAMI</span></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrlsrkq3k5u0z"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788807497/yirb1v8mro7exm7sctbn.png" alt="spilla Abbasso la Caccia — Spille" loading="lazy"><span class="nm">Abbasso la Caccia</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrlwhfic40t0t"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788807671/avc4cdk9ejuqlatbrrw2.png" alt="spilla ABBASSO LE DIETE — Spille" loading="lazy"><span class="nm">ABBASSO LE DIETE</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrlxmd2wn2vgh"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788807723/p1qcihtiiudkt6d0gtc4.png" alt="spilla Acne! No Grazie — Spille" loading="lazy"><span class="nm">Acne! No Grazie</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrlyptvtryru0"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788807775/o0nrwinqzuxz0bkzbtjp.png" alt="spilla AMO IL JAZZ — Spille" loading="lazy"><span class="nm">AMO IL JAZZ</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrm30hqttirx5"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788807975/zbnphp1ejyfkycnmyav7.png" alt="spilla AMO LA NATURA — Spille" loading="lazy"><span class="nm">AMO LA NATURA</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrn0g7bz3kyiq"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788809535/mqqneuuh36iw5dq9f5dj.png" alt="spilla CHE PIACERE VEDERTI — Spille" loading="lazy"><span class="nm">CHE PIACERE VEDERTI</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrna0l1e34zsi"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788809981/uhnpnvz9jvxxbrtumbll.png" alt="spilla NON VEDO, NON SENTO, NON PARLO. — Spille" loading="lazy"><span class="nm">NON VEDO, NON SENTO, NON PARLO.</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrnbgljnf6ucd"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788810049/vdbp1eudv3jokwmgnux3.png" alt="spilla Nucleare! No Grazie — Spille" loading="lazy"><span class="nm">Nucleare! No Grazie</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrnhrr6e6mt5r"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788810343/dzffvytuesz98vwsrufa.png" alt="spilla Scuola! No Grazie — Spille" loading="lazy"><span class="nm">Scuola! No Grazie</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrnn8ppi0wrcx"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788810599/z38sg7digcattvy83dqx.png" alt="spilla SONO COTTO DI TE — Spille" loading="lazy"><span class="nm">SONO COTTO DI TE</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrnof2eya0oz4"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788810653/bqjb1fitkqugr4ezkrgg.png" alt="spilla SONO ECOLOGICO — Spille" loading="lazy"><span class="nm">SONO ECOLOGICO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrnq2yc54myls"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788810731/aqhipkmbqlnh1ciw6zbn.png" alt="spilla SONO FUORI DI MELONE — Spille" loading="lazy"><span class="nm">SONO FUORI DI MELONE</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrnr3yszkpv7n"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788810779/flxosob00w29wqpdabki.png" alt="spilla SONO GOLOSO — Spille" loading="lazy"><span class="nm">SONO GOLOSO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrntrobhakcxt"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788817512/gqf9nkzzot6hnurom1ot.png" alt="spilla SONO IL VERO BATMAN — Spille" loading="lazy"><span class="nm">SONO IL VERO BATMAN</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrnyl2nsvwexy"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811128/pw4sjjx8m3ioa8mkhtpt.png" alt="spilla SONO SCOPPIATO — Spille" loading="lazy"><span class="nm">SONO SCOPPIATO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtro0l0jen9786"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811221/aag3dgxj4wwogdzwdbie.png" alt="spilla SONO UN DIVO — Spille" loading="lazy"><span class="nm">SONO UN DIVO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtro1xs4cvjvty"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811284/utpidz8d3vlv38huhdns.png" alt="spilla SONO UN DRAGO — Spille" loading="lazy"><span class="nm">SONO UN DRAGO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtro4ib3m0l25j"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811404/cs5zzwajzodj44cdvomj.png" alt="spilla SONO UN DURO — Spille" loading="lazy"><span class="nm">SONO UN DURO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtro5m7cnpvmsl"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811456/dphzwlfky5mf4of0ceej.png" alt="spilla SONO UN GENIO — Spille" loading="lazy"><span class="nm">SONO UN GENIO</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtroarsxc4mne8"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811697/dddgvgrip7fck97rja7i.png" alt="spilla SONO UN MOSTRO ! — Spille" loading="lazy"><span class="nm">SONO UN MOSTRO !</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtroeb7ec5n55h"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811862/ugrfl3pdzryixphqgplc.png" alt="spilla Sono un Rockettaro — Spille" loading="lazy"><span class="nm">Sono un Rockettaro</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrofxsgrfk6u9"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788811937/unifqwfgnlug1shhwxef.png" alt="spilla SONO UNA BOMBA — Spille" loading="lazy"><span class="nm">SONO UNA BOMBA</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtroihev2tik9s"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788812056/vwazrcswehh7fqizwfos.png" alt="spilla STAPPAMI — Spille" loading="lazy"><span class="nm">STAPPAMI</span></a></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtrol06vynyhvd"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788812174/frbdaferwed6a1ltrghm.png" alt="spilla STRAZIAMI MA DI BACI SAZIAMI — Spille" loading="lazy"><span class="nm">STRAZIAMI MA DI BACI SAZIAMI</span></a></li>
 </ul>
 
 <h3 class="ss">3,7 CM rosse</h3>
 <ul class="g">
-<li class="c"><span class="nm">ABBASSO LE DIETE</span></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtvz11znger9iq"><span class="nm">ABBASSO LE DIETE</span></a></li>
 </ul>
 
 <h3 class="ss">piccole</h3>
 <ul class="g">
-<li class="c"><span class="nm">ABBASSO LE DIETE</span></li>
+<li class="c"><a href="/#f/eJ2w0D0dYKO7YF1MdFHp/mtvz15rdwacd23"><span class="nm">ABBASSO LE DIETE</span></a></li>
 </ul>
 
 <div class="invito"><a class="vai" href="/">Vai al sito Internet figurineSgorbions.it !</a></div>

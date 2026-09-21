@@ -81,8 +81,28 @@ h3.ss{color:var(--lime);font-size:1.05rem;margin:1.8rem 0 .5rem;letter-spacing:.
    giorni, l'ultima proprio scrivendo la riga che lo vieta. */
 h4.cat{color:var(--categoria);font-size:.92rem;font-weight:800;letter-spacing:.03em;margin:1.4rem 0 .4rem}
 .hint{color:var(--dim);font-size:.9rem;margin:0 0 1.1rem}
+/* 🆕 v6.949 — la riga che dice che le card si cliccano. Stesso aspetto della hint e classe
+   diversa: vedi il commento nel codice che la scrive. */
+.apri{color:var(--dim);font-size:.9rem;margin:0 0 1.1rem}
 .g{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.9rem}
 .c{background:var(--card);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+/* 🆕 v6.949 — LA REGOLA DEL LINK DENTRO LA CARD, quella che il commento del 7 settembre
+   nominava, e non e' decorativa: e' il link a prendersi il flex in colonna, non piu' l'elemento
+   di lista. 🔴 PERCHE': i due margini automatici della v6.940 e della v6.945 — quelli che
+   mettono la foto a mezza altezza — stanno sull'immagine e sulla riga del numero, cioe' DENTRO
+   il link. Se il contenitore flex restasse l'elemento di lista, il link diventerebbe il suo
+   unico figlio e quei due margini si troverebbero in un blocco normale: la foto tornerebbe
+   appiccicata in cima, su ogni card, senza nessun errore.
+   ⚠️ L'EREDITA' DEL COLORE NON E' PIGNOLERIA: la regola dei link di questa stessa pagina
+   renderebbe GIALLI il numero e il nome di tutte le card. Il giallo qui significa «entra nel
+   sito», ed e' del bottone: un nome giallo direbbe una cosa che non e' vera.
+   📌 IL CONTORNO ALL'HOVER dichiara che si puo' cliccare, per chi ha un mouse. Chi non ce
+   l'ha lo legge nella riga sotto il titolo: due strade per la stessa informazione, perche' la
+   prima meta' dei visitatori arriva da un telefono.
+   ⚠️ NIENTE APICI INVERSI QUI DENTRO: questo commento vive in una template literal, e il primo
+   apice la CHIUDE. Preso di nuovo scrivendo proprio questo blocco — e' la quinta volta. */
+.c a{display:flex;flex-direction:column;height:100%;color:inherit;text-decoration:none}
+.c a:hover{outline:2px solid var(--acc);outline-offset:-2px;border-radius:10px}
 /* 🔄 v6.940 — LA FOTO STA A MEZZA ALTEZZA, non incollata in cima (Franco: «le figurine
    sdraiate riusciresti a metterle a mezza altezza, rispetto alla altezza di una figurina
    verticale? al momento pareggiamo al lato superiore»).
@@ -155,230 +175,231 @@ footer a{color:var(--dim);text-decoration:underline}
 <div class="invito"><a class="vai" href="/">Vai al sito Internet figurineSgorbions.it !</a></div>
 
 <h2>Tutti gli articoli</h2>
+<p class="apri">Clicca un articolo per aprirlo sul sito, con il suo retro e le sue versioni.</p>
 <h3 class="ss">Figurine Metal</h3>
 <ul class="g">
-<li class="c"><span class="nm">CAMILLA GODZILLA</span></li>
-<li class="c"><span class="nm">ROSARIO MALARIO</span></li>
-<li class="c"><span class="nm">GOLEA-DORINO</span></li>
-<li class="c"><span class="nm">DANIELA RAGNATELA</span></li>
-<li class="c"><span class="nm">CUPI-DINO</span></li>
-<li class="c"><span class="nm">BATTISTA PALLISTA</span></li>
-<li class="c"><span class="nm">MARCELLO PORCELLO</span></li>
-<li class="c"><span class="nm">GENNARO CORSARO</span></li>
-<li class="c"><span class="nm">PABLO DIABLO</span></li>
-<li class="c"><span class="nm">EXTRA TERESA</span></li>
-<li class="c"><span class="nm">TAPPA-TINO</span></li>
-<li class="c"><span class="nm">CLARETTA CARRETTA</span></li>
-<li class="c"><span class="nm">LILLI PUNTASPILLI</span></li>
-<li class="c"><span class="nm">CERNO-BILL</span></li>
-<li class="c"><span class="nm">SPIE-DINO</span></li>
-<li class="c"><span class="nm">BATTISTA ELETTRICISTA</span></li>
-<li class="c"><span class="nm">GENNARO ROCKETTARO</span></li>
-<li class="c"><span class="nm">RAIMONDA GIOCONDA</span></li>
-<li class="c"><span class="nm">GINO LUMINO</span></li>
-<li class="c"><span class="nm">ANITA TROGLODITA</span></li>
-<li class="c"><span class="nm">RINO MONCHERINO</span></li>
-<li class="c"><span class="nm">GENNARO PATTUMARO</span></li>
-<li class="c"><span class="nm">DONATA AVARIATA</span></li>
-<li class="c"><span class="nm">SALVATORE FETORE</span></li>
-<li class="c"><span class="nm">DIN DON DINO</span></li>
-<li class="c"><span class="nm">NINO PEPERINO</span></li>
-<li class="c"><span class="nm">SONIA INSONNIA</span></li>
-<li class="c"><span class="nm">RENATO BOCCIATO</span></li>
-<li class="c"><span class="nm">MARCELLO SBUDELLO</span></li>
-<li class="c"><span class="nm">MARTINO BURINO</span></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/2mVLqi5CLMWuR0fn2VEh"><span class="nm">CAMILLA GODZILLA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/4f6WLFt5ZtqmJYqeHjpG"><span class="nm">ROSARIO MALARIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/4tP9rPuV4cvjGslSXvWB"><span class="nm">GOLEA-DORINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/6ZoP0qnwoFDIx3E9ZtSX"><span class="nm">DANIELA RAGNATELA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/87WFygOIMrN1tg7RpdAr"><span class="nm">CUPI-DINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/A9Z4TwtbeJuJWUUnFX7Z"><span class="nm">BATTISTA PALLISTA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/AEAAorkPw3V7afMiZr8W"><span class="nm">MARCELLO PORCELLO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Co22Lm6Cmznqcn44FI7M"><span class="nm">GENNARO CORSARO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/CosXb6ofGJouumLI0Rf8"><span class="nm">PABLO DIABLO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/CvBsgsO3GrN7LWMISD3K"><span class="nm">EXTRA TERESA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/HOaAkqqNwWAjHySEDAWe"><span class="nm">TAPPA-TINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/HPOAvifov5qTa1rqD5X9"><span class="nm">CLARETTA CARRETTA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/HxZoDUZFWY8jzU7ZZdBz"><span class="nm">LILLI PUNTASPILLI</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/NOa2A3dzU85vmpfMoDOt"><span class="nm">CERNO-BILL</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/OqPuIbALjZAmdSXP9nq9"><span class="nm">SPIE-DINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/OtOHiDp1YVBw01OJiL4R"><span class="nm">BATTISTA ELETTRICISTA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/YQkuXqJjRZP1FZriVLdu"><span class="nm">GENNARO ROCKETTARO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/ZLIYiFPSzFMdhIHAa4rn"><span class="nm">RAIMONDA GIOCONDA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/auvNu9rtf4Lh9RFOcNvt"><span class="nm">GINO LUMINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/e9WZHxOumZNTLrq2bVa9"><span class="nm">ANITA TROGLODITA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/fyVeY5GiKK0Zmk5mKM3i"><span class="nm">RINO MONCHERINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/hOYo2iE7aeu4o4BeyVim"><span class="nm">GENNARO PATTUMARO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/hXytqTsHu0NEIdsFrdSG"><span class="nm">DONATA AVARIATA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/jAyVG4BHEqp9P8RmDliE"><span class="nm">SALVATORE FETORE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/mAouapzJq82ONNE1AVZi"><span class="nm">DIN DON DINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/oWOVuPLBs27YE3aEy8Np"><span class="nm">NINO PEPERINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/tI1JUcHAtvgr8GwCgeZt"><span class="nm">SONIA INSONNIA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/vCsBuIm754Pf7m6aurSI"><span class="nm">RENATO BOCCIATO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/voDrTHj0qFYJbDFCW6Oo"><span class="nm">MARCELLO SBUDELLO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/x7YbaYCDLWGFFX0gqQys"><span class="nm">MARTINO BURINO</span></a></li>
 </ul>
 
 <h3 class="ss">Figurine Clear</h3>
 <ul class="g">
-<li class="c"><span class="nm">MUGO L'ANGELO</span></li>
-<li class="c"><span class="nm">MARIAROSA RUGOSA</span></li>
-<li class="c"><span class="nm">BATTISTA TEPPISTA</span></li>
-<li class="c"><span class="nm">TOPO-LINO</span></li>
-<li class="c"><span class="nm">RINA CATARRINA</span></li>
-<li class="c"><span class="nm">NICOLAS CADENAS</span></li>
-<li class="c"><span class="nm">PIERINO LAVANDINO</span></li>
-<li class="c"><span class="nm">CICCIO PASTICCIO</span></li>
-<li class="c"><span class="nm">ALBERTO SORDO</span></li>
-<li class="c"><span class="nm">DODO COLABRODO</span></li>
-<li class="c"><span class="nm">PEPÈ BIGNÈ</span></li>
-<li class="c"><span class="nm">NIPPON TRIPPON</span></li>
-<li class="c"><span class="nm">FIFFÌ PIPÌ</span></li>
-<li class="c"><span class="nm">BOTOLO ROTOLO</span></li>
-<li class="c"><span class="nm">MONGOL PIERO</span></li>
-<li class="c"><span class="nm">OMBRETTA CONIGLIETTA</span></li>
-<li class="c"><span class="nm">PIERINO ABBUFFINO</span></li>
-<li class="c"><span class="nm">ALVARO METALLARO</span></li>
-<li class="c"><span class="nm">RINO IMPICCATINO</span></li>
-<li class="c"><span class="nm">RAMBO BAMBO</span></li>
-<li class="c"><span class="nm">MATTEO CAPPEREO</span></li>
-<li class="c"><span class="nm">PAMELA CANDELA</span></li>
-<li class="c"><span class="nm">ARISTIDE CARIATIDE</span></li>
-<li class="c"><span class="nm">SIMONE LINGUACCIONE</span></li>
-<li class="c"><span class="nm">CARLA IGENICA</span></li>
-<li class="c"><span class="nm">VITO SPEDITO</span></li>
-<li class="c"><span class="nm">AGO-STINO FILOMENO</span></li>
-<li class="c"><span class="nm">ANITA INVIPERITA</span></li>
-<li class="c"><span class="nm">ISACCO DI PULCI</span></li>
-<li class="c"><span class="nm">ANTONELLA MORTADELLA</span></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/1xhLXOXLsRAUXrOStpWJ"><span class="nm">MUGO L'ANGELO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/2LRFCuBFK6fAeNwoAxXw"><span class="nm">MARIAROSA RUGOSA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/3daciij7i9mEZ4K8w7aU"><span class="nm">BATTISTA TEPPISTA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/3lE5Q4Y1sRIYxDCsmnOq"><span class="nm">TOPO-LINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/8uNPOKYzdDmzNMXjhid4"><span class="nm">RINA CATARRINA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/AIyDh1NzhPt8LrSHlDDE"><span class="nm">NICOLAS CADENAS</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/E0ApZb0j45phXJ9UQC4s"><span class="nm">PIERINO LAVANDINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Gb0cLhUfBrSw2f4Bcq5J"><span class="nm">CICCIO PASTICCIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/K7l1DYuLQMqO2BFiL9Uq"><span class="nm">ALBERTO SORDO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/LsDm7kL5yyIVRnIE5SwL"><span class="nm">DODO COLABRODO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/R77xFbuW6w4TmWHQFdHt"><span class="nm">PEPÈ BIGNÈ</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/SKZC795NVgJcE1fWLOuA"><span class="nm">NIPPON TRIPPON</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/V0JJDZjGdGhqR3v15bqo"><span class="nm">FIFFÌ PIPÌ</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/VcgWGNnsHRLP2Y0jw5Ev"><span class="nm">BOTOLO ROTOLO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/ZE6XySwhp11rMWLDPpsO"><span class="nm">MONGOL PIERO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/ab4MmrYvKT12TrO0Y3NL"><span class="nm">OMBRETTA CONIGLIETTA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/cJqGANswSdFKFwdRyOEp"><span class="nm">PIERINO ABBUFFINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/dVrXLfitZNLrZHkSAEDo"><span class="nm">ALVARO METALLARO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/dbfjw5FfraHUyEgYNNeX"><span class="nm">RINO IMPICCATINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/gyaJWhu0RXQ3YD1MkhUv"><span class="nm">RAMBO BAMBO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/im7BaOspVcnve9O5ioT4"><span class="nm">MATTEO CAPPEREO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/mO25fPHyZccclfb2EySv"><span class="nm">PAMELA CANDELA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/pzFRKiVQmNpdJqCIP01j"><span class="nm">ARISTIDE CARIATIDE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/rJG9BRvPXVLid8iMOc99"><span class="nm">SIMONE LINGUACCIONE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/ufBcP7tywM6JmkessMdP"><span class="nm">CARLA IGENICA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/up9quAl4lbw4V0ifzC2x"><span class="nm">VITO SPEDITO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/xEGmMoYu4ejvGFkuiRJ2"><span class="nm">AGO-STINO FILOMENO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/xUHF3Smm7qUym5UEaGpc"><span class="nm">ANITA INVIPERITA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/zZ78BEznDqU7wJkgh8R8"><span class="nm">ISACCO DI PULCI</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/zrp8LjVRjObIerk0y36T"><span class="nm">ANTONELLA MORTADELLA</span></a></li>
 </ul>
 
 <h3 class="ss">Figurine White</h3>
 <ul class="g">
-<li class="c"><span class="nm">ANITA TROGLODITA</span></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/mtuntf8u6uskog"><span class="nm">ANITA TROGLODITA</span></a></li>
 </ul>
 
 <h3 class="ss">Tatuaggi</h3>
 <ul class="g">
-<li class="c"><span class="nm">MONICA SUPERSONICA</span></li>
-<li class="c"><span class="nm">PUGNO SUL GRUGNO</span></li>
-<li class="c"><span class="nm">ENRICO ELETTRICO</span></li>
-<li class="c"><span class="nm">DARIO MILLENARIO</span></li>
-<li class="c"><span class="nm">JAMES FOND</span></li>
-<li class="c"><span class="nm">FEDERIC RASOIO BIC</span></li>
-<li class="c"><span class="nm">NIPPON TRIPPON</span></li>
-<li class="c"><span class="nm">CECCO STAMBECCO</span></li>
-<li class="c"><span class="nm">MARI-COMIO</span></li>
-<li class="c"><span class="nm">PINO SILVESTRINO</span></li>
-<li class="c"><span class="nm">ANITA DIMAGRITA</span></li>
-<li class="c"><span class="nm">CAMIL-LEONTE</span></li>
-<li class="c"><span class="nm">VANESSA SCHIFESSA</span></li>
-<li class="c"><span class="nm">SILVESTRA STALLONA</span></li>
-<li class="c"><span class="nm">GINO TAPPINO</span></li>
-<li class="c"><span class="nm">RICK'N ROLL</span></li>
-<li class="c"><span class="nm">ECTÒR CUCADÒR</span></li>
-<li class="c"><span class="nm">BATTISTA TEPPISTA</span></li>
-<li class="c"><span class="nm">ROMEO TROFEO</span></li>
-<li class="c"><span class="nm">ADRIANO CIARLATANO</span></li>
-<li class="c"><span class="nm">GENNARO ROCKETTARO</span></li>
-<li class="c"><span class="nm">SALVATORE PENSATORE</span></li>
-<li class="c"><span class="nm">ERMANNO BUON COMPLEANNO</span></li>
-<li class="c"><span class="nm">CERNO-BILL</span></li>
-<li class="c"><span class="nm">ORNELLA STAMPELLA</span></li>
-<li class="c"><span class="nm">AUGUSTO BUONGUSTO</span></li>
-<li class="c"><span class="nm">RAMONA CAPOCCIONA</span></li>
-<li class="c"><span class="nm">ARISTIDE CARIATIDE</span></li>
-<li class="c"><span class="nm">IVO RADIOATTIVO</span></li>
-<li class="c"><span class="nm">GASTONE TROMBONE</span></li>
-<li class="c"><span class="nm">BAGNO MARIO</span></li>
-<li class="c"><span class="nm">CARMELO DOPPIOPELO</span></li>
-<li class="c"><span class="nm">FORTU-NELLO</span></li>
-<li class="c"><span class="nm">RAMBO BAMBO</span></li>
-<li class="c"><span class="nm">ANTONIO DEMONIO</span></li>
-<li class="c"><span class="nm">ANNA OSSA</span></li>
-<li class="c"><span class="nm">BEPPE CHE SLEPPE</span></li>
-<li class="c"><span class="nm">ROBERTO VENTREAPERTO</span></li>
-<li class="c"><span class="nm">GIGETTO PUS PUS</span></li>
-<li class="c"><span class="nm">ROMEO VIDEO</span></li>
-<li class="c"><span class="nm">CARLONE ZUCCONE</span></li>
-<li class="c"><span class="nm">CONCETTA COSCETTA</span></li>
-<li class="c"><span class="nm">DODO NODO</span></li>
-<li class="c"><span class="nm">AUGUSTA SUPPOSTA</span></li>
-<li class="c"><span class="nm">ROSA CENERE</span></li>
-<li class="c"><span class="nm">BENIGNO MALIGNO</span></li>
-<li class="c"><span class="nm">DONALD QUACK</span></li>
-<li class="c"><span class="nm">NICOLA PISTOLA</span></li>
-<li class="c"><span class="nm">PUZZI CAT</span></li>
-<li class="c"><span class="nm">MARINELLA BELLA</span></li>
-<li class="c"><span class="nm">DECALCO MARIA</span></li>
-<li class="c"><span class="nm">ARTURO SUPERDURO</span></li>
-<li class="c"><span class="nm">LORENZA INFLUENZA</span></li>
-<li class="c"><span class="nm">CILIE-GINO</span></li>
-<li class="c"><span class="nm">CICCIO PASTICCIO</span></li>
-<li class="c"><span class="nm">PUCCI OSSUCCI</span></li>
-<li class="c"><span class="nm">STARNU-TINO</span></li>
-<li class="c"><span class="nm">RITA BOLLITA</span></li>
-<li class="c"><span class="nm">CIRO VAMPIRO</span></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/1bV6oEakXTDHuRqTIiVW"><span class="nm">MONICA SUPERSONICA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/1q7LIZq36uRK6Pof3jAB"><span class="nm">PUGNO SUL GRUGNO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/1vhQmS9kb3gPUUSb8zKP"><span class="nm">ENRICO ELETTRICO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/2XwIPviZehqXjpodkGC1"><span class="nm">DARIO MILLENARIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/46AcsOMy2FNmIqgyNFxy"><span class="nm">JAMES FOND</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/4tQmPyAJVuLps2wo3bGy"><span class="nm">FEDERIC RASOIO BIC</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/5DPDejBS2gr8zzhEnwRj"><span class="nm">NIPPON TRIPPON</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/AW55yihhLppLFiDpqJZv"><span class="nm">CECCO STAMBECCO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/BhNndPkJCtgEvrBBxwiZ"><span class="nm">MARI-COMIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/CawthVfVobMxxnJMyBeH"><span class="nm">PINO SILVESTRINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/CnAHQyl0tgNZVLnnI6Ns"><span class="nm">ANITA DIMAGRITA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/D6hG0MX6YpqvWQUsvfJo"><span class="nm">CAMIL-LEONTE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/FTjx8eVUruBXEXEqAY6c"><span class="nm">VANESSA SCHIFESSA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Gr1zMsB4uq3yVHUMXGgB"><span class="nm">SILVESTRA STALLONA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/JLmIequBm9sHqWNBa1ay"><span class="nm">GINO TAPPINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/JtrBLYC2K2X7YtlBSEc8"><span class="nm">RICK'N ROLL</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/La1QTxrTjsW42Ujl43l6"><span class="nm">ECTÒR CUCADÒR</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/MQZyNajlklfnNNc3Greo"><span class="nm">BATTISTA TEPPISTA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/MfGBFti9RXkxMdR4jkDf"><span class="nm">ROMEO TROFEO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/O6vxacNAQnVAxYHnznkG"><span class="nm">ADRIANO CIARLATANO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/O7tS10Mw4yYiMuPW6FLI"><span class="nm">GENNARO ROCKETTARO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/QOE1VvTCIqoR0aWyjOox"><span class="nm">SALVATORE PENSATORE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/SgAH7GX7Hp19EuDOyApy"><span class="nm">ERMANNO BUON COMPLEANNO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Snx1i6tQsM2GBWbVKiBg"><span class="nm">CERNO-BILL</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/TDmI15MvHAPLAUUNOcIk"><span class="nm">ORNELLA STAMPELLA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/XcFu1z8kREE10n2WNxNO"><span class="nm">AUGUSTO BUONGUSTO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Xd9KiG1cbWszcYVQJD0f"><span class="nm">RAMONA CAPOCCIONA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/YTJFKUoADYajG8tQvls9"><span class="nm">ARISTIDE CARIATIDE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/YUAQeDxXhjkYkqF8uzlI"><span class="nm">IVO RADIOATTIVO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Yj3GyVV9Atl9jEB12GOB"><span class="nm">GASTONE TROMBONE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Z1ngbiTTfs55RFHdDJKk"><span class="nm">BAGNO MARIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/ZusE3xBKDpu2spyha32V"><span class="nm">CARMELO DOPPIOPELO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/bVGikgYZJW3LZSdJb5II"><span class="nm">FORTU-NELLO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/byFARe3JSwczqq3FEuF5"><span class="nm">RAMBO BAMBO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/fR6hIoLUOiX8eFsIMKvY"><span class="nm">ANTONIO DEMONIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/fvmLjNwnBAZylT9I99dc"><span class="nm">ANNA OSSA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/gO9snf0M4jv3qAUZYywO"><span class="nm">BEPPE CHE SLEPPE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/hFBOMlRQV5AA0UfqFFSb"><span class="nm">ROBERTO VENTREAPERTO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/i1hGN68OWER1iFYAy8Mb"><span class="nm">GIGETTO PUS PUS</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/iPaZFnxdYEb96pH5Bu5p"><span class="nm">ROMEO VIDEO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/iUF8xe27a6MouLArreD3"><span class="nm">CARLONE ZUCCONE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/kM0yYYLHw9ZT32Su8IJG"><span class="nm">CONCETTA COSCETTA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/kSPlvNmXsaIdVzyHPi8Y"><span class="nm">DODO NODO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/mN6fz4TXOKUlOFxQzN9a"><span class="nm">AUGUSTA SUPPOSTA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/ngvYrzxly3ccARWBvJa5"><span class="nm">ROSA CENERE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/o7FBQGLn6NKvQoszEVUQ"><span class="nm">BENIGNO MALIGNO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/oHMdyZEdOT0XoTDgfhx8"><span class="nm">DONALD QUACK</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/pvGijGtIlvuexZulAqgE"><span class="nm">NICOLA PISTOLA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/r5fKp0ksbQZNaG9WEj1n"><span class="nm">PUZZI CAT</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/rX1BXa9B2CSWJXR2ReTM"><span class="nm">MARINELLA BELLA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/ryN2LbjQNQSG9qAUt1ym"><span class="nm">DECALCO MARIA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/st3uH3eJjlXwJh2hMMzI"><span class="nm">ARTURO SUPERDURO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/trUTq2dJVDnv3M3pgwr6"><span class="nm">LORENZA INFLUENZA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/v8WjFnbWOcBuQFJZB2VA"><span class="nm">CILIE-GINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/vffflseNeCLrLGPsYg8u"><span class="nm">CICCIO PASTICCIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/wgHktzSuhmX4d6XBuTfu"><span class="nm">PUCCI OSSUCCI</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/woVgVKlPgv8WyIPlUoOf"><span class="nm">STARNU-TINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/y9Q1QGoMDHhVkIwu9aso"><span class="nm">RITA BOLLITA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/z8047BXGt7USoqzB4KM7"><span class="nm">CIRO VAMPIRO</span></a></li>
 </ul>
 
 <h3 class="ss">Trasferelli</h3>
 <ul class="g">
-<li class="c"><span class="nm">STRIZZA-TINO</span></li>
-<li class="c"><span class="nm">GINO SPAZZALATRINO</span></li>
-<li class="c"><span class="nm">ROBERTO VENTREAPERTO</span></li>
-<li class="c"><span class="nm">GASTONE BUBBONE</span></li>
-<li class="c"><span class="nm">STARNU-TINO</span></li>
-<li class="c"><span class="nm">SABRINA GOMMINA</span></li>
-<li class="c"><span class="nm">POLLY-FEMO</span></li>
-<li class="c"><span class="nm">NINETTO RIGETTO</span></li>
-<li class="c"><span class="nm">CELESTE DUE TESTE</span></li>
-<li class="c"><span class="nm">ROMEO TROFEO</span></li>
-<li class="c"><span class="nm">ROMEO VIDEO</span></li>
-<li class="c"><span class="nm">CAMILLO SPILLO</span></li>
-<li class="c"><span class="nm">CLEMENTE MORTOVIVENTE</span></li>
-<li class="c"><span class="nm">VERA FATTUCCHIERA</span></li>
-<li class="c"><span class="nm">DARIO MILLENARIO</span></li>
-<li class="c"><span class="nm">PINO SPADINO</span></li>
-<li class="c"><span class="nm">PAOLONE GOBBONE</span></li>
-<li class="c"><span class="nm">ANTONIO DEMONIO</span></li>
-<li class="c"><span class="nm">CIRO VAMPIRO</span></li>
-<li class="c"><span class="nm">LUCILLA GORILLA</span></li>
-<li class="c"><span class="nm">RICCARDO SUPERLARDO</span></li>
-<li class="c"><span class="nm">ORNELLA STAMPELLA</span></li>
-<li class="c"><span class="nm">ORESTE MANGIABESTIE</span></li>
-<li class="c"><span class="nm">BICE CICCATRICE</span></li>
-<li class="c"><span class="nm">ARTURO SUPERDURO</span></li>
-<li class="c"><span class="nm">ANITA DIMAGRITA</span></li>
-<li class="c"><span class="nm">SELVAG-GINA</span></li>
-<li class="c"><span class="nm">RAMONA CAPOCCIONA</span></li>
-<li class="c"><span class="nm">CAMIL-LEONTE</span></li>
-<li class="c"><span class="nm">PINUCCIA BOCCUCCIA</span></li>
-<li class="c"><span class="nm">RENATA CARIATA</span></li>
-<li class="c"><span class="nm">PIPPO-STRELLO</span></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/1QXr69tqr27I6RpKbMPY"><span class="nm">STRIZZA-TINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/2hLavbH41YtYjzXFlViN"><span class="nm">GINO SPAZZALATRINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/4F8FgYhDn43YK8gkjSSq"><span class="nm">ROBERTO VENTREAPERTO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/84YxzIv3C0Htp2pCddE9"><span class="nm">GASTONE BUBBONE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/87vXxiz75lO5KaXOFR7z"><span class="nm">STARNU-TINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/BRoWJQ2fLVA5tJHsXNAY"><span class="nm">SABRINA GOMMINA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/CIPG1Sszo5Syf1FcFycg"><span class="nm">POLLY-FEMO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/CyMSNXoMhd78SlJ374Cm"><span class="nm">NINETTO RIGETTO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/EJjucWbY3AYCv6X84NCC"><span class="nm">CELESTE DUE TESTE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/HjqmAqYyW77PqnYFKSF6"><span class="nm">ROMEO TROFEO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Ky11TYDqyd28NCuJFLw2"><span class="nm">ROMEO VIDEO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/LA32Yijp4T3tbGvXMfPb"><span class="nm">CAMILLO SPILLO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Pg6ZegFCYFWpTsgw958v"><span class="nm">CLEMENTE MORTOVIVENTE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/QJSYPtreATbWjiQBiaqW"><span class="nm">VERA FATTUCCHIERA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Sjnl8NA6Mfyi6xzrzRcF"><span class="nm">DARIO MILLENARIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/T0Ui4obcinPG7oJjnU1e"><span class="nm">PINO SPADINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/UL2si5ZBO5PB1c4dMBIj"><span class="nm">PAOLONE GOBBONE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/VaLjlaDXqiAOOZrahEAq"><span class="nm">ANTONIO DEMONIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Xxwm14Ui6D0NrC2rN3rA"><span class="nm">CIRO VAMPIRO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/YmSgqwD2RdhqUwWksG5w"><span class="nm">LUCILLA GORILLA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/c2v8TvZ67vPk05bRXTY3"><span class="nm">RICCARDO SUPERLARDO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/dALAMHBKh4YuZq88q5CX"><span class="nm">ORNELLA STAMPELLA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/dK2iPaMM2qGdTT3f3WE6"><span class="nm">ORESTE MANGIABESTIE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/ipH2jezMrkgQydUh1eHr"><span class="nm">BICE CICCATRICE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/kIQPU98yeWso1yJWCgTc"><span class="nm">ARTURO SUPERDURO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/mBblORenxhAj7TSU1tP5"><span class="nm">ANITA DIMAGRITA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/pZ1sulNKDIZEAXkZyrYK"><span class="nm">SELVAG-GINA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/qjEsQGUOwgQNhwvIXyJE"><span class="nm">RAMONA CAPOCCIONA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/rYsYYfDwuTUejVyrOGQT"><span class="nm">CAMIL-LEONTE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/vKRE5klyl35Cf951XFqB"><span class="nm">PINUCCIA BOCCUCCIA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/xKNRNOKVrHVUVSOf5wws"><span class="nm">RENATA CARIATA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/zC3SoPr0TRloF1TBr8AD"><span class="nm">PIPPO-STRELLO</span></a></li>
 </ul>
 
 <h3 class="ss">Carte d'identità</h3>
 <ul class="g">
-<li class="c"><span class="nm">CARLETTO RAMETTO</span></li>
-<li class="c"><span class="nm">NICOLA PISTOLA</span></li>
-<li class="c"><span class="nm">MARI-COMIO</span></li>
-<li class="c"><span class="nm">ANNONA PUSTOLONA</span></li>
-<li class="c"><span class="nm">JOHN STRAVOLT</span></li>
-<li class="c"><span class="nm">PUNKER-OTTO</span></li>
-<li class="c"><span class="nm">MARCELLO SCERVELLO</span></li>
-<li class="c"><span class="nm">HUGO SAPIENS</span></li>
-<li class="c"><span class="nm">ATHOS STAPPATOS</span></li>
-<li class="c"><span class="nm">DOPPIO AUGUSTO</span></li>
-<li class="c"><span class="nm">ROMANO TOSCANO</span></li>
-<li class="c"><span class="nm">MARGHERITA SFIORITA</span></li>
-<li class="c"><span class="nm">PIERO BINETTO</span></li>
-<li class="c"><span class="nm">GASTONE SGORBIONE</span></li>
-<li class="c"><span class="nm">ORAZIO MAL DI SPAZIO</span></li>
-<li class="c"><span class="nm">OTTONE ZUCCOTTONE</span></li>
-<li class="c"><span class="nm">JOE FALCHETTO</span></li>
-<li class="c"><span class="nm">TINA BUDINA</span></li>
-<li class="c"><span class="nm">TINO SCUOITATINO</span></li>
-<li class="c"><span class="nm">FRAGOLA E PISTACCHIO</span></li>
-<li class="c"><span class="nm">GIANNI ATTACCAPANNI</span></li>
-<li class="c"><span class="nm">RENATO SBACIUCCHIATO</span></li>
-<li class="c"><span class="nm">DANTE MUTANTE</span></li>
-<li class="c"><span class="nm">MARINELLA BELLA</span></li>
-<li class="c"><span class="nm">LORENZA INFLUENZA</span></li>
-<li class="c"><span class="nm">MARCELLO CATTIVELLO</span></li>
-<li class="c"><span class="nm">RAMONA ABBUFFONA</span></li>
-<li class="c"><span class="nm">ENZO PURULENTO</span></li>
-<li class="c"><span class="nm">LETIZIA IMMONDIZIA</span></li>
-<li class="c"><span class="nm">TOSTA-TINA</span></li>
-<li class="c"><span class="nm">CATERINA FRAGILINA</span></li>
-<li class="c"><span class="nm">ROCKY ZERO</span></li>
-<li class="c"><span class="nm">RAIMONDO URLATONDO</span></li>
-<li class="c"><span class="nm">NINO MANINO</span></li>
-<li class="c"><span class="nm">GAIO BUONGUSTAIO</span></li>
-<li class="c"><span class="nm">EDMONDO RUBICONDO</span></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/08icEuxNsr0t90oghlp7"><span class="nm">CARLETTO RAMETTO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/1s0vS3EnyqeifgBMWJrT"><span class="nm">NICOLA PISTOLA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/40rARHp3BK77qzRtofhk"><span class="nm">MARI-COMIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/BHuF6RfP6hFuEmfKpYK1"><span class="nm">ANNONA PUSTOLONA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/DNYswkCPbTVKyhc3fJ1I"><span class="nm">JOHN STRAVOLT</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/HBGNeNOik0RPZfVktJxz"><span class="nm">PUNKER-OTTO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/IQfq7oBAXlKRR8wMJNJK"><span class="nm">MARCELLO SCERVELLO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Lip2mIRqiQhwkL2AjQGX"><span class="nm">HUGO SAPIENS</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/N9AVamEfQqeLn9Rv8xrg"><span class="nm">ATHOS STAPPATOS</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Os89x2s4rQcnLGGBS44A"><span class="nm">DOPPIO AUGUSTO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/PO7zrD1Mq3jgCNwiLCGS"><span class="nm">ROMANO TOSCANO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/PVsDswIBS6eBvNwsGqKM"><span class="nm">MARGHERITA SFIORITA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/R8eIt9tDaxmK3KvXKa05"><span class="nm">PIERO BINETTO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/TiP0oX3pf4OkZ3lfEcBm"><span class="nm">GASTONE SGORBIONE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/UbOeb7Wr4Zhe1aeW3aFl"><span class="nm">ORAZIO MAL DI SPAZIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/VqNz399bwjMi1KDTMUJb"><span class="nm">OTTONE ZUCCOTTONE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/Y5GrkKpROORezsBlF7N4"><span class="nm">JOE FALCHETTO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/ZiUycGsKOMH5MPW4FAfT"><span class="nm">TINA BUDINA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/ZkAY1IPhUZmWC68pNUlu"><span class="nm">TINO SCUOITATINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/ahVN61Tacq3N3Kz0qLxU"><span class="nm">FRAGOLA E PISTACCHIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/c9ysoCxrqXtBC9SeiAep"><span class="nm">GIANNI ATTACCAPANNI</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/d1KItrg6PNQCSzjyafTq"><span class="nm">RENATO SBACIUCCHIATO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/d5TXkiAlHgD8XZ61CXBe"><span class="nm">DANTE MUTANTE</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/g08DQUZEHOSlB0LWiHaW"><span class="nm">MARINELLA BELLA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/gRnIWcIB0MFv9p2sJOAp"><span class="nm">LORENZA INFLUENZA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/gZPtDd6vNX1vCG2ZXxGw"><span class="nm">MARCELLO CATTIVELLO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/hJZzR51txMkGU4evJ0lU"><span class="nm">RAMONA ABBUFFONA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/jH1X9TjdYbRkEt2LLugL"><span class="nm">ENZO PURULENTO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/pMwWHeqO7WsACCrMtEaS"><span class="nm">LETIZIA IMMONDIZIA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/rCw2sgwOjS6lg7ecayZY"><span class="nm">TOSTA-TINA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/sf7rMZlAzmujx6FhpMsF"><span class="nm">CATERINA FRAGILINA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/wgWkavrLFWnHpNty0Qus"><span class="nm">ROCKY ZERO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/xNZY5CCJjYxXdokm0ItH"><span class="nm">RAIMONDO URLATONDO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/z8rsU51Y9ZM2HtYrmwL1"><span class="nm">NINO MANINO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/zgNaANwJikHkolzAGDeN"><span class="nm">GAIO BUONGUSTAIO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/zrrKAJUD5KEnb459lLrO"><span class="nm">EDMONDO RUBICONDO</span></a></li>
 </ul>
 
 <h3 class="ss">Album</h3>
 <ul class="g">
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1786876617/it26sfdveiqga2y7woce.png" alt="album Versione standard — Sgorbions Holidays" loading="lazy"><span class="nm">Versione standard</span></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/msvo7qz1scanlx"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1786876617/it26sfdveiqga2y7woce.png" alt="album Versione standard — Sgorbions Holidays" loading="lazy"><span class="nm">Versione standard</span></a></li>
 </ul>
 
 <h3 class="ss">Bustine</h3>
 <ul class="g">
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788991220/londjo5p2kamqcelshop.png" alt="bustina BUSTINA CON SIGILLO — Sgorbions Holidays" loading="lazy"><span class="nm">BUSTINA CON SIGILLO</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789293619/pb6ropnynl7yuwqd2tml.png" alt="bustina BUSTINA OMAGGIO NERA — Sgorbions Holidays" loading="lazy"><span class="nm">BUSTINA OMAGGIO NERA</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789293699/sgaeamaxud00s9hnatw0.png" alt="bustina BUSTINA OMAGGIO ROSSA — Sgorbions Holidays" loading="lazy"><span class="nm">BUSTINA OMAGGIO ROSSA</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1785798985/iepu3opkwv3khvrj8hid.jpg" alt="bustina BUSTINA STANDARD — Sgorbions Holidays" loading="lazy"><span class="nm">BUSTINA STANDARD</span></li>
-<li class="c"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789293555/hyh8doyukl0iyenr1acl.jpg" alt="bustina BUSTINA CON PALLONCINI — Sgorbions Holidays" loading="lazy"><span class="nm">BUSTINA CON PALLONCINI</span></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/mtun6m5gtb3yyu"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1788991220/londjo5p2kamqcelshop.png" alt="bustina BUSTINA CON SIGILLO — Sgorbions Holidays" loading="lazy"><span class="nm">BUSTINA CON SIGILLO</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/mtzn81n0yhpt5n"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789293619/pb6ropnynl7yuwqd2tml.png" alt="bustina BUSTINA OMAGGIO NERA — Sgorbions Holidays" loading="lazy"><span class="nm">BUSTINA OMAGGIO NERA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/mtzn9rl82n6nnf"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789293699/sgaeamaxud00s9hnatw0.png" alt="bustina BUSTINA OMAGGIO ROSSA — Sgorbions Holidays" loading="lazy"><span class="nm">BUSTINA OMAGGIO ROSSA</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/msduh4tzitymh7"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1785798985/iepu3opkwv3khvrj8hid.jpg" alt="bustina BUSTINA STANDARD — Sgorbions Holidays" loading="lazy"><span class="nm">BUSTINA STANDARD</span></a></li>
+<li class="c"><a href="/#f/swKZRKDPEyqTeKHNoigu/mtzn5j4y9g5x1a"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789293555/hyh8doyukl0iyenr1acl.jpg" alt="bustina BUSTINA CON PALLONCINI — Sgorbions Holidays" loading="lazy"><span class="nm">BUSTINA CON PALLONCINI</span></a></li>
 </ul>
 
 <div class="invito"><a class="vai" href="/">Vai al sito Internet figurineSgorbions.it !</a></div>
