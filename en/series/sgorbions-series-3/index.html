@@ -25,10 +25,27 @@
 :root{--bg:#1a1333;--card:#241a45;--dim:#b3a8d4;--txt:#f2eeff;--acc:#ffd166}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--txt);font-family:Nunito,system-ui,sans-serif;line-height:1.55}
-.wrap{max-width:1100px;margin:0 auto;padding:1.5rem 1.1rem 4rem}
+/* 🔄 v6.950 (Franco: «la pagina, nel suo complesso, potrebbe essere un poco piu larga; per
+   intenderci, per la serie 1 sarebbe bello se i totali rientrassero nella riga dei conteggi»)
+   — DA 1100 A 1280px. 📏 Misurato nel browser sulla serie 1: la riga «Figurine con retro»
+   chiedeva 734px e ne aveva 700, quindi andava a capo. Con 1280 la colonna delle numeriche
+   passa a ~880 e i totali rientrano.
+   🔴 I PARAGRAFI DI TESTO RESTANO A 1100 (vedi .wrap p piu' sotto): e' stata chiesta la
+   PAGINA, e una riga di prosa lunga 1280 si legge peggio di una lunga 1100. E' la stessa
+   scelta della v6.934 sulla tabella della scheda GSC. */
+.wrap{max-width:1280px;margin:0 auto;padding:1.5rem 1.1rem 4rem}
+/* 🆕 v6.950 — il testo di presentazione non cresce con la pagina. Si nomina il solo figlio
+   diretto: le righe dentro le card non c'entrano. */
+.wrap > p{max-width:1100px}
 a{color:var(--acc)}
-.bc{font-size:.85rem;color:var(--dim);margin-bottom:1.4rem}
-.bc a{color:var(--dim)}
+/* 🔄 v6.950 (Franco: «la scritta in alto va in bianco») — LA RIGA DI NAVIGAZIONE ERA SMORTA.
+   📌 Non e' solo estetica: quella riga porta l'unico collegamento all'altra lingua, ed e' il
+   link che per Google tiene vivi i due hreflang. Smorto, non lo vedeva nessuno. */
+.bc{font-size:.85rem;color:var(--txt);margin-bottom:1.4rem}
+.bc a{color:var(--txt)}
+/* 🆕 v6.950 — la bandierina accanto al link dell'altra lingua. Altezza in em cosi' cresce
+   con il testo, e vertical-align per stare sulla riga invece che sul fondo. */
+.bc img{height:.95em;width:auto;vertical-align:-.08em;margin-right:.3em;border-radius:2px}
 header{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-start;margin-bottom:1.6rem}
 header img{border-radius:10px;background:var(--card);flex-shrink:0}
 /* 🔴 v6.636 (Franco: «le 6 pagine devono avere la stessa struttura») — IL BLOCCO DI
@@ -54,7 +71,10 @@ h1{font-size:2rem;margin:.2rem 0 .4rem;line-height:1.15;color:var(--nome)}
 .cat{font-weight:700;color:var(--txt)}
 .vv{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.35rem .9rem}
 .pal{display:inline-block;width:9px;height:9px;border-radius:2px;background:currentColor;margin-right:7px;vertical-align:.05em}
-h2{font-size:1.35rem;margin:2.2rem 0 .3rem}
+/* 🔄 v6.950 (Franco: «"Tutti gli articoli" va in azzurro serie») — L'AZZURRO E' QUELLO DEI
+   NOMI DELLE ENTITA' del sito, e arriva dal browser vivo come gli altri tre: vedi
+   _gscColoriDalSito. Scritto qui sarebbe la seconda copia di un valore che vive nell'index. */
+h2{font-size:1.35rem;margin:2.2rem 0 .3rem;color:var(--nome)}
 /* 🆕 v6.941 — IL NOME DELLA SOTTOSERIE SOPRA LA SUA GRIGLIA, lime (Franco: «usa il
    solito colore lime»). È l'accento del sito, quello dei titoletti dell'hub, e come gli altri
    due arriva dal browser vivo invece di essere ricopiato qui: vedi _gscColoriDalSito.
@@ -144,7 +164,7 @@ footer a{color:var(--dim);text-decoration:underline}
 <body>
 <div class="wrap">
 
-<nav class="bc"><a href="/">figurineSgorbions.it</a> › Series › Sgorbions serie 3 · <a href="https://figurinesgorbions.it/serie/sgorbions-serie-3/">Italiano</a></nav>
+<nav class="bc"><a href="/">figurineSgorbions.it</a> › Series › Sgorbions serie 3 · <a href="https://figurinesgorbions.it/serie/sgorbions-serie-3/"><img src="/flags/it.png" alt="" width="20" height="15">Versione italiana</a></nav>
 
 <header>
   <img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_380,q_auto,f_auto/v1782162091/jcwxn42oyjfstq10hkge.jpg" alt="The cover of Sgorbions serie 3" width="190" height="264">
@@ -166,7 +186,7 @@ footer a{color:var(--dim);text-decoration:underline}
   </div>
 </header>
 
-<div class="invito"><a class="vai" href="/">Go to the website figurineSgorbions.it !</a></div>
+<div class="invito"><a class="vai" href="/">See the whole series on the figurineSgorbions.it website !</a></div>
 
 <p>The Sgorbions 3 series is a Topps product.<br>
 It starts from the American Garbage Pail Kids series 2, 3, 4, 7, 8, 10, 11, 12, 13, 14, and 15.<br>
@@ -175,9 +195,9 @@ The stickers measure 5.04 cm x 8.89 cm.<br>
 The stickers range from 417 to 672.</p>
 
 <h2>All the items</h2>
-<p class="apri">Click an item to open it on the website, with its back and its versions.</p>
 <h3 class="ss">Stickers</h3>
 <p class="hint">From no. 417 to no. 672.</p>
+<p class="apri">Click a sticker to open it on the website, with its versions.</p>
 <ul class="g">
 <li class="c"><a href="/#f/0UqtlWyqCJtFliPTLk8Y/mt44xccyf051cp"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784495033/xzubma1b0um0oro1sayj.png" alt="album sticker ZACCARIA BIRRERIA, no. 417 — Sgorbions serie 3" loading="lazy"><span class="n">417</span><span class="nm">ZACCARIA BIRRERIA</span></a></li>
 <li class="c"><a href="/#f/0UqtlWyqCJtFliPTLk8Y/mt44xccywmxktq"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784495053/yfm4ogjxp0gd21aronwy.png" alt="album sticker FRANCESCO ALITO FRESCO, no. 418 — Sgorbions serie 3" loading="lazy"><span class="n">418</span><span class="nm">FRANCESCO ALITO FRESCO</span></a></li>
@@ -438,6 +458,7 @@ The stickers range from 417 to 672.</p>
 </ul>
 
 <h3 class="ss">Retros</h3>
+<p class="apri">Click a retro to open it on the website, with its versions.</p>
 <h4 class="cat">CINEMA !</h4>
 <ul class="g">
 <li class="c"><a href="/#f/0UqtlWyqCJtFliPTLk8Y/BURappLPmik3Ao4s9mNG"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1784839392/t13rndmac5xhrcyirunn.png" alt="retro TUTINA — Sgorbions serie 3" loading="lazy"><span class="nm">TUTINA</span></a></li>
@@ -714,12 +735,14 @@ The stickers range from 417 to 672.</p>
 </ul>
 
 <h3 class="ss">Albums</h3>
+<p class="apri">Click an album to open it on the website, with its versions.</p>
 <ul class="g">
 <li class="c"><a href="/#f/0UqtlWyqCJtFliPTLk8Y/msvniwxbvd7jat"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1786875478/gemqsneojskbmfwyg4nz.png" alt="album L.1000 — Sgorbions serie 3" loading="lazy"><span class="nm">L.1000</span></a></li>
 <li class="c"><a href="/#f/0UqtlWyqCJtFliPTLk8Y/mtw29qrgvtmz2y"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789077045/ixwpsapsqtzonod44r0l.jpg" alt="album OMAGGIO - Sigillato — Sgorbions serie 3" loading="lazy"><span class="nm">OMAGGIO - Sigillato</span></a></li>
 </ul>
 
 <h3 class="ss">Wrappers</h3>
+<p class="apri">Click a wrapper to open it on the website, with its versions.</p>
 <ul class="g">
 <li class="c"><a href="/#f/0UqtlWyqCJtFliPTLk8Y/msdswmzdcrt21n"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789247238/jp2pfmdwjguurypemoia.png" alt="wrapper Bustina standard — Sgorbions serie 3" loading="lazy"><span class="nm">Bustina standard</span></a></li>
 <li class="c"><a href="/#f/0UqtlWyqCJtFliPTLk8Y/mtywadax5o8mxo"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789248377/neocpjqd17mg8oaxumvt.png" alt="wrapper Bustina standard con sigillo — Sgorbions serie 3" loading="lazy"><span class="nm">Bustina standard con sigillo</span></a></li>
@@ -728,7 +751,7 @@ The stickers range from 417 to 672.</p>
 <li class="c"><a href="/#f/0UqtlWyqCJtFliPTLk8Y/mtywq6qch0awn2"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_240,q_auto,f_auto/v1789249115/crivbfisebx6cpqk42du.png" alt="wrapper Bustina Tipo 1 — Sgorbions serie 3" loading="lazy"><span class="nm">Bustina Tipo 1</span></a></li>
 </ul>
 
-<div class="invito"><a class="vai" href="/">Go to the website figurineSgorbions.it !</a></div>
+<div class="invito"><a class="vai" href="/">See the whole series on the figurineSgorbions.it website !</a></div>
 
 <footer>
   <p>2026 <a href="/">figurinesgorbions.it</a> — <a href="/#privacy">Privacy Policy</a></p>
