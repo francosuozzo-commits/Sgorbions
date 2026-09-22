@@ -158,6 +158,20 @@ footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #2a2044;color:var
 .invito{margin:1.5rem 0 2rem;text-align:center}
 .vai{display:inline-block;background:var(--acc);color:#1a1333;font-weight:800;font-size:1.05rem;padding:.75rem 1.5rem;border-radius:10px;text-decoration:none}
 footer a{color:var(--dim);text-decoration:underline}
+/* 🆕 v6.953 (Franco: «serve una versione mobile delle pagine statiche per google. Le numeriche
+   della serie vanno sotto alla foto della serie, non alla sua destra. Le foto le farei un po'
+   piu' piccole, in modo che per ogni riga ci stiano 4 immagini; al momento ce ne stanno solo
+   due»). 📏 MISURATO a 390px sulla serie 1: la copertina ne prendeva 190, alle numeriche
+   restavano 142 e la pagina usciva larga 444 — cioe' scorreva di lato.
+   📌 640 e' la soglia con cui il sito passa alle griglie strette della vetrina.
+   ⚠️ NIENTE APICI INVERSI QUI DENTRO: questo commento vive in una template literal. */
+@media (max-width:640px){
+  header{flex-direction:column;align-items:center}
+  header > div{flex:none;width:100%}
+  .g{grid-template-columns:repeat(4,minmax(0,1fr));gap:.4rem}
+  .c .n{padding:.3rem .3rem 0;font-size:.62rem}
+  .c .nm{padding:0 .3rem .4rem;font-size:.64rem;overflow-wrap:anywhere}
+}
 :root{--nome:#4db8ff;--viola:#c84bff;--lime:#b5ff2e;--categoria:#ffd84d}
 </style>
 </head>
