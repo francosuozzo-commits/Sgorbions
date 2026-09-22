@@ -1,6 +1,34 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.953 - 📱 LE CINQUE NOTE DI FRANCO SULLA HOME DA TELEFONO. Modificati index.html, js/app.js
+//          e css/style.css. Franco ha detto lui dove vale ciascuna:
+//          1. (solo telefono) via l'aria sopra «Il database non ufficiale…». 📏 Misurato a 390px:
+//             88px vuoti fra la striscia della versione e la prima riga — 56 di `.page` e 32
+//             dell'hero. Diventano 8 + 8, come sul desktop dalla v6.947.
+//          2. (tutti e due) sopra la fila, solo «Le Serie Sgorbions», viola come «Le figurine».
+//          3. (tutti e due) sotto la fila, «(registrati o accedi per vederle !)» nel giallo di prima.
+//          4. (tutti e due) aria fra la fila delle serie e «Le figurine».
+//          5. (solo telefono) il footer su una riga: era impilato apposta dalla v5.855.
+//          6. (solo telefono) via il tasto «Inizia a collezionare gli Sgorbions».
+//          7. (sotto gli 860px) via le barre viola della fascia e del carosello. Non col
+//             `pointer:coarse` della prima stesura: nel banco di prova sul PC non scattava.
+//          10. (desktop) sotto «Le figurine» lo stesso spazio che sotto «Le Serie Sgorbions»:
+//             📏 35px contro 17, il margine del bottone «Esplora» spento restava a vuoto.
+//          11. 🃏 la scheda di una figurina per album mostra il retro della sua figurina con
+//             retro (le fpa il `retroId` non ce l'hanno).
+//          12. 🐛 (telefono) le numeriche dell'hub della serie tornano SOTTO la foto: la regola
+//             della v6.928 scavalcava quella del telefono a pari specificita'.
+//          13. 🐛 (telefono) i comandi di «Sfoglia l'album» salgono sopra la pagina.
+//          14. 🔤 il velo delle card sfumate: «ACCEDI / PER VEDERE», al centro della FOTO.
+//          15. ⬆️ (desktop) «Inizia a collezionare» diventa una freccia sotto «Accedi».
+//          8. «registrati o accedi» → solo «accedi», nei tre posti che lo dicevano; e i clic da
+//             ospite (vetrina, Mia lista, Ciò che cerco) aprono il tab ACCEDI, non Registrati.
+//             Franco: «la registrazione… lo direi all'ultimo momento possibile: dopo che ho
+//             cliccato "accedi"». I tasti «Registrati» e «Inizia a collezionare» restano come sono.
+//          9. 🔎 LE PAGINE PER GOOGLE SUL TELEFONO (sotto i 640px): le numeriche sotto la
+//             copertina e quattro foto per riga. 📏 A 390px la pagina usciva larga 444 e le
+//             numeriche avevano 142px. ⚠️ Arriva nelle pagine solo RIGENERANDOLE dalla console.
 // v6.952 - 🏠 LE CINQUE NOTE DI FRANCO SULLA HOME. Modificati index.html e js/app.js.
 //          1. 🔴 LA FASCIA: le due frecce si accendono SOLO se c'e' da scorrere, e la fila si
 //             centra quando ci sta tutta. 📏 Misurato nel browser, ed e' l'unico modo per aver
@@ -29075,7 +29103,16 @@ function renderScheda() {
   const { serie, art, items } = _schedaCorrente;
   const it = currentLang === 'it';
   const num = _haNumero(art);
-  const retro = _retroDi(art, items);
+  // 🔄 v6.953 (Franco: «nella pagina che si apre mostrerei anche il retro della figurina base
+  //    associata alla figurina. Oggi mostriamo solo il fronte») — LE FIGURINE PER ALBUM IL RETRO
+  //    NON CE L'HANNO NEI DATI: sono `section:'attaccare'`, senza `retroId`, e puntano con
+  //    `baseFigurineId` alla figurina con retro. 📏 Misurato sulla scheda di GASTONE BUBBONE
+  //    (serie 1, n. 1): lui niente, la sua base `retroId` c'e'. Si chiede il retro a lei.
+  // ⚠️ Solo per quelle: una variazione o un change il retro ce l'hanno SUO, ed e' quello che li
+  //    distingue — prendere quello della base mostrerebbe proprio la faccia sbagliata.
+  const baseAlbum = (!art.retroId && art.section === 'attaccare' && art.baseFigurineId)
+    ? (items || []).find(x => x && x.id === art.baseFigurineId) : null;
+  const retro = _retroDi(art, items) || _retroDi(baseAlbum, items);
   const versioni = _altreVersioni(art, items);
   const foto = _fotoFigurina(art, items) || '';
   const fotoRetro = retro ? (_fotoFigurina(retro, items) || '') : '';
@@ -29157,8 +29194,9 @@ function renderScheda() {
     //    stesso mestiere, stessa tinta, nei due versi.
     + (entrato ? '' :
         '<p style="color:var(--invito);font-size:.92rem;margin:1.6rem 0 .6rem;">'
-        + (it ? 'Registrati o accedi per segnare le tue e costruire la tua lista.'
-              : 'Register or sign in to mark yours and build your list.') + '</p>')
+        // 🔄 v6.953 — solo «accedi»: la registrazione si scopre dopo il clic (vedi VETRINA_INVITO).
+        + (it ? 'Accedi per segnare le tue e costruire la tua lista.'
+              : 'Sign in to mark yours and build your list.') + '</p>')
     + '<div style="display:flex;gap:.7rem;flex-wrap:wrap;margin:' + (entrato ? '1.6rem' : '0') + ' 0 0;">'
     + '<button class="btn-primary" onclick="schedaAzione(\'lista\')">'
     + (it ? 'Mia lista' : 'My list') + '</button>'
@@ -30011,7 +30049,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.952';
+const JS_VERSION = 'v6.953';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34370,7 +34408,43 @@ async function ricaricaSaltandoLaCache(btn) {
   location.reload();
 }
 
+// 🆕 v6.953 (Franco: «il tasto inizia a collezionare gli sgorbions… serve che sia un tasto a forma
+//    di freccia; e va posizionato sotto al pulsante Accedi; parlo del desktop») — LA FRECCIA SI
+//    METTE SOTTO «ACCEDI» MISURANDO DOV'È, non con un numero: la barra cambia larghezza con la
+//    lingua, la bandiera e lo schermo, e un `right:` scritto a mano sarebbe giusto su uno solo.
+// 📌 Se «Accedi» non c'è (chi ha fatto login) la freccia sparisce: indicherebbe il vuoto.
+// 🔄 v6.953, seconda stesura (Franco: «storta, con la punta verso il tasto Accedi, e di tipo 3D»)
+//    — SI SPOSTA L'INVOLUCRO `#freccia-accedi`, che porta rotazione e rilievo (vedi l'index), e
+//    il centro va messo in modo che sia la PUNTA a guardare «Accedi»: con la freccia storta di un
+//    angolo θ, il centro sta a sinistra di «Accedi» di (distanza in verticale) × tan θ.
+function _frecciaSottoAccedi() {
+  const f = document.getElementById('freccia-accedi');
+  const h = document.getElementById('hero');
+  if (!f || !h) return;
+  const a = document.querySelector('#guest-nav .btn-login');
+  if (!a || !a.offsetParent) { f.style.visibility = 'hidden'; return; }
+  f.style.visibility = '';
+  // ⚠️ SI SPOSTA DI QUANTO MANCA, non si calcola da zero: `#page-home` ha uno `zoom` (0.9 su
+  //    certi schermi), quindi le misure a schermo e i pixel di `style.left` non sono la stessa
+  //    unità. 📏 Prima stesura: 170px di CSS misuravano 153 a schermo, e la freccia finiva 60px
+  //    a destra di «Accedi». `k` riporta la differenza misurata nell'unità dello stile.
+  const ar = a.getBoundingClientRect(), fr = f.getBoundingClientRect();
+  if (!fr.width) return;
+  // 📌 Con la freccia ruotata il rettangolo a schermo non è più largo quanto `offsetWidth`: lo
+  //    zoom si legge allora dove sta, sulla pagina, e non si ricava dalle due larghezze.
+  const k = 1 / (parseFloat(getComputedStyle(document.getElementById('page-home') || h).zoom) || 1);
+  const ang = (parseFloat(getComputedStyle(f).getPropertyValue('--freccia-angolo')) || 0) * Math.PI / 180;
+  const cx = fr.left + fr.width / 2, cy = fr.top + fr.height / 2;
+  const spinta = parseFloat(getComputedStyle(f).getPropertyValue('--freccia-dx')) || 0;
+  const mira = (ar.left + ar.width / 2) - (cy - ar.bottom) * Math.tan(ang) + spinta;
+  const scarto = mira - cx;
+  f.style.left = Math.round(f.offsetLeft + scarto * k) + 'px';
+}
+window.addEventListener('resize', () => { try { _frecciaSottoAccedi(); } catch (e) {} });
+
 function updateNavUser() {
+  // 🆕 v6.953 — dopo che questa funzione ha acceso o spento «Accedi», la freccia si rimette sotto.
+  requestAnimationFrame(() => { try { _frecciaSottoAccedi(); } catch (e) {} });
   _aggiornaRicercaNavbar();   // v6.341 - vale per tutti e due i rami, quindi sta prima del bivio
   // 🆕 v6.878 — RC si accende per il solo admin. Sta PRIMA del bivio come la riga qui sopra e
   //    per la stessa ragione: la risposta e' una sola per tutti e due i rami, e scriverla due
@@ -43127,14 +43201,27 @@ function seriesCardHTML(s) {
 //    sempre?»), e `prova-v6390` la conta. La sua nota del 22 settembre scriveva «vederle!»
 //    attaccato — la regola generale vince sulla svista di battitura, e questa riga sta qui
 //    perche' il prossimo che la legge non la «sistemi».
-const VETRINA_INVITO = { it: 'Le Serie Sgorbions: registrati o accedi per vederle !',
-                         en: 'The Sgorbions Series: register or sign in to see them !' };
-const VETRINA_INVITO_GRIGLIA = { it: 'Registrati o accedi per vedere', en: 'Register or sign in to see' };
+// 🔄 v6.953 (Franco: «sopra le foto delle serie, scriverei solo "Le serie Sgorbions", nel viola
+//    dei titoli; il resto lo metterei sotto, nel giallo attuale, ma tra parentesi») — LA FRASE
+//    SI SPEZZA IN DUE: il titolo sopra la fila, l'invito sotto. Sono due mestieri (intitolare,
+//    far entrare) e adesso sono due elementi con due colori, come «Le figurine» più sotto.
+const VETRINA_TITOLO = { it: 'Le Serie Sgorbions', en: 'The Sgorbions Series' };
+// 🔄 v6.953 (Franco: «ovunque si dica "registrati o accedi", potremmo solo dire "accedi"… sapere
+//    sin da subito che devo anche registrarmi è una seccatura; lo direi all'ultimo momento
+//    possibile: dopo che ho cliccato "accedi"») — SOLO «ACCEDI». La registrazione la trova nella
+//    finestra che si apre, al tab accanto; e per questo `vetrinaChiediAccesso` apre il LOGIN.
+const VETRINA_INVITO = { it: '(accedi per vederle !)',
+                         en: '(sign in to see them !)' };
+const VETRINA_INVITO_GRIGLIA = { it: 'Accedi per vedere', en: 'Sign in to see' };
+// 🆕 v6.953 (Franco: «scrivila in maiuscolo; e poi con "ACCEDI" su una riga e "PER VEDERE"
+//    sull'altra») — IL VELO HA LE SUE DUE RIGHE. Il maiuscolo lo fa il CSS; qui c'e' solo dove
+//    si va a capo, che non si puo' lasciare al caso della larghezza della card.
+const VETRINA_VELO = { it: ['Accedi', 'per vedere'], en: ['Sign in', 'to see'] };
 const VETRINA_TORNA  = { it: '‹ Torna alle serie', en: '‹ Back to the series' };
 
 // 🔴 UNA SOLA COSA DA CLICCARE, E PORTA AL LOGIN. Card nitida o sfumata non fa differenza: chi
 //    tocca una figurina sta chiedendo di vederla, e la risposta è sempre la stessa porta.
-function vetrinaChiediAccesso() { openAuth('register'); }
+function vetrinaChiediAccesso() { openAuth('login'); }
 
 // 📌 La riga corta sotto la copertina (Franco: «riga corta»). Il numero è quello che il sito
 //    conta già per la card della serie — `senzaErroriDiStampa` — quindi non può dire una cifra
@@ -43204,7 +43291,9 @@ function _vetrinaFigCard(f, sfumata, figs) {
     //    riga usava la STESSA costante del bottone sopra la fascia, quindi allungando quella
     //    sarebbe uscito «Le Serie Sgorbions…» su ogni figurina sfumata — dentro un velo largo
     //    150px. Se n'e' accorto lui guardando, non una prova.
-    + (sfumata ? '<span class="vetrina-velo">' + esc(VETRINA_INVITO_GRIGLIA[it ? 'it' : 'en']) + '</span>' : '')
+    // 🔄 v6.953 — due righe e un riquadro interno alto quanto la FOTO: vedi `.vetrina-velo-t`.
+    + (sfumata ? '<span class="vetrina-velo"><span class="vetrina-velo-t">'
+        + VETRINA_VELO[it ? 'it' : 'en'].map(esc).join('<br>') + '</span></span>' : '')
     + (num ? '<span class="vetrina-n">' + esc(f.number) + '</span>' : '')
     + '<span class="vetrina-nm">' + esc(f.name || '') + '</span></li>';
 }
@@ -43292,6 +43381,8 @@ function renderHomeSeries() {
   sez.style.display = '';
   const invito = document.getElementById('vetrina-invito');
   if (invito) invito.textContent = VETRINA_INVITO[it ? 'it' : 'en'];
+  const titolo = document.getElementById('vetrina-titolo-serie');
+  if (titolo) titolo.textContent = VETRINA_TITOLO[it ? 'it' : 'en'];
   grid.classList.remove('aperta');
   grid.innerHTML = serie.map(_vetrinaSerieCard).join('');
   // 🆕 v6.952 — dopo il disegno, si ridecide se le frecce servono.
@@ -46626,7 +46717,7 @@ function getOwned() {
   return LOCAL.get('owned_' + uid) || [];
 }
 async function toggleOwned(figId) {
-  if (!currentUser) { openAuth('register'); return; }
+  if (!currentUser) { openAuth('login'); return; }
   let owned = getOwned();
   if (owned.includes(figId)) owned = owned.filter(x => x !== figId);
   else owned.push(figId);
@@ -52872,7 +52963,7 @@ async function saveWishlist() {
 }
 
 async function toggleWishlist(figId) {
-  if (!currentUser) { openAuth('register'); return; }
+  if (!currentUser) { openAuth('login'); return; }
   if (_wishlist.includes(figId)) {
     _wishlist = _wishlist.filter(id => id !== figId);
   } else {
@@ -63311,7 +63402,21 @@ footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #2a2044;color:var
    dei link della pagina: un bottone non si legge, si vede. */
 .invito{margin:1.5rem 0 2rem;text-align:center}
 .vai{display:inline-block;background:var(--acc);color:#1a1333;font-weight:800;font-size:1.05rem;padding:.75rem 1.5rem;border-radius:10px;text-decoration:none}
-footer a{color:var(--dim);text-decoration:underline}`;
+footer a{color:var(--dim);text-decoration:underline}
+/* 🆕 v6.953 (Franco: «serve una versione mobile delle pagine statiche per google. Le numeriche
+   della serie vanno sotto alla foto della serie, non alla sua destra. Le foto le farei un po'
+   piu' piccole, in modo che per ogni riga ci stiano 4 immagini; al momento ce ne stanno solo
+   due»). 📏 MISURATO a 390px sulla serie 1: la copertina ne prendeva 190, alle numeriche
+   restavano 142 e la pagina usciva larga 444 — cioe' scorreva di lato.
+   📌 640 e' la soglia con cui il sito passa alle griglie strette della vetrina.
+   ⚠️ NIENTE APICI INVERSI QUI DENTRO: questo commento vive in una template literal. */
+@media (max-width:640px){
+  header{flex-direction:column;align-items:center}
+  header > div{flex:none;width:100%}
+  .g{grid-template-columns:repeat(4,minmax(0,1fr));gap:.4rem}
+  .c .n{padding:.3rem .3rem 0;font-size:.62rem}
+  .c .nm{padding:0 .3rem .4rem;font-size:.64rem;overflow-wrap:anywhere}
+}`;
 
 // 🔴 LE NUMERICHE NON RICALCOLANO NIENTE: chiedono a `tipiPresenti`, la stessa funzione che
 //    disegna la pagina della serie. Dentro c'e' `_eBase`, la quaterna di negazioni che la v6.235
@@ -68424,7 +68529,7 @@ document.addEventListener('keydown', e => {
 });
 
 async function toggleWishlistFromDetail(figId) {
-  if (!currentUser) { openAuth('register'); return; }
+  if (!currentUser) { openAuth('login'); return; }
   if (_wishlist.includes(figId)) {
     _wishlist = _wishlist.filter(id => id !== figId);
   } else {
