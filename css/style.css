@@ -309,6 +309,7 @@ body {
   align-items: flex-start; line-height: 1.25;
 }
 
+
 /* 🆕 v6.886 — LA SCHEDA A UNA COLONNA SOLA (Franco, sulla scheda dell'album).
    La colonna delle foto sparisce e i tre tab prendono tutta la larghezza. 📌 E' una classe e non
    uno stile in linea scritto da JavaScript: la forma della scheda è una regola, e `prova-v6637`
@@ -2195,8 +2196,15 @@ footer {
      rubava spazio ai comandi di destra */
   #lang-current-btn { width: 24px !important; height: 16px !important; }
 
-  /* footer: "2026 figurinesgorbions.it" e "Privacy Policy" su due righe, via il trattino */
-  #footer-copy-row { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+  /* 🔄 v6.953 (Franco: «il footer lo organizzerei su una sola riga. Lo spazio c'è. Mettendo le
+     due frasi un minimo distanziate») — UNA RIGA, e senza trattino: lo stacco lo fa il `gap`.
+     Era impilato dalla v5.855. `flex-wrap` resta come rete per i telefoni più stretti.
+     📏 MISURATO a 390px, ed è per questo che ci sono i due padding: in italiano il link dice
+     «Informativa sulla Privacy» (155px) e il dominio 159, ma fra i 2rem del footer e gli 1,5rem
+     della riga restavano 278px — e le due frasi andavano a capo anche con la regola giusta.
+     Senza il padding di lato della riga e con .75rem al footer ne restano 366 (336 a 360px). */
+  footer { padding-left: 0.75rem; padding-right: 0.75rem; }
+  #footer-copy-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 0.15rem 1rem; padding-left: 0 !important; padding-right: 0 !important; }
   #footer-copy-row .footer-sep { display: none; }
 
   #home-how-grid { grid-template-columns: 1fr !important; font-size: 1em !important; }
@@ -2327,6 +2335,23 @@ footer {
      foto (riga 2, colonna 1) valgono come sempre. Il pulsante prende una riga sua in fondo. */
   .cover-riga { display: contents; }
   #sfoglia-album-serie { grid-row: 5; grid-column: 1 / -1; justify-self: start; margin-top: 0.5rem; }
+
+  /* 🆕 v6.953 (Franco, dal telefono: «non è possibile sfogliare l'album in quanto i tasti alla
+     sinistra della finestra occupano molto spazio. Quei tasti vanno messi sopra alla finestra»)
+     — I COMANDI DELLO SFOGLIATORE SALGONO SOPRA LA PAGINA.
+     📏 Misurato a 390px: la colonna dei tre comandi prendeva ~125px e la cornice restava
+     `min(70vw, 1100px)`, cioè 273 — più le due frecce, la riga usciva dallo schermo.
+     📌 La riga va a capo: i comandi prendono una riga intera in cima (`order:-1`), e sotto
+     restano freccia, pagina, freccia. La cornice si prende quello che avanza.
+     ⚠️ Sta DENTRO questa media query e non in una sua: `prova-v6876` ritaglia la prima
+     `@media (max-width: 860px)` del foglio, e un blocco nuovo più in alto le avrebbe rubato il
+     posto. `!important` perché le misure della cornice stanno in linea nell'index. */
+  .sfoglia-riga { flex-wrap: wrap; justify-content: center; gap: 0.4rem !important; width: 100%; }
+  .sfoglia-comandi { order: -1; width: 100%; flex-direction: row !important; flex-wrap: wrap;
+    justify-content: center; margin: 0 0 0.4rem !important; }
+  .sfoglia-cornice { width: auto !important; flex: 1 1 0 !important; min-width: 0;
+    height: calc(100vh - 14rem) !important; }
+  #sfoglia-album-prec, #sfoglia-album-succ { min-width: 2.2rem !important; padding: 0.4rem 0.5rem !important; }
   .series-subname { font-size: 1.15rem; }   /* v6.720 - cresciuto da 0.92 anche qui */
   .series-info { display: contents; }
   /* Le RIGHE vanno dette esplicitamente. La copertina viene prima nell'HTML: lasciando fare
