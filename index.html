@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.952">
+<link rel="stylesheet" href="css/style.css?v=6.953">
 
 
 <style>
@@ -549,6 +549,16 @@
    ⚠️ `2 / -1` e non `2 / 4`: se un domani la griglia prende una quarta colonna, «fino alla fine»
    resta vero senza che nessuno debba tornare qui. */
 .series-title-area #detail-meta { grid-column: 2 / -1; }
+/* 🔴 v6.953 (Franco, dal telefono: «la pagina della serie ha le numeriche alla destra della foto.
+   Lì non possono stare. Vanno messe sotto») — LA RIGA QUI SOPRA SCAVALCAVA IL TELEFONO.
+   📏 Misurato a 390px sulla serie 1: numeriche a 133px dal bordo, larghe 241 su 358. La regola
+   del telefono (`#detail-meta.meta-hub { grid-column: 1 / -1 }` in style.css, v5.886) ha la
+   STESSA specificità di questa e sta in un file che arriva prima: dalla v6.928 perdeva, in
+   silenzio, e le numeriche dell'hub tornavano nella colonna di destra.
+   📌 Si ridice qui, sotto gli 860px, con un tipo in più: vince per specificità e non per ordine. */
+@media (max-width:860px){
+  .series-title-area #detail-meta.meta-hub { grid-column: 1 / -1; }
+}
 
 /* 🔴 v6.929 (Franco: «il pulsante opzioni cade sopra la miniatura; deve finire prima che la
    miniatura inizi») — LA RIGA DEL TITOLO SI FERMA PRIMA DELLA TERZA COLONNA.
@@ -1250,9 +1260,18 @@ button.back-btn { color:#ffffff; }
    alla riga dei dodici numeroni e le due cose sembravano un blocco solo.
    📌 Il margine sta sull'INVITO e non sui numeroni: quella riga la usa anche chi ha fatto
    login, e li' sotto non c'e' nessuna fascia da staccare. */
-.vetrina-invito{font-family:var(--font-ui);font-weight:800;font-size:1.45rem;letter-spacing:.02em;
-  text-align:center;color:var(--invito);margin:2.2rem 0 1rem;
+/* 🔄 v6.953 (Franco: «il resto lo metterei sotto, nel giallo attuale, ma tra parentesi»; «tra la
+   fascia delle serie e la scritta "Le figurine" lascerei dello spazio») — L'INVITO SCENDE SOTTO
+   LA FILA, e il margine di sopra passa al titolo `#vetrina-titolo-serie`, che adesso è la prima
+   riga dopo i numeroni. Quello di sotto è l'aria prima di «Le figurine».
+   📌 Più piccolo del titolo: fra parentesi è una nota al titolo, non un secondo titolo. */
+.vetrina-invito{font-family:var(--font-ui);font-weight:800;font-size:1.15rem;letter-spacing:.02em;
+  text-align:center;color:var(--invito);margin:.3rem 0 2.6rem;
   display:block;width:100%;background:none;border:0;padding:0;cursor:pointer;}
+#vetrina-titolo-serie{margin-top:2.2rem;}
+/* ⚠️ La stessa classe veste l'invito che nasce sopra la griglia aperta: lì non ci sono né i
+   numeroni sopra né «Le figurine» sotto, e i margini restano quelli di prima. */
+.vetrina-serie .vetrina-invito{margin:0 0 1rem;}
 .vetrina-invito:hover{text-decoration:underline;}
 /* 🆕 v6.952 — il titolo sopra il carosello delle figurine. Stessa famiglia e stesso peso
    dell'invito della fascia, colore diverso: quello invita a entrare (giallo), questo intitola
@@ -1368,6 +1387,15 @@ button.back-btn { color:#ffffff; }
 .vetrina-velo{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   text-align:center;padding:.5rem;font-family:var(--font-ui);font-weight:800;font-size:.72rem;
   line-height:1.25;color:var(--text);background:rgba(10,8,20,.66);}
+/* 🔄 v6.953 (Franco, due volte: «la scritta nelle card sfumate… disposta verticalmente al
+   centro») — AL CENTRO DELLA FOTO, NON DELLA CARD. 📏 Misurato a 1440px: la scritta era già a
+   metà della card (443→457 in 348→553), ma la card è foto (152px) più numero e nome sotto, quindi
+   a occhio cadeva nella parte bassa della foto. Il riquadro interno ha lo stesso 3/4 di
+   `.vetrina-fig img`: è alto quanto la foto per costruzione, e la scritta si centra lì dentro.
+   Il velo scuro resta su tutta la card. */
+.vetrina-velo{align-items:flex-start;padding:0;}
+.vetrina-velo-t{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:3/4;
+  padding:.5rem;text-transform:uppercase;font-size:.8rem;letter-spacing:.04em;}
 /* 🔄 v6.947 (Franco: «la scritta "registrati o accedi per vedere" sulle card delle figurine
    non si legge molto in viola») — SUL VELO LA FRASE È BIANCA, E IL VELO È PIÙ FITTO (.55 → .66).
    🔴 QUI LA STESSA FRASE HA UN COLORE DIVERSO DALL'INVITO, ED È VOLUTO. Sotto la fascia quel
@@ -1379,7 +1407,7 @@ button.back-btn { color:#ffffff; }
 /* 📌 v6.947 — il velo porta LA STESSA FRASE dell'invito, quindi porta anche lo stesso
    colore: due tinte per una frase sola sarebbero due decisioni da tenere uguali. */
 @media (max-width:640px){
-  .vetrina-invito{font-size:1.15rem;}
+  .vetrina-invito{font-size:1rem;}
   .vetrina-serie{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.7rem;}
   .vetrina-griglia{grid-template-columns:repeat(auto-fill,minmax(95px,1fr));gap:.5rem;}
 }
@@ -1404,6 +1432,33 @@ button.back-btn { color:#ffffff; }
 .hero-riga-logo{display:flex;align-items:center;justify-content:center;gap:1.6rem;flex-wrap:wrap;}
 .hero-riga-logo .hero-h1{margin:0;}
 .hero-cta-lato{white-space:normal;max-width:230px;font-size:1.05rem;padding:.75rem 1.4rem;}
+/* 🆕 v6.953 (Franco: «un tasto a forma di freccia… posizionato sotto al pulsante Accedi; parlo
+   del desktop») — LA FRECCIA. La forma la fa `clip-path`: punta in su, verso «Accedi», e il
+   testo sta nel gambo. Esce dalla riga del logo (`position:absolute` dentro `#hero`), e il
+   punto orizzontale lo calcola `_frecciaSottoAccedi` in app.js misurando dov'è «Accedi».
+   📌 La ↗ accanto al testo se n'è andata: adesso è il tasto intero a essere la freccia. */
+/* 🔄 v6.953, seconda stesura (Franco: «la vorrei storta, con la punta verso il tasto Accedi, e di
+   tipo 3D») — STORTA E IN RILIEVO, e per questo ha un involucro, `#freccia-accedi`.
+   🔴 L'OMBRA NON PUÒ STARE SUL TASTO: `clip-path` taglia tutto quello che l'elemento disegna,
+   ombra compresa. Il rilievo (`drop-shadow`, che segue la forma e non il rettangolo) va quindi sul
+   genitore, che viene ritagliato DOPO; e anche la rotazione sta lì, così ruotano insieme.
+   📌 L'angolo è in `--freccia-angolo` perché lo legge anche `_frecciaSottoAccedi`: la punta deve
+   finire sotto «Accedi», e dove sta il centro dipende da quanto è storta. */
+@media (min-width:861px){
+  /* 🔄 terza stesura (Franco: «ancora un po' più a destra e ancora un po' più in alto; con il
+     corpo della freccia un po' più largo, in modo da poter ingrandire il testo»): `top` negativo,
+     `--freccia-dx` (pixel a schermo che `_frecciaSottoAccedi` aggiunge alla mira), gambo dal 52%
+     al 64% della larghezza e testo da .8 a .95rem. */
+  #freccia-accedi{--freccia-angolo:20deg;--freccia-dx:30;position:absolute;top:-26px;left:auto;z-index:5;
+    transform:rotate(var(--freccia-angolo));
+    filter:drop-shadow(5px 6px 0 #0b1f5c) drop-shadow(0 12px 14px rgba(0,0,0,.55));}
+  #btn-start-collecting-dx{display:flex;width:190px;height:180px;
+    max-width:none;margin:0;padding:66px 38px 10px;border-radius:0;
+    clip-path:polygon(50% 0,100% 36%,82% 36%,82% 100%,18% 100%,18% 36%,0 36%);
+    align-items:center;justify-content:center;text-align:center;
+    background:linear-gradient(135deg,#7aa2ff 0%,#2563eb 45%,#1e3a8a 100%);
+    text-shadow:0 1px 0 rgba(0,0,0,.45);font-size:.95rem;line-height:1.2;}
+}
 /* 🆕 v6.947 — IL NOME IN BARRA. Sotto gli 860px si spegne: là lo spazio non c'è. */
 #navbar{position:relative;}
 #navbar .nav-nome-sito{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;
@@ -1414,7 +1469,9 @@ button.back-btn { color:#ffffff; }
   white-space:nowrap;pointer-events:none;}
 @media (max-width:860px){
   .hero-riga-logo{gap:.8rem;}
-  .hero-cta-lato{font-size:.95rem;padding:.6rem 1rem;max-width:150px;}
+  /* 🗑️ v6.953 (Franco: «il tasto "inizia a collezionare" da mobile va eliminato») — sul telefono
+     il tasto non c'è: Accedi e Registrati stanno già in cima, a un dito di distanza. */
+  #btn-start-collecting-dx{display:none !important;}
   .nav-nome-sito{display:none;}
 }
 
@@ -1433,6 +1490,29 @@ button.back-btn { color:#ffffff; }
 @media (min-width:861px){
   #page-home{padding-top:16px;}
   #hero{padding-top:8px;}
+}
+/* 🆕 v6.953 (Franco: «sopra alla scritta del database c'è dello spazio vuoto inutilizzato.
+   Tiriamo su tutto», solo telefono) — E ADESSO ANCHE SOTTO GLI 860px, MISURATO.
+   📏 A 390px: la striscia della versione finisce a 89, «Il database…» comincia a 177. Gli 88px
+   in mezzo sono i 56 di `.page` più i 32 dell'hero, e non servono a niente: la striscia è
+   `sticky` e sta già nel flusso, quindi la pagina comincia sotto di lei da sola.
+   ✅ Con 8 + 8 ne restano 16, e tutto sale di 72px. */
+@media (max-width:860px){
+  #page-home{padding-top:8px;}
+  #hero{padding-top:8px;}
+}
+/* 🗑️ v6.953 (Franco: «nel mobile, la barra di scorrimento viola… è ancora lì») — SUL TELEFONO
+   LE BARRE VIOLA NON CI SONO. Sono quelle di `::-webkit-scrollbar` in style.css (pollice
+   `--accent3`), pensate per il mouse: col dito si scorre trascinando, e la barra sotto la fila
+   delle serie era solo una riga viola in più.
+   🔄 v6.953, seconda stesura (Franco: «da mobile vedo ancora le due barre… hai cambiato idea?») —
+   LA CONDIZIONE ERA `pointer:coarse`, e nel banco di prova `test_mobile.html` sul PC il puntatore
+   è il mouse: la regola non scattava mai proprio dove Franco guarda. Adesso vale la larghezza,
+   e solo per le due file che scorrono di lato (la fascia delle serie e il carosello), che hanno
+   già le loro frecce. La barra della pagina resta: su una finestra stretta del desktop serve. */
+@media (max-width:860px){
+  .vetrina-serie,#home-carosello{scrollbar-width:none;}
+  .vetrina-serie::-webkit-scrollbar,#home-carosello::-webkit-scrollbar{display:none;}
 }
 </style>
 </head>
@@ -1738,7 +1818,7 @@ button.back-btn { color:#ffffff; }
          qui e sale verso di loro. Messa a sinistra, punterebbe fuori dalla pagina.
          📌 Smette di ripetere un invito e comincia a far vedere DOVE si entra: la freccia è
          un carattere (↗), non un'immagine — cresce col testo e non chiede un file in più. -->
-    <button class="btn-primary hero-cta-lato" id="btn-start-collecting-dx" onclick="openAuth('register')"><span data-i18n="hero.cta2">Inizia a collezionare gli Sgorbions</span> <span aria-hidden="true">&#8599;</span></button>
+    <span id="freccia-accedi"><button class="btn-primary hero-cta-lato" id="btn-start-collecting-dx" onclick="openAuth('register')"><span data-i18n="hero.cta2">Inizia a collezionare gli Sgorbions</span></button></span>
   </div>
   <div class="hero-stats-side hero-stats-right" id="hero-stats-right" style="display:none;">
     <!-- v5.940 — "Mia lista / Totale Inventario" tolto dai numeroni della home (Franco).
@@ -1805,8 +1885,13 @@ button.back-btn { color:#ffffff; }
            le card della fascia sono bottoni.
            🔄 v6.947 (Franco: «in quel caso la scritta viola la metti sopra») — È RISALITO SOPRA
            LA FILA. Era sceso sotto per alzare le copertine; con la fila a carosello le
-           copertine sono già alte, e l'invito torna dove si comincia a leggere. -->
-      <button type="button" class="vetrina-invito" id="vetrina-invito" onclick="vetrinaChiediAccesso()">Le Serie Sgorbions: registrati o accedi per vederle !</button>
+           copertine sono già alte, e l'invito torna dove si comincia a leggere.
+           🔄 v6.953 — E RIDISCENDE SOTTO, tra parentesi: sopra adesso c'è il titolo. -->
+      <!-- 🔄 v6.953 (Franco: «sopra le foto delle serie, scriverei solo "Le serie Sgorbions", nel
+           viola dei titoli; il resto lo metterei sotto, nel giallo attuale, ma tra parentesi») —
+           LA FRASE SI SPEZZA: sopra il titolo, sotto l'invito. Il titolo è un <h2> come «Le
+           figurine» e ne prende la classe, così le due file si intitolano allo stesso modo. -->
+      <h2 class="carosello-titolo" id="vetrina-titolo-serie">Le Serie Sgorbions</h2>
       <!-- 🆕 v6.947 (Franco: «la fascia occupa 2 righe; non puoi farla a carosello così che
            occupi sempre una sola riga») — LA FILA SCORRE, NON VA A CAPO.
            📌 Le frecce e il contenitore sono quelli del carosello qui sotto, non una seconda
@@ -1816,6 +1901,7 @@ button.back-btn { color:#ffffff; }
         <div id="home-series-grid" class="vetrina-serie"></div>
         <button type="button" class="vetrina-freccia" id="vetrina-succ" aria-label="Successivo" onclick="vetrinaScorri(1)">&#8250;</button>
       </div>
+      <button type="button" class="vetrina-invito" id="vetrina-invito" onclick="vetrinaChiediAccesso()">(accedi per vederle !)</button>
     </div>
   </section>
 
@@ -1857,8 +1943,12 @@ button.back-btn { color:#ffffff; }
            `display:none` e la accende `renderCarosello()` solo se ha materiale. Lasciandolo dentro,
            un carosello vuoto non lascia in pagina un invito orfano - che e' il comportamento di
            oggi, e non c'e' motivo di cambiarlo insieme alla posizione. -->
-      <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.2rem;">
-        <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Esplora l'Inventario Sgorbions !</button>
+      <!-- 🔄 v6.953 (Franco: lo spazio fra «Le figurine» e il carosello deve essere quello fra
+           «Le Serie Sgorbions» e la fascia) — IL MARGINE PASSA DAL CONTENITORE AL BOTTONE.
+           📏 Misurato a 1440px: 35px contro 17. Per chi non ha fatto login il bottone è spento,
+           ma il margine di 1,2rem stava sul contenitore e restava lì a vuoto. -->
+      <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;margin-bottom:1.2rem;">Esplora l'Inventario Sgorbions !</button>
       </div>
       <div class="carosello-largo" style="position:relative;">
         <button type="button" id="carosello-prec" aria-label="Precedente"
@@ -5395,7 +5485,9 @@ di tutte le serie</button>
        ⬜ E LA FOTO NON SI TOCCA, che e' la condizione che Franco ha posto: la cornice mantiene
        `min(70vw, 1100px)` e `calc(100vh - 10rem)`, le stesse misure della v6.868. Qui si sposta
        un pulsante, non si ridisegna la finestra. -->
-  <div style="position:relative;display:flex;align-items:center;gap:1rem;max-width:100%;">
+  <!-- 🆕 v6.953 — le classi `sfoglia-riga`, `sfoglia-comandi` e `sfoglia-cornice` servono solo al
+       telefono (style.css): i tre comandi salgono SOPRA la foto. -->
+  <div class="sfoglia-riga" style="position:relative;display:flex;align-items:center;gap:1rem;max-width:100%;">
     <button type="button" onclick="chiudiSfogliaAlbum()" aria-label="Chiudi" style="position:absolute;top:-2.4rem;right:0;background:none;border:none;color:var(--text);font-size:2rem;line-height:1;cursor:pointer;">&times;</button>
     <!-- 🆕 v6.864 (Franco) — «Vai all'album»: piccolo, accanto alla foto (v6.865), e apre la scheda
          dell'album che si sta sfogliando. ⚠️ Niente `btn-foto`: non e' un comando della foto, e
@@ -5415,7 +5507,7 @@ di tutte le serie</button>
          chi apre non passa l'informazione. Nominarne una sarebbe falso su metà dei casi.
          📌 I due comandi condividono `.sfoglia-cmd` (nel foglio): erano uno stile scritto a mano,
          e due pillole gemelle una sopra l'altra divergono al primo ritocco. -->
-    <div style="display:flex;flex-direction:column;gap:0.4rem;margin-right:0.6rem;">
+    <div style="display:flex;flex-direction:column;gap:0.4rem;margin-right:0.6rem;" class="sfoglia-comandi">
       <button type="button" id="sfoglia-album-indietro" onclick="chiudiSfogliaAlbum()"
               class="sfoglia-cmd">← <span data-i18n="sfoglia.indietro">Indietro</span></button>
       <button type="button" id="sfoglia-album-vai" onclick="vaiAllAlbumSfogliato()"
@@ -5451,7 +5543,7 @@ di tutte le serie</button>
        cambia mai, l'immagine ci sta dentro centrata e piu' piccola quando serve.
        ⚠️ La misura e' in `vw`/`vh` e non in pixel: dev'essere la stessa su ogni schermo, e un
        numero fisso sarebbe giusto solo sul monitor dove l'ho scritto. -->
-  <div style="width:min(70vw, 1100px);height:calc(100vh - 10rem);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+  <div class="sfoglia-cornice" style="width:min(70vw, 1100px);height:calc(100vh - 10rem);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
     <img id="sfoglia-album-img" alt="" style="max-width:100%;max-height:100%;object-fit:contain;">
   </div>
     <button type="button" id="sfoglia-album-succ" onclick="sfogliaVai(1)" style="min-width:3rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.4rem 0.8rem;font-size:1.3rem;line-height:1;cursor:pointer;">&#8250;</button>
@@ -5468,7 +5560,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.952"></script>
+<script src="js/app.js?v=6.953"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5492,7 +5584,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.952'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.953'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
