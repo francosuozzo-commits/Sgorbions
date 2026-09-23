@@ -1,7 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.956 - 🏆 DUE SULLA CLASSIFICA (Franco, 22 settembre). Modificati index.html e js/app.js.
+// v6.957 - 🃏 I DUE PULSANTI DELLA SCHEDA: «CE L'HO !» E «LA VOGLIO !». Modificati index.html e
+//          js/app.js. Franco ha scelto la strada B: il nome nuovo solo per chi arriva da fuori.
+//          📏 Nel codice la scheda si apre soltanto da un indirizzo `#f/…` (pagine per Google o
+//          link), quindi cambiare i due nomi lì È la B: il resto del sito resta «Mia lista» e
+//          «Ciò che cerco», come vuole la v5.381.
+// v6.956 -🏆 DUE SULLA CLASSIFICA (Franco, 22 settembre). Modificati index.html e js/app.js.
 //          1. «non mostrare gli utenti con zero punti»: chi ha punteggio 0 non entra in fila.
 //          2. «i nomi dei livelli mostrali in azzurro serie»: nella tabella dei livelli e sotto il
 //             punteggio di ogni collezionista, col token `--nome-entita`. I punti che lo usano
@@ -29214,10 +29219,19 @@ function renderScheda() {
         + (it ? 'Accedi per segnare le tue e costruire la tua lista.'
               : 'Sign in to mark yours and build your list.') + '</p>')
     + '<div style="display:flex;gap:.7rem;flex-wrap:wrap;margin:' + (entrato ? '1.6rem' : '0') + ' 0 0;">'
+    // 🔄 v6.957 (Franco: «Mia lista → Ce l'ho! ; Ciò che cerco → La voglio! ; nota qui uso
+    //    "ce l'ho" perché siamo fuori dal sito», e fra le tre strade ha scelto la B: il nome
+    //    nuovo SOLO per chi arriva da fuori). 🔴 Il divieto della v5.381 qui sopra resta vero per
+    //    il resto del sito; la scheda ne è l'eccezione dichiarata, perché parla a chi il sito non
+    //    lo conosce ancora e un gesto («ce l'ho») si capisce prima di un nome di funzione.
+    // 📏 E LA B NON CREA DUE NOMI NELLA STESSA PAGINA: misurato nel codice, la scheda si apre solo
+    //    da `apriSchedaDaHash()` all'avvio, cioè da un indirizzo `#f/…` — nessun punto del sito
+    //    ci porta dall'interno. Il giorno che una card la aprisse, questa scelta va riguardata.
+    // 📌 Lo spazio prima del «!» è la regola generale del 24 agosto (`prova-v6390`).
     + '<button class="btn-primary" onclick="schedaAzione(\'lista\')">'
-    + (it ? 'Mia lista' : 'My list') + '</button>'
+    + (it ? 'Ce l\'ho !' : 'I have it !') + '</button>'
     + '<button class="btn-primary" onclick="schedaAzione(\'cerco\')">'
-    + (it ? 'Ciò che cerco' : 'What I am looking for') + '</button>'
+    + (it ? 'La voglio !' : 'I want it !') + '</button>'
     + '</div>'
     + '</div>';
 }
@@ -30065,7 +30079,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.956';
+const JS_VERSION = 'v6.957';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
