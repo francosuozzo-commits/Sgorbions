@@ -2158,6 +2158,17 @@ footer {
   .profile-header { flex-direction: row-reverse; align-items: flex-start; flex-wrap: nowrap; gap: 1rem; padding: 1.25rem; }
   .profile-avatar { flex-shrink: 0; }
 
+  /* 🔄 v6.958 (Franco: «nella versione mobile, nella scheda profilo, i numeri che conteggiano
+     gli articoli dell'utente sono troppo grandi») — «I TUOI NUMERI SGORBIONS» SI STRINGONO.
+     📏 Misurato a 390px con un utente finto: numeri a 28.8px, etichette a 15.2px, e il riquadro
+     — largo solo 220px, perché l'avatar gli sta a destra — alto 645px su OTTO righe per tredici
+     numeri. Sul telefono quella regola non era mai stata ritoccata: valeva l'1.8rem del desktop.
+     📌 Le misure sono quelle dei numeroni della home sul telefono (`.hero-stats-side`, 1.15rem e
+     0.7rem nell'index): stessi numeri lime, stessa grandezza, in tutto il sito. */
+  .profile-stats { gap: 0.45rem 1rem; }
+  .profile-stat-num { font-size: 1.15rem; line-height: 1.15; }
+  .profile-stat-label { font-size: 0.7rem; }
+
   /* i pulsanti "Cambia nome utente" / "Cambia nazionalità" (e password) uno sotto l'altro */
   #profile-actions-row { flex-direction: column; align-items: stretch; }
   #profile-actions-row > button { width: 100%; }
