@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.958">
+<link rel="stylesheet" href="css/style.css?v=6.959">
 
 
 <style>
@@ -1945,7 +1945,9 @@ button.back-btn { color:#ffffff; }
            da sole, e una riga di titolo sopra una fila di immagini e' spazio che non aggiunge
            niente. Tolte anche le due voci dal dizionario: una chiave che nessuno usa piu' e' una
            di quelle "chiavi morte" che il §5 avverte di non lasciare in giro. -->
-      <!-- 🆕 v6.359 (Franco: *"il pulsante della home «Esplora l'inventario» mettiamolo SOPRA al
+      <!-- 🗄️ RIBALTATA DALLA v6.959: il pulsante è tornato SOTTO il carosello (vedi il commento
+           dopo il carosello). Quello che segue è la storia di quando stava qui sopra.
+           🆕 v6.359 (Franco: *"il pulsante della home «Esplora l'inventario» mettiamolo SOPRA al
            carosello, non sotto"*).
            ⚠️ QUESTO RIBALTA LA v6.062, e quella non era una svista: aveva spostato il pulsante
            QUI SOTTO con un argomento scritto — «prima stava fra i pulsanti dell'hero, cioe' PRIMA
@@ -1965,15 +1967,24 @@ button.back-btn { color:#ffffff; }
            «Le Serie Sgorbions» e la fascia) — IL MARGINE PASSA DAL CONTENITORE AL BOTTONE.
            📏 Misurato a 1440px: 35px contro 17. Per chi non ha fatto login il bottone è spento,
            ma il margine di 1,2rem stava sul contenitore e restava lì a vuoto. -->
-      <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;">
-        <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;margin-bottom:1.2rem;">Esplora l'Inventario Sgorbions !</button>
-      </div>
       <div class="carosello-largo" style="position:relative;">
         <button type="button" id="carosello-prec" aria-label="Precedente"
           style="position:absolute;left:-6px;top:50%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.4rem;line-height:1;padding:0.5rem 0.6rem;border-radius:999px;cursor:pointer;">&#8249;</button>
         <div id="home-carosello" style="display:flex;gap:0.9rem;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;padding:0.2rem 0.4rem 0.8rem;"></div>
         <button type="button" id="carosello-succ" aria-label="Successivo"
           style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.4rem;line-height:1;padding:0.5rem 0.6rem;border-radius:999px;cursor:pointer;">&#8250;</button>
+      </div>
+      <!-- 🔄 v6.959 (Franco: «il bottone Esplora si trova tra il titolo "Le figurine" e il
+           carosello delle figurine. No, sbagliato: mettiamolo sotto al carosello», «sia desktop
+           che mobile») — IL PULSANTE TORNA SOTTO, dove l'aveva messo la v6.062.
+           📌 Ribalta la v6.359, e la ragione è cambiata insieme alla pagina: dalla v6.952 sopra il
+           carosello c'è il titolo «Le figurine», e il bottone in mezzo separava il titolo dalla
+           cosa che intitola. Adesso titolo e carosello stanno attaccati come «Le Serie Sgorbions»
+           e la sua fascia, e l'invito arriva dopo aver fatto vedere qualcosa.
+           📌 Il margine passa da sotto (1.2rem, v6.953) a sopra: il carosello ha già 0.8rem di
+           padding in fondo, e 0.6rem in più staccano il bottone dalle card senza allontanarlo. -->
+      <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;margin-top:0.6rem;">Esplora l'Inventario Sgorbions !</button>
       </div>
       <!-- 🗄️ v6.062, RIBALTATA DALLA v6.359: "Esplora l'Inventario" era sceso QUI sotto perche'
            «fra i pulsanti dell'hero stava PRIMA di aver fatto vedere qualcosa». Dal 22 agosto 2026
@@ -5578,7 +5589,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.958"></script>
+<script src="js/app.js?v=6.959"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5602,7 +5613,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.958'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.959'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
