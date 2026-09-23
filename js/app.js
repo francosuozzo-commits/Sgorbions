@@ -1,7 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.957 - 🃏 I DUE PULSANTI DELLA SCHEDA: «CE L'HO !» E «LA VOGLIO !». Modificati index.html e
+// v6.958 - 📱 «I TUOI NUMERI SGORBIONS» PIÙ PICCOLI SUL TELEFONO. Modificati index.html,
+//          js/app.js e css/style.css. Franco: «nella scheda profilo, i numeri che conteggiano
+//          gli articoli dell'utente sono troppo grandi». 📏 A 390px: numeri 28.8px → 18.4px,
+//          etichette 15.2 → 11.2, e il riquadro da 645 a 256px d'altezza (otto righe → sei).
+//          Le misure sono quelle dei numeroni della home sul telefono. Il desktop non cambia.
+// v6.957 -🃏 I DUE PULSANTI DELLA SCHEDA: «CE L'HO !» E «LA VOGLIO !». Modificati index.html e
 //          js/app.js. Franco ha scelto la strada B: il nome nuovo solo per chi arriva da fuori.
 //          📏 Nel codice la scheda si apre soltanto da un indirizzo `#f/…` (pagine per Google o
 //          link), quindi cambiare i due nomi lì È la B: il resto del sito resta «Mia lista» e
@@ -30079,7 +30084,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.957';
+const JS_VERSION = 'v6.958';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
