@@ -1,7 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.955 - 📱 «LE FIGURINE» SI STACCA DAI NUMERONI, DA LOGGATI SUL TELEFONO. Modificati
+// v6.956 - 🏆 DUE SULLA CLASSIFICA (Franco, 22 settembre). Modificati index.html e js/app.js.
+//          1. «non mostrare gli utenti con zero punti»: chi ha punteggio 0 non entra in fila.
+//          2. «i nomi dei livelli mostrali in azzurro serie»: nella tabella dei livelli e sotto il
+//             punteggio di ogni collezionista, col token `--nome-entita`. I punti che lo usano
+//             passano da nove a undici, e `prova-v6398` li dichiara.
+// v6.955 -📱 «LE FIGURINE» SI STACCA DAI NUMERONI, DA LOGGATI SUL TELEFONO. Modificati
 //          index.html e js/app.js. Franco: «la scritta Le figurine è molto vicina alla fine
 //          degli score verdi». 📏 A 390px il titolo stava 8px sopra il fondo dei numeri; con la
 //          fascia delle serie spenta il carosello prende la classe `senza-vetrina` e il titolo
@@ -30060,7 +30065,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.955';
+const JS_VERSION = 'v6.956';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -67273,7 +67278,9 @@ function renderClassificaLevels(el) {
     if (isAdmin) html += '<th></th>';
     html += '</tr></thead><tbody>';
     html += levels.map(lv => {
-      let row = '<tr><td><strong>' + ((currentLang !== 'it' && lv.nameEn) ? lv.nameEn : lv.name) + '</strong></td>';
+      // 🔄 v6.956 (Franco: «i nomi dei livelli mostrali in azzurro serie») — un livello ha un
+      //    NOME, come una serie o un utente, e prende lo stesso token (`prova-v6398` lo conta).
+      let row = '<tr><td><strong style="color:var(--nome-entita);">' + ((currentLang !== 'it' && lv.nameEn) ? lv.nameEn : lv.name) + '</strong></td>';
       // 🆕 v6.491 (Franco: *"oggi a volte abbiamo 200 / punti, invece io vorrei
       // «200 punti»"*) — IL NUMERO E LA SUA PAROLA NON SI SEPARANO.
       // 🔴 Il difetto e' nato con la v6.486, che ha scritto «punti» dove c'era «pt»:
@@ -67420,6 +67427,10 @@ async function renderClassifica() {
     const countFigurines = user.countFigurines || 0;
     const countAlbums = user.countAlbums || 0;
     const countExtras = user.countExtras || 0;
+    // 🆕 v6.956 (Franco: «non mostrare gli utenti con zero punti») — chi non ha ancora niente
+    //    in lista non entra in classifica, nemmeno se è chi guarda: la classifica elenca
+    //    collezionisti, e a zero punti non c'è ancora niente da mettere in fila.
+    if (score <= 0) continue;
     ranking.push({ user, score, countFigurines, countAlbums, countExtras });
   }
 
@@ -67507,7 +67518,7 @@ async function renderClassifica() {
              scritta a due schermate da qui — presa lo stesso, per la terza volta. -->
         <div style="text-align:right;">
           <div style="font-family:var(--font-ui);font-size:1.1rem;color:var(--accent);">${_codaPunti(score.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US'))}</div>
-          ${(() => { const lv = getUserLevel(score); if (!lv) return ''; const lvName = (currentLang !== 'it' && lv.nameEn) ? lv.nameEn : lv.name; return `<div style="font-size:0.72rem;color:var(--accent);opacity:0.8;font-family:var(--font-ui);">🏅 ${lvName}</div>`; })()}
+          ${(() => { const lv = getUserLevel(score); if (!lv) return ''; const lvName = (currentLang !== 'it' && lv.nameEn) ? lv.nameEn : lv.name; return `<div style="font-size:0.72rem;color:var(--nome-entita);font-family:var(--font-ui);">🏅 ${lvName}</div>`; })()}
         </div>
         ${isTop3 ? trophies[idx] : (medal ? `<span style="font-size:1.5rem;">${medal}</span>` : '')}
       </div>
