@@ -1,7 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.958 - 📱 «I TUOI NUMERI SGORBIONS» PIÙ PICCOLI SUL TELEFONO. Modificati index.html,
+// v6.959 - 📱 IL PROFILO USA TUTTA LA LARGHEZZA, E «ESPLORA» TORNA SOTTO IL CAROSELLO.
+//          Modificati index.html, js/app.js e css/style.css.
+//          1. (telefono) Franco: «nella scheda profilo sfrutterei di più lo spazio: verso destra
+//             rimane tutto non utilizzato», per i numeri e le due spunte in fondo. L'avatar
+//             galleggia a destra invece di tenersi una colonna intera. 📏 A 390px il riquadro
+//             dei numeri e le preferenze e-mail passano da 220 a 316px, e la scheda da 965 a 813.
+//          2. (desktop e telefono) Franco: «il bottone Esplora si trova tra il titolo "Le
+//             figurine" e il carosello. No, sbagliato: mettiamolo sotto al carosello». Ribalta
+//             la v6.359: il titolo della v6.952 era finito separato dalla cosa che intitola.
+// v6.958 -📱 «I TUOI NUMERI SGORBIONS» PIÙ PICCOLI SUL TELEFONO. Modificati index.html,
 //          js/app.js e css/style.css. Franco: «nella scheda profilo, i numeri che conteggiano
 //          gli articoli dell'utente sono troppo grandi». 📏 A 390px: numeri 28.8px → 18.4px,
 //          etichette 15.2 → 11.2, e il riquadro da 645 a 256px d'altezza (otto righe → sei).
@@ -30084,7 +30093,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.958';
+const JS_VERSION = 'v6.959';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
