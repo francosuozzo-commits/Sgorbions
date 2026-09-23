@@ -2157,6 +2157,19 @@ footer {
      flex-start li porta alla stessa altezza. nowrap per tenerli in riga anche stretti. */
   .profile-header { flex-direction: row-reverse; align-items: flex-start; flex-wrap: nowrap; gap: 1rem; padding: 1.25rem; }
   .profile-avatar { flex-shrink: 0; }
+  /* 🔄 v6.959 (Franco: «nella scheda profilo sfrutterei di più lo spazio: verso destra rimane
+     tutto non utilizzato», per «le numeriche e le due spunte in fondo alla pagina») — L'AVATAR
+     NON SI TIENE PIÙ UNA COLONNA INTERA.
+     📏 A 390px la riga flex dava all'avatar 80px + 16 di spazio per TUTTA l'altezza della
+     scheda, e a tutto il resto ne restavano 220 su 318: numeri, preferenze e-mail e le due
+     spunte in fondo stavano in una colonna stretta con il vuoto a destra.
+     📌 Adesso l'avatar GALLEGGIA a destra: accanto a sé tiene solo le righe che gli stanno di
+     fianco (nome, e-mail, nazionalità), e sotto di lui il contenuto prende tutta la larghezza.
+     `flow-root` fa sì che la scheda contenga l'avatar anche se il testo accanto fosse più corto.
+     ⚠️ Sta DOPO la regola della v5.864 e la scavalca apposta: la riga `row-reverse` qui sopra
+     resta come racconto di dove stava l'avatar, ma sul telefono non è più un flex. */
+  .profile-header { display: flow-root; }
+  .profile-header .profile-avatar { float: right; margin: 0 0 0.5rem 1rem; }
 
   /* 🔄 v6.958 (Franco: «nella versione mobile, nella scheda profilo, i numeri che conteggiano
      gli articoli dell'utente sono troppo grandi») — «I TUOI NUMERI SGORBIONS» SI STRINGONO.
