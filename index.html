@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.953">
+<link rel="stylesheet" href="css/style.css?v=6.955">
 
 
 <style>
@@ -416,8 +416,13 @@
    stringe e i due lati restano diversi. 📏 Misurato: a sinistra c'era il `gap` di `.nav-links`
    (0,25rem = 4px), a destra niente. Adesso i due margini lo compensano - 0,35rem + i 4px del gap a
    sinistra, 0,6rem a destra - e i due vuoti valgono **9,6px l'uno**, comunque sia larga la finestra. */
-#nav-search { position:relative; flex:1 1 auto; min-width:0; display:flex; justify-content:center; margin:0 0.6rem 0 0.35rem; }
-#nav-search-input { width:325px; max-width:100%; min-width:0; }
+/* 🔄 v6.954 (Franco: «basta mettere la buca della RG più a dx; buca che tra l'altro è fin troppo
+   larga») — LA CASELLA VA IN FONDO A DESTRA E SI STRINGE, da 325 a 230px. Serve a liberare il
+   centro della barra per il nome del sito anche da loggato (Franco: «lo spazio c'è eccome»).
+   📏 A 2560px la casella stava a 1405→1730 e il nome, centrato a 1280, ci sarebbe finito
+   sopra; adesso la casella sta a ridosso della bandiera. I margini della v6.855 restano. */
+#nav-search { position:relative; flex:1 1 auto; min-width:0; display:flex; justify-content:flex-end; margin:0 0.6rem 0 0.35rem; }
+#nav-search-input { width:230px; max-width:100%; min-width:0; }
 /* ⬜ E SOTTO I 1500px LA CASELLA SPARISCE, AL SUO POSTO UN TASTO 🔍 che apre la finestrella del
    telefono. 📏 Misurato: da admin, a 1440px le voci da sole arrivano già dove comincia la bandiera,
    quindi una casella lì non ci sta comunque - stringerla a 26px non è «più stretta», è illeggibile.
@@ -1278,6 +1283,19 @@ button.back-btn { color:#ffffff; }
    (viola). Due mestieri, due tinte. */
 .carosello-titolo{font-family:var(--font-ui);font-weight:800;font-size:1.45rem;letter-spacing:.02em;
   text-align:center;color:var(--accent3);margin:0 0 1rem;}
+/* 🔄 v6.955 (Franco: «nella mobile, nella home page, la scritta Le figurine è molto vicina alla
+   fine degli score verdi») — DA LOGGATI, SUL TELEFONO, IL TITOLO SI STACCA DAI NUMERONI.
+   📏 Misurato sul sito vivo a 390px con un utente finto: il titolo cominciava 8px SOPRA il fondo
+   dei numeri. Il `margin-top:-2rem` della sezione è pensato per un'hero che finisce con dell'aria,
+   e da ospite in mezzo c'è la fascia delle serie; da loggati la fascia è spenta e sul telefono
+   i numeri arrivano fino in fondo. A 1440px lo spazio era 25px, e lì non si tocca.
+   📌 Il margine è lo stesso 2.2rem di `#vetrina-titolo-serie`: da ospite fra i numeri e «Le Serie
+   Sgorbions» ci sono 27px, e da loggato «Le figurine» prende lo stesso posto.
+   📌 La classe la mette `renderHomeSeries()` quando spegne la fascia, non il login: vale anche
+   per un ospite quando le serie non sono ancora arrivate. */
+@media (max-width:860px){
+  #home-carosello-sez.senza-vetrina .carosello-titolo{margin-top:2.2rem;}
+}
 /* 🔄 v6.947 — DA GRIGLIA A FILA CHE SCORRE. Con dieci serie la griglia andava a capo e la
    fascia si mangiava due righe; una fila che scorre ne occupa sempre una, qualunque sia il
    numero delle serie — è vero per costruzione, non finché sono dieci.
@@ -5560,7 +5578,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.953"></script>
+<script src="js/app.js?v=6.955"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5584,7 +5602,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.953'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.955'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
