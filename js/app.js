@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.955 - 📱 «LE FIGURINE» SI STACCA DAI NUMERONI, DA LOGGATI SUL TELEFONO. Modificati
+//          index.html e js/app.js. Franco: «la scritta Le figurine è molto vicina alla fine
+//          degli score verdi». 📏 A 390px il titolo stava 8px sopra il fondo dei numeri; con la
+//          fascia delle serie spenta il carosello prende la classe `senza-vetrina` e il titolo
+//          2.2rem di margine, come «Le Serie Sgorbions». Sopra gli 860px non cambia niente.
+// v6.954 -🔍 LA BARRA DA LOGGATI E LA FRECCIA. Modificati index.html e js/app.js.
+//          1. la casella della RG va in fondo a destra e si stringe (325 → 230px) — Franco:
+//             «basta mettere la buca della RG più a dx; buca che tra l'altro è fin troppo larga».
+//          2. il nome del sito compare anche da loggati, SE CI STA: `_nomeSitoSeCiSta` lo accende
+//             e lo rispegne se tocca una voce, la casella o i comandi di destra.
+//          3. a 1000px la freccia copriva «…per collezionisti»: scende di quanto serve.
 // v6.953 - 📱 LE CINQUE NOTE DI FRANCO SULLA HOME DA TELEFONO. Modificati index.html, js/app.js
 //          e css/style.css. Franco ha detto lui dove vale ciascuna:
 //          1. (solo telefono) via l'aria sopra «Il database non ufficiale…». 📏 Misurato a 390px:
@@ -30049,7 +30060,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.953';
+const JS_VERSION = 'v6.955';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32608,9 +32619,26 @@ function _aggiornaLogoNavbar() {
   //    Adesso vive solo qui, quindi in home ci deve stare — è l'unico posto che lo dice.
   // ⚠️ Da loggati il menu si riempie (Inventario, Blog, Liste, Classifica...) e il centro
   //    della barra non è più vuoto: lì il nome finirebbe sopra le voci.
+  // 🔄 v6.954 (Franco: «ma lo spazio c'è eccome anche da loggato») — DA LOGGATI IL NOME SI
+  //    MOSTRA SE CI STA, e si decide misurando, non per regola: si accende, e se tocca una voce del
+  //    menu, la casella della ricerca o i comandi di destra, si rispegne. 📏 Da utente a 1440px il
+  //    menu arriva a 916 e i comandi cominciano a 1157: il nome (≈270px al centro) non ci sta; a
+  //    2560, con la casella spostata in fondo, sì.
   const nome = document.querySelector('#navbar .nav-nome-sito');
-  if (nome) nome.style.display = (typeof currentUser !== 'undefined' && currentUser) ? 'none' : '';
+  if (!nome) return;
+  nome.style.display = '';
+  if (typeof currentUser !== 'undefined' && currentUser) _nomeSitoSeCiSta(nome);
 }
+function _nomeSitoSeCiSta(nome) {
+  if (!nome.offsetParent) return;
+  const n = nome.getBoundingClientRect();
+  const ostacoli = [...document.querySelectorAll('#navbar .nav-links > *:not(#nav-search), #nav-search-input, #navbar .nav-right')]
+    .filter(e => e.offsetParent);
+  const tocca = ostacoli.some(e => { const r = e.getBoundingClientRect();
+    return r.width && r.left < n.right + 12 && r.right > n.left - 12; });
+  if (tocca) nome.style.display = 'none';
+}
+window.addEventListener('resize', () => { try { _aggiornaLogoNavbar(); } catch (e) {} });
 
 // ============================================================
 //  CAROSELLO DELLA HOME (v6.051, Franco)
@@ -34424,6 +34452,18 @@ function _frecciaSottoAccedi() {
   const a = document.querySelector('#guest-nav .btn-login');
   if (!a || !a.offsetParent) { f.style.visibility = 'hidden'; return; }
   f.style.visibility = '';
+  // 🆕 v6.954 — E NON SI APPOGGIA SULLA RIGA DI TESTO SOPRA IL LOGO. 📏 A 1000px la testa della
+  //    freccia copriva «…per collezionisti»: la riga arriva fino a 947 e la freccia ci passava
+  //    sopra. Si parte dall'altezza del CSS e, se le due si toccano, la freccia scende di quanto
+  //    serve (il rettangolo di una freccia storta è più grande di lei: qualche pixel d'aria in più).
+  f.style.top = '';
+  const riga = document.querySelector('.hero-due-righe');
+  if (riga && riga.offsetParent) {
+    const rr = riga.getBoundingClientRect(), f0 = f.getBoundingClientRect();
+    const zz = parseFloat(getComputedStyle(document.getElementById('page-home') || h).zoom) || 1;
+    if (f0.left < rr.right && f0.right > rr.left && f0.top < rr.bottom)
+      f.style.top = Math.round(f.offsetTop + (rr.bottom - f0.top) / zz) + 'px';
+  }
   // ⚠️ SI SPOSTA DI QUANTO MANCA, non si calcola da zero: `#page-home` ha uno `zoom` (0.9 su
   //    certi schermi), quindi le misure a schermo e i pixel di `style.left` non sono la stessa
   //    unità. 📏 Prima stesura: 170px di CSS misuravano 153 a schermo, e la freccia finiva 60px
@@ -34444,7 +34484,7 @@ window.addEventListener('resize', () => { try { _frecciaSottoAccedi(); } catch (
 
 function updateNavUser() {
   // 🆕 v6.953 — dopo che questa funzione ha acceso o spento «Accedi», la freccia si rimette sotto.
-  requestAnimationFrame(() => { try { _frecciaSottoAccedi(); } catch (e) {} });
+  requestAnimationFrame(() => { try { _frecciaSottoAccedi(); _aggiornaLogoNavbar(); } catch (e) {} });
   _aggiornaRicercaNavbar();   // v6.341 - vale per tutti e due i rami, quindi sta prima del bivio
   // 🆕 v6.878 — RC si accende per il solo admin. Sta PRIMA del bivio come la riga qui sopra e
   //    per la stessa ragione: la risposta e' una sola per tutti e due i rami, e scriverla due
@@ -43376,6 +43416,10 @@ function renderHomeSeries() {
   const grid = document.getElementById('home-series-grid');
   if (!sez || !grid) return;
   const serie = (typeof currentUser !== 'undefined' && currentUser) ? [] : _serieDellaVetrina();
+  // 🆕 v6.955 — il carosello sa se la fascia c'è: senza, sul telefono, il suo titolo si
+  //    appoggiava ai numeroni dell'hero (📏 -8px a 390). Il margine sta nell'index.
+  const car = document.getElementById('home-carosello-sez');
+  if (car) car.classList.toggle('senza-vetrina', !serie.length);
   if (!serie.length) { sez.style.display = 'none'; grid.innerHTML = ''; return; }
   const it = currentLang === 'it';
   sez.style.display = '';
