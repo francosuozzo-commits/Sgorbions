@@ -1,7 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.963 - 🐛 LA FUNZIONE 5 («CREA LE FIGURINE PER ALBUM») SOLO SULLE SERIE CHE LE AMMETTONO.
+// v6.964 - 📌 LE FIGURINE PER ALBUM: UNA CARD SOLA, LE SOTTOSERIE A RIGHE NELLA GRIGLIA.
+//          Modificati index.html e js/app.js. Franco: la funzione 5 su Holidays aveva prodotto
+//          tre card doppie nell'hub (Metal, White, Clear) — «volevo una card sola, Figurine per
+//          album, che le contenga tutte e 61; all'interno la griglia può ordinarle per
+//          sottoserie, facendo iniziare una sottoserie sempre da inizio riga».
+//          1. `ARTICOLI.attaccare.sottoserieInGriglia`: niente card di sottoserie nell'hub per
+//             questa tipologia, e la card della sezione le conta tutte.
+//          2. nella griglia aperta si vedono tutte: ordinate per sottoserie, ognuna da inizio
+//             riga con il suo nome sopra (lime, come le etichette di sottoserie dalla v6.905).
+//          3. la sottoserie diventa un campo EREDITATO dalla figurina con retro, come nome e
+//             numero (Franco: «teoricamente dovrebbe essere un campo ereditato dalla fcr»).
+//          4. 🐛 (urgente, Franco) una figurina con retro clonata e fatta change NON SI SALVAVA:
+//             «il tipo di change è obbligatorio», benché a video fosse preso dal retro change
+//             (MOSCA NERA). Il salvataggio giudicava su `updates.retroId`, che si scrive
+//             cinquanta righe DOPO: era vuoto. Adesso il retro si legge dalla scheda, con la
+//             stessa regola. Stesso difetto, stessa cura, per il tipo di omaggio.
+//          ⚠️ La prima stesura (mai pubblicata) toglieva la sottoserie alle fpa: capito male.
+//             Lo script F12 di quella stesura l'ha tolta davvero alle 61 di Holidays, e un
+//             secondo script gliel'ha rimessa copiandola dalla loro figurina con retro.
+// v6.963 -🐛 LA FUNZIONE 5 («CREA LE FIGURINE PER ALBUM») SOLO SULLE SERIE CHE LE AMMETTONO.
 //          Modificati index.html e js/app.js. Franco: «dovrebbe mostrare solo le serie che
 //          ammettono figurine per album». Il menu e il piano passano da `_serieAmmetteTipologia(s,
 //          'attaccare')`. 📏 Nella preview: 7 serie nel menu (1, 2, 3, 4, Holidays, Mega 1 e 2);
@@ -30119,7 +30138,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.963';
+const JS_VERSION = 'v6.964';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -36225,8 +36244,28 @@ function _sottoserieUsate(s, articoli) {
   return usate.concat(orfane);
 }
 
+// 🆕 v6.964 (Franco: «volevo una card sola, Figurine per album, che le contenga tutte e 61;
+//    all'interno la griglia può ordinarle per sottoserie, facendo iniziare una sottoserie sempre
+//    da inizio riga… non serve enfatizzare 2 volte l'esistenza delle sottoserie») — PER ALCUNE
+//    TIPOLOGIE LE SOTTOSERIE STANNO NELLA GRIGLIA, NON IN CARD. Lo dice il descrittore
+//    (`sottoserieInGriglia`), come `sottonome` e `carosello`: oggi solo «Figurine per album», che
+//    la sottoserie la eredita dalla figurina con retro — le card le ha già quella.
+function _sottoserieInGriglia(sez) {
+  return !!_art(sez).sottoserieInGriglia;
+}
+// I gruppi da disegnare nella griglia aperta, in ordine; vuoto dove la regola non vale.
+function _gruppiSottoserieInGriglia() {
+  if (!currentSeriesId || !currentSection || !_sottoserieInGriglia(currentSection)) return [];
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  const g = _sottoserieUsate(s, getData('figurines', [])
+    .filter(f => f.seriesId === currentSeriesId && f.section === currentSection));
+  return g.some(v => v) ? g : [];
+}
+
 function _sottoserieDellaSezione() {
   if (!currentSeriesId || !currentSection) return [];
+  // 🔄 v6.964 - dove le sottoserie stanno nella griglia non si entra in UNA di loro: si vedono tutte.
+  if (_sottoserieInGriglia(currentSection)) return [];
   const s = getData('series', []).find(x => x.id === currentSeriesId);
   return _sottoserieUsate(s, getData('figurines', [])
     .filter(f => f.seriesId === currentSeriesId && f.section === currentSection));
@@ -37658,6 +37697,10 @@ const ARTICOLI = {
   },
   attaccare: {
     riquadro: 1,   // v6.654
+    // 🆕 v6.964 (Franco) - le sottoserie stanno DENTRO la griglia, a righe, e non in card
+    //    separate nell'hub: le card per sottoserie le ha già la figurina con retro. Vedi
+    //    `_sottoserieInGriglia`.
+    sottoserieInGriglia: true,   // v6.964
     // 🔄 v6.649 (Franco: «Figurine da attaccare -> Stickers») — L'INGLESE E' DECISO, e
     //    non e' piu' provvisorio: dalla v6.195 tre punti del file portavano scritto che
     //    «Stickers to stick» era da confermare. Adesso e' confermato, ed e' un'altra
@@ -37973,6 +38016,7 @@ const _ETICHETTE_DESCRITTORE = {
   //    CHIAVE: due intestazioni minuscole in mezzo alle altre. Si vedeva a occhio, e nessun
   //    controllo poteva dirlo - il ripiego `|| k` non e' un errore, e' un ripiego.
   genere: 'Genere', carosello: 'Carosello',
+  sottoserieInGriglia: 'Sottoserie nella griglia',   // v6.964
   numero: 'Numero', ordina: 'Ordinamento',
   ordinaDove: 'Ordina dove', nomeCompleto: 'Nome completo', nomeCompletoDove: 'Nome completo dove'
 };
@@ -41274,6 +41318,10 @@ function _riordinaBoxSezioni() {
 // 📌 La domanda ha un nome perche' la fanno in due - chi decide la visibilita' e chi
 //    scrive il numero - e due copie della stessa condizione divergono al primo ritocco.
 function _sezioneCoperta(sez) {
+  // 🔄 v6.964 - una tipologia con le sottoserie nella griglia non è mai «coperta»: le card di
+  //    sottoserie per lei non esistono, quindi la sua card è l'unica porta. Senza questa riga,
+  //    misurato nella preview, la card «Figurine per album» di Holidays spariva dall'hub.
+  if (_sottoserieInGriglia(sez)) return false;
   const s = getData('series', []).find(x => x.id === currentSeriesId);
   const items = getData('figurines', [])
     .filter(f => f.seriesId === currentSeriesId && (f.section || 'figurines') === sez);
@@ -43932,10 +43980,28 @@ function _incollaGruppi(items, cardsHTML, geo, allFigs, idx) {
   const codaRiga = px => '<div class="fig-fine-riga" aria-hidden="true" style="flex:0 0 ' + px + 'px"></div>';
   const pezzi = [];
   let x = 0, rows = 1, i = 0;
+  // 🆕 v6.964 - dove le sottoserie stanno nella griglia, ognuna COMINCIA A INIZIO RIGA con il suo
+  //    nome sopra (Franco: «facendo iniziare una sottoserie sempre da un inizio riga»). Il titolo
+  //    occupa tutta la riga (`grid-column:1/-1` a griglia, `flex:0 0 100%` in flex): la riga prima
+  //    resta aperta con le sue celle vuote, senza riempimenti da contare.
+  // 📌 Lime e non azzurro: il nome di una sottoserie è un'etichetta, e la v6.905 ha deciso che le
+  //    etichette di sottoserie sono lime (`prova-v6398` difende il confine dell'azzurro).
+  const _ssG = _gruppiSottoserieInGriglia();
+  let _ssPrec = null;
+  const _titoloSs = nome => '<div class="griglia-sottoserie" style="grid-column:1/-1;flex:0 0 100%;'
+    + 'font-family:var(--font-ui);font-weight:800;font-size:1.05rem;color:var(--accent);'
+    + 'margin:0.9rem 0 0.1rem;">' + esc(nome) + '</div>';
   while (i < items.length) {
     const k = _familyKey(items[i], idx);          // v6.800 - l'indice c'e' gia': si passa
     let j = i + 1;
     while (j < items.length && _familyKey(items[j], idx) === k) j++;
+    if (_ssG.length) {
+      const ss = String(items[i].subseries || '').trim();
+      if (ss !== _ssPrec) {
+        if (ss) { pezzi.push(_titoloSs(ss)); rows += (x > 0 ? 2 : 1); x = 0; }
+        _ssPrec = ss;
+      }
+    }
     const p = _collocaFamiglia(items.slice(i, j), geo, x, rows, allFigs, idx);
     if (p.vuoti > 0) pezzi.push(geo.kind === 'flex' ? codaRiga(p.vuoti) : CELLA_VUOTA.repeat(p.vuoti));
     for (let q = i; q < j; q++) pezzi.push(cardsHTML[q]);
@@ -45601,7 +45667,9 @@ function updateSectionCounts() {
     //    e' contato due volte nella stessa schermata.
     // 🔴 Dove sottoserie non ce ne sono - sette sezioni su otto - `_gruppi` esce vuota e
     //    `_resto` e' `items`: la card non cambia di una virgola.
-    const _gruppi = _sottoserieUsate(_serie, items).filter(v => v);
+    // 🔄 v6.964 - dove le sottoserie stanno DENTRO la griglia (`_sottoserieInGriglia`), la card
+    //    della sezione le conta tutte: non ci sono card di sottoserie a cui cederle.
+    const _gruppi = _sottoserieInGriglia(sec) ? [] : _sottoserieUsate(_serie, items).filter(v => v);
     const _resto = _gruppi.length
       ? items.filter(f => !_gruppi.includes(String(f.subseries || '').trim()))
       : items;
@@ -45691,6 +45759,8 @@ function _rendiCardSottoserie() {
   const it = currentLang === 'it';
   PRODOTTI_INVENTARIO.forEach(sec => {
     if (!_tipologiaAmmessa(sec, currentSeriesId)) return;
+    // 🔄 v6.964 - niente card di sottoserie per le tipologie che le mostrano nella griglia.
+    if (_sottoserieInGriglia(sec)) return;
     const items = tutti.filter(f => (f.section || 'figurines') === sec);
     const gruppi = _sottoserieUsate(s, items).filter(v => v);
     if (!gruppi.length) return;
@@ -49982,7 +50052,13 @@ function renderItems() {
   // perche' e' una scelta esplicita di chi ha creato il box: le regole per sezione sono il
   // comportamento predefinito, questa e' una decisione presa.
   const _cmpTipo = _tipoProdottoCorrente ? _comparatoreTipo(_tipoProdottoCorrente) : null;
+  // 🆕 v6.964 - dove le sottoserie stanno nella griglia, prima comanda la SOTTOSERIE (nell'ordine
+  //    in cui la serie le dichiara), poi tutto il resto come sempre. Senza, i titoli di
+  //    `_incollaGruppi` comparirebbero ogni volta che la sottoserie cambia, cioè a caso.
+  const _ssOrd = _gruppiSottoserieInGriglia();
+  const _ssPos = f => { const p = _ssOrd.indexOf(String(f.subseries || '').trim()); return p < 0 ? _ssOrd.length : p; };
   const allItems = _daOrdinare.sort((a,b) => {
+    if (_ssOrd.length && _ssPos(a) !== _ssPos(b)) return _ssPos(a) - _ssPos(b);
     if (_cmpTipo) return _cmpTipo(a, b);
     if (currentSection === 'figurines') {
       const allFigsForSort = _idx;
@@ -58737,7 +58813,9 @@ function _campiEreditatiDaBase(section) {
   // un retro un numero non ce l'ha). Qui invece la da attaccare E' la figurina n. 12, e quel numero
   // deve seguirla - Franco: *"eredita i campi NOME, NUMERO e la foto della parte frontale"*.
   // 🔄 v6.840 (Franco) - e la FAMIGLIA: «mi aspetto sia non modificabile, sulle fpa».
-  if (section === 'attaccare') return ['name', 'number', 'famiglia'];
+  // 🔄 v6.964 (Franco: «teoricamente quello dovrebbe essere un campo ereditato dalla fcr
+  //    associata») - e la SOTTOSERIE: nella scheda non si modifica, la comanda la figurina con retro.
+  if (section === 'attaccare') return ['name', 'number', 'famiglia', 'subseries'];
   // 🔄 v6.843 (Franco) - sulle figurine con retro anche la FAMIGLIA: «editabile solo nelle figurine base;
   //    le sue versioni la ereditano». Scritto per sezione e non con `TDA_CON_FAMIGLIA`: le prove estraggono
   //    questa funzione da sola.
@@ -59453,12 +59531,25 @@ async function saveFigFromDetail(figId, opzioni) {
     // 📌 Si guarda `updates`, non il record aperto: fra l'apertura e il Salva l'articolo può
     //    aver cambiato caso, ed è la forma finale che decide di chi è il tipo.
     const _sezSalva = updates.section || existingForCheck?.section || 'figurines';
-    const _chDietro = _changeDiRetro({ ...updates, section: _sezSalva });
+    // 🐛 v6.964 (Franco: «se clono una figurina con retro della serie 3 e la qualifico come change,
+    //    non riesco a salvare perché mi dice che il tipo di change è obbligatorio… a video, dopo
+    //    l'associazione col retro change, il campo è popolato (con mosca nera) ma non salva») —
+    //    IL RETRO SI LEGGEVA TROPPO PRESTO. `updates.retroId` lo scrive il blocco della v5.786
+    //    cinquanta righe più sotto; qui era ancora vuoto, quindi `_changeDiRetro` rispondeva «no»
+    //    e il tipo, che la scheda mostrava preso dal retro, veniva preteso a mano.
+    // 📌 Stessa regola di quel blocco (retro solo per le figurine; un retro vero vince sul retro
+    //    bianco), e la scheda a video la legge già così: `_recordFintoDallaForm`.
+    const _retroIdForm = (existingForCheck?.section === 'figurines')
+      ? (document.getElementById('fe-retro')?.value || null) : null;
+    const _retroBiancoForm = (existingForCheck?.section === 'figurines')
+      ? (!_retroIdForm && !!document.getElementById('fe-retro-bianco')?.checked) : false;
+    const _conRetro = { ...updates, section: _sezSalva, retroId: _retroIdForm, retroBianco: _retroBiancoForm };
+    const _chDietro = _changeDiRetro(_conRetro);
     if (_chDietro) updates.changeType = '';
     // 🆕 v6.795 - e lo stesso per l'omaggio: se sta dietro, il tipo non e' suo e non si scrive.
     //    ⚠️ Cosi' le 26 copie misurate si ripuliscono da sole man mano che Franco tocca quelle
     //    figurine, senza nessuno script - come le 114 del change.
-    if (_omaggioDiRetro({ ...updates, section: _sezSalva })) updates.freeVersionType = '';
+    if (_omaggioDiRetro(_conRetro)) updates.freeVersionType = '';
     // v5.779 — Il Tipo di change e' OBBLIGATORIO per un Change (Retro o figurina)
     // 🔄 v6.792 - ...ma solo dove una SCELTA esiste: su un change di retro non c'è nessun
     //    controllo da compilare, e pretendere un campo che non si mostra è la peggiore delle due
