@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.965">
+<link rel="stylesheet" href="css/style.css?v=6.966">
 
 
 <style>
@@ -1296,6 +1296,28 @@ button.back-btn { color:#ffffff; }
 @media (max-width:860px){
   #home-carosello-sez.senza-vetrina .carosello-titolo{margin-top:2.2rem;}
 }
+/* 🆕 v6.966 — TRE PULSANTI NEL SELETTORE «SFOGLIA PER», e sul telefono non ci stavano: 📏 a 390px
+   «Tipologie di articoli» andava su tre righe. Si stringe il solo PADDING, solo sul telefono.
+   🔄 Il corpo del testo NO (Franco: «ora è anche più piccolo il font… torna indietro»): la prima
+   stesura lo portava a 0.85rem, ed è tornato quello di prima. `!important` perché lo stile dei
+   pulsanti è in linea nell'index. */
+@media (max-width:860px){
+  #taglio-serie,#taglio-prodotti,#taglio-personaggi{padding:0.5rem 0.7rem !important;}
+}
+/* 🆕 v6.966 (Franco: «rimetti a sx l'inizio dei 3 selettori… lo ricordavo a sx, che inizia con
+   l'inizio del contenitore dell'hub») — LA RIGA «SFOGLIA PER» PRENDE LA LARGHEZZA DELLA GRIGLIA.
+   📏 A 1440px la riga partiva a 170px e le card a 107: la griglia esce dal contenitore da 1100px
+   (`#catalog-grid`, v6.747/v6.726, in style.css) e la riga no. Si copia lo STESSO sbordo e lo
+   stesso padding laterale, solo sul computer: sul telefono partono già tutte e due a 16px. */
+@media (min-width:861px){
+  #bivio-inventario{width:min(1620px, calc((100vw - 4rem) * 0.9));max-width:1620px;
+    margin-left:50%;transform:translateX(-50%);padding-left:0.4rem;padding-right:0.4rem;box-sizing:border-box;}
+  /* 🆕 v6.966 (Franco: «la pagina dei risultati della RG deve essere più larga, di modo da potersi
+     sviluppare di più in larghezza») — i risultati prendono la stessa larghezza della griglia.
+     📏 A 1440px: da 1100 a 1238px. */
+  #catalog-search-results{width:min(1620px, calc((100vw - 4rem) * 0.9));max-width:1620px;
+    margin-left:50%;transform:translateX(-50%);box-sizing:border-box;}
+}
 /* 🔄 v6.947 — DA GRIGLIA A FILA CHE SCORRE. Con dieci serie la griglia andava a capo e la
    fascia si mangiava due righe; una fila che scorre ne occupa sempre una, qualunque sia il
    numero delle serie — è vero per costruzione, non finché sono dieci.
@@ -2087,11 +2109,15 @@ button.back-btn { color:#ffffff; }
            I due pulsanti non hanno una classe propria: lo stato acceso lo mette
            _aggiornaBivioInventario() dallo stile, cosi' non c'e' una regola CSS in piu' da
            tenere allineata a una sola pagina. -->
-      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <div id="bivio-inventario" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
         <span style="font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);font-weight:700;" data-i18n="catalog.browseby">Browse by</span>
         <div style="display:inline-flex;background:var(--bg2);border:1px solid var(--border2);border-radius:999px;padding:4px;gap:4px;">
           <button type="button" id="taglio-serie" onclick="impostaTaglioInventario('serie')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:#ffffff;background:var(--action);border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.byseries">Series</button>
           <button type="button" id="taglio-prodotti" onclick="impostaTaglioInventario('prodotti')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.byproducts">Item types</button>
+          <!-- 🆕 v6.966 (Franco: «il selettore n. 3: dopo Serie e Tipologie di articoli, abbiamo
+               Personaggi») — il terzo taglio. Stessa forma dei due di prima: lo stato acceso lo
+               mette `_aggiornaBivioInventario`, che adesso conosce tre valori. -->
+          <button type="button" id="taglio-personaggi" onclick="impostaTaglioInventario('personaggi')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;">Personaggi</button>
         </div>
         <!-- v6.174 (Franco) - IL RIEPILOGO DELLE SERIE, per tutti e non solo per l'admin.
              `margin-left:auto` lo spinge in fondo a destra della riga senza aggiungere contenitori.
@@ -4212,6 +4238,14 @@ di tutte le serie</button>
             <!-- 🔄 v6.831 (Franco) - «Unico retro» diventa «Non mostrare retro in griglia»: stesso campo, `unicoRetro`. -->
             <span>Non mostrare retro in griglia</span>
           </label>
+          <!-- 🆕 v6.966 (Franco: «creami un campo nella serie») — LA RIGA DEL PERSONAGGIO SULLE CARD.
+               In una griglia gli oggetti non sono mai misti, quindi la riga o c'è su TUTTE le card o
+               su nessuna, e l'altezza uniforme della parte testuale resta com'è. Serve dove il nome
+               non è il personaggio: Mega 1 e 2, e poi due sottoinsiemi della serie 4. -->
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-personaggio-card-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span>Mostra il personaggio sulle card</span>
+          </label>
           <!-- 🆕 v6.369 (Franco: *"i campi «Senza numeri» e «Serie contenitore» mettili SOPRA il
                titoletto «Figurine da incollare»; altrimenti sembra che facciano parte di quella
                sezione"*) — LE DUE SPUNTE SALGONO.
@@ -5589,7 +5623,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.965"></script>
+<script src="js/app.js?v=6.966"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5613,7 +5647,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.965'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.966'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
