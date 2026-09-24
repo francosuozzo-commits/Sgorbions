@@ -1,6 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.966 - 🧑‍🎤 LA SERIE DICHIARA SE MOSTRARE IL PERSONAGGIO SULLE CARD. Modificati index.html e
+//          js/app.js. Franco: «creami un campo nella serie, alle sottoserie ci pensiamo dopo».
+//          Nuova spunta «Mostra il personaggio sulle card» (campo `personaggioInCard`) nella
+//          scheda della serie, accanto a «Non mostrare retro in griglia». In una griglia gli
+//          oggetti non sono mai misti: la riga c'è su tutte le card o su nessuna, e l'altezza
+//          uniforme resta.
+//          E LA PARTE GRAFICA DEI PERSONAGGI (Franco: «vorrei che tu creassi già la parte grafica,
+//          dopo andiamo avanti con il caricamento dati»):
+//          · il terzo taglio dell'Inventario: «Sfoglia per: Serie | Tipologie di articoli |
+//            Personaggi», con un hub di card (foto, nome, serie, numero di articoli), 48 per
+//            pagina e la ricerca per nome;
+//          · la pagina di un personaggio: foto, nome e articoli per serie e tipologia, compresi
+//            quelli ricavati (versioni, fpa → fcr, figurine col suo retro, segnate «dal retro»);
+//          · nella scheda il campo «Personaggio» (e «Personaggi del retro»), coi link;
+//          · sulle card la riga del personaggio, dove la serie ha la spunta;
+//          · nell'hub, per tutti, l'interruttore «Senza figurine»: i personaggi che non sono il
+//            fronte di nessuna figurina (quelli nati nei retro, più chi sta solo su altri
+//            articoli). 📏 Coi dati della bozza: 115 su 1082.
+//          Le raccolte `personaggi` e `associazioni` si leggono solo quando servono; finché non
+//          ci sono (o le regole Firebase non le lasciano leggere) i personaggi sono zero.
 // v6.965 - 🔍 LA RICERCA GLOBALE ORDINA COME LA GRIGLIA. Modificati index.html e js/app.js.
 //          Franco: «l'ordine dei risultati della RG è lo stesso della griglia? io vorrei che fosse
 //          lo stesso ma non lo è». L'ordine della griglia esce da `renderItems` e diventa
@@ -30161,7 +30181,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.965';
+const JS_VERSION = 'v6.966';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -36407,6 +36427,7 @@ function _ripristinaFlagSerie(s) {
   }
   spunta('series-contenitore-input',               s && s.serieContenitore); // v6.204
   spunta('series-unico-retro-input',              s && s.unicoRetro); // v6.814
+  spunta('series-personaggio-card-input',         s && s.personaggioInCard); // v6.966
   // 🔴 v6.584 - IL RIPRISTINO DEL FLAG NUOVO, e vale l'avvertimento della v6.219: senza
   // questa riga la casella si aprirebbe sempre spenta e `saveSeries` scriverebbe `false` —
   // cioe' ogni salvataggio rimetterebbe in vista una serie nascosta. Dodici flag, dodici
@@ -37096,6 +37117,8 @@ async function saveSeries() {
   //    quindi il retro non si gestisce per articolo. Stessa forma della riga sopra — due spunte
   //    gemelle lette in due modi diversi divergono alla prima modifica di una delle due (v6.480).
   const unicoRetro = document.getElementById('series-unico-retro-input')?.checked || false; // v6.814
+  // 🆕 v6.966 (Franco) - la riga del personaggio sulle card di questa serie: vedi `_personaggioInCard`.
+  const personaggioInCard = document.getElementById('series-personaggio-card-input')?.checked || false;
   // 🔄 v6.668 - un campo solo al posto delle due spunte. Il ripiego a «pubblicata» copre il
   //    caso in cui il selettore non fosse nel DOM: prima, due `|| false` dicevano «visibile e
   //    senza timbro», che e' la stessa cosa detta in due pezzi.
@@ -37290,7 +37313,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -37312,7 +37335,7 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -40038,10 +40061,13 @@ async function _seminaVersioniArticolo() {
 // L'ultima scelta si ricorda. Un bivio che si ripresenta identico ad ogni visita diventa un
 // casello: alla terza volta uno sa gia' dove vuole andare, e la domanda e' solo un clic in piu'.
 let _taglioInventario = 'serie';
-try { if (localStorage.getItem('sgb_taglio') === 'prodotti') _taglioInventario = 'prodotti'; } catch (e) {}
+// 🔄 v6.966 - tre tagli: serie, prodotti (tipologie) e personaggi.
+const _TAGLI_INVENTARIO = ['serie', 'prodotti', 'personaggi'];
+try { const _t = localStorage.getItem('sgb_taglio'); if (_TAGLI_INVENTARIO.includes(_t)) _taglioInventario = _t; } catch (e) {}
 
 function impostaTaglioInventario(taglio) {
-  _taglioInventario = (taglio === 'prodotti') ? 'prodotti' : 'serie';
+  _taglioInventario = _TAGLI_INVENTARIO.includes(taglio) ? taglio : 'serie';
+  if (taglio === 'personaggi') _personaggioAperto = null;   // v6.966 - dal selettore si torna all'hub
   try { localStorage.setItem('sgb_taglio', _taglioInventario); } catch (e) {}
   _aggiornaBivioInventario();
   renderCatalog();
@@ -40422,7 +40448,7 @@ function apriInfoTutteLeSerie() {
 // occasione. Si cambia la CHIAVE e si lascia fare a lui — cosi' la frase vale anche in inglese
 // senza una seconda regola da mantenere.
 function _aggiornaBivioInventario() {
-  ['serie', 'prodotti'].forEach(k => {
+  _TAGLI_INVENTARIO.forEach(k => {   // 🔄 v6.966 - erano due
     const b = document.getElementById('taglio-' + k);
     if (b) {
       const acceso = (k === _taglioInventario);
@@ -40432,9 +40458,16 @@ function _aggiornaBivioInventario() {
   });
   const sub = document.getElementById('catalog-sub');
   if (sub) {
-    const chiave = (_taglioInventario === 'prodotti') ? 'catalog.subProducts' : 'catalog.sub';
-    sub.setAttribute('data-i18n', chiave);
-    sub.textContent = t(chiave);
+    if (_taglioInventario === 'personaggi') {
+      // 🆕 v6.966 - la riga sotto il titolo per il taglio Personaggi. Senza `data-i18n`: la frase è
+      //    scritta qui nelle due lingue, e l'attributo la farebbe tornare quella delle serie.
+      sub.removeAttribute('data-i18n');
+      sub.textContent = currentLang === 'it' ? 'Tutti i personaggi Sgorbions, con i loro articoli' : 'All Sgorbions characters, with their items';
+    } else {
+      const chiave = (_taglioInventario === 'prodotti') ? 'catalog.subProducts' : 'catalog.sub';
+      sub.setAttribute('data-i18n', chiave);
+      sub.textContent = t(chiave);
+    }
   }
   // v6.144 - IL PULSANTE CHE AGGIUNGE SEGUE IL TAGLIO. Nel taglio Serie si aggiunge una serie, nel
   // taglio Prodotti un tipo di prodotto: stessa posizione, mai insieme. Sta qui e non in
@@ -40444,13 +40477,13 @@ function _aggiornaBivioInventario() {
   const _admin = !!currentUser?.isAdmin;
   const _bSerie = document.getElementById('admin-add-series-btn');
   const _bTipo = document.getElementById('admin-add-tipo-prodotto-btn');
-  if (_bSerie) _bSerie.style.display = (_admin && _taglioInventario !== 'prodotti') ? '' : 'none';
+  if (_bSerie) _bSerie.style.display = (_admin && _taglioInventario === 'serie') ? '' : 'none';   // 🔄 v6.966 - era «non prodotti»
   if (_bTipo)  _bTipo.style.display  = (_admin && _taglioInventario === 'prodotti') ? '' : 'none';
   // v6.174 - il riepilogo delle serie: solo nel taglio Serie, ma per CHIUNQUE. Non c'e' `_admin`
   // nella condizione, e non e' una dimenticanza: e' un riepilogo del catalogo, non uno strumento.
   const _bInfo = document.getElementById('btn-info-tutte-serie');
   if (_bInfo) {
-    _bInfo.style.display = (_taglioInventario !== 'prodotti') ? '' : 'none';
+    _bInfo.style.display = (_taglioInventario === 'serie') ? '' : 'none';   // 🔄 v6.966 - era «non prodotti»
     // v6.177 (Franco) - su telefono l'etichetta si accorcia. Si cambia l'ATTRIBUTO `data-i18n` e poi
     // il testo, come fa questa stessa funzione due righe sopra per `catalog.sub`: scrivere solo il
     // testo lo farebbe riallungare al primo `applyI18n()`, che rilegge l'attributo.
@@ -40879,6 +40912,289 @@ function _rigaTitoloHub(testo) {
   return '<div style="grid-column:1 / -1;margin:1rem 0 -0.3rem;padding-bottom:0.6rem;'
     + 'border-bottom:2px solid var(--accent);font-family:var(--font-display);font-size:1.15rem;'
     + 'font-weight:800;letter-spacing:0.1em;color:var(--accent);">' + esc(testo) + '</div>';
+}
+
+// ============================================================
+//  🆕 v6.966 — I PERSONAGGI: IL TERZO TAGLIO DELL'INVENTARIO
+// ============================================================
+// Franco, 24 settembre: «ogni articolo rappresenta un personaggio… lo stesso personaggio è
+// raffigurato su diverse figurine di diverse serie… ecco il terzo taglio del sito: il personaggio».
+// E: «il selettore n. 3: dopo Serie e Tipologie di articoli, abbiamo Personaggi… un hub con le
+// card; ma non voglio 1000 card di personaggio in una pagina sola… mostrane 40 alla volta, max 50».
+//
+// 📌 I DATI (decisi con Franco, strada B): due raccolte.
+//    · `personaggi`   — { id, nome }            (id stabile, ricavato dal nome)
+//    · `associazioni` — { articoloId, personaggioId }   una riga per coppia, molti a molti
+// 🔴 NELLA TABELLA STANNO SOLO LE RIGHE MINIME: il fronte sulla figurina per album (o sulla
+//    figurina con retro base dove le fpa mancano), il retro sul retro base, carte e le altre sul
+//    loro articolo base. Tutto il resto SI RICAVA qui — versioni, figurine con retro di una fpa,
+//    figurine che hanno quel retro — e non si salva: una correzione su un retro vale per tutte le
+//    figurine che lo usano, senza toccarle.
+// ⚠️ Le due raccolte si leggono SOLO quando servono (hub, scheda, card con la spunta della serie),
+//    non a ogni caricamento: sono migliaia di documenti. Finché non esistono, o le regole Firebase
+//    non le lasciano leggere, la lettura fallisce in silenzio e i personaggi sono zero.
+const PERSONAGGI_PER_PAGINA = 48;   // Franco: «mostrane 40 alla volta, max 50»
+let _personaggiDati = null;
+let _personaggiCaricamento = null;
+
+function _impostaPersonaggi(personaggi, associazioni) {
+  const perId = new Map();
+  (personaggi || []).forEach(p => { if (p && p.id) perId.set(p.id, { id: p.id, nome: p.nome || p.id }); });
+  const dirPerArt = new Map(), artPerPers = new Map();
+  (associazioni || []).forEach(a => {
+    if (!a || !a.articoloId || !perId.has(a.personaggioId)) return;
+    if (!dirPerArt.has(a.articoloId)) dirPerArt.set(a.articoloId, []);
+    if (!dirPerArt.get(a.articoloId).includes(a.personaggioId)) dirPerArt.get(a.articoloId).push(a.personaggioId);
+    if (!artPerPers.has(a.personaggioId)) artPerPers.set(a.personaggioId, []);
+    artPerPers.get(a.personaggioId).push(a.articoloId);
+  });
+  const elenco = [...perId.values()].sort((x, y) => x.nome.localeCompare(y.nome, 'it', { sensitivity: 'base' }));
+  _personaggiDati = { elenco, perId, dirPerArt, artPerPers };
+  return _personaggiDati;
+}
+
+async function caricaPersonaggi() {
+  if (_personaggiDati) return _personaggiDati;
+  if (_personaggiCaricamento) return _personaggiCaricamento;
+  _personaggiCaricamento = (async () => {
+    let p = [], a = [];
+    try { p = await fsGetAll('personaggi'); a = await fsGetAll('associazioni'); }
+    catch (e) { console.warn('caricaPersonaggi: raccolte non leggibili (ancora vuote, o regole Firebase)', e && e.message); }
+    return _impostaPersonaggi(p, a);
+  })();
+  return _personaggiCaricamento;
+}
+
+// Gli indici degli articoli che servono a ricavare: figli per base, figurine per retro.
+function _indiciPersonaggi() {
+  const figs = getData('figurines', []) || [];
+  const figliDi = new Map(), perRetro = new Map();
+  figs.forEach(f => {
+    if (f.baseFigurineId) { if (!figliDi.has(f.baseFigurineId)) figliDi.set(f.baseFigurineId, []); figliDi.get(f.baseFigurineId).push(f); }
+    if (f.retroId) { if (!perRetro.has(f.retroId)) perRetro.set(f.retroId, []); perRetro.get(f.retroId).push(f); }
+  });
+  return { figs, perId: _indiceArticoli(), figliDi, perRetro };
+}
+
+// I personaggi DI UN ARTICOLO (i suoi, non quelli del suo retro). Una figurina ne ha sempre UNO.
+function personaggiDiArticolo(f, ix) {
+  if (!f || !_personaggiDati) return [];
+  const d = id => (id && _personaggiDati.dirPerArt.get(id)) || [];
+  ix = ix || _indiciPersonaggi();
+  const sez = f.section || 'figurines';
+  let out = d(f.id);
+  if (sez === 'figurines') {
+    const baseId = _eBase(f) ? f.id : (f.baseFigurineId || '');
+    if (!out.length) { const fpa = (ix.figliDi.get(baseId) || []).find(x => x.section === 'attaccare'); if (fpa) out = d(fpa.id); }
+    if (!out.length) out = d(baseId);
+    return out.slice(0, 1);   // 🔴 figurina: sempre uno (Franco: «per le fig è sempre uno»)
+  }
+  if (!out.length && f.baseFigurineId) out = d(f.baseFigurineId);   // fpa → la sua fcr; versioni → la base
+  return out;
+}
+function personaggiDelRetroDi(f, ix) {
+  if (!f || !f.retroId) return [];
+  ix = ix || _indiciPersonaggi();
+  const r = ix.perId.get(f.retroId);
+  return r ? personaggiDiArticolo(r, ix) : [];
+}
+
+// Gli ARTICOLI DI UN PERSONAGGIO: le righe della tabella, più tutto ciò che si ricava da loro.
+function articoliDelPersonaggio(pid, ix) {
+  if (!_personaggiDati) return [];
+  ix = ix || _indiciPersonaggi();
+  const admin = !!currentUser?.isAdmin;
+  const visibile = f => f && (admin || !f.invisibile);
+  const out = new Map();
+  const add = f => { if (visibile(f)) out.set(f.id, f); };
+  const conFigli = f => { add(f); (ix.figliDi.get(f.id) || []).forEach(add); };
+  (_personaggiDati.artPerPers.get(pid) || []).forEach(id => {
+    const a = ix.perId.get(id);
+    if (!a) return;
+    const sez = a.section || 'figurines';
+    if (sez === 'attaccare') {
+      add(a);
+      const fcr = a.baseFigurineId ? ix.perId.get(a.baseFigurineId) : null;
+      if (fcr) conFigli(fcr);
+    } else if (sez === 'retros') {
+      conFigli(a);
+      [a].concat(ix.figliDi.get(a.id) || []).forEach(r => (ix.perRetro.get(r.id) || []).forEach(add));
+    } else {
+      conFigli(a);
+    }
+  });
+  return [...out.values()];
+}
+
+// La serie che viene prima nell'ordine delle serie (Franco: «se un personaggio ha una figurina della
+// serie 1 e una della serie 4, usa la foto della serie 1»).
+function _fotoPersonaggio(arts) {
+  const ordine = new Map((getData('series', []) || []).map(s => [s.id, s.order ?? 9999]));
+  const pesoSez = f => ({ attaccare: 0, figurines: 1 }[f.section || 'figurines'] ?? 2);
+  const figs = getData('figurines', []);
+  const cand = arts.slice().sort((a, b) => (ordine.get(a.seriesId) ?? 9999) - (ordine.get(b.seriesId) ?? 9999)
+    || pesoSez(a) - pesoSez(b) || (_eBase(b) - _eBase(a)) || ((+a.number || 9999) - (+b.number || 9999)));
+  for (const f of cand) { const u = _fotoFigurina(f, figs); if (u) return u; }
+  return '';
+}
+
+let _personaggiPagina = 1;
+let _personaggiFiltro = '';
+let _personaggioAperto = null;
+// 🆕 v6.966 (Franco: «nella form di ricerca dei personaggi serve un campo "senza figurine", user
+//    visible, che mostri i personaggi senza una figurina associata — sono quelli che nascono nei
+//    retro») — una figurina (con retro o per album) conta solo se il personaggio è quello del suo
+//    FRONTE: una figurina che c'è perché lui sta sul retro non è «una sua figurina».
+let _personaggiSenzaFigurine = false;
+function _haFigurineSue(pid, arts, ix) {
+  return arts.some(a => ['figurines', 'attaccare'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).includes(pid));
+}
+
+function renderCatalogPersonaggi(grid) {
+  const it = currentLang === 'it';
+  // 📌 Sul telefono due colonne, come l'hub delle tipologie (v6.080): a tre la card si stringe e la
+  //    riga del conto non ci sta. 📏 Misurato a 390px nella preview.
+  if (grid) grid.style.gridTemplateColumns = _isMobileViewport() ? 'repeat(' + HUB_COLONNE_MOBILE + ', 1fr)' : '';
+  if (!_personaggiDati) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">⏳</div><p class="empty-title">' + (it ? 'Caricamento dei personaggi…' : 'Loading characters…') + '</p></div>';
+    caricaPersonaggi().then(() => { if (_taglioInventario === 'personaggi') renderCatalog(); });
+    return;
+  }
+  if (_personaggioAperto) { renderPaginaPersonaggio(grid, _personaggioAperto); return; }
+  const ix = _indiciPersonaggi();
+  const q = _perRicerca(_personaggiFiltro.trim());
+  const tutti = _personaggiDati.elenco.filter(p => (!q || _perRicerca(p.nome).includes(q))
+    && (!_personaggiSenzaFigurine || !_haFigurineSue(p.id, articoliDelPersonaggio(p.id, ix), ix)));
+  const pagine = Math.max(1, Math.ceil(tutti.length / PERSONAGGI_PER_PAGINA));
+  if (_personaggiPagina > pagine) _personaggiPagina = pagine;
+  if (_personaggiPagina < 1) _personaggiPagina = 1;
+  const da = (_personaggiPagina - 1) * PERSONAGGI_PER_PAGINA;
+  const pagina = tutti.slice(da, da + PERSONAGGI_PER_PAGINA);
+  const serieNome = new Map((getData('series', []) || []).map(s => [s.id, s]));
+  const ordine = new Map((getData('series', []) || []).map(s => [s.id, s.order ?? 9999]));
+  const cerca = '<div style="grid-column:1/-1;display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;">'
+    + '<input class="form-input" type="text" id="personaggi-cerca" value="' + esc(_personaggiFiltro) + '" placeholder="' + (it ? 'Cerca un personaggio per nome…' : 'Search a character by name…') + '" oninput="_personaggiFiltro=this.value;_personaggiPagina=1;renderCatalog();document.getElementById(\'personaggi-cerca\').focus();" style="flex:1 1 260px;max-width:420px;">'
+    // 🆕 v6.966 - «Senza figurine», per tutti (Franco: «user visible»). Lo stesso interruttore
+    //    blu dei filtri della ricerca di sezione.
+    + '<label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);">'
+    + '<button type="button" class="toggle-btn-blue ' + (_personaggiSenzaFigurine ? 'on' : '') + '" onclick="_personaggiSenzaFigurine=!_personaggiSenzaFigurine;_personaggiPagina=1;renderCatalog();"></button>'
+    + (it ? 'Senza figurine' : 'Without stickers') + '</label>'
+    + '<span style="color:var(--accent);font-size:0.95rem;">' + tutti.length + ' ' + (it ? (tutti.length === 1 ? 'personaggio' : 'personaggi') : (tutti.length === 1 ? 'character' : 'characters')) + '</span></div>';
+  if (!_personaggiDati.elenco.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🧑‍🎤</div><p class="empty-title">' + (it ? 'I personaggi non sono ancora stati caricati.' : 'Characters have not been loaded yet.') + '</p></div>';
+    return;
+  }
+  const card = p => {
+    const arts = articoliDelPersonaggio(p.id, ix);
+    const foto = _fotoPersonaggio(arts);
+    const serie = [...new Set(arts.map(a => a.seriesId))].sort((a, b) => (ordine.get(a) ?? 9999) - (ordine.get(b) ?? 9999))
+      .map(id => serieNome.get(id)).filter(Boolean);
+    return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="apriPersonaggio(\'' + p.id + '\')">'
+      + '<div class="card-img-placeholder">' + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="' + esc(p.nome) + '" style="width:100%;height:100%;object-fit:contain;">' : '') + '</div>'
+      + '<div class="card-body" style="display:flex;flex-direction:column;flex:1 1 auto;">'
+      + '<div class="card-title" style="margin-bottom:0.35rem;color:var(--nome-entita);">' + esc(p.nome) + '</div>'
+      + '<div style="font-size:0.8rem;color:var(--text);flex:1 1 auto;">' + serie.map(s => esc(_nomeSerieCard(s, true))).join(' · ') + '</div>'
+      + '<div class="card-desc" style="margin-top:0.45rem;padding-top:0.45rem;border-top:1px solid rgba(255,255,255,0.06);color:var(--accent);">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div>'
+      + '</div></div>';
+  };
+  grid.innerHTML = cerca + (pagina.length ? pagina.map(card).join('')
+      : '<div class="empty-state" style="grid-column:1/-1;"><p class="empty-title">' + (it ? 'Nessun personaggio con questo nome.' : 'No character with this name.') + '</p></div>')
+    + _paginazionePersonaggi(pagine);
+}
+
+function _paginazionePersonaggi(tot) {
+  if (tot <= 1) return '';
+  const it = currentLang === 'it', cur = _personaggiPagina;
+  const b = (p, testo, spento) => '<button class="btn-secondary" style="padding:0.4rem 1rem;' + (spento ? 'opacity:0.3;' : '') + '"' + (spento ? ' disabled' : ' onclick="_vaiPaginaPersonaggi(' + p + ')"') + '>' + testo + '</button>';
+  return '<div class="pag-row" style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;margin-top:1rem;">'
+    + b(1, '⏮ ' + (it ? 'Prima' : 'First'), cur === 1) + b(cur - 1, '◀ ' + (it ? 'Precedente' : 'Previous'), cur === 1)
+    + '<span class="pag-label" style="font-family:var(--font-ui);color:var(--text);font-size:0.9rem;">' + (it ? 'Pagina ' + cur + ' di ' + tot : 'Page ' + cur + ' of ' + tot) + '</span>'
+    + b(cur + 1, (it ? 'Successiva' : 'Next') + ' ▶', cur === tot) + b(tot, (it ? 'Ultima' : 'Last') + ' ⏭', cur === tot)
+    + '</div>';
+}
+function _vaiPaginaPersonaggi(p) { _personaggiPagina = p; renderCatalog(); try { document.getElementById('catalog-grid').scrollIntoView({ block: 'start' }); } catch (e) {} }
+
+// Apre la pagina di un personaggio: dalla sua card, o dal campo «Personaggio» di una scheda.
+function apriPersonaggio(pid) {
+  try { closeModal('fig-detail-modal'); } catch (e) {}
+  _taglioInventario = 'personaggi';
+  try { localStorage.setItem('sgb_taglio', 'personaggi'); } catch (e) {}
+  _personaggioAperto = pid;
+  // la casella della ricerca globale si svuota: piena, `renderCatalog` mostrerebbe i risultati
+  const _casellaRG = document.getElementById('series-search'); if (_casellaRG) _casellaRG.value = '';
+  showPage('catalog');
+  renderCatalog();
+  window.scrollTo(0, 0);
+}
+function chiudiPersonaggio() { _personaggioAperto = null; renderCatalog(); }
+
+// LA PAGINA DI UN PERSONAGGIO: foto, nome, e i suoi articoli per serie e per tipologia.
+function renderPaginaPersonaggio(grid, pid) {
+  const it = currentLang === 'it';
+  const p = _personaggiDati.perId.get(pid);
+  if (!p) { _personaggioAperto = null; renderCatalogPersonaggi(grid); return; }
+  const arts = articoliDelPersonaggio(pid);
+  const foto = _fotoPersonaggio(arts);
+  const figs = getData('figurines', []);
+  const serie = (getData('series', []) || []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  const elenco = [];
+  const blocchi = serie.map(s => {
+    const suoi = arts.filter(a => a.seriesId === s.id);
+    if (!suoi.length) return '';
+    const sezioni = PRODOTTI_INVENTARIO.map(sec => {
+      const inSez = suoi.filter(a => (a.section || 'figurines') === sec);
+      if (!inSez.length) return '';
+      const ord = inSez.slice().sort(_comparatoreGriglia(sec, figs.filter(x => x.seriesId === s.id && (x.section || 'figurines') === sec), _indiceArticoli(), figs));
+      return '<div style="margin:0.6rem 0 0.2rem;font-weight:600;color:var(--text);">' + esc(getSectionLabel(sec)) + ': <span style="font-weight:400;color:var(--accent);">' + ord.length + '</span></div>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">' + ord.map(f => {
+          elenco.push(f.id);
+          const u = _fotoFigurina(f, figs);
+          const v = _versioneDiChiave(_chiaveTipo(f));
+          const ver = (v && !_eBase(f)) ? ' <span style="color:' + (_COLORE_TIPO[v.chiave] || 'var(--text)') + ';font-size:0.8rem;">' + esc(it ? v.it : v.en) + '</span>' : '';
+          // 📌 Una figurina che è qui perché il personaggio sta sul suo RETRO lo dice: il nome
+          //    stampato è quello di un altro, e senza la nota sembrerebbe un errore.
+          const _dalRetro = sec === 'figurines' && !personaggiDiArticolo(f).includes(pid);
+          const nota = _dalRetro ? ' <span style="color:var(--text);font-size:0.8rem;">· ' + (it ? 'dal retro' : 'on the back') + '</span>' : '';
+          return '<div onclick="openFigDetail(\'' + f.id + '\', _elencoPersonaggio)" style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0.6rem 0.25rem 0.25rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--card);">'
+            + (u ? '<img src="' + cloudinaryUrl(u, 'w_96,h_96,c_fit,q_auto,f_auto') + '" style="width:48px;height:48px;object-fit:contain;border-radius:4px;">' : '')
+            + '<span style="color:' + COL_IDENTITA + ';">' + (f.number ? f.number + ' ' : '') + esc(sec === 'retros' ? (f.fullName || f.name || '') : (f.name || '')) + '</span>' + ver + nota + '</div>';
+        }).join('') + '</div>';
+    }).join('');
+    return '<div style="grid-column:1/-1;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:0.9rem 1rem;">'
+      + '<div style="font-size:1.15rem;color:var(--nome-entita);font-weight:600;">' + esc(_nomeSerie(s)) + '</div>' + sezioni + '</div>';
+  }).join('');
+  _elencoPersonaggio = elenco;
+  grid.innerHTML = '<div style="grid-column:1/-1;"><button class="back-btn" onclick="chiudiPersonaggio()">&#8592; ' + (it ? 'Personaggi' : 'Characters') + '</button></div>'
+    + '<div style="grid-column:1/-1;display:flex;gap:1.2rem;align-items:center;flex-wrap:wrap;">'
+    + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_480,h_480,c_fit,q_auto,f_auto') + '" style="width:200px;height:200px;object-fit:contain;border-radius:12px;background:var(--card2);">' : '')
+    + '<div><div style="font-family:var(--font-display);font-size:1.8rem;color:var(--nome-entita);">' + esc(p.nome) + '</div>'
+    + '<div style="color:var(--accent);margin-top:0.3rem;">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div></div></div>'
+    + blocchi;
+}
+let _elencoPersonaggio = [];
+
+// IL CAMPO «PERSONAGGIO» DELLA SCHEDA IN LETTURA. Nasce vuoto con un id; si riempie qui, anche
+// dopo, se i personaggi arrivano mentre la scheda è già aperta.
+function _rigaPersonaggiHTML(f) {
+  return '<div class="detail-row" id="fig-personaggi-riga" data-fig-id="' + f.id + '" style="display:none;"></div>'
+    + '<div class="detail-row" id="fig-personaggi-retro-riga" style="display:none;"></div>';
+}
+function _riempiRigaPersonaggi(f) {
+  const r1 = document.getElementById('fig-personaggi-riga'), r2 = document.getElementById('fig-personaggi-retro-riga');
+  if (!r1 || !f || r1.dataset.figId !== f.id) return;
+  if (!_personaggiDati) { caricaPersonaggi().then(() => _riempiRigaPersonaggi(f)); return; }
+  const it = currentLang === 'it';
+  const ix = _indiciPersonaggi();
+  const link = pid => { const p = _personaggiDati.perId.get(pid); return p ? '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + pid + '\')" style="color:var(--nome-entita);">' + esc(p.nome) + '</a>' : ''; };
+  const miei = personaggiDiArticolo(f, ix);
+  const plurale = (f.section || 'figurines') !== 'figurines' && miei.length > 1;
+  r1.innerHTML = '<span class="detail-label">' + (it ? (plurale ? 'Personaggi' : 'Personaggio') : (plurale ? 'Characters' : 'Character')) + '</span><span class="detail-value">' + miei.map(link).join(' · ') + '</span>';
+  r1.style.display = miei.length ? '' : 'none';
+  const dietro = personaggiDelRetroDi(f, ix);
+  if (r2) {
+    r2.innerHTML = '<span class="detail-label">' + (it ? 'Personaggi del retro' : 'Characters on the back') + '</span><span class="detail-value">' + dietro.map(link).join(' · ') + '</span>';
+    r2.style.display = dietro.length ? '' : 'none';
+  }
 }
 
 function renderCatalogProdotti(grid) {
@@ -42040,6 +42356,7 @@ function renderCatalog() {
   if (grid) grid.style.display = '';
   _aggiornaBivioInventario();
   if (_taglioInventario === 'prodotti') { if (grid) renderCatalogProdotti(grid); return; }
+  if (_taglioInventario === 'personaggi') { if (grid) renderCatalogPersonaggi(grid); return; }   // 🆕 v6.966
   // v6.080 - tornando al taglio per SERIE la griglia riprende le sue colonne: e' lo stesso
   // elemento, e lo stile inline messo dal taglio Prodotti gli resterebbe addosso.
   if (grid) grid.style.gridTemplateColumns = '';
@@ -42302,8 +42619,9 @@ function renderCatalogSearch(q) {
   //    crescita dal valore di prima, così si legge di quanto e da dove. La regola che il 2:1 serviva
   //    a difendere resta, ed è quella che `prova-v6405` ora controlla: la SERIE sta sopra i
   //    risultati, mai il contrario (qui 101 contro 57).
-  const _MINI_RISULTATO = Math.round(44 * 1.30);   // 57
-  const _MINI_SERIE = Math.round(88 * 1.15);       // 101
+  // 🔄 v6.966 (Franco: «le foto aumentale ancora del 20%») — un altro 20% su tutte e due.
+  const _MINI_RISULTATO = Math.round(44 * 1.30 * 1.20);   // 69
+  const _MINI_SERIE = Math.round(88 * 1.15 * 1.20);       // 121
   // v6.097 - si azzera SUBITO, prima di ogni ritorno anticipato. I due `return` qui sotto (query
   // vuota, query fatta di soli separatori) e quello del "nessun risultato" lasciavano altrimenti
   // in giro l'elenco della ricerca precedente, e le frecce avrebbero scorso dei risultati che a
@@ -50842,6 +51160,19 @@ function renderItems() {
   const _sottonomeRigaHTML = !_haSottonome(f.section || currentSection) ? '' : _rigaCard(
         (f.subname || '').trim() ? '(' + esc((f.subname || '').trim()) + ')' : '',
         'font-size:0.82rem;color:var(--info);margin-top:1px;', 'subname');
+  // 🆕 v6.966 (Franco: «in una griglia non abbiamo mai oggetti misti, quindi quando ha senso
+  //    mostrarlo lo ha per tutta la griglia») - LA RIGA DEL PERSONAGGIO, solo nelle serie con la
+  //    spunta «Mostra il personaggio sulle card». È una `_rigaCard` come le altre: c'è su TUTTE le
+  //    card della griglia, piena o vuota, e l'altezza uniforme della parte testuale resta.
+  //    Se i personaggi non sono ancora arrivati la riga resta vuota e la griglia si ridisegna
+  //    quando arrivano.
+  let _personaggioRigaHTML = '';
+  if (_personaggioInCard(f.seriesId)) {
+    if (!_personaggiDati) caricaPersonaggi().then(d => { if (d && d.elenco.length) { try { renderItems(); } catch (e) {} } });
+    const _nomi = (personaggiDiArticolo(f) || []).map(pid => _personaggiDati.perId.get(pid)?.nome).filter(Boolean);
+    _personaggioRigaHTML = _rigaCard(_nomi.length ? '🧑‍🎤 ' + esc(_nomi.join(' · ')) : '',
+      'font-size:0.82rem;color:var(--nome-entita);margin-top:1px;', 'personaggio');
+  }
   const _retroRigheHTML = !isRetroCard ? '' : (
         _rigaCard(_campoCard('CATEGORIA: ', esc(_catNuda), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
         _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc(_retroSub), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
@@ -51048,7 +51379,7 @@ function renderItems() {
       ${_contrassegnoVariazioneHTML(f)}
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
-        ${_sottonomeRigaHTML}${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : famigliaHTML)}
+        ${_sottonomeRigaHTML}${_personaggioRigaHTML}${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : famigliaHTML)}
         ${retroNameHTML}
         ${typeIndicatorHTML}
         ${descHTML}
@@ -53506,6 +53837,17 @@ function _serieSenzaRetro(seriesId) {
 // la scorciatoia della v6.813 rifatta al contrario — e questa volta si sa già come va a finire.
 // 📌 Si legge dalla cache grezza e non da `getData('series')`: quella toglie le serie nascoste a
 // chi non è admin, e la forma di una scheda non deve dipendere da chi la guarda (v6.811).
+// 🆕 v6.966 (Franco: «creami un campo nella serie») - LA SERIE MOSTRA IL PERSONAGGIO SULLE CARD?
+//    Stessa forma di `_serieUnicoRetro` qui sotto, e per la stessa ragione (cache grezza).
+// ⬜ Oggi nessuno la chiama: la riga sulle card arriva con il caricamento dei personaggi, perché
+//    prima non ci sarebbe niente da scriverci. Il campo nasce adesso perché Franco possa già
+//    accenderlo sulle serie giuste (Mega 1 e 2); le sottoserie verranno dopo (sue parole).
+function _personaggioInCard(seriesId) {
+  if (!seriesId) return false;
+  const s = (Array.isArray(_cache.series) ? _cache.series : []).find(x => x.id === seriesId);
+  return !!(s && s.personaggioInCard);
+}
+
 function _serieUnicoRetro(seriesId) {
   if (!seriesId) return false;
   const tutte = Array.isArray(_cache.series) ? _cache.series : [];
@@ -54024,6 +54366,10 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   if (_haSottonome(f.section) && (f.subname || '').trim()) {
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottonome' : 'Subname')}</span><span class="detail-value">${esc(f.subname.trim())}</span></div>`);
   }
+  // 🆕 v6.966 (Franco: «una visualizzazione stile campo singolo») - IL PERSONAGGIO, subito dopo il
+  //    nome. Le righe nascono vuote e le riempie `_riempiRigaPersonaggi` quando la scheda è a
+  //    schermo: i personaggi si leggono solo quando servono.
+  (_mobileDetail ? rowsTop : rows).push(_rigaPersonaggiHTML(f));
 
 
   // Punteggio
@@ -54553,6 +54899,8 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       + (_pagLett2 ? '<div id="figdetail-tab-pagine" style="display:none;">' + _pagLett2 + '</div>' : '')
       + _sfogliaCodaDetail() + _codaAzioniDetail(bottomButtons);
   }
+  // 🆕 v6.966 - il markup c'e' (in tutti e due i rami): si riempie il campo Personaggio.
+  try { _riempiRigaPersonaggi(f); } catch (e) { console.error('_riempiRigaPersonaggi', e); }
   // 🆕 v6.529 - il markup c'e': si caricano le foto grandi di lato e si scambiano quando
   // arrivano. Vale per TUTTE le `img[data-grande]` della scheda.
   // 🔄 v6.530 - la radice e' il MODALE: le foto grandi stanno nella colonna della foto,
