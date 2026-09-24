@@ -2114,8 +2114,12 @@ footer {
   /* 🔄 v6.847 (Franco: «mettila solo per l'admin») - e dentro la vista tabellare restano tutti:
      la tabella da telefono la apre solo l'admin, quindi i suoi comandi sono gia' riservati. */
   /* 🔄 v6.848 - e nella pagina Newsletter, per la stessa ragione («Invia», «Seleziona tutti») */
+  /* 🔄 v6.960 (Franco: «da app non ho il tasto di modifica») - e anche «Modifica» in fondo alla
+     scheda di un articolo porta .admin-anche-telefono. SOLO quello: matita e clona sulle card, e
+     Clona/Elimina della scheda, restano spenti (scelta di Franco, «tasto A»). I Salva della
+     modalità modifica sono .btn-barra-admin, che questa lista non ha mai nascosto. */
   .btn-admin:not(.admin-anche-telefono):not(#bulk-edit-view *):not(#page-newsletter *),
-  .tbl-btn-edit:not(#bulk-edit-view *):not(#page-newsletter *),
+  .tbl-btn-edit:not(.admin-anche-telefono):not(#bulk-edit-view *):not(#page-newsletter *),
   .tbl-btn-del:not(#bulk-edit-view *):not(#page-newsletter *) { display: none !important; }
 
   /* vista tabellare disattivata su telefono: il selettore sparisce
