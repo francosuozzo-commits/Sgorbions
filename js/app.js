@@ -1,6 +1,29 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.965 - 🔍 LA RICERCA GLOBALE ORDINA COME LA GRIGLIA. Modificati index.html e js/app.js.
+//          Franco: «l'ordine dei risultati della RG è lo stesso della griglia? io vorrei che fosse
+//          lo stesso ma non lo è». L'ordine della griglia esce da `renderItems` e diventa
+//          `_comparatoreGriglia(sez, elenco, idx, tutti)`; la RG lo usa per ogni tipologia (prima
+//          ordinava solo le figurine, per numero e versione, e le altre come venivano).
+//          🔴 E LA CAUSA VERA ERA UN'ALTRA (Franco, con due foto di GIACINTO LABIRINTO, n. 560):
+//          `_chiaviOrdinamentoFigurine` guardava `currentSection`, e nella RG nessuna sezione è
+//          aperta: chiavi vuote, versioni nell'ordine d'arrivo. Adesso la sezione è un parametro, e
+//          la RG calcola le chiavi sull'intera sezione della serie come la griglia.
+//          2. 🐛 le PILLOLE dei tipi di change (e d'omaggio) leggevano il campo della figurina, che
+//          dove il change sta sul retro è vuoto per scelta (v6.792): le MOSCA NERA finivano in
+//          «(Senza tipo)». Change e omaggio dichiarano `valoreDi` con `_tipoChange`/`_tipoOmaggio`.
+//          3. la riga sopra le griglie: «Pagina 1 di 3 | N figurine con retro di 82 (da 417 a 451)»,
+//          con N le card della pagina (Franco). Dove non ci sono numeri, senza parentesi.
+//          4. chiusa la scheda (X, Esc, clic fuori), se sotto c'è la RG la si rifà: un clone fatto
+//          là dentro adesso compare subito (Franco: «per vederlo devo rilanciare la RG»).
+//          5. nella RG le miniature dei risultati +30% (44 → 57px) e la copertina della serie +15%
+//          (88 → 101px); il 2:1 della v6.405 cade per scelta, resta «la serie sopra i risultati».
+//          6. il CLONE propone la sua sorgente come figurina di partenza quando si spunta una
+//          versione (Franco); e in modifica il riquadro delle foto mostra quelle EREDITATE — fronte
+//          della partenza e retro associato — che prima si vedevano solo in lettura.
+//          7. dove il numero viene dalla partenza, la scheda in modifica mostra «N.» in grigio e in
+//          sola lettura, come il Nome (Franco: «nella 2 non c'è campo numero»).
 // v6.964 - 📌 LE FIGURINE PER ALBUM: UNA CARD SOLA, LE SOTTOSERIE A RIGHE NELLA GRIGLIA.
 //          Modificati index.html e js/app.js. Franco: la funzione 5 su Holidays aveva prodotto
 //          tre card doppie nell'hub (Metal, White, Clear) — «volevo una card sola, Figurine per
@@ -30138,7 +30161,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.964';
+const JS_VERSION = 'v6.965';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -38985,6 +39008,12 @@ const VERSIONI_ARTICOLO = [
     colore: 'var(--type-unofficial)',  badge: 'fig-badge-unofficial',  marcatoreEbay: 'VARIAZIONE NON UFFICIALE',
     iconaTab: '🎨' },
   { chiave: 'change',              campo: 'isChange',              it: 'Change',                   en: 'Change',
+    // 🐛 v6.965 (Franco: «se cerco la 560 la sua mosca viene contata nei change, ma nelle pillole
+    //    dei change quella figurina non compare con tipo "MOSCA NERA": come tipo ha ""») — IL TIPO
+    //    SI CHIEDE A `_tipoChange`, non al campo. Dove il change sta sul RETRO il campo della
+    //    figurina è vuoto per scelta (v6.792: il tipo è del retro, non si copia), e pillole,
+    //    conteggi e filtro leggevano proprio il campo. La scheda lo chiedeva già a `_tipoChange`.
+    valoreDi: f => f.isChange ? _tipoChange(f, null, _indiceArticoli()) : undefined,
     filtroIt: 'Change', filtroEn: 'Changes',   // v6.514
     badgeIt: 'Change', badgeEn: 'Change',
     livello: 'figlio', partenza: ['base', 'variation', 'unofficialVariation'],
@@ -39056,6 +39085,8 @@ const VERSIONI_ARTICOLO = [
   // *si cambia cio' che si LEGGE, non cio' che si CHIAMA* — rinominarlo sarebbe una migrazione su
   // ogni record per cambiare una parola che nessuno vede.
   { chiave: 'free',                campo: 'isFreeVersion',         it: 'Omaggio',                  en: 'Free',
+    // 🐛 v6.965 - lo stesso per l'omaggio: dove sta sul retro (v6.795) il tipo è del retro.
+    valoreDi: f => f.isFreeVersion ? _tipoOmaggio(f, null, _indiceArticoli()) : undefined,
     // 🔴 v6.514 - «VERSIONI OMAGGIO», e NON il `pluraleIt` che sta qui sotto: «Omaggi» sono
     // gli oggetti, «Versioni omaggio» e' la versione. Franco l'ha ribadito apposta.
     filtroIt: 'Versioni omaggio', filtroEn: 'Free versions',
@@ -42265,8 +42296,14 @@ function renderCatalogSearch(q) {
   // 📌 IL 2:1 E' UNA RELAZIONE, non due numeri. Scritto come moltiplicazione, cambiare la miniatura
   // dei risultati porta con se' quella della serie: due costanti indipendenti avrebbero ricreato in
   // un mese esattamente la situazione che questa riga sta correggendo.
-  const _MINI_RISULTATO = 44;
-  const _MINI_SERIE = _MINI_RISULTATO * 2;
+  // 🔄 v6.965 (Franco: «nella RG ingrandirei ancora un po' la foto delle miniature, 30%, e la
+  //    copertina della serie, 15%») — IL 2:1 CADE, PER SCELTA. Le due misure crescono di quote
+  //    diverse, quindi non si scrivono più come moltiplicazione l'una dell'altra: si scrivono come
+  //    crescita dal valore di prima, così si legge di quanto e da dove. La regola che il 2:1 serviva
+  //    a difendere resta, ed è quella che `prova-v6405` ora controlla: la SERIE sta sopra i
+  //    risultati, mai il contrario (qui 101 contro 57).
+  const _MINI_RISULTATO = Math.round(44 * 1.30);   // 57
+  const _MINI_SERIE = Math.round(88 * 1.15);       // 101
   // v6.097 - si azzera SUBITO, prima di ogni ritorno anticipato. I due `return` qui sotto (query
   // vuota, query fatta di soli separatori) e quello del "nessun risultato" lasciavano altrimenti
   // in giro l'elenco della ricerca precedente, e le frecce avrebbero scorso dei risultati che a
@@ -42319,6 +42356,10 @@ function renderCatalogSearch(q) {
     allFigs = allFigs.concat((getData('figurines', []) || []).filter(f => !f.invisibile && _idInArrivo.has(f.seriesId)));
   }
   allSeries.sort((a,b) => (a.order??9999)-(b.order??9999));
+  // 🆕 v6.965 - l'indice di TUTTI gli articoli, una volta sola: `_comparatoreGriglia` risale dalla
+  //    versione alla sua base, e la base può non essere fra i risultati della ricerca.
+  const _tutteRG = getData('figurines', []);
+  const _idxRG = _figIndex(_tutteRG);
 
   // Cerca in serie (nome, descrizione) e negli oggetti.
   // v6.049 (Franco) - LE DUE RICERCHE CERCAVANO IN CAMPI DIVERSI. Quella dentro una sezione aveva
@@ -42515,17 +42556,17 @@ function renderCatalogSearch(q) {
           // Questo sostituisce il vecchio `groupNumber`, che il numero della base andava a cercarlo
           // con una find() su ~3300 oggetti per ogni confronto dell'ordinamento.
           const chiaveGruppo = f => String((f.number ?? '') !== '' ? f.number : (f.name || ''));
-          if (sec === 'figurines') {
-            // v6.103 - gli errori di stampa avevano priorita' 0, cioe' si ordinavano come se fossero
-            // la figurina BASE e finivano davanti alle variazioni della stessa. Ora chiudono la fila.
-            // v6.234 - sesta catena a mano, con gli stessi numeri: ora e' `_prioritaTipo`.
-            const priority = _prioritaTipo;
-            inSection = [...inSection].sort((a, b) => {
-              const g = chiaveGruppo(a).localeCompare(chiaveGruppo(b), undefined, { numeric: true });
-              if (g !== 0) return g;
-              return priority(a) - priority(b);
-            });
-          }
+          // 🔄 v6.965 (Franco: «vorrei che l'ordine dei risultati della RG fosse lo stesso della
+          //    griglia, ma non lo è») — QUI C'ERA UN ORDINE SUO, e valeva per le sole figurine:
+          //    numero, poi versione (v6.103, v6.234). Le altre tipologie restavano nell'ordine del
+          //    database. Adesso ogni tipologia si ordina con `_comparatoreGriglia`, la stessa
+          //    funzione della griglia. I gruppi per numero qui sotto restano contigui: la griglia
+          //    ordina le figurine per il numero della loro base, e una versione ha quel numero.
+          //    ⚠️ Le chiavi si calcolano sull'INTERA sezione della serie, come fa la griglia, e non
+          //    sui soli risultati: un change si ordina dietro la sua versione, e la versione può
+          //    non essere fra i risultati della ricerca.
+          const _sezIntera = _tutteRG.filter(f => f.seriesId === s.id && (f.section || 'figurines') === sec);
+          inSection = [...inSection].sort(_comparatoreGriglia(sec, _sezIntera, _idxRG, _tutteRG));
           if (!inSection.length) return '';
           // 🆕 v6.664 (Franco: *"per le spille usa la sottoserie come contenitore, alla
           //    stregua della tipologia di articolo"*) - LA SOTTOSERIE DIVENTA UN CONTENITORE.
@@ -42826,7 +42867,7 @@ function renderCatalogSearch(q) {
                 // SERIE, e' dichiarato in cima alla funzione: vedi `_MINI_SERIE`.
                 const _MINI = _MINI_RISULTATO;
                 const smallImg = (url, title, bordo = true) => url
-                  ? `<img src="${cloudinaryUrl(url,'w_64,h_64,c_fit,q_auto,f_auto')}"${title ? ` title="${esc(title)}"` : ''} style="width:${_MINI}px;height:${_MINI}px;object-fit:contain;border-radius:4px;background:var(--card);${bordo ? 'border:1px solid var(--border);' : ''}">`
+                  ? `<img src="${cloudinaryUrl(url,'w_' + (_MINI * 2) + ',h_' + (_MINI * 2) + ',c_fit,q_auto,f_auto')}"${title ? ` title="${esc(title)}"` : ''} style="width:${_MINI}px;height:${_MINI}px;object-fit:contain;border-radius:4px;background:var(--card);${bordo ? 'border:1px solid var(--border);' : ''}">`
                   : '';
                 // 🆕 v6.663 (Franco: *"metti sempre il solo nome/numero dell'articolo in
                 //    riga 1 e tutto il resto in riga 2"*) - LA PILLOLA SU DUE RIGHE.
@@ -46910,7 +46951,10 @@ function cloneFigurine(itemId) {
   // v5.788 - il "Tipo di change" residuo nel select: era un difetto della FINESTRA, che riusava lo
   // stesso DOM fra un'apertura e l'altra. La scheda rigenera l'HTML ogni volta, quindi non si
   // ripresenta - e per lo stesso motivo non serve piu' la riga di reset.
+  // 🆕 v6.965 - la sorgente si ricorda FUORI dalla bozza: sulla bozza finirebbe nel database.
+  //    La legge `toggleFeBaseFigurineGroup` per proporla come partenza; la azzera chi apre un'altra scheda.
   _apriSchedaSuBozza(b);
+  _cloneSorgenteId = src.id;
   toast((currentLang === 'it' ? '📋 Copia pronta: cambia Numero/Nome e salva' : '📋 Copy ready: change Number/Name and save'), 'success');
 }
 
@@ -49948,6 +49992,145 @@ function _verificaSottoserieAttiva() {
   if (!gruppi.includes(_sottoserieAttiva)) _sottoserieAttiva = gruppi[0];
 }
 
+// 🆕 v6.965 (Franco: «l'ordine con il quale vengono esposti i risultati della RG è lo stesso usato
+//    per ordinare le figurine nella griglia? io vorrei che fosse lo stesso ma non lo è») — L'ORDINE
+//    DELLA GRIGLIA DIVENTA UNA FUNZIONE. Stava scritto dentro `renderItems`, e la ricerca globale ne
+//    aveva uno suo: le figurine per numero e versione, tutte le altre tipologie nell'ordine in cui
+//    arrivavano dal database. Due ordini per la stessa cosa divergono sempre (§12-bis).
+// 📌 Il corpo è quello di prima, spostato: cambia solo `currentSection` -> `sez`. Le regole che
+//    stanno FUORI restano a chi le chiama: le sottoserie a righe e l'ordinamento del box di un tipo
+//    sono cose della griglia aperta, la ricerca non le ha.
+function _comparatoreGriglia(sez, elenco, _idx, _allFigs) {
+  const _chiaviOrd = _chiaviOrdinamentoFigurine(elenco, _idx, sez);
+  return (a, b) => {
+    if (sez === 'figurines') {
+      const allFigsForSort = _idx;
+      // Figurina di riferimento: se stessa se è base, altrimenti la figurina base collegata
+      // 🔴 v6.314 - IL DIFETTO LATENTE DEL 13 AGOSTO, CHIUSO. Questa terna diceva che un errore di
+      // stampa - e da giugno un omaggio - e' un CAPOGRUPPO, mentre a poche righe di distanza
+      // `_chiaviOrdinamentoFigurine` lo tratta da FIGLIO, perche' quella chiede a `_eBase`. Due
+      // idee diverse di *"chi e' un figlio"* dentro lo stesso ordinamento, e il documento le aveva
+      // gia' viste litigare ("`refFig` e `rangoFiglio` non sono d'accordo").
+      // ⚠️ Non mordeva perche' gli errori di stampa senza numero proprio erano ZERO. Non e' una
+      // proprieta' del codice: e' una proprieta' dei dati di quel giorno.
+      const refFig = f => {
+        if (_eBase(f)) return f;
+        return f.baseFigurineId ? allFigsForSort.get(f.baseFigurineId) : null;
+      };
+      const refA = refFig(a), refB = refFig(b);
+      const numA = refA?.number, numB = refB?.number;
+      if (numA && numB) {
+        if (numA !== numB) return numA - numB;
+      } else if (numA && !numB) {
+        return -1; // i gruppi con numero vengono prima di quelli senza
+      } else if (!numA && numB) {
+        return 1;
+      } else {
+        // Nessuna delle due ha un numero: si raggruppa per Nome della figurina di riferimento
+        const nameCmp = (refA?.name||'').localeCompare(refB?.name||'', 'it');
+        if (nameCmp !== 0) return nameCmp;
+      }
+
+      // Stesso gruppo (stesso numero, o stesso nome se senza numero).
+      // v6.088 (Franco) - DENTRO IL GRUPPO SI ORDINA A DUE LIVELLI, non piu' a uno.
+      // Prima era piatto: base, poi tutte le variazioni, poi TUTTI i change in fondo. Cosi' un
+      // change finiva lontano dalla versione di cui e' un change, e per il #586 si leggeva
+      //   base / variazione Z / variazione LA NUOVA SUPERBUSTA / change della base / change di Z
+      // cioe' l'elenco non diceva piu' a chi apparteneva ciascun change.
+      // Ora ogni versione si porta dietro i suoi: base + suoi change + suoi errori di stampa,
+      // poi variazione 1 + i suoi, poi variazione 2 + i suoi.
+      //
+      // COSA LEGA UN CHANGE ALLA SUA VERSIONE, ed e' il punto: NON `baseFigurineId`, che punta
+      // sempre alla figurina base - lo impedisce la form stessa, che dall'elenco delle basi
+      // selezionabili esclude variazioni e change (populateBaseFigurineSelect). Per il database
+      // tutti i change del #586 sono figli della stessa base, indistintamente.
+      // Li lega il RETRO, che e' del resto cio' che definisce una variazione (Franco). E li lega
+      // per NOME, non per id: il change punta al retro-change, la variazione al retro base, e i
+      // due sono omonimi - e' la coppia di omonimi del controllo della v6.084. Usare il nome
+      // rende questo ordinamento indipendente dal fatto che i collegamenti siano gia' stati
+      // corretti o no: funziona uguale prima e dopo la funzione 3.
+      //
+      // L'ordine dei CAPIGRUPPO resta quello di prima (base, poi variazioni per Categoria +
+      // Sottocategoria + Nome del retro): non e' alfabetico, ed e' quello che Franco si aspetta
+      // di ritrovare. Qui si innestano i figli, non si riordinano i padri.
+      // Il ripiego non dovrebbe mai servire (la mappa nasce dallo stesso elenco che si ordina), ma
+      // un `undefined` qui dentro romperebbe la griglia intera invece di sbagliare una riga.
+      const _kVuota = { rankCapo: 0, retroCapo: '', catCapo: '', subcatCapo: '', nomeRetroCapo: '', rangoFiglio: 0 };
+      const kA = _chiaviOrd.get(a.id) || _kVuota, kB = _chiaviOrd.get(b.id) || _kVuota;
+      // 1) il capogruppo: base (0), variazione ufficiale (1), non ufficiale (2)
+      if (kA.rankCapo !== kB.rankCapo) return kA.rankCapo - kB.rankCapo;
+      // 2) fra capigruppo diversi, l'ordine di sempre: Categoria, Sottocategoria, Nome del retro
+      //    DEL CAPO - non del figlio, che punta al retro-change omonimo.
+      if (kA.retroCapo !== kB.retroCapo) {
+        const catCmp = kA.catCapo.localeCompare(kB.catCapo, 'it');
+        if (catCmp !== 0) return catCmp;
+        const subcatCmp = kA.subcatCapo.localeCompare(kB.subcatCapo, 'it');
+        if (subcatCmp !== 0) return subcatCmp;
+        const nomeCmp = kA.nomeRetroCapo.localeCompare(kB.nomeRetroCapo, 'it');
+        if (nomeCmp !== 0) return nomeCmp;
+      }
+      // 3) dentro la stessa versione: prima lei, poi i suoi change, poi i suoi errori di stampa
+      if (kA.rangoFiglio !== kB.rangoFiglio) return kA.rangoFiglio - kB.rangoFiglio;
+      if (kA.rangoFiglio === 0) return (a.subseries||'').localeCompare(b.subseries||'');
+      // 4) fra pari (due change della stessa versione): per nome completo
+      return (a.fullName || a.name || '').localeCompare(b.fullName || b.name || '', 'it', { numeric: true });
+    }
+    if (sez === 'retros') {
+      const catCmp = (a.category||'').localeCompare(b.category||'', 'it');
+      if (catCmp !== 0) return catCmp;
+      const subcatCmp = (a.subcategory||'').localeCompare(b.subcategory||'', 'it');
+      if (subcatCmp !== 0) return subcatCmp;
+      return (a.name||'').localeCompare(b.name||'', 'it');
+    }
+    // v6.077 (Franco) - album, bustine e altri oggetti: prima il campo Ordinamento, poi il NOME.
+    // Il campo e' lo stesso `number` di sempre, ma qui non e' un dato dell'oggetto - e' solo la
+    // leva con cui Franco decide la posizione, e infatti non si vede da nessuna parte (§_haNumero).
+    // Il nome come secondo criterio non e' un di piu': delle 11 bustine NESSUNA ha un ordinamento,
+    // e senza il ripiego resterebbero nell'ordine in cui capitano di arrivare dal database - che
+    // cambia senza motivo e non e' un ordine.
+    // Collazione NUMERICA sul nome: "L. 500" prima di "L. 1000", che l'alfabetico puro metterebbe
+    // dopo perche' confronta '5' con '1' invece di 500 con 1000.
+    // 🔴 v6.799 (Franco: *"non si spezza mai una famiglia"*) - QUI L'ORDINE ERA DEL SINGOLO
+    //    ARTICOLO, E LA FAMIGLIA NON ESISTEVA. Le sezioni senza numeri (spille, carte, tatuaggi,
+    //    trasferelli, cartoncini, bustine, album, altri) confrontavano `number` e `name` del
+    //    record, quindi un errore di stampa poteva finire lontano dalla sua base - e
+    //    `_incollaGruppi`, che raggruppa cio' che e' CONTIGUO, non poteva piu' rimetterli insieme.
+    //    ⚠️ Non e' `_collocaFamiglia` a sbagliare: quando arriva, il danno e' gia' fatto.
+    // 🔴 E IL SEGUITO ERA UN ORDINE CHE DICE "SONO PARI". Il Nome e' EREDITATO dalla base
+    //    (`_campiEreditatiDaBase`), quindi una base e il suo errore di stampa hanno lo STESSO nome:
+    //    senza numero, l'ultimo confronto tornava 0 e le due card si scambiavano posto a ogni
+    //    ridisegno. E' il difetto intermittente della v6.616, qui in piena regola.
+    // 📌 Adesso: prima si ordinano le FAMIGLIE per le chiavi del loro capo, poi dentro la
+    //    famiglia si scende nell'ordine DICHIARATO delle versioni (`_prioritaTipo`, che viene da
+    //    `_VERSIONI_VIVE`: il giorno che nasce una versione nuova si infila da se'), e l'ultima
+    //    parola ce l'ha l'id, che e' unico.
+    // ⬜ RESTA APERTO, ED E' UNA DOMANDA PER FRANCO, NON UN PEZZO MANCANTE: due membri di una
+    //    famiglia con SOTTOSERIE diverse stanno su due PAGINE diverse (una pagina per sottoserie,
+    //    v6.765), e li' non c'e' nessun ordine che li avvicini. Sono due spille su settantasette.
+    const capoA = _capoFamiglia(a, _idx), capoB = _capoFamiglia(b, _idx);
+    if (capoA !== capoB) {
+      const ordA = capoA.number, ordB = capoB.number;
+      if (ordA && ordB && ordA !== ordB) return ordA - ordB;
+      if (ordA && !ordB) return -1;
+      if (!ordA && ordB) return 1;
+      const nomeCmp = (capoA.name || '').localeCompare(capoB.name || '', 'it', { numeric: true, sensitivity: 'base' });
+      if (nomeCmp !== 0) return nomeCmp;
+      // ⚠️ due famiglie con lo stesso nome e nessun numero esistono: senza questa riga
+      //    tornerebbero "pari" e si scambierebbero posto a ogni ridisegno (v6.616).
+      return String(capoA.id || '').localeCompare(String(capoB.id || ''));
+    }
+    // stessa famiglia: prima il capo, poi i suoi nell'ordine dichiarato
+    const pA = _prioritaTipo(a), pB = _prioritaTipo(b);
+    if (pA !== pB) return pA - pB;
+    // 📌 fra pari (due errori di stampa della stessa base) il NOME COMPLETO, che e' cio' che
+    //    la card mostra davvero - e dalla v6.796 su una spilla porta anche il sottonome.
+    const _nomePieno = f => f.fullName || computeFullName(f, _allFigs) || f.name || '';
+    const pienoCmp = _nomePieno(a).localeCompare(_nomePieno(b), 'it', { numeric: true });
+    if (pienoCmp !== 0) return pienoCmp;
+    return String(a.id || '').localeCompare(String(b.id || ''));
+  };
+}
+
 function renderItems() {
   const grid = document.getElementById('items-grid');
   if (!currentSeriesId || !grid || !currentSection) return;
@@ -50047,7 +50230,7 @@ function renderItems() {
   // chiamato n·log n volte: cercare li' dentro il capogruppo di un figlio avrebbe voluto dire una
   // scansione dell'elenco per confronto, cioe' il difetto che la v6.072 aveva appena tolto da
   // questo stesso sort ("ora 1,4 ms, ordine identico", due righe piu' su).
-  const _chiaviOrd = _chiaviOrdinamentoFigurine(_daOrdinare, _idx);
+  // 🔄 v6.965 - le chiavi le calcola adesso `_comparatoreGriglia`, una volta per chiamata.
   // v6.155 - dentro il box di un tipo comanda l'ordinamento scritto sul tipo, se c'e'. Sta in cima
   // perche' e' una scelta esplicita di chi ha creato il box: le regole per sezione sono il
   // comportamento predefinito, questa e' una decisione presa.
@@ -50057,134 +50240,12 @@ function renderItems() {
   //    `_incollaGruppi` comparirebbero ogni volta che la sottoserie cambia, cioè a caso.
   const _ssOrd = _gruppiSottoserieInGriglia();
   const _ssPos = f => { const p = _ssOrd.indexOf(String(f.subseries || '').trim()); return p < 0 ? _ssOrd.length : p; };
+  // 🔄 v6.965 - il comparatore sta in `_comparatoreGriglia`, e lo usa anche la ricerca globale.
+  const _cmpG = _comparatoreGriglia(currentSection, _daOrdinare, _idx, _allFigs);
   const allItems = _daOrdinare.sort((a,b) => {
     if (_ssOrd.length && _ssPos(a) !== _ssPos(b)) return _ssPos(a) - _ssPos(b);
     if (_cmpTipo) return _cmpTipo(a, b);
-    if (currentSection === 'figurines') {
-      const allFigsForSort = _idx;
-      // Figurina di riferimento: se stessa se è base, altrimenti la figurina base collegata
-      // 🔴 v6.314 - IL DIFETTO LATENTE DEL 13 AGOSTO, CHIUSO. Questa terna diceva che un errore di
-      // stampa - e da giugno un omaggio - e' un CAPOGRUPPO, mentre a poche righe di distanza
-      // `_chiaviOrdinamentoFigurine` lo tratta da FIGLIO, perche' quella chiede a `_eBase`. Due
-      // idee diverse di *"chi e' un figlio"* dentro lo stesso ordinamento, e il documento le aveva
-      // gia' viste litigare ("`refFig` e `rangoFiglio` non sono d'accordo").
-      // ⚠️ Non mordeva perche' gli errori di stampa senza numero proprio erano ZERO. Non e' una
-      // proprieta' del codice: e' una proprieta' dei dati di quel giorno.
-      const refFig = f => {
-        if (_eBase(f)) return f;
-        return f.baseFigurineId ? allFigsForSort.get(f.baseFigurineId) : null;
-      };
-      const refA = refFig(a), refB = refFig(b);
-      const numA = refA?.number, numB = refB?.number;
-      if (numA && numB) {
-        if (numA !== numB) return numA - numB;
-      } else if (numA && !numB) {
-        return -1; // i gruppi con numero vengono prima di quelli senza
-      } else if (!numA && numB) {
-        return 1;
-      } else {
-        // Nessuna delle due ha un numero: si raggruppa per Nome della figurina di riferimento
-        const nameCmp = (refA?.name||'').localeCompare(refB?.name||'', 'it');
-        if (nameCmp !== 0) return nameCmp;
-      }
-
-      // Stesso gruppo (stesso numero, o stesso nome se senza numero).
-      // v6.088 (Franco) - DENTRO IL GRUPPO SI ORDINA A DUE LIVELLI, non piu' a uno.
-      // Prima era piatto: base, poi tutte le variazioni, poi TUTTI i change in fondo. Cosi' un
-      // change finiva lontano dalla versione di cui e' un change, e per il #586 si leggeva
-      //   base / variazione Z / variazione LA NUOVA SUPERBUSTA / change della base / change di Z
-      // cioe' l'elenco non diceva piu' a chi apparteneva ciascun change.
-      // Ora ogni versione si porta dietro i suoi: base + suoi change + suoi errori di stampa,
-      // poi variazione 1 + i suoi, poi variazione 2 + i suoi.
-      //
-      // COSA LEGA UN CHANGE ALLA SUA VERSIONE, ed e' il punto: NON `baseFigurineId`, che punta
-      // sempre alla figurina base - lo impedisce la form stessa, che dall'elenco delle basi
-      // selezionabili esclude variazioni e change (populateBaseFigurineSelect). Per il database
-      // tutti i change del #586 sono figli della stessa base, indistintamente.
-      // Li lega il RETRO, che e' del resto cio' che definisce una variazione (Franco). E li lega
-      // per NOME, non per id: il change punta al retro-change, la variazione al retro base, e i
-      // due sono omonimi - e' la coppia di omonimi del controllo della v6.084. Usare il nome
-      // rende questo ordinamento indipendente dal fatto che i collegamenti siano gia' stati
-      // corretti o no: funziona uguale prima e dopo la funzione 3.
-      //
-      // L'ordine dei CAPIGRUPPO resta quello di prima (base, poi variazioni per Categoria +
-      // Sottocategoria + Nome del retro): non e' alfabetico, ed e' quello che Franco si aspetta
-      // di ritrovare. Qui si innestano i figli, non si riordinano i padri.
-      // Il ripiego non dovrebbe mai servire (la mappa nasce dallo stesso elenco che si ordina), ma
-      // un `undefined` qui dentro romperebbe la griglia intera invece di sbagliare una riga.
-      const _kVuota = { rankCapo: 0, retroCapo: '', catCapo: '', subcatCapo: '', nomeRetroCapo: '', rangoFiglio: 0 };
-      const kA = _chiaviOrd.get(a.id) || _kVuota, kB = _chiaviOrd.get(b.id) || _kVuota;
-      // 1) il capogruppo: base (0), variazione ufficiale (1), non ufficiale (2)
-      if (kA.rankCapo !== kB.rankCapo) return kA.rankCapo - kB.rankCapo;
-      // 2) fra capigruppo diversi, l'ordine di sempre: Categoria, Sottocategoria, Nome del retro
-      //    DEL CAPO - non del figlio, che punta al retro-change omonimo.
-      if (kA.retroCapo !== kB.retroCapo) {
-        const catCmp = kA.catCapo.localeCompare(kB.catCapo, 'it');
-        if (catCmp !== 0) return catCmp;
-        const subcatCmp = kA.subcatCapo.localeCompare(kB.subcatCapo, 'it');
-        if (subcatCmp !== 0) return subcatCmp;
-        const nomeCmp = kA.nomeRetroCapo.localeCompare(kB.nomeRetroCapo, 'it');
-        if (nomeCmp !== 0) return nomeCmp;
-      }
-      // 3) dentro la stessa versione: prima lei, poi i suoi change, poi i suoi errori di stampa
-      if (kA.rangoFiglio !== kB.rangoFiglio) return kA.rangoFiglio - kB.rangoFiglio;
-      if (kA.rangoFiglio === 0) return (a.subseries||'').localeCompare(b.subseries||'');
-      // 4) fra pari (due change della stessa versione): per nome completo
-      return (a.fullName || a.name || '').localeCompare(b.fullName || b.name || '', 'it', { numeric: true });
-    }
-    if (currentSection === 'retros') {
-      const catCmp = (a.category||'').localeCompare(b.category||'', 'it');
-      if (catCmp !== 0) return catCmp;
-      const subcatCmp = (a.subcategory||'').localeCompare(b.subcategory||'', 'it');
-      if (subcatCmp !== 0) return subcatCmp;
-      return (a.name||'').localeCompare(b.name||'', 'it');
-    }
-    // v6.077 (Franco) - album, bustine e altri oggetti: prima il campo Ordinamento, poi il NOME.
-    // Il campo e' lo stesso `number` di sempre, ma qui non e' un dato dell'oggetto - e' solo la
-    // leva con cui Franco decide la posizione, e infatti non si vede da nessuna parte (§_haNumero).
-    // Il nome come secondo criterio non e' un di piu': delle 11 bustine NESSUNA ha un ordinamento,
-    // e senza il ripiego resterebbero nell'ordine in cui capitano di arrivare dal database - che
-    // cambia senza motivo e non e' un ordine.
-    // Collazione NUMERICA sul nome: "L. 500" prima di "L. 1000", che l'alfabetico puro metterebbe
-    // dopo perche' confronta '5' con '1' invece di 500 con 1000.
-    // 🔴 v6.799 (Franco: *"non si spezza mai una famiglia"*) - QUI L'ORDINE ERA DEL SINGOLO
-    //    ARTICOLO, E LA FAMIGLIA NON ESISTEVA. Le sezioni senza numeri (spille, carte, tatuaggi,
-    //    trasferelli, cartoncini, bustine, album, altri) confrontavano `number` e `name` del
-    //    record, quindi un errore di stampa poteva finire lontano dalla sua base - e
-    //    `_incollaGruppi`, che raggruppa cio' che e' CONTIGUO, non poteva piu' rimetterli insieme.
-    //    ⚠️ Non e' `_collocaFamiglia` a sbagliare: quando arriva, il danno e' gia' fatto.
-    // 🔴 E IL SEGUITO ERA UN ORDINE CHE DICE "SONO PARI". Il Nome e' EREDITATO dalla base
-    //    (`_campiEreditatiDaBase`), quindi una base e il suo errore di stampa hanno lo STESSO nome:
-    //    senza numero, l'ultimo confronto tornava 0 e le due card si scambiavano posto a ogni
-    //    ridisegno. E' il difetto intermittente della v6.616, qui in piena regola.
-    // 📌 Adesso: prima si ordinano le FAMIGLIE per le chiavi del loro capo, poi dentro la
-    //    famiglia si scende nell'ordine DICHIARATO delle versioni (`_prioritaTipo`, che viene da
-    //    `_VERSIONI_VIVE`: il giorno che nasce una versione nuova si infila da se'), e l'ultima
-    //    parola ce l'ha l'id, che e' unico.
-    // ⬜ RESTA APERTO, ED E' UNA DOMANDA PER FRANCO, NON UN PEZZO MANCANTE: due membri di una
-    //    famiglia con SOTTOSERIE diverse stanno su due PAGINE diverse (una pagina per sottoserie,
-    //    v6.765), e li' non c'e' nessun ordine che li avvicini. Sono due spille su settantasette.
-    const capoA = _capoFamiglia(a, _idx), capoB = _capoFamiglia(b, _idx);
-    if (capoA !== capoB) {
-      const ordA = capoA.number, ordB = capoB.number;
-      if (ordA && ordB && ordA !== ordB) return ordA - ordB;
-      if (ordA && !ordB) return -1;
-      if (!ordA && ordB) return 1;
-      const nomeCmp = (capoA.name || '').localeCompare(capoB.name || '', 'it', { numeric: true, sensitivity: 'base' });
-      if (nomeCmp !== 0) return nomeCmp;
-      // ⚠️ due famiglie con lo stesso nome e nessun numero esistono: senza questa riga
-      //    tornerebbero "pari" e si scambierebbero posto a ogni ridisegno (v6.616).
-      return String(capoA.id || '').localeCompare(String(capoB.id || ''));
-    }
-    // stessa famiglia: prima il capo, poi i suoi nell'ordine dichiarato
-    const pA = _prioritaTipo(a), pB = _prioritaTipo(b);
-    if (pA !== pB) return pA - pB;
-    // 📌 fra pari (due errori di stampa della stessa base) il NOME COMPLETO, che e' cio' che
-    //    la card mostra davvero - e dalla v6.796 su una spilla porta anche il sottonome.
-    const _nomePieno = f => f.fullName || computeFullName(f, _allFigs) || f.name || '';
-    const pienoCmp = _nomePieno(a).localeCompare(_nomePieno(b), 'it', { numeric: true });
-    if (pienoCmp !== 0) return pienoCmp;
-    return String(a.id || '').localeCompare(String(b.id || ''));
+    return _cmpG(a, b);
   });
   updateItemsCountDisplay(allItems);
   const owned = getOwned();
@@ -50328,20 +50389,24 @@ function renderItems() {
     // v5.893 — la coda dei risultati passa da "${label} ${from}..${to} | ${total} ${label}"
     // a "${label} ${from}..${to} di ${total}": via la pipe e la ripetizione della parola.
     // Senza range (sezioni senza numeri) resta "${total} ${label}".
-    let tailStr = '';
+    // 🔄 v6.965 (Franco: «Pagina 1 di 3 | figurine con retro 417..451 di 82» diventa «Pagina 1 di 3
+    //    | N figurine con retro di 82 (da 417 a 451)», dove N è il numero di card della pagina; «in
+    //    tutte le griglie») — PRIMA QUANTE SONO, POI DA DOVE A DOVE. Il numero di card viene dai
+    //    confini VERI della pagina (v5.977), che sono di lunghezza variabile: non è il tetto.
+    // 📌 Dove i numeri non ci sono (sezioni senza numeri) resta la prima metà, senza parentesi.
+    // 📌 Il singolare a una card sola: «1 figurina con retro», non «1 figurine con retro».
+    const b = _itemPages[cur - 1] || { start: 0, end: total };
+    const nPagina = Math.max(0, Math.min(b.end, total) - b.start);
+    const _etiN = (nPagina === 1 ? (getSectionLabelSingular(currentSection) || sectionLabelLower) : sectionLabelLower).toLowerCase();
+    let tailStr = currentLang === 'it'
+      ? ` &nbsp;|&nbsp; ${nPagina} ${_etiN} di ${total}`
+      : ` &nbsp;|&nbsp; ${nPagina} ${_etiN} of ${total}`;
     if (firstNum != null) {
       // v5.977 — l'intervallo si legge dai confini VERI della pagina. Con le pagine di lunghezza
       // variabile, "firstNum + (cur-1) * tetto" annuncerebbe numeri che nella pagina non ci sono.
-      const b = _itemPages[cur - 1] || { start: 0, end: total };
       const from = firstNum + b.start;
       const to = Math.min(firstNum + b.end - 1, firstNum + total - 1);
-      tailStr = currentLang === 'it'
-        ? ` &nbsp;|&nbsp; ${sectionLabelLower} ${from}..${to} di ${total}`
-        : ` &nbsp;|&nbsp; ${sectionLabelLower} ${from}..${to} of ${total}`;
-    } else {
-      tailStr = currentLang === 'it'
-        ? ` &nbsp;|&nbsp; ${total} ${sectionLabelLower}`
-        : ` &nbsp;|&nbsp; ${total} total`;
+      tailStr += currentLang === 'it' ? ` (da ${from} a ${to})` : ` (from ${from} to ${to})`;
     }
     const label = currentLang === 'it'
       ? `Pagina ${cur} di ${tot}${tailStr}`
@@ -53688,6 +53753,7 @@ function _secondaFacciaSulRecord(sezione) {
 // qui (v6.033), e senza l'esclusione sfogliare venti figurine costruirebbe una pila di
 // venti: per uscire ci vorrebbero venti pressioni. Sfogliare non e' saltare.
 function openFigDetail(figId, elencoNav, senzaMemoria) {
+  _cloneSorgenteId = null;   // 🆕 v6.965 - aprendo un articolo vero, il ricordo del clone finisce
   // 🔴 v6.891 (Franco, baco: «le due foto dell'album devono essere mostrate solo nel tab
   //    Generale; invece sono mostrate in tutti; e poi sono enormi») - LA SCHEDA TORNA A DUE
   //    COLONNE OGNI VOLTA CHE SI APRE IN LETTURA.
@@ -54573,9 +54639,14 @@ function _cmpOrdineRetro(a, b, idx) {
       || String(a.id).localeCompare(String(b.id));
 }
 
-function _chiaviOrdinamentoFigurine(items, idx) {
+// 🔄 v6.965 - LA SEZIONE È UN PARAMETRO (col vecchio valore come ripiego). Chiedeva
+//    `currentSection`, cioè la sezione APERTA nella pagina: nella griglia è quella giusta, ma nella
+//    ricerca globale non c'è nessuna sezione aperta, e le chiavi uscivano VUOTE — tre versioni della
+//    stessa figurina restavano nell'ordine d'arrivo. 📏 Misurato su GIACINTO LABIRINTO (serie 3,
+//    n. 560): griglia base, change, variazione; ricerca base, variazione, change (foto di Franco).
+function _chiaviOrdinamentoFigurine(items, idx, sez = currentSection) {
   const chiavi = new Map();
-  if (currentSection !== 'figurines') return chiavi;
+  if (sez !== 'figurines') return chiavi;
   const nomeRetroDi = f => {
     const r = f.retroId ? idx.get(f.retroId) : null;
     return (r?.name || '').trim().toUpperCase();
@@ -55214,6 +55285,20 @@ function _omaggioDiRetro(f, allFigs, indice) {
 // ⚠️ Chi non è un omaggio di retro tiene il suo: un omaggio di BUSTINA, e una figurina omaggio
 //    a cui il retro non è ancora stato collegato. Non è un ripiego - è l'altro caso, e in quel
 //    caso il campo della figurina è l'unico posto dove quel fatto esiste.
+// 🆕 v6.965 - L'INDICE DI TUTTI GLI ARTICOLI, costruito una volta e riusato finché l'elenco è lo
+//    stesso. Serve a pillole e filtri dei tipi (`valoreDi` di change e omaggio), che lo chiedono
+//    per ogni articolo di ogni ridisegno: senza, ogni articolo scorrerebbe l'elenco intero.
+// ⚠️ Si rifà se cambia l'ELENCO o la sua LUNGHEZZA (articolo creato o cancellato). Un articolo
+//    modificato sul posto resta lo stesso oggetto nell'indice, quindi i suoi valori sono freschi.
+let _indiceArticoliDi = null, _indiceArticoliMap = null;
+function _indiceArticoli() {
+  const a = getData('figurines', []) || [];
+  if (a !== _indiceArticoliDi || !_indiceArticoliMap || _indiceArticoliMap.size !== a.length) {
+    _indiceArticoliDi = a; _indiceArticoliMap = _figIndex(a);
+  }
+  return _indiceArticoliMap;
+}
+
 function _tipoOmaggio(f, allFigs, indice) {
   if (!f) return '';
   if (!_omaggioDiRetro(f, allFigs, indice)) return (f.freeVersionType || '').trim();
@@ -56051,6 +56136,17 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
     }
   }
   group.style.display = showBase ? '' : 'none';
+  // 🆕 v6.965 (Franco: «se arrivo da un clone di una base potrebbe propormi quella») — IL CLONE
+  //    PROPONE LA SUA SORGENTE COME PARTENZA, quando la versione ne chiede una e il campo è vuoto.
+  //    Solo se la sorgente è fra le partenze AMMESSE: clonando un change, la sorgente non lo è, e
+  //    il campo resta vuoto come prima. Si sceglie con la stessa funzione del clic.
+  {
+    const _sel = document.getElementById('fe-base-figurine');
+    if (showBase && _cloneSorgenteId && _sel && !_sel.value
+        && _feBaseFigurineLinkOptions.some(x => x.id === _cloneSorgenteId)) {
+      selectFeBaseFigurineLink(_cloneSorgenteId);
+    }
+  }
   // v5.786 — Retro visibile anche per i Change; per i Change ripopolo il selettore con TUTTE le serie.
   if (retroGroup) {
     retroGroup.style.display = '';
@@ -56058,6 +56154,7 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
   }
   // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
   if (numberGroup) numberGroup.style.display = _mostraCampoNumero(_feSezione, showBase) ? '' : 'none'; // v6.077 - stessa fonte delle altre due
+  try { _aggiornaNumeroEreditato(); } catch (e) {}   // 🆕 v6.965 - e dove si nasconde, compare quello della partenza
   // 🆕 v6.792 - QUALE DELLE DUE RIGHE DEL TIPO DI CHANGE. 🔴 Si guarda lo stato ATTUALE
   //    della form e non il record aperto, perché fra l'apertura e il salvataggio l'articolo può
   //    cambiare caso senza che la scheda si ridisegni: si collega un retro change, o si spunta
@@ -56188,6 +56285,27 @@ function selectFeBaseFigurineLink(id) {
   document.getElementById('fe-base-figurine').value = id;
   document.getElementById('fe-base-figurine-search').value = _baseFigurineLinkLabel(f);
   document.getElementById('fe-base-figurine-dropdown').style.display = 'none';
+  // 🆕 v6.965 - scelta la partenza, il riquadro delle foto mostra subito la sua (se non ce n'è una propria).
+  try { _ridisegnaSlotFoto('fronte'); } catch (e) {}
+  try { _aggiornaNumeroEreditato(); } catch (e) {}   // e il N. ereditato
+}
+
+// 🆕 v6.965 - LA RIGA DEL N. EREDITATO: visibile quando il campo modificabile è nascosto perché il
+//    numero viene dalla partenza, e solo dove la sezione numera davvero (figurine, carte: `numero:
+//    'inventario'`) e la serie ha i numeri. Il valore è quello della partenza scelta nella scheda,
+//    o del record se la scheda non ne ha ancora una; senza partenza, «—».
+function _aggiornaNumeroEreditato() {
+  const riga = document.getElementById('fe-number-ered-group');
+  const val = document.getElementById('fe-number-ered');
+  const edit = document.getElementById('fe-number-group');
+  if (!riga || !val || !edit) return;
+  const s = getData('series', []).find(x => x.id === _feItemSeriesId);
+  const serve = edit.style.display === 'none' && _art(_feSezione).numero === 'inventario' && !(s && s.noNumbers);
+  riga.style.display = serve ? '' : 'none';
+  if (!serve) return;
+  const baseId = document.getElementById('fe-base-figurine')?.value || (_feRecord && _feRecord.baseFigurineId) || '';
+  const b = baseId ? getData('figurines', []).find(x => x.id === baseId) : null;
+  val.textContent = (b && !b.noNumber && b.number != null && b.number !== '') ? String(b.number) : '—';
 }
 
 function clearFeBaseFigurineLinkIfEmpty() {
@@ -56240,6 +56358,8 @@ function selectFeRetroLink(id) {
   //    me lo dice il retro», e viceversa. Senza questa riga il cambio si vedrebbe solo riaprendo
   //    la scheda - e nel frattempo la form mostrerebbe il caso sbagliato dei due.
   toggleFeBaseFigurineGroup();
+  // 🆕 v6.965 - scelto il retro, il riquadro delle foto lo mostra subito.
+  try { _ridisegnaSlotFoto('fronte'); } catch (e) {}
 }
 
 function clearFeRetroLinkIfEmpty() {
@@ -56352,7 +56472,10 @@ function openNuovoItem() {
 // "Clona" con una bozza copiata. Il modo di aprirla e' lo stesso, quindi sta scritto una volta:
 // due copie sarebbero divergite alla prima modifica, ed e' la lezione che questo file ripete da
 // dodici release (v6.032, v6.074, v6.087).
+// 🆕 v6.965 - l'id dell'articolo da cui è nato il clone aperto adesso, o null. Vedi `cloneFigurine`.
+let _cloneSorgenteId = null;
 function _apriSchedaSuBozza(bozza) {
+  _cloneSorgenteId = null;   // v6.965 - una bozza nuova non eredita la sorgente di quella di prima
   _bozzaCorrente = bozza;
   _returnToErroriAfterSave = false;   // v6.105 - come in `openFigDetail`, vedi li' il perche'
   _figEditImgData = null; _figEditImgRetroData = null;
@@ -56669,6 +56792,15 @@ function switchToEditMode(figId) {
     // legge (`fe-no-number`), e se non la trova scrive `false`. Toglierla avrebbe azzerato il flag
     // in silenzio al primo salvataggio, che e' il modo peggiore di perdere un dato.
     '<label style="' + (_numeroEOrdine ? 'display:none;' : 'display:flex;') + 'align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--text);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Non ha numero':'Does not have a number') + '</label></span></div>';
+  // 🆕 v6.965 (Franco, con due foto: clonando la variazione della 560 «nella 2 non c'è campo
+  //    numero») — IL NUMERO EREDITATO SI VEDE, COME IL NOME. Il campo modificabile resta nascosto
+  //    dove il numero viene dalla partenza (variazioni, change, errori, omaggi): era giusto non
+  //    farlo scrivere, sbagliato farlo sparire. Accanto al Nome, che è ereditato anche lui e si
+  //    vede in grigio e in sola lettura, il N. mancava del tutto.
+  // 📌 È una riga a parte, non il campo di sopra reso readonly: il salvataggio legge `fe-number` e
+  //    per i figli il numero lo riscrive dalla partenza (v6.111); questa riga non si legge mai.
+  html += '<div class="detail-row" id="fe-number-ered-group" style="display:none;opacity:0.55;"><span class="detail-label">N.</span>'
+    + '<span class="detail-value" id="fe-number-ered" style="padding:0.3rem 0.5rem;font-size:0.9rem;"></span></div>';
 
   // Punteggio
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Rarità':'Rarity') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-score" value="' + (f.score||0) + '" min="0" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
@@ -57114,6 +57246,7 @@ function switchToEditMode(figId) {
     '</div>';
 
   content.innerHTML = barra + html;
+  try { _aggiornaNumeroEreditato(); } catch (e) {}   // 🆕 v6.965 - il N. ereditato, già all'apertura
 
   // Listener sui due pulsanti Salva (evita problemi con onclick inline)
   const saveBtn = document.getElementById('fig-edit-save-btn');
@@ -57257,10 +57390,33 @@ function _slotFotoEdit(slot, url, f, stretto) {
       '<div style="font-size:0.72rem;color:var(--text);margin-top:0.4rem;">' + nota + '</div>' +
     '</div>';
   }
+  // 🆕 v6.965 (Franco: «clono, metto change, scelgo partenza e retro: non mostra le foto, né fronte
+  //    né retro; neanche dopo "salva e resta". Per vederle devo salvare e riaprire») — IN MODIFICA
+  //    SI VEDEVANO SOLO LE FOTO PROPRIE. 📏 Misurato su un change già salvato di GIACINTO
+  //    LABIRINTO: in lettura 2 foto, in modifica «Nessuna foto». Un change la foto non ce l'ha: il
+  //    fronte è della figurina di partenza, il retro è l'articolo retro associato.
+  // 📌 Si MOSTRANO, non si copiano: il riquadro dice da dove vengono, e «Aggiungi foto» resta per
+  //    chi vuole una foto propria (che vince, come in lettura). Partenza e retro si leggono dalla
+  //    SCHEDA se ci sono (sono le scelte di adesso, prima di salvare) e se no dal record.
+  const _ered = (!url && slot === 'fronte') ? _fotoEreditataFronte(f) : '';
+  const _retroAss = (slot === 'fronte') ? _retroDellaScheda(f) : null;
+  // ⚠️ Solo dove il retro NON ha già un riquadro suo (la seconda faccia sta sul record: album…).
+  const _riqRetro = (_retroAss && !(_schedaDueFoto(f) && _secondaFacciaSulRecord(f.section)))
+    ? '<div style="margin-top:0.6rem;">'
+      + '<div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? 'Retro associato' : 'Linked back') + '</div>'
+      + (_retroAss.img
+          ? '<img src="' + cloudinaryUrl(_retroAss.img, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:160px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;">'
+          : '<div style="width:100%;height:60px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;">' + vuoto + '</div>')
+      + '<div style="font-size:0.72rem;color:var(--text);margin-top:0.3rem;">' + (currentLang === 'it' ? 'È la foto dell\'articolo retro: si cambia da lì.' : 'This is the back item\'s photo: change it there.') + '</div>'
+      + '</div>'
+    : '';
   // 🆕 v6.599 - stesso id dell'altro ramo: chi ridisegna non deve sapere quale dei due e'.
   return '<div id="fig-slot-' + slot + '" class="fig-slot' + _cls + '" style="margin-bottom:0.6rem;' + _flex + '">' + titolo +
     (url
       ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(url, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
+      : _ered
+      ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(_ered, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.3rem;">'
+        + '<div style="font-size:0.72rem;color:var(--text);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Foto della figurina di partenza: questa non ne ha una propria.' : 'Photo of the source sticker: this one has none of its own.') + '</div>'
       : '<div id="' + s.preview + '" style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + vuoto + '</div>') +
     '<div class="fig-cmd" style="display:flex;gap:0.4rem;margin-top:0.3rem;">' +
       '<label style="flex:1;cursor:pointer;text-align:center;">' +
@@ -57300,7 +57456,26 @@ function _slotFotoEdit(slot, url, f, stretto) {
       '<button onclick="removeFigPhoto(\'' + slot + '\')" class="btn-foto elimina" style="flex:1;">\u{1F5D1}\uFE0F ' + (currentLang === 'it' ? 'Rimuovi foto' : 'Remove photo') + '</button>' +
       '<button id="' + s.btn + '" onclick="removeBgFromEdit(\'' + slot + '\')" class="btn-foto" style="flex:1;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' +
     '</div>' : '') +
+    _riqRetro +
   '</div>';
+}
+
+// \uD83C\uDD95 v6.965 - LE FOTO CHE UNA FIGURINA CON RETRO EREDITA, lette dalla scheda aperta.
+//    Solo per le figurine con retro: sono loro ad avere partenza e retro associato.
+//    \u26A0\uFE0F I campi della scheda si leggono se ci sono (scelte non ancora salvate); al primo disegno
+//    non esistono ancora, e vale il record.
+function _fotoEreditataFronte(f) {
+  if (!f || (f.section || 'figurines') !== 'figurines') return '';
+  const figs = getData('figurines', []) || [];
+  const baseId = document.getElementById('fe-base-figurine')?.value || f.baseFigurineId || '';
+  const b = baseId ? figs.find(x => x.id === baseId) : null;
+  return b ? (_fotoFigurina(b, figs) || '') : '';
+}
+function _retroDellaScheda(f) {
+  if (!f || (f.section || 'figurines') !== 'figurines') return null;
+  const el = document.getElementById('fe-retro');
+  const rid = el ? el.value : (f.retroId || '');
+  return rid ? ((getData('figurines', []) || []).find(x => x.id === rid) || null) : null;
 }
 
 // ============================================================
@@ -60386,6 +60561,34 @@ function openGriglieLegend() {
   if (m) m.classList.remove('hidden');
 }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// 🆕 v6.965 (Franco: «se faccio una RG, apro un risultato, lo clono e salvo, quando esco questo
+//    risultato non esce… non possiamo fare che quando si ritorna su di essa da una finestra, la si
+//    riesegue?») — CHIUSA LA SCHEDA, LA RICERCA GLOBALE SI RIFA'. I risultati erano stati disegnati
+//    prima di aprire la scheda, e niente li ridisegnava: un clone, una modifica, una cancellazione
+//    fatti là dentro non si vedevano finché non si rilanciava la ricerca a mano.
+// 🔴 SI OSSERVA LA FINESTRA, NON `closeModal`: Esc e il clic fuori la chiudono aggiungendo la
+//    classe da soli, senza passare di qui. Un aggancio su una sola delle strade ne lascerebbe due.
+// 📌 Si rifà solo se sotto ci sono davvero i risultati (casella piena e riquadro visibile), con lo
+//    stesso testo, e tenendo lo scorrimento dove l'utente l'aveva lasciato.
+function _rifaiRicercaGlobaleSeAperta() {
+  const r = document.getElementById('catalog-search-results');
+  const q = (document.getElementById('series-search')?.value || '').trim();
+  if (!q || !r || r.style.display === 'none' || !r.offsetParent) return;
+  const y = window.scrollY;
+  try { renderCatalogSearch(q); } catch (e) { console.error('_rifaiRicercaGlobaleSeAperta', e); return; }
+  window.scrollTo(0, y);
+}
+(function () {
+  const m = document.getElementById('fig-detail-modal');
+  if (!m || typeof MutationObserver === 'undefined') return;
+  let chiusa = m.classList.contains('hidden');
+  new MutationObserver(() => {
+    const ora = m.classList.contains('hidden');
+    if (ora && !chiusa) _rifaiRicercaGlobaleSeAperta();
+    chiusa = ora;
+  }).observe(m, { attributes: true, attributeFilter: ['class'] });
+})();
 const NO_CLICK_CLOSE = ['auth-modal', 'change-pwd-modal', 'reset-pwd-modal', 'add-series-modal', 'add-fig-modal', 'ebay-bulk-modal'];
 document.querySelectorAll('.modal-overlay').forEach(m => {
   if (!NO_CLICK_CLOSE.includes(m.id)) {
