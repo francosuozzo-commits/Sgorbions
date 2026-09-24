@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.962 - 🔍 LA RICERCA GLOBALE DELL'ADMIN CERCA ANCHE NELLE SERIE IN ARRIVO. Modificati
+//          index.html e js/app.js. Franco: «la ricerca globale per l'admin deve cercare anche
+//          dentro le serie in arrivo». Per i visitatori non cambia niente (v6.899); le nascoste
+//          restano fuori per tutti.
 // v6.961 - 🐛 IL NUMERO NON È PIÙ OBBLIGATORIO NELLE SERIE «SENZA NUMERI». Modificati index.html
 //          e js/app.js. Franco: «la serie Mega 1 e 2 sono impostate come "senza numero" ma non mi
 //          fa salvare delle card perché mi chiede il numero obbligatorio». Il controllo del
@@ -30110,7 +30114,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.961';
+const JS_VERSION = 'v6.962';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42244,8 +42248,24 @@ function renderCatalogSearch(q) {
   //    risponde a due: la domanda che fa - «quali serie si mostrano a chi naviga» - e' la stessa.
   //    ⬜ Rinominarla toccherebbe tre suite senza cambiare niente di quello che fa: e' un debito
   //    dichiarato, non una svista.
-  const allSeries = _serieDelleListe().sort((a,b) => (a.order??9999)-(b.order??9999));
-  const allFigs = _articoliDaContareSito();
+  // 🔄 v6.962 (Franco: «la ricerca globale per l'admin deve cercare anche dentro le serie in
+  //    arrivo») — ALL'ADMIN LE IN ARRIVO TORNANO. La ragione della v6.899 qui sopra era che una
+  //    serie in arrivo non si apre, e il risultato portava a un box che non si preme: ma
+  //    `_serieBloccata` blocca solo chi NON è admin, quindi per lui il risultato funziona.
+  // 📌 Le NASCOSTE restano fuori anche per l'admin: Franco ha nominato le in arrivo, e basta.
+  //    E gli articoli invisibili restano fuori come prima (stessa regola di `_articoliDaContare`).
+  // ⚠️ La strada di tutti resta QUELLA DI PRIMA (`_serieDelleListe`, `_articoliDaContareSito`) e
+  //    l'admin ci aggiunge le in arrivo: riscrivere il filtro da capo avrebbe fatto una seconda
+  //    regola accanto a quella che dieci suite esercitano già.
+  let allSeries = _serieDelleListe();
+  let allFigs = _articoliDaContareSito();
+  if (currentUser?.isAdmin) {
+    const _inArrivo = (getData('series', []) || []).filter(s => _statoSerie(s) === 'in-arrivo');
+    const _idInArrivo = new Set(_inArrivo.map(s => s.id));
+    allSeries = allSeries.concat(_inArrivo);
+    allFigs = allFigs.concat((getData('figurines', []) || []).filter(f => !f.invisibile && _idInArrivo.has(f.seriesId)));
+  }
+  allSeries.sort((a,b) => (a.order??9999)-(b.order??9999));
 
   // Cerca in serie (nome, descrizione) e negli oggetti.
   // v6.049 (Franco) - LE DUE RICERCHE CERCAVANO IN CAMPI DIVERSI. Quella dentro una sezione aveva
