@@ -1,7 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.962 - 🔍 LA RICERCA GLOBALE DELL'ADMIN CERCA ANCHE NELLE SERIE IN ARRIVO. Modificati
+// v6.963 - 🐛 LA FUNZIONE 5 («CREA LE FIGURINE PER ALBUM») SOLO SULLE SERIE CHE LE AMMETTONO.
+//          Modificati index.html e js/app.js. Franco: «dovrebbe mostrare solo le serie che
+//          ammettono figurine per album». Il menu e il piano passano da `_serieAmmetteTipologia(s,
+//          'attaccare')`. 📏 Nella preview: 7 serie nel menu (1, 2, 3, 4, Holidays, Mega 1 e 2);
+//          fuori Kakkones 1 e 2, Spille, Stamps, 2018, Gli auguri e Articoli senza serie.
+// v6.962 -🔍 LA RICERCA GLOBALE DELL'ADMIN CERCA ANCHE NELLE SERIE IN ARRIVO. Modificati
 //          index.html e js/app.js. Franco: «la ricerca globale per l'admin deve cercare anche
 //          dentro le serie in arrivo». Per i visitatori non cambia niente (v6.899); le nascoste
 //          restano fuori per tutti.
@@ -30114,7 +30119,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.962';
+const JS_VERSION = 'v6.963';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -64419,7 +64424,11 @@ function renderAdminFunzioni() {
         '<label class="form-label">' + (it ? 'Serie' : 'Series') + '</label>' +
         '<select id="attacca-serie" class="form-select" style="margin-bottom:0.75rem;">' +
           '<option value="">' + (it ? 'Tutte le serie' : 'All series') + '</option>' +
-          serie.map(x => '<option value="' + x.id + '">' + esc(x.name) + '</option>').join('') +
+          // 🐛 v6.963 (Franco: «la funzione 5 dovrebbe mostrare solo le serie che ammettono figurine
+          //    per album») — il menu elencava tutte le serie, anche quelle la cui mappa delle
+          //    tipologie non prevede `attaccare`. Il filtro è lo stesso che usa il resto del sito.
+          serie.filter(x => _serieAmmetteTipologia(x, 'attaccare'))
+            .map(x => '<option value="' + x.id + '">' + esc(x.name) + '</option>').join('') +
         '</select>' +
         '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
           '<button class="btn-primary btn-admin" onclick="anteprimaDaAttaccare()">&#128269; ' + (it ? 'Anteprima' : 'Preview') + '</button>' +
@@ -64456,6 +64465,9 @@ function _pianoDaAttaccare(seriesId) {
   const out = [];
   for (const s of getData('series', [])) {
     if (seriesId && s.id !== seriesId) continue;
+    // 🐛 v6.963 — e il piano salta le serie che le figurine per album non le ammettono: senza
+    //    questa riga «Tutte le serie» le avrebbe create anche lì, menu o non menu.
+    if (!_serieAmmetteTipologia(s, 'attaccare')) continue;
     const items = s.items || [];
     // Chi ce l'ha gia': l'insieme delle figurine con velina che risultano gia' agganciate.
     const gia = new Set(items.filter(x => x.section === 'attaccare' && x.baseFigurineId)
