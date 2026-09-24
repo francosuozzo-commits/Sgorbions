@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.961 - 🐛 IL NUMERO NON È PIÙ OBBLIGATORIO NELLE SERIE «SENZA NUMERI». Modificati index.html
+//          e js/app.js. Franco: «la serie Mega 1 e 2 sono impostate come "senza numero" ma non mi
+//          fa salvare delle card perché mi chiede il numero obbligatorio». Il controllo del
+//          salvataggio nella scheda non leggeva il flag `noNumbers` della serie dell'articolo.
 // v6.960 - ✏️ «MODIFICA» SUL TELEFONO E IL SOTTONOME SULLE FIGURINE CON RETRO. Modificati
 //          index.html, js/app.js e css/style.css. Franco, per il taglio per personaggio: «mi serve
 //          modificare il campo sottonome per le serie Mega 1 e Mega 2; da app non ho il tasto di
@@ -30106,7 +30110,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.960';
+const JS_VERSION = 'v6.961';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -59172,9 +59176,19 @@ async function saveFigFromDetail(figId, opzioni) {
     // pretendeva un numero che l'oggetto eredita dalla sua partenza cento righe piu' sotto
     // (v6.261). Un campo obbligatorio il cui valore viene poi sovrascritto - lo stesso difetto
     // che la v6.038 ha tolto ai campi del retro, in un'altra forma.
+    // 🐛 v6.961 (Franco: «la serie Mega 1 e 2 sono impostate come "senza numero" ma non mi fa
+    //    salvare delle card perché mi chiede il numero obbligatorio») — E LA SERIE NON ERA
+    //    INTERPELLATA. La pretesa guardava la tipologia, la versione e la spunta dell'articolo, e
+    //    non il flag «Non ha numeri» della sua serie (`noNumbers`), che `_haNumero` legge da
+    //    sempre. Nessuno se n'era accorto perché fino alla v6.960 le figurine delle Mega non le
+    //    modificava nessuno: si è visto al primo sottonome.
+    // 📌 La serie si cerca dall'articolo, non da `currentSeriesId`: per la stessa ragione per cui
+    //    la sezione si legge da `existingForCheck` (la scheda si apre anche dalla ricerca globale).
+    const _serieDellArt = getData('series', []).find(x => x.id === existingForCheck?.seriesId);
     const _numeroRichiesto = (existingForCheck?.section === 'figurines')
       && _eBase(_vScheda)
-      && !_noNumChk;
+      && !_noNumChk
+      && !(_serieDellArt && _serieDellArt.noNumbers);
     if (_numeroRichiesto && !_numScritto) {
       toast(currentLang === 'it' ? 'Il numero è obbligatorio' : 'Number is required', 'error');
       return;
