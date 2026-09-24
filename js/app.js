@@ -1,7 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.966 - 🧑‍🎤 LA SERIE DICHIARA SE MOSTRARE IL PERSONAGGIO SULLE CARD. Modificati index.html e
+// v6.967 - 🔍 LA RICERCA GLOBALE PULITA. Modificati index.html e js/app.js.
+//          1. 🐛 Franco, con una foto della RG aperta: «a cosa serve mostrare quanto ti mostro nella
+//             foto?». Finché la RG mostra i risultati spariscono «Sfoglia per» e i pulsanti
+//             «Aggiungi Serie» / «Mostra informazioni sommarie» (`_aggiornaBivioInventario`, ora
+//             chiamata anche da `renderCatalogSearch`); svuotata la casella tornano.
+//          2. Franco: «il nome della serie scrivilo sopra alla foto della serie, non alla sua dx;
+//             anche le numeriche che vengono dopo al nome». Nome, etichetta «serie» e numeriche
+//             in una riga sopra la miniatura (`seriesHeader` in colonna).
+// v6.966 -🧑‍🎤 LA SERIE DICHIARA SE MOSTRARE IL PERSONAGGIO SULLE CARD. Modificati index.html e
 //          js/app.js. Franco: «creami un campo nella serie, alle sottoserie ci pensiamo dopo».
 //          Nuova spunta «Mostra il personaggio sulle card» (campo `personaggioInCard`) nella
 //          scheda della serie, accanto a «Non mostrare retro in griglia». In una griglia gli
@@ -30181,7 +30189,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.966';
+const JS_VERSION = 'v6.967';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40474,16 +40482,24 @@ function _aggiornaBivioInventario() {
   // `updateNavUser` perche' e' il TAGLIO a deciderlo, e il taglio cambia senza che l'utente cambi:
   // lasciarlo la' avrebbe voluto dire due punti che accendono lo stesso pulsante con due regole
   // diverse, ed e' il difetto chiuso ieri con la v6.139.
+  // 🆕 v6.967 (Franco, con una foto della RG aperta: «a cosa serve mostrare quanto ti mostro
+  //    nella foto?») — FINCHE' LA RICERCA GLOBALE MOSTRA I RISULTATI, VIA «SFOGLIA PER» E I DUE
+  //    PULSANTI. Sotto non c'e' la griglia: il taglio non cambia i risultati, e aggiungere una serie
+  //    o il riepilogo delle serie parlano di un elenco che non si vede. Svuotata la casella,
+  //    `renderCatalog` passa di qui con la ricerca chiusa e tornano.
+  const _rg = !!_perRicerca((document.getElementById('series-search')?.value || '').trim());
+  const _bivio = document.getElementById('bivio-inventario');
+  if (_bivio) _bivio.style.display = _rg ? 'none' : '';
   const _admin = !!currentUser?.isAdmin;
   const _bSerie = document.getElementById('admin-add-series-btn');
   const _bTipo = document.getElementById('admin-add-tipo-prodotto-btn');
-  if (_bSerie) _bSerie.style.display = (_admin && _taglioInventario === 'serie') ? '' : 'none';   // 🔄 v6.966 - era «non prodotti»
-  if (_bTipo)  _bTipo.style.display  = (_admin && _taglioInventario === 'prodotti') ? '' : 'none';
+  if (_bSerie) _bSerie.style.display = (_admin && !_rg && _taglioInventario === 'serie') ? '' : 'none';   // 🔄 v6.966 - era «non prodotti»
+  if (_bTipo)  _bTipo.style.display  = (_admin && !_rg && _taglioInventario === 'prodotti') ? '' : 'none';
   // v6.174 - il riepilogo delle serie: solo nel taglio Serie, ma per CHIUNQUE. Non c'e' `_admin`
   // nella condizione, e non e' una dimenticanza: e' un riepilogo del catalogo, non uno strumento.
   const _bInfo = document.getElementById('btn-info-tutte-serie');
   if (_bInfo) {
-    _bInfo.style.display = (_taglioInventario === 'serie') ? '' : 'none';   // 🔄 v6.966 - era «non prodotti»
+    _bInfo.style.display = (!_rg && _taglioInventario === 'serie') ? '' : 'none';   // 🔄 v6.966 - era «non prodotti»; v6.967 - e non con la RG
     // v6.177 (Franco) - su telefono l'etichetta si accorcia. Si cambia l'ATTRIBUTO `data-i18n` e poi
     // il testo, come fa questa stessa funzione due righe sopra per `catalog.sub`: scrivere solo il
     // testo lo farebbe riallungare al primo `applyI18n()`, che rilegge l'attributo.
@@ -42642,6 +42658,9 @@ function renderCatalogSearch(q) {
   if (!q) { renderCatalog(); return; }
   if (resultsEl) resultsEl.style.display = '';
   if (grid) grid.style.display = 'none';
+  // 🆕 v6.967 - nasconde «Sfoglia per» e i pulsanti del catalogo. Il `typeof` perché i banchi di
+  //    prova eseguono questa funzione da sola, senza il resto del catalogo.
+  if (typeof _aggiornaBivioInventario === 'function') _aggiornaBivioInventario();
 
   // 🔴 v6.899 (Franco: «nei risultati della ricerca globale sono uscite due serie che sono in
   //    arrivo; avevamo detto che non devono uscire quelle in arrivo») - LA RICERCA PASSA DALLE
@@ -42781,7 +42800,26 @@ function renderCatalogSearch(q) {
     //    ritocco. Chi l'ha gia' vista sulle copertine dell'Inventario la riconosce qui.
     const _bloccataRG = _serieBloccata(s);
     const seriesHeader = `<div style="display:flex;align-items:center;justify-content:space-between;">
-        <div${_bloccataRG ? '' : ` onclick="openSeriesDetail('${s.id}')"`} style="cursor:${_bloccataRG ? 'default' : 'pointer'};display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
+        <div${_bloccataRG ? '' : ` onclick="openSeriesDetail('${s.id}')"`} style="cursor:${_bloccataRG ? 'default' : 'pointer'};display:flex;align-items:flex-start;flex-direction:column;gap:0.4rem;flex:1;min-width:0;">
+          ${/* 🔄 v6.967 (Franco: «il nome della serie scrivilo sopra alla foto della serie, non alla
+                 sua dx; anche le numeriche che vengono dopo al nome») - NOME E NUMERICHE IN UNA
+                 RIGA SOPRA, LA MINIATURA SOTTO. La riga va a capo da sola se non ci sta. */''}
+          <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:0.3rem 0.5rem;min-width:0;max-width:100%;">
+          <!-- 🆕 v6.395 (Franco) - IL NOME DELLA SERIE E' BIANCO, come in tutto il resto del sito.
+               Qui era l'unico posto in cui era lime: altrove eredita il colore del testo, e nella
+               lista admin e' --muted. 🔴 E il lime non e' un colore qualunque: e' --accent, che
+               nella ricerca DENTRO una sezione colora il NUMERO dei risultati
+               (updateItemsCountDisplay). Cioe' il nome della serie portava il colore che due
+               schermate piu' in la' significa «quanti ne ho trovati».
+               ⚠️ NIENTE APICI INVERSI IN QUESTO COMMENTO: sta dentro un template literal, e un
+               backtick qui CHIUDE la stringa. E' la lezione della v6.217, e scrivendo questa
+               release ci sono cascato di nuovo - l'ha presa node --check, non la rilettura. -->
+          <span style="font-family:var(--font-display);font-size:1.1875rem;font-weight:600;max-width:100%;color:var(--nome-entita);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_nomeSerie(s)}${r.figs.length ? ':' : ''}</span>
+          ${r.seriesMatch ? `<span style="font-size:0.8125rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 5px;flex-shrink:0;">${currentLang==='it'?'serie':'series'}</span>` : ''}
+          <!-- 🆕 v6.395 - e il lime passa QUI, dove dice cio' che dice sempre: quanti risultati.
+               Non e' uno scambio estetico: e' rimettere un colore sul suo mestiere. -->
+          ${r.figs.length ? `<span style="font-size:0.9375rem;color:var(--accent);white-space:nowrap;flex-shrink:0;">${_frasePerQuesta(r.figs.length)} ${_fraseTipologie(_nTipologie(r.figs))}</span>` : ''}
+          </div>
           ${/* ⚠️ LA MINIATURA ENTRA IN UN CONTENITORE SUO, e le due dichiarazioni non sono
                  decorazione: `position:relative` perche' il timbro e' assoluto e senza un
                  antenato posizionato si aggancia a quello che trova; `container-type:inline-size`
@@ -42793,20 +42831,6 @@ function renderCatalogSearch(q) {
           ${s.img ? `<img src="${cloudinaryUrl(s.img,'w_' + (_MINI_SERIE * 2) + ',h_' + (_MINI_SERIE * 2) + ',c_fit,q_auto,f_auto')}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;background:var(--card2);">` : '<span style="font-size:' + Math.round(_MINI_SERIE * 0.6) + 'px;line-height:' + _MINI_SERIE + 'px;text-align:center;">🎴</span>'}
           ${_timbroStatoSerie(s)}
           </div>
-          <!-- 🆕 v6.395 (Franco) - IL NOME DELLA SERIE E' BIANCO, come in tutto il resto del sito.
-               Qui era l'unico posto in cui era lime: altrove eredita il colore del testo, e nella
-               lista admin e' --muted. 🔴 E il lime non e' un colore qualunque: e' --accent, che
-               nella ricerca DENTRO una sezione colora il NUMERO dei risultati
-               (updateItemsCountDisplay). Cioe' il nome della serie portava il colore che due
-               schermate piu' in la' significa «quanti ne ho trovati».
-               ⚠️ NIENTE APICI INVERSI IN QUESTO COMMENTO: sta dentro un template literal, e un
-               backtick qui CHIUDE la stringa. E' la lezione della v6.217, e scrivendo questa
-               release ci sono cascato di nuovo - l'ha presa node --check, non la rilettura. -->
-          <span style="font-family:var(--font-display);font-size:1.1875rem;font-weight:600;color:var(--nome-entita);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_nomeSerie(s)}${r.figs.length ? ':' : ''}</span>
-          ${r.seriesMatch ? `<span style="font-size:0.8125rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 5px;flex-shrink:0;">${currentLang==='it'?'serie':'series'}</span>` : ''}
-          <!-- 🆕 v6.395 - e il lime passa QUI, dove dice cio' che dice sempre: quanti risultati.
-               Non e' uno scambio estetico: e' rimettere un colore sul suo mestiere. -->
-          ${r.figs.length ? `<span style="font-size:0.9375rem;color:var(--accent);white-space:nowrap;flex-shrink:0;">${_frasePerQuesta(r.figs.length)} ${_fraseTipologie(_nTipologie(r.figs))}</span>` : ''}
         </div>
         ${/* 🗑️ v6.341 (Franco: *"il risultato totale non va riportato anche in alto a dx"*) - VIA
               IL CONTEGGIO A DESTRA. E' la terza decisione sulla stessa riga in una sera, quindi
