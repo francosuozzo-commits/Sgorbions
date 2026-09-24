@@ -1,7 +1,20 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.959 - 📱 IL PROFILO USA TUTTA LA LARGHEZZA, E «ESPLORA» TORNA SOTTO IL CAROSELLO.
+// v6.960 - ✏️ «MODIFICA» SUL TELEFONO E IL SOTTONOME SULLE FIGURINE CON RETRO. Modificati
+//          index.html, js/app.js e css/style.css. Franco, per il taglio per personaggio: «mi serve
+//          modificare il campo sottonome per le serie Mega 1 e Mega 2; da app non ho il tasto di
+//          modifica». Scelte sue: «tasto A e sottonome B».
+//          1. (telefono) il tasto «Modifica» in fondo alla scheda di un articolo si vede anche
+//             sotto gli 860px. Solo lui: matita/clona sulle card e Clona/Elimina restano al PC.
+//          2. `ARTICOLI.figurines.sottonome = true`: il campo compare nella form, nella card
+//             (una riga in più su tutte), nella scheda e nella vista tabellare. 🔴 NON nel nome
+//             completo: il ramo della v6.796 l'avrebbe riscritto per tutte le 2632 fcr, togliendo
+//             il retro — `prova-v6796` 4b se n'è accorta. Le fcr ne sono escluse per nome.
+//          3. 🐛 Franco: «sulla app, dopo che mi autentico, si vede ancora la fascia delle serie».
+//             Nessuno ridisegnava la fascia dopo il login: adesso lo fa `updateNavUser`.
+//             📏 Nella preview a 390px, dopo un login finto: v6.959 `block`, v6.960 `none`.
+// v6.959 -📱 IL PROFILO USA TUTTA LA LARGHEZZA, E «ESPLORA» TORNA SOTTO IL CAROSELLO.
 //          Modificati index.html, js/app.js e css/style.css.
 //          1. (telefono) Franco: «nella scheda profilo sfrutterei di più lo spazio: verso destra
 //             rimane tutto non utilizzato», per i numeri e le due spunte in fondo. L'avatar
@@ -30093,7 +30106,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.959';
+const JS_VERSION = 'v6.960';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34518,6 +34531,13 @@ window.addEventListener('resize', () => { try { _frecciaSottoAccedi(); } catch (
 function updateNavUser() {
   // 🆕 v6.953 — dopo che questa funzione ha acceso o spento «Accedi», la freccia si rimette sotto.
   requestAnimationFrame(() => { try { _frecciaSottoAccedi(); _aggiornaLogoNavbar(); } catch (e) {} });
+  // 🐛 v6.960 (Franco: «sulla app, dopo che mi autentico, si vede ancora la fascia delle serie,
+  //    quella per invogliare al login») — LA FASCIA SI RIDECIDE QUI. `renderHomeSeries` sa già
+  //    che da loggati non va mostrata, ma nessuno la richiamava dopo il login: né `doLogin` né
+  //    `signInWithGoogle` ridisegnano la home, e la fascia restava quella disegnata da ospite
+  //    finché non si cambiava pagina. Questa funzione la chiamano login, Google e logout, quindi
+  //    un posto solo copre i tre ingressi (e anche l'uscita, dove la fascia deve tornare).
+  try { renderHomeSeries(); } catch (e) {}
   _aggiornaRicercaNavbar();   // v6.341 - vale per tutti e due i rami, quindi sta prima del bivio
   // 🆕 v6.878 — RC si accende per il solo admin. Sta PRIMA del bivio come la riga qui sopra e
   //    per la stessa ragione: la risposta e' una sola per tutti e due i rami, e scriverla due
@@ -37599,6 +37619,14 @@ const ARTICOLI = {
     //    QUESTA TIPOLOGIA VA NEI CAROSELLI. Prima i due caroselli filtravano 'figurines'
     //    scritto a mano, in due punti: adesso la risposta ce l'ha l'articolo.
     carosello: true,   // v6.690
+    // 🆕 v6.960 (Franco: «mi serve modificare il campo sottonome per le serie Mega 1 e Mega 2»)
+    //    — IL SOTTONOME ANCHE SULLE FIGURINE CON RETRO. Serve al taglio per PERSONAGGIO: nelle
+    //    Mega il nome è il motto («SONO STONATA») e il personaggio andrà scritto qui.
+    // 🔴 È STATA SCELTA LA STRADA LARGA, a ragion veduta: fra «solo le figurine delle Mega» e
+    //    «tutte le figurine con retro» Franco ha scelto la seconda, sapendo che ogni card di
+    //    questa tipologia guadagna una riga — vuota quasi ovunque (`_rigaCard` scrive `&nbsp;`
+    //    anche col campo vuoto, perché le righe delle card restano allineate).
+    sottonome: true,   // v6.960
     it: 'Figurine con retro',   en: 'Stickers with backs',
     itSing: 'figurina con retro', enSing: 'sticker with back',
     genere: 'f',
@@ -54262,7 +54290,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     const _puoModificare = !_daAttaccareModificaVietata(f);
     const _puoClonare    = !_daAttaccareCreazioneVietata(f);
     bottomButtons = (_puoModificare || _puoClonare) ? `<div style="display:flex;gap:0.5rem;justify-content:flex-end;">
-      ${_puoModificare ? `<button class="tbl-btn tbl-btn-edit" style="font-size:0.92rem;padding:6px 14px;" onclick="switchToEditMode('${f.id}')">&#9998; ${(currentLang === 'it') ? 'Modifica' : 'Edit'}</button>` : ''}
+      ${_puoModificare ? `<button class="tbl-btn tbl-btn-edit admin-anche-telefono" style="font-size:0.92rem;padding:6px 14px;" onclick="switchToEditMode('${f.id}')">&#9998; ${(currentLang === 'it') ? 'Modifica' : 'Edit'}</button>` : ''}
       ${_puoClonare ? `<button class="tbl-btn tbl-btn-edit" style="font-size:0.92rem;padding:6px 14px;" onclick="cloneFigurine('${f.id}')">&#10697; ${(currentLang === 'it') ? 'Clona' : 'Clone'}</button>` : ''}
       ${_puoModificare ? `<button class="tbl-btn tbl-btn-del" style="font-size:0.92rem;padding:6px 14px;" onclick="deleteItemFromDetail('${f.id}')">🗑️ ${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button>` : ''}
     </div>` : '';
@@ -60488,7 +60516,11 @@ function computeFullName(fig, allFigs, _salti) {
   // 📌 E I DERIVATI SEGUONO DA SOLI: un errore di stampa di spilla compone
   //    `_nomeFigurinaDiPartenza`, che rientra in questa stessa funzione sulla base. Cambiare qui
   //    li sistema tutti e sette senza toccare i loro rami.
-  if (_haSottonome(fig.section || 'figurines')) {
+  // 🔴 v6.960 — E IL «DOMANI» QUI SOPRA È ARRIVATO: le figurine con retro dichiarano un
+  //    sottonome. Senza l'eccezione, TUTTE le 2632 fcr avrebbero perso il retro dal nome
+  //    completo — `prova-v6796` 4b se n'è accorta prima di chiunque. Il sottonome delle fcr
+  //    serve al taglio per personaggio, non al nome: il loro nome completo resta `Nome - Retro`.
+  if (_haSottonome(fig.section || 'figurines') && (fig.section || 'figurines') !== 'figurines') {
     return [(fig.subseries || '').trim(), (fig.name || '').trim(), (fig.subname || '').trim()]
       .filter(Boolean).join(' - ');
   }
