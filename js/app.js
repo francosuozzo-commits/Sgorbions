@@ -1,6 +1,29 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.969 - Modificati index.html e js/app.js. Tre cose:
+//          1. 🐛 LA FOTO DELLA FPA NELLA SCHEDA (Franco: «aprendo una fpa dalla RG, la foto non si
+//             carica»). Il ramo a una faccia di `openFigDetail` leggeva solo `f.img`, vuoto per scelta
+//             sulle fpa: ora chiede a `_fotoFigurina`, come la card.
+//          2. 🧑‍🎤 LA PAGINA DEL PERSONAGGIO RIFATTA (Franco: «così come è non mi piace»): una card per
+//             articolo, tutte con lo stesso riquadro quadrato; sotto la foto serie, personaggio e
+//             tipologia; ordine fcr → retro → altri, e dentro l'ordine delle serie. E nella card
+//             dell'hub via la riga delle serie (Franco: «non è quello il posto in cui scriverla»).
+//             Poi (Franco): fuori le figurine per album, e le fcr con fronte E retro, a metà
+//             riquadro ciascuno, «altrimenti sembrano tutte uguali». E card grandi il doppio di
+//             quelle dell'hub («tanto ce ne saranno poche»), testo un po' più grande. E sotto la
+//             foto (Franco): Serie / Tipologia / Numero - Nome / Tipo di versione / Nome completo,
+//             dell'articolo; via la nota «dal retro».
+//          4. 🐛 Nei risultati della RG « - » fra numero e nome, come nel titolo della scheda.
+//          5. ⬆️ (index) La buca della RG sopra «Sfoglia per» (Franco: «ne è indipendente»).
+//          6. 🏷️ «+ Aggiungi tipo di articolo» → «+ Aggiungi tipologia di articolo» (Franco), e
+//             il titolo della finestra con lui.
+//          7. 📝 Nella VT delle fcr la colonna «Note», solo admin, ultima (Franco).
+//          8. 🔍 RG: le fcr prima per ATTINENZA (la ricerca nel loro nome/sottonome/numero batte
+//             quella nel retro), poi nell'ordine della griglia (`_ordinaPerAttinenzaRG`, per gruppo).
+//          3. 📖 UN ALBUM PER PIÙ SERIE SENZA DUPLICARE LE FOTO (strada B): nuovo campo `fotoDaAlbumId`
+//             («Foto dall'album») — fronte, retro e pagine si prendono dall'album indicato dove la
+//             copia non ne ha di sue (`_albumFonteFoto`, `_imgRetroDi`, `_albumConLePagine`).
 // v6.968 - 🧑‍🎤 CARICA I PERSONAGGI: la funzione 6 della scheda Funzioni. Modificati index.html e
 //          js/app.js. Franco: «carichiamo le coppie personaggi-articolo stando all'ultima versione
 //          del file che mi hai mandato». Si scelgono `personaggi.json` e `associazioni.json`,
@@ -30205,7 +30228,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.968';
+const JS_VERSION = 'v6.969';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41128,8 +41151,6 @@ function renderCatalogPersonaggi(grid) {
   if (_personaggiPagina < 1) _personaggiPagina = 1;
   const da = (_personaggiPagina - 1) * PERSONAGGI_PER_PAGINA;
   const pagina = tutti.slice(da, da + PERSONAGGI_PER_PAGINA);
-  const serieNome = new Map((getData('series', []) || []).map(s => [s.id, s]));
-  const ordine = new Map((getData('series', []) || []).map(s => [s.id, s.order ?? 9999]));
   // 🔄 v6.968 (Franco: «la sezione di ricerca è brutta: deve essere come le altre, quindi barra di
   //    ricerca sopra, sezione [dei filtri] delimitata con perimetro bianco») — LA FORMA DI
   //    `#items-search-box`: riquadro col bordo blu delle azioni utente, la buca in cima con
@@ -41166,14 +41187,15 @@ function renderCatalogPersonaggi(grid) {
   const card = p => {
     const arts = articoliDelPersonaggio(p.id, ix);
     const foto = _fotoPersonaggio(arts, p.id, ix);
-    const serie = [...new Set(arts.map(a => a.seriesId))].sort((a, b) => (ordine.get(a) ?? 9999) - (ordine.get(b) ?? 9999))
-      .map(id => serieNome.get(id)).filter(Boolean);
+    // 🗑️ v6.969 (Franco: «il nome della serie, nella card del personaggio, va tolto; un personaggio
+    //    può avere più serie; non è quello il posto in cui scriverla») - via la riga delle serie.
+    //    Le serie si vedono nella pagina del personaggio, sotto ogni articolo. Il `flex` che la
+    //    riga teneva passa al nome, cosi' il conto resta in fondo alla card anche coi nomi corti.
     return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="apriPersonaggio(\'' + p.id + '\')">'
       + '<div class="card-img-placeholder">' + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="' + esc(p.nome) + '" style="width:100%;height:100%;object-fit:contain;">' : '') + '</div>'
       // 🔄 v6.968 — card a un quarto: testo e margini scalati con lei (titolo 1,35 → 0,85rem).
       + '<div class="card-body" style="display:flex;flex-direction:column;flex:1 1 auto;padding:0.55rem 0.65rem 0.6rem;">'
-      + '<div class="card-title" style="margin-bottom:0.2rem;font-size:0.85rem;line-height:1.2;color:var(--nome-entita);">' + esc(p.nome) + '</div>'
-      + '<div style="font-size:0.68rem;line-height:1.3;color:var(--text);flex:1 1 auto;">' + serie.map(s => esc(_nomeSerieCard(s, true))).join(' · ') + '</div>'
+      + '<div class="card-title" style="margin-bottom:0.2rem;font-size:0.85rem;line-height:1.2;color:var(--nome-entita);flex:1 1 auto;">' + esc(p.nome) + '</div>'
       + '<div class="card-desc" style="margin-top:0.3rem;padding-top:0.3rem;font-size:0.72rem;line-height:1.3;border-top:1px solid rgba(255,255,255,0.06);color:var(--accent);">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div>'
       + '</div></div>';
   };
@@ -41208,48 +41230,111 @@ function apriPersonaggio(pid) {
 }
 function chiudiPersonaggio() { _personaggioAperto = null; renderCatalog(); }
 
-// LA PAGINA DI UN PERSONAGGIO: foto, nome, e i suoi articoli per serie e per tipologia.
+// LA PAGINA DI UN PERSONAGGIO.
+// 🔄 v6.969 (Franco: «così come è non mi piace… mostriamo la foto di tutti gli articoli che lo
+//    ritraggono; sotto all'articolo metti il nome della serie, il nome del personaggio, la
+//    tipologia di articolo; le foto tutte della stessa dimensione; prime foto di fcr, poi retro,
+//    poi altro; tra le fcr l'ordine lo detta il solito ordine serie») - NON PIU' BLOCCHI PER SERIE
+//    CON LE RIGHE DEI NOMI: una griglia di card, una per articolo, tutte con lo stesso riquadro
+//    quadrato (la foto ci sta dentro intera, come nelle card delle griglie).
+// 📌 L'ORDINE: tre gruppi (`_gruppoPersonaggio`), dentro ognuno l'ordine delle serie, poi - negli
+//    «altri» - l'ordine delle tipologie dell'inventario, e infine il comparatore della griglia, cosi'
+//    due articoli della stessa serie e tipologia stanno come nella loro griglia.
+// 📌 SOTTO LA FOTO (poi, sempre Franco): serie, tipologia, «numero - nome», versione, nome completo
+//    - tutto dell'ARTICOLO. Vedi la card qui sotto.
+// ⚠️ Via la foto grande in testa: era la prima di queste stesse card, ripetuta.
+function _gruppoPersonaggio(f) {
+  const sec = f.section || 'figurines';
+  return sec === 'figurines' ? 0 : sec === 'retros' ? 1 : 2;
+}
 function renderPaginaPersonaggio(grid, pid) {
   const it = currentLang === 'it';
   const p = _personaggiDati.perId.get(pid);
   if (!p) { _personaggioAperto = null; renderCatalogPersonaggi(grid); return; }
-  const arts = articoliDelPersonaggio(pid);
-  const foto = _fotoPersonaggio(arts, pid);
+  const ix = _indiciPersonaggi();
+  // 🐛 v6.969 (Franco: «nella pagina di un personaggio hai messo le figurine per album; no: mettiamo
+  //    solo fcr e sue versioni») - fuori le figurine per album: hanno lo stesso fronte della loro
+  //    fcr, e in pagina sembravano un doppione. Il conto in testa segue quello che si vede.
+  const arts = articoliDelPersonaggio(pid, ix).filter(a => a.section !== 'attaccare');
   const figs = getData('figurines', []);
-  const serie = (getData('series', []) || []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
-  const elenco = [];
-  const blocchi = serie.map(s => {
-    const suoi = arts.filter(a => a.seriesId === s.id);
-    if (!suoi.length) return '';
-    const sezioni = PRODOTTI_INVENTARIO.map(sec => {
-      const inSez = suoi.filter(a => (a.section || 'figurines') === sec);
-      if (!inSez.length) return '';
-      const ord = inSez.slice().sort(_comparatoreGriglia(sec, figs.filter(x => x.seriesId === s.id && (x.section || 'figurines') === sec), _indiceArticoli(), figs));
-      return '<div style="margin:0.6rem 0 0.2rem;font-weight:600;color:var(--text);">' + esc(getSectionLabel(sec)) + ': <span style="font-weight:400;color:var(--accent);">' + ord.length + '</span></div>'
-        + '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">' + ord.map(f => {
-          elenco.push(f.id);
-          const u = _fotoFigurina(f, figs);
-          const v = _versioneDiChiave(_chiaveTipo(f));
-          const ver = (v && !_eBase(f)) ? ' <span style="color:' + (_COLORE_TIPO[v.chiave] || 'var(--text)') + ';font-size:0.8rem;">' + esc(it ? v.it : v.en) + '</span>' : '';
-          // 📌 Una figurina che è qui perché il personaggio sta sul suo RETRO lo dice: il nome
-          //    stampato è quello di un altro, e senza la nota sembrerebbe un errore.
-          const _dalRetro = sec === 'figurines' && !personaggiDiArticolo(f).includes(pid);
-          const nota = _dalRetro ? ' <span style="color:var(--text);font-size:0.8rem;">· ' + (it ? 'dal retro' : 'on the back') + '</span>' : '';
-          return '<div onclick="openFigDetail(\'' + f.id + '\', _elencoPersonaggio)" style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0.6rem 0.25rem 0.25rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--card);">'
-            + (u ? '<img src="' + cloudinaryUrl(u, 'w_96,h_96,c_fit,q_auto,f_auto') + '" style="width:48px;height:48px;object-fit:contain;border-radius:4px;">' : '')
-            + '<span style="color:' + COL_IDENTITA + ';">' + (f.number ? f.number + ' ' : '') + esc(sec === 'retros' ? (f.fullName || f.name || '') : (f.name || '')) + '</span>' + ver + nota + '</div>';
-        }).join('') + '</div>';
-    }).join('');
-    return '<div style="grid-column:1/-1;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:0.9rem 1rem;">'
-      + '<div style="font-size:1.15rem;color:var(--nome-entita);font-weight:600;">' + esc(_nomeSerie(s)) + '</div>' + sezioni + '</div>';
-  }).join('');
-  _elencoPersonaggio = elenco;
+  const serieDi = new Map((getData('series', []) || []).map(s => [s.id, s]));
+  const ordSerie = id => serieDi.get(id)?.order ?? 9999;
+  const ordSez = sec => { const i = PRODOTTI_INVENTARIO.indexOf(sec); return i < 0 ? 999 : i; };
+  // un comparatore della griglia per ogni coppia serie-tipologia, costruito una volta sola
+  const comp = new Map();
+  const compDi = f => {
+    const sec = f.section || 'figurines', k = f.seriesId + '|' + sec;
+    if (!comp.has(k)) comp.set(k, _comparatoreGriglia(sec, figs.filter(x => x.seriesId === f.seriesId && (x.section || 'figurines') === sec), ix.perId, figs));
+    return comp.get(k);
+  };
+  const ord = arts.slice().sort((a, b) => (_gruppoPersonaggio(a) - _gruppoPersonaggio(b))
+    || (ordSerie(a.seriesId) - ordSerie(b.seriesId))
+    || (ordSez(a.section || 'figurines') - ordSez(b.section || 'figurines'))
+    || compDi(a)(a, b));
+  _elencoPersonaggio = ord.map(f => f.id);
+  // 🔄 v6.969 (Franco: «le card della pagina del personaggio devono essere grandi il doppio; tanto ce
+  //    ne saranno poche») - le colonne della griglia così come sono (l'hub ne usa il doppio), cioè
+  //    card larghe il doppio di quelle dell'hub. 📱 Sul telefono due invece di tre: la metà
+  //    esatta non esiste, e a una colonna sola la foto riempirebbe lo schermo.
+  if (grid) {
+    grid.style.gridTemplateColumns = '';
+    const n = _isMobileViewport() ? 0 : getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
+    grid.style.gridTemplateColumns = 'repeat(' + (n || 2) + ', minmax(0, 1fr))';
+    grid.style.gap = '0.75rem';
+  }
+  // 📌 con le card doppie anche il testo cresce: 0,68 → 0,8rem (il nome 0,78 → 0,95rem)
+  const riga = (testo, stile) => '<div style="font-size:0.8rem;line-height:1.3;' + stile + '">' + testo + '</div>';
+  const card = f => {
+    const sec = f.section || 'figurines';
+    const u = _fotoFigurina(f, figs);
+    const s = serieDi.get(f.seriesId);
+    // 🔄 v6.969 (Franco: «le informazioni mostrale così: Serie / Tipologia di articolo (in minuscolo
+    //    con la prima lettera maiuscola) / Numero - Nome / Tipo di versione / Nome completo») - CINQUE
+    //    RIGHE, e il nome è quello DELL'ARTICOLO, non del personaggio. Per questo se ne va la nota
+    //    «dal retro» della v6.966: serviva a spiegare perché sotto la foto di un altro stava il nome di
+    //    lui, e adesso sotto ogni foto c'è il nome stampato su quell'articolo.
+    const tipologia = _maiuscola(String(getSectionLabelSingular(sec) || '').toLowerCase());
+    const numNome = ((_haNumero(f) && f.number) ? f.number + ' - ' : '') + (f.name || '');
+    // la versione come nella RG: sulle figurine sempre (anche «Versione base»), altrove solo se c'è
+    const _k = _chiaveTipo(f);
+    const versione = (sec === 'figurines' || _k !== 'base')
+      ? (_etichettaTipo(f, false) || (it ? 'Versione base' : 'Base version')) : '';
+    // 🔄 Franco: «al posto del nome completo, metti il nome completo del retro». Per una figurina è
+    //    quello del retro che ha davvero (`_retroEffettivo`: il suo, o quello ereditato dalla base);
+    //    un retro scrive il proprio; gli altri articoli un retro collegato non ce l'hanno, e la riga
+    //    non c'è.
+    const _rId = sec === 'figurines' ? _retroEffettivo(f, figs) : null;
+    const _rRec = _rId ? ix.perId.get(_rId) : null;
+    const nomeCompleto = sec === 'retros' ? _retroNomeCompleto(f) : (_rRec ? _retroNomeCompleto(_rRec) : '');
+    // 🔄 v6.969 (Franco: «devi mettere fronte e retro, altrimenti sembrano tutte uguali, le fcr») -
+    //    una fcr e le sue versioni hanno quasi sempre lo stesso fronte: si distinguono DIETRO. Per
+    //    loro il riquadro quadrato si divide in due metà, fronte a sinistra e retro a destra, con le
+    //    due facce chieste a `_dueFacce` come la card della griglia. Il riquadro resta della stessa
+    //    misura per tutte le card: cambia solo cosa c'è dentro.
+    const _mezza = url => url
+      ? '<img src="' + cloudinaryUrl(url, 'w_400,h_600,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:50%;height:100%;object-fit:contain;padding:3px;">'
+      : '<span style="width:50%;height:100%;"></span>';
+    const _ff = sec === 'figurines' ? _dueFacce(f, figs) : null;
+    const _foto = _ff
+      ? (_ff.fronte || _ff.retro ? _mezza(_ff.fronte) + _mezza(_ff.retro) : '')
+      : (u ? '<img src="' + cloudinaryUrl(u, 'w_600,h_600,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;padding:4px;">' : '');
+    return '<div class="card personaggio-articolo" style="display:flex;flex-direction:column;cursor:pointer;" onclick="openFigDetail(\'' + f.id + '\', _elencoPersonaggio)">'
+      + '<div style="aspect-ratio:1;background:var(--card2);display:flex;align-items:center;justify-content:center;">'
+      + (_foto || '<span style="color:var(--muted);font-size:0.7rem;">' + (it ? 'Foto non disponibile' : 'Photo not available') + '</span>')
+      + '</div>'
+      + '<div class="card-body" style="padding:0.45rem 0.55rem 0.5rem;">'
+      + riga(s ? esc(_nomeSerieCard(s, true)) : '', 'color:var(--text);')
+      + riga(esc(tipologia), 'color:var(--accent);')
+      + riga(esc(numNome), 'font-size:0.95rem;font-weight:600;color:var(--nome-entita);margin:0.1rem 0;')
+      // Franco: «la tipologia di versione in minuscolo a parte l'iniziale» - come la tipologia sopra
+      + (versione ? riga(esc(_maiuscola(versione.toLowerCase())), 'color:' + (_COLORE_TIPO[_k] || 'var(--text)') + ';') : '')
+      + (nomeCompleto ? riga(esc(nomeCompleto), 'color:var(--text);') : '')
+      + '</div></div>';
+  };
   grid.innerHTML = '<div style="grid-column:1/-1;"><button class="back-btn" onclick="chiudiPersonaggio()">&#8592; ' + (it ? 'Personaggi' : 'Characters') + '</button></div>'
-    + '<div style="grid-column:1/-1;display:flex;gap:1.2rem;align-items:center;flex-wrap:wrap;">'
-    + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_480,h_480,c_fit,q_auto,f_auto') + '" style="width:200px;height:200px;object-fit:contain;border-radius:12px;background:var(--card2);">' : '')
-    + '<div><div style="font-family:var(--font-display);font-size:1.8rem;color:var(--nome-entita);">' + esc(p.nome) + '</div>'
-    + '<div style="color:var(--accent);margin-top:0.3rem;">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div></div></div>'
-    + blocchi;
+    + '<div style="grid-column:1/-1;"><div style="font-family:var(--font-display);font-size:1.8rem;color:var(--nome-entita);">' + esc(p.nome) + '</div>'
+    + '<div style="color:var(--accent);margin-top:0.3rem;">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div></div>'
+    + ord.map(card).join('');
 }
 let _elencoPersonaggio = [];
 
@@ -42099,8 +42184,10 @@ function openAddTipoProdottoModal(idDaModificare) {
   if (g('tipo-prodotto-colonne-desktop')) g('tipo-prodotto-colonne-desktop').value = (t && _colClamp(t.colonneDesktop)) || COLONNE_DEFAULT.extras.d;  // v6.163
   if (g('tipo-prodotto-colonne-mobile'))  g('tipo-prodotto-colonne-mobile').value  = (t && _colClamp(t.colonneMobile))  || COLONNE_DEFAULT.extras.m;  // v6.163
   const tit = g('tipo-prodotto-modal-title');
-  if (tit) tit.textContent = t ? (it ? 'Modifica tipo di articolo' : 'Edit item type')
-                               : (it ? 'Aggiungi tipo di articolo' : 'Add item type');
+  // 🔄 v6.969 (Franco: «il tasto "Aggiungi tipo di articolo" diventa "Aggiungi tipologia di
+  //    articolo"») - e con lui il titolo della finestra che apre, in tutte e due le forme.
+  if (tit) tit.textContent = t ? (it ? 'Modifica tipologia di articolo' : 'Edit item type')
+                               : (it ? 'Aggiungi tipologia di articolo' : 'Add item type');
   // v6.151 (Franco) - ELIMINA GRIGIATO finche' quel tipo ha dei prodotti dentro. La v6.149 lo
   // lasciava premibile e spiegava nella conferma che gli oggetti sarebbero rimasti orfani di box:
   // una spiegazione dopo il clic e' un avviso, un pulsante spento e' una regola. E qui la regola
@@ -42577,6 +42664,33 @@ function _campiRicercaFigurina(f) {
   return campi;
 }
 
+// 🆕 v6.969 (Franco: «serve ottimizzare l'algoritmo di ordinamento dei risultati della RG… le fcr
+//    devono essere ordinate prima per assonanza del risultato con la ricerca e solo dopo per numero;
+//    se cerco "achille" deve prima dare la figurina 340, con tutte le sue versioni, e solo dopo le
+//    figurine che hanno "achille" nel retro; la assonanza di un nome figurina è maggiore di quella
+//    di un nome di retro») - L'ATTINENZA DI UNA FCR, in due gradi:
+//      0 = la ricerca sta nel SUO nome, nel sottonome o nel numero - è lei;
+//      1 = la ricerca sta altrove (il retro, che le entra nel Nome completo, il tipo, la
+//          descrizione…): la figurina c'è perché è collegata a qualcosa che si chiama così.
+// 📌 LA FUNZIONE DELLA GRIGLIA NON SI TOCCA, e questo è il «separare» che Franco ha previsto: la
+//    RG ordina prima con `_comparatoreGriglia`, poi qui riordina per attinenza, e l'ordinamento di
+//    JavaScript è stabile - a parità di grado resta l'ordine della griglia (il numero). La griglia
+//    non sa niente della ricerca, e non deve.
+// ⚠️ IL GRADO È DEL GRUPPO, non della singola pillola: il gruppo è la figurina con tutte le sue
+//    versioni (stesso numero, `chiaveGruppo`), e prende il grado migliore dei suoi. Se contasse la
+//    pillola, un change di 340 trovato solo per il suo retro finirebbe lontano dalla sua base.
+function _attinenzaFcrRG(f, qn) {
+  if (!qn) return 0;
+  if (String(f.number || '').includes(qn)) return 0;
+  return (_matchRicerca(f.name, qn) || _matchRicerca(f.subname, qn)) ? 0 : 1;
+}
+function _ordinaPerAttinenzaRG(items, qn, chiaveGruppo) {
+  if (!qn) return items;
+  const grado = new Map();
+  items.forEach(f => { const k = chiaveGruppo(f), g = _attinenzaFcrRG(f, qn); if (!grado.has(k) || g < grado.get(k)) grado.set(k, g); });
+  return items.slice().sort((a, b) => grado.get(chiaveGruppo(a)) - grado.get(chiaveGruppo(b)));
+}
+
 function _figMatchRicerca(f, qn) {
   if (!qn) return true;
   if (String(f.number || '').includes(qn)) return true;
@@ -42976,6 +43090,9 @@ function renderCatalogSearch(q) {
           //    non essere fra i risultati della ricerca.
           const _sezIntera = _tutteRG.filter(f => f.seriesId === s.id && (f.section || 'figurines') === sec);
           inSection = [...inSection].sort(_comparatoreGriglia(sec, _sezIntera, _idxRG, _tutteRG));
+          // 🆕 v6.969 - e le fcr, PRIMA dell'ordine della griglia, per quanto il risultato somiglia
+          //    alla ricerca (`_ordinaPerAttinenzaRG`, qui sotto la funzione).
+          if (sec === 'figurines') inSection = _ordinaPerAttinenzaRG(inSection, qn, chiaveGruppo);
           if (!inSection.length) return '';
           // 🆕 v6.664 (Franco: *"per le spille usa la sottoserie come contenitore, alla
           //    stregua della tipologia di articolo"*) - LA SOTTOSERIE DIVENTA UN CONTENITORE.
@@ -43288,7 +43405,11 @@ function renderCatalogSearch(q) {
                 //    che si scorre con l'occhio. Tutto cio' che qualifica - versione, tipologia,
                 //    il retro associato - sta sotto, e i pezzi li unisce il separatore invece di
                 //    portarselo ciascuno addosso.
-                const _riga1 = (f.number ? '<span style="color:' + COL_IDENTITA + ';font-size:0.85rem;">' + f.number + '</span> ' : '')
+                // 🐛 v6.969 (Franco: «nei risultati della RG, dopo il [numero] ci va " - ", come
+                //    facciamo nel nome completo degli articoli aventi un numero») - la forma del
+                //    titolo della scheda (`numero - nome`). Il trattino è `_sep`: bianco, perché la
+                //    punteggiatura non porta il colore dei valori (v6.404).
+                const _riga1 = (f.number ? '<span style="color:' + COL_IDENTITA + ';font-size:0.85rem;">' + f.number + '</span>' + _sep : '')
                   + _prefissoInvisibile(f)
                   + '<span style="color:' + COL_IDENTITA + ';">'
                   + (sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name) + '</span>'
@@ -50996,8 +51117,11 @@ function renderItems() {
     // card mostrava lo stesso il segnaposto del retro.
     // ⚠️ E' la stessa forma della v6.152 e della v6.147: una regola giusta applicata in un posto e
     // non nell'altro. Qui non era nemmeno una copia divergente — era una meta' sola.
-    if (!imgHTML && _schedaDueFoto(f) && _secondaFacciaSulRecord(currentSection) && (f.img || f.imgRetro)) {
-      imgHTML = _coppiaAffiancataHTML(f.img, f.imgRetro, undefined, _latoErrCard, _tipoErrCard);
+    // 🔄 v6.969 - le due facce di un album possono venire dall'album indicato in «Foto dall'album»:
+    //    si chiedono a `_fotoFigurina` e `_imgRetroDi`, che per chi le ha sue rispondono come prima.
+    const _fCard = f.img || (f.section === 'albums' ? _fotoFigurina(f) : null), _rCard = _imgRetroDi(f);
+    if (!imgHTML && _schedaDueFoto(f) && _secondaFacciaSulRecord(currentSection) && (_fCard || _rCard)) {
+      imgHTML = _coppiaAffiancataHTML(_fCard, _rCard, undefined, _latoErrCard, _tipoErrCard);
     }
     if (!imgHTML) {
       // v5.872 — quando manca la foto, un placeholder GRIGIO PIENO "FOTO NON DISPONIBILE" che
@@ -54755,8 +54879,8 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       // fare. Scrivere "Foto non disponibile" li' direbbe una cosa falsa.
       const boxVuoto = '<div style="width:100%;aspect-ratio:1;background:var(--card2);border-radius:8px;"></div>';
       const retroHTML = _bustina
-        ? (f.imgRetro
-            ? `${_fotoInDueTempi(f.imgRetro, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;aspect-ratio:1;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
+        ? (_imgRetroDi(f)   // v6.969 - anche dall'album indicato in «Foto dall'album»
+            ? `${_fotoInDueTempi(_imgRetroDi(f),'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;aspect-ratio:1;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
             : boxVuoto)
         : (retroFig
             ? (retroFig.img
@@ -54804,8 +54928,14 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       // NON si e' normalizzata l'AREA (che avrebbe dato alle verticali 377x516, cioe' piu' ALTE
       // delle orizzontali): sarebbe tornata a far ballare la finestra, che e' il difetto peggiore.
       const _altezzaFotoRetro = 380;
-      photoEl.innerHTML = f.img
-        ? `${_fotoInDueTempi(f.img, 'w_640,h_640,c_fit,q_auto,f_auto', 'width:100%;height:' + _altezzaFotoRetro + 'px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
+      // 🐛 v6.969 (Franco: «aprendo una fpa dalla RG, la foto non si carica») - QUI SI LEGGEVA SOLO
+      //    `f.img`, e una figurina per album ha una faccia sola ma NESSUNA foto sua, per scelta
+      //    (v6.358): la prende dalla figurina con retro collegata. La card passa da `_fotoFigurina`
+      //    e la mostrava, la scheda no. Ora la stessa domanda: per chi una foto sua ce l'ha (i retro)
+      //    `_fotoFigurina` risponde `f.img` alla prima riga, quindi per loro non cambia niente.
+      const _unaFaccia = _fotoFigurina(f, getData('figurines', []));
+      photoEl.innerHTML = _unaFaccia
+        ? `${_fotoInDueTempi(_unaFaccia,'w_640,h_640,c_fit,q_auto,f_auto', 'width:100%;height:' + _altezzaFotoRetro + 'px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
         : '<div style="width:100%;height:' + _altezzaFotoRetro + 'px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non ancora disponibile' : 'Photo not yet available') + '</div>';
     }
   }
@@ -56031,6 +56161,10 @@ function _mancaLaFotoChePorta(f, allFigs) {
 function _fotoFigurina(f, allFigs, _salti) {
   if (!f) return null;
   if (f.img) return f.img;
+  // 🆕 v6.969 - un album senza foto sua la prende dall'album indicato in «Foto dall'album».
+  //    Un album non ha altri ripieghi (le righe sotto valgono per figurine e fpa), quindi il ramo
+  //    torna qui, con la foto dell'originale o con niente, come prima.
+  if (f.section === 'albums') return _albumFonteFoto(f)?.img || null;
   // v5.785 - f.section, non currentSection: vale anche fuori dalla griglia (la scheda, i tab).
   // v6.080 (Franco) - IL RIPIEGO SULLA FOTO DELLA BASE VALE SOLO DOVE IL FRONTE E' DAVVERO QUELLO
   // DELLA BASE. La regola, parole sue:
@@ -56172,7 +56306,7 @@ function _dueFacce(f, tutte) {
   // v6.080 - torna anche il RECORD del retro (quando ne esiste uno): una URL non puo' dire se
   // quel retro dichiara "foto non disponibile", e i controlli della pagina Errori lo chiedono.
   if (!_schedaDueFoto(f)) return { fronte, retro: null, retroRec: null };
-  if (_secondaFacciaSulRecord(f?.section)) return { fronte, retro: f?.imgRetro || null, retroRec: null };
+  if (_secondaFacciaSulRecord(f?.section)) return { fronte, retro: _imgRetroDi(f), retroRec: null };   // v6.969 - anche dall'album indicato
   if (f?.retroBianco && !f?.retroId) return { fronte, retro: RETRO_BIANCO_IMG, retroRec: null };
   // 🔄 v6.595 - QUI STAVA LA SECONDA COPIA DELLA REGOLA, ed e' quella che Franco vedeva: questa
   // funzione serve `renderCatalogSearch` (la ricerca globale), `renderCatalog`, la vista massiva e
@@ -57493,6 +57627,10 @@ function switchToEditMode(figId) {
       + ' onchange="_ridisegnaPagine()"'
       + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">'
       + '</label></span></div>';
+    // 🆕 v6.969 - «FOTO DALL'ALBUM»: l'album da cui questo prende fronte, retro e pagine
+    //    (`_albumFonteFoto`). Si offrono gli album delle ALTRE serie che non prendono a loro volta da
+    //    un altro: un anello solo, e mai se stesso.
+    html += _rigaFotoDaAlbumHTML(f);
   }
 
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Foto non disponibile':'Photo unavailable') + '</span>' +
@@ -57971,6 +58109,50 @@ const _pagina = p => (typeof p === 'string') ? { url: p, orig: p }
 const _pagineDi = f => (Array.isArray(f && f.pagine) ? f.pagine : [])
   .filter(p => p && (typeof p === 'string' ? p : (p.url || p.orig))).map(_pagina);
 
+// 🆕 v6.969 (Franco: «abbiamo 3 serie che condividono lo stesso album; non vorrei creare un
+//    duplicato di tutte le foto») - L'ALBUM CHE PRENDE LE FOTO DA UN ALTRO. Franco ha scelto la
+//    strada B: un album per serie, tre articoli distinti (tre spunte, tre nei totali), e le copie
+//    puntano all'originale col campo `fotoDaAlbumId`. E' lo stesso modello della figurina per album
+//    sulla figurina con retro (v6.358): la foto sta in un posto solo e si legge da li'.
+// 📌 COSA SI EREDITA: fronte, retro e pagine - e solo dove l'album non ne ha di sue. Una foto
+//    caricata sulla copia vince, come vince `f.img` in `_fotoFigurina`.
+// ⚠️ UN ANELLO SOLO: l'originale non puo' a sua volta prendere da un altro (la tendina non lo
+//    offre), e qui non si risale. Due album che si puntano a vicenda non fanno un giro infinito.
+// ⚠️ LE PAGINE EREDITATE SI GUARDANO E BASTA: in modifica il tab Pagine resta quello della copia
+//    (`_pagineDi`), cosi' un caricamento o un cestino non toccano mai l'originale da un altro album.
+function _albumFonteFoto(f) {
+  if (!f || f.section !== 'albums' || !f.fotoDaAlbumId || f.fotoDaAlbumId === f.id) return null;
+  const a = (getData('figurines', []) || []).find(x => x.id === f.fotoDaAlbumId);
+  return (a && a.section === 'albums') ? a : null;
+}
+function _imgRetroDi(f) {
+  return (f && f.imgRetro) || _albumFonteFoto(f)?.imgRetro || null;
+}
+// l'album che porta DAVVERO le pagine da mostrare di `f`: lui, o quello da cui prende le foto
+function _albumConLePagine(f) {
+  if (_pagineDi(f).length) return f;
+  const a = _albumFonteFoto(f);
+  return (a && _pagineDi(a).length) ? a : null;
+}
+const _pagineDaMostrare = f => _pagineDi(_albumConLePagine(f));
+// la riga della scheda in modifica: una tendina, vuota = foto sue
+function _rigaFotoDaAlbumHTML(f) {
+  const it = currentLang === 'it';
+  const serieDi = new Map((getData('series', []) || []).map(s => [s.id, s]));
+  const cand = (getData('figurines', []) || []).filter(a => a.section === 'albums' && a.id !== f.id
+      && a.seriesId !== f.seriesId && !a.fotoDaAlbumId)
+    .sort((a, b) => ((serieDi.get(a.seriesId)?.order ?? 9999) - (serieDi.get(b.seriesId)?.order ?? 9999))
+      || ((+a.number || 9999) - (+b.number || 9999)));
+  const opz = cand.map(a => {
+    const s = serieDi.get(a.seriesId);
+    const et = (s ? _nomeSerie(s) + ' — ' : '') + (a.name || a.id);
+    return '<option value="' + esc(a.id) + '"' + (a.id === f.fotoDaAlbumId ? ' selected' : '') + '>' + esc(et) + '</option>';
+  }).join('');
+  return '<div class="detail-row"><span class="detail-label">' + (it ? '🖼️ Foto dall\'album' : '🖼️ Photos from album') + '</span>'
+    + '<span class="detail-value"><select id="fe-foto-da-album" class="form-input" style="padding:0.3rem 0.5rem;font-size:0.9rem;">'
+    + '<option value="">' + (it ? '— le sue —' : '— its own —') + '</option>' + opz + '</select></span></div>';
+}
+
 // 🆕 v6.806 (Franco) - QUALE ALBUM SI SFOGLIA, E LO DICE UN FLAG.
 // 🔄 REVOCA UNA DECISIONE SCRITTA: il piano diceva «l'album con ordine 1», cioe' IL PRIMO.
 //    Franco: *«un flag negli album che indica che sia quello per lo sfoglia album»*.
@@ -57989,7 +58171,7 @@ function _albumSfogliabileDi(seriesId, escludiId) {
 //    sfogliatore), e tre copie di una condizione divergono al primo ritocco.
 function _albumDaSfogliare(seriesId) {
   const a = _albumSfogliabileDi(seriesId, null);
-  return (a && _pagineDi(a).length) ? a : null;
+  return (a && _pagineDaMostrare(a).length) ? a : null;   // v6.969 - anche le pagine prese da un altro album
 }
 
 // ============================================================
@@ -58130,7 +58312,7 @@ function apriSfogliaAlbum(idAlbum) {
   const alb = idAlbum
     ? getData('figurines', []).find(x => x.id === idAlbum)
     : _albumDaSfogliare(currentSeriesId);
-  const pag = _pagineDi(alb);
+  const pag = _pagineDaMostrare(alb);   // v6.969
   if (!pag.length) return;
   _sfogliaPagine = pag;
   _sfogliaQui = 0;
@@ -58384,11 +58566,15 @@ function _miniaturaPaginaHTML(p, i, it) {
 //    l'anteprima dell'ULTIMO album aperto in modifica - una finestra che mostra le pagine di un
 //    altro album, e nessun errore da nessuna parte.
 function _bloccoPagineLettura(f) {
-  if (!f || !_haPagine(f.section) || !_pagineVisibili(f)) return '';
-  const pag = _pagineDi(f);
+  if (!f || !_haPagine(f.section)) return '';
+  // 🔄 v6.969 - le pagine sono quelle dell'album che le porta: lui, o quello da cui prende le foto.
+  //    E `_figSlotF` va su QUELL'album, perche' `apriPaginaGrande` legge le pagine da li'.
+  const _conPagine = _albumConLePagine(f);
+  if (!_conPagine || (_conPagine === f && !_pagineVisibili(f))) return '';
+  const pag = _pagineDi(_conPagine);
   if (!pag.length) return '';
   const it = currentLang === 'it';
-  _figSlotF = f;
+  _figSlotF = _conPagine;
   return _grigliaPagineApre()
     + pag.map((p, i) =>
         '<div style="border:1px solid var(--border);border-radius:8px;padding:0.4rem;text-align:center;">'
@@ -60043,6 +60229,10 @@ async function saveFigFromDetail(figId, opzioni) {
         ? (document.getElementById('fe-famiglia').value || '').trim()
         : (existingForCheck?.famiglia || ''),
       commentoAlbum: document.getElementById('fe-commento-album')?.value.trim() || '',
+      // 🆕 v6.969 - «Foto dall'album». Solo se la tendina c'e' (album): altrove la chiave non si
+      //    scrive, cosi' un salvataggio da un'altra tipologia non tocca niente.
+      ...(document.getElementById('fe-foto-da-album')
+            ? { fotoDaAlbumId: document.getElementById('fe-foto-da-album').value || null } : {}),
       category: _catEff, // v6.038
       subcategory: _subcatEff, // v6.038
       subname: _subnameEff, // v6.038
@@ -67109,6 +67299,8 @@ function renderBulkEditView() {
   //    niente da mostrare, non un dato. Se un giorno una da-attaccare diventasse la versione di
   //    qualcosa, e' la v6.370 a dover cambiare per prima - e questa riga con lei.
   const _cPartenza = isAdmin && !_cSoloExtra && currentSection !== 'attaccare';
+  // 🆕 v6.969 (Franco) - la colonna Note: solo admin, solo nella VT delle figurine con retro.
+  const _cNote = isAdmin && currentSection === 'figurines';
   // I suggerimenti della Categoria, uno per TIPO: in una tabella le righe possono appartenere a
   // tipi diversi (Extra serie aperta senza filtro), e un elenco unico proporrebbe a un Cartoncino
   // le categorie dei Poster. Si emettono una volta e le righe puntano al proprio.
@@ -67254,6 +67446,11 @@ function renderBulkEditView() {
           ${_cPartenza ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);min-width:420px;">${_etichettaDiPartenza(currentSection)}</th>` : ''}
           ${_cTaglia ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Taglia</th>' : ''}
           ${_ordinaPerCreazione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;">${currentLang === 'it' ? 'Data creazione' : 'Created on'}</th>` : ''}
+          <!-- 🆕 v6.969 (Franco: «aggiungi il campo Note alla VT delle fcr, visibile solo per admin;
+               come ultima colonna») - lo stesso campo note della scheda, che anche lì in lettura
+               vede solo l'admin. Ultima: dopo la Data creazione, e le due di Mia lista / Ciò che
+               cerco qui sotto sono solo per chi non è admin, quindi non convivono mai. -->
+          ${_cNote ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Note</th>` : ''}
           ${!isAdmin ? `
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Mia lista' : 'My list'}</th>
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</th>` : ''}
@@ -67422,6 +67619,7 @@ function renderBulkEditView() {
               + '</td>'
             : readCell(f.size)) : ''}
           ${_ordinaPerCreazione ? `<td style="padding:4px 8px;color:${_dataCreazione(f) ? 'var(--text)' : 'var(--muted)'};white-space:nowrap;font-size:0.78rem;${_dataCreazione(f) ? '' : 'font-style:italic;'}">${esc(_dataCreazioneTesto(f))}</td>` : ''}
+          ${_cNote ? `<td style="padding:4px;"><textarea data-field="note" data-id="${f.id}" rows="1" style="width:260px;min-height:1.9em;resize:vertical;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;font-family:inherit;" onchange="saveBulkCell(this)">${esc(f.note || '')}</textarea></td>` : ''}
           ${!isAdmin ? `
           <td style="padding:4px;text-align:center;"><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista':'In your list') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="toggleOwned('${f.id}')">\u2713</button></td>
           <td style="padding:4px;text-align:center;"><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" onclick="toggleWishlist('${f.id}')" title="${currentLang==='it'?(inWishlist?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(inWishlist?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${inWishlist?'var(--danger)':'rgba(255,255,255,0.15)'};color:${inWishlist?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;">${inWishlist?'❤️':'♡'}</button></td>` : ''}
