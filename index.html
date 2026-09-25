@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.968">
+<link rel="stylesheet" href="css/style.css?v=6.969">
 
 
 <style>
@@ -2117,7 +2117,21 @@ button.back-btn { color:#ffffff; }
              ⚠️ Da qui si crea il TIPO (il box), non il prodotto: il prodotto si crea dalla scheda,
              che dal §12.1 e' l'unica form del sito. -->
         <div id="admin-add-tipo-prodotto-btn" style="display:none;">
-          <button class="btn-primary btn-admin" onclick="openAddTipoProdottoModal()">+ Aggiungi tipo di articolo</button>
+          <button class="btn-primary btn-admin" onclick="openAddTipoProdottoModal()">+ Aggiungi tipologia di articolo</button><!-- v6.969 (Franco): «tipo» → «tipologia» -->
+        </div>
+      </div>
+      <!-- 🔄 v6.969 (Franco: «la buca della ricerca della pagina con i tre hub dovrebbe stare sopra
+           al selettore delle 3 pagine, perché ne è indipendente») — LA RICERCA GLOBALE PRIMA DEL
+           BIVIO. Cerca in tutto l'Inventario qualunque taglio sia acceso, quindi non sta «dentro» un
+           taglio: la ragione scritta qui sotto dalla v6.073 («decide COSA si sta cercando») non vale
+           più. Con i risultati aperti il bivio sparisce (v6.967) e i risultati stanno subito sotto.
+           📌 `margin-bottom:1rem` e non i 2rem della classe: lo stesso stacco che il bivio lascia
+           sotto di sé, così le tre righe hanno un passo solo. -->
+      <div class="search-bar" style="margin-bottom:1rem;">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" type="text" id="series-search" placeholder="Cerca nell'Inventario..." oninput="renderCatalog();toggleSearchClearBtn('series-search')" data-i18n-placeholder="catalog.searchglobal">
+          <span class="search-clear-btn" id="series-search-clear" onclick="clearSearchField('series-search', renderCatalog)" style="display:none;">✕</span>
         </div>
       </div>
       <!-- v6.073 (Franco) — IL BIVIO. Entrando nell'Inventario non si atterra piu' subito sulle
@@ -2152,13 +2166,7 @@ button.back-btn { color:#ffffff; }
         <button type="button" id="btn-info-tutte-serie" class="btn-primary" onclick="apriInfoTutteLeSerie()" style="margin-left:auto;font-size:0.85rem;padding:0 1.2rem;border-radius:999px;letter-spacing:0.3px;" data-i18n="catalog.allSeriesInfo">Mostra informazioni sommarie
 di tutte le serie</button>
       </div>
-      <div class="search-bar">
-        <div class="search-input-wrap">
-          <span class="search-icon">🔍</span>
-          <input class="search-input" type="text" id="series-search" placeholder="Cerca nell'Inventario..." oninput="renderCatalog();toggleSearchClearBtn('series-search')" data-i18n-placeholder="catalog.searchglobal">
-          <span class="search-clear-btn" id="series-search-clear" onclick="clearSearchField('series-search', renderCatalog)" style="display:none;">✕</span>
-        </div>
-      </div>
+      <!-- ⬆️ LA BUCA DELLA RICERCA STAVA QUI, sotto «Sfoglia per»: ora sta sopra (v6.969). -->
       <div id="catalog-search-results" style="display:none;"></div>
       <div class="grid-3" id="catalog-grid">
         <div class="empty-state"><div class="empty-icon">🎴</div><p class="empty-title" data-i18n="catalog.empty">No series yet. Admin can add them !</p></div>
@@ -3852,7 +3860,7 @@ di tutte le serie</button>
 <div class="modal-overlay hidden" id="add-tipo-prodotto-modal">
   <div class="modal">
     <div class="modal-header">
-      <h2 class="modal-title" id="tipo-prodotto-modal-title">Aggiungi tipo di articolo</h2>
+      <h2 class="modal-title" id="tipo-prodotto-modal-title">Aggiungi tipologia di articolo</h2>
       <button class="modal-close" onclick="closeModal('add-tipo-prodotto-modal')">&#10005;</button>
     </div>
     <!-- v6.149 - vuoto = si crea, valorizzato = si modifica quel tipo. La stessa form fa le due
@@ -5640,7 +5648,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.968"></script>
+<script src="js/app.js?v=6.969"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5664,7 +5672,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.968'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.969'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
