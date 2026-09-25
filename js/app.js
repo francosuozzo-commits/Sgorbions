@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.970 - Modificati index.html e js/app.js. Tre cose:
+//          1. 🔴 I PERSONAGGI IN UN DOCUMENTO SOLO (`personaggi/_pacchetto`). Leggere le due
+//             raccolte intere costava ~2.750 letture a visita e il 25 settembre ha esaurito la
+//             quota gratuita (52.000 letture, grafico di Franco). Ora 1 lettura; la funzione 6
+//             confronta e scrive quel documento. Le raccolte restano sul server, non lette.
+//          2. 🏠 Da sloggato, con una serie aperta nella fascia della home, il carosello delle
+//             figurine si nasconde (Franco: «fa solo confusione»); chiusa la serie torna.
+//          3. Il segnaposto «Cerca un personaggio…» bianco, come quello dell'Inventario (Franco).
+//          4. 📝 La colonna Note (solo admin) anche nella VT delle spille (Franco).
 // v6.969 - Modificati index.html e js/app.js. Tre cose:
 //          1. 🐛 LA FOTO DELLA FPA NELLA SCHEDA (Franco: «aprendo una fpa dalla RG, la foto non si
 //             carica»). Il ramo a una faccia di `openFigDetail` leggeva solo `f.img`, vuoto per scelta
@@ -30228,7 +30237,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.969';
+const JS_VERSION = 'v6.970';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33344,7 +33353,9 @@ function renderCarosello() {
   const succ = document.getElementById('carosello-succ');
   if (prec) prec.onclick = () => _caroselloScorriBox(box, -1);
   if (succ) succ.onclick = () => _caroselloScorriBox(box, 1);
-  const vivo = () => { const h = document.getElementById('page-home'); return !!h && h.classList.contains('active'); };
+  // 🔄 v6.970 - e non scorre mentre è nascosto perché in home è aperta una serie (vedi
+  //    `_caroselloDietroVetrina`): un carosello che gira dove nessuno lo vede è lavoro buttato.
+  const vivo = () => { const h = document.getElementById('page-home'); return !!h && h.classList.contains('active') && !sez.classList.contains('nascosto-vetrina'); };
   box.onmouseenter = () => _caroselloSpegni('home');
   box.onmouseleave = () => _caroselloAvviaBox(box, 'home', vivo);
   _caroselloAvviaBox(box, 'home', vivo);
@@ -41015,14 +41026,33 @@ function _impostaPersonaggi(personaggi, associazioni) {
   return _personaggiDati;
 }
 
+// 🔴 v6.970 - I PERSONAGGI STANNO IN UN DOCUMENTO SOLO, e questa è la ragione della release.
+//    Fino alla v6.969 qui si leggevano le due RACCOLTE intere, cioè ~2.750 documenti, e Firestore
+//    conta una lettura per documento: ogni apertura dell'hub o di una pagina personaggio costava
+//    ~2.750 letture. 📏 Il 25 settembre, caricati i personaggi alle 13, le letture sono passate da
+//    quasi zero a 52.000 in dodici ore, oltre la quota gratuita di 50.000: il server ha cominciato
+//    a rispondere «Quota exceeded» (grafico di Franco, «Operazioni di lettura»).
+// ✅ Adesso: UN documento, `personaggi/_pacchetto`, con dentro i due elenchi. Una visita = una
+//    lettura. Sta nella raccolta `personaggi` perché la sua regola Firebase c'è già (lettura
+//    libera, scrittura admin): nessuna regola nuova da mettere. Lo scrive la funzione 6.
+// ⚠️ Le due raccolte restano sul server com'erano, ma il sito NON LE LEGGE PIÙ: sono un
+//    archivio fermo al 25 settembre. Toglierle costerebbe 2.750 cancellazioni, e non serve.
+// ⚠️ Se il documento non c'è (prima del primo lancio della funzione 6) i personaggi sono zero:
+//    NIENTE ripiego sulle raccolte, che è proprio la spesa da non rifare.
+const PERSONAGGI_PACCHETTO = { coll: 'personaggi', id: '_pacchetto' };
+// dal documento ai due elenchi nella forma di sempre (`{id,nome}` e `{articoloId,personaggioId}`)
+function _elenchiDaPacchetto(d) {
+  return {
+    personaggi: ((d && d.personaggi) || []).map(x => ({ id: x.i, nome: x.n })),
+    associazioni: ((d && d.associazioni) || []).map(x => ({ id: _idAssociazione(x.a, x.p), articoloId: x.a, personaggioId: x.p }))
+  };
+}
 async function caricaPersonaggi() {
   if (_personaggiDati) return _personaggiDati;
   if (_personaggiCaricamento) return _personaggiCaricamento;
   _personaggiCaricamento = (async () => {
-    let p = [], a = [];
-    try { p = await fsGetAll('personaggi'); a = await fsGetAll('associazioni'); }
-    catch (e) { console.warn('caricaPersonaggi: raccolte non leggibili (ancora vuote, o regole Firebase)', e && e.message); }
-    return _impostaPersonaggi(p, a);
+    const e = _elenchiDaPacchetto(await fsGet(PERSONAGGI_PACCHETTO.coll, PERSONAGGI_PACCHETTO.id));
+    return _impostaPersonaggi(e.personaggi, e.associazioni);
   })();
   return _personaggiCaricamento;
 }
@@ -44070,6 +44100,7 @@ function vetrinaApriSerie(id) {
   const figs = getData('figurines', []);
   const pezzi = _vetrinaPezzi(s);
   grid.classList.add('aperta');
+  _caroselloDietroVetrina(true);   // 🆕 v6.970
   grid.innerHTML =
     '<div class="vetrina-testa">'
     + '<button type="button" class="back-btn vetrina-torna" onclick="renderHomeSeries()">' + esc(VETRINA_TORNA[it ? 'it' : 'en']) + '</button>'
@@ -44120,10 +44151,33 @@ function _vetrinaFrecce() {
 }
 window.addEventListener('resize', () => { try { _vetrinaFrecce(); } catch (e) {} });
 
+// 🆕 v6.970 (Franco: «da sloggato, se clicchi sulla copertina di un album si apre la finestra con
+//    le sue figurine… ma sotto rimane il carosello con le figurine; fa solo confusione, perché vedo
+//    figurine sopra e sotto; nella homepage il carosello non deve essere mostrato se sono nella
+//    pagina di una serie») - IL CAROSELLO SI NASCONDE FINCHÉ LA SERIE È APERTA.
+// 📌 CON UNA CLASSE, NON CON `style.display`: `renderCarosello` il display lo decide da sé (lo
+//    accende se ha figurine), e può ripartire in qualunque momento - un aggiornamento dei dati, il
+//    cambio di lingua. Una classe con `!important` (nell'index) vince su di lui senza che debba
+//    saperlo. E si spegne lo scorrimento automatico.
+// 📌 Chiudendo la serie si ridisegna, cioè una nuova pescata a caso: è quello che fa la home
+//    ogni volta che si apre, e un carosello fermo da mezz'ora non avrebbe niente di meglio.
+function _caroselloDietroVetrina(nascondi) {
+  const car = document.getElementById('home-carosello-sez');
+  if (!car) return;
+  const era = car.classList.contains('nascosto-vetrina');
+  car.classList.toggle('nascosto-vetrina', !!nascondi);
+  if (nascondi) { try { _caroselloSpegni('home'); } catch (e) {} }
+  else if (era) { try { renderCarosello(); } catch (e) { console.error('renderCarosello (vetrina chiusa)', e); } }
+}
+
 function renderHomeSeries() {
   const sez = document.getElementById('home-vetrina-sez');
   const grid = document.getElementById('home-series-grid');
   if (!sez || !grid) return;
+  // 🆕 v6.970 - la fascia si ridisegna chiusa, quindi il carosello torna. ⚠️ QUI IN CIMA e non
+  //    accanto al `remove('aperta')` più giù: chi fa login con una serie aperta esce dal ramo
+  //    «niente fascia» prima di arrivarci, e il carosello resterebbe nascosto anche a lui.
+  _caroselloDietroVetrina(false);
   const serie = (typeof currentUser !== 'undefined' && currentUser) ? [] : _serieDellaVetrina();
   // 🆕 v6.955 — il carosello sa se la fascia c'è: senza, sul telefono, il suo titolo si
   //    appoggiava ai numeroni dell'hero (📏 -8px a 390). Il margine sta nell'index.
@@ -65672,11 +65726,30 @@ function _pianoCaricaPersonaggi(file, server) {
   aServer.forEach((a, id) => { if (!aFile.has(id)) piano.aDaTogliere.push({ id, articoloId: a.articoloId, personaggioId: a.personaggioId }); });
   piano.daFare = piano.pNuovi.length + piano.pRinominati.length + piano.pDaTogliere.length
                + piano.aNuove.length + piano.aDaTogliere.length;
+  piano.pulito = { pFile, aFile };   // 🆕 v6.970 - lo stato da scrivere nel documento unico
   return piano;
 }
 
+// 🆕 v6.970 - il documento unico dei personaggi, dallo stato ripulito dei file. Chiavi da una
+//    lettera (i/n, a/p): il documento ha un tetto di 1 MB, e le chiavi si ripetono migliaia di volte.
+function _pacchettoDaPiano(piano) {
+  const pers = [], ass = [];
+  piano.pulito.pFile.forEach((nome, id) => pers.push({ i: id, n: nome }));
+  piano.pulito.aFile.forEach(a => ass.push({ a: a.articoloId, p: a.personaggioId }));
+  return { personaggi: pers, associazioni: ass, aggiornato: new Date().toISOString() };
+}
+// quanto pesa, in byte: stima per eccesso (il JSON è più lungo della codifica di Firestore)
+function _pesoPacchetto(pacchetto) { return new Blob([JSON.stringify(pacchetto)]).size; }
+const PERSONAGGI_PACCHETTO_MAX = 1000000;   // il tetto di un documento Firestore (1 MiB, arrotondato giù)
+
+// 🔄 v6.970 - il confronto si fa col DOCUMENTO UNICO (vedi `caricaPersonaggi`), non più con le due
+//    raccolte: 1 lettura invece di ~2.750. Senza `try`: un rifiuto deve arrivare all'anteprima,
+//    che lo dice, invece di diventare un «sul server non c'è niente».
 async function _leggiPersonaggiDalServer() {
-  return { personaggi: await fsGetAllDalServer('personaggi'), associazioni: await fsGetAllDalServer('associazioni') };
+  const { doc, getDoc } = window._fb;
+  const snap = await getDoc(doc(db, PERSONAGGI_PACCHETTO.coll, PERSONAGGI_PACCHETTO.id));
+  _trackReads(1);
+  return _elenchiDaPacchetto(snap.exists() ? snap.data() : null);
 }
 
 function _righePianoPersonaggi(piano, it) {
@@ -65723,27 +65796,23 @@ async function anteprimaCaricaPersonaggi() {
   }
   const piano = _pianoCaricaPersonaggi(file, server);
   piano.file = file;
-  _pianoPersonaggi = piano;
-  if (btn) btn.style.display = piano.daFare ? '' : 'none';
+  // 🆕 v6.970 - il peso del documento unico si dice, e oltre il tetto non si scrive.
+  const peso = _pesoPacchetto(_pacchettoDaPiano(piano));
+  const troppo = peso > PERSONAGGI_PACCHETTO_MAX;
+  _pianoPersonaggi = troppo ? null : piano;
+  if (btn) btn.style.display = (piano.daFare && !troppo) ? '' : 'none';
   esito.innerHTML = _righePianoPersonaggi(piano, it) +
+    '<div style="font-size:0.85rem;margin-top:0.4rem;color:' + (troppo ? 'var(--danger)' : 'var(--muted)') + ';">'
+      + (it ? 'Documento unico: ' : 'Single document: ') + Math.round(peso / 1024) + ' KB'
+      + (troppo ? (it ? ' — oltre il limite di un documento Firestore: non si può scrivere.' : ' — over the Firestore document limit: cannot be written.') : '')
+      + '</div>' +
     (piano.daFare ? '' : '<div style="font-size:0.9rem;color:var(--success);margin-top:0.6rem;">' +
       (it ? 'Il sito è già uguale ai file. Niente da caricare.' : 'The site already matches the files. Nothing to load.') + '</div>');
 }
 
-// Scrive a pezzi: un `writeBatch` regge al massimo 500 operazioni.
-async function _scriviPersonaggiAPezzi(operazioni, avanza) {
-  const { writeBatch, doc } = window._fb;
-  const PEZZO = 400;
-  for (let i = 0; i < operazioni.length; i += PEZZO) {
-    const b = writeBatch(db);
-    operazioni.slice(i, i + PEZZO).forEach(op => {
-      const ref = doc(db, op.coll, op.id);
-      if (op.dati) b.set(ref, op.dati); else b.delete(ref);
-    });
-    await b.commit();
-    avanza(Math.min(i + PEZZO, operazioni.length));
-  }
-}
+// 🗑️ v6.970 - qui stava `_scriviPersonaggiAPezzi`, che scriveva le due raccolte a pezzi di 400 con
+//    `writeBatch`. Col documento unico la scrittura è una sola (`setDoc`), e la funzione non la
+//    chiamava più nessuno. `writeBatch` resta importato in `window._fb`: non costa niente.
 
 async function applicaCaricaPersonaggi() {
   const it = currentLang === 'it';
@@ -65757,21 +65826,18 @@ async function applicaCaricaPersonaggi() {
   if (!confirm(it
     ? `Caricare i personaggi?\n\n· ${piano.pNuovi.length} personaggi da creare, ${piano.pRinominati.length} da rinominare, ${piano.pDaTogliere.length} da togliere\n· ${piano.aNuove.length} associazioni da aggiungere, ${piano.aDaTogliere.length} da togliere` + (togli ? '\n\nLe righe da togliere non si recuperano.' : '')
     : `Load the characters?\n\n· ${piano.pNuovi.length} characters to create, ${piano.pRinominati.length} to rename, ${piano.pDaTogliere.length} to remove\n· ${piano.aNuove.length} links to add, ${piano.aDaTogliere.length} to remove` + (togli ? '\n\nRemoved rows cannot be recovered.' : ''))) return;
-  // 📌 L'ORDINE: prima i personaggi, poi le associazioni che li nominano; si toglie per ultimo, e
-  //    prima le associazioni dei personaggi. Se la scrittura si ferma a metà, non restano mai
-  //    associazioni a un personaggio che non c'è.
-  const ops = [].concat(
-    piano.pNuovi.concat(piano.pRinominati).map(p => ({ coll: 'personaggi', id: p.id, dati: { nome: p.nome } })),
-    piano.aNuove.map(a => ({ coll: 'associazioni', id: a.id, dati: { articoloId: a.articoloId, personaggioId: a.personaggioId } })),
-    piano.aDaTogliere.map(a => ({ coll: 'associazioni', id: a.id })),
-    piano.pDaTogliere.map(p => ({ coll: 'personaggi', id: p.id }))
-  );
+  // 🔄 v6.970 - SI SCRIVE UN DOCUMENTO SOLO: lo stato intero dei file (quello che il piano ha
+  //    ripulito: `piano.pulito`), non le differenze. Una scrittura invece di migliaia, e nessuno
+  //    stato «a metà»: il documento o è quello vecchio o è quello nuovo.
+  // 📏 Misura: ~1.100 personaggi e ~1.700 associazioni in chiavi da una lettera stanno sui 150 KB,
+  //    sotto il limite di 1 MB di un documento Firestore. Il conteggio dei byte lo fa l'anteprima.
+  const pacchetto = _pacchettoDaPiano(piano);
   if (btn) btn.disabled = true;
   let errore = null;
   try {
-    await _scriviPersonaggiAPezzi(ops, n => {
-      if (esito) esito.innerHTML = '<div style="font-size:0.9rem;color:var(--muted);">' + (it ? 'Scritte ' : 'Written ') + n + ' / ' + ops.length + '…</div>';
-    });
+    if (esito) esito.innerHTML = '<div style="font-size:0.9rem;color:var(--muted);">' + (it ? 'Scrivo…' : 'Writing…') + '</div>';
+    const { doc, setDoc } = window._fb;
+    await setDoc(doc(db, PERSONAGGI_PACCHETTO.coll, PERSONAGGI_PACCHETTO.id), pacchetto);
   } catch (e) { errore = e; console.error('applicaCaricaPersonaggi', e); }
   if (btn) btn.disabled = false;
   // La copia in memoria si butta: la prossima pagina dei personaggi rilegge dal server.
@@ -67300,7 +67366,8 @@ function renderBulkEditView() {
   //    qualcosa, e' la v6.370 a dover cambiare per prima - e questa riga con lei.
   const _cPartenza = isAdmin && !_cSoloExtra && currentSection !== 'attaccare';
   // 🆕 v6.969 (Franco) - la colonna Note: solo admin, solo nella VT delle figurine con retro.
-  const _cNote = isAdmin && currentSection === 'figurines';
+  // 🔄 v6.970 (Franco: «metti la colonna Note anche nella VT delle spille»).
+  const _cNote = isAdmin && ['figurines', 'spille'].includes(currentSection);
   // I suggerimenti della Categoria, uno per TIPO: in una tabella le righe possono appartenere a
   // tipi diversi (Extra serie aperta senza filtro), e un elenco unico proporrebbe a un Cartoncino
   // le categorie dei Poster. Si emettono una volta e le righe puntano al proprio.
