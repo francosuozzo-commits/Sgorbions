@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.967">
+<link rel="stylesheet" href="css/style.css?v=6.968">
 
 
 <style>
@@ -1489,16 +1489,33 @@ button.back-btn { color:#ffffff; }
      corpo della freccia un po' più largo, in modo da poter ingrandire il testo»): `top` negativo,
      `--freccia-dx` (pixel a schermo che `_frecciaSottoAccedi` aggiunge alla mira), gambo dal 52%
      al 64% della larghezza e testo da .8 a .95rem. */
-  #freccia-accedi{--freccia-angolo:20deg;--freccia-dx:30;position:absolute;top:-26px;left:auto;z-index:5;
+  /* 🐛 v6.968 (Franco: «quando apro il sito si vede per un attimo al centro, sopra lo hero, il
+     freccione») — NASCE INVISIBILE. Il suo posto lo calcola `_frecciaSottoAccedi` in app.js, che
+     parte dopo il primo disegno: fino ad allora `left:auto` la lasciava accanto al logo. La rende
+     visibile la stessa funzione, DOPO averla spostata.
+     🔄 E `--freccia-dx` 30 → 60 (Franco: «è ancora troppo a sx; lo sposterei un attimo a dx»). */
+  #freccia-accedi{--freccia-angolo:20deg;--freccia-dx:60;position:absolute;top:-26px;left:auto;z-index:5;
+    visibility:hidden;
     transform:rotate(var(--freccia-angolo));
-    filter:drop-shadow(5px 6px 0 #0b1f5c) drop-shadow(0 12px 14px rgba(0,0,0,.55));}
+    /* 🔄 v6.968 (Franco: «aumenterei un attimo l'effetto 3D») — lo spessore 5×6 → 8×10px, e
+       l'ombra a terra più lunga e più scura. */
+    filter:drop-shadow(8px 10px 0 #0b1f5c) drop-shadow(0 16px 18px rgba(0,0,0,.62));}
   #btn-start-collecting-dx{display:flex;width:190px;height:180px;
-    max-width:none;margin:0;padding:66px 38px 10px;border-radius:0;
+    /* 🔄 v6.968 (Franco: «la scritta la farei iniziare più in alto») — il testo parte dall'alto
+       (`flex-start`) a 54px invece di stare centrato sotto i 66: sale di circa 25px e la prima
+       riga entra nella base della punta, che lì è già larga 158px contro i 114 del testo. */
+    max-width:none;margin:0;padding:54px 38px 10px;border-radius:0;
     clip-path:polygon(50% 0,100% 36%,82% 36%,82% 100%,18% 100%,18% 36%,0 36%);
-    align-items:center;justify-content:center;text-align:center;
+    align-items:flex-start;justify-content:center;text-align:center;
     background:linear-gradient(135deg,#7aa2ff 0%,#2563eb 45%,#1e3a8a 100%);
     text-shadow:0 1px 0 rgba(0,0,0,.45);font-size:.95rem;line-height:1.2;}
 }
+/* 🆕 v6.968 (Franco: «la scritta "Cerca nell'inventario" falla bianca») — solo la casella
+   dell'Inventario; `opacity:1` perché Firefox schiarisce il segnaposto per conto suo. */
+/* 📌 Il bianco del TESTO è `var(--text)` (regola della v6.393, `prova-v6393` B2). */
+#series-search::placeholder{color:var(--text);opacity:1;}
+/* E la cornice (Franco: «anche la cornice del box della ricerca: falla bianca»): era il lime al 18%. */
+#series-search{border-color:#ffffff;}
 /* 🆕 v6.947 — IL NOME IN BARRA. Sotto gli 860px si spegne: là lo spazio non c'è. */
 #navbar{position:relative;}
 #navbar .nav-nome-sito{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;
@@ -1858,7 +1875,7 @@ button.back-btn { color:#ffffff; }
          qui e sale verso di loro. Messa a sinistra, punterebbe fuori dalla pagina.
          📌 Smette di ripetere un invito e comincia a far vedere DOVE si entra: la freccia è
          un carattere (↗), non un'immagine — cresce col testo e non chiede un file in più. -->
-    <span id="freccia-accedi"><button class="btn-primary hero-cta-lato" id="btn-start-collecting-dx" onclick="openAuth('register')"><span data-i18n="hero.cta2">Inizia a collezionare gli Sgorbions</span></button></span>
+    <span id="freccia-accedi"><button class="btn-primary hero-cta-lato" id="btn-start-collecting-dx" onclick="openAuth('register')"><span data-i18n="hero.cta2">Inizia a collezionare gli Sgorbions !</span></button></span>
   </div>
   <div class="hero-stats-side hero-stats-right" id="hero-stats-right" style="display:none;">
     <!-- v5.940 — "Mia lista / Totale Inventario" tolto dai numeroni della home (Franco).
@@ -5623,7 +5640,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.967"></script>
+<script src="js/app.js?v=6.968"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5647,7 +5664,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.967'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.968'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
