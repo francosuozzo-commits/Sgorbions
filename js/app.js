@@ -1,6 +1,22 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.968 - 🧑‍🎤 CARICA I PERSONAGGI: la funzione 6 della scheda Funzioni. Modificati index.html e
+//          js/app.js. Franco: «carichiamo le coppie personaggi-articolo stando all'ultima versione
+//          del file che mi hai mandato». Si scelgono `personaggi.json` e `associazioni.json`,
+//          l'anteprima li confronta con quanto c'e' sul server (da creare, da rinominare, da
+//          togliere, scarti), l'applica scrive a pezzi con `writeBatch` (aggiunto a `window._fb`)
+//          e alla fine riconta dal server. Rilanciabile: coi file uguali non cambia niente.
+//          E LA FRECCIA DELLA HOME (Franco): nasce invisibile e la mostra `_frecciaSottoAccedi`
+//          dopo averla messa a posto (prima si vedeva un attimo al centro); `--freccia-dx` 30 → 60;
+//          testo dall'alto a 54px; rilievo più spesso (8×10); « !» in fondo, italiano e inglese.
+//          E L'INVENTARIO (Franco): «Mostra informazioni sommarie» torna in fondo a destra — la
+//          v6.967 rimetteva la riga con `display=''`, che cancellava il flex dell'index; le tre
+//          scritte di «Sfoglia per» sempre bianche; segnaposto e cornice della ricerca bianchi.
+//          E L'HUB DEI PERSONAGGI (Franco): card a un quarto (doppio delle colonne, tre sul
+//          telefono, testo scalato); ricerca nella forma di `#items-search-box`; 🐛 la buca
+//          scriveva al contrario (il ridisegno riportava il cursore all'inizio); chi non ha una
+//          figurina sua si mostra col suo retro (`_fotoPersonaggio(arts, pid, ix)`).
 // v6.967 - 🔍 LA RICERCA GLOBALE PULITA. Modificati index.html e js/app.js.
 //          1. 🐛 Franco, con una foto della RG aperta: «a cosa serve mostrare quanto ti mostro nella
 //             foto?». Finché la RG mostra i risultati spariscono «Sfoglia per» e i pulsanti
@@ -30189,7 +30205,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.967';
+const JS_VERSION = 'v6.968';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -30353,12 +30369,12 @@ async function initFirebase() {
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
   // v6.176 - `getDocsFromServer` in piu': e' la differenza fra "non ho i dati" e "il database e'
   // vuoto". Vedi `fsGetAllDalServer`.
-  const { getFirestore, collection, doc, getDocs, getDocsFromServer, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove, increment } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const { getFirestore, collection, doc, getDocs, getDocsFromServer, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove, increment, writeBatch } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
   const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, deleteUser: fbDeleteAuthUser, reauthenticateWithPopup, updatePassword } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
   fbApp = initializeApp(FIREBASE_CONFIG);
   db = getFirestore(fbApp);
   fbAuth = getAuth(fbApp);
-  window._fb = { collection, doc, getDocs, getDocsFromServer, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove, increment };
+  window._fb = { collection, doc, getDocs, getDocsFromServer, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove, increment, writeBatch };   // writeBatch: v6.968, funzione 6
   window._fbAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential, fbDeleteAuthUser, reauthenticateWithPopup, updatePassword };
   console.log('Firebase ready');
 
@@ -31855,7 +31871,7 @@ const i18n = {
 'hero.challenge':'Challenge others','hero.challengeDesc':'Who has the highest-scoring list? You can also choose to appear anonymously.',
 'hero.desc':'The unofficial database dedicated to the legendary Italian sticker series of the \'90s.','hero.descShort':'The unofficial database of the legendary Italian \'90s series.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
-'hero.cta1':'Explore the Sgorbions Inventory !','home.figurine':'The stickers','hero.cta2':'Start collecting Sgorbions',
+'hero.cta1':'Explore the Sgorbions Inventory !','home.figurine':'The stickers','hero.cta2':'Start collecting Sgorbions !',
 'hero.stat1':'Series','hero.stat3':'Collectors','hero.statLangs':'Site languages',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
 'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
@@ -31961,7 +31977,7 @@ const i18n = {
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','rc.title':'Ricarica il sito saltando la cache del browser','nav.mialista':'Mia lista',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista con maggior punteggio? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.','hero.descShort':'Il database non ufficiale della leggendaria serie italiana anni \'90.',
-    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Le figurine','hero.cta2':'Inizia a collezionare gli Sgorbions',
+    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Le figurine','hero.cta2':'Inizia a collezionare gli Sgorbions !',
     'hero.stat1':'Serie','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
@@ -34579,8 +34595,8 @@ function _frecciaSottoAccedi() {
   const h = document.getElementById('hero');
   if (!f || !h) return;
   const a = document.querySelector('#guest-nav .btn-login');
+  // 🐛 v6.968 — la freccia nasce invisibile (index) e diventa visibile solo in fondo, a posto.
   if (!a || !a.offsetParent) { f.style.visibility = 'hidden'; return; }
-  f.style.visibility = '';
   // 🆕 v6.954 — E NON SI APPOGGIA SULLA RIGA DI TESTO SOPRA IL LOGO. 📏 A 1000px la testa della
   //    freccia copriva «…per collezionisti»: la riga arriva fino a 947 e la freccia ci passava
   //    sopra. Si parte dall'altezza del CSS e, se le due si toccano, la freccia scende di quanto
@@ -34608,6 +34624,7 @@ function _frecciaSottoAccedi() {
   const mira = (ar.left + ar.width / 2) - (cy - ar.bottom) * Math.tan(ang) + spinta;
   const scarto = mira - cx;
   f.style.left = Math.round(f.offsetLeft + scarto * k) + 'px';
+  f.style.visibility = 'visible';
 }
 window.addEventListener('resize', () => { try { _frecciaSottoAccedi(); } catch (e) {} });
 
@@ -40461,7 +40478,9 @@ function _aggiornaBivioInventario() {
     if (b) {
       const acceso = (k === _taglioInventario);
       b.style.background = acceso ? 'var(--action)' : 'transparent';
-      b.style.color = acceso ? '#ffffff' : 'var(--muted)';
+      // 🔄 v6.968 (Franco: «prova a mettere la scritta Serie, Tipologia di articoli e Personaggi
+      //    sempre in bianco») — il bianco non è più il segno del tab acceso: quello resta il fondo.
+      b.style.color = '#ffffff';
     }
   });
   const sub = document.getElementById('catalog-sub');
@@ -40489,7 +40508,11 @@ function _aggiornaBivioInventario() {
   //    `renderCatalog` passa di qui con la ricerca chiusa e tornano.
   const _rg = !!_perRicerca((document.getElementById('series-search')?.value || '').trim());
   const _bivio = document.getElementById('bivio-inventario');
-  if (_bivio) _bivio.style.display = _rg ? 'none' : '';
+  // 🐛 v6.968 (Franco: «il tasto Mostra info sommarie mettilo più a dx, che il suo lato dx batta
+  //    contro la fine del contenitore delle card») — `''` CANCELLAVA IL `display:flex` SCRITTO
+  //    NELL'INDEX, non lo ripristinava: la riga tornava un blocco e il `margin-left:auto` del tasto
+  //    non spingeva più niente. Rotto dalla v6.967; si rimette `flex`, che è il valore dell'index.
+  if (_bivio) _bivio.style.display = _rg ? 'none' : 'flex';
   const _admin = !!currentUser?.isAdmin;
   const _bSerie = document.getElementById('admin-add-series-btn');
   const _bTipo = document.getElementById('admin-add-tipo-prodotto-btn');
@@ -41044,7 +41067,16 @@ function articoliDelPersonaggio(pid, ix) {
 
 // La serie che viene prima nell'ordine delle serie (Franco: «se un personaggio ha una figurina della
 // serie 1 e una della serie 4, usa la foto della serie 1»).
-function _fotoPersonaggio(arts) {
+// 🆕 v6.968 (Franco: «per i personaggi che non hanno una figurina, mostra la foto del retro (o dei
+//    retro) che lo menziona») — CHI NON HA UNA FIGURINA SUA SI MOSTRA COL SUO RETRO. Fra i suoi
+//    articoli ci sono anche le figurine che USANO quel retro, cioè le facce di altri personaggi: la
+//    prima foto in ordine di serie sarebbe stata quella di qualcun altro. Se il retro non c'è (sta
+//    solo su spille o altri articoli) si torna a tutti i suoi articoli, che sono suoi.
+function _fotoPersonaggio(arts, pid, ix) {
+  if (pid && !_haFigurineSue(pid, arts, ix || _indiciPersonaggi())) {
+    const retri = arts.filter(a => a.section === 'retros');
+    if (retri.length) arts = retri;
+  }
   const ordine = new Map((getData('series', []) || []).map(s => [s.id, s.order ?? 9999]));
   const pesoSez = f => ({ attaccare: 0, figurines: 1 }[f.section || 'figurines'] ?? 2);
   const figs = getData('figurines', []);
@@ -41077,6 +41109,16 @@ function renderCatalogPersonaggi(grid) {
     return;
   }
   if (_personaggioAperto) { renderPaginaPersonaggio(grid, _personaggioAperto); return; }
+  // 🔄 v6.968 (Franco: «le card sono enormi… passiamo a un quarto della grandezza attuale») — IL
+  //    DOPPIO DELLE COLONNE, cioè metà larghezza e metà altezza (la foto è 4:3): un quarto
+  //    dell'area. Le colonne si leggono da quelle che la griglia ha adesso, così il raddoppio vale
+  //    a ogni larghezza di schermo. 📱 Sul telefono tre e non quattro: a 390px quattro card sono
+  //    larghe 80px, e i nomi lunghi («ANTONELLO MORTADELLO») non ci stanno.
+  if (grid) {
+    const n = _isMobileViewport() ? 0 : getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
+    grid.style.gridTemplateColumns = 'repeat(' + (n ? n * 2 : 3) + ', minmax(0, 1fr))';
+    grid.style.gap = '0.75rem';
+  }
   const ix = _indiciPersonaggi();
   const q = _perRicerca(_personaggiFiltro.trim());
   const tutti = _personaggiDati.elenco.filter(p => (!q || _perRicerca(p.nome).includes(q))
@@ -41088,29 +41130,51 @@ function renderCatalogPersonaggi(grid) {
   const pagina = tutti.slice(da, da + PERSONAGGI_PER_PAGINA);
   const serieNome = new Map((getData('series', []) || []).map(s => [s.id, s]));
   const ordine = new Map((getData('series', []) || []).map(s => [s.id, s.order ?? 9999]));
-  const cerca = '<div style="grid-column:1/-1;display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;">'
-    + '<input class="form-input" type="text" id="personaggi-cerca" value="' + esc(_personaggiFiltro) + '" placeholder="' + (it ? 'Cerca un personaggio per nome…' : 'Search a character by name…') + '" oninput="_personaggiFiltro=this.value;_personaggiPagina=1;renderCatalog();document.getElementById(\'personaggi-cerca\').focus();" style="flex:1 1 260px;max-width:420px;">'
+  // 🔄 v6.968 (Franco: «la sezione di ricerca è brutta: deve essere come le altre, quindi barra di
+  //    ricerca sopra, sezione [dei filtri] delimitata con perimetro bianco») — LA FORMA DI
+  //    `#items-search-box`: riquadro col bordo blu delle azioni utente, la buca in cima con
+  //    l'etichetta a cavallo del bordo, e sotto il riquadro dei filtri col bordo bianco (lo stesso
+  //    `rgba(255,255,255,0.6)` di «Filtri legati alla tua lista» e «Filtri aggiuntivi admin»).
+  //    Il conteggio esce dal riquadro e va sotto, come `#items-count-display`.
+  const _etichettaBordo = 'position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;pointer-events:none;';
+  const cerca = '<div style="grid-column:1/-1;">'
+    + '<div id="personaggi-search-box" style="background:var(--card);border:1px solid var(--action);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-bottom:0.9rem;">'
+    + '<div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.75rem;">'
+    + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? 'Imposta i criteri per la tua ricerca' : 'Set your search criteria') + '</div>'
+    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>'
+    + '</div>'
+    + '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;">'
+    + '<span style="' + _etichettaBordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + (it ? 'Ricerca per nome' : 'Search by name') + '</span>'
+    + '<div class="search-input-wrap"><span class="search-icon">🔍</span>'
+    + '<input class="search-input" type="text" id="personaggi-cerca" value="' + esc(_personaggiFiltro) + '" placeholder="' + (it ? 'Cerca un personaggio…' : 'Search a character…') + '" oninput="_personaggiFiltro=this.value;_personaggiPagina=1;renderCatalog();const c=document.getElementById(\'personaggi-cerca\');c.focus();c.setSelectionRange(c.value.length,c.value.length);">'
+    + (_personaggiFiltro ? '<span class="search-clear-btn" onclick="_personaggiFiltro=\'\';_personaggiPagina=1;renderCatalog();">✕</span>' : '')
+    + '</div></div>'
     // 🆕 v6.966 - «Senza figurine», per tutti (Franco: «user visible»). Lo stesso interruttore
     //    blu dei filtri della ricerca di sezione.
-    + '<label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);">'
+    + '<div style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
+    + '<div style="' + _etichettaBordo + '">' + (it ? 'Filtri aggiuntivi' : 'More filters') + '</div>'
+    + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);">'
     + '<button type="button" class="toggle-btn-blue ' + (_personaggiSenzaFigurine ? 'on' : '') + '" onclick="_personaggiSenzaFigurine=!_personaggiSenzaFigurine;_personaggiPagina=1;renderCatalog();"></button>'
     + (it ? 'Senza figurine' : 'Without stickers') + '</label>'
-    + '<span style="color:var(--accent);font-size:0.95rem;">' + tutti.length + ' ' + (it ? (tutti.length === 1 ? 'personaggio' : 'personaggi') : (tutti.length === 1 ? 'character' : 'characters')) + '</span></div>';
+    + '</div></div>'
+    + '<div style="font-size:0.95rem;color:var(--text);margin-bottom:0.3rem;"><span style="color:var(--accent);">' + tutti.length + '</span> ' + (it ? (tutti.length === 1 ? 'personaggio' : 'personaggi') : (tutti.length === 1 ? 'character' : 'characters')) + '</div>'
+    + '</div>';
   if (!_personaggiDati.elenco.length) {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🧑‍🎤</div><p class="empty-title">' + (it ? 'I personaggi non sono ancora stati caricati.' : 'Characters have not been loaded yet.') + '</p></div>';
     return;
   }
   const card = p => {
     const arts = articoliDelPersonaggio(p.id, ix);
-    const foto = _fotoPersonaggio(arts);
+    const foto = _fotoPersonaggio(arts, p.id, ix);
     const serie = [...new Set(arts.map(a => a.seriesId))].sort((a, b) => (ordine.get(a) ?? 9999) - (ordine.get(b) ?? 9999))
       .map(id => serieNome.get(id)).filter(Boolean);
     return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="apriPersonaggio(\'' + p.id + '\')">'
       + '<div class="card-img-placeholder">' + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="' + esc(p.nome) + '" style="width:100%;height:100%;object-fit:contain;">' : '') + '</div>'
-      + '<div class="card-body" style="display:flex;flex-direction:column;flex:1 1 auto;">'
-      + '<div class="card-title" style="margin-bottom:0.35rem;color:var(--nome-entita);">' + esc(p.nome) + '</div>'
-      + '<div style="font-size:0.8rem;color:var(--text);flex:1 1 auto;">' + serie.map(s => esc(_nomeSerieCard(s, true))).join(' · ') + '</div>'
-      + '<div class="card-desc" style="margin-top:0.45rem;padding-top:0.45rem;border-top:1px solid rgba(255,255,255,0.06);color:var(--accent);">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div>'
+      // 🔄 v6.968 — card a un quarto: testo e margini scalati con lei (titolo 1,35 → 0,85rem).
+      + '<div class="card-body" style="display:flex;flex-direction:column;flex:1 1 auto;padding:0.55rem 0.65rem 0.6rem;">'
+      + '<div class="card-title" style="margin-bottom:0.2rem;font-size:0.85rem;line-height:1.2;color:var(--nome-entita);">' + esc(p.nome) + '</div>'
+      + '<div style="font-size:0.68rem;line-height:1.3;color:var(--text);flex:1 1 auto;">' + serie.map(s => esc(_nomeSerieCard(s, true))).join(' · ') + '</div>'
+      + '<div class="card-desc" style="margin-top:0.3rem;padding-top:0.3rem;font-size:0.72rem;line-height:1.3;border-top:1px solid rgba(255,255,255,0.06);color:var(--accent);">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div>'
       + '</div></div>';
   };
   grid.innerHTML = cerca + (pagina.length ? pagina.map(card).join('')
@@ -41150,7 +41214,7 @@ function renderPaginaPersonaggio(grid, pid) {
   const p = _personaggiDati.perId.get(pid);
   if (!p) { _personaggioAperto = null; renderCatalogPersonaggi(grid); return; }
   const arts = articoliDelPersonaggio(pid);
-  const foto = _fotoPersonaggio(arts);
+  const foto = _fotoPersonaggio(arts, pid);
   const figs = getData('figurines', []);
   const serie = (getData('series', []) || []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
   const elenco = [];
@@ -42371,6 +42435,9 @@ function renderCatalog() {
   if (resultsEl) resultsEl.style.display = 'none';
   if (grid) grid.style.display = '';
   _aggiornaBivioInventario();
+  // 🆕 v6.968 — colonne e spazi tornano quelli del CSS PRIMA di ogni taglio: le card piccole dei
+  //    personaggi mettono il doppio delle colonne, e i Prodotti su desktop non le ripuliscono.
+  if (grid) { grid.style.gridTemplateColumns = ''; grid.style.gap = ''; }
   if (_taglioInventario === 'prodotti') { if (grid) renderCatalogProdotti(grid); return; }
   if (_taglioInventario === 'personaggi') { if (grid) renderCatalogPersonaggi(grid); return; }   // 🆕 v6.966
   // v6.080 - tornando al taglio per SERIE la griglia riprende le sue colonne: e' lo stesso
@@ -65102,10 +65169,46 @@ function renderAdminFunzioni() {
         '</div>' +
         '<div id="attacca-esito" style="margin-top:1rem;"></div>' +
       '</div>' +
+
+      // 🆕 v6.968 (Franco) - FUNZIONE 6: «carichiamo le coppie personaggi-articolo stando
+      // all'ultima versione del file che mi hai mandato». Stessa forma delle altre: anteprima,
+      // conferma col numero, scrittura, ricontrollo. I dati arrivano da due file scelti qui.
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1.25rem;">' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '6. Carica i personaggi' : '6. Load the characters') + '</h4>' +
+        '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
+          (it ? 'Carica i <b>personaggi</b> e le loro <b>associazioni agli articoli</b> dai due file preparati fuori dal sito: <b>personaggi.json</b> e <b>associazioni.json</b>.<br><br>' +
+                '<b>Cosa fa:</b><br>' +
+                'crea i personaggi nuovi e corregge il nome di quelli cambiati;<br>' +
+                'aggiunge le associazioni nuove;<br>' +
+                'toglie personaggi e associazioni che nei file non ci sono più.<br><br>' +
+                '<b>NOTE:</b><br>' +
+                'I file sono la fonte: quello che sta sul sito e non nei file viene <b>tolto</b>.<br>' +
+                'Si può <b>rilanciare</b>: con gli stessi file non cambia niente.<br>' +
+                'Le associazioni a un articolo che non esiste, o a un personaggio che manca, vengono <b>scartate</b> e mostrate nell’anteprima.<br>' +
+                'Mostra l’anteprima coi numeri e chiede conferma.'
+              : 'Loads the <b>characters</b> and their <b>links to items</b> from the two files prepared outside the site: <b>personaggi.json</b> and <b>associazioni.json</b>.<br><br>' +
+                '<b>What it does:</b><br>' +
+                'creates new characters and fixes the name of changed ones;<br>' +
+                'adds new links;<br>' +
+                'removes characters and links no longer in the files.<br><br>' +
+                '<b>NOTES:</b><br>' +
+                'The files are the source: what is on the site and not in the files is <b>removed</b>.<br>' +
+                'It can be <b>re-run</b>: with the same files nothing changes.<br>' +
+                'Links to a missing item or character are <b>discarded</b> and listed in the preview.<br>' +
+                'It previews the numbers and asks for confirmation.') + '</p>' +
+        '<label class="form-label">' + (it ? 'I due file (scegline due insieme)' : 'The two files (pick both together)') + '</label>' +
+        '<input type="file" id="personaggi-file" accept=".json,application/json" multiple class="form-input" style="margin-bottom:0.75rem;">' +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
+          '<button class="btn-primary btn-admin" onclick="anteprimaCaricaPersonaggi()">&#128269; ' + (it ? 'Anteprima' : 'Preview') + '</button>' +
+          '<button class="btn-primary btn-admin" id="personaggi-applica-btn" onclick="applicaCaricaPersonaggi()" style="display:none;">&#9989; ' + (it ? 'Carica' : 'Load') + '</button>' +
+        '</div>' +
+        '<div id="personaggi-esito" style="margin-top:1rem;"></div>' +
+      '</div>' +
     '</div>';
   _pianoAllinea = null;
   _pianoFixRetro = null; // v6.085
   _pianoAttacca = null;  // v6.358 - un piano calcolato su un elenco vecchio non si applica
+  _pianoPersonaggi = null; // v6.968
 }
 
 // v6.085 - il piano della funzione 3. Non calcola niente di suo: chiede a _changeConRetroErrato()
@@ -65290,6 +65393,217 @@ async function applicaDaAttaccare() {
   }
   toast(it ? `✅ ${creati} figurine per album create` : `✅ ${creati} ${_nomiAttacca().att.toLowerCase()} created`, 'success');
   try { updateSectionCounts(); } catch(e) { console.error('updateSectionCounts', e); }
+}
+
+// ============================================================
+//  🆕 v6.968 — CARICA I PERSONAGGI (funzione 6 della scheda Funzioni)
+// ============================================================
+// Franco, 25 settembre: «carichiamo le coppie personaggi-articolo stando all'ultima versione del
+// file che mi hai mandato». I file sono `personaggi.json` ({ id, nome }) e `associazioni.json`
+// ({ articoloId, personaggioId }), fatti da `genera-caricamento.py` dalla bozza 19.
+//
+// 📌 I FILE SONO LA FONTE, e il piano è una DIFFERENZA col server: da creare, da rinominare, da
+//    togliere. Così la funzione si rilancia quando la bozza cambia, e coi file uguali non scrive
+//    niente — la prova, come per la funzione 5, è il piano vuoto al secondo lancio.
+// 🔴 IL CONFRONTO SI FA COL SERVER (`fsGetAllDalServer`), NON CON `_personaggiDati`: quello è una
+//    copia letta una volta, e un piano calcolato su una copia vecchia toglierebbe cose che non
+//    sa di avere. Se il server non si lascia leggere — regole Firebase mancanti — l'anteprima lo
+//    dice e si ferma: un «zero sul server» inventato farebbe ricreare tutto a ogni lancio.
+// 📌 L'id di un'associazione è `articoloId__personaggioId`: la coppia È la riga, quindi la stessa
+//    coppia non può finire due volte nella raccolta, nemmeno rilanciando.
+let _pianoPersonaggi = null;
+
+function _idAssociazione(articoloId, personaggioId) { return articoloId + '__' + personaggioId; }
+// Firestore non accetta `/` in un id, né id vuoti, `.` o `..`: una riga così si scarta, non si prova.
+function _idFirestoreValido(id) { return typeof id === 'string' && id !== '' && id !== '.' && id !== '..' && !id.includes('/'); }
+
+// Riconosce i due file dal CONTENUTO, non dal nome: scaricati due volte diventano «personaggi (1).json».
+async function _leggiFilePersonaggi(files) {
+  const out = { personaggi: null, associazioni: null };
+  for (const f of files || []) {
+    let dati;
+    try { dati = JSON.parse(await f.text()); }
+    catch (e) { throw new Error((currentLang === 'it' ? 'Il file «' + f.name + '» non è un JSON leggibile: ' : 'The file «' + f.name + '» is not readable JSON: ') + e.message); }
+    const primo = Array.isArray(dati) ? dati.find(x => x && typeof x === 'object') : null;
+    if (primo && 'articoloId' in primo && 'personaggioId' in primo) out.associazioni = dati;
+    else if (primo && 'id' in primo && 'nome' in primo) out.personaggi = dati;
+    else throw new Error(currentLang === 'it' ? 'Non riconosco il file «' + f.name + '»: non sono né personaggi né associazioni.'
+                                               : 'Unrecognised file «' + f.name + '»: neither characters nor links.');
+  }
+  if (!out.personaggi || !out.associazioni)
+    throw new Error(currentLang === 'it' ? 'Servono tutti e due i file: personaggi.json e associazioni.json.'
+                                         : 'Both files are needed: personaggi.json and associazioni.json.');
+  return out;
+}
+
+// UNA SOLA FUNZIONE CALCOLA IL PIANO, per l'anteprima e per il ricontrollo dopo la scrittura (§14).
+function _pianoCaricaPersonaggi(file, server) {
+  const scarti = [];
+  const indiceArt = _indiceArticoli();
+  // I personaggi del file, puliti: id valido, nome non vuoto, niente doppioni.
+  const pFile = new Map();
+  (file.personaggi || []).forEach(p => {
+    const id = p && typeof p.id === 'string' ? p.id.trim() : '';
+    const nome = p && typeof p.nome === 'string' ? p.nome.trim() : '';
+    if (!_idFirestoreValido(id) || !nome) { scarti.push({ cosa: 'personaggio', chi: (id || '?') + ' ' + nome, perche: 'id o nome non validi' }); return; }
+    if (pFile.has(id)) { scarti.push({ cosa: 'personaggio', chi: id, perche: 'doppio nel file' }); return; }
+    pFile.set(id, nome);
+  });
+  // Le associazioni del file: personaggio che esiste nel file, articolo che esiste nel sito.
+  const aFile = new Map();
+  (file.associazioni || []).forEach(a => {
+    const art = a && typeof a.articoloId === 'string' ? a.articoloId.trim() : '';
+    const pid = a && typeof a.personaggioId === 'string' ? a.personaggioId.trim() : '';
+    const chi = art + ' → ' + pid;
+    if (!pFile.has(pid)) { scarti.push({ cosa: 'associazione', chi, perche: 'personaggio che non c’è' }); return; }
+    if (!_idFirestoreValido(art) || !indiceArt.has(art)) { scarti.push({ cosa: 'associazione', chi, perche: 'articolo che non c’è' }); return; }
+    const id = _idAssociazione(art, pid);
+    if (!aFile.has(id)) aFile.set(id, { articoloId: art, personaggioId: pid });
+  });
+  const pServer = new Map((server.personaggi || []).map(p => [p.id, p.nome || '']));
+  const aServer = new Map();
+  (server.associazioni || []).forEach(a => aServer.set(a.id, a));
+  const piano = {
+    pFile: pFile.size, aFile: aFile.size,
+    pNuovi: [], pRinominati: [], pDaTogliere: [],
+    aNuove: [], aDaTogliere: [], scarti
+  };
+  pFile.forEach((nome, id) => {
+    if (!pServer.has(id)) piano.pNuovi.push({ id, nome });
+    else if (pServer.get(id) !== nome) piano.pRinominati.push({ id, nome, prima: pServer.get(id) });
+  });
+  pServer.forEach((nome, id) => { if (!pFile.has(id)) piano.pDaTogliere.push({ id, nome }); });
+  // ⚠️ Un'associazione sul server si confronta per ID E PER CONTENUTO: una riga con l'id giusto ma
+  //    i campi diversi (scritta a mano in console) va riscritta, non tenuta.
+  aFile.forEach((a, id) => {
+    const s = aServer.get(id);
+    if (!s || s.articoloId !== a.articoloId || s.personaggioId !== a.personaggioId) piano.aNuove.push({ id, ...a });
+  });
+  aServer.forEach((a, id) => { if (!aFile.has(id)) piano.aDaTogliere.push({ id, articoloId: a.articoloId, personaggioId: a.personaggioId }); });
+  piano.daFare = piano.pNuovi.length + piano.pRinominati.length + piano.pDaTogliere.length
+               + piano.aNuove.length + piano.aDaTogliere.length;
+  return piano;
+}
+
+async function _leggiPersonaggiDalServer() {
+  return { personaggi: await fsGetAllDalServer('personaggi'), associazioni: await fsGetAllDalServer('associazioni') };
+}
+
+function _righePianoPersonaggi(piano, it) {
+  const riga = (t, n, col) => '<div style="font-size:0.9rem;padding:0.15rem 0;">' + t + ': <b style="color:' + (n ? col : 'var(--muted)') + ';">' + n + '</b></div>';
+  const elenco = (titolo, righe) => righe.length
+    ? '<div style="font-size:0.85rem;margin-top:0.6rem;"><b>' + titolo + '</b>' +
+        '<div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.6rem;margin-top:0.3rem;color:var(--muted);font-size:0.78rem;line-height:1.5;">' +
+        righe.slice(0, 200).map(esc).join('<br>') + (righe.length > 200 ? '<br>… ' + (righe.length - 200) + (it ? ' altre' : ' more') : '') +
+        '</div></div>'
+    : '';
+  return '<div style="font-size:0.85rem;color:var(--text);margin-bottom:0.4rem;">' +
+      (it ? 'Nei file: <b>' + piano.pFile + '</b> personaggi, <b>' + piano.aFile + '</b> associazioni valide.'
+          : 'In the files: <b>' + piano.pFile + '</b> characters, <b>' + piano.aFile + '</b> valid links.') + '</div>' +
+    riga(it ? 'Personaggi da creare' : 'Characters to create', piano.pNuovi.length, 'var(--success)') +
+    riga(it ? 'Personaggi da rinominare' : 'Characters to rename', piano.pRinominati.length, 'var(--warn)') +
+    riga(it ? 'Personaggi da togliere' : 'Characters to remove', piano.pDaTogliere.length, 'var(--danger)') +
+    riga(it ? 'Associazioni da aggiungere' : 'Links to add', piano.aNuove.length, 'var(--success)') +
+    riga(it ? 'Associazioni da togliere' : 'Links to remove', piano.aDaTogliere.length, 'var(--danger)') +
+    riga(it ? 'Righe scartate' : 'Discarded rows', piano.scarti.length, 'var(--warn)') +
+    elenco(it ? 'Da rinominare' : 'To rename', piano.pRinominati.map(p => p.prima + ' → ' + p.nome)) +
+    elenco(it ? 'Personaggi da togliere' : 'Characters to remove', piano.pDaTogliere.map(p => p.nome || p.id)) +
+    elenco(it ? 'Associazioni da togliere' : 'Links to remove', piano.aDaTogliere.map(a => a.articoloId + ' → ' + a.personaggioId)) +
+    elenco(it ? 'Scartate' : 'Discarded', piano.scarti.map(s => s.cosa + ' ' + s.chi + ' — ' + s.perche));
+}
+
+async function anteprimaCaricaPersonaggi() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('personaggi-esito');
+  const btn = document.getElementById('personaggi-applica-btn');
+  _pianoPersonaggi = null;
+  if (btn) btn.style.display = 'none';
+  if (!esito) return;
+  esito.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">' + (it ? 'Leggo i file e il server…' : 'Reading files and server…') + '</div>';
+  let file, server;
+  try { file = await _leggiFilePersonaggi(document.getElementById('personaggi-file')?.files); }
+  catch (e) { esito.innerHTML = '<div style="font-size:0.9rem;color:var(--danger);">' + esc(e.message) + '</div>'; return; }
+  try { server = await _leggiPersonaggiDalServer(); }
+  catch (e) {
+    esito.innerHTML = '<div style="font-size:0.9rem;color:var(--danger);">' +
+      (it ? 'Non riesco a leggere personaggi e associazioni dal server. Le regole Firebase delle due raccolte sono state messe? ('
+          : 'Cannot read characters and links from the server. Are the Firebase rules for the two collections in place? (') +
+      esc(e?.message || String(e)) + ')</div>';
+    return;
+  }
+  const piano = _pianoCaricaPersonaggi(file, server);
+  piano.file = file;
+  _pianoPersonaggi = piano;
+  if (btn) btn.style.display = piano.daFare ? '' : 'none';
+  esito.innerHTML = _righePianoPersonaggi(piano, it) +
+    (piano.daFare ? '' : '<div style="font-size:0.9rem;color:var(--success);margin-top:0.6rem;">' +
+      (it ? 'Il sito è già uguale ai file. Niente da caricare.' : 'The site already matches the files. Nothing to load.') + '</div>');
+}
+
+// Scrive a pezzi: un `writeBatch` regge al massimo 500 operazioni.
+async function _scriviPersonaggiAPezzi(operazioni, avanza) {
+  const { writeBatch, doc } = window._fb;
+  const PEZZO = 400;
+  for (let i = 0; i < operazioni.length; i += PEZZO) {
+    const b = writeBatch(db);
+    operazioni.slice(i, i + PEZZO).forEach(op => {
+      const ref = doc(db, op.coll, op.id);
+      if (op.dati) b.set(ref, op.dati); else b.delete(ref);
+    });
+    await b.commit();
+    avanza(Math.min(i + PEZZO, operazioni.length));
+  }
+}
+
+async function applicaCaricaPersonaggi() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('personaggi-esito');
+  const btn = document.getElementById('personaggi-applica-btn');
+  const piano = _pianoPersonaggi;
+  if (!piano || !piano.daFare) { toast(it ? 'Fai prima l’anteprima' : 'Run the preview first', 'error'); return; }
+  if (!db || !window._fb?.writeBatch) { toast(it ? 'Database non pronto' : 'Database not ready', 'error'); return; }
+  // §14, regola 2: la conferma NOMINA i numeri.
+  const togli = piano.pDaTogliere.length + piano.aDaTogliere.length;
+  if (!confirm(it
+    ? `Caricare i personaggi?\n\n· ${piano.pNuovi.length} personaggi da creare, ${piano.pRinominati.length} da rinominare, ${piano.pDaTogliere.length} da togliere\n· ${piano.aNuove.length} associazioni da aggiungere, ${piano.aDaTogliere.length} da togliere` + (togli ? '\n\nLe righe da togliere non si recuperano.' : '')
+    : `Load the characters?\n\n· ${piano.pNuovi.length} characters to create, ${piano.pRinominati.length} to rename, ${piano.pDaTogliere.length} to remove\n· ${piano.aNuove.length} links to add, ${piano.aDaTogliere.length} to remove` + (togli ? '\n\nRemoved rows cannot be recovered.' : ''))) return;
+  // 📌 L'ORDINE: prima i personaggi, poi le associazioni che li nominano; si toglie per ultimo, e
+  //    prima le associazioni dei personaggi. Se la scrittura si ferma a metà, non restano mai
+  //    associazioni a un personaggio che non c'è.
+  const ops = [].concat(
+    piano.pNuovi.concat(piano.pRinominati).map(p => ({ coll: 'personaggi', id: p.id, dati: { nome: p.nome } })),
+    piano.aNuove.map(a => ({ coll: 'associazioni', id: a.id, dati: { articoloId: a.articoloId, personaggioId: a.personaggioId } })),
+    piano.aDaTogliere.map(a => ({ coll: 'associazioni', id: a.id })),
+    piano.pDaTogliere.map(p => ({ coll: 'personaggi', id: p.id }))
+  );
+  if (btn) btn.disabled = true;
+  let errore = null;
+  try {
+    await _scriviPersonaggiAPezzi(ops, n => {
+      if (esito) esito.innerHTML = '<div style="font-size:0.9rem;color:var(--muted);">' + (it ? 'Scritte ' : 'Written ') + n + ' / ' + ops.length + '…</div>';
+    });
+  } catch (e) { errore = e; console.error('applicaCaricaPersonaggi', e); }
+  if (btn) btn.disabled = false;
+  // La copia in memoria si butta: la prossima pagina dei personaggi rilegge dal server.
+  _personaggiDati = null; _personaggiCaricamento = null;
+  // §14, regola 3: alla fine SI RICONTA DA CAPO, dal server, con gli stessi file.
+  let restanti = null;
+  try { restanti = _pianoCaricaPersonaggi(piano.file, await _leggiPersonaggiDalServer()); }
+  catch (e) { console.error('ricontrollo personaggi', e); }
+  _pianoPersonaggi = null;
+  if (btn) btn.style.display = 'none';
+  if (esito) {
+    const ok = !errore && restanti && !restanti.daFare;
+    esito.innerHTML =
+      '<div style="font-size:0.9rem;color:' + (ok ? 'var(--success)' : 'var(--warn)') + ';">' +
+        (errore ? '<span style="color:var(--danger);">' + esc((it ? 'La scrittura si è fermata: ' : 'Writing stopped: ') + (errore.message || errore)) + '</span><br>' : '') +
+        (restanti
+          ? (it ? 'Ricontato dal server dopo la scrittura: <b>' + restanti.daFare + '</b> cose ancora da fare.'
+                : 'Recounted from the server after writing: <b>' + restanti.daFare + '</b> things still to do.')
+          : (it ? 'Non sono riuscito a ricontare dal server.' : 'Could not recount from the server.')) +
+      '</div>' + (restanti && restanti.daFare ? _righePianoPersonaggi(restanti, it) : '');
+  }
+  if (!errore) toast(it ? '✅ Personaggi caricati' : '✅ Characters loaded', 'success');
 }
 
 let _pianoFixRetro = null;
