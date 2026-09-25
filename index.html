@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.969">
+<link rel="stylesheet" href="css/style.css?v=6.970">
 
 
 <style>
@@ -1514,6 +1514,13 @@ button.back-btn { color:#ffffff; }
    dell'Inventario; `opacity:1` perché Firefox schiarisce il segnaposto per conto suo. */
 /* 📌 Il bianco del TESTO è `var(--text)` (regola della v6.393, `prova-v6393` B2). */
 #series-search::placeholder{color:var(--text);opacity:1;}
+/* 🆕 v6.970 (Franco: «la scritta "cerca un personaggio" la vorrei bianca») — la stessa regola
+   per la buca dell'hub dei personaggi. */
+#personaggi-cerca::placeholder{color:var(--text);opacity:1;}
+/* 🆕 v6.970 (Franco) — con una serie aperta nella fascia della home il carosello delle figurine
+   non si mostra: `!important` perché `renderCarosello` accende il display da sé (vedi
+   `_caroselloDietroVetrina` in app.js). */
+#home-carosello-sez.nascosto-vetrina{display:none!important;}
 /* E la cornice (Franco: «anche la cornice del box della ricerca: falla bianca»): era il lime al 18%. */
 #series-search{border-color:#ffffff;}
 /* 🆕 v6.947 — IL NOME IN BARRA. Sotto gli 860px si spegne: là lo spazio non c'è. */
@@ -5648,7 +5655,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.969"></script>
+<script src="js/app.js?v=6.970"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5672,7 +5679,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.969'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.970'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
