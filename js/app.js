@@ -1,7 +1,19 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.972 - Modificato js/app.js (e la versione in index.html). Due cose:
+// v6.973 - Modificato js/app.js (e la versione in index.html). Una cosa:
+//          1. 📥 Import figurine: le Tipologie di change, di omaggio e di errore di stampa non sono
+//             più obbligatorie quando il Retro indicato è della stessa versione: il tipo lo prende
+//             dal retro, come fa il sito (v6.577, v6.792, v6.795). Franco: «per le change di retro
+//             questo valore viene preso dal retro»; «per omaggio ed errori di stampa vale lo
+//             stesso?». Istruzioni della console aggiornate.
+//          2. 🗑️ Import figurine: via la colonna «Tipologia di omaggio» (un omaggio lo è sempre
+//             grazie al retro) e la colonna «Serie» (è quella scelta nella finestra). Template a 13
+//             colonne, e il template viaggia nella _upload_ (templates\).
+//          3. 👁 Import figurine: il pulsante «Anteprima» (Franco: «così posso fare sempre una
+//             preview»). È l'import vero che non scrive: stesso registro e stesso riepilogo.
+//             E lo stesso nell'import dei retro (Franco: «sì anche per i retro»).
+// v6.972 -Modificato js/app.js (e la versione in index.html). Due cose:
 //          1. 🧑‍🎤 Via la colonna «Personaggio» dalle VT delle figurine con retro e delle figurine
 //             per album (Franco: «lì il nome è identico; non ha senso»). Resta nelle altre.
 //          2. 🗑️ Via la colonna «Note» da tutte le VT (Franco: «ho cambiato idea»). Il campo resta
@@ -30273,7 +30285,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.972';
+const JS_VERSION = 'v6.973';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -62734,7 +62746,12 @@ function _importAvvisoTipologia(sez, it) {
             : 'This series does not allow ' + nome + ': import not started';
 }
 
-async function startImportRetro() {
+// 🆕 v6.973 (Franco: «sì anche per i retro») - L'ANTEPRIMA ANCHE QUI, con lo stesso schema di
+//    `startImportFig`: stessa funzione, parametro `anteprima`, niente scritture, niente cache, niente
+//    lucchetto; i retro «salvati» restano in memoria e le righe dopo li vedono (un change trova il
+//    retro base creato dallo stesso file). I collegati da riallineare si contano e non si scrivono.
+async function startImportRetro(anteprima) {
+  anteprima = anteprima === true;
   // 🆕 v6.379 (Franco: *"ad inizio di esportazione puliamo il log"*) - SI SVUOTA QUI, PRIMA DEI
   // CONTROLLI D'INGRESSO, e le due cose che guadagna non si vedono finche' non capitano.
   // 🔴 Il log gia' si azzerava (`innerHTML = ''`), ma PIU' SOTTO e solo lui: il RIEPILOGO della
@@ -62747,6 +62764,15 @@ async function startImportRetro() {
   // ⚠️ Non e' il caso del lucchetto (v6.377), che si alza DOPO i controlli apposta: alzarlo prima
   // lo lascerebbe acceso su un caricamento mai cominciato. Qui non si accende niente, si spegne.
   clearImportRetroLog();
+  // v6.973 - il magazzino dell'anteprima, come in `startImportFig`
+  const finti = new Map();
+  let _nFinti = 0;
+  const _conFinti = arr => { if (!finti.size) return arr; const out = arr.map(f => finti.get(f.id) || f); finti.forEach((f, id) => { if (id.startsWith('anteprima-')) out.push(f); }); return out; };
+  const _scriviImportRetro = async rec => {
+    if (!anteprima) { await fsSave('figurines', rec); return; }
+    if (!rec.id) rec = { ...rec, id: 'anteprima-' + (++_nFinti) };
+    finti.set(rec.id, rec);
+  };
   const seriesId = document.getElementById('import-retro-series-select').value;
   if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series','error'); return; }
   // 🆕 v6.830 - la tipologia prima di tutto: una serie senza retro non ne riceve dal file.
@@ -62772,18 +62798,19 @@ async function startImportRetro() {
   // serie esce da un `return` anticipato, e il lucchetto resterebbe alzato su un caricamento che
   // non e' mai cominciato - col battito che continua a tenerlo vivo, quindi senza nemmeno la
   // scadenza a salvare la situazione. Si alza quando il lavoro comincia davvero.
-  _alzaLucchetto('retro');
+  if (!anteprima) _alzaLucchetto('retro');   // v6.973: l'anteprima non scrive
   document.getElementById('import-retro-log').style.display = 'block';
   { const _a = document.getElementById('import-retro-log-actions'); if (_a) _a.style.display = 'flex'; }
   applicaTemaLog();
   const _startBtn = document.getElementById('import-retro-start-btn'); if (_startBtn) _startBtn.disabled = true;
+  { const _b = document.getElementById('import-retro-anteprima-btn'); if (_b) _b.disabled = true; }   // v6.973
 
   // 🆕 v6.376 (Franco: *"fallo in bianco"*) — LA RIGA DI AVVIO E' UN DELIMITATORE, non una nota.
   // Era in 'info', cioe' il grigio delle righe che non hanno niente da dire; ma le altre tre righe
   // fra trattini — FINE e i due INIZIO/FINE dei recap — sono sempre state in 'white'. Delle
   // quattro cornici del log, tre erano bianche e una grigia, e non per una decisione: perche'
   // nessuno le aveva mai guardate insieme.
-  retroImportLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + rows.length + ' righe ---', 'white');
+  retroImportLog('--- ' + (anteprima ? (currentLang==='it' ? 'ANTEPRIMA — non viene scritto niente' : 'PREVIEW — nothing is written') : (currentLang==='it'?'Avvio':'Start')) + ': ' + rows.length + ' righe ---', 'white');
 
   const selEl = document.getElementById('import-retro-series-select');
   const seriesName = selEl?.selectedOptions[0]?.dataset.name || '';
@@ -62836,7 +62863,7 @@ async function startImportRetro() {
   // dell'altro import, e per la stessa ragione — ci sono retro che una sottocategoria non ce l'hanno.
   // 📌 `_eBase(f)` e non `!f.isChange && !f.isPrintError`: quella coppia scritta a mano è la ragione
   // per cui fin qui un retro OMAGGIO poteva essere restituito come «retro base» di un change.
-  const candidatiPartenza = (cat, sub, nom) => getData('figurines', []).filter(f =>
+  const candidatiPartenza = (cat, sub, nom) => _conFinti(getData('figurines', [])).filter(f =>
     f.seriesId === seriesId && f.section === 'retros' && _eBase(f) &&
     _n(f.category) === _n(cat) && _n(f.name) === _n(nom) &&
     (sub ? _n(f.subcategory) === _n(sub) : true));
@@ -62975,7 +63002,7 @@ async function startImportRetro() {
     // 📌 I flag di versione si scrivono DALL'ELENCO, non a mano: `_VERSIONI_VIVE` li conosce tutti,
     // e alla sesta versione questa riga non chiederà niente. La quaterna scritta a mano che stava
     // qui è la ragione per cui l'omaggio non arrivava: quattro `false` e nessun posto dove metterlo.
-    const existingFigs = getData('figurines', []);
+    const existingFigs = _conFinti(getData('figurines', []));   // v6.973: in anteprima, anche i retro «salvati» finora
     const retroData = {
       seriesId,
       section: 'retros',
@@ -63013,9 +63040,8 @@ async function startImportRetro() {
         updatedRec.fullName = computeFullName(updatedRec, existingFigs);
         const _diff = _importDiff(duplicate, updatedRec, _campiDiff);
         if (_diff.length) {
-          await fsSave('figurines', updatedRec);
-          const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
-          if (idx >= 0) _cache.figurines[idx] = updatedRec;
+          await _scriviImportRetro(updatedRec);
+          if (!anteprima) { const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec; }
           // 🆕 v6.386 - E SI PROPAGA, che qui non succedeva affatto. Questo import poteva
           // rinominare un retro esistente e lasciare indietro sia i suoi figli sia tutte le
           // figurine che lo usano: delle quattro strade che scrivono un retro era la piu' scoperta,
@@ -63027,7 +63053,10 @@ async function startImportRetro() {
           // sparse, e la strada corta e' anche quella che non introduce un secondo modo di salvare.
           let _propagati = 0;
           try {
-            for (const _p of _daSalvareInsiemeA(updatedRec, _cache.figurines)) {
+            // v6.973 - in anteprima i collegati si CONTANO soltanto
+            const _collegati = _daSalvareInsiemeA(updatedRec, _cache.figurines);
+            if (anteprima) _propagati = _collegati.length;
+            else for (const _p of _collegati) {
               await fsSave('figurines', _p);
               const _k = _cache.figurines.findIndex(f => f.id === _p.id);
               if (_k >= 0) _cache.figurines[_k] = _p;
@@ -63051,7 +63080,7 @@ async function startImportRetro() {
         }
       } else {
         retroData.fullName = computeFullName(retroData, existingFigs);
-        await fsSave('figurines', retroData);
+        await _scriviImportRetro(retroData);
         retroImportLog(pf() + '✅ "' + nome + '" — aggiunto' + _tag
           + (partenza ? ' (partenza: "' + partenza.name + '")' : ' (' + categoria + ')'), 'ok');
         inserted++;
@@ -63068,7 +63097,7 @@ async function startImportRetro() {
     { n: updated,  testo: 'aggiornati',                   tipo: 'upd'  },
     { n: skipped,  testo: 'ignorate (no aggiornamenti)',  tipo: 'warn' },
     { n: errors,   testo: 'errori',                       tipo: 'err'  }]);
-  retroImportLog('--- FINE: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + unchanged + ' invariati · ' + skipped + ' ignorate · ' + errors + ' errori ---', 'white');
+  retroImportLog('--- ' + (anteprima ? 'FINE ANTEPRIMA (niente è stato scritto): si avrebbero ' : 'FINE: ') + inserted + ' inseriti · ' + updated + ' aggiornati · ' + unchanged + ' invariati · ' + skipped + ' ignorate · ' + errors + ' errori ---', 'white');
 
   if (erroriRighe.length) {
     retroImportLog('', 'info');
@@ -63081,9 +63110,10 @@ async function startImportRetro() {
   // ma non per sempre: smette di battere, e dopo un minuto le altre finestre lo considerano morto.
   // E' la ragione per cui il battito esiste - un lucchetto che si ripara da se' non ha bisogno che
   // qualcuno si ricordi di ogni via d'uscita.
-  _abbassaLucchetto();
+  if (!anteprima) _abbassaLucchetto();
   const _endBtn = document.getElementById('import-retro-start-btn'); if (_endBtn) _endBtn.disabled = false;
-  renderItems(); updateSectionCounts();
+  const _endBtnA = document.getElementById('import-retro-anteprima-btn'); if (_endBtnA) _endBtnA.disabled = false;
+  if (!anteprima) { renderItems(); updateSectionCounts(); }
 }
 
 // ── Importazione Figurine da XLS ───────────────────────────────────────
@@ -63131,7 +63161,16 @@ function figImportStatus(msg, pct) {
 // Nome di ogni variante = SEMPRE quello della base. DOPPIA PASSATA interna: prima le basi, poi le
 // varianti (così una variante trova la sua base anche se nel file la precede). Guardia sui numeri
 // doppi tra basi come rete di sicurezza (non è un caso legittimo).
-async function startImportFig() {
+// 🆕 v6.973 (Franco: «aggiungi alla funzionalità di data import una funzionalità di preview; così
+//    posso fare sempre una preview») - L'ANTEPRIMA È L'IMPORT VERO CHE NON SCRIVE. Stessi controlli,
+//    stesso registro, stesso riepilogo: cambia solo che dove l'import salva (`_scriviImportFig`)
+//    l'anteprima tiene il record in memoria (`finti`), e le righe dopo lo vedono come se fosse stato
+//    salvato - così una variante trova la base che lo stesso file crea. Niente cache toccata, niente
+//    lucchetto (non si scrive), niente Firestore.
+// 📌 Una funzione sola con un parametro, non una copia: due copie dello stesso import avrebbero
+//    detto due cose diverse al primo ritocco, e l'anteprima vale solo se è identica all'import.
+async function startImportFig(anteprima) {
+  anteprima = anteprima === true;
   // 🆕 v6.379 (Franco: *"ad inizio di esportazione puliamo il log"*) - SI SVUOTA QUI, PRIMA DEI
   // CONTROLLI D'INGRESSO, e le due cose che guadagna non si vedono finche' non capitano.
   // 🔴 Il log gia' si azzerava (`innerHTML = ''`), ma PIU' SOTTO e solo lui: il RIEPILOGO della
@@ -63144,6 +63183,16 @@ async function startImportFig() {
   // ⚠️ Non e' il caso del lucchetto (v6.377), che si alza DOPO i controlli apposta: alzarlo prima
   // lo lascerebbe acceso su un caricamento mai cominciato. Qui non si accende niente, si spegne.
   clearImportFigLog();
+  // v6.973 - il magazzino dell'anteprima (vedi sopra la funzione). ⚠️ Dopo `clearImportFigLog`: il
+  //    log si svuota per primo, prima di qualunque uscita (v6.379).
+  const finti = new Map();   // id -> record, solo in anteprima
+  let _nFinti = 0;
+  const _conFinti = arr => { if (!finti.size) return arr; const out = arr.map(f => finti.get(f.id) || f); finti.forEach((f, id) => { if (id.startsWith('anteprima-')) out.push(f); }); return out; };
+  const _scriviImportFig = async rec => {
+    if (!anteprima) { await fsSave('figurines', rec); return; }
+    if (!rec.id) rec = { ...rec, id: 'anteprima-' + (++_nFinti) };
+    finti.set(rec.id, rec);
+  };
   const seriesId = document.getElementById('import-fig-series-select').value;
   if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series','error'); return; }
   const fileInput = document.getElementById('import-fig-file');
@@ -63172,11 +63221,12 @@ async function startImportFig() {
   // serie esce da un `return` anticipato, e il lucchetto resterebbe alzato su un caricamento che
   // non e' mai cominciato - col battito che continua a tenerlo vivo, quindi senza nemmeno la
   // scadenza a salvare la situazione. Si alza quando il lavoro comincia davvero.
-  _alzaLucchetto('figurine');
+  if (!anteprima) _alzaLucchetto('figurine');   // v6.973: l'anteprima non scrive, non chiude niente
   document.getElementById('import-fig-log').style.display = 'block';
   { const _a = document.getElementById('import-fig-log-actions'); if (_a) _a.style.display = 'flex'; }
   applicaTemaLog();
   const _startBtn = document.getElementById('import-fig-start-btn'); if (_startBtn) _startBtn.disabled = true;
+  { const _b = document.getElementById('import-fig-anteprima-btn'); if (_b) _b.disabled = true; }   // v6.973
 
   const selEl = document.getElementById('import-fig-series-select');
   const seriesName = selEl?.selectedOptions[0]?.dataset.name || '';
@@ -63186,7 +63236,7 @@ async function startImportFig() {
   // fra trattini — FINE e i due INIZIO/FINE dei recap — sono sempre state in 'white'. Delle
   // quattro cornici del log, tre erano bianche e una grigia, e non per una decisione: perche'
   // nessuno le aveva mai guardate insieme.
-  figImportLog('--- ' + (it?'Avvio':'Start') + ': ' + rows.length + ' righe ---', 'white');
+  figImportLog('--- ' + (anteprima ? (it ? 'ANTEPRIMA — non viene scritto niente' : 'PREVIEW — nothing is written') : (it?'Avvio':'Start')) + ': ' + rows.length + ' righe ---', 'white');
   // v6.383 - si dice PRIMA che il log arrivera' dopo: un riquadro vuoto mentre la barra avanza e'
   // indistinguibile da un caricamento piantato.
   figImportLog(it ? '⏳ Le righe compariranno alla fine, in ordine di file.' : '⏳ Rows will appear at the end, in file order.', 'info');
@@ -63319,7 +63369,7 @@ async function startImportFig() {
     // v6.392 - anche il contatore parla in righe di EXCEL (vedi sopra).
     figImportStatus((it?'Riga ':'Row ') + rn + '/' + (rows.length + 1), Math.round((done/rows.length)*100));
 
-    const existingFigs = getData('figurines', []);
+    const existingFigs = _conFinti(getData('figurines', []));   // v6.973: in anteprima, anche i record «salvati» finora
     // 🆕 v6.379 - LE COLONNE SI LEGGONO QUI, PRIMA DI OGNI CONTROLLO, e non e' un riordino
     // estetico: il prefisso del log le nomina tutte, quindi devono esistere anche sulle righe che
     // escono subito (Serie mancante, Serie che non corrisponde). Prima stavano sotto quei due
@@ -63343,7 +63393,10 @@ async function startImportFig() {
     // senza dire il vero motivo.
     const figBaseRef = g('Figurina di partenza','figurina di partenza');
     const tipoChange = g('Tipologia di change','tipologia di change');
-    const tipoOmaggio = g('Tipologia di omaggio','tipologia di omaggio');
+    // 🗑️ v6.973 (Franco: «la colonna del file non ha senso, dato che tutte le fig omaggio lo sono
+    //    grazie al retro; mai al fronte») - «Tipologia di omaggio» non si legge più: il tipo di una
+    //    figurina omaggio è quello del suo retro (`_tipoOmaggio`). Un file vecchio che ce l'ha ancora
+    //    non dà errore: la colonna viene semplicemente ignorata.
     const tipoErroreStampa = g('Tipologia di errore di stampa','tipologia di errore di stampa');
     const retroCategoria = g('Retro - Categoria','retro - categoria');
     // 🆕 v6.351 (Franco) - la sottocategoria del retro: la categoria da sola non basta a
@@ -63363,8 +63416,11 @@ async function startImportFig() {
     // le tre colonne del retro - L, M, J. ⚠️ Quell'ordine e' il suo e NON e' quello del template
     // (L, M, J invece di J, L, M): si lascia come l'ha detto.
     const pf = () => _prefissoRigaLog(rn, [numero, nome, retroNome, retroTipoChange, retroCategoria]);
-    if (!serieCol) { errRiga(pf() + '⚠️ colonna Serie mancante', 'warn'); continue; }
-    if (serieCol.toLowerCase() !== seriesName.toLowerCase()) {
+    // 🗑️ v6.973 (Franco: «togliamo serie») - LA COLONNA SERIE NON C'È PIÙ: la serie è quella scelta
+    //    nella finestra, e ripeterla su ogni riga era una seconda copia dello stesso dato. ⚠️ Un file
+    //    VECCHIO che ce l'ha ancora continua a scartare le righe di un'altra serie: ignorarla le
+    //    avrebbe caricate tutte nella serie scelta.
+    if (serieCol && serieCol.toLowerCase() !== seriesName.toLowerCase()) {
       _logRiga(pf() + '⏭️ Serie "' + serieCol + '" non corrisponde a "' + seriesName + '" — ignorata', 'warn');
       skipped++; continue;
     }
@@ -63408,7 +63464,7 @@ async function startImportFig() {
       // Coerenza: una riga base non deve avere campi da variante.
       // ♻️ v6.351 - il controllo guarda le tre TIPOLOGIE e la «Figurina di partenza». Prima
       // guardava `Tipo`, che adesso e' la Versione e su una riga base vale legittimamente «base».
-      if (figBaseRef || tipoChange || tipoOmaggio || tipoErroreStampa) {
+      if (figBaseRef || tipoChange || tipoErroreStampa) {
         errRiga(pf() + '⚠️ riga base (Versione «base» o vuota) ma con «Figurina di partenza» o una Tipologia valorizzata — incoerente, riga scartata', 'warn');
          continue;
       }
@@ -63444,15 +63500,15 @@ async function startImportFig() {
           const _diff = _importDiff(duplicate, updatedRec, ['number','subseries','name','retroId']);
           const changed = _diff.length > 0;
           if (changed) {
-            await fsSave('figurines', updatedRec);
-            const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec;
+            await _scriviImportFig(updatedRec);
+            if (!anteprima) { const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec; }
             { const _u = pf() + '🔄 "' + finalName + '" — base sovrascritta' + _importDiffTxt(_diff); _logRiga(_u, 'update'); righeAggiornate.push(_voceRecap(_u, 'update')); updated++; }
           } else { _logRiga(pf() + '⏭️ "' + finalName + '" — base già presente, nessuna modifica', 'info'); unchanged++; }
         } else {
           if (!nome) { errRiga(pf() + '⚠️ nessuna base con Numero ' + numero + ' — per crearne una nuova serve anche il Nome', 'warn'); continue; }
           const newRec = { ...figData, name: nome };
           newRec.fullName = computeFullName(newRec, existingFigs);
-          await fsSave('figurines', newRec);
+          await _scriviImportFig(newRec);
           _logRiga(pf() + '✅ "' + nome + '" — base aggiunta', 'ok'); inserted++;
         }
       } catch(e) { errRiga(pf() + '❌ ' + e.message, 'err'); }
@@ -63479,7 +63535,7 @@ async function startImportFig() {
     // ⚠️ UNA TIPOLOGIA CHE NON APPARTIENE ALLA VERSIONE DICHIARATA FERMA LA RIGA. Non e' pignoleria:
     // «Versione = change» con la «Tipologia di omaggio» piena e' una riga su cui chi l'ha scritta
     // aveva in mente due cose diverse, e indovinare quale valga vuol dire scegliere per lui.
-    const _tipologie = { change: tipoChange, omaggio: tipoOmaggio, 'errore di stampa': tipoErroreStampa };
+    const _tipologie = { change: tipoChange, 'errore di stampa': tipoErroreStampa };   // v6.973: niente più omaggio
     const _estranee = Object.entries(_tipologie)
       .filter(([v, val]) => val && v !== versione).map(([v]) => 'Tipologia di ' + v);
     if (_estranee.length) {
@@ -63520,10 +63576,22 @@ async function startImportFig() {
       return null;
     };
 
-    if (versione === 'errore di stampa') {
+    if (versione === 'errore di stampa' && !tipoErroreStampa) {
+      // 🆕 v6.973 (Franco: «per omaggio ed errori di stampa vale lo stesso?») - sì: l'ERRORE DI
+      //    STAMPA SUL RETRO prende il tipo dal retro dalla v6.577 (`_tipoErroreStampa`), e il campo
+      //    della figurina può restare vuoto. Serve un retro che sia un errore di stampa.
+      const _r = (retroCategoria && retroNome) ? cercaRetro() : null;
+      if (!_r || !_r.retro || !_r.retro.isPrintError) {
+        errRiga(pf() + '⚠️ Versione «errore di stampa» senza «Tipologia di errore di stampa»: si può lasciare vuota solo se anche il Retro indicato ha la versione «errore di stampa» (il tipo lo prende da lui)'
+          + (_r && _r.errore ? ' — ' + _r.errore.replace(/^.*?❌ /, '') : ''), 'warn'); continue;
+      }
+      duplicate = existingFigs.find(f => f.seriesId === seriesId && f.section === 'figurines' && f.isPrintError && f.baseFigurineId === baseFig.id && f.retroId === _r.retro.id);
+      figData = { ...baseCommon, isPrintError: true, printErrorType: null, retroId: _r.retro.id };
+      rowType = (it ? 'Errore di stampa' : 'Print error');
+      keyInfo = ' [Errore di stampa sul retro: ' + (_r.retro.printErrorType || '') + ']';
+    } else if (versione === 'errore di stampa') {
       // ♻️ v6.351 - adesso si valida, come le altre due. Fino alla v6.350 era testo libero, quindi
       // un refuso entrava nei dati e si scopriva solo guardando un riquadro con due voci quasi uguali.
-      if (!tipoErroreStampa) { errRiga(pf() + '⚠️ Versione «errore di stampa» senza «Tipologia di errore di stampa»', 'warn'); continue; }
       const _v = _validaTipologia('Tipologia di errore di stampa', tipoErroreStampa, erroreTypesDiSerie(seriesId));
       if (_v.errore) { errRiga(_v.errore, 'err'); continue; }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.section === 'figurines' && f.isPrintError &&
@@ -63531,8 +63599,22 @@ async function startImportFig() {
       figData = { ...baseCommon, isPrintError: true, printErrorType: _v.ok, retroId: _retroProprio(it ? 'Errore di stampa' : 'Print error') };
       rowType = (it ? 'Errore di stampa' : 'Print error');
       keyInfo = ' [Errore di stampa: ' + _v.ok + ']';
+    } else if (versione === 'change' && !tipoChange) {
+      // 🆕 v6.973 (Franco: «tipologia di change non deve essere obbligatoria, dato che per le change
+      //    di retro questo valore viene preso dal retro») - IL CHANGE DI RETRO SENZA TIPOLOGIA. Come nel
+      //    sito dalla v6.792 (`_tipoChange`): se il retro indicato è un change, il tipo è il suo, e il
+      //    campo della figurina resta vuoto. Senza retro, o con un retro che change non è, la
+      //    Tipologia serve ancora: di un change frontale nessun altro posto sa dire il tipo.
+      const _r = (retroCategoria && retroNome) ? cercaRetro() : null;
+      if (!_r || !_r.retro || !_r.retro.isChange) {
+        errRiga(pf() + '⚠️ Versione «change» senza «Tipologia di change»: si può lasciare vuota solo se il Retro indicato è un change (il tipo lo prende da lui)'
+          + (_r && _r.errore ? ' — ' + _r.errore.replace(/^.*?❌ /, '') : ''), 'warn'); continue;
+      }
+      duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isChange && f.retroId === _r.retro.id);
+      figData = { ...baseCommon, isChange: true, changeType: null, retroId: _r.retro.id };
+      rowType = 'Change';
+      keyInfo = ' [Change di retro: ' + (_r.retro.changeType || '') + ']';
     } else if (versione === 'change') {
-      if (!tipoChange) { errRiga(pf() + '⚠️ Versione «change» senza «Tipologia di change»', 'warn'); continue; }
       const _v = _validaTipologia('Tipologia di change', tipoChange, changeTypesDiSerie(seriesId));
       if (_v.errore) { errRiga(_v.errore, 'err'); continue; }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isChange &&
@@ -63541,18 +63623,20 @@ async function startImportFig() {
       rowType = 'Change';
       keyInfo = ' [Tipo di change: ' + _v.ok + ']';
     } else if (versione === 'omaggio') {
-      // 🆕 v6.351 - L'OMAGGIO ENTRA NELL'IMPORT, e prima non c'era nessuna strada per crearlo da
-      // qui: la quinta versione e' nata fra la v6.232 e la v6.264 e l'importatore e' rimasto
-      // indietro senza che nessuno lo scrivesse. Si comporta come il change - tipologia dall'elenco
-      // della serie, retro proprio facoltativo - perche' e' un figlio come lui (v6.314).
-      if (!tipoOmaggio) { errRiga(pf() + '⚠️ Versione «omaggio» senza «Tipologia di omaggio»', 'warn'); continue; }
-      const _v = _validaTipologia('Tipologia di omaggio', tipoOmaggio, omaggioTypesDiSerie(seriesId));
-      if (_v.errore) { errRiga(_v.errore, 'err'); continue; }
-      duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isFreeVersion &&
-        (f.freeVersionType||'').toLowerCase().trim() === _v.ok.toLowerCase().trim());
-      figData = { ...baseCommon, isFreeVersion: true, freeVersionType: _v.ok, retroId: _retroProprio('Omaggio') };
+      // 🔄 v6.973 (Franco: «tutte le fig omaggio lo sono grazie al retro; mai al fronte») - UN OMAGGIO
+      //    È SEMPRE UN OMAGGIO DI RETRO: il retro indicato dev'essere un omaggio, e il tipo è il suo
+      //    (`_tipoOmaggio`, v6.795). Il campo della figurina resta vuoto, come per i change di retro.
+      //    📌 Il retro omaggio si individua con «Retro - Tipo di omaggio», che resta.
+      // (Prima, dalla v6.351: tipologia dall'elenco della serie e retro facoltativo, come un change.)
+      const _r = (retroCategoria && retroNome) ? cercaRetro() : null;
+      if (!_r || !_r.retro || !_r.retro.isFreeVersion) {
+        errRiga(pf() + '⚠️ Versione «omaggio»: serve il Retro omaggio (colonne «Retro - …», con «Retro - Tipo di omaggio»); il tipo lo prende da lui'
+          + (_r && _r.errore ? ' — ' + _r.errore.replace(/^.*?❌ /, '') : ''), 'warn'); continue;
+      }
+      duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isFreeVersion && f.retroId === _r.retro.id);
+      figData = { ...baseCommon, isFreeVersion: true, freeVersionType: null, retroId: _r.retro.id };
       rowType = 'Omaggio';
-      keyInfo = ' [Tipo di omaggio: ' + _v.ok + ']';
+      keyInfo = ' [Omaggio di retro: ' + (_r.retro.freeVersionType || '') + ']';
     } else {
       // Le due variazioni. ⚠️ Qui il Retro NON e' facoltativo: e' la chiave che le distingue fra
       // loro (base + Retro), quindi senza non c'e' modo di dire QUALE variazione sia.
@@ -63586,13 +63670,13 @@ async function startImportFig() {
         const _diff = _importDiff(duplicate, updatedRec, ['name','isVariation','isUnofficialVariation','isChange','isPrintError','isFreeVersion','baseFigurineId','retroId','changeType','printErrorType','freeVersionType']);
         const changed = _diff.length > 0;
         if (changed) {
-          await fsSave('figurines', updatedRec);
-          const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec;
+          await _scriviImportFig(updatedRec);
+          if (!anteprima) { const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec; }
           { const _u = pf() + '🔄 "' + finalName + '"' + keyInfo + ' — sovrascritta (' + rowType + ')' + _importDiffTxt(_diff); _logRiga(_u, 'update'); righeAggiornate.push(_voceRecap(_u, 'update')); updated++; }
         } else { _logRiga(pf() + '⏭️ "' + finalName + '"' + keyInfo + ' — già presente, nessuna modifica', 'info'); unchanged++; }
       } else {
         figData.fullName = computeFullName(figData, existingFigs);
-        await fsSave('figurines', figData);
+        await _scriviImportFig(figData);
         _logRiga(pf() + '✅ "' + finalName + '"' + keyInfo + ' — aggiunta (' + rowType + ')', 'ok'); inserted++;
       }
     } catch(e) { errRiga(pf() + '❌ ' + e.message, 'err'); }
@@ -63615,7 +63699,7 @@ async function startImportFig() {
   _bufferLog.sort((a, b) => (a.ord - b.ord) || (a.seq - b.seq));
   _bufferLog.forEach(r => figImportLog(r.msg, r.lvl));
 
-  figImportLog('--- FINE: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + unchanged + ' invariate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : '') + ' ---', 'white');
+  figImportLog('--- ' + (anteprima ? 'FINE ANTEPRIMA (niente è stato scritto): si avrebbero ' : 'FINE: ') + inserted + ' inserite · ' + updated + ' aggiornate · ' + unchanged + ' invariate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : '') + ' ---', 'white');
 
   // Recap, ciascuna sezione delimitata da INIZIO/FINE: (1) righe AGGIORNATE (hanno sovrascritto un
   // record esistente); (2) righe NON IMPORTATE (scartate); (3) righe NON IMPORTATE COMPLETAMENTE
@@ -63651,9 +63735,10 @@ async function startImportFig() {
   // ma non per sempre: smette di battere, e dopo un minuto le altre finestre lo considerano morto.
   // E' la ragione per cui il battito esiste - un lucchetto che si ripara da se' non ha bisogno che
   // qualcuno si ricordi di ogni via d'uscita.
-  _abbassaLucchetto();
+  if (!anteprima) _abbassaLucchetto();
   const _endBtn = document.getElementById('import-fig-start-btn'); if (_endBtn) _endBtn.disabled = false;
-  renderItems(); updateSectionCounts();
+  const _endBtnA = document.getElementById('import-fig-anteprima-btn'); if (_endBtnA) _endBtnA.disabled = false;
+  if (!anteprima) { renderItems(); updateSectionCounts(); }
 }
 
 function toggleImportSection(key) {
@@ -66551,8 +66636,8 @@ function renderAdminFoto() {
       <div id="import-fig-section-content" style="display:none;">
       <p class="istruzioni-import" style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? '<span class="istruzioni-titolo">ISTRUZIONI:</span><br>- Seleziona la serie<br>- Carica il file XLS.<br><br><b class="istruzioni-sezione">I dettagli del file da caricare:</b><br>- Un unico file per figurine base, variazioni, change, omaggi ed errori di stampa.<br>- Ogni riga rappresenta quindi una sola Figurina<br><br><b class="istruzioni-sezione">Significato delle Colonne</b><br>- <code>Serie</code>: nome (completo) della serie della figurina<br>- <code>Sottoserie</code>: sottoserie di appartenenza della figurina, se applicabile<br>- <code>Numero</code>: numero della figurina (bianco per serie senza numero)<br>- <code>Nome</code>: nome della figurina<br>- <code>Versione</code>: tipo della figurina; possibili valori: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>:<br>&nbsp;&nbsp;&nbsp;&nbsp;- da popolare solo per figurine non base (variazione - change - omaggio - errore)<br>&nbsp;&nbsp;&nbsp;&nbsp;- numero (o nome se non c’è numero) della figurina di partenza<br>- <code>Tipologia di change</code>: tipo del change (vedere valori ammessi)<br>- <code>Tipologia di omaggio</code>: tipo di figurina omaggio (vedere valori ammessi)<br>- <code>Tipologia di errore di stampa</code>: tipo di errore di stampa (vedere valori ammessi)<br>- <code>Retro - Categoria</code>: categoria del retro associato alla figurina<br>- <code>Retro - Sottocategoria</code>: sottocategoria del retro associato alla figurina<br>- <code>Retro - Nome</code>: nome del retro associato alla figurina<br>- <code>Retro - Tipo di change</code>: tipologia di change del retro associato<br>- <code>Retro - Tipo di omaggio</code>: tipologia di omaggio del retro associato<br>- <code>Retro - Tipo di errore</code>: tipologia di errore di stampa del retro associato<br><br><span class="istruzioni-sezione">NOTA:</span> le righe con Serie diversa da quella selezionata vengono ignorate. Le figurine base si<br>importano prima delle loro varianti, e ci pensa la procedura: non serve ordinarle nel file.'
-          : '<span class="istruzioni-titolo">INSTRUCTIONS:</span><br>- Select the series<br>- Upload the XLS file.<br><br><b class="istruzioni-sezione">About the file:</b><br>- One single file for base stickers, variations, changes, free versions and print errors.<br>- Each row is therefore one sticker<br><br><b class="istruzioni-sezione">Columns</b><br>- <code>Serie</code>: full name of the sticker’s series<br>- <code>Sottoserie</code>: subseries, if any<br>- <code>Numero</code>: sticker number (blank for series without numbers)<br>- <code>Nome</code>: sticker name<br>- <code>Versione</code>: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>: only for non-base stickers — number (or name) of the starting sticker<br>- <code>Tipologia di change</code> / <code>Tipologia di omaggio</code> / <code>Tipologia di errore di stampa</code>: the type, from the ones configured on the series<br>- <code>Retro - Categoria</code> / <code>Retro - Sottocategoria</code> / <code>Retro - Nome</code>: the linked retro<br>- <code>Retro - Tipo di change</code> / <code>Retro - Tipo di omaggio</code> / <code>Retro - Tipo di errore</code>: to link a variant retro instead of the base one<br><br><span class="istruzioni-sezione">NOTE:</span> rows whose Serie differs from the selected one are skipped. Base stickers are imported<br>before their variants automatically — no need to sort the file.'}
+          ? '<span class="istruzioni-titolo">ISTRUZIONI:</span><br>- Seleziona la serie<br>- Carica il file XLS.<br><br><b class="istruzioni-sezione">I dettagli del file da caricare:</b><br>- Un unico file per figurine base, variazioni, change, omaggi ed errori di stampa.<br>- Ogni riga rappresenta quindi una sola Figurina<br><br><b class="istruzioni-sezione">Significato delle Colonne</b><br>- <code>Sottoserie</code>: sottoserie di appartenenza della figurina, se applicabile<br>- <code>Numero</code>: numero della figurina (bianco per serie senza numero)<br>- <code>Nome</code>: nome della figurina<br>- <code>Versione</code>: tipo della figurina; possibili valori: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>:<br>&nbsp;&nbsp;&nbsp;&nbsp;- da popolare solo per figurine non base (variazione - change - omaggio - errore)<br>&nbsp;&nbsp;&nbsp;&nbsp;- numero (o nome se non c’è numero) della figurina di partenza<br>- <code>Tipologia di change</code>: tipo del change (vedere valori ammessi); per un change di retro si lascia vuota, il tipo lo prende dal retro<br>- <code>Tipologia di errore di stampa</code>: tipo di errore di stampa (vedere valori ammessi); per un errore sul retro si lascia vuota, il tipo lo prende dal retro<br>- <code>Retro - Categoria</code>: categoria del retro associato alla figurina<br>- <code>Retro - Sottocategoria</code>: sottocategoria del retro associato alla figurina<br>- <code>Retro - Nome</code>: nome del retro associato alla figurina<br>- <code>Retro - Tipo di change</code>: tipologia di change del retro associato<br>- <code>Retro - Tipo di omaggio</code>: tipologia di omaggio del retro associato; per una figurina omaggio è obbligatoria, perché il tipo dell’omaggio è quello del suo retro<br>- <code>Retro - Tipo di errore</code>: tipologia di errore di stampa del retro associato<br><br><span class="istruzioni-sezione">NOTA:</span> tutte le righe vanno nella serie selezionata qui sopra. Le figurine base si<br>importano prima delle loro varianti, e ci pensa la procedura: non serve ordinarle nel file.'
+          : '<span class="istruzioni-titolo">INSTRUCTIONS:</span><br>- Select the series<br>- Upload the XLS file.<br><br><b class="istruzioni-sezione">About the file:</b><br>- One single file for base stickers, variations, changes, free versions and print errors.<br>- Each row is therefore one sticker<br><br><b class="istruzioni-sezione">Columns</b><br>- <code>Sottoserie</code>: subseries, if any<br>- <code>Numero</code>: sticker number (blank for series without numbers)<br>- <code>Nome</code>: sticker name<br>- <code>Versione</code>: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>: only for non-base stickers — number (or name) of the starting sticker<br>- <code>Tipologia di change</code> / <code>Tipologia di errore di stampa</code>: the type, from the ones configured on the series (leave it empty when the retro carries it; a free version always takes its type from its retro)<br>- <code>Retro - Categoria</code> / <code>Retro - Sottocategoria</code> / <code>Retro - Nome</code>: the linked retro<br>- <code>Retro - Tipo di change</code> / <code>Retro - Tipo di omaggio</code> / <code>Retro - Tipo di errore</code>: to link a variant retro instead of the base one<br><br><span class="istruzioni-sezione">NOTE:</span> every row goes into the series selected above. Base stickers are imported<br>before their variants automatically — no need to sort the file.'}
       </p>
       <a href="templates/template-figurine.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
 
@@ -66566,6 +66651,10 @@ function renderAdminFoto() {
         <label class="form-label">${currentLang==='it'?'File XLS (.xlsx, .xls)':'XLS File (.xlsx, .xls)'}</label>
         <input type="file" id="import-fig-file" accept=".xlsx,.xls" class="form-input" style="margin-bottom:0.75rem;padding:0.4rem;">
 
+        <!-- 🆕 v6.973 (Franco) - l'anteprima PRIMA, a sinistra: è il gesto da fare per primo -->
+        <button class="btn-primary btn-admin" onclick="startImportFig(true)" id="import-fig-anteprima-btn">
+          👁 ${currentLang==='it'?'Anteprima':'Preview'}
+        </button>
         <button class="btn-primary btn-admin" onclick="startImportFig()" id="import-fig-start-btn">
           ▶ ${currentLang==='it'?'Avvia importazione':'Start import'}
         </button>
@@ -66603,6 +66692,10 @@ function renderAdminFoto() {
         <label class="form-label">${currentLang==='it'?'File XLS (.xlsx, .xls)':'XLS File (.xlsx, .xls)'}</label>
         <input type="file" id="import-retro-file" accept=".xlsx,.xls" class="form-input" style="margin-bottom:0.75rem;padding:0.4rem;">
 
+        <!-- 🆕 v6.973 (Franco: «sì anche per i retro») -->
+        <button class="btn-primary btn-admin" onclick="startImportRetro(true)" id="import-retro-anteprima-btn">
+          👁 ${currentLang==='it'?'Anteprima':'Preview'}
+        </button>
         <button class="btn-primary btn-admin" onclick="startImportRetro()" id="import-retro-start-btn">
           ▶ ${currentLang==='it'?'Avvia importazione':'Start import'}
         </button>
