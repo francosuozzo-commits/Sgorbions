@@ -1,7 +1,34 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.971 - Modificati index.html e js/app.js. Due cose:
+// v6.972 - Modificato js/app.js (e la versione in index.html). Due cose:
+//          1. 🧑‍🎤 Via la colonna «Personaggio» dalle VT delle figurine con retro e delle figurine
+//             per album (Franco: «lì il nome è identico; non ha senso»). Resta nelle altre.
+//          2. 🗑️ Via la colonna «Note» da tutte le VT (Franco: «ho cambiato idea»). Il campo resta
+//             nella scheda.
+//          3. 📋 L'avviso del clone ancora più in alto (Franco): da 12vh a 5vh.
+//          4. 🖼️ Nelle card dell'hub Personaggi la foto sdraiata sta a mezza altezza (Franco: «come
+//             hai fatto per le pagine di Google»): due margini automatici, foto e testo.
+//          5. ◀ ▶ Le frecce nella pagina del personaggio, con «3 di 48», nell'ordine dell'hub da
+//             cui la si è aperta, con o senza ricerca (Franco).
+//          6. 🃏 Nelle card della pagina del personaggio fronte e retro sdraiati TUTTI E DUE vanno
+//             uno sopra l'altro, con la regola della griglia (Franco); altrimenti affiancati.
+//          7. 🎯 (index) «L'Inventario» al centro con la frase sotto, più in alto, e il nero fra la
+//             ricerca dell'Inventario e il bivio a tre vie (Franco: «faccio confusione tra la
+//             ricerca nell'INV e quelle dell'hub»).
+//          8. 👥 GLI ALTER EGO (Franco): documento `personaggi/_alterego` (alter ego → principale),
+//             scritto da Franco a db. Nell'hub niente card per loro, il loro nome trova il
+//             principale, la pagina del principale ha anche i loro articoli e li nomina; l'admin
+//             li vede con l'interruttore «Alter ego». Vedi `PERSONAGGI_ALTER_EGO`.
+//             Si segnano DAL SITO (Franco: «da quando agiamo da dietro le quinte?»): nella pagina
+//             del personaggio, admin, «È alter ego di:» + Salva; la ✕ accanto a ognuno lo toglie.
+//         10. 🧰 I PERSONAGGI SI CREANO E SI COLLEGANO DAL SITO (Franco: «come faccio io per creare
+//             un PERS?»): nella scheda casella + Collega e la ✕; nell'hub «Nuovo personaggio»; nella
+//             pagina Rinomina ed Elimina. Ogni scrittura rilegge il documento dal server.
+//             E la pagina del personaggio larga come la griglia della serie (1800).
+//          9. 📐 Pagina del personaggio: card più piccole del 20% (colonne ×1,25), e nell'ordine,
+//             dentro fcr/retro/altri, prima gli articoli del principale e poi dell'alter ego (Franco).
+// v6.971 -Modificati index.html e js/app.js. Due cose:
 //          1. 🧑‍🎤 Il conto della card dell'hub dei personaggi non conta più le figurine per album
 //             (Franco: «sì, togli le fpa anche dalla card»), come la pagina del personaggio dalla
 //             v6.969. La foto della card resta scelta su tutti gli articoli.
@@ -30246,7 +30273,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.971';
+const JS_VERSION = 'v6.972';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40561,6 +40588,8 @@ function _aggiornaBivioInventario() {
   const _bTipo = document.getElementById('admin-add-tipo-prodotto-btn');
   if (_bSerie) _bSerie.style.display = (_admin && !_rg && _taglioInventario === 'serie') ? '' : 'none';   // 🔄 v6.966 - era «non prodotti»
   if (_bTipo)  _bTipo.style.display  = (_admin && !_rg && _taglioInventario === 'prodotti') ? '' : 'none';
+  const _bPers = document.getElementById('admin-add-personaggio-btn');   // 🆕 v6.972 - nell'hub, non nella pagina di uno
+  if (_bPers) _bPers.style.display = (_admin && !_rg && _taglioInventario === 'personaggi' && !_personaggioAperto) ? '' : 'none';
   // v6.174 - il riepilogo delle serie: solo nel taglio Serie, ma per CHIUNQUE. Non c'e' `_admin`
   // nella condizione, e non e' una dimenticanza: e' un riepilogo del catalogo, non uno strumento.
   const _bInfo = document.getElementById('btn-info-tutte-serie');
@@ -41019,9 +41048,25 @@ const PERSONAGGI_PER_PAGINA = 48;   // Franco: «mostrane 40 alla volta, max 50�
 let _personaggiDati = null;
 let _personaggiCaricamento = null;
 
-function _impostaPersonaggi(personaggi, associazioni) {
+function _impostaPersonaggi(personaggi, associazioni, alterEgo) {
   const perId = new Map();
   (personaggi || []).forEach(p => { if (p && p.id) perId.set(p.id, { id: p.id, nome: p.nome || p.id }); });
+  // 🆕 v6.972 - gli ALTER EGO (vedi `PERSONAGGI_ALTER_EGO`): alter ego → principale, e al contrario.
+  //    Vale solo una coppia di personaggi che esistono tutti e due; se il principale è a sua volta
+  //    un alter ego si risale fino in cima (al massimo 5 passi, e un giro chiuso si scarta).
+  const principaleDi = new Map(), alterEgoDi = new Map();
+  Object.entries(alterEgo || {}).forEach(([a, p]) => {
+    if (a === 'id' || typeof p !== 'string' || !perId.has(a) || !perId.has(p) || a === p) return;
+    principaleDi.set(a, p);
+  });
+  // ⚠️ si risale sulla COPIA di partenza: togliendo durante il giro, di un giro chiuso resterebbe metà
+  const scritto = new Map(principaleDi);
+  scritto.forEach((p0, a) => {
+    let p = p0, n = 0;
+    while (scritto.has(p) && p !== a && n++ < 5) p = scritto.get(p);
+    if (scritto.has(p) || p === a) principaleDi.delete(a); else principaleDi.set(a, p);
+  });
+  principaleDi.forEach((p, a) => { if (!alterEgoDi.has(p)) alterEgoDi.set(p, []); alterEgoDi.get(p).push(a); });
   const dirPerArt = new Map(), artPerPers = new Map();
   (associazioni || []).forEach(a => {
     if (!a || !a.articoloId || !perId.has(a.personaggioId)) return;
@@ -41031,7 +41076,9 @@ function _impostaPersonaggi(personaggi, associazioni) {
     artPerPers.get(a.personaggioId).push(a.articoloId);
   });
   const elenco = [...perId.values()].sort((x, y) => x.nome.localeCompare(y.nome, 'it', { sensitivity: 'base' }));
-  _personaggiDati = { elenco, perId, dirPerArt, artPerPers };
+  // `grezzi`: i tre ingressi così come sono arrivati, per rifare tutto dopo un salvataggio dal sito
+  _personaggiDati = { elenco, perId, dirPerArt, artPerPers, principaleDi, alterEgoDi,
+    grezzi: { personaggi, associazioni, alterEgo: Object.assign({}, alterEgo || {}) } };
   return _personaggiDati;
 }
 
@@ -41056,15 +41103,93 @@ function _elenchiDaPacchetto(d) {
     associazioni: ((d && d.associazioni) || []).map(x => ({ id: _idAssociazione(x.a, x.p), articoloId: x.a, personaggioId: x.p }))
   };
 }
+// 🆕 v6.972 - GLI ALTER EGO. Franco: «a volte i personaggi hanno 2 nomi; ma non vorrei avere 2
+//    personaggi nel nostro inventario… parliamo di "Alter ego"… sarò io a settarli, direttamente a
+//    db». Esempio: LIVIO BIVIO principale, ALBERTO TROMBA suo alter ego.
+// 📌 UN DOCUMENTO A PARTE, `personaggi/_alterego`, un campo per alter ego: `alberto-tromba:
+//    "livio-bivio"` (id dell'alter ego → id del principale). Franco li scrive dalla console di
+//    Firebase (sono al massimo una decina). Sta in `personaggi` perché la regola c'è già (lettura
+//    libera, scrittura admin); costa UNA lettura in più, insieme al pacchetto.
+// 📌 COSA FANNO: nell'hub senza ricerca l'alter ego non ha card; cercandolo esce il principale;
+//    la pagina del principale ha anche i suoi articoli; nella scheda il campo resta col suo nome,
+//    ma il link porta al principale (`_principale`). L'admin li vede con l'interruttore «Alter ego».
+// ⚠️ Dal 26 settembre i personaggi si correggono SOLO a db: la funzione 6 non si rilancia più (Franco:
+//    «che senso ha lavorare ancora da funzione 6 + excel tuoi? ormai il grosso è stato fatto»).
+const PERSONAGGI_ALTER_EGO = { coll: 'personaggi', id: '_alterego' };
 async function caricaPersonaggi() {
   if (_personaggiDati) return _personaggiDati;
   if (_personaggiCaricamento) return _personaggiCaricamento;
   _personaggiCaricamento = (async () => {
-    const e = _elenchiDaPacchetto(await fsGet(PERSONAGGI_PACCHETTO.coll, PERSONAGGI_PACCHETTO.id));
-    return _impostaPersonaggi(e.personaggi, e.associazioni);
+    const [pk, ae] = await Promise.all([fsGet(PERSONAGGI_PACCHETTO.coll, PERSONAGGI_PACCHETTO.id), fsGet(PERSONAGGI_ALTER_EGO.coll, PERSONAGGI_ALTER_EGO.id)]);
+    const e = _elenchiDaPacchetto(pk);
+    return _impostaPersonaggi(e.personaggi, e.associazioni, ae);
   })();
   return _personaggiCaricamento;
 }
+// 🆕 v6.972 - GLI ALTER EGO SI SEGNANO DAL SITO (Franco: «perché devo andare a fare le modifiche da
+//    FB?», «da quando agiamo da dietro le quinte?»). Nella pagina di un personaggio, solo admin, la
+//    riga «È alter ego di:» col nome del principale (suggeriti mentre si scrive) e Salva; nella pagina
+//    del principale la ✕ accanto a ogni alter ego lo toglie. Si scrive solo `personaggi/_alterego`,
+//    un campo per volta; poi i dati in memoria si rifanno dagli ingressi (`grezzi`), senza rileggere.
+function _rigaAlterEgoAdmin(pid) {
+  const d = _personaggiDati, esclusi = new Set(_conAlterEgo(pid));
+  return '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;font-size:0.85rem;color:var(--text);">'
+    + '<label for="alterego-di">È alter ego di:</label>'
+    + '<input class="form-input" id="alterego-di" list="dl-personaggi-nomi" placeholder="nome del personaggio principale" style="max-width:320px;padding:0.3rem 0.6rem;font-size:0.85rem;">'
+    + '<datalist id="dl-personaggi-nomi">' + d.elenco.filter(p => !esclusi.has(p.id) && !d.principaleDi.has(p.id)).map(p => '<option value="' + esc(p.nome) + '"></option>').join('') + '</datalist>'
+    + '<button type="button" class="btn-primary btn-admin" style="padding:0.3rem 0.9rem;font-size:0.82rem;" onclick="_salvaAlterEgo(\'' + pid + '\')">Salva</button>'
+    + '</div>';
+}
+// 🆕 v6.972 - Rinomina, ed Elimina solo se non ha collegamenti propri né alter ego (se no i suoi
+//    articoli resterebbero senza personaggio senza che nessuno l'abbia deciso)
+function _rigaGestionePersonaggio(pid) {
+  const d = _personaggiDati, it = currentLang === 'it', p = d.perId.get(pid);
+  const eliminabile = !(d.artPerPers.get(pid) || []).length && !(d.alterEgoDi.get(pid) || []).length;
+  return '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;font-size:0.85rem;color:var(--text);">'
+    + '<label for="personaggio-rinomina">' + (it ? 'Nome:' : 'Name:') + '</label>'
+    + '<input class="form-input" id="personaggio-rinomina" value="' + esc(p.nome) + '" style="max-width:320px;padding:0.3rem 0.6rem;font-size:0.85rem;">'
+    + '<button type="button" class="btn-primary btn-admin" style="padding:0.3rem 0.9rem;font-size:0.82rem;" onclick="_rinominaPersonaggio(\'' + pid + '\')">' + (it ? 'Rinomina' : 'Rename') + '</button>'
+    + (eliminabile ? '<button type="button" class="btn-danger" style="padding:0.3rem 0.9rem;font-size:0.82rem;" onclick="_eliminaPersonaggio(\'' + pid + '\')">' + (it ? 'Elimina' : 'Delete') + '</button>' : '')
+    + '</div>';
+}
+async function _scriviAlterEgo(campi) {
+  const { doc, setDoc } = window._fb;
+  await setDoc(doc(db, PERSONAGGI_ALTER_EGO.coll, PERSONAGGI_ALTER_EGO.id), campi, { merge: true });
+}
+function _rifaiPersonaggi(alterEgo) {
+  const g = _personaggiDati.grezzi;
+  _impostaPersonaggi(g.personaggi, g.associazioni, alterEgo);
+}
+async function _salvaAlterEgo(pid) {
+  const d = _personaggiDati, nome = (document.getElementById('alterego-di')?.value || '').trim().toUpperCase();
+  const p = d.elenco.find(x => x.nome.toUpperCase() === nome);
+  const it = currentLang === 'it';
+  if (!p) { toast(it ? 'Non trovo un personaggio che si chiama così: sceglilo fra quelli suggeriti' : 'No character with this name: pick one of the suggestions', 'error'); return; }
+  const princ = _principale(p.id);
+  if (_conAlterEgo(pid).includes(princ)) { toast(it ? 'Non può essere alter ego di sé stesso, né di un suo alter ego' : 'It cannot be the alter ego of itself or of one of its alter egos', 'error'); return; }
+  const ae = Object.assign({}, d.grezzi.alterEgo, { [pid]: p.id });
+  try { await _scriviAlterEgo({ [pid]: p.id }); }
+  catch (e) { console.error('_salvaAlterEgo', e); toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error'); return; }
+  // i suoi alter ego passano al nuovo principale: la catena si risale da sola (`_impostaPersonaggi`)
+  _rifaiPersonaggi(ae);
+  toast(d.perId.get(pid).nome + (it ? ' è ora alter ego di ' : ' is now the alter ego of ') + _personaggiDati.perId.get(princ).nome, 'success');
+  _personaggioAperto = princ;
+  renderCatalog();
+}
+async function _togliAlterEgo(aid) {
+  const { deleteField } = window._fb;
+  const ae = Object.assign({}, _personaggiDati.grezzi.alterEgo); delete ae[aid];
+  const it = currentLang === 'it';
+  try { await _scriviAlterEgo({ [aid]: deleteField() }); }
+  catch (e) { console.error('_togliAlterEgo', e); toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error'); return; }
+  _rifaiPersonaggi(ae);
+  toast(_personaggiDati.perId.get(aid).nome + (it ? ' non è più un alter ego' : ' is no longer an alter ego'), 'success');
+  renderCatalog();
+}
+
+// il principale di un personaggio (lui stesso, se non è un alter ego), e lui con i suoi alter ego
+function _principale(pid) { return (_personaggiDati && _personaggiDati.principaleDi.get(pid)) || pid; }
+function _conAlterEgo(pid) { return [pid].concat((_personaggiDati && _personaggiDati.alterEgoDi.get(pid)) || []); }
 
 // Gli indici degli articoli che servono a ricavare: figli per base, figurine per retro.
 function _indiciPersonaggi() {
@@ -41101,7 +41226,7 @@ function personaggiDelRetroDi(f, ix) {
 }
 
 // Gli ARTICOLI DI UN PERSONAGGIO: le righe della tabella, più tutto ciò che si ricava da loro.
-function articoliDelPersonaggio(pid, ix) {
+function articoliDelPersonaggio(pid, ix, soloLui) {   // v6.972: `soloLui` = senza i suoi alter ego
   if (!_personaggiDati) return [];
   ix = ix || _indiciPersonaggi();
   const admin = !!currentUser?.isAdmin;
@@ -41109,7 +41234,9 @@ function articoliDelPersonaggio(pid, ix) {
   const out = new Map();
   const add = f => { if (visibile(f)) out.set(f.id, f); };
   const conFigli = f => { add(f); (ix.figliDi.get(f.id) || []).forEach(add); };
-  (_personaggiDati.artPerPers.get(pid) || []).forEach(id => {
+  // 🔄 v6.972 - un principale porta con sé gli articoli dei suoi alter ego (Franco: «quando lo clicco
+  //    devono mostrarsi anche gli articoli di Alberto Tromba»)
+  (soloLui ? [pid] : _conAlterEgo(pid)).flatMap(x => _personaggiDati.artPerPers.get(x) || []).forEach(id => {
     const a = ix.perId.get(id);
     if (!a) return;
     const sez = a.section || 'figurines';
@@ -41156,8 +41283,10 @@ let _personaggioAperto = null;
 //    retro») — una figurina (con retro o per album) conta solo se il personaggio è quello del suo
 //    FRONTE: una figurina che c'è perché lui sta sul retro non è «una sua figurina».
 let _personaggiSenzaFigurine = false;
+let _personaggiAlterEgo = false;   // 🆕 v6.972 - l'interruttore admin «Alter ego» dell'hub
 function _haFigurineSue(pid, arts, ix) {
-  return arts.some(a => ['figurines', 'attaccare'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).includes(pid));
+  const suoi = _conAlterEgo(pid);   // v6.972 - anche la figurina di un suo alter ego è sua
+  return arts.some(a => ['figurines', 'attaccare'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).some(x => suoi.includes(x)));
 }
 
 function renderCatalogPersonaggi(grid) {
@@ -41183,8 +41312,16 @@ function renderCatalogPersonaggi(grid) {
   }
   const ix = _indiciPersonaggi();
   const q = _perRicerca(_personaggiFiltro.trim());
-  const tutti = _personaggiDati.elenco.filter(p => (!q || _perRicerca(p.nome).includes(q))
+  // 🔄 v6.972 - GLI ALTER EGO (vedi `PERSONAGGI_ALTER_EGO`). Senza l'interruttore admin «Alter ego»
+  //    non hanno card, e il loro nome fa trovare il principale (Franco: «se cerco "alberto" o
+  //    "tromba" deve uscire Livio Bivio»). Con l'interruttore acceso si vedono SOLO loro.
+  const { principaleDi, alterEgoDi, perId } = _personaggiDati;
+  const soloAlterEgo = !!currentUser?.isAdmin && _personaggiAlterEgo;
+  const nomiDi = p => [p.nome].concat((alterEgoDi.get(p.id) || []).map(a => perId.get(a).nome));
+  const tutti = _personaggiDati.elenco.filter(p => (soloAlterEgo ? principaleDi.has(p.id) : !principaleDi.has(p.id))
+    && (!q || (soloAlterEgo ? [p.nome] : nomiDi(p)).some(n => _perRicerca(n).includes(q)))
     && (!_personaggiSenzaFigurine || !_haFigurineSue(p.id, articoliDelPersonaggio(p.id, ix), ix)));
+  _sequenzaPersonaggi = tutti.map(p => p.id);   // v6.972 - l'ordine per le frecce della pagina del personaggio
   const pagine = Math.max(1, Math.ceil(tutti.length / PERSONAGGI_PER_PAGINA));
   if (_personaggiPagina > pagine) _personaggiPagina = pagine;
   if (_personaggiPagina < 1) _personaggiPagina = 1;
@@ -41201,10 +41338,10 @@ function renderCatalogPersonaggi(grid) {
     + '<div id="personaggi-search-box" style="background:var(--card);border:1px solid var(--action);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-bottom:0.9rem;">'
     + '<div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.75rem;">'
     + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? 'Imposta i criteri per la tua ricerca' : 'Set your search criteria') + '</div>'
-    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>'
+    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>'
     + '</div>'
     + '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;">'
-    + '<span style="' + _etichettaBordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + (it ? 'Ricerca per nome' : 'Search by name') + '</span>'
+    + '<span style="' + _etichettaBordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + t('items.searchHint')   /* v6.972 (Franco): la stessa etichetta delle form di serie e TDA */ + '</span>'
     + '<div class="search-input-wrap"><span class="search-icon">🔍</span>'
     + '<input class="search-input" type="text" id="personaggi-cerca" value="' + esc(_personaggiFiltro) + '" placeholder="' + (it ? 'Cerca un personaggio…' : 'Search a character…') + '" oninput="_personaggiFiltro=this.value;_personaggiPagina=1;renderCatalog();const c=document.getElementById(\'personaggi-cerca\');c.focus();c.setSelectionRange(c.value.length,c.value.length);">'
     + (_personaggiFiltro ? '<span class="search-clear-btn" onclick="_personaggiFiltro=\'\';_personaggiPagina=1;renderCatalog();">✕</span>' : '')
@@ -41216,8 +41353,19 @@ function renderCatalogPersonaggi(grid) {
     + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);">'
     + '<button type="button" class="toggle-btn-blue ' + (_personaggiSenzaFigurine ? 'on' : '') + '" onclick="_personaggiSenzaFigurine=!_personaggiSenzaFigurine;_personaggiPagina=1;renderCatalog();"></button>'
     + (it ? 'Senza figurine' : 'Without stickers') + '</label>'
+    // 🆕 v6.972 (Franco: «solo l'admin può cercare [gli alter ego], mediante apposito flag "Alter ego"»)
+    + (currentUser?.isAdmin ? '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);margin-left:1.4rem;">'
+      + '<button type="button" class="toggle-btn-blue ' + (_personaggiAlterEgo ? 'on' : '') + '" onclick="_personaggiAlterEgo=!_personaggiAlterEgo;_personaggiPagina=1;renderCatalog();"></button>'
+      + 'Alter ego <span style="color:var(--muted);font-size:0.78rem;">(admin)</span></label>' : '')
     + '</div></div>'
-    + '<div style="font-size:0.95rem;color:var(--text);margin-bottom:0.3rem;"><span style="color:var(--accent);">' + tutti.length + '</span> ' + (it ? (tutti.length === 1 ? 'personaggio' : 'personaggi') : (tutti.length === 1 ? 'character' : 'characters')) + '</div>'
+    // 🔄 v6.972 (Franco: «prima di esporre i risultati manca anche questa sezione, che per figurine e
+    //    TDA abbiamo: I risultati della tua ricerca: 2 articoli trovati») - la forma di
+    //    `updateItemsCountDisplay`: il titolo sopra, il numero a 1,5rem nel colore d'accento.
+    + '<div style="display:flex;flex-direction:column;gap:1px;margin-bottom:0.5rem;">'
+    + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:0.35rem;">' + (it ? 'I risultati della tua ricerca:' : 'Your search results:') + '</div>'
+    + '<div style="font-size:0.95rem;color:var(--text);"><span style="font-size:1.5rem;font-weight:700;color:var(--accent);">' + tutti.length.toLocaleString(it ? 'it-IT' : 'en-US') + '</span> '
+    + (it ? (tutti.length === 1 ? 'personaggio trovato' : 'personaggi trovati') : (tutti.length === 1 ? 'character found' : 'characters found')) + '</div>'
+    + '</div>'
     + '</div>';
   if (!_personaggiDati.elenco.length) {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🧑‍🎤</div><p class="empty-title">' + (it ? 'I personaggi non sono ancora stati caricati.' : 'Characters have not been loaded yet.') + '</p></div>';
@@ -41234,11 +41382,20 @@ function renderCatalogPersonaggi(grid) {
     //    può avere più serie; non è quello il posto in cui scriverla») - via la riga delle serie.
     //    Le serie si vedono nella pagina del personaggio, sotto ogni articolo. Il `flex` che la
     //    riga teneva passa al nome, cosi' il conto resta in fondo alla card anche coi nomi corti.
+    // 🔄 v6.972 (Franco: «quando una foto è orizzontale, mettila al centro, verticalmente; come hai
+    //    fatto per le pagine di Google») - LO STESSO METODO DELLE PAGINE PER GOOGLE (v6.940): due
+    //    margini automatici, uno sulla foto e uno sul testo, che si dividono in parti uguali lo spazio
+    //    libero della card. La foto sdraiata finisce a mezza altezza fra la cima e il testo; quella in
+    //    piedi, che decide l'altezza della riga, non ha spazio libero e non si muove.
+    //    📌 Per questo il testo non si allunga più (`flex:0 0 auto` invece di `1 1 auto`): era lui a
+    //    prendersi tutto lo spazio, e la foto restava incollata in cima. Il conto resta in fondo.
     return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="apriPersonaggio(\'' + p.id + '\')">'
-      + '<div class="card-img-placeholder">' + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="' + esc(p.nome) + '" style="width:100%;height:100%;object-fit:contain;">' : '') + '</div>'
+      + '<div class="card-img-placeholder" style="margin-top:auto;">' + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="' + esc(p.nome) + '" style="width:100%;height:100%;object-fit:contain;">' : '') + '</div>'
       // 🔄 v6.968 — card a un quarto: testo e margini scalati con lei (titolo 1,35 → 0,85rem).
-      + '<div class="card-body" style="display:flex;flex-direction:column;flex:1 1 auto;padding:0.55rem 0.65rem 0.6rem;">'
+      + '<div class="card-body" style="display:flex;flex-direction:column;flex:0 0 auto;margin-top:auto;padding:0.55rem 0.65rem 0.6rem;">'
       + '<div class="card-title" style="margin-bottom:0.2rem;font-size:0.85rem;line-height:1.2;color:var(--nome-entita);flex:1 1 auto;">' + esc(p.nome) + '</div>'
+      // 🆕 v6.972 - con l'interruttore «Alter ego» (admin) la card dice di chi è l'alter ego
+      + (principaleDi.has(p.id) ? '<div style="font-size:0.7rem;color:var(--text);">' + (it ? 'alter ego di ' : 'alter ego of ') + esc(perId.get(principaleDi.get(p.id)).nome) + '</div>' : '')
       + '<div class="card-desc" style="margin-top:0.3rem;padding-top:0.3rem;font-size:0.72rem;line-height:1.3;border-top:1px solid rgba(255,255,255,0.06);color:var(--accent);">' + conto + ' ' + _paroleArticoli(conto).trim() + '</div>'
       + '</div></div>';
   };
@@ -41264,7 +41421,7 @@ function apriPersonaggio(pid) {
   try { closeModal('fig-detail-modal'); } catch (e) {}
   _taglioInventario = 'personaggi';
   try { localStorage.setItem('sgb_taglio', 'personaggi'); } catch (e) {}
-  _personaggioAperto = pid;
+  _personaggioAperto = _principale(pid);   // v6.972 - un alter ego apre il suo principale (Franco: «1. ok»)
   // la casella della ricerca globale si svuota: piena, `renderCatalog` mostrerebbe i risultati
   const _casellaRG = document.getElementById('series-search'); if (_casellaRG) _casellaRG.value = '';
   showPage('catalog');
@@ -41292,6 +41449,7 @@ function _gruppoPersonaggio(f) {
 }
 function renderPaginaPersonaggio(grid, pid) {
   const it = currentLang === 'it';
+  pid = _principale(pid);   // v6.972 - la pagina è sempre del principale
   const p = _personaggiDati.perId.get(pid);
   if (!p) { _personaggioAperto = null; renderCatalogPersonaggi(grid); return; }
   const ix = _indiciPersonaggi();
@@ -41310,7 +41468,13 @@ function renderPaginaPersonaggio(grid, pid) {
     if (!comp.has(k)) comp.set(k, _comparatoreGriglia(sec, figs.filter(x => x.seriesId === f.seriesId && (x.section || 'figurines') === sec), ix.perId, figs));
     return comp.get(k);
   };
+  // 🆕 v6.972 (Franco: «prima il personaggio principale e poi l'alter ego»; esempio: fcr di Livio
+  //    Bivio, fcr dell'alter ego, retro di Livio Bivio, retro dell'alter ego) - dentro il gruppo
+  //    fcr/retro/altri, e prima della serie. Del principale è quello che lui ha anche SENZA alter ego.
+  const _suoi = new Set(articoliDelPersonaggio(pid, ix, true).map(f => f.id));
+  const _dellAlterEgo = f => _suoi.has(f.id) ? 0 : 1;
   const ord = arts.slice().sort((a, b) => (_gruppoPersonaggio(a) - _gruppoPersonaggio(b))
+    || (_dellAlterEgo(a) - _dellAlterEgo(b))
     || (ordSerie(a.seriesId) - ordSerie(b.seriesId))
     || (ordSez(a.section || 'figurines') - ordSez(b.section || 'figurines'))
     || compDi(a)(a, b));
@@ -41321,8 +41485,17 @@ function renderPaginaPersonaggio(grid, pid) {
   //    esatta non esiste, e a una colonna sola la foto riempirebbe lo schermo.
   if (grid) {
     grid.style.gridTemplateColumns = '';
+    // 🆕 v6.972 (Franco: «le foto della griglia personaggio sono più piccole, pur tenendo lo stesso
+    //    numero di card per riga… il contenitore è meno largo; fallo uguale a quello della pagina della
+    //    serie; deve sovrapporsi») - LA LARGHEZZA DI `#items-grid` (min(1800px, 96vw), v6.x in
+    //    `renderItems`) invece di quella dell'Inventario (1620). Sbordo e centratura li dà già il CSS
+    //    di `#catalog-grid`; sul telefono niente, come per `#items-grid`. `renderCatalog` la toglie.
+    //    ⚠️ Le colonne si contano PRIMA di allargare: «pur tenendo lo stesso numero di card per riga».
     const n = _isMobileViewport() ? 0 : getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
-    grid.style.gridTemplateColumns = 'repeat(' + (n || 2) + ', minmax(0, 1fr))';
+    if (!_isMobileViewport()) { grid.style.width = 'min(1800px, 96vw)'; grid.style.maxWidth = '1800px'; }
+    // 🔄 v6.972 (Franco: «diminuirei un 20% la dimensione delle card degli articoli») - un quarto di
+    //    colonne in più (4 → 5): ogni card larga l'80%. 📱 Sul telefono restano due: tre sarebbe -33%.
+    grid.style.gridTemplateColumns = 'repeat(' + (n ? Math.round(n * 1.25) : 2) + ', minmax(0, 1fr))';
     grid.style.gap = '0.75rem';
   }
   // 📌 con le card doppie anche il testo cresce: 0,68 → 0,8rem (il nome 0,78 → 0,95rem)
@@ -41354,12 +41527,26 @@ function renderPaginaPersonaggio(grid, pid) {
     //    loro il riquadro quadrato si divide in due metà, fronte a sinistra e retro a destra, con le
     //    due facce chieste a `_dueFacce` come la card della griglia. Il riquadro resta della stessa
     //    misura per tutte le card: cambia solo cosa c'è dentro.
-    const _mezza = url => url
-      ? '<img src="' + cloudinaryUrl(url, 'w_400,h_600,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:50%;height:100%;object-fit:contain;padding:3px;">'
-      : '<span style="width:50%;height:100%;"></span>';
+    // 🔄 v6.972 (Franco: «quando le due foto da mostrare sono entrambe orizzontali, andrebbero
+    //    disposte verticalmente; la stessa regola dispositiva della card della griglia») - LA REGOLA DI
+    //    `_checkBothOrientationForStack`: si parte affiancate, e se al caricamento risultano sdraiate
+    //    TUTTE E DUE si passa a una sopra l'altra (`_pcOrientamento`). Come nella griglia (v6.094),
+    //    la faccia che manca conta come sdraiata: si registra subito, qui.
+    const _pcId = 'pc-' + f.id;
+    const _mezza = (url, lato) => url
+      ? '<img src="' + cloudinaryUrl(url, 'w_400,h_600,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:50%;height:100%;object-fit:contain;padding:3px;" onload="_pcOrientamento(\'' + _pcId + '\',\'' + lato + '\',this.naturalHeight>this.naturalWidth)">'
+      // 🔄 v6.972 (Franco: «se non è presente una delle 2 foto, il comportamento deve essere lo stesso
+      //    della griglia delle fcr: un box nero che dice "foto non disponibile"; ora mostri una zona nera
+      //    senza confine» - OMBRETTA CARRETTA 224, MARCELLO PORCELLO) - il riquadro `fig-noimg` della
+      //    griglia (`_facciaRetroHTML`), con la forma di una foto sdraiata come lì (v6.094).
+      : '<div class="fig-noimg" style="position:relative;width:50%;aspect-ratio:1.38;flex:0 0 auto;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.62rem;line-height:1.15;padding:4px;box-sizing:border-box;">' + (it ? 'FOTO NON DISPONIBILE' : 'PHOTO NOT AVAILABLE') + '</div>';
     const _ff = sec === 'figurines' ? _dueFacce(f, figs) : null;
+    if (_ff && (_ff.fronte || _ff.retro)) {
+      if (!_ff.fronte) _pcOrientamento(_pcId, 'fronte', false);
+      if (!_ff.retro) _pcOrientamento(_pcId, 'retro', false);
+    }
     const _foto = _ff
-      ? (_ff.fronte || _ff.retro ? _mezza(_ff.fronte) + _mezza(_ff.retro) : '')
+      ? (_ff.fronte || _ff.retro ? '<div id="' + _pcId + '" style="display:flex;flex-direction:row;width:100%;height:100%;align-items:center;justify-content:center;">' + _mezza(_ff.fronte, 'fronte') + _mezza(_ff.retro, 'retro') + '</div>' : '')
       : (u ? '<img src="' + cloudinaryUrl(u, 'w_600,h_600,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;padding:4px;">' : '');
     return '<div class="card personaggio-articolo" style="display:flex;flex-direction:column;cursor:pointer;" onclick="openFigDetail(\'' + f.id + '\', _elencoPersonaggio)">'
       + '<div style="aspect-ratio:1;background:var(--card2);display:flex;align-items:center;justify-content:center;">'
@@ -41374,12 +41561,67 @@ function renderPaginaPersonaggio(grid, pid) {
       + (nomeCompleto ? riga(esc(nomeCompleto), 'color:var(--text);') : '')
       + '</div></div>';
   };
-  grid.innerHTML = '<div style="grid-column:1/-1;"><button class="back-btn" onclick="chiudiPersonaggio()">&#8592; ' + (it ? 'Personaggi' : 'Characters') + '</button></div>'
+  // 🆕 v6.972 (Franco: «quando faccio una ricerca nell'hub Personaggi, se poi apro un risultato…
+  //    vorrei vedere le frecce avanti e indietro»; «falle vedere anche se lo user non ha fatto una
+  //    ricerca… usa l'ordine con il quale erano mostrate nella griglia precedente») - LE FRECCE, con
+  //    «3 di 48» in mezzo come nella scheda. L'elenco è quello dell'hub così com'era disegnato
+  //    (ricerca e «Senza figurine» compresi), tutte le pagine e non solo quella visibile.
+  //    📌 Arrivando da un link della scheda il personaggio può non stare nell'elenco: niente frecce.
+  const _iSeq = _sequenzaPersonaggi.indexOf(pid);
+  const _freccia = (d, segno, spenta) => '<button class="btn-secondary btn-admin-ghost" style="padding:0.35rem 0.65rem;' + (spenta ? 'opacity:0.3;' : '') + '"' + (spenta ? ' disabled' : ' onclick="_vaiPersonaggio(' + d + ')"') + ' title="' + (d < 0 ? (it ? 'Precedente' : 'Previous') : (it ? 'Successivo' : 'Next')) + '">' + segno + '</button>';
+  const _frecce = _iSeq < 0 || _sequenzaPersonaggi.length < 2 ? '' :
+    '<div style="display:flex;align-items:center;gap:0.5rem;">' + _freccia(-1, '◀', _iSeq === 0)
+    + '<span style="font-size:0.8rem;color:var(--muted);font-family:var(--font-ui);white-space:nowrap;min-width:4rem;text-align:center;">' + (_iSeq + 1) + (it ? ' di ' : ' of ') + _sequenzaPersonaggi.length + '</span>'
+    + _freccia(1, '▶', _iSeq === _sequenzaPersonaggi.length - 1) + '</div>';
+  grid.innerHTML = '<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;"><button class="back-btn" onclick="chiudiPersonaggio()">&#8592; ' + (it ? 'Personaggi' : 'Characters') + '</button>' + _frecce + '</div>'
     + '<div style="grid-column:1/-1;"><div style="font-family:var(--font-display);font-size:1.8rem;color:var(--nome-entita);">' + esc(p.nome) + '</div>'
+    // 🆕 v6.972 - i suoi alter ego, sotto il nome; all'admin con la ✕ per toglierli
+    + ((_personaggiDati.alterEgoDi.get(pid) || []).length ? '<div style="color:var(--text);margin-top:0.2rem;">Alter ego: ' + _personaggiDati.alterEgoDi.get(pid).map(a => esc(_personaggiDati.perId.get(a).nome)
+        + (currentUser?.isAdmin ? ' <button type="button" class="btn-secondary btn-admin-ghost" style="padding:0 0.4rem;font-size:0.75rem;" title="Non è più un suo alter ego" onclick="_togliAlterEgo(\'' + a + '\')">✕</button>' : '')).join(', ') + '</div>' : '')
+    + (currentUser?.isAdmin ? _rigaAlterEgoAdmin(pid) + _rigaGestionePersonaggio(pid) : '')
     + '<div style="color:var(--accent);margin-top:0.3rem;">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div></div>'
     + ord.map(card).join('');
 }
 let _elencoPersonaggio = [];
+// 🆕 v6.972 - la regola della griglia (`_checkBothOrientationForStack`) per le card della pagina del
+//    personaggio: si decide quando si conoscono TUTTE E DUE le facce; due sdraiate = una sopra
+//    l'altra, ciascuna alta metà del riquadro. Altrimenti restano affiancate, come nascono.
+const _pcFacce = {};
+function _pcOrientamento(id, lato, inPiedi) {
+  const s = _pcFacce[id] || (_pcFacce[id] = {});
+  s[lato] = inPiedi;
+  if (s.fronte === undefined || s.retro === undefined) return;
+  delete _pcFacce[id];
+  const c = document.getElementById(id);
+  if (!c) return;
+  // 🔄 v6.972 (Franco, con la foto della griglia: «la superficie delle 4 foto è sempre la medesima…
+  //    come mai 2 comportamenti diversi?») - LA REGOLA DELLA GRIGLIA È SUL LATO LUNGO: ogni foto ha il
+  //    lato lungo pari a MEZZO riquadro. La sdraiata è larga metà, quella in piedi è alta metà; così
+  //    le superfici tornano uguali. Prima quella in piedi si prendeva tutta l'altezza del riquadro e
+  //    veniva il doppio della sdraiata accanto.
+  const dritte = [s.fronte, s.retro];
+  [...c.children].forEach((el, i) => {
+    el.style.flex = '0 0 auto';
+    if (el.tagName !== 'IMG') { el.style.width = '50%'; el.style.height = ''; el.style.aspectRatio = '1.38'; return; }
+    if (dritte[i]) { el.style.height = '50%'; el.style.width = 'auto'; el.style.maxWidth = '50%'; }
+    else { el.style.width = '50%'; el.style.height = 'auto'; }
+  });
+  // due sdraiate: una sopra l'altra, ciascuna larga mezzo riquadro come sopra (la faccia che manca ha
+  // la forma di un retro sdraiato, 1,38, misurata nella v6.044)
+  if (s.fronte || s.retro) return;
+  c.style.flexDirection = 'column';
+}
+// 🆕 v6.972 - l'elenco dell'hub nell'ordine in cui era disegnato, e il passo delle frecce. Tornando
+//    all'hub la pagina segue il personaggio a cui si è arrivati, così lo si ritrova nella griglia.
+let _sequenzaPersonaggi = [];
+function _vaiPersonaggio(d) {
+  const i = _sequenzaPersonaggi.indexOf(_personaggioAperto) + d;
+  if (i < 0 || i >= _sequenzaPersonaggi.length) return;
+  _personaggioAperto = _sequenzaPersonaggi[i];
+  _personaggiPagina = Math.floor(i / PERSONAGGI_PER_PAGINA) + 1;
+  renderCatalog();
+  window.scrollTo(0, 0);
+}
 
 // IL CAMPO «PERSONAGGIO» DELLA SCHEDA IN LETTURA. Nasce vuoto con un id; si riempie qui, anche
 // dopo, se i personaggi arrivano mentre la scheda è già aperta.
@@ -41396,13 +41638,162 @@ function _riempiRigaPersonaggi(f) {
   const link = pid => { const p = _personaggiDati.perId.get(pid); return p ? '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + pid + '\')" style="color:var(--nome-entita);">' + esc(p.nome) + '</a>' : ''; };
   const miei = personaggiDiArticolo(f, ix);
   const plurale = (f.section || 'figurines') !== 'figurines' && miei.length > 1;
-  r1.innerHTML = '<span class="detail-label">' + (it ? (plurale ? 'Personaggi' : 'Personaggio') : (plurale ? 'Characters' : 'Character')) + '</span><span class="detail-value">' + miei.map(link).join(' · ') + '</span>';
-  r1.style.display = miei.length ? '' : 'none';
+  // 🆕 v6.972 - per l'admin la ✕ accanto a ogni personaggio collegato a QUESTA riga, e la casella
+  //    per collegarne uno (vedi `_collegaPersonaggio`). La riga c'è anche vuota, se no non si collega.
+  const admin = !!currentUser?.isAdmin, riga = admin ? _rigaDelPersonaggio(f, ix) : null;
+  const diretti = riga ? (_personaggiDati.dirPerArt.get(riga.id) || []) : [];
+  const conX = pid => link(pid) + (admin && diretti.includes(pid) ? ' <button type="button" class="btn-secondary btn-admin-ghost" style="padding:0 0.4rem;font-size:0.75rem;" title="' + (it ? 'Scollega' : 'Unlink') + '" onclick="_scollegaPersonaggio(\'' + f.id + '\',\'' + pid + '\')">✕</button>' : '');
+  r1.innerHTML = '<span class="detail-label">' + (it ? (plurale ? 'Personaggi' : 'Personaggio') : (plurale ? 'Characters' : 'Character')) + '</span><span class="detail-value">' + miei.map(conX).join(' · ')
+    + (admin ? '<span style="display:inline-flex;gap:0.4rem;align-items:center;flex-wrap:wrap;margin-left:' + (miei.length ? '0.8rem' : '0') + ';">'
+      + '<input class="form-input" id="fig-personaggio-nuovo" list="dl-personaggi-scheda" placeholder="' + (it ? 'nome del personaggio' : 'character name') + '" style="max-width:240px;padding:0.2rem 0.5rem;font-size:0.82rem;">'
+      + '<datalist id="dl-personaggi-scheda">' + _personaggiDati.elenco.map(p => '<option value="' + esc(p.nome) + '"></option>').join('') + '</datalist>'
+      + '<button type="button" class="btn-primary btn-admin" style="padding:0.2rem 0.8rem;font-size:0.8rem;" onclick="_collegaPersonaggio(\'' + f.id + '\')">' + (it ? 'Collega' : 'Link') + '</button></span>' : '')
+    + '</span>';
+  r1.style.display = miei.length || admin ? '' : 'none';
   const dietro = personaggiDelRetroDi(f, ix);
   if (r2) {
     r2.innerHTML = '<span class="detail-label">' + (it ? 'Personaggi del retro' : 'Characters on the back') + '</span><span class="detail-value">' + dietro.map(link).join(' · ') + '</span>';
     r2.style.display = dietro.length ? '' : 'none';
   }
+}
+
+// ============================================================
+//  🆕 v6.972 — I PERSONAGGI SI CREANO E SI COLLEGANO DAL SITO
+// ============================================================
+// Franco: «come faccio io per creare un PERS?… devo poterlo fare, visto che non usiamo più il file
+// xls». Dal 26 settembre la funzione 6 non si rilancia (i file sono in pensione): i personaggi si
+// toccano solo da qui, e solo l'admin.
+//   · SCHEDA (in lettura): casella «nome del personaggio» + Collega; la ✕ scollega. Un nome che non
+//     c'è si crea, dopo una conferma.
+//   · HUB: il pulsante «+ Aggiungi personaggio» in alto a destra, come serie e tipologie, con la sua
+//     finestra (un personaggio ancora senza articoli).
+//   · PAGINA DEL PERSONAGGIO: Rinomina; Elimina solo se non ha più articoli né alter ego.
+// 📌 OGNI SCRITTURA RILEGGE IL DOCUMENTO DAL SERVER, lo cambia e lo riscrive (`_scriviPacchetto`):
+//    così non si scrive sopra una modifica fatta da un'altra finestra con una copia vecchia.
+// 📌 LA RIGA GIUSTA (`_rigaDelPersonaggio`), la regola delle righe minime (v6.966): il fronte sta
+//    sulla figurina per album (o sulla fcr base, dove le fpa mancano), il retro sul retro base, le
+//    altre tipologie sul loro articolo base. Collegando da una versione si scrive sulla sua riga, e
+//    tutte le versioni lo ricavano da lì. Una figurina ha UN personaggio: collegarne un altro lo
+//    sostituisce.
+function _slugPersonaggio(nome) {   // la stessa di `genera-caricamento.py`: gli id restano quelli di sempre
+  return String(nome || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+function _rigaDelPersonaggio(f, ix) {
+  const sez = f.section || 'figurines';
+  if (sez === 'attaccare') return f;
+  const base = f.baseFigurineId ? (ix.perId.get(f.baseFigurineId) || f) : f;
+  if (sez === 'figurines') return (ix.figliDi.get(base.id) || []).find(x => x.section === 'attaccare') || base;
+  return base;
+}
+async function _scriviPacchetto(cambia) {
+  const { doc, getDoc, setDoc } = window._fb;
+  const rif = doc(db, PERSONAGGI_PACCHETTO.coll, PERSONAGGI_PACCHETTO.id);
+  const snap = await getDoc(rif);
+  const d = snap.exists() ? snap.data() : { personaggi: [], associazioni: [] };
+  d.personaggi = d.personaggi || []; d.associazioni = d.associazioni || [];
+  cambia(d);
+  d.aggiornato = new Date().toISOString();
+  await setDoc(rif, d);
+  const e = _elenchiDaPacchetto(d);
+  _impostaPersonaggi(e.personaggi, e.associazioni, _personaggiDati ? _personaggiDati.grezzi.alterEgo : null);
+}
+// il personaggio con quel nome, o uno nuovo (dopo conferma); null se si rinuncia o il nome è vuoto
+function _personaggioDaNome(nome, d, senzaConferma) {
+  const it = currentLang === 'it', N = String(nome || '').trim().replace(/\s+/g, ' ').toUpperCase();
+  if (!N) return null;
+  const c = d.personaggi.find(p => (p.n || '').toUpperCase() === N);
+  if (c) return c.i;
+  const id = _slugPersonaggio(N);
+  if (!id) return null;
+  if (d.personaggi.some(p => p.i === id)) {   // stesso id, grafia diversa (accenti, trattini)
+    toast((it ? 'Esiste già un personaggio scritto quasi uguale: ' : 'A character spelled almost the same already exists: ') + d.personaggi.find(p => p.i === id).n, 'error');
+    return null;
+  }
+  if (!senzaConferma && !confirm(it ? 'Il personaggio «' + N + '» non esiste.\n\nLo creo?' : 'The character «' + N + '» does not exist.\n\nCreate it?')) return null;
+  d.personaggi.push({ i: id, n: N });
+  return id;
+}
+async function _collegaPersonaggio(figId) {
+  const it = currentLang === 'it';
+  const f = getData('figurines', []).find(x => x.id === figId);
+  const nome = document.getElementById('fig-personaggio-nuovo')?.value || '';
+  if (!f || !nome.trim()) return;
+  const ix = _indiciPersonaggi(), riga = _rigaDelPersonaggio(f, ix);
+  const unoSolo = ['figurines', 'attaccare'].includes(riga.section || 'figurines');
+  let pid = null;
+  try {
+    await _scriviPacchetto(d => {
+      pid = _personaggioDaNome(nome, d);
+      if (!pid) throw new Error('rinuncia');
+      if (unoSolo) d.associazioni = d.associazioni.filter(a => a.a !== riga.id);
+      if (!d.associazioni.some(a => a.a === riga.id && a.p === pid)) d.associazioni.push({ a: riga.id, p: pid });
+    });
+  } catch (e) {
+    if (e.message !== 'rinuncia') { console.error('_collegaPersonaggio', e); toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error'); }
+    return;
+  }
+  toast((it ? 'Collegato: ' : 'Linked: ') + _personaggiDati.perId.get(pid).nome, 'success');
+  _riempiRigaPersonaggi(f);
+}
+async function _scollegaPersonaggio(figId, pid) {
+  const it = currentLang === 'it';
+  const f = getData('figurines', []).find(x => x.id === figId);
+  if (!f) return;
+  const riga = _rigaDelPersonaggio(f, _indiciPersonaggi());
+  try { await _scriviPacchetto(d => { d.associazioni = d.associazioni.filter(a => !(a.a === riga.id && a.p === pid)); }); }
+  catch (e) { console.error('_scollegaPersonaggio', e); toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error'); return; }
+  toast(it ? 'Scollegato' : 'Unlinked', 'success');
+  _riempiRigaPersonaggi(f);
+}
+async function _creaPersonaggio() {
+  const it = currentLang === 'it', nome = document.getElementById('personaggio-crea')?.value || '';
+  let pid = null;
+  try {
+    await _scriviPacchetto(d => {
+      if (d.personaggi.some(p => (p.n || '').toUpperCase() === nome.trim().replace(/\s+/g, ' ').toUpperCase())) throw new Error(it ? 'esiste già' : 'already exists');
+      pid = _personaggioDaNome(nome, d, true);   // il pulsante è già la conferma
+      if (!pid) throw new Error('rinuncia');
+    });
+  } catch (e) {
+    if (e.message !== 'rinuncia') toast((it ? '⚠️ NON creato: ' : '⚠️ NOT created: ') + (e?.message || e), 'error');
+    return;
+  }
+  closeModal('add-personaggio-modal');
+  toast((it ? 'Creato: ' : 'Created: ') + _personaggiDati.perId.get(pid).nome, 'success');
+  apriPersonaggio(pid);
+}
+// 🔄 v6.972 (Franco: «perché lo hai fatto diverso dalle altre 2? la user experience è importante anche
+//    per l'admin») - la creazione passa dal pulsante in alto a destra e dalla sua finestra, come le
+//    serie e le tipologie di articolo, non da una riga dentro l'hub.
+function openAddPersonaggioModal() {
+  if (!currentUser?.isAdmin) return;
+  const c = document.getElementById('personaggio-crea');
+  if (c) c.value = '';
+  document.getElementById('add-personaggio-modal')?.classList.remove('hidden');
+  setTimeout(() => c && c.focus(), 50);
+}
+async function _rinominaPersonaggio(pid) {
+  const it = currentLang === 'it';
+  const N = String(document.getElementById('personaggio-rinomina')?.value || '').trim().replace(/\s+/g, ' ').toUpperCase();
+  if (!N) return;
+  try {
+    await _scriviPacchetto(d => {
+      if (d.personaggi.some(p => p.i !== pid && (p.n || '').toUpperCase() === N)) throw new Error(it ? 'c\'è già un personaggio con questo nome' : 'another character has this name');
+      const p = d.personaggi.find(x => x.i === pid);
+      if (!p) throw new Error(it ? 'personaggio non trovato' : 'character not found');
+      p.n = N;   // 📌 cambia il nome, non l'id: i collegamenti restano
+    });
+  } catch (e) { toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error'); return; }
+  toast((it ? 'Rinominato: ' : 'Renamed: ') + N, 'success');
+  renderCatalog();
+}
+async function _eliminaPersonaggio(pid) {
+  const it = currentLang === 'it', p = _personaggiDati.perId.get(pid);
+  if (!p || !confirm(it ? 'Elimino il personaggio «' + p.nome + '»?' : 'Delete the character «' + p.nome + '»?')) return;
+  try { await _scriviPacchetto(d => { d.personaggi = d.personaggi.filter(x => x.i !== pid); d.associazioni = d.associazioni.filter(a => a.p !== pid); }); }
+  catch (e) { toast((it ? '⚠️ NON eliminato: ' : '⚠️ NOT deleted: ') + (e?.message || e), 'error'); return; }
+  toast((it ? 'Eliminato: ' : 'Deleted: ') + p.nome, 'success');
+  chiudiPersonaggio();
 }
 
 function renderCatalogProdotti(grid) {
@@ -42567,7 +42958,7 @@ function renderCatalog() {
   _aggiornaBivioInventario();
   // 🆕 v6.968 — colonne e spazi tornano quelli del CSS PRIMA di ogni taglio: le card piccole dei
   //    personaggi mettono il doppio delle colonne, e i Prodotti su desktop non le ripuliscono.
-  if (grid) { grid.style.gridTemplateColumns = ''; grid.style.gap = ''; }
+  if (grid) { grid.style.gridTemplateColumns = ''; grid.style.gap = ''; grid.style.width = ''; grid.style.maxWidth = ''; }   // v6.972: e la larghezza della pagina del personaggio
   if (_taglioInventario === 'prodotti') { if (grid) renderCatalogProdotti(grid); return; }
   if (_taglioInventario === 'personaggi') { if (grid) renderCatalogPersonaggi(grid); return; }   // 🆕 v6.966
   // v6.080 - tornando al taglio per SERIE la griglia riprende le sue colonne: e' lo stesso
@@ -66809,7 +67200,8 @@ function toast(msg, type = 'success', anchorEl = null, duration = 3500) {
   //    metà, dove copriva i campi Numero e Nome da cambiare. ⚠️ Centrato con `margin:auto` e non con
   //    `transform`: l'animazione `toast-in` usa `transform` e lo cancellerebbe.
   if (anchorEl === 'alto') {
-    t.style.cssText = 'position:fixed;z-index:9999;top:12vh;left:0;right:0;margin:0 auto;width:fit-content;pointer-events:none;';
+    // 🔄 v6.972 (Franco: «ancora un poco più in alto») - da 12vh a 5vh.
+    t.style.cssText = 'position:fixed;z-index:9999;top:5vh;left:0;right:0;margin:0 auto;width:fit-content;pointer-events:none;';
     document.body.appendChild(t);
   } else if (anchorEl) {
     // Position near the anchor element
@@ -67387,7 +67779,8 @@ function renderBulkEditView() {
   const _cPartenza = isAdmin && !_cSoloExtra && currentSection !== 'attaccare';
   // 🆕 v6.969 (Franco) - la colonna Note: solo admin, solo nella VT delle figurine con retro.
   // 🔄 v6.970 (Franco: «metti la colonna Note anche nella VT delle spille»).
-  const _cNote = isAdmin && ['figurines', 'spille'].includes(currentSection);
+  // 🗑️ v6.972 (Franco: «ho cambiato idea: togli la colonna note da tutte le VT») - via, in tutte le
+  //    sezioni. Il campo `note` resta sugli articoli e nella scheda: si toglie la colonna, non il dato.
   // 🆕 v6.971 (Franco: «dobbiamo aggiungere la colonna personaggio a tutte le VT, visibile a tutti»;
   //    «sulla dx») - LA COLONNA PERSONAGGIO, in ogni sezione e per tutti, in fondo a destra: dopo
   //    le Note e prima dei due pulsanti Mia lista / Ciò che cerco, che non sono dati ma comandi.
@@ -67396,8 +67789,12 @@ function renderBulkEditView() {
   //    pagina del personaggio, come nella scheda.
   // ⚠️ I personaggi si leggono solo quando servono (v6.966) e costano UNA lettura (v6.970): se non
   //    ci sono ancora, si chiedono qui e la tabella si ridisegna quando arrivano, come le card.
-  if (!_personaggiDati) caricaPersonaggi().then(d => { if (d && d.elenco.length && bulkEditActive) { try { renderBulkEditView(); } catch (e) { console.error('renderBulkEditView (personaggi)', e); } } }).catch(e => console.error('caricaPersonaggi (VT)', e));
-  const _ixPers = _personaggiDati ? _indiciPersonaggi() : null;
+  // 🔄 v6.972 (Franco: «la colonna personaggio non va nelle VT delle fpa e fcr; lì il nome è
+  //    identico; non ha senso») - su figurine con retro e figurine per album il personaggio È il
+  //    nome della figurina: la colonna ripeteva la colonna Nome. Resta su tutte le altre tipologie.
+  const _cPersonaggio = !['figurines', 'attaccare'].includes(currentSection);
+  if (_cPersonaggio && !_personaggiDati) caricaPersonaggi().then(d => { if (d && d.elenco.length && bulkEditActive) { try { renderBulkEditView(); } catch (e) { console.error('renderBulkEditView (personaggi)', e); } } }).catch(e => console.error('caricaPersonaggi (VT)', e));
+  const _ixPers = _cPersonaggio && _personaggiDati ? _indiciPersonaggi() : null;
   const _cellaPersonaggio = f => {
     const nomi = !_ixPers ? [] : personaggiDiArticolo(f, _ixPers).map(pid => _personaggiDati.perId.get(pid)).filter(Boolean)
       .map(p => '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + p.id + '\')" style="color:var(--nome-entita);">' + esc(p.nome) + '</a>');
@@ -67552,9 +67949,8 @@ function renderBulkEditView() {
                come ultima colonna») - lo stesso campo note della scheda, che anche lì in lettura
                vede solo l'admin. Ultima: dopo la Data creazione, e le due di Mia lista / Ciò che
                cerco qui sotto sono solo per chi non è admin, quindi non convivono mai. -->
-          ${_cNote ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Note</th>` : ''}
           <!-- 🆕 v6.971 (Franco) - Personaggio, per tutti, a destra: vedi _cellaPersonaggio. -->
-          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Personaggio' : 'Character'}</th>
+          ${_cPersonaggio ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Personaggio' : 'Character'}</th>` : ''}
           ${!isAdmin ? `
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Mia lista' : 'My list'}</th>
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</th>` : ''}
@@ -67723,8 +68119,7 @@ function renderBulkEditView() {
               + '</td>'
             : readCell(f.size)) : ''}
           ${_ordinaPerCreazione ? `<td style="padding:4px 8px;color:${_dataCreazione(f) ? 'var(--text)' : 'var(--muted)'};white-space:nowrap;font-size:0.78rem;${_dataCreazione(f) ? '' : 'font-style:italic;'}">${esc(_dataCreazioneTesto(f))}</td>` : ''}
-          ${_cNote ? `<td style="padding:4px;"><textarea data-field="note" data-id="${f.id}" rows="1" style="width:260px;min-height:1.9em;resize:vertical;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;font-family:inherit;" onchange="saveBulkCell(this)">${esc(f.note || '')}</textarea></td>` : ''}
-          ${_cellaPersonaggio(f)}
+          ${_cPersonaggio ? _cellaPersonaggio(f) : ''}
           ${!isAdmin ? `
           <td style="padding:4px;text-align:center;"><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista':'In your list') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="toggleOwned('${f.id}')">\u2713</button></td>
           <td style="padding:4px;text-align:center;"><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" onclick="toggleWishlist('${f.id}')" title="${currentLang==='it'?(inWishlist?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(inWishlist?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${inWishlist?'var(--danger)':'rgba(255,255,255,0.15)'};color:${inWishlist?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;">${inWishlist?'❤️':'♡'}</button></td>` : ''}
