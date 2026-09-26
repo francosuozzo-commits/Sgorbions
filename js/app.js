@@ -1,7 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.970 - Modificati index.html e js/app.js. Tre cose:
+// v6.971 - Modificati index.html e js/app.js. Due cose:
+//          1. 🧑‍🎤 Il conto della card dell'hub dei personaggi non conta più le figurine per album
+//             (Franco: «sì, togli le fpa anche dalla card»), come la pagina del personaggio dalla
+//             v6.969. La foto della card resta scelta su tutti gli articoli.
+//          2. 🧑‍🎤 La colonna «Personaggio» in tutte le viste tabellari, per tutti, in fondo a
+//             destra (Franco: «dobbiamo aggiungere la colonna personaggio a tutte le VT, visibile
+//             a tutti», «sulla dx»). Nomi con link alla pagina del personaggio.
+//          3. 📋 Clonando un articolo, l'avviso «Copia pronta: cambia Numero/Nome e salva» esce
+//             più in alto (Franco): `toast(…, 'alto')`, a 12vh invece che a metà schermo.
+// v6.970 -Modificati index.html e js/app.js. Tre cose:
 //          1. 🔴 I PERSONAGGI IN UN DOCUMENTO SOLO (`personaggi/_pacchetto`). Leggere le due
 //             raccolte intere costava ~2.750 letture a visita e il 25 settembre ha esaurito la
 //             quota gratuita (52.000 letture, grafico di Franco). Ora 1 lettura; la funzione 6
@@ -30237,7 +30246,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.970';
+const JS_VERSION = 'v6.971';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41217,6 +41226,10 @@ function renderCatalogPersonaggi(grid) {
   const card = p => {
     const arts = articoliDelPersonaggio(p.id, ix);
     const foto = _fotoPersonaggio(arts, p.id, ix);
+    // 🔄 v6.971 (Franco: «sì, togli le fpa anche dalla card») - il conto non conta le figurine per
+    //    album, come la pagina del personaggio (v6.969): hanno lo stesso fronte della loro fcr. La
+    //    foto qui sopra si sceglie ancora su tutti gli articoli.
+    const conto = arts.filter(a => a.section !== 'attaccare').length;
     // 🗑️ v6.969 (Franco: «il nome della serie, nella card del personaggio, va tolto; un personaggio
     //    può avere più serie; non è quello il posto in cui scriverla») - via la riga delle serie.
     //    Le serie si vedono nella pagina del personaggio, sotto ogni articolo. Il `flex` che la
@@ -41226,7 +41239,7 @@ function renderCatalogPersonaggi(grid) {
       // 🔄 v6.968 — card a un quarto: testo e margini scalati con lei (titolo 1,35 → 0,85rem).
       + '<div class="card-body" style="display:flex;flex-direction:column;flex:1 1 auto;padding:0.55rem 0.65rem 0.6rem;">'
       + '<div class="card-title" style="margin-bottom:0.2rem;font-size:0.85rem;line-height:1.2;color:var(--nome-entita);flex:1 1 auto;">' + esc(p.nome) + '</div>'
-      + '<div class="card-desc" style="margin-top:0.3rem;padding-top:0.3rem;font-size:0.72rem;line-height:1.3;border-top:1px solid rgba(255,255,255,0.06);color:var(--accent);">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div>'
+      + '<div class="card-desc" style="margin-top:0.3rem;padding-top:0.3rem;font-size:0.72rem;line-height:1.3;border-top:1px solid rgba(255,255,255,0.06);color:var(--accent);">' + conto + ' ' + _paroleArticoli(conto).trim() + '</div>'
       + '</div></div>';
   };
   grid.innerHTML = cerca + (pagina.length ? pagina.map(card).join('')
@@ -47539,7 +47552,7 @@ function cloneFigurine(itemId) {
   //    La legge `toggleFeBaseFigurineGroup` per proporla come partenza; la azzera chi apre un'altra scheda.
   _apriSchedaSuBozza(b);
   _cloneSorgenteId = src.id;
-  toast((currentLang === 'it' ? '📋 Copia pronta: cambia Numero/Nome e salva' : '📋 Copy ready: change Number/Name and save'), 'success');
+  toast((currentLang === 'it' ? '📋 Copia pronta: cambia Numero/Nome e salva' : '📋 Copy ready: change Number/Name and save'), 'success', 'alto');   // v6.971: più in alto (Franco)
 }
 
 function getOwned() {
@@ -66791,7 +66804,14 @@ function toast(msg, type = 'success', anchorEl = null, duration = 3500) {
   const t = document.createElement('div');
   t.className = 'toast ' + type;
   if (msg.includes('<br>')) { t.innerHTML = msg; } else { t.textContent = msg; }
-  if (anchorEl) {
+  // 🆕 v6.971 (Franco: «quando clono un articolo, il messaggio… lo vorrei più in alto») - `'alto'`
+  //    al posto dell'ancora: centrato in orizzontale, nella fascia alta dello schermo invece che a
+  //    metà, dove copriva i campi Numero e Nome da cambiare. ⚠️ Centrato con `margin:auto` e non con
+  //    `transform`: l'animazione `toast-in` usa `transform` e lo cancellerebbe.
+  if (anchorEl === 'alto') {
+    t.style.cssText = 'position:fixed;z-index:9999;top:12vh;left:0;right:0;margin:0 auto;width:fit-content;pointer-events:none;';
+    document.body.appendChild(t);
+  } else if (anchorEl) {
     // Position near the anchor element
     const rect = anchorEl.getBoundingClientRect();
     t.style.position = 'fixed';
@@ -67368,6 +67388,21 @@ function renderBulkEditView() {
   // 🆕 v6.969 (Franco) - la colonna Note: solo admin, solo nella VT delle figurine con retro.
   // 🔄 v6.970 (Franco: «metti la colonna Note anche nella VT delle spille»).
   const _cNote = isAdmin && ['figurines', 'spille'].includes(currentSection);
+  // 🆕 v6.971 (Franco: «dobbiamo aggiungere la colonna personaggio a tutte le VT, visibile a tutti»;
+  //    «sulla dx») - LA COLONNA PERSONAGGIO, in ogni sezione e per tutti, in fondo a destra: dopo
+  //    le Note e prima dei due pulsanti Mia lista / Ciò che cerco, che non sono dati ma comandi.
+  // 📌 I nomi vengono da `personaggiDiArticolo`, la stessa regola della scheda: su una figurina uno
+  //    solo (anche quello ricavato dalla fpa o dalla base), su un retro tutti i suoi. Sono link alla
+  //    pagina del personaggio, come nella scheda.
+  // ⚠️ I personaggi si leggono solo quando servono (v6.966) e costano UNA lettura (v6.970): se non
+  //    ci sono ancora, si chiedono qui e la tabella si ridisegna quando arrivano, come le card.
+  if (!_personaggiDati) caricaPersonaggi().then(d => { if (d && d.elenco.length && bulkEditActive) { try { renderBulkEditView(); } catch (e) { console.error('renderBulkEditView (personaggi)', e); } } }).catch(e => console.error('caricaPersonaggi (VT)', e));
+  const _ixPers = _personaggiDati ? _indiciPersonaggi() : null;
+  const _cellaPersonaggio = f => {
+    const nomi = !_ixPers ? [] : personaggiDiArticolo(f, _ixPers).map(pid => _personaggiDati.perId.get(pid)).filter(Boolean)
+      .map(p => '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + p.id + '\')" style="color:var(--nome-entita);">' + esc(p.nome) + '</a>');
+    return `<td style="padding:4px 8px;color:var(--text);min-width:160px;">${nomi.join(' · ')}</td>`;
+  };
   // I suggerimenti della Categoria, uno per TIPO: in una tabella le righe possono appartenere a
   // tipi diversi (Extra serie aperta senza filtro), e un elenco unico proporrebbe a un Cartoncino
   // le categorie dei Poster. Si emettono una volta e le righe puntano al proprio.
@@ -67518,6 +67553,8 @@ function renderBulkEditView() {
                vede solo l'admin. Ultima: dopo la Data creazione, e le due di Mia lista / Ciò che
                cerco qui sotto sono solo per chi non è admin, quindi non convivono mai. -->
           ${_cNote ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Note</th>` : ''}
+          <!-- 🆕 v6.971 (Franco) - Personaggio, per tutti, a destra: vedi _cellaPersonaggio. -->
+          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Personaggio' : 'Character'}</th>
           ${!isAdmin ? `
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Mia lista' : 'My list'}</th>
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</th>` : ''}
@@ -67687,6 +67724,7 @@ function renderBulkEditView() {
             : readCell(f.size)) : ''}
           ${_ordinaPerCreazione ? `<td style="padding:4px 8px;color:${_dataCreazione(f) ? 'var(--text)' : 'var(--muted)'};white-space:nowrap;font-size:0.78rem;${_dataCreazione(f) ? '' : 'font-style:italic;'}">${esc(_dataCreazioneTesto(f))}</td>` : ''}
           ${_cNote ? `<td style="padding:4px;"><textarea data-field="note" data-id="${f.id}" rows="1" style="width:260px;min-height:1.9em;resize:vertical;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;font-family:inherit;" onchange="saveBulkCell(this)">${esc(f.note || '')}</textarea></td>` : ''}
+          ${_cellaPersonaggio(f)}
           ${!isAdmin ? `
           <td style="padding:4px;text-align:center;"><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista':'In your list') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="toggleOwned('${f.id}')">\u2713</button></td>
           <td style="padding:4px;text-align:center;"><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" onclick="toggleWishlist('${f.id}')" title="${currentLang==='it'?(inWishlist?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(inWishlist?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${inWishlist?'var(--danger)':'rgba(255,255,255,0.15)'};color:${inWishlist?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;">${inWishlist?'❤️':'♡'}</button></td>` : ''}
