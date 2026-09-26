@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.976">
+<link rel="stylesheet" href="css/style.css?v=6.977">
 
 
 <style>
@@ -1517,6 +1517,10 @@ button.back-btn { color:#ffffff; }
 /* 🆕 v6.970 (Franco: «la scritta "cerca un personaggio" la vorrei bianca») — la stessa regola
    per la buca dell'hub dei personaggi. */
 #personaggi-cerca::placeholder{color:var(--text);opacity:1;}
+/* 🆕 v6.977 (Franco) — la foto che DOVREBBE esserci e non c'è, vista dall'admin: «FOTO DA CARICARE»,
+   col bordo e il testo nell'arancione dei comandi admin. Il riquadro «FOTO NON DISPONIBILE» (flag
+   acceso, o chi guarda non è admin) resta il grigio pieno di `.fig-noimg`. */
+.fig-noimg.fig-noimg-da-caricare{background:transparent;color:var(--action-admin);box-shadow:inset 0 0 0 2px var(--action-admin);}
 /* 🆕 v6.970 (Franco) — con una serie aperta nella fascia della home il carosello delle figurine
    non si mostra: `!important` perché `renderCarosello` accende il display da sé (vedi
    `_caroselloDietroVetrina` in app.js). */
@@ -5691,7 +5695,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.976"></script>
+<script src="js/app.js?v=6.977"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5715,7 +5719,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.976'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.977'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
