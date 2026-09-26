@@ -1,7 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.976 - Modificato js/app.js (e la versione in index.html). Una cosa:
+// v6.977 - Modificati index.html e js/app.js. Una cosa:
+//          1. 🖼️ LA FOTO CHE MANCA SI DICE IN UN MODO SOLO, e in due casi (`_senzaFotoHTML`): flag
+//             «Foto non disponibile» acceso (o chi guarda non è admin) → «FOTO NON DISPONIBILE», il
+//             riquadro grigio della griglia; flag spento e admin → «FOTO DA CARICARE», bordo
+//             arancione. Griglia, scheda in lettura, scheda in modifica e pagina del personaggio
+//             (Franco: «la differenza tra una foto che non c'è e che dovrebbe esserci, da una foto
+//             che non c'è ma che non può esserci»). Il retro non collegato resta vuoto (v6.098).
+//          2. 🐛 La riga TIPOLOGIA della card chiede il tipo a chi lo possiede (Franco: «da quando è
+//             scomparsa la tipologia di omaggio dalla card?»): leggeva il campo della figurina, vuoto
+//             per scelta sugli omaggi caricati con l'import della v6.973 e sui change di retro.
+// v6.976 -Modificato js/app.js (e la versione in index.html). Una cosa:
 //          1. 🔗 Nelle note della scheda che spiegano da dove arriva la foto, gli articoli nominati
 //             (partenza, retro omaggio collegato, retro associato…) sono link che li aprono già in
 //             modifica (Franco: «con un click arrivo a poterli modificare»).
@@ -30304,7 +30314,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.976';
+const JS_VERSION = 'v6.977';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41570,7 +41580,9 @@ function renderPaginaPersonaggio(grid, pid) {
       //    della griglia delle fcr: un box nero che dice "foto non disponibile"; ora mostri una zona nera
       //    senza confine» - OMBRETTA CARRETTA 224, MARCELLO PORCELLO) - il riquadro `fig-noimg` della
       //    griglia (`_facciaRetroHTML`), con la forma di una foto sdraiata come lì (v6.094).
-      : '<div class="fig-noimg" style="position:relative;width:50%;aspect-ratio:1.38;flex:0 0 auto;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.62rem;line-height:1.15;padding:4px;box-sizing:border-box;">' + (it ? 'FOTO NON DISPONIBILE' : 'PHOTO NOT AVAILABLE') + '</div>';
+      // 🔄 v6.977 - dal riquadro unico (`_senzaFotoHTML`), col flag di chi possiede la faccia
+      : _senzaFotoHTML(lato === 'retro' ? !!(_ff && _ff.retroRec && _ff.retroRec.fotoNonDisponibile) : !!f.fotoNonDisponibile,
+          'position:relative;width:50%;aspect-ratio:1.38;flex:0 0 auto;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.62rem;line-height:1.15;padding:4px;box-sizing:border-box;');
     const _ff = sec === 'figurines' ? _dueFacce(f, figs) : null;
     if (_ff && (_ff.fronte || _ff.retro)) {
       if (!_ff.fronte) _pcOrientamento(_pcId, 'fronte', false);
@@ -41581,7 +41593,7 @@ function renderPaginaPersonaggio(grid, pid) {
       : (u ? '<img src="' + cloudinaryUrl(u, 'w_600,h_600,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;padding:4px;">' : '');
     return '<div class="card personaggio-articolo" style="display:flex;flex-direction:column;cursor:pointer;" onclick="openFigDetail(\'' + f.id + '\', _elencoPersonaggio)">'
       + '<div style="aspect-ratio:1;background:var(--card2);display:flex;align-items:center;justify-content:center;">'
-      + (_foto || '<span style="color:var(--muted);font-size:0.7rem;">' + (it ? 'Foto non disponibile' : 'Photo not available') + '</span>')
+      + (_foto || _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.7rem;padding:4px;'))   // v6.977
       + '</div>'
       + '<div class="card-body" style="padding:0.45rem 0.55rem 0.5rem;">'
       + riga(s ? esc(_nomeSerieCard(s, true)) : '', 'color:var(--text);')
@@ -44866,6 +44878,7 @@ function _coppiaFronteRetro(f, allFigs, idx) {
     // card resta larga lo stesso.
     retroImg: retroRec ? retroRec.img : null,
     retroVuoto: !retroRec, // v6.098 - il terzo stato: la faccia non esiste, non e' una foto mancante
+    retroNonDisp: !!(retroRec && retroRec.fotoNonDisponibile),   // v6.977 - la foto del retro «non può esserci»
   };
 }
 
@@ -50907,14 +50920,30 @@ function _azzeraTuttiIRaggr(section) {
 //   nessuno dei due -> segnaposto FOTO NON DISPONIBILE (il retro c'e', la foto no)
 // Il grigio e' `var(--card2)`, lo stesso che la SCHEDA usa dalla v6.044 per lo stesso caso: le due
 // viste dicono la stessa cosa nello stesso modo, e chi impara a leggerne una legge anche l'altra.
-function _facciaRetroHTML(imgUrl, onloadAttr, vuoto) {
+// 🆕 v6.977 (Franco: «la differenza tra una foto che non c'è e che dovrebbe esserci, da una foto che
+//    non c'è ma che non può esserci (flag "foto non disponibile" dell'articolo a TRUE)») - IL
+//    SEGNAPOSTO DI UNA FOTO CHE MANCA, IN UN POSTO SOLO, e dice due cose diverse:
+//    · flag acceso, oppure chi guarda non è admin → «FOTO NON DISPONIBILE» (il riquadro grigio pieno
+//      della griglia, v5.872). Al visitatore basta sapere che non c'è.
+//    · flag spento e chi guarda è l'admin → «FOTO DA CARICARE», col bordo arancione dei comandi admin:
+//      è un lavoro da fare, e si vede in griglia e nelle schede.
+//    Lo usano la griglia, la scheda in lettura, la scheda in modifica e la pagina del personaggio.
+// ⚠️ Il retro NON collegato non passa di qui: è un riquadro vuoto apposta (v6.098), perché lì manca
+//    un collegamento, non una foto.
+function _senzaFotoHTML(nonDisp, stile, id) {   // `id`: la scheda in modifica sostituisce il riquadro per id
+  const daCaricare = !nonDisp && !!currentUser?.isAdmin;
+  const it = currentLang === 'it';
+  const testo = daCaricare ? (it ? 'FOTO DA CARICARE' : 'PHOTO TO UPLOAD') : (it ? 'FOTO NON DISPONIBILE' : 'PHOTO NOT AVAILABLE');
+  return '<div' + (id ? ' id="' + id + '"' : '') + ' class="fig-noimg' + (daCaricare ? ' fig-noimg-da-caricare' : '') + '"' + (stile ? ' style="' + stile + '"' : '') + '>' + testo + '</div>';
+}
+function _facciaRetroHTML(imgUrl, onloadAttr, vuoto, nonDisp) {   // v6.977: `nonDisp` = flag «Foto non disponibile» di quella faccia
   if (imgUrl) {
     return `<img src="${cloudinaryUrl(imgUrl)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"${onloadAttr ? ' ' + onloadAttr : ''}>`;
   }
   if (vuoto) {
     return `<div style="width:100%;height:100%;background:var(--card2);"></div>`;
   }
-  return `<div class="fig-noimg" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.62rem;line-height:1.15;padding:4px;box-sizing:border-box;">${currentLang === 'it' ? 'FOTO NON DISPONIBILE' : 'PHOTO NOT AVAILABLE'}</div>`;
+  return _senzaFotoHTML(nonDisp, 'position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.62rem;line-height:1.15;padding:4px;box-sizing:border-box;');   // v6.977
 }
 
 // v6.094 - tollerante su ENTRAMBI i lati. Il caso simmetrico esiste davvero: un oggetto con la
@@ -50941,10 +50970,10 @@ function _etichettaErroreCardHTML(lato, latoErr, tipo) {
   return '<span style="' + _stileFascettaErrore(true) + '">' + _testoFascettaErrore(tipo) + '</span>';
 }
 
-function _coppiaAffiancataHTML(imgFronte, imgRetro, retroVuoto, _latoErrCard, _tipoErrCard) {
+function _coppiaAffiancataHTML(imgFronte, imgRetro, retroVuoto, _latoErrCard, _tipoErrCard, ndF, ndR) {   // v6.977: i due flag
   return `<div class="coppia-facce" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
-            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(imgFronte)}</div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(imgRetro, null, retroVuoto)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(imgFronte, null, false, ndF)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(imgRetro, null, retroVuoto, ndR)}</div>
           </div>`;
 }
 
@@ -51524,6 +51553,8 @@ function renderItems() {
       // meno usati (dinamico, fronte-grande) se ne sarebbero accorti mesi dopo.
       const _retroVuoto = _cp.retroVuoto;
       const _retroImg = _cp.retroImg;
+      // v6.977 - di chi è la foto che manca: del fronte (l'articolo) o del retro (il suo record)
+      const _ndF = !!f.fotoNonDisponibile, _ndR = !!_cp.retroNonDisp;
       // v6.099 - `larga` la decide la funzione, che e' la stessa che risponde a _itemHasWidePair:
       // e' proprio questo il valore che le due copie potevano far divergere.
       hasWidePair = _cp.larga;
@@ -51531,18 +51562,18 @@ function renderItems() {
       // fronte non torna `mostra`. Il livello di indentazione dei rami resta quello di prima, per
       // tenere il diff piccolo su un blocco delicato come questo.
         if (_retroViewMode === 'destra') {
-          imgHTML = _coppiaAffiancataHTML(_fronteCoppia, _retroImg, _retroVuoto, _latoErrCard, _tipoErrCard); // v6.075 — markup condiviso con le bustine
+          imgHTML = _coppiaAffiancataHTML(_fronteCoppia, _retroImg, _retroVuoto, _latoErrCard, _tipoErrCard, _ndF, _ndR); // v6.075 — markup condiviso con le bustine
         } else if (_retroViewMode === 'dinamico') {
           const dualId = 'dual-' + f.id;
           imgHTML = `<div id="${dualId}" class="coppia-facce" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
-            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_fronteCoppia)}</div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_retroImg, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`, _retroVuoto)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_fronteCoppia, null, false, _ndF)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_retroImg, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`, _retroVuoto, _ndR)}</div>
           </div>`;
         } else if (_retroViewMode === 'fronte-grande') {
           const dualId2 = 'dualf-' + f.id;
           imgHTML = `<div id="${dualId2}" class="coppia-facce" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
-            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_fronteCoppia, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId2}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`)}</div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_retroImg, null, _retroVuoto)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_fronteCoppia, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId2}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`, false, _ndF)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_retroImg, null, _retroVuoto, _ndR)}</div>
           </div>`;
         } else if (_retroViewMode === 'destra-piena') {
           // Fronte+Retro mai rimpiccioliti rispetto alla dimensione "piena" che avrebbero in
@@ -51569,14 +51600,14 @@ function renderItems() {
           // box e' orizzontale comunque. La condizione guarda percio' la foto, non il record.
           if (!_retroImg) _checkBothOrientationForStack(dualId5, 'retro', false, 138, 100);
           imgHTML = `<div id="${dualId5}" class="coppia-facce" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
-            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_fronteCoppia, `onload="_checkBothOrientationForStack('${dualId5}','front',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`)}</div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_retroImg, `onload="_checkBothOrientationForStack('${dualId5}','retro',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`, _retroVuoto)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_fronteCoppia, `onload="_checkBothOrientationForStack('${dualId5}','front',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`, false, _ndF)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_retroImg, `onload="_checkBothOrientationForStack('${dualId5}','retro',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`, _retroVuoto, _ndR)}</div>
           </div>`;
         } else {
           // 'sotto' (default)
           imgHTML = `<div class="coppia-facce" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
-            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_fronteCoppia)}</div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_retroImg, null, _retroVuoto)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_fronteCoppia, null, false, _ndF)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_retroImg, null, _retroVuoto, _ndR)}</div>
           </div>`;
         }
     }
@@ -51610,7 +51641,7 @@ function renderItems() {
     //    si chiedono a `_fotoFigurina` e `_imgRetroDi`, che per chi le ha sue rispondono come prima.
     const _fCard = f.img || (f.section === 'albums' ? _fotoFigurina(f) : null), _rCard = _imgRetroDi(f);
     if (!imgHTML && _schedaDueFoto(f) && _secondaFacciaSulRecord(currentSection) && (_fCard || _rCard)) {
-      imgHTML = _coppiaAffiancataHTML(_fCard, _rCard, undefined, _latoErrCard, _tipoErrCard);
+      imgHTML = _coppiaAffiancataHTML(_fCard, _rCard, undefined, _latoErrCard, _tipoErrCard, !!f.fotoNonDisponibile, !!f.fotoNonDisponibile);   // v6.977: le due facce sono dello stesso record
     }
     if (!imgHTML) {
       // v5.872 — quando manca la foto, un placeholder GRIGIO PIENO "FOTO NON DISPONIBILE" che
@@ -51618,7 +51649,7 @@ function renderItems() {
       // e le card restano uniformi (prima il fallback era un box piccolo centrato che lasciava
       // spazio vuoto attorno).
       _cardNoPhoto = !displayImg;
-      imgHTML = displayImg ? `<img src="${cloudinaryUrl(displayImg)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : `<div class="fig-noimg">${currentLang === 'it' ? 'FOTO NON DISPONIBILE' : 'PHOTO NOT AVAILABLE'}</div>`;
+      imgHTML = displayImg ? `<img src="${cloudinaryUrl(displayImg)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : _senzaFotoHTML(!!f.fotoNonDisponibile);   // v6.977
     }
     // Il badge distingue ora le due variazioni, invece di accorparle in un
     // generico "Variazione" che non diceva quale delle due fosse — proprio la sola
@@ -51951,7 +51982,17 @@ function renderItems() {
       // quindi per loro la riga resta vuota — che e' l'informazione giusta.
       const _cardVers = _versioneDiChiave(_chiaveTipo(f));
       const _cardCampoTipo = _campoTipoDi(f);
-      const _cardTypeTxt = _cardCampoTipo ? ((f[_cardCampoTipo] || '').trim()) : '';
+      // 🐛 v6.977 (Franco: «da quando è scomparsa la tipologia di omaggio dalla card di una figurina
+      //    nella griglia?») - IL TIPO SI CHIEDE A CHI LO POSSIEDE, come fanno già nome completo,
+      //    pillole e filtri (`_tipoChange` v6.792, `_tipoOmaggio` v6.795, `_tipoErroreStampa` v6.577).
+      //    Qui si leggeva il campo della figurina, che è VUOTO PER SCELTA dove il tipo sta sul retro:
+      //    le figurine omaggio caricate con l'import della v6.973 (che il tipo lo prende dal retro)
+      //    perdevano la riga, e lo stesso i change di retro. Chi il tipo ce l'ha suo risponde come prima.
+      const _cardTypeTxt = !_cardCampoTipo ? ''
+        : (f.isFreeVersion ? _tipoOmaggio(f, _allFigs, _idx)
+          : f.isChange ? _tipoChange(f, _allFigs, _idx)
+          : f.isPrintError ? _tipoErroreStampa(f, _allFigs, _idx)
+          : (f[_cardCampoTipo] || '')).trim();
       const _cardTypeColor = (_cardVers && _cardVers.colore) || 'var(--text)';
       // 🆕 v6.265 (Franco: "nella card, il campo Tipo di omaggio, scrivi OMAGGIO ROSSO quando
       // vale ROSSO") - LA PAROLA VIENE DALLA DICHIARAZIONE (`prefissoTipo`), non da un `if` sulla
@@ -55362,13 +55403,16 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       // niente da collegare e niente dove andare.
       const _bustina = _secondaFacciaSulRecord(f.section); // v6.076 - non piu' le sole bustine
       const retroFig = (!_bustina && _detEffRetroId) ? getData('figurines', []).find(x => x.id === _detEffRetroId) : null;
-      const noPhotoBox = '<div style="width:100%;aspect-ratio:1;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non disponibile' : 'Photo not available') + '</div>';
+      // 🔄 v6.977 (Franco) - il riquadro della griglia (`_senzaFotoHTML`), che distingue la foto che non
+      //    può esserci (flag, o visitatore) da quella da caricare (admin). Il flag è di chi possiede
+      //    la faccia: l'articolo per il fronte, il record del retro per il retro.
+      const noPhotoBox = nd => _senzaFotoHTML(nd, 'position:relative;width:100%;aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;');
       // v5.916 — altezza FISSA 200px su entrambe le foto (come il box "foto non disponibile"): così
       // fronte e retro sono sempre alti uguali e l'area foto non cambia dimensione tra una figurina e
       // l'altra (niente sfarfallamento).
       const baseHTML = frontImg
         ? `${_fotoInDueTempi(frontImg, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;aspect-ratio:1;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
-        : noPhotoBox;
+        : noPhotoBox(!!f.fotoNonDisponibile);
       // v6.044 - due assenze diverse, due riquadri diversi: se il Retro ESISTE ma non ha foto resta
       // "Foto non disponibile" (manca un'immagine di qualcosa che c'e'); se il Retro non c'e'
       // proprio, il riquadro e' VUOTO - non c'e' nessuna foto mancante, c'e' un collegamento da
@@ -55377,11 +55421,13 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       const retroHTML = _bustina
         ? (_imgRetroDi(f)   // v6.969 - anche dall'album indicato in «Foto dall'album»
             ? `${_fotoInDueTempi(_imgRetroDi(f),'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;aspect-ratio:1;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
-            : boxVuoto)
+            // 🔄 v6.977 - il retro di una bustina o di un album ESISTE sempre (è sul record): se la foto
+            //    manca è una foto mancante, come in griglia dalla v6.094, non un collegamento da fare.
+            : noPhotoBox(!!f.fotoNonDisponibile))
         : (retroFig
             ? (retroFig.img
                 ? `${_fotoInDueTempi(retroFig.img, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;aspect-ratio:1;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
-                : noPhotoBox)
+                : noPhotoBox(!!retroFig.fotoNonDisponibile))
             : boxVuoto);
       // v6.031 (Franco) - come nel tab Variazioni (v6.030): il sottonome su una riga sua, in
       // azzurro, e il link resta sulla prima. Il sottonome non entra nel link, come sulle card:
@@ -55432,7 +55478,8 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       const _unaFaccia = _fotoFigurina(f, getData('figurines', []));
       photoEl.innerHTML = _unaFaccia
         ? `${_fotoInDueTempi(_unaFaccia,'w_640,h_640,c_fit,q_auto,f_auto', 'width:100%;height:' + _altezzaFotoRetro + 'px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
-        : '<div style="width:100%;height:' + _altezzaFotoRetro + 'px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non ancora disponibile' : 'Photo not yet available') + '</div>';
+        // 🔄 v6.977 - il riquadro unico (`_senzaFotoHTML`): era un terzo testo, «Foto non ancora disponibile»
+        : _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:' + _altezzaFotoRetro + 'px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;');
     }
   }
 
@@ -58451,7 +58498,7 @@ function _slotFotoEdit(slot, url, f, stretto) {
       + '<div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? 'Retro associato' : 'Linked back') + '</div>'
       + (_retroAss.img
           ? '<img src="' + cloudinaryUrl(_retroAss.img, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:160px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;">'
-          : '<div style="width:100%;height:60px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;">' + vuoto + '</div>')
+          : _senzaFotoHTML(!!_retroAss.fotoNonDisponibile, 'position:relative;width:100%;height:60px;border-radius:8px;display:flex;align-items:center;justify-content:center;'))   // v6.977
       // v6.976 - «da lì» è un link al retro, aperto in modifica (Franco: «con un click arrivo a poterli modificare»)
       + '<div style="font-size:0.72rem;color:var(--text);margin-top:0.3rem;">' + (currentLang === 'it' ? 'È la foto dell\'articolo retro: si cambia ' + _linkModifica(_retroAss.id, 'da lì') + '.' : 'This is the back item\'s photo: change it ' + _linkModifica(_retroAss.id, 'there') + '.') + '</div>'
       + '</div>'
@@ -58495,7 +58542,7 @@ function _slotFotoEdit(slot, url, f, stretto) {
     return '<div id="fig-slot-' + slot + '" class="fig-slot' + _cls + '" style="margin-bottom:0.6rem;' + _flex + '">' + titolo +
       (_vista
         ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(_vista, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0;">'
-        : '<div id="' + s.preview + '" style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + vuoto + '</div>') +
+        : _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:200px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;', s.preview)) +   // v6.977
       '<div style="font-size:0.72rem;color:var(--text);margin-top:0.4rem;">' + nota + '</div>' +
       _riqRetro +
     '</div>';
@@ -58517,7 +58564,7 @@ function _slotFotoEdit(slot, url, f, stretto) {
       : _ered
       ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(_ered, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.3rem;">'
         + '<div style="font-size:0.72rem;color:var(--text);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Foto della figurina di partenza: questa non ne ha una propria.' : 'Photo of the source sticker: this one has none of its own.') + '</div>'
-      : '<div id="' + s.preview + '" style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + vuoto + '</div>') +
+      : _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:200px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;margin-bottom:0.5rem;', s.preview)) +   // v6.977
     '<div class="fig-cmd" style="display:flex;gap:0.4rem;margin-top:0.3rem;">' +
       '<label style="flex:1;cursor:pointer;text-align:center;">' +
         '<span class="btn-foto" style="display:block;">\u{1F4F7} ' + (currentLang === 'it' ? (url ? 'Cambia foto' : 'Aggiungi foto') : (url ? 'Change photo' : 'Add photo')) + '</span>' +
