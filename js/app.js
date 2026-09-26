@@ -1,7 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.977 - Modificati index.html e js/app.js. Una cosa:
+// v6.978 - Modificato js/app.js (e la versione in index.html). Una prova, chiesta da Franco:
+//          1. 📐 In «Fronte e retro sempre grandi», se una riga ha una card O-O (due foto sdraiate,
+//             impilate), le coppie affiancate della riga si allungano alla sua altezza e le loro foto
+//             si centrano: il centro verticale è lo stesso per tutte (`_allineaRigheOO`). Il
+//             riquadro si allunga, le foto no: scendono soltanto (Franco: «la dimensione è aumentata»).
+//          2. 🔘 «Filtra per versione» va a capo invece di tagliare l'ultima pillola (Franco: «serve
+//             stare su due righe»): `unaRiga` spenta sul riquadro Versione.
+// v6.977 -Modificati index.html e js/app.js. Una cosa:
 //          1. 🖼️ LA FOTO CHE MANCA SI DICE IN UN MODO SOLO, e in due casi (`_senzaFotoHTML`): flag
 //             «Foto non disponibile» acceso (o chi guarda non è admin) → «FOTO NON DISPONIBILE», il
 //             riquadro grigio della griglia; flag spento e admin → «FOTO DA CARICARE», bordo
@@ -30314,7 +30321,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.977';
+const JS_VERSION = 'v6.978';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -39786,7 +39793,13 @@ const _RAGGR_VERSIONE = {
   // possono essere venti, e venti pillole su una riga sola sarebbero un nastro da scorrere.
   // ⚠️ Quindi non e' una preferenza estetica applicabile a tutti: e' una proprieta' di un elenco
   // che ha un tetto. Chi un domani la mettesse su un riquadro dei tipi otterrebbe l'altro difetto.
-  unaRiga: true,
+  // 🔄 v6.978 (Franco: «nella form di ricerca delle fcr, l'area "filtra per versione" non riesce ad
+  //    ospitare tutte le opzioni; quando abbiamo tutto, l'ultima viene troncata, a dx… serve stare su
+  //    due righe») - LA RIGA SOLA SI SPEGNE. Nella v6.357 Franco aveva scelto la riga sola sapendo che
+  //    con tutte le versioni non ci sarebbe stata: «tanto non capiterà mai». Adesso capita, e le
+  //    pillole vanno a capo come negli altri riquadri. Il meccanismo `unaRiga` resta nel pannello,
+  //    spento: riaccenderlo è questa riga.
+  unaRiga: false,
   // 🆕 v6.514 (Franco: *"tutto in maiuscolo"*) - LE ETICHETTE DI QUESTO RIQUADRO SI
   // LEGGONO IN MAIUSCOLO. 📌 Il maiuscolo NON si scrive nei dati: lo mette il
   // `text-transform`, come nel titolo della scheda (v6.371) — scriverlo a mano vorrebbe
@@ -48540,8 +48553,62 @@ function _checkBothOrientationForStack(containerId, which, isVertical, natW, nat
       c.dataset.confirmedRow = 'true';
     }
     delete _dualOrientationState[containerId];
+    _programmaAllineaRigheOO();   // v6.978
   }
 }
+
+// 🆕 v6.978 (Franco: «se c'è una card O-O, allora tutte le altre tipologie prendono il suo centro
+//    verticale») - IN «Fronte e retro sempre grandi», UNA RIGA CON UNA CARD IMPILATA (due foto
+//    sdraiate, O-O) ha quel riquadro più alto; le coppie affiancate della stessa riga (V-V, V-O, O-V)
+//    restavano col loro riquadro basso, incollate in cima, e la linea di mezzo non tornava.
+//    Adesso il riquadro delle affiancate si allunga fino all'altezza del più alto O-O della riga: le
+//    foto dentro NON cambiano misura (sono larghe mezza card, `object-fit:contain`) e si centrano, quindi
+//    il loro centro cade sul centro della O-O. Senza O-O nella riga non cambia niente.
+// 📌 Le righe si riconoscono da dove stanno (`offsetTop`), perché in questa disposizione le card vanno
+//    a capo da sole (flex). Si rifà quando una coppia decide come disporsi e quando la finestra cambia.
+// ⚠️ Solo le coppie: una card a foto singola allungata ingrandirebbe una foto in piedi.
+let _tAllineaOO = null;
+function _programmaAllineaRigheOO() { clearTimeout(_tAllineaOO); _tAllineaOO = setTimeout(_allineaRigheOO, 60); }
+function _allineaRigheOO() {
+  const grid = document.getElementById('items-grid');
+  if (!grid) return;
+  const righe = new Map();
+  grid.querySelectorAll('.fig-card').forEach(card => {
+    const ph = card.querySelector('.fig-img-placeholder');
+    const cf = ph && ph.querySelector('.coppia-facce');
+    if (!cf) return;
+    // si riparte dal riquadro com'era: altezza e proporzioni scritte da questa funzione si tolgono
+    if (ph.dataset.allineatoOO) {
+      ph.style.height = ''; ph.style.aspectRatio = ph.dataset.arOO || '';
+      cf.style.top = '0'; cf.style.height = '100%';
+      delete ph.dataset.allineatoOO; delete ph.dataset.arOO;
+    }
+    const k = Math.round(card.offsetTop);
+    if (!righe.has(k)) righe.set(k, []);
+    righe.get(k).push({ ph, cf, impilata: cf.style.flexDirection === 'column' });
+  });
+  if (_retroViewMode !== 'destra-piena') return;
+  righe.forEach(riga => {
+    const oo = riga.filter(x => x.impilata);
+    if (!oo.length) return;
+    const h = Math.max(...oo.map(x => x.ph.getBoundingClientRect().height));
+    riga.filter(x => !x.impilata).forEach(x => {
+      const h0 = x.ph.getBoundingClientRect().height;
+      if (h0 >= h - 1) return;
+      // 🔄 v6.978 (Franco: «ok per il baricentro, ma la dimensione delle foto è aumentata… le foto V»)
+      //    - IL RIQUADRO SI ALLUNGA, LE FOTO NO. Una foto in piedi è limitata dall'ALTEZZA: allungando
+      //    il contenitore delle facce cresceva con lui. Adesso le facce tengono l'altezza di prima
+      //    (`h0`) e scendono di metà dello spazio in più: cambia la posizione, non la misura.
+      x.ph.dataset.allineatoOO = '1';
+      x.ph.dataset.arOO = x.ph.style.aspectRatio || '';
+      x.ph.style.aspectRatio = 'auto';
+      x.ph.style.height = h + 'px';
+      x.cf.style.height = h0 + 'px';
+      x.cf.style.top = ((h - h0) / 2) + 'px';
+    });
+  });
+}
+window.addEventListener('resize', _programmaAllineaRigheOO);
 
 // 🆕 v6.340 (Franco) - LA LEGENDA CAMBIA CON LA SEZIONE, e fin qui ce n'era una sola.
 //
