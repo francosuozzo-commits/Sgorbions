@@ -1,7 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.973 - Modificato js/app.js (e la versione in index.html). Una cosa:
+// v6.974 - Modificato js/app.js (e la versione in index.html). Una cosa:
+//          1. 📋 Nel registro degli import, la testa di ogni riga va dal generale al particolare
+//             (Franco: «perché indichi prima il nome del retro e dopo la sua categoria?»):
+//             figurine «Numero - Nome - Retro Categoria - Retro Nome - tipo del retro», retro
+//             «Categoria - Sottocategoria - Nome».
+//          2. 📥 «Retro - Nome» vale col Nome oppure con «Nome - Sottonome» del retro, e i messaggi
+//             di retro non trovato sono uno solo e corto
+//             (Franco: «questo errore è lunghissimo, cosa vuoi dire?»).
+// v6.973 -Modificato js/app.js (e la versione in index.html). Una cosa:
 //          1. 📥 Import figurine: le Tipologie di change, di omaggio e di errore di stampa non sono
 //             più obbligatorie quando il Retro indicato è della stessa versione: il tipo lo prende
 //             dal retro, come fa il sito (v6.577, v6.792, v6.795). Franco: «per le change di retro
@@ -30285,7 +30293,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.973';
+const JS_VERSION = 'v6.974';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -62903,7 +62911,9 @@ async function startImportRetro(anteprima) {
     // 🆕 v6.379 - le tre colonne che identificano un retro: Nome, Categoria, Sottocategoria.
     // ⚠️ NON sono le stesse dell'import figurine, e non possono esserlo: questo template ha 11
     // colonne e le «L» e «M» di la' qui non esistono. Il FORMATO e' lo stesso, i campi no.
-    const pf = () => _prefissoRigaLog(rn, [nome, categoria, sottocategoria]);
+    // 🔄 v6.974 - e dal generale al particolare anche qui, come nell'import figurine (Franco):
+    //    Categoria, Sottocategoria, Nome.
+    const pf = () => _prefissoRigaLog(rn, [categoria, sottocategoria, nome]);
     if (!serieCol) { errRiga(pf() + '⚠️ colonna Serie mancante', 'warn'); continue; }
     if (serieCol.toLowerCase() !== seriesName.toLowerCase()) {
       retroImportLog(pf() + '⏭️ Serie "' + serieCol + '" non corrisponde a "' + seriesName + '" — ignorata', 'warn');
@@ -63306,9 +63316,16 @@ async function startImportFig(anteprima) {
   // diverse, e confonderle avrebbe reso impossibile agganciare i retro che una sottocategoria non
   // ce l'hanno. Chi vuole proprio quelli scrive la sottocategoria giusta o si fa dire l'elenco.
   const _n = v => (v || '').toLowerCase().trim();
+  // 🔄 v6.974 (Franco, su un errore «lunghissimo»: il file diceva «RICERCATO PER TRATTA DEGLI SCHIAVI -
+  //    GUIDATORE DI AUTOBUS», il Nome è «RICERCATO PER TRATTA DEGLI SCHIAVI» e il Sottonome «GUIDATORE
+  //    DI AUTOBUS») - «Retro - Nome» vale se coincide col NOME oppure con «NOME - SOTTONOME».
+  //    Franco: «se l'import accetta sia NOME che NOME - SOTTONOME, ok per me»; e sulle parole: «perché
+  //    lo chiami nome completo? il nome completo è un'altra cosa».
+  // ⚠️ NON il campo `fullName`, che era la prima stesura: su un omaggio vale «… - GUIDATORE DI AUTOBUS
+  //    - OMAGGIO NERO» (misurato sul server), quindi proprio la riga di Franco non si sarebbe trovata.
   const findRetriCandidati = (cat, sub, nom, rct, rpet, rfvt) => getData('figurines', []).filter(f =>
     f.seriesId === seriesId && f.section === 'retros' &&
-    _n(f.category) === _n(cat) && _n(f.name) === _n(nom) &&
+    _n(f.category) === _n(cat) && (_n(f.name) === _n(nom) || (!!(f.subname || '').trim() && _n(f.name + ' - ' + f.subname) === _n(nom))) &&
     (sub ? _n(f.subcategory) === _n(sub) : true) &&
     (rct  ? (f.isChange      && _n(f.changeType)     === _n(rct))
      : rpet ? (f.isPrintError && _n(f.printErrorType) === _n(rpet))
@@ -63412,10 +63429,12 @@ async function startImportFig(anteprima) {
        : retroTipoOmaggio ? ' [Tipo di omaggio: ' + retroTipoOmaggio + ']'
        : retroTipoErrore ? ' [Tipo di errore: ' + retroTipoErrore + ']' : '');
     const serieCol = g('Serie','series','serie');
-    // I cinque campi che identificano la riga, nell'ordine dettato da Franco: Numero, Nome, e poi
-    // le tre colonne del retro - L, M, J. ⚠️ Quell'ordine e' il suo e NON e' quello del template
-    // (L, M, J invece di J, L, M): si lascia come l'ha detto.
-    const pf = () => _prefissoRigaLog(rn, [numero, nome, retroNome, retroTipoChange, retroCategoria]);
+    // I cinque campi che identificano la riga. 🔄 v6.974 (Franco: «il tuo log non è chiaro; perché
+    // indichi prima il nome del retro associato e dopo la sua categoria? io li avrei invertiti») -
+    // DAL GENERALE AL PARTICOLARE: Numero, Nome, poi del retro Categoria, Nome e il suo tipo. Fino
+    // alla v6.973 era «Nome del retro, Tipo di change, Categoria» (v6.379), e il tipo era solo
+    // quello del change: adesso è quello che la riga ha, change, omaggio o errore.
+    const pf = () => _prefissoRigaLog(rn, [numero, nome, retroCategoria, retroNome, retroTipoChange || retroTipoOmaggio || retroTipoErrore]);
     // 🗑️ v6.973 (Franco: «togliamo serie») - LA COLONNA SERIE NON C'È PIÙ: la serie è quella scelta
     //    nella finestra, e ripeterla su ogni riga era una seconda copia dello stesso dato. ⚠️ Un file
     //    VECCHIO che ce l'ha ancora continua a scartare le righe di un'altra serie: ignorarla le
@@ -63433,7 +63452,8 @@ async function startImportFig(anteprima) {
     const cercaRetro = () => {
       const cand = findRetriCandidati(retroCategoria, retroSottocategoria, retroNome,
                                       retroTipoChange, retroTipoErrore, retroTipoOmaggio);
-      if (!cand.length) return { retro: null, errore: pf() + '❌ Retro "' + retroRef + '" non trovato — riga scartata (il Retro deve già esistere)' };
+      // 🔄 v6.974 - più corto: categoria, nome e tipo del retro li dice già la testa della riga (pf)
+      if (!cand.length) return { retro: null, errore: pf() + '❌ Retro non trovato' + (retroSottocategoria ? ' nella sottocategoria «' + retroSottocategoria + '»' : '') + ' — riga scartata' };
       if (cand.length > 1) {
         // ⚠️ L'elenco dei candidati sta NEL MESSAGGIO: senza, chi legge sa che c'e' un'ambiguita' e
         // non quale, e deve andarsela a cercare in un inventario di migliaia di righe. Con le
@@ -63581,9 +63601,11 @@ async function startImportFig(anteprima) {
       //    STAMPA SUL RETRO prende il tipo dal retro dalla v6.577 (`_tipoErroreStampa`), e il campo
       //    della figurina può restare vuoto. Serve un retro che sia un errore di stampa.
       const _r = (retroCategoria && retroNome) ? cercaRetro() : null;
+      // 🔄 v6.974 (Franco: «questo errore è lunghissimo, cosa vuoi dire?») - UN MESSAGGIO SOLO: se il
+      //    retro non si trova si dice quello; se si trova ma non è un errore, una frase breve.
+      if (_r && _r.errore) { errRiga(_r.errore, 'err'); continue; }
       if (!_r || !_r.retro || !_r.retro.isPrintError) {
-        errRiga(pf() + '⚠️ Versione «errore di stampa» senza «Tipologia di errore di stampa»: si può lasciare vuota solo se anche il Retro indicato ha la versione «errore di stampa» (il tipo lo prende da lui)'
-          + (_r && _r.errore ? ' — ' + _r.errore.replace(/^.*?❌ /, '') : ''), 'warn'); continue;
+        errRiga(pf() + '⚠️ manca la «Tipologia di errore di stampa» (si può omettere solo se il Retro indicato ha la versione «errore di stampa»)', 'warn'); continue;
       }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.section === 'figurines' && f.isPrintError && f.baseFigurineId === baseFig.id && f.retroId === _r.retro.id);
       figData = { ...baseCommon, isPrintError: true, printErrorType: null, retroId: _r.retro.id };
@@ -63606,9 +63628,9 @@ async function startImportFig(anteprima) {
       //    campo della figurina resta vuoto. Senza retro, o con un retro che change non è, la
       //    Tipologia serve ancora: di un change frontale nessun altro posto sa dire il tipo.
       const _r = (retroCategoria && retroNome) ? cercaRetro() : null;
+      if (_r && _r.errore) { errRiga(_r.errore, 'err'); continue; }   // v6.974: un messaggio solo
       if (!_r || !_r.retro || !_r.retro.isChange) {
-        errRiga(pf() + '⚠️ Versione «change» senza «Tipologia di change»: si può lasciare vuota solo se il Retro indicato è un change (il tipo lo prende da lui)'
-          + (_r && _r.errore ? ' — ' + _r.errore.replace(/^.*?❌ /, '') : ''), 'warn'); continue;
+        errRiga(pf() + '⚠️ manca la «Tipologia di change» (si può omettere solo se il Retro indicato è un change)', 'warn'); continue;
       }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isChange && f.retroId === _r.retro.id);
       figData = { ...baseCommon, isChange: true, changeType: null, retroId: _r.retro.id };
@@ -63629,9 +63651,9 @@ async function startImportFig(anteprima) {
       //    📌 Il retro omaggio si individua con «Retro - Tipo di omaggio», che resta.
       // (Prima, dalla v6.351: tipologia dall'elenco della serie e retro facoltativo, come un change.)
       const _r = (retroCategoria && retroNome) ? cercaRetro() : null;
+      if (_r && _r.errore) { errRiga(_r.errore, 'err'); continue; }   // v6.974: un messaggio solo
       if (!_r || !_r.retro || !_r.retro.isFreeVersion) {
-        errRiga(pf() + '⚠️ Versione «omaggio»: serve il Retro omaggio (colonne «Retro - …», con «Retro - Tipo di omaggio»); il tipo lo prende da lui'
-          + (_r && _r.errore ? ' — ' + _r.errore.replace(/^.*?❌ /, '') : ''), 'warn'); continue;
+        errRiga(pf() + '⚠️ un omaggio vuole il suo retro omaggio: compila «Retro - Tipo di omaggio»', 'warn'); continue;
       }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isFreeVersion && f.retroId === _r.retro.id);
       figData = { ...baseCommon, isFreeVersion: true, freeVersionType: null, retroId: _r.retro.id };
@@ -66636,7 +66658,7 @@ function renderAdminFoto() {
       <div id="import-fig-section-content" style="display:none;">
       <p class="istruzioni-import" style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? '<span class="istruzioni-titolo">ISTRUZIONI:</span><br>- Seleziona la serie<br>- Carica il file XLS.<br><br><b class="istruzioni-sezione">I dettagli del file da caricare:</b><br>- Un unico file per figurine base, variazioni, change, omaggi ed errori di stampa.<br>- Ogni riga rappresenta quindi una sola Figurina<br><br><b class="istruzioni-sezione">Significato delle Colonne</b><br>- <code>Sottoserie</code>: sottoserie di appartenenza della figurina, se applicabile<br>- <code>Numero</code>: numero della figurina (bianco per serie senza numero)<br>- <code>Nome</code>: nome della figurina<br>- <code>Versione</code>: tipo della figurina; possibili valori: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>:<br>&nbsp;&nbsp;&nbsp;&nbsp;- da popolare solo per figurine non base (variazione - change - omaggio - errore)<br>&nbsp;&nbsp;&nbsp;&nbsp;- numero (o nome se non c’è numero) della figurina di partenza<br>- <code>Tipologia di change</code>: tipo del change (vedere valori ammessi); per un change di retro si lascia vuota, il tipo lo prende dal retro<br>- <code>Tipologia di errore di stampa</code>: tipo di errore di stampa (vedere valori ammessi); per un errore sul retro si lascia vuota, il tipo lo prende dal retro<br>- <code>Retro - Categoria</code>: categoria del retro associato alla figurina<br>- <code>Retro - Sottocategoria</code>: sottocategoria del retro associato alla figurina<br>- <code>Retro - Nome</code>: nome del retro associato alla figurina<br>- <code>Retro - Tipo di change</code>: tipologia di change del retro associato<br>- <code>Retro - Tipo di omaggio</code>: tipologia di omaggio del retro associato; per una figurina omaggio è obbligatoria, perché il tipo dell’omaggio è quello del suo retro<br>- <code>Retro - Tipo di errore</code>: tipologia di errore di stampa del retro associato<br><br><span class="istruzioni-sezione">NOTA:</span> tutte le righe vanno nella serie selezionata qui sopra. Le figurine base si<br>importano prima delle loro varianti, e ci pensa la procedura: non serve ordinarle nel file.'
+          ? '<span class="istruzioni-titolo">ISTRUZIONI:</span><br>- Seleziona la serie<br>- Carica il file XLS.<br><br><b class="istruzioni-sezione">I dettagli del file da caricare:</b><br>- Un unico file per figurine base, variazioni, change, omaggi ed errori di stampa.<br>- Ogni riga rappresenta quindi una sola Figurina<br><br><b class="istruzioni-sezione">Significato delle Colonne</b><br>- <code>Sottoserie</code>: sottoserie di appartenenza della figurina, se applicabile<br>- <code>Numero</code>: numero della figurina (bianco per serie senza numero)<br>- <code>Nome</code>: nome della figurina<br>- <code>Versione</code>: tipo della figurina; possibili valori: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>:<br>&nbsp;&nbsp;&nbsp;&nbsp;- da popolare solo per figurine non base (variazione - change - omaggio - errore)<br>&nbsp;&nbsp;&nbsp;&nbsp;- numero (o nome se non c’è numero) della figurina di partenza<br>- <code>Tipologia di change</code>: tipo del change (vedere valori ammessi); per un change di retro si lascia vuota, il tipo lo prende dal retro<br>- <code>Tipologia di errore di stampa</code>: tipo di errore di stampa (vedere valori ammessi); per un errore sul retro si lascia vuota, il tipo lo prende dal retro<br>- <code>Retro - Categoria</code>: categoria del retro associato alla figurina<br>- <code>Retro - Sottocategoria</code>: sottocategoria del retro associato alla figurina<br>- <code>Retro - Nome</code>: nome del retro associato alla figurina (va bene anche «Nome - Sottonome»)<br>- <code>Retro - Tipo di change</code>: tipologia di change del retro associato<br>- <code>Retro - Tipo di omaggio</code>: tipologia di omaggio del retro associato; per una figurina omaggio è obbligatoria, perché il tipo dell’omaggio è quello del suo retro<br>- <code>Retro - Tipo di errore</code>: tipologia di errore di stampa del retro associato<br><br><span class="istruzioni-sezione">NOTA:</span> tutte le righe vanno nella serie selezionata qui sopra. Le figurine base si<br>importano prima delle loro varianti, e ci pensa la procedura: non serve ordinarle nel file.'
           : '<span class="istruzioni-titolo">INSTRUCTIONS:</span><br>- Select the series<br>- Upload the XLS file.<br><br><b class="istruzioni-sezione">About the file:</b><br>- One single file for base stickers, variations, changes, free versions and print errors.<br>- Each row is therefore one sticker<br><br><b class="istruzioni-sezione">Columns</b><br>- <code>Sottoserie</code>: subseries, if any<br>- <code>Numero</code>: sticker number (blank for series without numbers)<br>- <code>Nome</code>: sticker name<br>- <code>Versione</code>: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>: only for non-base stickers — number (or name) of the starting sticker<br>- <code>Tipologia di change</code> / <code>Tipologia di errore di stampa</code>: the type, from the ones configured on the series (leave it empty when the retro carries it; a free version always takes its type from its retro)<br>- <code>Retro - Categoria</code> / <code>Retro - Sottocategoria</code> / <code>Retro - Nome</code>: the linked retro<br>- <code>Retro - Tipo di change</code> / <code>Retro - Tipo di omaggio</code> / <code>Retro - Tipo di errore</code>: to link a variant retro instead of the base one<br><br><span class="istruzioni-sezione">NOTE:</span> every row goes into the series selected above. Base stickers are imported<br>before their variants automatically — no need to sort the file.'}
       </p>
       <a href="templates/template-figurine.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
