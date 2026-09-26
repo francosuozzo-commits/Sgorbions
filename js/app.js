@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.975 - Modificato js/app.js (e la versione in index.html). Una cosa:
+//          1. 🐛 La scheda di un RETRO omaggio (e di bustine e album omaggio) ha di nuovo i comandi
+//             della foto (Franco: «il tasto di modifica foto non c'è»). Il divieto della v6.487 vale
+//             solo per la figurina con retro omaggio, che prende le due facce da partenza e retro.
+//          2. 🖼️ E la scheda in modifica di chi una foto propria non ce l'ha (figurina omaggio, errore
+//             sul retro) mostra quella che eredita e il retro associato, non un riquadro vuoto
+//             (Franco: «la foto non viene mostrata; c'è un box nero con quella frase sotto»).
 // v6.974 - Modificato js/app.js (e la versione in index.html). Una cosa:
 //          1. 📋 Nel registro degli import, la testa di ogni riga va dal generale al particolare
 //             (Franco: «perché indichi prima il nome del retro e dopo la sua categoria?»):
@@ -30293,7 +30300,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.974';
+const JS_VERSION = 'v6.975';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -54496,7 +54503,14 @@ function _daAttaccareFotoVietata(f) {
   // stesso in un `if`, ma un chiamante che confronta con `false` sbaglierebbe — e una
   // prova che lo fa e' esattamente quella che l'ha trovato.
   const _erroreDietro = !!(f && f.isPrintError && _latoErroreStampa(f) === 'retro');
-  return !!f && (f.section === 'attaccare' || !!f.isFreeVersion || _erroreDietro);
+  // 🐛 v6.975 (Franco: «nella form del retro omaggio non è possibile cambiare la foto del retro; il
+  //    tasto di modifica foto non c'è») - L'OMAGGIO SENZA FOTO SUA È SOLO LA FIGURINA CON RETRO.
+  //    La regola della v6.487 parla di «foto frontale dalla partenza e foto del retro dal retro omaggio
+  //    collegato»: vale per chi un retro collegato ce l'ha. Un RETRO omaggio È quella faccia, e la
+  //    foto deve essere sua; lo stesso una bustina o un album omaggio. Il «qualunque sezione» scritto
+  //    qui sopra era sbagliato, e `_fotoFigurina` infatti fa ereditare solo alle figurine.
+  const _omaggioFigurina = !!(f && f.isFreeVersion && (f.section || 'figurines') === 'figurines');
+  return !!f && (f.section === 'attaccare' || _omaggioFigurina || _erroreDietro);
 }
 function _daAttaccareModificaVietata(f) {
   if (!f || f.section !== 'attaccare') return false;
@@ -58413,6 +58427,24 @@ function _slotFotoEdit(slot, url, f, stretto) {
     ? '<div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? s.it : s.en) + '</div>'
     : '';
   const vuoto = currentLang === 'it' ? 'Nessuna foto' : 'No photo';
+  // 🔄 v6.975 - LA FOTO EREDITATA E IL RETRO ASSOCIATO SI CALCOLANO QUI, prima del bivio: servono ai
+  //    due rami. Franco, su una figurina omaggio: «non è possibile cambiare la foto della figurina… la
+  //    foto non viene mostrata; c'è un box nero con quella frase sotto». Il ramo delle schede SENZA
+  //    foto propria (omaggi, fpa, errori sul retro) mostrava solo `f.img`, che per regola è vuoto:
+  //    diceva «la foto arriva dalla partenza» sopra un riquadro vuoto. Adesso mostra la foto che
+  //    arriva davvero, e sotto il retro associato, come fa l'altro ramo dalla v6.965.
+  const _ered = (!url && slot === 'fronte') ? _fotoEreditataFronte(f) : '';
+  const _retroAss = (slot === 'fronte') ? _retroDellaScheda(f) : null;
+  // ⚠️ Solo dove il retro NON ha già un riquadro suo (la seconda faccia sta sul record: album…).
+  const _riqRetro = (_retroAss && !(_schedaDueFoto(f) && _secondaFacciaSulRecord(f.section)))
+    ? '<div style="margin-top:0.6rem;">'
+      + '<div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? 'Retro associato' : 'Linked back') + '</div>'
+      + (_retroAss.img
+          ? '<img src="' + cloudinaryUrl(_retroAss.img, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:160px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;">'
+          : '<div style="width:100%;height:60px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;">' + vuoto + '</div>')
+      + '<div style="font-size:0.72rem;color:var(--text);margin-top:0.3rem;">' + (currentLang === 'it' ? 'È la foto dell\'articolo retro: si cambia da lì.' : 'This is the back item\'s photo: change it there.') + '</div>'
+      + '</div>'
+    : '';
   // 🔴 v6.462 - NIENTE COMANDI DELLA FOTO PER LE FIGURINE DA ATTACCARE. Si mostra l'anteprima (che
   // per loro e' quasi sempre il riquadro vuoto) e ci si ferma: niente «Cambia foto», niente «Rimuovi
   // foto», niente «Rimuovi sfondo». 📌 Si esce PRIMA di comporre i tre comandi invece di nasconderli
@@ -58438,11 +58470,13 @@ function _slotFotoEdit(slot, url, f, stretto) {
               : 'The photo comes from the linked sticker: no photo of its own here.');
     // 🆕 v6.599 - il contenitore porta un id: cosi' questo riquadro si puo' RIDISEGNARE da
     //    solo quando la foto cambia, senza toccare il resto della scheda.
+    const _vista = url || _ered;   // v6.975: la foto che arriva davvero, non il riquadro vuoto
     return '<div id="fig-slot-' + slot + '" class="fig-slot' + _cls + '" style="margin-bottom:0.6rem;' + _flex + '">' + titolo +
-      (url
-        ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(url, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0;">'
+      (_vista
+        ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(_vista, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0;">'
         : '<div id="' + s.preview + '" style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + vuoto + '</div>') +
       '<div style="font-size:0.72rem;color:var(--text);margin-top:0.4rem;">' + nota + '</div>' +
+      _riqRetro +
     '</div>';
   }
   // 🆕 v6.965 (Franco: «clono, metto change, scelgo partenza e retro: non mostra le foto, né fronte
@@ -58453,18 +58487,8 @@ function _slotFotoEdit(slot, url, f, stretto) {
   // 📌 Si MOSTRANO, non si copiano: il riquadro dice da dove vengono, e «Aggiungi foto» resta per
   //    chi vuole una foto propria (che vince, come in lettura). Partenza e retro si leggono dalla
   //    SCHEDA se ci sono (sono le scelte di adesso, prima di salvare) e se no dal record.
-  const _ered = (!url && slot === 'fronte') ? _fotoEreditataFronte(f) : '';
-  const _retroAss = (slot === 'fronte') ? _retroDellaScheda(f) : null;
-  // ⚠️ Solo dove il retro NON ha già un riquadro suo (la seconda faccia sta sul record: album…).
-  const _riqRetro = (_retroAss && !(_schedaDueFoto(f) && _secondaFacciaSulRecord(f.section)))
-    ? '<div style="margin-top:0.6rem;">'
-      + '<div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? 'Retro associato' : 'Linked back') + '</div>'
-      + (_retroAss.img
-          ? '<img src="' + cloudinaryUrl(_retroAss.img, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:160px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;">'
-          : '<div style="width:100%;height:60px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;">' + vuoto + '</div>')
-      + '<div style="font-size:0.72rem;color:var(--text);margin-top:0.3rem;">' + (currentLang === 'it' ? 'È la foto dell\'articolo retro: si cambia da lì.' : 'This is the back item\'s photo: change it there.') + '</div>'
-      + '</div>'
-    : '';
+  // (v6.975: `_ered`, `_retroAss` e `_riqRetro` si calcolano più su, prima del ramo delle schede
+  //  senza foto propria, che li usa anche lui)
   // 🆕 v6.599 - stesso id dell'altro ramo: chi ridisegna non deve sapere quale dei due e'.
   return '<div id="fig-slot-' + slot + '" class="fig-slot' + _cls + '" style="margin-bottom:0.6rem;' + _flex + '">' + titolo +
     (url
