@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.971">
+<link rel="stylesheet" href="css/style.css?v=6.972">
 
 
 <style>
@@ -2100,7 +2100,13 @@ button.back-btn { color:#ffffff; }
 
 <!-- ==================== CATALOG PAGE ==================== -->
 <div id="page-catalog" class="page">
-  <section class="section">
+  <!-- 🔄 v6.972 (Franco: «io continuo a fare spesso confusione tra la ricerca nell'INV e quelle
+       dell'hub… la scritta "L'inventario" mettila al centro della pagina, la frase sotto; entrambi
+       gli oggetti li sposti in alto; tanto c'è spazio nero, sopra; così da lasciare spazio nero
+       prima che inizi il selettore a 3 vie») - il riquadro sale (padding in cima 2,5 → 0,5rem), e
+       lo spazio guadagnato va fra la ricerca dell'Inventario e il bivio (1 → 2,5rem): la buca
+       dell'Inventario sta col titolo, quella dell'hub sta dopo il bivio, e il nero le separa. -->
+  <section class="section" style="padding-top:0.5rem;">
     <div class="section-inner">
       <!-- 🔄 v6.709 (Franco: «tirali su sino a stare sotto al titolo») - L'ARIA SOTTO IL
            TITOLO PASSA DA 2rem A 0.5rem. Non e' un trasloco: «Sfoglia per» sta GIA' subito
@@ -2110,12 +2116,17 @@ button.back-btn { color:#ffffff; }
            finisce il titolo.
            ⚠️ Si tocca QUESTA riga, non quella di «Sfoglia per»: il suo `margin-bottom: 1rem`
            la stacca dalla ricerca, e con questa richiesta non c'entra. -->
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:0.5rem;">
-        <div style="display:flex;align-items:baseline;gap:0.6rem;flex-wrap:wrap;">
+      <!-- 🔄 v6.972 - titolo e frase CENTRATI, la frase sotto il titolo. Tre colonne (1fr auto 1fr):
+           il titolo sta nel mezzo della pagina e il pulsante admin resta in fondo a destra, senza
+           spingerlo fuori centro come farebbe un flex a due elementi. -->
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:1rem;margin-bottom:0.9rem;">
+        <div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:0.2rem;">
           <h1 style="font-family:var(--font-display);font-size:2.2rem;" data-i18n="catalog.title">The Inventory</h1>
-          <p id="catalog-sub" style="color:var(--muted);font-size:0.9rem;" data-i18n="catalog.sub">All Sgorbions series published</p>
+          <!-- v6.972 (Franco: «la frase "Tutti i personaggi Sgorbions, con i loro articoli" va in bianco») - bianca in tutti e tre i tagli: è lo stesso elemento -->
+          <p id="catalog-sub" style="color:var(--text);font-size:0.9rem;" data-i18n="catalog.sub">All Sgorbions series published</p>
         </div>
-        <div id="admin-add-series-btn" style="display:none;">
+        <div id="admin-add-series-btn" style="display:none;justify-self:end;">
           <button class="btn-primary btn-admin" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
         </div>
         <!-- v6.144 (Franco) - stesso posto del pulsante delle serie, ma acceso SOLO nel taglio
@@ -2123,8 +2134,14 @@ button.back-btn { color:#ffffff; }
              si sta guardando, quindi il pulsante che aggiunge deve parlare di quello.
              ⚠️ Da qui si crea il TIPO (il box), non il prodotto: il prodotto si crea dalla scheda,
              che dal §12.1 e' l'unica form del sito. -->
-        <div id="admin-add-tipo-prodotto-btn" style="display:none;">
+        <div id="admin-add-tipo-prodotto-btn" style="display:none;justify-self:end;">
           <button class="btn-primary btn-admin" onclick="openAddTipoProdottoModal()">+ Aggiungi tipologia di articolo</button><!-- v6.969 (Franco): «tipo» → «tipologia» -->
+        </div>
+        <!-- 🆕 v6.972 (Franco: «metti questo tasto dove sta quello di creazione di altre entità… come per
+             figurine e tipologie di articolo») - terzo pulsante nello stesso posto, acceso nel taglio
+             Personaggi. Apre la sua finestra, come gli altri due. -->
+        <div id="admin-add-personaggio-btn" style="display:none;justify-self:end;">
+          <button class="btn-primary btn-admin" onclick="openAddPersonaggioModal()">+ Aggiungi personaggio</button>
         </div>
       </div>
       <!-- 🔄 v6.969 (Franco: «la buca della ricerca della pagina con i tre hub dovrebbe stare sopra
@@ -2134,7 +2151,7 @@ button.back-btn { color:#ffffff; }
            più. Con i risultati aperti il bivio sparisce (v6.967) e i risultati stanno subito sotto.
            📌 `margin-bottom:1rem` e non i 2rem della classe: lo stesso stacco che il bivio lascia
            sotto di sé, così le tre righe hanno un passo solo. -->
-      <div class="search-bar" style="margin-bottom:1rem;">
+      <div class="search-bar" style="margin-bottom:2.5rem;"><!-- v6.972: 1 → 2,5rem, il nero prima del bivio (Franco) -->
         <div class="search-input-wrap">
           <span class="search-icon">🔍</span>
           <input class="search-input" type="text" id="series-search" placeholder="Cerca nell'Inventario..." oninput="renderCatalog();toggleSearchClearBtn('series-search')" data-i18n-placeholder="catalog.searchglobal">
@@ -4023,6 +4040,25 @@ di tutte le serie</button>
   </div>
 </div>
 
+<!-- 🆕 v6.972 - LA FINESTRA DEL NUOVO PERSONAGGIO, gemella di quella della tipologia di articolo:
+     un campo, Annulla e Salva. Nessuna domanda: il pulsante è già la conferma (Franco). -->
+<div class="modal-overlay hidden" id="add-personaggio-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Aggiungi personaggio</h2>
+      <button class="modal-close" onclick="closeModal('add-personaggio-modal')">&#10005;</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="personaggio-crea">Nome</label>
+      <input class="form-input" id="personaggio-crea" placeholder="es. LIVIO BIVIO" onkeydown="if(event.key==='Enter')_creaPersonaggio()">
+    </div>
+    <div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:1rem;">
+      <button class="btn-secondary btn-admin-ghost" onclick="closeModal('add-personaggio-modal')">Annulla</button>
+      <button class="btn-primary" onclick="_creaPersonaggio()">Salva</button>
+    </div>
+  </div>
+</div>
+
 <!-- v6.174 (Franco) — RIEPILOGO DI TUTTE LE SERIE, e non e' un pannello da admin: lo vede chiunque.
      Nove colonne su telefono non ci stanno, quindi il contenitore scorre in orizzontale invece di
      comprimere le colonne fino a renderle illeggibili. -->
@@ -5655,7 +5691,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.971"></script>
+<script src="js/app.js?v=6.972"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5679,7 +5715,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.971'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.972'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
