@@ -1,7 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.975 - Modificato js/app.js (e la versione in index.html). Una cosa:
+// v6.976 - Modificato js/app.js (e la versione in index.html). Una cosa:
+//          1. 🔗 Nelle note della scheda che spiegano da dove arriva la foto, gli articoli nominati
+//             (partenza, retro omaggio collegato, retro associato…) sono link che li aprono già in
+//             modifica (Franco: «con un click arrivo a poterli modificare»).
+// v6.975 -Modificato js/app.js (e la versione in index.html). Una cosa:
 //          1. 🐛 La scheda di un RETRO omaggio (e di bustine e album omaggio) ha di nuovo i comandi
 //             della foto (Franco: «il tasto di modifica foto non c'è»). Il divieto della v6.487 vale
 //             solo per la figurina con retro omaggio, che prende le due facce da partenza e retro.
@@ -30300,7 +30304,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.975';
+const JS_VERSION = 'v6.976';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -58416,6 +58420,12 @@ function _fotoNelTabGenerale(f) {
 // schede che non sono album, e in quel caso le foto restano nella colonna di destra.
 let _feFotoNelGenerale = '';
 
+// 🆕 v6.976 - un articolo nominato in una nota della scheda, come link che lo apre in modifica.
+//    Senza id resta testo: un link che non porta da nessuna parte è peggio di una parola.
+function _linkModifica(id, testo) {
+  if (!id) return esc(testo);
+  return '<a href="javascript:void(0)" onclick="apriModificaItem(\'' + id + '\')" style="color:var(--nome-entita);text-decoration:underline;">' + esc(testo) + '</a>';
+}
 function _slotFotoEdit(slot, url, f, stretto) {
   // ⚠️ La classe, non uno stile in linea: `prova-v6637` pretende che il verso dei comandi si
   //    decida nel FOGLIO e in un posto solo - due correzioni per lo stesso difetto vogliono dire
@@ -58442,7 +58452,8 @@ function _slotFotoEdit(slot, url, f, stretto) {
       + (_retroAss.img
           ? '<img src="' + cloudinaryUrl(_retroAss.img, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:160px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;">'
           : '<div style="width:100%;height:60px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;">' + vuoto + '</div>')
-      + '<div style="font-size:0.72rem;color:var(--text);margin-top:0.3rem;">' + (currentLang === 'it' ? 'È la foto dell\'articolo retro: si cambia da lì.' : 'This is the back item\'s photo: change it there.') + '</div>'
+      // v6.976 - «da lì» è un link al retro, aperto in modifica (Franco: «con un click arrivo a poterli modificare»)
+      + '<div style="font-size:0.72rem;color:var(--text);margin-top:0.3rem;">' + (currentLang === 'it' ? 'È la foto dell\'articolo retro: si cambia ' + _linkModifica(_retroAss.id, 'da lì') + '.' : 'This is the back item\'s photo: change it ' + _linkModifica(_retroAss.id, 'there') + '.') + '</div>'
       + '</div>'
     : '';
   // 🔴 v6.462 - NIENTE COMANDI DELLA FOTO PER LE FIGURINE DA ATTACCARE. Si mostra l'anteprima (che
@@ -58461,13 +58472,23 @@ function _slotFotoEdit(slot, url, f, stretto) {
     // retro collegata» e dell'«articolo di partenza», che qui non c'entrano. Una nota
     // riciclata direbbe il falso proprio dove serve spiegare.
     const _errDietro = !!f.isPrintError && _latoErroreStampa(f) === 'retro';
+    // 🆕 v6.976 (Franco: «i 2 messaggi che dicono che non si può modificare la foto mi piacciono, ma
+    //    metti il link a quei 2 oggetti citati, così con un click arrivo a poterli modificare») - GLI
+    //    OGGETTI NOMINATI SONO LINK, che aprono quell'articolo GIÀ IN MODIFICA (`apriModificaItem`):
+    //    è lì che sta il pulsante della foto. La partenza e il retro sono quelli della scheda (le
+    //    scelte di adesso), se no del record; senza un articolo da aprire la parola resta testo.
+    const _pId = document.getElementById('fe-base-figurine')?.value || f.baseFigurineId || '';
+    const _rId = _retroAss ? _retroAss.id : '';
+    const pa = _linkModifica(_pId, currentLang === 'it' ? (_omg ? 'articolo di partenza' : 'figurina di partenza') : (_omg ? 'source item' : 'source sticker'));
+    const re = _linkModifica(_rId, currentLang === 'it' ? (_errDietro ? 'quel retro è un altro articolo' : 'retro in versione omaggio collegato') : (_errDietro ? 'that back is another item' : 'linked free-version back'));
+    const gem = _linkModifica(f.baseFigurineId || '', currentLang === 'it' ? 'figurina con retro collegata' : 'linked sticker');
     const nota = currentLang === 'it'
-      ? (_errDietro ? 'Il difetto sta sul retro, e quel retro è un altro articolo: la foto arriva da lì. Davanti la faccia è quella della figurina di partenza.'
-        : _omg ? 'La foto del fronte arriva dall\'articolo di partenza; quella del retro dal retro in versione omaggio collegato.'
-              : 'La foto arriva dalla figurina con retro collegata: qui non se ne attacca una propria.')
-      : (_errDietro ? 'The defect is on the back, and that back is another item: the photo comes from there. The front is the source sticker\'s.'
-        : _omg ? 'The front photo comes from the source item; the back one from the linked free-version back.'
-              : 'The photo comes from the linked sticker: no photo of its own here.');
+      ? (_errDietro ? 'Il difetto sta sul retro, e ' + re + ': la foto arriva da lì. Davanti la faccia è quella della ' + pa + '.'
+        : _omg ? 'La foto del fronte arriva dall\'' + pa + '; quella del retro dal ' + re + '.'
+              : 'La foto arriva dalla ' + gem + ': qui non se ne attacca una propria.')
+      : (_errDietro ? 'The defect is on the back, and ' + re + ': the photo comes from there. The front is the ' + pa + '\'s.'
+        : _omg ? 'The front photo comes from the ' + pa + '; the back one from the ' + re + '.'
+              : 'The photo comes from the ' + gem + ': no photo of its own here.');
     // 🆕 v6.599 - il contenitore porta un id: cosi' questo riquadro si puo' RIDISEGNARE da
     //    solo quando la foto cambia, senza toccare il resto della scheda.
     const _vista = url || _ered;   // v6.975: la foto che arriva davvero, non il riquadro vuoto
