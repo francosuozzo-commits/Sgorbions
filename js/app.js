@@ -1,7 +1,43 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v6.978 - Modificato js/app.js (e la versione in index.html). Una prova, chiesta da Franco:
+// v6.980 - Modificato js/app.js (e la versione in index.html). Nove cose, le prime quattro nella pagina
+//          del personaggio:
+//          1. 🧑‍🎤 Sotto la serie, la SOTTOSERIE dell'articolo; senza sottoserie la riga resta
+//             vuota, così tutte le card si leggono alla stessa altezza (Franco: «per garantire una
+//             lettura uniforme della pagina»).
+//          2. 🔤 Il nome della serie è quello normale su desktop, il breve solo sul telefono
+//             (Franco: «ok per il mobile ma per il desktop vorrei fosse sempre usata la versione
+//             normale»). Era sempre il breve dalla v6.969.
+//          3. 🏷️ Prima della tipologia, «Tipologia di articolo: » (Franco).
+//          4. 🐛 L'ordine delle card rispetta quello delle SOTTOSERIE della serie (Franco: «se mostri
+//             una spilla 4.1 senza nome e una 3.7 cm con nome, dovresti mostrare prima la 4.1»).
+//          5. 🔎 Nella ricerca dei personaggi, il riquadro «Filtra per serie»: una pillola per serie
+//             (le pillole della ricerca di sezione: il nome = solo questa, «+» = aggiungi), e passano
+//             i personaggi con almeno un articolo in una delle serie accese (Franco).
+//          6. 🔎 Nei «Filtri aggiuntivi admin» di ogni ricerca di tipologia, «Senza personaggio»: gli
+//             articoli a cui `personaggiDiArticolo` non ne trova nessuno (Franco). Gemello di
+//             «Senza rarità».
+//          7. 🗄️ Scheda Funzioni: ARCHIVIATE la 6 («Carica i personaggi», dai file) e la 7
+//             («Personaggi dalle Note»), nata in questa stessa release, lanciata da Franco dalla
+//             preview sulle Mega e poi tolta (Franco: «per me puoi archiviare funzioni 6 e 7»).
+//          8. 🔒 «Rimuovi sfondo» uno alla volta: mentre il modello lavora, gli altri bottoni dello
+//             sfondo in pagina si spengono (Franco: «se lo premi per sbaglio la funzione va in errore
+//             perché può essere eseguita una sola volta alla volta»). Il lucchetto è in
+//             `_togliSfondoDaBlob`, dove passano tutti.
+//          9. 🧩 IL POSTER (Franco: «poster fatti da figurine; per vedere il poster basta mettere
+//             affianco le figurine»). Sulla figurina con retro BASE la spunta «Poster» con riga e
+//             colonna; in fondo alla pagina del personaggio «Poster» e i fronti affiancati, uno per
+//             serie; nella scheda della figurina (o di una sua versione) «Vedi poster», in una
+//             finestra grande come «Sfoglia album».
+// v6.979 -Modificati index.html, css/style.css e js/app.js. Una cosa:
+//          1. 🖨️ L'ERRORE DI STAMPA DOPPIO, davanti e dietro (Franco: «abbiamo anche gli errori di
+//             stampa che sono stampe errate sia davanti che dietro»). Spunta «Errore anche sul
+//             fronte» (`erroreAncheFronte`) quando il retro collegato è un errore: il fronte ha la
+//             foto e il tipo suoi, il retro quelli del retro. Card e scheda con due cornici e due
+//             fascette, badge «fronte e retro», nome completo «FRONTE / RETRO», filtri frontali E
+//             posteriori; l'import lo riconosce da sé (tipo del fronte + retro errore).
+// v6.978 -Modificato js/app.js (e la versione in index.html). Una prova, chiesta da Franco:
 //          1. 📐 In «Fronte e retro sempre grandi», se una riga ha una card O-O (due foto sdraiate,
 //             impilate), le coppie affiancate della riga si allungano alla sua altezza e le loro foto
 //             si centrano: il centro verticale è lo stesso per tutte (`_allineaRigheOO`). Il
@@ -30321,7 +30357,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.978';
+const JS_VERSION = 'v6.980';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32402,6 +32438,12 @@ let _noteFilter = false;   // v6.113 - "Con note", solo admin
 // otto punti, stesso riquadro, stesse trappole. Se un domani si tocca uno dei due, si
 // guardi anche l'altro — sono gemelli per costruzione, non per caso.
 let _senzaRaritaFilter = false;   // v6.502
+// 🆕 v6.980 (Franco: «mettimi un campo per la ricerca admin nella form di ricerca di qualsiasi
+//    articolo; chiamalo "Senza personaggio"; e deve tornare gli articoli che un personaggio non lo
+//    hanno») - gemello di `_senzaRaritaFilter`, negli stessi punti. «Senza» vuol dire che
+//    `personaggiDiArticolo` non ne trova nessuno: la stessa regola della scheda e della VT (una
+//    figurina lo prende anche dalla sua fpa o dalla base, una versione dalla base).
+let _senzaPersonaggioFilter = false;   // v6.980
 // 🆕 v6.540 (Franco) - IL FILTRO DEI SEMILAVORATI: gli articoli con `invisibile`, cioe'
 // quelli che gli utenti normali non vedono finche' non sono pronti (campo della v6.080).
 // 🔴 v6.542 - LA v6.540 GUARDAVA IL CAMPO SBAGLIATO, `fotoNonDisponibile`. Quello dice «la
@@ -41338,6 +41380,35 @@ let _personaggioAperto = null;
 //    FRONTE: una figurina che c'è perché lui sta sul retro non è «una sua figurina».
 let _personaggiSenzaFigurine = false;
 let _personaggiAlterEgo = false;   // 🆕 v6.972 - l'interruttore admin «Alter ego» dell'hub
+// 🆕 v6.980 (Franco: «nella maschera di ricerca PERS mettiamo un rettangolo per la ricerca nelle serie;
+//    dentro al rettangolo metti dei selettori a pillola, uno per serie; premendoli si cercano PERS
+//    coinvolti nella serie o nelle selezionate; il rettangolo ha il nome "Filtra per serie"») - LE
+//    SERIE ACCESE, in OR: passa il personaggio che ha almeno un articolo in una di loro. Vuoto = tutte.
+let _personaggiSerie = new Set();
+// Le serie di un personaggio, da tutti i suoi articoli (alter ego compresi, come la sua pagina).
+// 📌 Si calcolano una volta e si tengono finché non cambiano articoli, personaggi o chi guarda
+//    (l'admin vede anche gli invisibili): senza, ogni lettera scritta nella buca rifarebbe il giro
+//    degli articoli di tutti i personaggi.
+let _seriePersCache = null;
+function _seriePersonaggio(pid, ix) {
+  const admin = !!currentUser?.isAdmin;
+  const c = _seriePersCache;
+  if (!c || c.figs !== ix.figs || c.dati !== _personaggiDati || c.admin !== admin)
+    _seriePersCache = { figs: ix.figs, dati: _personaggiDati, admin, m: new Map() };
+  const m = _seriePersCache.m;
+  if (!m.has(pid)) m.set(pid, new Set(articoliDelPersonaggio(pid, ix).map(a => a.seriesId).filter(Boolean)));
+  return m.get(pid);
+}
+// La parte della pillola che dice «solo questa»: premuta su una accesa da sola, la spegne.
+function _personaggiSerieSolo(id) {
+  _personaggiSerie = (_personaggiSerie.size === 1 && _personaggiSerie.has(id)) ? new Set() : new Set([id]);
+  _personaggiPagina = 1; renderCatalog();
+}
+// Il «+» / «−»: aggiunge la serie alle accese, o la toglie.
+function _personaggiSerieAggiungi(id) {
+  if (_personaggiSerie.has(id)) _personaggiSerie.delete(id); else _personaggiSerie.add(id);
+  _personaggiPagina = 1; renderCatalog();
+}
 function _haFigurineSue(pid, arts, ix) {
   const suoi = _conAlterEgo(pid);   // v6.972 - anche la figurina di un suo alter ego è sua
   return arts.some(a => ['figurines', 'attaccare'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).some(x => suoi.includes(x)));
@@ -41372,9 +41443,25 @@ function renderCatalogPersonaggi(grid) {
   const { principaleDi, alterEgoDi, perId } = _personaggiDati;
   const soloAlterEgo = !!currentUser?.isAdmin && _personaggiAlterEgo;
   const nomiDi = p => [p.nome].concat((alterEgoDi.get(p.id) || []).map(a => perId.get(a).nome));
-  const tutti = _personaggiDati.elenco.filter(p => (soloAlterEgo ? principaleDi.has(p.id) : !principaleDi.has(p.id))
+  // 🔄 v6.980 - prima tutti gli altri filtri, poi le serie: i numeri delle pillole si contano sul
+  //    primo elenco, così ogni pillola dice quanti ne troveresti accendendo lei.
+  const senzaSerie = _personaggiDati.elenco.filter(p => (soloAlterEgo ? principaleDi.has(p.id) : !principaleDi.has(p.id))
     && (!q || (soloAlterEgo ? [p.nome] : nomiDi(p)).some(n => _perRicerca(n).includes(q)))
     && (!_personaggiSenzaFigurine || !_haFigurineSue(p.id, articoliDelPersonaggio(p.id, ix), ix)));
+  const tutti = !_personaggiSerie.size ? senzaSerie
+    : senzaSerie.filter(p => [..._seriePersonaggio(p.id, ix)].some(s => _personaggiSerie.has(s)));
+  // Le pillole: una per serie che ha almeno un personaggio, nell'ordine delle serie. Una serie
+  //    accesa resta anche se i filtri di adesso la portano a zero: deve potersi spegnere (v6.335).
+  const _contoSerie = new Map();
+  senzaSerie.forEach(p => _seriePersonaggio(p.id, ix).forEach(s => _contoSerie.set(s, (_contoSerie.get(s) || 0) + 1)));
+  const _conPersonaggi = new Set(_personaggiDati.elenco.flatMap(p => [..._seriePersonaggio(p.id, ix)]));
+  const _pilloleSerie = (getData('series', []) || []).filter(s => _conPersonaggi.has(s.id) || _personaggiSerie.has(s.id))
+    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+    .map(s => _chipTipoHTML({
+      etichetta: _nomeSerieCard(s), n: _contoSerie.get(s.id) || 0, attiva: _personaggiSerie.has(s.id), it,
+      onSet: '_personaggiSerieSolo(\'' + esc(s.id) + '\')', onAdd: '_personaggiSerieAggiungi(\'' + esc(s.id) + '\')',
+      titolo: it ? 'Solo questa serie' : 'This series only'
+    })).join('');
   _sequenzaPersonaggi = tutti.map(p => p.id);   // v6.972 - l'ordine per le frecce della pagina del personaggio
   const pagine = Math.max(1, Math.ceil(tutti.length / PERSONAGGI_PER_PAGINA));
   if (_personaggiPagina > pagine) _personaggiPagina = pagine;
@@ -41392,7 +41479,7 @@ function renderCatalogPersonaggi(grid) {
     + '<div id="personaggi-search-box" style="background:var(--card);border:1px solid var(--action);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-bottom:0.9rem;">'
     + '<div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.75rem;">'
     + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? 'Imposta i criteri per la tua ricerca' : 'Set your search criteria') + '</div>'
-    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>'
+    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiSerie=new Set();_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>'
     + '</div>'
     + '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;">'
     + '<span style="' + _etichettaBordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + t('items.searchHint')   /* v6.972 (Franco): la stessa etichetta delle form di serie e TDA */ + '</span>'
@@ -41400,6 +41487,11 @@ function renderCatalogPersonaggi(grid) {
     + '<input class="search-input" type="text" id="personaggi-cerca" value="' + esc(_personaggiFiltro) + '" placeholder="' + (it ? 'Cerca un personaggio…' : 'Search a character…') + '" oninput="_personaggiFiltro=this.value;_personaggiPagina=1;renderCatalog();const c=document.getElementById(\'personaggi-cerca\');c.focus();c.setSelectionRange(c.value.length,c.value.length);">'
     + (_personaggiFiltro ? '<span class="search-clear-btn" onclick="_personaggiFiltro=\'\';_personaggiPagina=1;renderCatalog();">✕</span>' : '')
     + '</div></div>'
+    // 🆕 v6.980 - «Filtra per serie»: lo stesso riquadro col bordo bianco di «Filtri aggiuntivi»,
+    //    e le pillole della ricerca di sezione (`_chipTipoHTML`: il nome = solo questa, «+» = aggiungi).
+    + (_pilloleSerie ? '<div id="personaggi-filtro-serie" style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
+      + '<div style="' + _etichettaBordo + '">' + (it ? 'Filtra per serie' : 'Filter by series') + '</div>'
+      + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + _pilloleSerie + '</div></div>' : '')
     // 🆕 v6.966 - «Senza figurine», per tutti (Franco: «user visible»). Lo stesso interruttore
     //    blu dei filtri della ricerca di sezione.
     + '<div style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
@@ -41527,10 +41619,21 @@ function renderPaginaPersonaggio(grid, pid) {
   //    fcr/retro/altri, e prima della serie. Del principale è quello che lui ha anche SENZA alter ego.
   const _suoi = new Set(articoliDelPersonaggio(pid, ix, true).map(f => f.id));
   const _dellAlterEgo = f => _suoi.has(f.id) ? 0 : 1;
+  // 🐛 v6.980 (Franco: «non stai rispettando l'ordine delle sottoserie all'interno di una serie; se
+  //    mostri una spilla 4.1 senza nome e una 3.7 cm con nome, dovresti mostrare prima la 4.1») - dopo
+  //    serie e tipologia comanda la SOTTOSERIE, nell'ordine in cui la serie le dichiara, come nella
+  //    griglia (v6.964). Il comparatore della griglia non la guarda: lì si sta dentro una sottoserie
+  //    sola. Senza sottoserie, o con una che la serie non dichiara, si va in fondo (`_sottoserieUsate`).
+  const ordSs = f => {
+    const l = _sottoserieSerie(serieDi.get(f.seriesId));
+    const i = l.indexOf(String(f.subseries || '').trim());
+    return i < 0 ? l.length : i;
+  };
   const ord = arts.slice().sort((a, b) => (_gruppoPersonaggio(a) - _gruppoPersonaggio(b))
     || (_dellAlterEgo(a) - _dellAlterEgo(b))
     || (ordSerie(a.seriesId) - ordSerie(b.seriesId))
     || (ordSez(a.section || 'figurines') - ordSez(b.section || 'figurines'))
+    || (ordSs(a) - ordSs(b))
     || compDi(a)(a, b));
   _elencoPersonaggio = ord.map(f => f.id);
   // 🔄 v6.969 (Franco: «le card della pagina del personaggio devono essere grandi il doppio; tanto ce
@@ -41609,8 +41712,18 @@ function renderPaginaPersonaggio(grid, pid) {
       + (_foto || _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.7rem;padding:4px;'))   // v6.977
       + '</div>'
       + '<div class="card-body" style="padding:0.45rem 0.55rem 0.5rem;">'
-      + riga(s ? esc(_nomeSerieCard(s, true)) : '', 'color:var(--text);')
-      + riga(esc(tipologia), 'color:var(--accent);')
+      // 🔄 v6.980 (Franco: «il nome della serie, nelle card, da quando è in versione breve? ok per il
+      //    mobile ma per il desktop vorrei fosse sempre usata la versione normale») - via `sempreCorto`:
+      //    `_nomeSerieCard` dà il breve solo sul telefono, come sulle card delle serie.
+      + riga(s ? esc(_nomeSerieCard(s)) : '', 'color:var(--text);')
+      // 🆕 v6.980 (Franco: «se si tratta di un articolo con sottoserie, scrivere la sottoserie sotto
+      //    la serie; ma per garantire una lettura uniforme della pagina, lasciare una riga vuota quando
+      //    la sottoserie non è presente») - la riga c'è SEMPRE: vuota, tiene alla stessa altezza la
+      //    tipologia e le righe sotto in tutte le card. Il colore è quello della serie, di cui è parte.
+      + riga(esc(String(f.subseries || '').trim()) || '&nbsp;', 'color:var(--text);')
+      // 🔄 v6.980 (Franco: «prima della tda, scrivere: "Tipologia di articolo: "») - la parola nel
+      //    colore del testo, la tipologia resta lime
+      + riga('<span style="color:var(--text);">' + (it ? 'Tipologia di articolo: ' : 'Item type: ') + '</span>' + esc(tipologia), 'color:var(--accent);')
       + riga(esc(numNome), 'font-size:0.95rem;font-weight:600;color:var(--nome-entita);margin:0.1rem 0;')
       // Franco: «la tipologia di versione in minuscolo a parte l'iniziale» - come la tipologia sopra
       + (versione ? riga(esc(_maiuscola(versione.toLowerCase())), 'color:' + (_COLORE_TIPO[_k] || 'var(--text)') + ';') : '')
@@ -41636,7 +41749,22 @@ function renderPaginaPersonaggio(grid, pid) {
         + (currentUser?.isAdmin ? ' <button type="button" class="btn-secondary btn-admin-ghost" style="padding:0 0.4rem;font-size:0.75rem;" title="Non è più un suo alter ego" onclick="_togliAlterEgo(\'' + a + '\')">✕</button>' : '')).join(', ') + '</div>' : '')
     + (currentUser?.isAdmin ? _rigaAlterEgoAdmin(pid) + _rigaGestionePersonaggio(pid) : '')
     + '<div style="color:var(--accent);margin-top:0.3rem;">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div></div>'
-    + ord.map(card).join('');
+    + ord.map(card).join('')
+    + _posterDelPersonaggioHTML(pid, arts, ix, ordSerie, serieDi);
+}
+// 🆕 v6.980 (Franco: «mostri direttamente il poster; magari lo fai in fondo, dopo aver mostrato tutti
+//    gli articoli; prima ci scrivi Poster, nello stesso font di "ARTICOLI"») - un poster per serie
+//    (uno per personaggio per serie), in ordine di serie; il nome della serie sopra solo se sono più
+//    d'uno. La scritta ha lo stile di «N articoli» in testa alla pagina.
+function _posterDelPersonaggioHTML(pid, arts, ix, ordSerie, serieDi) {
+  const pids = new Set(_conAlterEgo(pid));
+  const serie = [...new Set(arts.map(a => a.seriesId).filter(Boolean))].sort((a, b) => ordSerie(a) - ordSerie(b));
+  const poster = serie.map(sid => ({ sid, pezzi: _pezziPoster(sid, pids, ix) })).filter(p => p.pezzi.length);
+  if (!poster.length) return '';
+  return '<div style="grid-column:1/-1;color:var(--accent);margin-top:1.5rem;">Poster</div>'
+    + poster.map(p => '<div style="grid-column:1/-1;max-width:min(100%, 1100px);">'
+      + (poster.length > 1 && serieDi.get(p.sid) ? '<div style="font-size:0.8rem;color:var(--text);margin-bottom:0.3rem;">' + esc(_nomeSerieCard(serieDi.get(p.sid))) + '</div>' : '')
+      + _posterHTML(p.pezzi) + '</div>').join('');
 }
 let _elencoPersonaggio = [];
 // 🆕 v6.972 - la regola della griglia (`_checkBothOrientationForStack`) per le card della pagina del
@@ -48179,6 +48307,16 @@ function toggleVisibilitaFilter(quale) {
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (toggleVisibilitaFilter)', e); }
 }
+// 🆕 v6.980 - «Senza personaggio». I personaggi si leggono solo quando servono (v6.966): acceso il
+//    filtro, se non ci sono ancora si chiedono e si ridisegna quando arrivano. Nel frattempo il
+//    setaccio non filtra (vedi lì): meglio un attimo di griglia intera che una griglia vuota.
+function toggleSenzaPersonaggioFilter() {
+  _senzaPersonaggioFilter = !_senzaPersonaggioFilter;
+  currentItemPage = 1;
+  if (_senzaPersonaggioFilter && !_personaggiDati) caricaPersonaggi().then(() => { try { renderItems(); } catch(e) { console.error('renderItems (personaggi)', e); } }).catch(e => console.error('caricaPersonaggi (filtro)', e));
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleSenzaPersonaggioFilter)', e); }
+}
+
 function toggleSenzaRaritaFilter() {
   _senzaRaritaFilter = !_senzaRaritaFilter;
   currentItemPage = 1;
@@ -48346,6 +48484,7 @@ function renderItemTypeFilters() {
       _fotoFilter = null;
       _noteFilter = false;   // v6.113 - stessa ragione: un non-admin non ha come spegnerlo
       _senzaRaritaFilter = false;   // v6.502 - idem, ed e' il punto che si dimentica
+      _senzaPersonaggioFilter = false;   // v6.980 - e il suo gemello
       _visibilitaFilter = 'all';    // v6.545 - e questo e' quel punto
     } else {
       const itl = (currentLang === 'it');
@@ -48404,6 +48543,8 @@ function renderItemTypeFilters() {
       // solo la variabile, la funzione e le due parole: due pulsanti gemelli scritti in
       // due modi somiglianti si confrontano male a occhio (lezione v6.164).
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_senzaRaritaFilter ? 'on' : ''}" onclick="toggleSenzaRaritaFilter()" title="${itl ? 'Senza rarità' : 'Without rarity'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Senza rarità' : 'Without rarity'}</span></div>`;
+      // 🆕 v6.980 - «Senza personaggio», copiato da «Senza rarità»
+      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_senzaPersonaggioFilter ? 'on' : ''}" onclick="toggleSenzaPersonaggioFilter()" title="${itl ? 'Senza personaggio' : 'Without character'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Senza personaggio' : 'Without character'}</span></div>`;
       // 🆕 v6.540 - «Invisibili», accanto a «Senza rarità»: stesso interruttore, stessa riga.
       // 🔄 v6.545 - e con lei «Visibili». Sono due facce dello stesso stato: accenderne una
       // spegne l'altra, e non c'e' modo di averle accese insieme.
@@ -48923,6 +49064,8 @@ const _FILTRI = [
                                   acceso: () => _noteFilter },
   { nome: 'senza rarita',         azzera: () => { _senzaRaritaFilter = false; },
                                   acceso: () => _senzaRaritaFilter },
+  { nome: 'senza personaggio',    azzera: () => { _senzaPersonaggioFilter = false; },   // v6.980
+                                  acceso: () => _senzaPersonaggioFilter },
   { nome: 'visibilita',           azzera: () => { _visibilitaFilter = 'all'; },
                                   acceso: () => _visibilitaFilter !== 'all' },
   // 🔴 IL COLPEVOLE DEL 5 SETTEMBRE: c'era nelle prime due liste e non nella terza.
@@ -49031,6 +49174,8 @@ function getCurrentlyFilteredItems(opts) {
   // panoramica di cio' che i filtri lasciano passare, non dei risultati di una
   // ricerca. La ricerca resta invece nel riquadro dei risultati.
   const _skipSearch = !!(opts && opts.skipSearch);
+  // 🆕 v6.980 - l'indice dei personaggi, una volta sola e solo a filtro acceso (come quello qui sotto)
+  const _ixPersFiltro = (_senzaPersonaggioFilter && _personaggiDati) ? _indiciPersonaggi() : null;
   // 🆕 v6.520 - l'indice si costruisce SOLO se il filtro è acceso: a filtro spento non si
   // paga niente, e a filtro acceso si paga una volta sola invece che una per articolo.
   // ⚠️ `skipLato` serve al riquadro che disegna le due pillole: deve contare quanti
@@ -49087,6 +49232,13 @@ function getCurrentlyFilteredItems(opts) {
     // gemelle - se contano una cosa e ne filtrano un'altra, il chip dice un numero e la griglia
     // ne mostra un altro. `prova-v6323.js` le confronta ESEGUENDOLE, non leggendole.
     for (const r of _raggrAttivi) {
+      // 🆕 v6.979 - un errore di stampa DOPPIO ha due tipi, uno per lato: passa se ne è scelto UNO
+      //    dei due. Gli altri errori hanno un lato solo, e il tipo di quel lato è quello di sempre.
+      if (r.campo === 'isPrintError' && f.isPrintError && f.erroreAncheFronte) {
+        const _tipiDoppio = _latiErroreStampa(f, allFigs, _idxLato || undefined).map(l => _tipoErroreStampaLato(f, l, allFigs, _idxLato || undefined));
+        if (!_tipiDoppio.some(t => r.filtro.has(t))) return false;
+        continue;
+      }
       if (r.valoreDi) { if (!r.filtro.has(r.valoreDi(f))) return false; }
       else if (!(f[r.campo] && r.filtro.has((f[r.campoTipo] || '').trim()))) return false;
     }
@@ -49099,9 +49251,10 @@ function getCurrentlyFilteredItems(opts) {
     // sotto FRONTALI e' una domanda senza risposta, e deve dare zero — non l'unione delle
     // due, che sarebbe la risposta a una domanda che nessuno ha fatto.
     if (_latoAcceso || _vincoloTip) {
-      const _lat = _latoErroreStampa(f, allFigs, _idxLato);
-      if (_latoAcceso && !_filtroLatoErrore.has(_lat)) return false;
-      if (_vincoloTip && !_latiTip.has(_lat)) return false;
+      // 🔄 v6.979 - i LATI, non il lato: un errore doppio sta fra i frontali E fra i posteriori
+      const _lati = _latiErroreStampa(f, allFigs, _idxLato);
+      if (_latoAcceso && !_lati.some(l => _filtroLatoErrore.has(l))) return false;
+      if (_vincoloTip && !_lati.some(l => _latiTip.has(l))) return false;
     }
     // v6.054 - i due versi dello stesso filtro
     // v6.086 (Franco) - si chiede `_fotoFigurina()`, non `f.img`. Il filtro guardava la foto
@@ -49139,6 +49292,9 @@ function getCurrentlyFilteredItems(opts) {
     // rotto. E' la stessa condizione con cui `_stellaRarita` decide se scrivere la stella:
     // cio' che la card tace e' cio' che questo filtro mostra.
     if (_senzaRaritaFilter && (f.score > 0)) return false;
+    // 🆕 v6.980 - «Senza personaggio». Finché i personaggi non sono arrivati non si filtra
+    //    (`_ixPersFiltro` è null): li chiede il suo interruttore, che poi ridisegna.
+    if (_ixPersFiltro && personaggiDiArticolo(f, _ixPersFiltro).length) return false;
     // 🔄 v6.545 - tre posizioni: 'invisibili' tiene solo i nascosti, 'visibili' solo gli
     // altri, 'all' non filtra. Le due domande sono l'una il complemento dell'altra, quindi
     // si scrivono in una riga sola: due righe separate si sarebbero potute contraddire.
@@ -50733,17 +50889,16 @@ function _corpoErroriPerLatoHTML(C) {
   const _dellaSezione = figs.filter(x => x.seriesId === currentSeriesId
     && (x.section || 'figurines') === currentSection && x.isPrintError);
   const _esiste = { fronte: false, retro: false };
-  for (const f of _dellaSezione) { const l = _latoErroreStampa(f, figs, idx); if (l) _esiste[l] = true; }
+  // 🔄 v6.979 - un errore doppio esiste, e si conta, su tutti e due i lati, ognuno col suo tipo
+  for (const f of _dellaSezione) _latiErroreStampa(f, figs, idx).forEach(l => { _esiste[l] = true; });
   const conta = { fronte: new Map(), retro: new Map() };
-  for (const f of items) {
-    const lato = _latoErroreStampa(f, figs, idx);
-    if (!lato) continue;
+  for (const f of items) for (const lato of _latiErroreStampa(f, figs, idx)) {
     // 🔄 v6.606 - anche qui si chiede al retro (v6.577): era l'ULTIMA lettura del campo
     // grezzo rimasta. Oggi non sbagliava — le figurine col difetto dietro concordano col
     // loro retro — ed e' entrata proprio per quello: «oggi non sbaglia» e' la premessa di
     // ogni copia, e il giorno che smette di essere vera nessuno lo sa. Qui costa zero:
     // l'indice sta gia' pronto sulla riga sopra, per il lato.
-    const tipo = _tipoErroreStampa(f, figs, idx);
+    const tipo = _tipoErroreStampaLato(f, lato, figs, idx);   // v6.979: il tipo DI QUEL LATO
     // ⚠️ LA RIGA SOTTO NON E' MORTA, e va tenuta anche se il form non puo' piu' produrre un
     // errore senza tipo (obbligatorio dalla v5.771): la validazione e' AL SALVATAGGIO, quindi
     // i record scritti prima, o entrati dall'import, possono avercelo vuoto. Una riga
@@ -50831,7 +50986,7 @@ function _pillolLatoErroreHTML() {
   const figs = getData('figurines', []);
   const idx = new Map(figs.map(x => [x.id, x]));
   const conta = { fronte: 0, retro: 0 };
-  for (const f of items) { const l = _latoErroreStampa(f, figs, idx); if (l) conta[l]++; }
+  for (const f of items) _latiErroreStampa(f, figs, idx).forEach(l => { conta[l]++; });   // v6.979: il doppio in tutti e due
   const voci = [['fronte', it ? 'FRONTALI' : 'ON THE FRONT'], ['retro', it ? 'POSTERIORI' : 'ON THE BACK']];
   const chip = ([lato, testo]) => {
     const on = _filtroLatoErrore.has(lato);
@@ -51033,7 +51188,10 @@ function _facciaRetroHTML(imgUrl, onloadAttr, vuoto, nonDisp) {   // v6.977: `no
 // 🔴 Concatenata, non template literal: questo corpo finisce dentro il template di
 // prova-v6556, e un apice inverso lo spezzerebbe.
 function _etichettaErroreCardHTML(lato, latoErr, tipo) {
-  if (!tipo || lato !== latoErr) return '';
+  // 🆕 v6.979 - l'errore doppio: tutte e due le facce, ognuna col suo tipo ({ fronte, retro })
+  if (latoErr === 'entrambi') tipo = tipo && tipo[lato];
+  else if (lato !== latoErr) return '';
+  if (!tipo) return '';
   return '<span style="' + _stileFascettaErrore(true) + '">' + _testoFascettaErrore(tipo) + '</span>';
 }
 
@@ -51059,9 +51217,11 @@ function _adattaCorniciErrore(radice) {
   Array.prototype.forEach.call(caselle, function (ph) {
     var coppia = ph.querySelector('.coppia-facce');
     if (!coppia || coppia.children.length < 2) return;
-    var faccia = ph.getAttribute('data-lato-errore') === 'retro'
-      ? coppia.children[coppia.children.length - 1]
-      : coppia.children[0];
+    var latoAttr = ph.getAttribute('data-lato-errore');
+    // 🆕 v6.979 - «entrambi»: le due facce, ognuna misurata per conto suo
+    var facce = latoAttr === 'entrambi' ? [coppia.children[0], coppia.children[coppia.children.length - 1]]
+      : [latoAttr === 'retro' ? coppia.children[coppia.children.length - 1] : coppia.children[0]];
+    facce.forEach(function (faccia) {
     var img = faccia.querySelector('img');
     if (!img) return;
     var misura = function () {
@@ -51077,6 +51237,7 @@ function _adattaCorniciErrore(radice) {
     };
     if (img.complete && img.naturalWidth) misura();
     else img.addEventListener('load', misura, { once: true });
+    });
   });
 }
 
@@ -51605,10 +51766,14 @@ function renderItems() {
     // 🆕 v6.555 - da che parte sta l'errore, per la cornice sulla card. Stessa funzione
     // della scheda (v6.510), e con l'INDICE: questa riga gira per ogni card, e col find
     // sull'archivio intero sarebbe quadratica (la ragione della v6.520).
-    const _latoErrCard = _latoErroreStampa(f, _allFigs, _idx);
+    // 🆕 v6.979 - un errore DOPPIO dice «entrambi», e la fascetta ha un tipo per faccia
+    const _doppioCard = _erroreDoppio(f, _allFigs, _idx);
+    const _latoErrCard = _doppioCard ? 'entrambi' : _latoErroreStampa(f, _allFigs, _idx);
     // 🔄 v6.577 - il testo della fascetta si CHIEDE: col difetto dietro vive sul retro.
     // ⚠️ Con l'indice, come il lato: questa riga gira per ogni card (ragione della v6.520).
-    const _tipoErrCard = _tipoErroreStampa(f, _allFigs, _idx);
+    const _tipoErrCard = _doppioCard
+      ? { fronte: _tipoErroreStampaLato(f, 'fronte', _allFigs, _idx), retro: _tipoErroreStampaLato(f, 'retro', _allFigs, _idx) }
+      : _tipoErroreStampa(f, _allFigs, _idx);
     if (_cp.mostra) {
       const _fronteCoppia = _cp.fronte;
       // v6.094 - basta che il retro ESISTA: la foto puo' mancare, e in quel caso al suo posto va il
@@ -52058,7 +52223,7 @@ function renderItems() {
       const _cardTypeTxt = !_cardCampoTipo ? ''
         : (f.isFreeVersion ? _tipoOmaggio(f, _allFigs, _idx)
           : f.isChange ? _tipoChange(f, _allFigs, _idx)
-          : f.isPrintError ? _tipoErroreStampa(f, _allFigs, _idx)
+          : f.isPrintError ? _tipoErroreStampaTesto(f, _allFigs, _idx)   // v6.979: sul doppio «FRONTE / RETRO»
           : (f[_cardCampoTipo] || '')).trim();
       const _cardTypeColor = (_cardVers && _cardVers.colore) || 'var(--text)';
       // 🆕 v6.265 (Franco: "nella card, il campo Tipo di omaggio, scrivi OMAGGIO ROSSO quando
@@ -54614,7 +54779,8 @@ function _daAttaccareFotoVietata(f) {
   // `undefined` e la funzione restituisce `undefined` invece di `false`. Funziona lo
   // stesso in un `if`, ma un chiamante che confronta con `false` sbaglierebbe — e una
   // prova che lo fa e' esattamente quella che l'ha trovato.
-  const _erroreDietro = !!(f && f.isPrintError && _latoErroreStampa(f) === 'retro');
+  // v6.979 - il doppio la foto la carica: il suo fronte è sbagliato e va mostrato
+  const _erroreDietro = !!(f && f.isPrintError && _latoErroreStampa(f) === 'retro' && !f.erroreAncheFronte);
   // 🐛 v6.975 (Franco: «nella form del retro omaggio non è possibile cambiare la foto del retro; il
   //    tasto di modifica foto non c'è») - L'OMAGGIO SENZA FOTO SUA È SOLO LA FIGURINA CON RETRO.
   //    La regola della v6.487 parla di «foto frontale dalla partenza e foto del retro dal retro omaggio
@@ -55516,7 +55682,9 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
         <div class="fig-facce" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
           <div>
             <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:14px;">${currentLang === 'it' ? 'Fronte' : 'Front'}</div>
-            ${_latoErr === 'fronte' ? _corniceErroreStampaHTML(baseHTML, _tipoErr) : baseHTML}
+            ${_latoErr === 'fronte' ? _corniceErroreStampaHTML(baseHTML, _tipoErr)
+              /* v6.979 - il doppio incornicia anche il fronte, col tipo del fronte */
+              : _erroreDoppio(f, getData('figurines', [])) ? _corniceErroreStampaHTML(baseHTML, _tipoErroreStampaLato(f, 'fronte', getData('figurines', []))) : baseHTML}
           </div>
           <div>
             <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:14px;">${currentLang === 'it' ? 'Retro' : 'Back'}</div>
@@ -55615,9 +55783,11 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   //    in basso»). Qui fuori si vede da TUTTI i tab, quindi non si perde niente: si guadagna.
   // ⚠️ Sta PRIMA di `_codaAzioniDetail`, cioe' sopra «Segnala errore»: quella resta l'ultima cosa
   //    della scheda per decisione della v6.079, ed e' della scheda intera - questo e' dell'album.
+  // 🆕 v6.980 (Franco: «nella form della figurina o di una sua versione, metti un bottone "Vedi
+  //    poster" che apre una finestra… che mostra il poster») - nello stesso angolo, accanto.
   const _sfogliaCodaDetail = () => {
-    const b = _bottoneSfogliaSuArticolo(f);
-    return b ? '<div style="display:flex;justify-content:flex-start;margin-top:1rem;">' + b + '</div>' : '';
+    const b = _bottoneSfogliaSuArticolo(f) + _bottonePosterSuArticolo(f);
+    return b ? '<div style="display:flex;justify-content:flex-start;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;">' + b + '</div>' : '';
   };
 
   let bottomButtons = '';
@@ -56334,6 +56504,7 @@ function _latoErroreStampa(f, allFigs, indice) {
   return (r && r.isPrintError) ? 'retro' : 'fronte';
 }
 
+
 // 🆕 v6.510 - LE PAROLE, IN UNA FONTE SOLA. Forma LUNGA per il titolo della scheda
 // («Errore di stampa frontale», «Errore di stampa sul retro» — le parole di Franco) e forma
 // BREVE per la card, dove lo spazio è poco e la riga dice già «TIPOLOGIA».
@@ -56368,6 +56539,35 @@ function _tipoErroreStampa(f, allFigs, indice) {
   const r = indice ? indice.get(f.retroId)
                    : (allFigs || getData('figurines', [])).find(x => x.id === f.retroId);
   return ((r && r.printErrorType) || '').trim() || _mio;
+}
+
+// 🆕 v6.979 (Franco: «abbiamo anche gli errori di stampa che sono stampe errate sia davanti che
+//    dietro; possiamo gestire questa casistica?») - L'ERRORE DI STAMPA DOPPIO.
+// 📌 Non si può dedurre: un errore sul retro ha il retro collegato che è a sua volta un errore, e il
+//    fronte della partenza. Se ANCHE il fronte è sbagliato lo dice la spunta «Errore anche sul
+//    fronte» (`erroreAncheFronte`, nome scelto da Franco), che conta solo quando il retro è un errore.
+//    Allora: il fronte è la foto della figurina (e si carica), il retro quella del retro errore; i
+//    tipi sono due, il fronte sulla figurina (`printErrorType`), il retro sul retro, come sempre.
+// ⚠️ `_latoErroreStampa` NON cambia (per un doppio dice 'retro', che resta vero): chi deve sapere
+//    dei due lati chiede `_latiErroreStampa`. I filtri lo contano fra i frontali E fra i posteriori.
+function _erroreDoppio(f, allFigs, indice) {
+  return !!(f && f.isPrintError && f.erroreAncheFronte && _latoErroreStampa(f, allFigs, indice) === 'retro');
+}
+function _latiErroreStampa(f, allFigs, indice) {
+  const l = _latoErroreStampa(f, allFigs, indice);
+  if (!l) return [];
+  return (l === 'retro' && f.erroreAncheFronte) ? ['fronte', 'retro'] : [l];
+}
+// il tipo di un lato: il fronte è della figurina, il retro del retro collegato (v6.577)
+function _tipoErroreStampaLato(f, lato, allFigs, indice) {
+  if (!f) return '';
+  if (lato === 'fronte') return (f.printErrorType || '').trim();
+  return _tipoErroreStampa(f, allFigs, indice);
+}
+// il testo del tipo per la card e il nome completo: sul doppio «FRONTE / RETRO»
+function _tipoErroreStampaTesto(f, allFigs, indice) {
+  if (!_erroreDoppio(f, allFigs, indice)) return _tipoErroreStampa(f, allFigs, indice);
+  return [_tipoErroreStampaLato(f, 'fronte', allFigs, indice), _tipoErroreStampaLato(f, 'retro', allFigs, indice)].filter(Boolean).join(' / ');
 }
 
 // 🆕 v6.792 (Franco) — DA CHE PARTE STA LA DIFFERENZA DI UN CHANGE. Torna `true` quando sta
@@ -56645,6 +56845,8 @@ function _latoErroreStampaTesto(f, allFigs) {
   // 📌 Le PILLOLE DEI FILTRI non passano di qua e non cambiano: li' «FRONTALI» e
   // «POSTERIORI» sono due scelte affiancate, e una senza nome non si potrebbe premere.
   if (lato !== 'retro') return '';
+  // 🆕 v6.979 - il doppio lo dice, perché qui la notizia è proprio quella
+  if (_erroreDoppio(f, allFigs)) return currentLang === 'it' ? 'fronte e retro' : 'front and back';
   return currentLang === 'it' ? 'posteriore' : 'on the back';
 }
 
@@ -56766,7 +56968,8 @@ function _mancaLaFotoChePorta(f, allFigs) {
   if (!f) return false;
   if (f.img) return false;
   if (!f.isPrintError) return !_fotoFigurina(f, allFigs);
-  return _latoErroreStampa(f, allFigs) === 'fronte' || !_fotoFigurina(f, allFigs);
+  // v6.979 - anche il doppio ha il difetto davanti: il suo fronte è suo e deve esserci
+  return _latoErroreStampa(f, allFigs) === 'fronte' || _erroreDoppio(f, allFigs) || !_fotoFigurina(f, allFigs);
 }
 function _fotoFigurina(f, allFigs, _salti) {
   if (!f) return null;
@@ -56835,7 +57038,8 @@ function _fotoFigurina(f, allFigs, _salti) {
   // 📌 Non e' un peggioramento: e' un difetto che smette di essere invisibile. Quelle 89
   // sono le stesse che il controllo #5 conta dalla v6.538, e la foto Franco ce l'ha —
   // deve solo caricarla.
-  const _erroreCheEreditaIlFronte = f.isPrintError && _latoErroreStampa(f, figs) === 'retro';
+  // v6.979 - il doppio NON eredita: il suo fronte è sbagliato anche lui, e la foto è la sua
+  const _erroreCheEreditaIlFronte = f.isPrintError && _latoErroreStampa(f, figs) === 'retro' && !f.erroreAncheFronte;
   const _frontePariAllaBase = f.isVariation || f.isUnofficialVariation
     || _erroreCheEreditaIlFronte || _staDietro || f.isFreeVersion;
   // 🆕 v6.358 - LA FIGURINA DA ATTACCARE NON HA UNA FOTO SUA, E NON DEVE AVERLA. Franco: *"la foto
@@ -58123,20 +58327,21 @@ function switchToEditMode(figId) {
   // si vede sarebbe un modo per far divergere le due cose a mano.
   const _peDietro = f.isPrintError && _latoErroreStampa(f, getData('figurines', [])) === 'retro';
   const _peTipo = _tipoErroreStampa(f, getData('figurines', []));
+  // 🆕 v6.979 - con l'errore sul retro compare la spunta «Errore anche sul fronte» (nome di Franco).
+  //    Accesa, il tipo del FRONTE si sceglie qui (è della figurina) e quello del retro resta del retro.
+  _peScheda = { seriesId: f.seriesId, printErrorType: f.printErrorType || '', section: f.section || 'figurines', retroTipo: _peTipo };
   html += '<div class="detail-row" id="fe-print-error-type-group" style="' + (f.isPrintError ? '' : 'display:none;') + '">' +
     '<span class="detail-label">' + (currentLang==='it'?'Tipo di errore di stampa':'Print error type') + '</span>' +
     (_peDietro
-      ? '<span class="detail-value" style="text-align:right;">' + esc(_peTipo || (currentLang==='it'?'non impostato':'not set')) +
-        '<input type="hidden" id="fe-print-error-type" value="' + esc(_peTipo) + '">' +
-        // ⚠️ NON `--muted`: dentro `switchToEditMode` il grigio e' vietato (v6.439, e
-        // `prova-v6439` lo verifica). Li' il testo e' bianco perche' e' la form dell'admin.
-        '<div style="font-size:0.72rem;color:var(--text);opacity:0.75;margin-top:2px;">' +
-        (currentLang==='it' ? 'Il difetto sta sul retro: la tipologia arriva da quel retro.'
-                            : 'The defect is on the back: the type comes from that back.') +
-        '</div></span>'
+      ? '<span class="detail-value" style="text-align:right;" id="fe-pe-box">' + _peCampoHTML(!!f.erroreAncheFronte) + '</span>'
       : '<select class="form-input" id="fe-print-error-type" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
         _opzioniTipoErrore(f.seriesId, f.printErrorType, f.section || 'figurines') +
-        '</select>') + '</div>';
+        '</select>') + '</div>' +
+    (_peDietro
+      ? '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Errore anche sul fronte':'Error on the front too') + '</span>' +
+        '<span class="detail-value"><input type="checkbox" id="fe-errore-anche-fronte" ' + (f.erroreAncheFronte ? 'checked' : '') +
+        ' onchange="document.getElementById(\'fe-pe-box\').innerHTML=_peCampoHTML(this.checked)" style="width:18px;height:18px;cursor:pointer;"></span></div>'
+      : '');
 
   // Figurina/Retro base — ricerca in digitazione (stesso pattern del Retro associato)
   // v6.235 - da chi puo' nascere QUESTO oggetto: una riga, letta dalla dichiarazione. Sta FUORI
@@ -58241,6 +58446,24 @@ function switchToEditMode(figId) {
     //    (`_albumFonteFoto`). Si offrono gli album delle ALTRE serie che non prendono a loro volta da
     //    un altro: un anello solo, e mai se stesso.
     html += _rigaFotoDaAlbumHTML(f);
+  }
+
+  // 🆕 v6.980 (Franco: «ci sono personaggi che sono coinvolti in poster; poster fatti da figurine…
+  //    mi serve un flag sulle figurine "Poster"; se a true, allora ci sono altri 2 campi, riga e
+  //    colonna»; «spunta solo sulla versione base») - solo sulla figurina con retro BASE. Riga e
+  //    colonna si vedono a spunta accesa.
+  if (_posterAmmesso(f)) {
+    const _it = currentLang === 'it', _pOn = !!f.poster;
+    html += '<div class="detail-row"><span class="detail-label">Poster</span>'
+      + '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">'
+      + '<input type="checkbox" id="fe-poster" ' + (_pOn ? 'checked' : '')
+      + ' onchange="document.getElementById(\'fe-poster-pos\').style.display=this.checked?\'\':\'none\'" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">'
+      + '</label></span></div>'
+      + '<div class="detail-row" id="fe-poster-pos" style="' + (_pOn ? '' : 'display:none;') + '"><span class="detail-label">' + (_it ? 'Riga e colonna nel poster' : 'Row and column in the poster') + '</span>'
+      + '<span class="detail-value" style="display:flex;gap:0.5rem;align-items:center;">'
+      + '<input type="number" min="1" step="1" class="form-input" id="fe-poster-riga" value="' + (f.posterRiga || '') + '" placeholder="' + (_it ? 'riga' : 'row') + '" style="max-width:6rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
+      + '<input type="number" min="1" step="1" class="form-input" id="fe-poster-colonna" value="' + (f.posterColonna || '') + '" placeholder="' + (_it ? 'colonna' : 'column') + '" style="max-width:6rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
+      + '</span></div>';
   }
 
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Foto non disponibile':'Photo unavailable') + '</span>' +
@@ -58536,6 +58759,24 @@ let _feFotoNelGenerale = '';
 
 // 🆕 v6.976 - un articolo nominato in una nota della scheda, come link che lo apre in modifica.
 //    Senza id resta testo: un link che non porta da nessuna parte è peggio di una parola.
+// 🆕 v6.979 - il campo del tipo di un errore sul RETRO, nella scheda in modifica. Due forme:
+//    · errore solo sul retro → il tipo del retro, in sola lettura (com'era dalla v6.577);
+//    · errore DOPPIO → la tendina del tipo del FRONTE, e sotto il tipo del retro, che resta suo.
+//    L'id `fe-print-error-type` c'è in tutte e due: chi salva legge sempre quello.
+let _peScheda = null;
+function _peCampoHTML(doppio) {
+  const s = _peScheda || {}, it = currentLang === 'it';
+  // ⚠️ NON `--muted`: dentro `switchToEditMode` il grigio e' vietato (v6.439, e `prova-v6439` lo
+  // verifica). Li' il testo e' bianco perche' e' la form dell'admin.
+  const nota = t => '<div style="font-size:0.72rem;color:var(--text);opacity:0.75;margin-top:2px;">' + t + '</div>';
+  if (!doppio) return esc(s.retroTipo || (it ? 'non impostato' : 'not set'))
+    + '<input type="hidden" id="fe-print-error-type" value="' + esc(s.retroTipo || '') + '">'
+    + nota(it ? 'Il difetto sta sul retro: la tipologia arriva da quel retro.' : 'The defect is on the back: the type comes from that back.');
+  return '<select class="form-input" id="fe-print-error-type" style="padding:0.3rem 0.5rem;font-size:0.9rem;">'
+    + _opzioniTipoErrore(s.seriesId, s.printErrorType, s.section) + '</select>'
+    + nota(it ? 'Questo è il tipo del fronte. Sul retro: ' + esc(s.retroTipo || 'non impostato') + ', che arriva da quel retro.'
+              : 'This is the front type. On the back: ' + esc(s.retroTipo || 'not set') + ', from that back.');
+}
 function _linkModifica(id, testo) {
   if (!id) return esc(testo);
   return '<a href="javascript:void(0)" onclick="apriModificaItem(\'' + id + '\')" style="color:var(--nome-entita);text-decoration:underline;">' + esc(testo) + '</a>';
@@ -59000,6 +59241,81 @@ function vaiAgliAlbumDellaSerie() {
   openSeriesDetail(serie);
   openSeriesSection('albums');
 }
+
+// ============================================================
+//  🆕 v6.980 — IL POSTER (Franco: «ci sono personaggi che sono coinvolti in poster; poster fatti da
+//  figurine; per vedere il poster basta mettere affianco le figurine»)
+// ============================================================
+// 📌 I PEZZI: le figurine con retro BASE di una serie con la spunta «Poster», dello stesso personaggio
+//    (alter ego compresi). Franco: «nella stessa serie un personaggio ha un solo poster». Senza
+//    personaggio, i pezzi senza personaggio della serie.
+// 📌 LA FORMA: una griglia di `colonne` colonne uguali, ogni fronte nella sua casella (riga, colonna),
+//    senza spazi; una casella senza figurina resta vuota. Riga o colonna mancanti valgono 1.
+function _posterAmmesso(f) {
+  return !!f && (f.section || 'figurines') === 'figurines' && !f.baseFigurineId && _eBase(f);
+}
+function _pezziPoster(seriesId, pids, ix) {
+  return getData('figurines', []).filter(x => x.seriesId === seriesId && x.poster && _posterAmmesso(x) && (() => {
+    const ps = personaggiDiArticolo(x, ix).map(_principale);
+    return pids ? ps.some(p => pids.has(p)) : !ps.length;
+  })());
+}
+function _posterHTML(pezzi) {
+  const figs = getData('figurines', []);
+  const r = x => Math.max(1, parseInt(x.posterRiga, 10) || 1), c = x => Math.max(1, parseInt(x.posterColonna, 10) || 1);
+  const colonne = Math.max(1, ...pezzi.map(c));
+  return '<div class="poster-griglia" style="display:grid;grid-template-columns:repeat(' + colonne + ', minmax(0, 1fr));gap:0;width:100%;">'
+    + pezzi.map(x => {
+      const u = _fotoFigurina(x, figs);
+      return '<div style="grid-row:' + r(x) + ';grid-column:' + c(x) + ';">'
+        + (u ? '<img src="' + cloudinaryUrl(u, 'w_900,q_auto,f_auto') + '" loading="lazy" alt="' + esc(x.name || '') + '" style="display:block;width:100%;height:auto;">'
+             : _senzaFotoHTML(!!x.fotoNonDisponibile, 'position:relative;width:100%;aspect-ratio:0.72;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.7rem;padding:4px;box-sizing:border-box;'))
+        + '</div>';
+    }).join('') + '</div>';
+}
+// la figurina base del poster a cui appartiene `f` (lei o la sua base), o null
+function _basePosterDi(f) {
+  if (!f) return null;
+  const b = f.baseFigurineId ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : f;
+  return b && b.poster && _posterAmmesso(b) ? b : null;
+}
+function _bottonePosterSuArticolo(f) {
+  if (!_basePosterDi(f)) return '';
+  return '<button type="button" class="btn-primary" onclick="apriPoster(\'' + f.id + '\')" style="padding:0.5rem 1rem;">'
+    + (currentLang === 'it' ? 'Vedi poster' : 'See poster') + '</button>';
+}
+// La finestra: la stessa cornice di «Sfoglia album» (min(70vw, 1100px) × calc(100vh - 10rem)),
+// costruita qui la prima volta. Esc o la × la chiudono.
+async function apriPoster(figId) {
+  const it = currentLang === 'it';
+  const base = _basePosterDi(getData('figurines', []).find(x => x.id === figId));
+  if (!base) return;
+  try { await caricaPersonaggi(); } catch (e) { console.error('apriPoster (personaggi)', e); }
+  const ix = _indiciPersonaggi();
+  const pid = _personaggiDati ? (personaggiDiArticolo(base, ix).map(_principale)[0] || null) : null;
+  const pezzi = _pezziPoster(base.seriesId, pid ? new Set(_conAlterEgo(pid)) : null, ix);
+  let m = document.getElementById('poster-modal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'poster-modal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;padding:1rem;';
+    m.addEventListener('click', ev => { if (ev.target === m) chiudiPoster(); });
+    document.body.appendChild(m);
+  }
+  const nome = pid && _personaggiDati.perId.get(pid) ? _personaggiDati.perId.get(pid).nome : '';
+  m.innerHTML = '<div style="position:relative;width:min(70vw, 1100px);max-width:100%;">'
+    + '<button type="button" onclick="chiudiPoster()" aria-label="' + (it ? 'Chiudi' : 'Close') + '" style="position:absolute;top:-2.4rem;right:0;background:none;border:none;color:var(--text);font-size:2rem;line-height:1;cursor:pointer;">&times;</button>'
+    + '<div style="color:var(--accent);margin-bottom:0.4rem;">Poster' + (nome ? ' · ' + esc(nome) : '') + '</div>'
+    + '<div style="max-height:calc(100vh - 10rem);overflow:auto;">' + _posterHTML(pezzi) + '</div></div>';
+  m.style.display = 'flex';
+  document.addEventListener('keydown', _posterTasti);
+}
+function chiudiPoster() {
+  const m = document.getElementById('poster-modal');
+  if (m) m.style.display = 'none';
+  document.removeEventListener('keydown', _posterTasti);
+}
+function _posterTasti(ev) { if (ev.key === 'Escape') chiudiPoster(); }
 
 function chiudiSfogliaAlbum() {
   const m = document.getElementById('sfoglia-album-modal');
@@ -59685,7 +60001,10 @@ async function pagineSfondoTutte() {
   const btn = document.getElementById('fe-pagine-sfondo-btn');
   const nuove = pag.slice();
   let fatte = 0, fallite = 0;
+  if (_sfondoInCorso) { toast(it ? '⏳ C\'è già una rimozione dello sfondo in corso: aspetta che finisca' : '⏳ A background removal is already running: wait for it to finish', 'error'); return; }
   if (btn) btn.disabled = true;
+  _sfondoFila = true;   // v6.980 - gli altri bottoni dello sfondo restano spenti per tutta la fila
+  try {
   for (let i = 0; i < pag.length; i++) {
     if (btn) btn.textContent = '\u23F3 ' + (i + 1) + ' / ' + pag.length;
     try {
@@ -59705,6 +60024,7 @@ async function pagineSfondoTutte() {
       fallite++;
     }
   }
+  } finally { _sfondoFila = false; _riaccendiBottoniSfondo(); }
   if (btn) { btn.disabled = false; btn.textContent = '\u2728 ' + (it ? 'Rimuovi sfondo da tutte' : 'Remove background from all'); }
   if (fatte && await _salvaPagine(nuove)) _ridisegnaPagine();
   toast((it ? '\u2705 Sfondo tolto a ' + fatte + ' pagine' : '\u2705 Background removed from ' + fatte + ' pages')
@@ -59804,7 +60124,34 @@ window._removeBackground = async function(blob) {
 // `onPct` e' come la funzione parla a chi l'ha chiamata senza sapere che aspetto abbia il suo
 // bottone: riceve la percentuale, oppure la fase 'libreria' quando sta ancora scaricando il
 // modello (la prima volta sono decine di MB, e un bottone fermo sul 0% sembra piantato).
+// 🆕 v6.980 (Franco: «quando nella stessa scheda sono presenti 2 bottoni per la funzione di rimuovi
+//    sfondo, non appena uno dei due viene selezionato, l'altro deve essere inibito; se lo premi per
+//    sbaglio la funzione va in errore perché può essere eseguita una sola volta alla volta») - IL
+//    LUCCHETTO STA QUI, dove passano tutti i bottoni (fronte, retro, copertina, eBay, pagine, la
+//    finestra della foto scelta): mentre il modello lavora gli altri bottoni dello sfondo presenti in
+//    pagina si spengono, e si riaccendono alla fine. Si spengono solo quelli accesi, e si riaccendono
+//    solo quelli spenti da qui (`data-spento-sfondo`): chi era spento per altre ragioni resta com'era.
+// 📌 Il bottone premuto non si tocca: l'ha già spento il suo chiamante, che scrive l'avanzamento.
+// 📌 `_sfondoFila`: lo sfondo di tutte le pagine chiama il modello più volte di fila, e fra una
+//    pagina e l'altra gli altri bottoni devono restare spenti.
+let _sfondoInCorso = false, _sfondoFila = false;
+function _bottoniSfondo() {
+  return [...document.querySelectorAll('button[onclick*="removeBg"], button[onclick*="Sfondo"]')];
+}
+function _spegniBottoniSfondo() {
+  _bottoniSfondo().forEach(b => { if (!b.disabled) { b.disabled = true; b.dataset.spentoSfondo = '1'; b.style.opacity = '0.45'; } });
+}
+function _riaccendiBottoniSfondo() {
+  _bottoniSfondo().forEach(b => { if (b.dataset.spentoSfondo) { b.disabled = false; delete b.dataset.spentoSfondo; b.style.opacity = ''; } });
+}
 async function _togliSfondoDaBlob(blob, onPct) {
+  if (_sfondoInCorso) throw new Error('_SFONDO_OCCUPATO_');
+  _sfondoInCorso = true;
+  _spegniBottoniSfondo();
+  try { return await _sfondoDalModello(blob, onPct); }
+  finally { _sfondoInCorso = false; if (!_sfondoFila) _riaccendiBottoniSfondo(); }
+}
+async function _sfondoDalModello(blob, onPct) {
   let removeBackground = window._removeBackground;
   if (!removeBackground) {
     if (onPct) onPct(null, 'libreria');
@@ -59879,7 +60226,9 @@ function _erroreSfondo(e, btn) {
   const it = currentLang === 'it';
   const msg = String((e && e.message) || '');
   let testo;
-  if (msg === '_LIBRERIA_NON_DISPONIBILE_') {
+  if (msg === '_SFONDO_OCCUPATO_') {   // v6.980 - il lucchetto: un'altra rimozione è in corso
+    testo = it ? '⏳ C\'è già una rimozione dello sfondo in corso: aspetta che finisca' : '⏳ A background removal is already running: wait for it to finish';
+  } else if (msg === '_LIBRERIA_NON_DISPONIBILE_') {
     testo = it ? '\u274C Libreria non disponibile, ricarica la pagina' : '\u274C Library unavailable, reload the page';
   } else if (/no available backend|GPU adapter|webgpu/i.test(msg)) {
     // La causa vista il 5 settembre 2026: il processo grafico di Chrome era caduto.
@@ -60836,6 +61185,8 @@ async function saveFigFromDetail(figId, opzioni) {
       number: document.getElementById('fe-number')?.value ? +document.getElementById('fe-number').value : null,
       noNumber: document.getElementById('fe-no-number')?.checked || false,
       fotoNonDisponibile: document.getElementById('fe-foto-non-disponibile')?.checked || false, // v6.079
+      // v6.979 - la spunta c'è solo sugli errori col retro errore: dove non c'è, il doppio non esiste
+      erroreAncheFronte: !!document.getElementById('fe-errore-anche-fronte')?.checked,
       // 🆕 v6.806 - ⚠️ SI LEGGE SOLO DOVE LA CASELLA ESISTE. Scritto come
       //    `?.checked || false` e basta, su una figurina tornerebbe `false` e finirebbe in `updates`:
       //    salvando una qualunque figurina si SPEGNEREBBE il flag di un album. E' la regola della
@@ -60846,6 +61197,13 @@ async function saveFigFromDetail(figId, opzioni) {
       //    casella la disegna `_haPagine` - e cosi' non ci sono due modi di farla.
       ...(document.getElementById('fe-sfogliabile')
             ? { sfogliabile: document.getElementById('fe-sfogliabile').checked } : {}),
+      // 🆕 v6.980 - il Poster, con la stessa regola: si scrive solo dove la spunta è disegnata (la
+      //    figurina base). Spenta, riga e colonna tornano vuote.
+      ...(document.getElementById('fe-poster') ? (() => {
+            const on = document.getElementById('fe-poster').checked;
+            const n = id => { const v = parseInt(document.getElementById(id)?.value, 10); return on && v > 0 ? v : null; };
+            return { poster: on, posterRiga: n('fe-poster-riga'), posterColonna: n('fe-poster-colonna') };
+          })() : {}),
       invisibile: document.getElementById('fe-invisibile')?.checked || false, // v6.080
       subseries: document.getElementById('fe-subseries')?.value.trim() || '',
       desc: document.getElementById('fe-desc')?.value.trim() || '',
@@ -62085,7 +62443,8 @@ function computeFullName(fig, allFigs, _salti) {
     // ⚠️ E QUESTA CONVERSIONE VALE SOLO PER LE FIGURINE. In «_retroFullName» c'e' la stessa
     // riga identica e NON va toccata: li' l'oggetto e' un RETRO, e su un retro il tipo e' suo.
     // Convertirla sarebbe questo stesso difetto al contrario.
-    const tipoPE = _tipoErroreStampa(fig, allFigs);
+    // 🔄 v6.979 - sul DOPPIO i due tipi, «FRONTE / RETRO» (`_tipoErroreStampaTesto`)
+    const tipoPE = _tipoErroreStampaTesto(fig, allFigs);
     return tipoPE ? baseName + ' - ' + tipoPE : baseName;
   }
   // v6.131 (Franco) - ANCHE LE FIGURINE BASE PORTANO IL NOME DEL RETRO nel Nome completo.
@@ -63728,7 +64087,7 @@ async function startImportFig(anteprima) {
       isVariation: false, isUnofficialVariation: false, isChange: false, isPrintError: false,
       isFreeVersion: false,
       baseFigurineId: baseFig.id, changeType: null, printErrorType: null, freeVersionType: null,
-      retroId: null, img: null
+      retroId: null, img: null, erroreAncheFronte: false   // v6.979: solo il ramo dell'errore lo accende
     };
     let duplicate = null, figData = null, rowType = '', keyInfo = '';
 
@@ -63777,9 +64136,15 @@ async function startImportFig(anteprima) {
       if (_v.errore) { errRiga(_v.errore, 'err'); continue; }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.section === 'figurines' && f.isPrintError &&
         f.baseFigurineId === baseFig.id && (f.printErrorType||'').toLowerCase().trim() === _v.ok.toLowerCase().trim());
-      figData = { ...baseCommon, isPrintError: true, printErrorType: _v.ok, retroId: _retroProprio(it ? 'Errore di stampa' : 'Print error') };
-      rowType = (it ? 'Errore di stampa' : 'Print error');
-      keyInfo = ' [Errore di stampa: ' + _v.ok + ']';
+      // 🆕 v6.979 (Franco: «lo capisci da solo se popolo sia il campo "tipo di errore di stampa" che il
+      //    campo Retro - Tipo di errore?») - SÌ: tipo del fronte PIÙ un retro che è a sua volta un errore
+      //    = errore DOPPIO, e la spunta «Errore anche sul fronte» si accende da sé.
+      const _ridPE = _retroProprio(it ? 'Errore di stampa' : 'Print error');
+      const _rPE = _ridPE ? existingFigs.find(x => x.id === _ridPE) : null;
+      const _doppioPE = !!(_rPE && _rPE.isPrintError);
+      figData = { ...baseCommon, isPrintError: true, printErrorType: _v.ok, retroId: _ridPE, erroreAncheFronte: _doppioPE };
+      rowType = (it ? (_doppioPE ? 'Errore di stampa fronte e retro' : 'Errore di stampa') : (_doppioPE ? 'Print error front and back' : 'Print error'));
+      keyInfo = _doppioPE ? ' [Errore di stampa: ' + _v.ok + ' / ' + (_rPE.printErrorType || '') + ']' : ' [Errore di stampa: ' + _v.ok + ']';
     } else if (versione === 'change' && !tipoChange) {
       // 🆕 v6.973 (Franco: «tipologia di change non deve essere obbligatoria, dato che per le change
       //    di retro questo valore viene preso dal retro») - IL CHANGE DI RETRO SENZA TIPOLOGIA. Come nel
@@ -63848,7 +64213,7 @@ async function startImportFig(anteprima) {
         // Senza, un omaggio reimportato con la tipologia cambiata sarebbe risultato «invariato»: il
         // record veniva scritto lo stesso, ma il registro avrebbe detto che non era successo niente
         // - un import che mente sul proprio esito e' peggio di uno che fallisce.
-        const _diff = _importDiff(duplicate, updatedRec, ['name','isVariation','isUnofficialVariation','isChange','isPrintError','isFreeVersion','baseFigurineId','retroId','changeType','printErrorType','freeVersionType']);
+        const _diff = _importDiff(duplicate, updatedRec, ['name','isVariation','isUnofficialVariation','isChange','isPrintError','isFreeVersion','baseFigurineId','retroId','changeType','printErrorType','freeVersionType','erroreAncheFronte']);   // v6.979
         const changed = _diff.length > 0;
         if (changed) {
           await _scriviImportFig(updatedRec);
@@ -66083,46 +66448,14 @@ function renderAdminFunzioni() {
         '</div>' +
         '<div id="attacca-esito" style="margin-top:1rem;"></div>' +
       '</div>' +
-
-      // 🆕 v6.968 (Franco) - FUNZIONE 6: «carichiamo le coppie personaggi-articolo stando
-      // all'ultima versione del file che mi hai mandato». Stessa forma delle altre: anteprima,
-      // conferma col numero, scrittura, ricontrollo. I dati arrivano da due file scelti qui.
-      '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1.25rem;">' +
-        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '6. Carica i personaggi' : '6. Load the characters') + '</h4>' +
-        '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
-          (it ? 'Carica i <b>personaggi</b> e le loro <b>associazioni agli articoli</b> dai due file preparati fuori dal sito: <b>personaggi.json</b> e <b>associazioni.json</b>.<br><br>' +
-                '<b>Cosa fa:</b><br>' +
-                'crea i personaggi nuovi e corregge il nome di quelli cambiati;<br>' +
-                'aggiunge le associazioni nuove;<br>' +
-                'toglie personaggi e associazioni che nei file non ci sono più.<br><br>' +
-                '<b>NOTE:</b><br>' +
-                'I file sono la fonte: quello che sta sul sito e non nei file viene <b>tolto</b>.<br>' +
-                'Si può <b>rilanciare</b>: con gli stessi file non cambia niente.<br>' +
-                'Le associazioni a un articolo che non esiste, o a un personaggio che manca, vengono <b>scartate</b> e mostrate nell’anteprima.<br>' +
-                'Mostra l’anteprima coi numeri e chiede conferma.'
-              : 'Loads the <b>characters</b> and their <b>links to items</b> from the two files prepared outside the site: <b>personaggi.json</b> and <b>associazioni.json</b>.<br><br>' +
-                '<b>What it does:</b><br>' +
-                'creates new characters and fixes the name of changed ones;<br>' +
-                'adds new links;<br>' +
-                'removes characters and links no longer in the files.<br><br>' +
-                '<b>NOTES:</b><br>' +
-                'The files are the source: what is on the site and not in the files is <b>removed</b>.<br>' +
-                'It can be <b>re-run</b>: with the same files nothing changes.<br>' +
-                'Links to a missing item or character are <b>discarded</b> and listed in the preview.<br>' +
-                'It previews the numbers and asks for confirmation.') + '</p>' +
-        '<label class="form-label">' + (it ? 'I due file (scegline due insieme)' : 'The two files (pick both together)') + '</label>' +
-        '<input type="file" id="personaggi-file" accept=".json,application/json" multiple class="form-input" style="margin-bottom:0.75rem;">' +
-        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
-          '<button class="btn-primary btn-admin" onclick="anteprimaCaricaPersonaggi()">&#128269; ' + (it ? 'Anteprima' : 'Preview') + '</button>' +
-          '<button class="btn-primary btn-admin" id="personaggi-applica-btn" onclick="applicaCaricaPersonaggi()" style="display:none;">&#9989; ' + (it ? 'Carica' : 'Load') + '</button>' +
-        '</div>' +
-        '<div id="personaggi-esito" style="margin-top:1rem;"></div>' +
-      '</div>' +
+      // 🗄️ v6.980 - ARCHIVIATE LE FUNZIONI 6 E 7 (Franco: «per me puoi archiviare funzioni 6 e 7»).
+      //    La 6 caricava i personaggi dai file (in pensione dal 26 settembre: i dati si toccano solo
+      //    dal sito); la 7 trasformava in collegamenti i personaggi scritti nelle Note delle Mega,
+      //    usata una volta da Franco. Il codice sta nelle cartelle archiviate (v6.968 → v6.980).
     '</div>';
   _pianoAllinea = null;
   _pianoFixRetro = null; // v6.085
   _pianoAttacca = null;  // v6.358 - un piano calcolato su un elenco vecchio non si applica
-  _pianoPersonaggi = null; // v6.968
 }
 
 // v6.085 - il piano della funzione 3. Non calcola niente di suo: chiede a _changeConRetroErrato()
@@ -66310,227 +66643,13 @@ async function applicaDaAttaccare() {
 }
 
 // ============================================================
-//  🆕 v6.968 — CARICA I PERSONAGGI (funzione 6 della scheda Funzioni)
+//  🗄️ v6.980 — ARCHIVIATE LE FUNZIONI 6 E 7 della scheda Funzioni
 // ============================================================
-// Franco, 25 settembre: «carichiamo le coppie personaggi-articolo stando all'ultima versione del
-// file che mi hai mandato». I file sono `personaggi.json` ({ id, nome }) e `associazioni.json`
-// ({ articoloId, personaggioId }), fatti da `genera-caricamento.py` dalla bozza 19.
-//
-// 📌 I FILE SONO LA FONTE, e il piano è una DIFFERENZA col server: da creare, da rinominare, da
-//    togliere. Così la funzione si rilancia quando la bozza cambia, e coi file uguali non scrive
-//    niente — la prova, come per la funzione 5, è il piano vuoto al secondo lancio.
-// 🔴 IL CONFRONTO SI FA COL SERVER (`fsGetAllDalServer`), NON CON `_personaggiDati`: quello è una
-//    copia letta una volta, e un piano calcolato su una copia vecchia toglierebbe cose che non
-//    sa di avere. Se il server non si lascia leggere — regole Firebase mancanti — l'anteprima lo
-//    dice e si ferma: un «zero sul server» inventato farebbe ricreare tutto a ogni lancio.
-// 📌 L'id di un'associazione è `articoloId__personaggioId`: la coppia È la riga, quindi la stessa
-//    coppia non può finire due volte nella raccolta, nemmeno rilanciando.
-let _pianoPersonaggi = null;
-
+// Franco: «per me puoi archiviare funzioni 6 e 7». La 6 («Carica i personaggi», v6.968) leggeva
+// personaggi.json e associazioni.json fatti fuori dal sito; la 7 («Personaggi dalle Note», v6.980)
+// collegava il personaggio scritto nella Note e la svuotava. Il codice sta nelle `_upload_`
+// archiviate. Resta questa, che serve a `_elenchiDaPacchetto`: l'id di un'associazione è la coppia.
 function _idAssociazione(articoloId, personaggioId) { return articoloId + '__' + personaggioId; }
-// Firestore non accetta `/` in un id, né id vuoti, `.` o `..`: una riga così si scarta, non si prova.
-function _idFirestoreValido(id) { return typeof id === 'string' && id !== '' && id !== '.' && id !== '..' && !id.includes('/'); }
-
-// Riconosce i due file dal CONTENUTO, non dal nome: scaricati due volte diventano «personaggi (1).json».
-async function _leggiFilePersonaggi(files) {
-  const out = { personaggi: null, associazioni: null };
-  for (const f of files || []) {
-    let dati;
-    try { dati = JSON.parse(await f.text()); }
-    catch (e) { throw new Error((currentLang === 'it' ? 'Il file «' + f.name + '» non è un JSON leggibile: ' : 'The file «' + f.name + '» is not readable JSON: ') + e.message); }
-    const primo = Array.isArray(dati) ? dati.find(x => x && typeof x === 'object') : null;
-    if (primo && 'articoloId' in primo && 'personaggioId' in primo) out.associazioni = dati;
-    else if (primo && 'id' in primo && 'nome' in primo) out.personaggi = dati;
-    else throw new Error(currentLang === 'it' ? 'Non riconosco il file «' + f.name + '»: non sono né personaggi né associazioni.'
-                                               : 'Unrecognised file «' + f.name + '»: neither characters nor links.');
-  }
-  if (!out.personaggi || !out.associazioni)
-    throw new Error(currentLang === 'it' ? 'Servono tutti e due i file: personaggi.json e associazioni.json.'
-                                         : 'Both files are needed: personaggi.json and associazioni.json.');
-  return out;
-}
-
-// UNA SOLA FUNZIONE CALCOLA IL PIANO, per l'anteprima e per il ricontrollo dopo la scrittura (§14).
-function _pianoCaricaPersonaggi(file, server) {
-  const scarti = [];
-  const indiceArt = _indiceArticoli();
-  // I personaggi del file, puliti: id valido, nome non vuoto, niente doppioni.
-  const pFile = new Map();
-  (file.personaggi || []).forEach(p => {
-    const id = p && typeof p.id === 'string' ? p.id.trim() : '';
-    const nome = p && typeof p.nome === 'string' ? p.nome.trim() : '';
-    if (!_idFirestoreValido(id) || !nome) { scarti.push({ cosa: 'personaggio', chi: (id || '?') + ' ' + nome, perche: 'id o nome non validi' }); return; }
-    if (pFile.has(id)) { scarti.push({ cosa: 'personaggio', chi: id, perche: 'doppio nel file' }); return; }
-    pFile.set(id, nome);
-  });
-  // Le associazioni del file: personaggio che esiste nel file, articolo che esiste nel sito.
-  const aFile = new Map();
-  (file.associazioni || []).forEach(a => {
-    const art = a && typeof a.articoloId === 'string' ? a.articoloId.trim() : '';
-    const pid = a && typeof a.personaggioId === 'string' ? a.personaggioId.trim() : '';
-    const chi = art + ' → ' + pid;
-    if (!pFile.has(pid)) { scarti.push({ cosa: 'associazione', chi, perche: 'personaggio che non c’è' }); return; }
-    if (!_idFirestoreValido(art) || !indiceArt.has(art)) { scarti.push({ cosa: 'associazione', chi, perche: 'articolo che non c’è' }); return; }
-    const id = _idAssociazione(art, pid);
-    if (!aFile.has(id)) aFile.set(id, { articoloId: art, personaggioId: pid });
-  });
-  const pServer = new Map((server.personaggi || []).map(p => [p.id, p.nome || '']));
-  const aServer = new Map();
-  (server.associazioni || []).forEach(a => aServer.set(a.id, a));
-  const piano = {
-    pFile: pFile.size, aFile: aFile.size,
-    pNuovi: [], pRinominati: [], pDaTogliere: [],
-    aNuove: [], aDaTogliere: [], scarti
-  };
-  pFile.forEach((nome, id) => {
-    if (!pServer.has(id)) piano.pNuovi.push({ id, nome });
-    else if (pServer.get(id) !== nome) piano.pRinominati.push({ id, nome, prima: pServer.get(id) });
-  });
-  pServer.forEach((nome, id) => { if (!pFile.has(id)) piano.pDaTogliere.push({ id, nome }); });
-  // ⚠️ Un'associazione sul server si confronta per ID E PER CONTENUTO: una riga con l'id giusto ma
-  //    i campi diversi (scritta a mano in console) va riscritta, non tenuta.
-  aFile.forEach((a, id) => {
-    const s = aServer.get(id);
-    if (!s || s.articoloId !== a.articoloId || s.personaggioId !== a.personaggioId) piano.aNuove.push({ id, ...a });
-  });
-  aServer.forEach((a, id) => { if (!aFile.has(id)) piano.aDaTogliere.push({ id, articoloId: a.articoloId, personaggioId: a.personaggioId }); });
-  piano.daFare = piano.pNuovi.length + piano.pRinominati.length + piano.pDaTogliere.length
-               + piano.aNuove.length + piano.aDaTogliere.length;
-  piano.pulito = { pFile, aFile };   // 🆕 v6.970 - lo stato da scrivere nel documento unico
-  return piano;
-}
-
-// 🆕 v6.970 - il documento unico dei personaggi, dallo stato ripulito dei file. Chiavi da una
-//    lettera (i/n, a/p): il documento ha un tetto di 1 MB, e le chiavi si ripetono migliaia di volte.
-function _pacchettoDaPiano(piano) {
-  const pers = [], ass = [];
-  piano.pulito.pFile.forEach((nome, id) => pers.push({ i: id, n: nome }));
-  piano.pulito.aFile.forEach(a => ass.push({ a: a.articoloId, p: a.personaggioId }));
-  return { personaggi: pers, associazioni: ass, aggiornato: new Date().toISOString() };
-}
-// quanto pesa, in byte: stima per eccesso (il JSON è più lungo della codifica di Firestore)
-function _pesoPacchetto(pacchetto) { return new Blob([JSON.stringify(pacchetto)]).size; }
-const PERSONAGGI_PACCHETTO_MAX = 1000000;   // il tetto di un documento Firestore (1 MiB, arrotondato giù)
-
-// 🔄 v6.970 - il confronto si fa col DOCUMENTO UNICO (vedi `caricaPersonaggi`), non più con le due
-//    raccolte: 1 lettura invece di ~2.750. Senza `try`: un rifiuto deve arrivare all'anteprima,
-//    che lo dice, invece di diventare un «sul server non c'è niente».
-async function _leggiPersonaggiDalServer() {
-  const { doc, getDoc } = window._fb;
-  const snap = await getDoc(doc(db, PERSONAGGI_PACCHETTO.coll, PERSONAGGI_PACCHETTO.id));
-  _trackReads(1);
-  return _elenchiDaPacchetto(snap.exists() ? snap.data() : null);
-}
-
-function _righePianoPersonaggi(piano, it) {
-  const riga = (t, n, col) => '<div style="font-size:0.9rem;padding:0.15rem 0;">' + t + ': <b style="color:' + (n ? col : 'var(--muted)') + ';">' + n + '</b></div>';
-  const elenco = (titolo, righe) => righe.length
-    ? '<div style="font-size:0.85rem;margin-top:0.6rem;"><b>' + titolo + '</b>' +
-        '<div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.6rem;margin-top:0.3rem;color:var(--muted);font-size:0.78rem;line-height:1.5;">' +
-        righe.slice(0, 200).map(esc).join('<br>') + (righe.length > 200 ? '<br>… ' + (righe.length - 200) + (it ? ' altre' : ' more') : '') +
-        '</div></div>'
-    : '';
-  return '<div style="font-size:0.85rem;color:var(--text);margin-bottom:0.4rem;">' +
-      (it ? 'Nei file: <b>' + piano.pFile + '</b> personaggi, <b>' + piano.aFile + '</b> associazioni valide.'
-          : 'In the files: <b>' + piano.pFile + '</b> characters, <b>' + piano.aFile + '</b> valid links.') + '</div>' +
-    riga(it ? 'Personaggi da creare' : 'Characters to create', piano.pNuovi.length, 'var(--success)') +
-    riga(it ? 'Personaggi da rinominare' : 'Characters to rename', piano.pRinominati.length, 'var(--warn)') +
-    riga(it ? 'Personaggi da togliere' : 'Characters to remove', piano.pDaTogliere.length, 'var(--danger)') +
-    riga(it ? 'Associazioni da aggiungere' : 'Links to add', piano.aNuove.length, 'var(--success)') +
-    riga(it ? 'Associazioni da togliere' : 'Links to remove', piano.aDaTogliere.length, 'var(--danger)') +
-    riga(it ? 'Righe scartate' : 'Discarded rows', piano.scarti.length, 'var(--warn)') +
-    elenco(it ? 'Da rinominare' : 'To rename', piano.pRinominati.map(p => p.prima + ' → ' + p.nome)) +
-    elenco(it ? 'Personaggi da togliere' : 'Characters to remove', piano.pDaTogliere.map(p => p.nome || p.id)) +
-    elenco(it ? 'Associazioni da togliere' : 'Links to remove', piano.aDaTogliere.map(a => a.articoloId + ' → ' + a.personaggioId)) +
-    elenco(it ? 'Scartate' : 'Discarded', piano.scarti.map(s => s.cosa + ' ' + s.chi + ' — ' + s.perche));
-}
-
-async function anteprimaCaricaPersonaggi() {
-  const it = currentLang === 'it';
-  const esito = document.getElementById('personaggi-esito');
-  const btn = document.getElementById('personaggi-applica-btn');
-  _pianoPersonaggi = null;
-  if (btn) btn.style.display = 'none';
-  if (!esito) return;
-  esito.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">' + (it ? 'Leggo i file e il server…' : 'Reading files and server…') + '</div>';
-  let file, server;
-  try { file = await _leggiFilePersonaggi(document.getElementById('personaggi-file')?.files); }
-  catch (e) { esito.innerHTML = '<div style="font-size:0.9rem;color:var(--danger);">' + esc(e.message) + '</div>'; return; }
-  try { server = await _leggiPersonaggiDalServer(); }
-  catch (e) {
-    esito.innerHTML = '<div style="font-size:0.9rem;color:var(--danger);">' +
-      (it ? 'Non riesco a leggere personaggi e associazioni dal server. Le regole Firebase delle due raccolte sono state messe? ('
-          : 'Cannot read characters and links from the server. Are the Firebase rules for the two collections in place? (') +
-      esc(e?.message || String(e)) + ')</div>';
-    return;
-  }
-  const piano = _pianoCaricaPersonaggi(file, server);
-  piano.file = file;
-  // 🆕 v6.970 - il peso del documento unico si dice, e oltre il tetto non si scrive.
-  const peso = _pesoPacchetto(_pacchettoDaPiano(piano));
-  const troppo = peso > PERSONAGGI_PACCHETTO_MAX;
-  _pianoPersonaggi = troppo ? null : piano;
-  if (btn) btn.style.display = (piano.daFare && !troppo) ? '' : 'none';
-  esito.innerHTML = _righePianoPersonaggi(piano, it) +
-    '<div style="font-size:0.85rem;margin-top:0.4rem;color:' + (troppo ? 'var(--danger)' : 'var(--muted)') + ';">'
-      + (it ? 'Documento unico: ' : 'Single document: ') + Math.round(peso / 1024) + ' KB'
-      + (troppo ? (it ? ' — oltre il limite di un documento Firestore: non si può scrivere.' : ' — over the Firestore document limit: cannot be written.') : '')
-      + '</div>' +
-    (piano.daFare ? '' : '<div style="font-size:0.9rem;color:var(--success);margin-top:0.6rem;">' +
-      (it ? 'Il sito è già uguale ai file. Niente da caricare.' : 'The site already matches the files. Nothing to load.') + '</div>');
-}
-
-// 🗑️ v6.970 - qui stava `_scriviPersonaggiAPezzi`, che scriveva le due raccolte a pezzi di 400 con
-//    `writeBatch`. Col documento unico la scrittura è una sola (`setDoc`), e la funzione non la
-//    chiamava più nessuno. `writeBatch` resta importato in `window._fb`: non costa niente.
-
-async function applicaCaricaPersonaggi() {
-  const it = currentLang === 'it';
-  const esito = document.getElementById('personaggi-esito');
-  const btn = document.getElementById('personaggi-applica-btn');
-  const piano = _pianoPersonaggi;
-  if (!piano || !piano.daFare) { toast(it ? 'Fai prima l’anteprima' : 'Run the preview first', 'error'); return; }
-  if (!db || !window._fb?.writeBatch) { toast(it ? 'Database non pronto' : 'Database not ready', 'error'); return; }
-  // §14, regola 2: la conferma NOMINA i numeri.
-  const togli = piano.pDaTogliere.length + piano.aDaTogliere.length;
-  if (!confirm(it
-    ? `Caricare i personaggi?\n\n· ${piano.pNuovi.length} personaggi da creare, ${piano.pRinominati.length} da rinominare, ${piano.pDaTogliere.length} da togliere\n· ${piano.aNuove.length} associazioni da aggiungere, ${piano.aDaTogliere.length} da togliere` + (togli ? '\n\nLe righe da togliere non si recuperano.' : '')
-    : `Load the characters?\n\n· ${piano.pNuovi.length} characters to create, ${piano.pRinominati.length} to rename, ${piano.pDaTogliere.length} to remove\n· ${piano.aNuove.length} links to add, ${piano.aDaTogliere.length} to remove` + (togli ? '\n\nRemoved rows cannot be recovered.' : ''))) return;
-  // 🔄 v6.970 - SI SCRIVE UN DOCUMENTO SOLO: lo stato intero dei file (quello che il piano ha
-  //    ripulito: `piano.pulito`), non le differenze. Una scrittura invece di migliaia, e nessuno
-  //    stato «a metà»: il documento o è quello vecchio o è quello nuovo.
-  // 📏 Misura: ~1.100 personaggi e ~1.700 associazioni in chiavi da una lettera stanno sui 150 KB,
-  //    sotto il limite di 1 MB di un documento Firestore. Il conteggio dei byte lo fa l'anteprima.
-  const pacchetto = _pacchettoDaPiano(piano);
-  if (btn) btn.disabled = true;
-  let errore = null;
-  try {
-    if (esito) esito.innerHTML = '<div style="font-size:0.9rem;color:var(--muted);">' + (it ? 'Scrivo…' : 'Writing…') + '</div>';
-    const { doc, setDoc } = window._fb;
-    await setDoc(doc(db, PERSONAGGI_PACCHETTO.coll, PERSONAGGI_PACCHETTO.id), pacchetto);
-  } catch (e) { errore = e; console.error('applicaCaricaPersonaggi', e); }
-  if (btn) btn.disabled = false;
-  // La copia in memoria si butta: la prossima pagina dei personaggi rilegge dal server.
-  _personaggiDati = null; _personaggiCaricamento = null;
-  // §14, regola 3: alla fine SI RICONTA DA CAPO, dal server, con gli stessi file.
-  let restanti = null;
-  try { restanti = _pianoCaricaPersonaggi(piano.file, await _leggiPersonaggiDalServer()); }
-  catch (e) { console.error('ricontrollo personaggi', e); }
-  _pianoPersonaggi = null;
-  if (btn) btn.style.display = 'none';
-  if (esito) {
-    const ok = !errore && restanti && !restanti.daFare;
-    esito.innerHTML =
-      '<div style="font-size:0.9rem;color:' + (ok ? 'var(--success)' : 'var(--warn)') + ';">' +
-        (errore ? '<span style="color:var(--danger);">' + esc((it ? 'La scrittura si è fermata: ' : 'Writing stopped: ') + (errore.message || errore)) + '</span><br>' : '') +
-        (restanti
-          ? (it ? 'Ricontato dal server dopo la scrittura: <b>' + restanti.daFare + '</b> cose ancora da fare.'
-                : 'Recounted from the server after writing: <b>' + restanti.daFare + '</b> things still to do.')
-          : (it ? 'Non sono riuscito a ricontare dal server.' : 'Could not recount from the server.')) +
-      '</div>' + (restanti && restanti.daFare ? _righePianoPersonaggi(restanti, it) : '');
-  }
-  if (!errore) toast(it ? '✅ Personaggi caricati' : '✅ Characters loaded', 'success');
-}
 
 let _pianoFixRetro = null;
 function _calcolaPianoFixRetro(seriesId) {
@@ -66817,7 +66936,7 @@ function renderAdminFoto() {
       <div id="import-fig-section-content" style="display:none;">
       <p class="istruzioni-import" style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? '<span class="istruzioni-titolo">ISTRUZIONI:</span><br>- Seleziona la serie<br>- Carica il file XLS.<br><br><b class="istruzioni-sezione">I dettagli del file da caricare:</b><br>- Un unico file per figurine base, variazioni, change, omaggi ed errori di stampa.<br>- Ogni riga rappresenta quindi una sola Figurina<br><br><b class="istruzioni-sezione">Significato delle Colonne</b><br>- <code>Sottoserie</code>: sottoserie di appartenenza della figurina, se applicabile<br>- <code>Numero</code>: numero della figurina (bianco per serie senza numero)<br>- <code>Nome</code>: nome della figurina<br>- <code>Versione</code>: tipo della figurina; possibili valori: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>:<br>&nbsp;&nbsp;&nbsp;&nbsp;- da popolare solo per figurine non base (variazione - change - omaggio - errore)<br>&nbsp;&nbsp;&nbsp;&nbsp;- numero (o nome se non c’è numero) della figurina di partenza<br>- <code>Tipologia di change</code>: tipo del change (vedere valori ammessi); per un change di retro si lascia vuota, il tipo lo prende dal retro<br>- <code>Tipologia di errore di stampa</code>: tipo di errore di stampa (vedere valori ammessi); per un errore sul retro si lascia vuota, il tipo lo prende dal retro<br>- <code>Retro - Categoria</code>: categoria del retro associato alla figurina<br>- <code>Retro - Sottocategoria</code>: sottocategoria del retro associato alla figurina<br>- <code>Retro - Nome</code>: nome del retro associato alla figurina (va bene anche «Nome - Sottonome»)<br>- <code>Retro - Tipo di change</code>: tipologia di change del retro associato<br>- <code>Retro - Tipo di omaggio</code>: tipologia di omaggio del retro associato; per una figurina omaggio è obbligatoria, perché il tipo dell’omaggio è quello del suo retro<br>- <code>Retro - Tipo di errore</code>: tipologia di errore di stampa del retro associato<br><br><span class="istruzioni-sezione">NOTA:</span> tutte le righe vanno nella serie selezionata qui sopra. Le figurine base si<br>importano prima delle loro varianti, e ci pensa la procedura: non serve ordinarle nel file.'
+          ? '<span class="istruzioni-titolo">ISTRUZIONI:</span><br>- Seleziona la serie<br>- Carica il file XLS.<br><br><b class="istruzioni-sezione">I dettagli del file da caricare:</b><br>- Un unico file per figurine base, variazioni, change, omaggi ed errori di stampa.<br>- Ogni riga rappresenta quindi una sola Figurina<br><br><b class="istruzioni-sezione">Significato delle Colonne</b><br>- <code>Sottoserie</code>: sottoserie di appartenenza della figurina, se applicabile<br>- <code>Numero</code>: numero della figurina (bianco per serie senza numero)<br>- <code>Nome</code>: nome della figurina<br>- <code>Versione</code>: tipo della figurina; possibili valori: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>:<br>&nbsp;&nbsp;&nbsp;&nbsp;- da popolare solo per figurine non base (variazione - change - omaggio - errore)<br>&nbsp;&nbsp;&nbsp;&nbsp;- numero (o nome se non c’è numero) della figurina di partenza<br>- <code>Tipologia di change</code>: tipo del change (vedere valori ammessi); per un change di retro si lascia vuota, il tipo lo prende dal retro<br>- <code>Tipologia di errore di stampa</code>: tipo di errore di stampa (vedere valori ammessi); per un errore sul retro si lascia vuota, il tipo lo prende dal retro. Se è piena E il retro indicato è a sua volta un errore di stampa, è un errore su tutti e due i lati: questa è la tipologia del fronte<br>- <code>Retro - Categoria</code>: categoria del retro associato alla figurina<br>- <code>Retro - Sottocategoria</code>: sottocategoria del retro associato alla figurina<br>- <code>Retro - Nome</code>: nome del retro associato alla figurina (va bene anche «Nome - Sottonome»)<br>- <code>Retro - Tipo di change</code>: tipologia di change del retro associato<br>- <code>Retro - Tipo di omaggio</code>: tipologia di omaggio del retro associato; per una figurina omaggio è obbligatoria, perché il tipo dell’omaggio è quello del suo retro<br>- <code>Retro - Tipo di errore</code>: tipologia di errore di stampa del retro associato<br><br><span class="istruzioni-sezione">NOTA:</span> tutte le righe vanno nella serie selezionata qui sopra. Le figurine base si<br>importano prima delle loro varianti, e ci pensa la procedura: non serve ordinarle nel file.'
           : '<span class="istruzioni-titolo">INSTRUCTIONS:</span><br>- Select the series<br>- Upload the XLS file.<br><br><b class="istruzioni-sezione">About the file:</b><br>- One single file for base stickers, variations, changes, free versions and print errors.<br>- Each row is therefore one sticker<br><br><b class="istruzioni-sezione">Columns</b><br>- <code>Sottoserie</code>: subseries, if any<br>- <code>Numero</code>: sticker number (blank for series without numbers)<br>- <code>Nome</code>: sticker name<br>- <code>Versione</code>: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>: only for non-base stickers — number (or name) of the starting sticker<br>- <code>Tipologia di change</code> / <code>Tipologia di errore di stampa</code>: the type, from the ones configured on the series (leave it empty when the retro carries it; a free version always takes its type from its retro)<br>- <code>Retro - Categoria</code> / <code>Retro - Sottocategoria</code> / <code>Retro - Nome</code>: the linked retro<br>- <code>Retro - Tipo di change</code> / <code>Retro - Tipo di omaggio</code> / <code>Retro - Tipo di errore</code>: to link a variant retro instead of the base one<br><br><span class="istruzioni-sezione">NOTE:</span> every row goes into the series selected above. Base stickers are imported<br>before their variants automatically — no need to sort the file.'}
       </p>
       <a href="templates/template-figurine.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
