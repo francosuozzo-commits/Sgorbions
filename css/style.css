@@ -1017,7 +1017,10 @@ body {
    `overflow:hidden` che taglierebbe sia il testo sia la parte che sporge dal bordo. Sulla card
    la cornice dice DOVE; il COSA lo dice la riga TIPOLOGIA sotto la foto. */
 .fig-img-placeholder[data-lato-errore="fronte"] > .coppia-facce > div:first-child,
-.fig-img-placeholder[data-lato-errore="retro"]  > .coppia-facce > div:last-child {
+.fig-img-placeholder[data-lato-errore="retro"]  > .coppia-facce > div:last-child,
+/* v6.979 — l'errore di stampa DOPPIO: tutte e due le facce */
+.fig-img-placeholder[data-lato-errore="entrambi"] > .coppia-facce > div:first-child,
+.fig-img-placeholder[data-lato-errore="entrambi"] > .coppia-facce > div:last-child {
   /* 🔄 v6.560 — QUI STAVA UN box-shadow:inset, ED E' STATO SOSTITUITO DA UNA LINEA VERA,
      RIENTRATA. L'ombra interna correva sul bordo della faccia, e la faccia vive in un
      `overflow:hidden`: un'etichetta a cavallo di quella linea sarebbe stata tagliata a meta'.
@@ -1037,7 +1040,9 @@ body {
   box-sizing: border-box;
 }
 .fig-img-placeholder[data-lato-errore="fronte"] > .coppia-facce > div:first-child::before,
-.fig-img-placeholder[data-lato-errore="retro"]  > .coppia-facce > div:last-child::before {
+.fig-img-placeholder[data-lato-errore="retro"]  > .coppia-facce > div:last-child::before,
+.fig-img-placeholder[data-lato-errore="entrambi"] > .coppia-facce > div:first-child::before,
+.fig-img-placeholder[data-lato-errore="entrambi"] > .coppia-facce > div:last-child::before {
   content: '';
   /* 🔄 v6.563 — DA 7px A ZERO. La rientranza serviva a far stare la scritta a cavallo
      della linea (v6.560), ma costava il taglio della foto: una foto verticale riempie la
