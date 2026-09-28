@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.010 - Modificato js/app.js, index.html e css/style.css. 📝 LE CINQUE TODO di Franco («falle
+//          tutte»): in home, sul telefono, «Cosa puoi fare in questo sito ?»; sul telefono «Mostra
+//          numeriche delle serie»; nella tabella delle serie, sul telefono, FIGURINE E RETRO in una
+//          colonna; il titolo «Le serie Sgorbions»; le scritte in lime «LE SERIE SGORBIONS», «I
+//          PERSONAGGI SGORBIONS» e «GLI ARTICOLI DELLA SERIE».
 // v7.009 - Modificato js/app.js (e la versione in index.html). 📋 Nella ricerca della pagina della
 //          tipologia il riquadro «Filtra per appartenenza alla tua lista»: Nella mia lista, Non nella
 //          mia lista, Ciò che cerco - come nelle sezioni, per chi ha fatto l'accesso (Franco).
@@ -30483,7 +30488,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.009';
+const JS_VERSION = 'v7.010';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32159,7 +32164,7 @@ const i18n = {
 'how.2.title':'Build Your List','how.2.desc':'Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.',
 'how.3.title':'Connect and Ask','how.3.desc':'Ask questions and get answers from the administrator and other collectors.',
 'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
-'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions items ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Item types','catalog.allSeriesInfo':'Show summary information\non all series','catalog.allSeriesInfoShort':'All series info','catalog.allSeriesInfoTitle':'The Sgorbions series on record','catalog.addseries':'+ Add Series',
+'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions items ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Item types','catalog.allSeriesInfo':'Show summary information\non all series','catalog.allSeriesInfoShort':'Show series figures','catalog.allSeriesInfoTitle':'The Sgorbions series','home.cosaFare':'What can you do on this site ?','series.articoliTitolo':'THE ITEMS OF THE SERIES','catalog.addseries':'+ Add Series',
 'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them !',
 'back':'Inventory','detail.addfig':'+ Add Sticker',
 'blog.title':'Blog / Q&A','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New Question / News','blog.empty':'No posts yet. Start the conversation !',
@@ -32264,7 +32269,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Tipologie di articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine per album','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','catalog.backToSeries':'Serie','form.series.firstNumber':'N. prima figurina','form.series.lastNumber':'N. ultima figurina','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Tipologie di articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra numeriche delle serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions','home.cosaFare':'Cosa puoi fare in questo sito ?','series.articoliTitolo':'GLI ARTICOLI DELLA SERIE','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine per album','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','catalog.backToSeries':'Serie','form.series.firstNumber':'N. prima figurina','form.series.lastNumber':'N. ultima figurina','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione !',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici !',
@@ -40909,8 +40914,11 @@ function apriInfoTutteLeSerie() {
     // guardano affiancate. Metterlo dentro SPECIALI l'avrebbe sepolto fra i contrassegni.
     // 🔄 v6.824 (Franco) — «N. FIG» diventa «FIG»: su telefono le intestazioni si accorciano come su
     //    desktop («PRIMA», «ULTIMA»).
-    ? (it ? ['', 'FIG', 'RETRO', 'SPECIALI']
-          : ['', 'stickers', 'BACKS', 'SPECIALS'])
+    // 🔄 v7.010 (Franco: «le due colonne "fig" e "retro" diventano una colonna sola chiamata
+    //    "FIGURINE / E / RETRO"; ognuna di queste tre parole sta su una riga e il testo è giustificato
+    //    centralmente») - è la regola della v6.209: due colonne strette costano più di due righe.
+    ? (it ? ['', 'FIGURINE<br>E<br>RETRO', 'SPECIALI']
+          : ['', 'STICKERS<br>AND<br>BACKS', 'SPECIALS'])
     // v6.177 (Franco) - via il prefisso "N." / "NUMERO": la colonna dice gia' di essere un conteggio
     // perche' sotto ci sono dei numeri, e cinque prefissi uguali allungano le intestazioni senza
     // aggiungere niente. Stessa idea del "SI" tolto nella v6.166 e del `#` tolto nella v6.115.
@@ -41075,6 +41083,17 @@ function apriInfoTutteLeSerie() {
       ? _contoSerieACella(s, c.spille, 'spille')
         + `<div style="font-size:0.7rem;line-height:1.1;">${it ? '(SPILLE)' : '(PINS)'}</div>`
       : _contoSerieACella(s, c.base, 'figurines');
+    // 🆕 v7.010 (Franco: «il contenuto della cella è: FIGURINE / n / RETRO / m; anche il contenuto della
+    //    cella è giustificato centralmente») - le due voci una sotto l'altra. Una voce a zero non si
+    //    scrive (v6.166, lo zero resta vuoto); per la serie delle spille la prima voce dice SPILLE, che
+    //    è ciò che quel numero conta (v6.828).
+    const _figM = _spilleInFigurine ? _contoSerieACella(s, c.spille, 'spille') : _contoSerieACella(s, c.base, 'figurines');
+    const _retM = _contoSerieACella(s, c.retro, 'retros');
+    const _voceFR = (et, v) => v ? `<div style="font-size:0.7rem;line-height:1.1;">${et}</div><div>${v}</div>` : '';
+    const _cellaFigRetro = `<div style="text-align:center;">`
+      + _voceFR(it ? (_spilleInFigurine ? 'SPILLE' : 'FIGURINE') : (_spilleInFigurine ? 'PINS' : 'STICKERS'), _figM)
+      + ((_figM && _retM) ? '<div style="height:0.35rem;"></div>' : '')
+      + _voceFR(it ? 'RETRO' : 'BACKS', _retM) + `</div>`;
     const celle = mobile
       // 🔄 v6.821 - anche su telefono le due celle dei conteggi prendono il trattino. ⚠️ Le righe
       //    dentro SPECIALI no, ed e' dichiarato: `_rigaVar` non scrive la riga quando il valore e'
@@ -41084,10 +41103,7 @@ function apriInfoTutteLeSerie() {
       //    spille in quella serie»* (telefono). Se la serie non ha figurine con retro ma ha spille,
       //    N. FIG porta le spille. ⚠️ Una serie con tutte e due mostrerebbe le figurine: oggi non
       //    ce n'è nessuna, ed è dichiarato in prova-v6824 §5j.
-      ? [primaCella, (_spilleInFigurine
-           ? _contoSerieACella(s, c.spille, 'spille')
-           : _contoSerieACella(s, c.base, 'figurines')),
-         _contoSerieACella(s, c.retro, 'retros'), _speciali]
+      ? [primaCella, _cellaFigRetro, _speciali]   // 🔄 v7.010: figurine e retro in una cella
       // v6.211 - `c.retro` sta PRIMA di `c.changeRetro` (Franco): i due numeri dei retro si leggono
       // affiancati, come le due colonne dei change lo erano gia'.
       // 🔄 v6.823 - ogni conteggio porta la sua TIPOLOGIA e, dove esiste, la sua VERSIONE: la
@@ -42095,7 +42111,8 @@ function renderCatalogPersonaggi(grid) {
       + '<div class="card-desc" style="margin-top:0.3rem;padding-top:0.3rem;font-size:0.72rem;line-height:1.3;border-top:1px solid rgba(255,255,255,0.06);color:var(--accent);">' + conto + ' ' + _paroleArticoli(conto).trim() + '</div>'
       + '</div></div>';
   };
-  grid.innerHTML = cerca + (pagina.length ? pagina.map(card).join('')
+  // 🆕 v7.010 (Franco: «analogamente, quando il selettore è su "Personaggi", scrivi "I PERSONAGGI SGORBIONS"»)
+  grid.innerHTML = _rigaTitoloHub(it ? 'I PERSONAGGI SGORBIONS' : 'THE SGORBIONS CHARACTERS') + cerca + (pagina.length ? pagina.map(card).join('')
       : '<div class="empty-state" style="grid-column:1/-1;"><p class="empty-title">' + (it ? 'Nessun personaggio con questo nome.' : 'No character with this name.') + '</p></div>')
     + _paginazionePersonaggi(pagine);
   // 🆕 v7.000 - «Filtra per serie» e «Filtri aggiuntivi» diventano barre
@@ -43714,7 +43731,11 @@ function renderCatalog() {
     grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🎴</div><p class="empty-title">${t('catalog.empty')}</p></div>`;
     return;
   }
-  grid.innerHTML = series.map(s => seriesCardHTML(s)).join('');
+  // 🆕 v7.010 (Franco: «quando il selettore è su "serie", mostra la scritta "LE SERIE SGORBIONS" in lime
+  //    con lo stesso font di quella usata quando il selettore è su "tipologie di articolo"») - la stessa
+  //    funzione, `_rigaTitoloHub`
+  grid.innerHTML = _rigaTitoloHub(currentLang === 'it' ? 'LE SERIE SGORBIONS' : 'THE SGORBIONS SERIES')
+    + series.map(s => seriesCardHTML(s)).join('');
 }
 
 // v6.093 (Franco) - LA RICERCA NON DEVE CHIEDERE L'ACCENTO ESATTO.
