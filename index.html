@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.013">
+<link rel="stylesheet" href="css/style.css?v=7.014">
 
 
 <style>
@@ -815,7 +815,7 @@ button.back-btn { color:#ffffff; }
    Chi la accende e' updateNavUser() in app.js, insieme alle altre voci riservate agli utenti
    registrati: la media query qui sotto la spegne comunque su desktop, cosi' i due comandi non
    possono comparire insieme. */
-@media (min-width:861px) { #nav-logout-link, #nav-mialista-link { display:none !important; } }
+@media (min-width:861px) { #nav-logout-link, #nav-mialista-link, #nav-questionario-link { display:none !important; } }
 @media (max-width:860px) { #user-nav .btn-logout { display:none; } }
 
 /* 🆕 v6.353 (Franco) — «IMPERSONA UN UTENTE» SOLO SU TELEFONO.
@@ -1693,6 +1693,10 @@ button.back-btn { color:#ffffff; }
          si apre dal riquadro "Costruisci la Tua Lista" in home. Sta PRIMA del Logout, che per
          richiesta di Franco resta l'ultima voce del panino. -->
     <a onclick="openDemoToggleModal()" id="nav-mialista-link" data-i18n="nav.mialista" style="display:none;">Mia lista</a>
+    <!-- 🆕 v7.014 (Franco: «da mobile gli darei una dignità di una riga nel menu») - il questionario,
+         subito dopo «Mia lista» (`order: 6` nel foglio, le successive scalano di uno), solo sul
+         telefono e solo con l'accesso, come quella. -->
+    <a onclick="apriWizardLista()" id="nav-questionario-link" data-i18n="nav.questionario" style="display:none;">Questionario Sgorbions</a>
     <a onclick="logout()" id="nav-logout-link" data-i18n="nav.logout" style="display:none;">Logout</a>
     </div>
   </div>
@@ -2068,6 +2072,10 @@ button.back-btn { color:#ffffff; }
         <!-- 🔄 v7.011 (Franco: «deve essere in giallo, e allineata a sx; e un po' più piccola») - il giallo
              è quello dei nomi delle categorie (`COL_CATEGORIA`, #ffd84d); da 1,45 a 1,15rem. -->
         <h2 class="carosello-titolo solo-telefono" style="color:#ffd84d;text-align:left;font-size:1.15rem;" data-i18n="home.cosaFare">Cosa puoi fare in questo sito ?</h2>
+        <!-- 🆕 v7.014 (Franco: «un bottone bello grosso… che faccia partire una procedura guidata») - il
+             percorso per costruire la lista. Sta nel blocco di chi ha fatto l'accesso: senza accesso una
+             lista non c'è. -->
+        <div style="text-align:center;margin:0.3rem 0 1.4rem;"><button type="button" class="btn-primary wz-pulsante" onclick="apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
       </div>
       <div id="home-how-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;font-size:1.15em;" class="reveal">
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('catalog')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
@@ -2137,6 +2145,9 @@ button.back-btn { color:#ffffff; }
           <h1 style="font-family:var(--font-display);font-size:2.2rem;" data-i18n="catalog.title">The Inventory</h1>
           <!-- v6.972 (Franco: «la frase "Tutti i personaggi Sgorbions, con i loro articoli" va in bianco») - bianca in tutti e tre i tagli: è lo stesso elemento -->
           <p id="catalog-sub" style="color:var(--text);font-size:0.9rem;" data-i18n="catalog.sub">All Sgorbions series published</p>
+          <!-- 🆕 v7.014 - il percorso guidato anche dall'Inventario; lo accende `renderCatalog` solo a chi
+               ha fatto l'accesso -->
+          <div id="wz-pulsante-inv" style="display:none;margin-top:0.6rem;"><button type="button" class="btn-primary wz-pulsante" onclick="apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
         </div>
         <div id="admin-add-series-btn" style="display:none;justify-self:end;">
           <button class="btn-primary btn-admin" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
@@ -3121,6 +3132,8 @@ di tutte le serie</button>
 <div id="page-profile" class="page">
   <section class="section">
     <div class="section-inner">
+      <!-- 🆕 v7.014 - il percorso guidato anche dal profilo, sopra la tua lista -->
+      <div style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary wz-pulsante" onclick="apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
       <div id="profile-content">
 <!-- 🔄 v6.685 (Franco: «il tasto "Torna a home" non e' bianco come gli altri tasti di navigazione pagine») — DA `--muted` A BIANCO.
            🔴 `--muted` e' il colore delle NOTE, di cio' che si puo' non leggere: su un COMANDO dice «questo conta meno». Gli altri tasti indietro sono bianchi per la regola `button.back-btn` in cima a questo file; questo quella classe non ce l'ha.
@@ -5736,7 +5749,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.013"></script>
+<script src="js/app.js?v=7.014"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5760,7 +5773,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.013'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.014'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
