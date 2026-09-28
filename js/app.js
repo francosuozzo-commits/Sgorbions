@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.002 - Modificato js/app.js (e la versione in index.html). 🎛️ Sul computer «Apri ▼» / «Chiudi ▲»
+//          sta a SINISTRA, prima del titolo, come un piccolo pulsante (Franco: «a dx è veramente
+//          lontana»); sul telefono resta a destra. Una barra sola per tutti i riquadri.
 // v7.001 - Modificato js/app.js (e la versione in index.html). 🔎 Nella ricerca della pagina della
 //          tipologia: via il campo Sottocategoria; la Categoria propone le categorie mentre scrivi
 //          (autocompletamento); la buca di testo senza suggerimento (Franco).
@@ -30457,7 +30460,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.001';
+const JS_VERSION = 'v7.002';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33852,9 +33855,8 @@ function renderRicercaTipologia() {
     //    BARRA DA TOCCARE: alta almeno 44px (la misura di un dito), il titolo dentro e non sul bordo, e
     //    a destra la parola che dice cosa succede - «Apri ▼» / «Chiudi ▲». Un triangolino da solo lo
     //    capisce chi sa già che c'è.
-    const testa = '<button type="button" onclick="_rtApri(\'' + k + '\')" aria-expanded="' + aperto + '" style="width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:0.6rem;background:transparent;border:none;color:var(--text);font-family:inherit;font-size:0.9rem;font-weight:600;padding:0.55rem 0.9rem;cursor:pointer;text-align:left;">'
-      + '<span>' + tit + (accese ? ' <span style="color:var(--accent);">(' + accese + ')</span>' : '') + '</span>'
-      + '<span style="font-size:0.8rem;font-weight:400;opacity:0.85;white-space:nowrap;">' + (aperto ? (it ? 'Chiudi ▲' : 'Close ▲') : (it ? 'Apri ▼' : 'Open ▼')) + '</span></button>';
+    // 🔄 v7.002 - la barra è quella di tutti (`_bmBarraHTML`), con lo stato di questa pagina
+    const testa = _bmBarraHTML(k, tit, accese, aperto, "_rtApri('" + k + "')");
     return '<div style="margin-top:0.8rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);">'
       + testa + (aperto ? '<div style="padding:0 0.9rem 0.8rem;">' + dentro + '</div>' : '') + '</div>';
   };
@@ -51276,11 +51278,19 @@ function _riquadriAvrannoMaiQualcosa() {
 //    sfondo lime `var(--accent)`, lo stesso che le fa vedere accese). Partono tutti chiusi, e lo stato
 //    resta per la sessione (`_bmAperti`).
 const _bmAperti = {};
-function _bmBarraHTML(chiave, tit, accese, aperto) {
-  const it = currentLang === 'it';
-  return '<button type="button" class="bm-barra" onclick="_bmApri(\'' + chiave + '\')" aria-expanded="' + aperto + '" style="width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:0.6rem;background:transparent;border:none;color:var(--text);font-family:inherit;font-size:0.9rem;font-weight:600;padding:0.55rem 0.9rem;cursor:pointer;text-align:left;">'
-    + '<span>' + esc(tit) + (accese ? ' <span style="color:var(--accent);">(' + accese + ')</span>' : '') + '</span>'
-    + '<span style="font-size:0.8rem;font-weight:400;opacity:0.85;white-space:nowrap;">' + (aperto ? (it ? 'Chiudi ▲' : 'Close ▲') : (it ? 'Apri ▼' : 'Open ▼')) + '</span></button>';
+// 🔄 v7.002 (Franco: «sono su dsk: è possibile avere la tendina di espansione del box a sx? a dx è
+//    veramente lontana») - SUL COMPUTER IL COMANDO VA A SINISTRA, prima del titolo, vestito da piccolo
+//    pulsante: su una barra larga quanto la pagina, a destra finiva a un metro dal titolo. Sul telefono
+//    resta a destra, dove la barra è corta e il pollice ci arriva.
+// 📌 `onclick` facoltativo: la pagina della tipologia ha lo stato suo (`_rtApri`). Una barra sola per
+//    tutti: fino alla v7.001 quella della tipologia era una copia di questa.
+function _bmBarraHTML(chiave, tit, accese, aperto, onclick) {
+  const it = currentLang === 'it', mob = _isMobileViewport();
+  const titolo = '<span>' + esc(tit) + (accese ? ' <span style="color:var(--accent);">(' + accese + ')</span>' : '') + '</span>';
+  const comando = '<span style="font-size:0.8rem;font-weight:400;white-space:nowrap;' + (mob ? 'opacity:0.85;' : 'border:1px solid var(--border2);border-radius:999px;padding:0.1rem 0.65rem;') + '">'
+    + (aperto ? (it ? 'Chiudi ▲' : 'Close ▲') : (it ? 'Apri ▼' : 'Open ▼')) + '</span>';
+  return '<button type="button" class="bm-barra" onclick="' + (onclick || ('_bmApri(\'' + chiave + '\')')) + '" aria-expanded="' + aperto + '" style="width:100%;min-height:44px;display:flex;align-items:center;justify-content:' + (mob ? 'space-between' : 'flex-start') + ';gap:' + (mob ? '0.6rem' : '0.8rem') + ';background:transparent;border:none;color:var(--text);font-family:inherit;font-size:0.9rem;font-weight:600;padding:0.55rem 0.9rem;cursor:pointer;text-align:left;">'
+    + (mob ? titolo + comando : comando + titolo) + '</button>';
 }
 function _bmApplica(box, chiave) {
   if (!box) return;
