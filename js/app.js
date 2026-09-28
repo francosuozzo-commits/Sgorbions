@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.994 - Modificato js/app.js e index.html. 🔎 LA RICERCA IN TUTTE LE SERIE, nella pagina della
+//          tipologia (Franco: «non abbiamo una ricerca cross serie che offra le stesse feature della
+//          ricerca fatta su singola serie, per una data tipologia»). Sotto il carosello: buca di
+//          testo, Categoria e Sottocategoria (testo), Filtra per serie, Versioni, e per l'admin i
+//          filtri aggiuntivi. Risultati come la ricerca globale, raggruppati per serie. I filtri
+//          admin escono dal setaccio della sezione in `_passaFiltriAdmin`, che usano tutti e due.
+//          E via il suggerimento d'esempio dal campo «Nomi alternativi» (Franco).
+//          E il titolo della pagina della tipologia si costruisce dal nome a schermo e dal genere:
+//          «Le Figurine per album Sgorbions», «I Retro Sgorbions» (Franco).
+//          E la FAMIGLIA si cerca, in tutte e tre le ricerche (Franco: «devi cercare anche per
+//          famiglia»).
 // v6.993 - Modificato js/app.js (e la versione in index.html). 🖼️ Nella scheda in modifica il
 //          fronte e il «Retro associato» AFFIANCATI, come le due facce delle spille (v6.866):
 //          nelle fcr e in ogni tipologia col retro come articolo collegato (Franco: «sì, affiancale
@@ -30422,7 +30433,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.993';
+const JS_VERSION = 'v6.994';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33703,6 +33714,162 @@ function renderCaroselloSezione() {
   box.onmouseenter = () => _caroselloSpegni('sezione');
   box.onmouseleave = () => _caroselloAvviaBox(box, 'sezione', vivo);
   _caroselloAvviaBox(box, 'sezione', vivo);
+}
+
+// ---- LA RICERCA IN TUTTE LE SERIE, NELLA PAGINA DELLA TIPOLOGIA (v6.994, Franco) -------------
+// Franco: «non abbiamo una ricerca cross serie che offra le stesse feature della ricerca fatta su
+// singola serie… se volessi cercare tutti i retro di categoria RICERCATO devo farlo serie per serie».
+// La lista l'abbiamo decisa insieme: buca di testo (le regole della ricerca globale), Categoria e
+// Sottocategoria come campi di testo («le pillole non sarebbero troppe? e poi, che fai, le mischi?»),
+// Filtra per serie, Versioni, e per l'admin i filtri aggiuntivi («i filtri delle sezioni admin sono
+// validi per ogni TDA»). Fuori, per ora, ciò che ha senso solo dentro una serie (famiglie, sottoserie,
+// tipi di change e di errore, mia lista, vista tabellare).
+// 📌 LO STATO È SUO (`_rt`): accendere un filtro qui non accende niente nelle sezioni, e viceversa.
+//    Si riparte da vuoto cambiando tipologia, non tornando sulla stessa.
+// 📌 I RISULTATI SONO QUELLI DELLA RICERCA GLOBALE (`renderCatalogSearch` con `opts.el`): stessa
+//    card, stesso raggruppamento per serie, stessa apertura della scheda.
+// 📌 Con la ricerca spenta si vedono i box delle serie di sempre; accesa, al loro posto i risultati.
+let _rtSez = null;
+let _rt = null;
+function _rtNuovo() {
+  return { testo: '', cat: '', sottocat: '', serie: new Set(), versioni: new Set(),
+           _fotoFilter: null, _noteFilter: false, _senzaRaritaFilter: false, _senzaPersonaggioFilter: false,
+           _conNomiAlternativiFilter: false, _conNomeCaroselloFilter: false, _visibilitaFilter: 'all' };
+}
+function _rtAcceso() {
+  const x = _rt;
+  return !!(x && (x.testo.trim() || x.cat.trim() || x.sottocat.trim() || x.serie.size || x.versioni.size
+    || x._fotoFilter || x._noteFilter || x._senzaRaritaFilter || x._senzaPersonaggioFilter
+    || x._conNomiAlternativiFilter || x._conNomeCaroselloFilter || x._visibilitaFilter !== 'all'));
+}
+// La versione di un articolo: 'base' o la chiave della sua versione (le chiavi di `VERSIONI_ARTICOLO`).
+function _rtVersione(f) {
+  if (_eBase(f)) return 'base';
+  const v = VERSIONI_ARTICOLO.find(x => f[x.campo]);
+  return v ? v.chiave : 'base';
+}
+// Gli articoli della tipologia che passano la ricerca. `esclusa` ('serie' | 'versioni') ignora quel
+// filtro: serve a contare le pillole, che dicono quanti ne troveresti accendendo loro (v6.271).
+function _rtFiltrati(esclusa) {
+  const x = _rt, sec = _rtSez;
+  const tutte = getData('figurines', []);
+  const qn = _perRicerca(x.testo.trim()), qc = _perRicerca(x.cat.trim()), qs = _perRicerca(x.sottocat.trim());
+  const adm = !!currentUser?.isAdmin;
+  const st = adm ? {
+    _fotoFilter: x._fotoFilter, _noteFilter: x._noteFilter, _senzaRaritaFilter: x._senzaRaritaFilter,
+    _ixPersFiltro: (x._senzaPersonaggioFilter && _personaggiDati) ? _indiciPersonaggi() : null,
+    _conNomiAlternativiFilter: x._conNomiAlternativiFilter, _conNomeCaroselloFilter: x._conNomeCaroselloFilter,
+    _visibilitaFilter: x._visibilitaFilter } : null;
+  return tutte.filter(f => (f.section || 'figurines') === sec
+    && (!qn || _figMatchRicerca(f, qn))
+    && (!qc || _matchRicerca(f.category, qc))
+    && (!qs || _matchRicerca(f.subcategory, qs))
+    && (esclusa === 'serie' || !x.serie.size || x.serie.has(f.seriesId))
+    && (esclusa === 'versioni' || !x.versioni.size || x.versioni.has(_rtVersione(f)))
+    && (!st || _passaFiltriAdmin(f, tutte, st)));
+}
+// Le pillole: il nome = solo questa (ripremuta da sola, la spegne), il «+» = aggiungi o togli.
+function _rtSolo(tipo, val) {
+  const set = _rt[tipo];
+  _rt[tipo] = (set.size === 1 && set.has(val)) ? new Set() : new Set([val]);
+  renderRicercaTipologia();
+}
+function _rtAggiungi(tipo, val) {
+  const set = _rt[tipo];
+  if (set.has(val)) set.delete(val); else set.add(val);
+  renderRicercaTipologia();
+}
+function _rtToggle(chiave) {
+  _rt[chiave] = !_rt[chiave];
+  if (chiave === '_senzaPersonaggioFilter' && _rt[chiave] && !_personaggiDati) {
+    caricaPersonaggi().then(() => { try { renderRicercaTipologia(); } catch (e) { console.error('renderRicercaTipologia', e); } })
+      .catch(e => console.error('caricaPersonaggi (ricerca tipologia)', e));
+  }
+  renderRicercaTipologia();
+}
+function _rtFoto(quale) { _rt._fotoFilter = (_rt._fotoFilter === quale) ? null : quale; renderRicercaTipologia(); }
+function _rtVisibilita(quale) { _rt._visibilitaFilter = (_rt._visibilitaFilter === quale) ? 'all' : quale; renderRicercaTipologia(); }
+function _rtAzzera() { _rt = _rtNuovo(); renderRicercaTipologia(); }
+function _rtScrivi(campo, valore) { _rt[campo] = valore; renderRicercaTipologia(); }
+
+function renderRicercaTipologia() {
+  const box = document.getElementById('prodotto-ricerca');
+  const ris = document.getElementById('prodotto-risultati');
+  const griglia = document.getElementById('prodotto-serie-grid');
+  if (!box || !_rtSez) return;
+  if (!_rt) _rt = _rtNuovo();
+  const it = currentLang === 'it', adm = !!currentUser?.isAdmin, sec = _rtSez, x = _rt;
+  // chi stava scrivendo in una buca la ritrova col cursore dov'era: il riquadro si ridisegna intero
+  const att = document.activeElement, idAtt = att && att.id && att.id.indexOf('rt-') === 0 ? att.id : null;
+  const cur = idAtt ? att.selectionStart : null;
+  const miei = getData('figurines', []).filter(f => (f.section || 'figurines') === sec);
+  const conCat = miei.some(f => String(f.category || '').trim());
+  const conSottocat = miei.some(f => String(f.subcategory || '').trim());
+  const bordo = 'position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;pointer-events:none;';
+  const riquadro = (titolo, dentro) => '<div style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
+    + '<div style="' + bordo + '">' + titolo + '</div>' + dentro + '</div>';
+  const buca = (id, campo, etichetta, ph) => '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;flex:1 1 220px;">'
+    + '<span style="' + bordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + etichetta + '</span>'
+    + '<div class="search-input-wrap"><span class="search-icon">🔍</span>'
+    + '<input class="search-input" type="text" id="' + id + '" value="' + esc(x[campo]) + '" placeholder="' + esc(ph) + '" oninput="_rtScrivi(\'' + campo + '\', this.value)">'
+    + (x[campo] ? '<span class="search-clear-btn" onclick="_rtScrivi(\'' + campo + '\', \'\')">✕</span>' : '')
+    + '</div></div>';
+  // le serie che di questa tipologia hanno qualcosa, nell'ordine delle serie
+  const perSerie = new Map(); _rtFiltrati('serie').forEach(f => perSerie.set(f.seriesId, (perSerie.get(f.seriesId) || 0) + 1));
+  const serieConRoba = new Set(miei.map(f => f.seriesId));
+  const pSerie = (getData('series', []) || []).filter(z => serieConRoba.has(z.id) || x.serie.has(z.id))
+    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+    .map(z => _chipTipoHTML({ etichetta: _nomeSerieCard(z), n: perSerie.get(z.id) || 0, attiva: x.serie.has(z.id), it,
+      onSet: '_rtSolo(\'serie\', \'' + esc(z.id) + '\')', onAdd: '_rtAggiungi(\'serie\', \'' + esc(z.id) + '\')',
+      titolo: it ? 'Solo questa serie' : 'This series only' })).join('');
+  // le versioni che questa tipologia può avere, più la base
+  const perVer = new Map(); _rtFiltrati('versioni').forEach(f => { const k = _rtVersione(f); perVer.set(k, (perVer.get(k) || 0) + 1); });
+  const vers = ['base'].concat(_versioniDellaTDA(sec));
+  const pVer = vers.map(k => {
+    const v = VERSIONI_ARTICOLO.find(y => y.chiave === k);
+    const et = k === 'base' ? 'Base' : (it ? (v && (v.filtroIt || v.pluraleIt || v.it)) : (v && (v.filtroEn || v.pluraleEn || v.en))) || k;
+    return _chipTipoHTML({ etichetta: et, n: perVer.get(k) || 0, attiva: x.versioni.has(k), it,
+      onSet: '_rtSolo(\'versioni\', \'' + k + '\')', onAdd: '_rtAggiungi(\'versioni\', \'' + k + '\')',
+      titolo: it ? 'Solo questa versione' : 'This version only' });
+  }).join('');
+  // i filtri admin: le stesse parole della ricerca di sezione
+  const bott = (acceso, onclick, et) => '<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ' + (acceso ? 'on' : '') + '" onclick="' + onclick + '" title="' + et + '"></button><span style="font-size:0.82rem;color:var(--text);">' + et + '</span></div>';
+  const adminHTML = !adm ? '' : riquadro(it ? 'Filtri aggiuntivi admin' : 'Admin filters',
+    '<div style="display:flex;flex-wrap:wrap;gap:0.6rem 1.2rem;">'
+    + bott(x._fotoFilter === 'senza', "_rtFoto('senza')", it ? 'Senza foto' : 'Without photo')
+    + bott(x._fotoFilter === 'con', "_rtFoto('con')", it ? 'Con foto' : 'With photo')
+    + bott(x._fotoFilter === 'nonDisp', "_rtFoto('nonDisp')", it ? 'Con foto non disponibile' : 'Marked photo unavailable')
+    + bott(x._noteFilter, "_rtToggle('_noteFilter')", it ? 'Con note' : 'With notes')
+    + bott(x._senzaRaritaFilter, "_rtToggle('_senzaRaritaFilter')", it ? 'Senza rarità' : 'Without rarity')
+    + bott(x._senzaPersonaggioFilter, "_rtToggle('_senzaPersonaggioFilter')", it ? 'Senza personaggio' : 'Without character')
+    + bott(x._conNomiAlternativiFilter, "_rtToggle('_conNomiAlternativiFilter')", it ? 'Con nomi alternativi' : 'With alternative names')
+    + bott(x._conNomeCaroselloFilter, "_rtToggle('_conNomeCaroselloFilter')", it ? 'Con Nome carosello mobile alterato' : 'With altered mobile carousel name')
+    + bott(x._visibilitaFilter === 'visibili', "_rtVisibilita('visibili')", it ? 'Visibili' : 'Visible')
+    + bott(x._visibilitaFilter === 'invisibili', "_rtVisibilita('invisibili')", it ? 'Invisibili' : 'Invisible')
+    + '</div>');
+  const titolo = it ? 'Cerca in tutte le serie: ' + esc(getSectionLabel(sec)) : 'Search all series: ' + esc(getSectionLabel(sec));
+  box.innerHTML = '<div id="rt-search-box" style="background:var(--card);border:1px solid var(--action);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-bottom:1.2rem;">'
+    + '<div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.9rem;">'
+    + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + titolo + '</div>'
+    + (_rtAcceso() ? '<button type="button" class="btn-primary" onclick="_rtAzzera()" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>' : '')
+    + '</div>'
+    // Franco: «nel suggerimento della buca scrivi solo questo: "Nome, famiglia categoria, sottocategoria, ecc"»
+    + buca('rt-testo', 'testo', t('items.searchHint'), it ? 'Nome, famiglia, categoria, sottocategoria, ecc.' : 'Name, family, category, subcategory, etc.')
+    + ((conCat || conSottocat) ? '<div style="display:flex;flex-wrap:wrap;gap:0 0.9rem;">'
+      + (conCat ? buca('rt-cat', 'cat', it ? 'Categoria' : 'Category', it ? 'es. ricercato' : 'e.g. wanted') : '')
+      + (conSottocat ? buca('rt-sottocat', 'sottocat', it ? 'Sottocategoria' : 'Subcategory', '') : '')
+      + '</div>' : '')
+    + (pSerie ? riquadro(it ? 'Filtra per serie' : 'Filter by series', '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + pSerie + '</div>') : '')
+    + riquadro(it ? 'Filtra per versione' : 'Filter by version', '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + pVer + '</div>')
+    + adminHTML
+    + '</div>';
+  if (idAtt) { const el = document.getElementById(idAtt); if (el) { el.focus(); try { el.setSelectionRange(cur, cur); } catch (e) {} } }
+  const acceso = _rtAcceso();
+  if (griglia) griglia.style.display = acceso ? 'none' : '';
+  if (!ris) return;
+  ris.style.display = acceso ? '' : 'none';
+  if (!acceso) { ris.innerHTML = ''; return; }
+  renderCatalogSearch(x.testo, { el: ris, figs: _rtFiltrati() });
 }
 
 // ---- CAROSELLO DELL'HUB DI UN PRODOTTO (v6.073, Franco) ---------------------------------------
@@ -40982,16 +41149,25 @@ function _fotoProdotto(sec) {
 // ("Figurine"): e' il nome della cosa ("Le Figurine Sgorbions"). L'articolo cambia col genere e col
 // numero, quindi si scrive, non si compone: "Le Figurine", "I Retro", "Gli Album". Comporlo da
 // getSectionLabel avrebbe voluto dire una regola grammaticale italiana dentro il codice.
+// 🔄 v6.994 (Franco: «come mai il titolo della pagina della tda "Figurine per album" non è fatto allo
+//    stesso modo nella pagina della tda "Figurine con retro"?»; «procedi con il titolo della pagina che
+//    riprende il nome della tda») - IL TITOLO SI COSTRUISCE, non si scrive. Era una tabellina a mano
+//    con le cinque tipologie della v6.073: le sei nate dopo ripiegavano sul nome nudo, e le figurine
+//    con retro dicevano «Le Figurine Sgorbions». Ora: articolo + nome a schermo + «Sgorbions».
+// 📌 L'articolo lo decide il GENERE del descrittore (`genere`, lo stesso di «Le hai tutte !»): «Le»
+//    per il femminile; per il maschile «Gli» davanti a vocale, s impura, z, gn, ps, x, y, e se no «I».
+// 📌 Serve solo dove questa pagina si apre, cioè alle tipologie in più serie (v6.770).
+function _articoloPlurale(nome, genere) {
+  if (genere === 'f') return 'Le';
+  const n = String(nome || '').trim().toLowerCase();
+  return /^([aeiouàèéìòùhxy]|s[^aeiouàèéìòù]|z|gn|ps|pn)/.test(n) ? 'Gli' : 'I';
+}
 function _titoloProdotto(sec) {
-  const it = {
-    figurines: 'Le Figurine Sgorbions', retros: 'I Retro Sgorbions', bustine: 'Le Bustine Sgorbions',
-    albums: 'Gli Album Sgorbions',      extras: 'Gli Altri articoli Sgorbions'
-  };
-  const en = {
-    figurines: 'The Sgorbions Stickers', retros: 'The Sgorbions Retros', bustine: 'The Sgorbions Wrappers',
-    albums: 'The Sgorbions Albums',      extras: 'The Other Sgorbions Items'
-  };
-  return (currentLang === 'it' ? it : en)[sec] || getSectionLabel(sec);
+  const a = ARTICOLI[sec];
+  if (!a) return getSectionLabel(sec);
+  return currentLang === 'it'
+    ? _articoloPlurale(a.it, a.genere) + ' ' + a.it + ' Sgorbions'
+    : 'The Sgorbions ' + a.en;
 }
 
 // La scomposizione per tipologia, COI COLORI del codice tipologie (v5.703): base, variazione
@@ -43240,6 +43416,10 @@ function _creaProdottoDetail() {
       // `grid-3`, che una sua regola per il telefono ce l'ha gia' (tre colonne).
       // Due griglie che mostrano le stesse serie devono comportarsi allo stesso modo, e il modo
       // di ottenerlo non e' ritoccare il 240: e' usare la stessa classe.
+      // 🆕 v6.994 - la ricerca in tutte le serie, e il posto dei suoi risultati (vedi
+      //    `renderRicercaTipologia`). Con la ricerca spenta si vedono i box delle serie di sempre.
+      '<div id="prodotto-ricerca"></div>' +
+      '<div id="prodotto-risultati" style="display:none;"></div>' +
       '<div class="grid-3" id="prodotto-serie-grid"></div>' +
     '</div>';
   // v6.073 (Franco) — BACO: l'hub partiva piu' in basso di quello di una serie. Con
@@ -43328,6 +43508,9 @@ function openProdottoDetail(sec) {
   }).join('');
 
   try { renderCaroselloProdotto(); } catch (e) { console.error('renderCaroselloProdotto', e); }
+  // 🆕 v6.994 - la ricerca: si riparte da vuota solo cambiando tipologia
+  if (_rtSez !== sec) { _rtSez = sec; _rt = _rtNuovo(); }
+  try { renderRicercaTipologia(); } catch (e) { console.error('renderRicercaTipologia', e); }
   try { _aggiornaLogoNavbar(); } catch (e) {}
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -43564,6 +43747,7 @@ function _campiRicercaFigurina(f) {
   //    gliel'aveva copiato.
   const campi = [f.name, f.subseries, f.desc, f.category, f.subcategory, f.subname, f.fullName,
                  ..._nomiAlternativi(f),                             // 🆕 v6.986 - per tutti, anche se non si vede
+                 f.famiglia,                                         // 🆕 v6.994 (Franco: «devi cercare anche per famiglia»)
                  (f.isChange ? _tipoChange(f) : f.changeType),        // v6.792
                  f.printErrorType,
                  (f.isFreeVersion ? _tipoOmaggio(f) : f.freeVersionType),   // 🔄 v6.795
@@ -43711,6 +43895,7 @@ function _frasePerQuesta(n) {
     : `${n} item${n === 1 ? '' : 's'}`;
 }
 function renderCatalogSearch(q) {
+  const opts = arguments[1];   // 🆕 v6.994 - il secondo argomento facoltativo (la firma resta quella di sempre)
   // 🆕 v6.405 (Franco) - LE DUE MINIATURE, E IL RAPPORTO FRA LORO SCRITTO UNA VOLTA SOLA.
   // Franco: *"nella ricerca globale la miniatura della serie la vorrei piu grande della miniatura
   // dei risultati: di un fattore 2:1"*.
@@ -43737,21 +43922,25 @@ function renderCatalogSearch(q) {
   // v6.093 - `q` resta il testo COME L'HA SCRITTO Franco, perche' finisce nel messaggio
   // "Nessun risultato per ...": mostrargli la versione senza accenti sarebbe rispondere a una
   // domanda che non ha fatto. A confrontare ci pensa `qn`.
-  q = (q || document.getElementById('series-search')?.value || '').trim();
+  // 🆕 v6.994 - `opts.el` = scrivi i risultati QUI (la pagina della tipologia), `opts.figs` = gli
+  //    articoli già filtrati da chi chiama. Senza `opts` la funzione è quella di sempre.
+  const _dentro = !!(opts && opts.el);
+  q = _dentro ? String(q || '').trim() : (q || document.getElementById('series-search')?.value || '').trim();
   const qn = _perRicerca(q);
   // v6.093 - se dopo la normalizzazione non resta NIENTE (si e' cercato "-", o dei soli spazi),
   // `includes('')` sarebbe vero per ogni campo di ogni oggetto: la ricerca risponderebbe con
   // l'intero catalogo, cioe' il contrario di quello che chiede chi ha scritto qualcosa. Un testo
   // fatto di soli separatori non e' una domanda: si torna al catalogo, come a campo vuoto.
-  if (!qn) { renderCatalog(); return; }
-  const resultsEl = document.getElementById('catalog-search-results');
-  const grid = document.getElementById('catalog-grid');
-  if (!q) { renderCatalog(); return; }
+  // v6.994 - dentro la pagina della tipologia si cerca anche a buca vuota: bastano i filtri
+  if (!qn && !_dentro) { renderCatalog(); return; }
+  const resultsEl = _dentro ? opts.el : document.getElementById('catalog-search-results');
+  const grid = _dentro ? null : document.getElementById('catalog-grid');
+  if (!q && !_dentro) { renderCatalog(); return; }
   if (resultsEl) resultsEl.style.display = '';
   if (grid) grid.style.display = 'none';
   // 🆕 v6.967 - nasconde «Sfoglia per» e i pulsanti del catalogo. Il `typeof` perché i banchi di
   //    prova eseguono questa funzione da sola, senza il resto del catalogo.
-  if (typeof _aggiornaBivioInventario === 'function') _aggiornaBivioInventario();
+  if (!_dentro && typeof _aggiornaBivioInventario === 'function') _aggiornaBivioInventario();
 
   // 🔴 v6.899 (Franco: «nei risultati della ricerca globale sono uscite due serie che sono in
   //    arrivo; avevamo detto che non devono uscire quelle in arrivo») - LA RICERCA PASSA DALLE
@@ -43783,6 +43972,7 @@ function renderCatalogSearch(q) {
     allSeries = allSeries.concat(_inArrivo);
     allFigs = allFigs.concat((getData('figurines', []) || []).filter(f => !f.invisibile && _idInArrivo.has(f.seriesId)));
   }
+  if (_dentro) allFigs = opts.figs || [];   // v6.994 - gli articoli li ha già scelti chi chiama
   allSeries.sort((a,b) => (a.order??9999)-(b.order??9999));
   // 🆕 v6.965 - l'indice di TUTTI gli articoli, una volta sola: `_comparatoreGriglia` risale dalla
   //    versione alla sua base, e la base può non essere fra i risultati della ricerca.
@@ -43807,8 +43997,8 @@ function renderCatalogSearch(q) {
     //    ⚠️ Si guardano TUTTI E DUE i nomi in tutte e due le lingue, non quello della
     //    lingua corrente: il nome italiano resta l'identificatore, e chi lo conosce deve
     //    poterlo digitare comunque.
-    const seriesMatch = _matchRicerca(s.name, qn) || _matchRicerca(s.nameEn || '', qn)
-                     || _matchRicerca(desc, qn);   // v6.264
+    const seriesMatch = !_dentro && (_matchRicerca(s.name, qn) || _matchRicerca(s.nameEn || '', qn)
+                     || _matchRicerca(desc, qn));   // v6.264; v6.994: non dentro la tipologia
     // v6.096 - l'elenco dei campi sta in _campiRicercaFigurina, condiviso con la ricerca di sezione
     const matchingFigs = allFigs.filter(f => f.seriesId === s.id && _figMatchRicerca(f, qn));
     if (seriesMatch || matchingFigs.length) {
@@ -43817,7 +44007,7 @@ function renderCatalogSearch(q) {
   });
 
   if (!results.length) {
-    resultsEl.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><p class="empty-title">${currentLang === 'it' ? 'Nessun risultato per "' + q + '"' : 'No results for "' + q + '"'}</p></div>`;
+    resultsEl.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><p class="empty-title">${(_dentro && !q) ? (currentLang === 'it' ? 'Nessun risultato' : 'No results') : currentLang === 'it' ? 'Nessun risultato per "' + esc(q) + '"' : 'No results for "' + esc(q) + '"'}</p></div>`;
     return;
   }
 
@@ -49469,6 +49659,71 @@ function _aggiornaBottoneAzzera() {
   b.style.cursor  = acceso ? '' : 'default';
 }
 
+// 🆕 v6.994 - I FILTRI ADMIN DI UN ARTICOLO, in un posto solo. Erano righe dentro il setaccio della
+//    sezione (`getCurrentlyFilteredItems`), che guarda la serie e la sezione aperte; la ricerca nella
+//    pagina della tipologia li vuole uguali, ma su tutte le serie e con uno STATO SUO (accendere un
+//    filtro lì non deve accenderlo nelle sezioni). Le righe sono quelle di prima, spostate e non
+//    riscritte: le variabili hanno gli stessi nomi, e arrivano come parametro invece che da fuori.
+// 📌 `stato` porta i sette valori: la sezione passa i suoi (le variabili di sempre), la pagina della
+//    tipologia i suoi. `_ixPersFiltro` è l'indice dei personaggi, o null se il filtro è spento.
+function _passaFiltriAdmin(f, allFigs, stato) {
+  const { _fotoFilter, _noteFilter, _senzaRaritaFilter, _ixPersFiltro,
+          _conNomiAlternativiFilter, _conNomeCaroselloFilter, _visibilitaFilter } = stato;
+  // v6.086 (Franco) - si chiede `_fotoFigurina()`, non `f.img`. Il filtro guardava la foto
+  // PROPRIA del record mentre la griglia disegna col ripiego sulla base: una variazione senza
+  // foto sua, che a schermo la foto ce l'ha eccome, passava per "senza foto". E' la stessa
+  // distinzione che la pagina Errori applica da sempre ("una variazione che mostra la foto della
+  // sua base non e' considerata senza foto") e che qui non era mai stata allineata.
+  // `_fotoFigurina()` restituisce il FRONTE, che e' cio' che Franco si aspetta da questo filtro:
+  // il retro ha un controllo suo nella pagina Errori e non c'entra.
+  // La si chiama SOLO a filtro acceso: spento, il ciclo resta identico a prima e non paga il
+  // `find` sulla base per ognuno dei 368 oggetti della serie, ad ogni ridisegno.
+  if (_fotoFilter) {
+    // v6.095 - il terzo stato chiede "questa card mostra il segnaposto?", non "ha il flag?".
+    // E' la correzione di Franco alla prima stesura: conta cio' che si vede, da qualunque delle
+    // tre ragioni possibili (vedi _mostraSegnapostoFoto).
+    // Ne segue che questo filtro CONTIENE tutti i "Senza foto" - una card senza fronte e' tutta
+    // segnaposto - piu' quelle a cui manca la sola faccia del retro. I due non sono alternativi
+    // per caso: sono due tagli diversi, uno piu' largo dell'altro.
+    if (_fotoFilter === 'nonDisp') {
+      if (!_mostraSegnapostoFoto(f, allFigs)) return false;
+    } else {
+      const _haFronte = !!_fotoFigurina(f, allFigs);
+      if (_fotoFilter === 'senza' && _haFronte) return false;
+      if (_fotoFilter === 'con' && !_haFronte) return false;
+    }
+  }
+  // v6.113 (Franco) - "Con note". Il `trim()` non e' pignoleria: una nota svuotata a mano lascia
+  // spesso una stringa di spazi, e senza quello comparirebbe fra gli oggetti "con note" un record
+  // in cui non c'e' scritto niente. Il campo lo scrive solo l'admin (v6.096), quindi l'oggetto qui
+  // e' sempre quello giusto - non c'e' il ripiego sulla base che complica il filtro delle foto.
+  if (_noteFilter && !String(f.note || '').trim()) return false;
+  // 🆕 v6.502 - "Senza rarità". ⚠️ `!(f.score > 0)` e non `f.score === 0`: nei dati il
+  // «senza» ha tre facce — `undefined` (mai toccato), `null`, `0` — e la sola terza e'
+  // rara. Con l'uguaglianza il filtro avrebbe mostrato quasi niente e sarebbe sembrato
+  // rotto. E' la stessa condizione con cui `_stellaRarita` decide se scrivere la stella:
+  // cio' che la card tace e' cio' che questo filtro mostra.
+  if (_senzaRaritaFilter && (f.score > 0)) return false;
+  // 🆕 v6.980 - «Senza personaggio». Finché i personaggi non sono arrivati non si filtra
+  //    (`_ixPersFiltro` è null): li chiede il suo interruttore, che poi ridisegna.
+  if (_ixPersFiltro && personaggiDiArticolo(f, _ixPersFiltro).length) return false;
+  // 🆕 v6.987 - «Con nomi alternativi»: il campo scritto sull'articolo, non quello della base
+  if (_conNomiAlternativiFilter && !String(f.nomeAlternativo || '').trim()) return false;
+  // 🆕 v6.992 - «Con Nome carosello mobile alterato»: il campo scritto sull'articolo
+  if (_conNomeCaroselloFilter && !String(f.nomeCaroselloMobile || '').trim()) return false;
+  // 🔄 v6.545 - tre posizioni: 'invisibili' tiene solo i nascosti, 'visibili' solo gli
+  // altri, 'all' non filtra. Le due domande sono l'una il complemento dell'altra, quindi
+  // si scrivono in una riga sola: due righe separate si sarebbero potute contraddire.
+  // 🔴 v6.542 - IL CAMPO E' `invisibile`, NON `fotoNonDisponibile`. La v6.540 guardava il
+  // secondo, che dice «la foto non esiste» ed e' definitivo. Il primo esiste dalla v6.080
+  // e vuol dire un'altra cosa: l'articolo e' nascosto agli utenti normali finche' non e'
+  // pronto — Franco: *"gli utenti normali non voglio che vedano dei semi-lavorati"*.
+  // 📌 Due parole vicine e due significati diversi. Bastava cercarla: c'era gia' in dieci
+  // punti, casella della scheda compresa.
+  if (_visibilitaFilter !== 'all' && (_visibilitaFilter === 'invisibili') !== !!f.invisibile) return false;
+  return true;
+}
+
 function getCurrentlyFilteredItems(opts) {
   const searchQ = _perRicerca((document.getElementById('items-search')?.value || '').trim()); // v6.093 — senza accenti
   const allFigs = getData('figurines', []);
@@ -49509,6 +49764,9 @@ function getCurrentlyFilteredItems(opts) {
   const _latiTip = _skipLato ? null : _latiDaTipologia();
   const _vincoloTip = !!(_latiTip && _latiTip.size);
   const _idxLato = (_latoAcceso || _vincoloTip) ? new Map(allFigs.map(x => [x.id, x])) : null;
+  // 🆕 v6.994 - lo stato dei filtri admin della sezione, per `_passaFiltriAdmin`
+  const _statoFiltriAdmin = { _fotoFilter, _noteFilter, _senzaRaritaFilter, _ixPersFiltro,
+                              _conNomiAlternativiFilter, _conNomeCaroselloFilter, _visibilitaFilter };
   return allFigs.filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
     // 🆕 v6.651 - LA SOTTOSERIE CHE SI STA GUARDANDO. Sta qui e non in un secondo modo di
@@ -49575,58 +49833,9 @@ function getCurrentlyFilteredItems(opts) {
       if (_vincoloTip && !_lati.some(l => _latiTip.has(l))) return false;
     }
     // v6.054 - i due versi dello stesso filtro
-    // v6.086 (Franco) - si chiede `_fotoFigurina()`, non `f.img`. Il filtro guardava la foto
-    // PROPRIA del record mentre la griglia disegna col ripiego sulla base: una variazione senza
-    // foto sua, che a schermo la foto ce l'ha eccome, passava per "senza foto". E' la stessa
-    // distinzione che la pagina Errori applica da sempre ("una variazione che mostra la foto della
-    // sua base non e' considerata senza foto") e che qui non era mai stata allineata.
-    // `_fotoFigurina()` restituisce il FRONTE, che e' cio' che Franco si aspetta da questo filtro:
-    // il retro ha un controllo suo nella pagina Errori e non c'entra.
-    // La si chiama SOLO a filtro acceso: spento, il ciclo resta identico a prima e non paga il
-    // `find` sulla base per ognuno dei 368 oggetti della serie, ad ogni ridisegno.
-    if (_fotoFilter) {
-      // v6.095 - il terzo stato chiede "questa card mostra il segnaposto?", non "ha il flag?".
-      // E' la correzione di Franco alla prima stesura: conta cio' che si vede, da qualunque delle
-      // tre ragioni possibili (vedi _mostraSegnapostoFoto).
-      // Ne segue che questo filtro CONTIENE tutti i "Senza foto" - una card senza fronte e' tutta
-      // segnaposto - piu' quelle a cui manca la sola faccia del retro. I due non sono alternativi
-      // per caso: sono due tagli diversi, uno piu' largo dell'altro.
-      if (_fotoFilter === 'nonDisp') {
-        if (!_mostraSegnapostoFoto(f, allFigs)) return false;
-      } else {
-        const _haFronte = !!_fotoFigurina(f, allFigs);
-        if (_fotoFilter === 'senza' && _haFronte) return false;
-        if (_fotoFilter === 'con' && !_haFronte) return false;
-      }
-    }
-    // v6.113 (Franco) - "Con note". Il `trim()` non e' pignoleria: una nota svuotata a mano lascia
-    // spesso una stringa di spazi, e senza quello comparirebbe fra gli oggetti "con note" un record
-    // in cui non c'e' scritto niente. Il campo lo scrive solo l'admin (v6.096), quindi l'oggetto qui
-    // e' sempre quello giusto - non c'e' il ripiego sulla base che complica il filtro delle foto.
-    if (_noteFilter && !String(f.note || '').trim()) return false;
-    // 🆕 v6.502 - "Senza rarità". ⚠️ `!(f.score > 0)` e non `f.score === 0`: nei dati il
-    // «senza» ha tre facce — `undefined` (mai toccato), `null`, `0` — e la sola terza e'
-    // rara. Con l'uguaglianza il filtro avrebbe mostrato quasi niente e sarebbe sembrato
-    // rotto. E' la stessa condizione con cui `_stellaRarita` decide se scrivere la stella:
-    // cio' che la card tace e' cio' che questo filtro mostra.
-    if (_senzaRaritaFilter && (f.score > 0)) return false;
-    // 🆕 v6.980 - «Senza personaggio». Finché i personaggi non sono arrivati non si filtra
-    //    (`_ixPersFiltro` è null): li chiede il suo interruttore, che poi ridisegna.
-    if (_ixPersFiltro && personaggiDiArticolo(f, _ixPersFiltro).length) return false;
-    // 🆕 v6.987 - «Con nomi alternativi»: il campo scritto sull'articolo, non quello della base
-    if (_conNomiAlternativiFilter && !String(f.nomeAlternativo || '').trim()) return false;
-    // 🆕 v6.992 - «Con Nome carosello mobile alterato»: il campo scritto sull'articolo
-    if (_conNomeCaroselloFilter && !String(f.nomeCaroselloMobile || '').trim()) return false;
-    // 🔄 v6.545 - tre posizioni: 'invisibili' tiene solo i nascosti, 'visibili' solo gli
-    // altri, 'all' non filtra. Le due domande sono l'una il complemento dell'altra, quindi
-    // si scrivono in una riga sola: due righe separate si sarebbero potute contraddire.
-    // 🔴 v6.542 - IL CAMPO E' `invisibile`, NON `fotoNonDisponibile`. La v6.540 guardava il
-    // secondo, che dice «la foto non esiste» ed e' definitivo. Il primo esiste dalla v6.080
-    // e vuol dire un'altra cosa: l'articolo e' nascosto agli utenti normali finche' non e'
-    // pronto — Franco: *"gli utenti normali non voglio che vedano dei semi-lavorati"*.
-    // 📌 Due parole vicine e due significati diversi. Bastava cercarla: c'era gia' in dieci
-    // punti, casella della scheda compresa.
-    if (_visibilitaFilter !== 'all' && (_visibilitaFilter === 'invisibili') !== !!f.invisibile) return false;
+    // 🔄 v6.994 - i filtri admin stanno in `_passaFiltriAdmin`, la stessa funzione della ricerca
+    //    nella pagina della tipologia: una regola, due posti che la chiedono.
+    if (!_passaFiltriAdmin(f, allFigs, _statoFiltriAdmin)) return false;
     if (_own) {
       const ceLho = _own.includes(f.id);
       if (_ownedFilter === 'owned' && !ceLho) return false;
@@ -58488,7 +58697,7 @@ function switchToEditMode(figId) {
     const _altBase = String(f.nomeAlternativo || '').trim() ? [] : _nomiAlternativi(f);
     const _phAlt = _altBase.length
       ? (currentLang === 'it' ? 'dalla base: ' : 'from the base: ') + _altBase.join(', ')
-      : (currentLang === 'it' ? 'es. ADDORMENTATA, DORMIENTE' : 'e.g. ADDORMENTATA, DORMIENTE');
+      : '';   // 🔄 v6.994 (Franco: «toglimi il suggerimento») - niente esempio, solo il valore della base
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nomi alternativi':'Alternative names') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-alternativo" value="' + esc(f.nomeAlternativo || '') + '" placeholder="' + esc(_phAlt) + '" title="' + esc(currentLang==='it' ? 'Solo per la ricerca: gli utenti non lo vedono, ma cercandolo trovano questo articolo. Più nomi separati da virgola.' : 'Search only: users do not see it.') + '"></span></div>';
   }
   // 🆕 v6.991 (Franco: «altro campo... sotto "Nomi alternativi", chiamato "Nome carosello mobile"»)
