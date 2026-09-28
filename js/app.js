@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.005 - Modificato index.html (e la versione in app.js). 📱 Sul telefono il logo della hero più
+//          piccolo del 25%, da 300 a 225px (Franco: «riducilo di un fattore 25%»); e il testo
+//          alternativo del logo dice «l'inventario degli Sgorbions».
 // v7.004 - Modificato js/app.js e index.html. ✍️ La frase della hero (Franco): «L'inventario non
 //          ufficiale della leggendaria serie anni '90.» e «Fatto con 💚 per collezionisti.»; la
 //          versione corta uguale alla prima riga; in inglese «The unofficial inventory of the
@@ -30467,7 +30470,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.004';
+const JS_VERSION = 'v7.005';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
