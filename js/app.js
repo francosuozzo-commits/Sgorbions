@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.982 - Modificato js/app.js e index.html. 🎠 «CAROSELLO SÌ/NO» PER TIPOLOGIA, DALLA CONSOLE
+//          (Franco: «carosello si-no per tda», «va messa in cfg»). Admin console → Tipo di
+//          articolo → «🎠 Caroselli»: una spunta per tipologia, salvata in `settings/caroselli`.
+//          Comanda i TRE caroselli - home, pagina della serie, pagina della tipologia (Franco:
+//          «tutti e tre»). Dove la console non ha detto niente vale il descrittore: sì per
+//          figurine con retro e spille. ⚠️ Per la pagina della tipologia è un cambio: prima lì
+//          il carosello c'era per tutte. E «⚙️ Modifica tipo di articolo» si vede anche sul
+//          telefono (Franco: «sì, anche sul telefono»).
 // v6.981 - Modificato js/app.js (e la versione in index.html). 🐛 Nei caroselli, su telefono, il
 //          nome della figurina non va più a capo a ogni parola: va a capo solo quando la parola
 //          successiva non ci sta intera (Franco: «non sfrutta bene lo spazio; bisogna andare a capo
@@ -30361,7 +30369,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.981';
+const JS_VERSION = 'v6.982';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33346,9 +33354,36 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
 //    l'hanno. Lo stesso vale per `carte` (Sgorbions 2018) e per le «da attaccare».
 // 🔴 Chi tornera' qui a chiedersi «perche' quella serie non si vede» ha la risposta senza
 //    doverla ricostruire: e' scritto qui perche' e' qui che si viene a guardare.
+// 🆕 v6.982 (Franco: «carosello si-no per tda»; «va messa in cfg») — LA RISPOSTA LA DA' ANCHE
+//    LA CONSOLE. Admin console → Tipo di articolo → «🎠 Caroselli»: una spunta per tipologia,
+//    nel documento `settings/caroselli` ({ voci: { retros: true, ... } }). Vale per i TRE
+//    caroselli, home, pagina della serie e pagina della tipologia (Franco: «tutti e tre»).
+// 📌 Dove la console non ha ancora detto niente vale `carosello: true` del descrittore, cioe'
+//    il sito di prima: si' per figurine con retro e spille.
+// ⚠️ Per la pagina della tipologia (`renderCaroselloProdotto`) e' un cambio: fino alla v6.981
+//    li' il carosello c'era per TUTTE le tipologie, perche' quella funzione questa domanda non
+//    la faceva. Adesso la fa, come gli altri due.
+// 🔴 Una sezione che `ARTICOLI` non conosce resta NO anche se la console la nomina (v6.690).
+let _CAROSELLI_CFG = {};
+
 function _vaInCarosello(sez) {
   const k = sez || 'figurines';
-  return !!(ARTICOLI[k] && ARTICOLI[k].carosello);
+  if (!ARTICOLI[k]) return false;
+  if (typeof _CAROSELLI_CFG[k] === 'boolean') return _CAROSELLI_CFG[k];   // v6.982
+  return !!ARTICOLI[k].carosello;
+}
+
+// 🆕 v6.982 - la chiama `_caricaLegendeDefinizioni`, che legge gia' tutto `settings`: nessuna
+//    lettura in piu'. Se la console dice qualcosa di diverso da prima, i caroselli della pagina
+//    che si sta guardando si ridisegnano.
+function _impostaCaroselli(d) {
+  const prima = JSON.stringify(_CAROSELLI_CFG);
+  _CAROSELLI_CFG = (d && d.voci && typeof d.voci === 'object') ? d.voci : {};
+  if (JSON.stringify(_CAROSELLI_CFG) === prima) return;
+  const inVista = id => { const el = document.getElementById(id); return !!(el && el.parentElement && el.parentElement.getClientRects().length); };
+  try { if (inVista('home-carosello-sez')) renderCarosello(); } catch (e) { console.error('renderCarosello', e); }
+  try { if (inVista('serie-carosello-sez')) renderCaroselloSerie(); } catch (e) { console.error('renderCaroselloSerie', e); }
+  try { if (inVista('prodotto-carosello-sez')) renderCaroselloProdotto(); } catch (e) { console.error('renderCaroselloProdotto', e); }
 }
 
 function _caroselloMostraSerie(elenco) {
@@ -33550,6 +33585,8 @@ function renderCaroselloProdotto() {
   const box = document.getElementById('prodotto-carosello');
   if (!sez || !box) return;
   _caroselloSpegni('prodotto');
+  // 🆕 v6.982 - la stessa domanda degli altri due caroselli (Franco: «tutti e tre»).
+  if (!_vaInCarosello(_prodottoCorrente)) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   // 🆕 v6.463 - LA FILA CHE HA FATTO NASCERE QUESTA RELEASE. E' questa: la sezione «Figurine da
   // attaccare» contava 672 figurine e ne mostrava zero, perche' il filtro chiedeva `f.img` e una da
   // attaccare quel campo non ce l'ha per costruzione.
@@ -38514,6 +38551,7 @@ async function _caricaLegendeDefinizioni() {
     const docs = await fsGetAll('settings');
     const d = docs.find(x => x.id === 'legende');
     _LEGENDE_DEF = (d && d.voci) || {};
+    _impostaCaroselli(docs.find(x => x.id === 'caroselli'));   // v6.982 - stesso giro di letture
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -38735,6 +38773,65 @@ async function salvaLegendeDefinizioni() {
     }
   } catch (e) {
     console.error('salvaLegendeDefinizioni', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
+}
+
+// 🆕 v6.982 (Franco: «carosello si-no per tda») — LA TABELLA DEI CAROSELLI, sotto-tab «🎠
+//    Caroselli» di Tipo di articolo. Una riga per tipologia, una spunta: accesa, gli articoli
+//    base con foto di quella tipologia girano nei tre caroselli; spenta, in nessuno.
+// 📌 La spunta si disegna da `_vaInCarosello`, cioe' da cio' che il sito fa ADESSO: dove la
+//    console non ha mai salvato niente mostra il descrittore, non una casella vuota che mente.
+// 📌 Il Salva porta .admin-anche-telefono: sul telefono i .btn-admin sono nascosti.
+function renderAdminCaroselliTDA() {
+  const box = document.getElementById('admin-caroselli-tda');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
+  box.innerHTML =
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">\uD83C\uDFA0 ' + (it ? 'Caroselli' : 'Carousels') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it
+        ? 'Accesa, gli articoli base con foto di quella tipologia girano nei <strong>tre caroselli</strong>: ' +
+          'la home, la pagina della serie e la pagina della tipologia. Spenta, in nessuno dei tre.'
+        : 'Checked: the base items with a photo of that type scroll in the <strong>three carousels</strong> ' +
+          '(home, series page, item type page). Unchecked: in none of them.') +
+    '</p>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:100%;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
+      '<th style="' + th + 'text-align:center;">' + (it ? 'Carosello' : 'Carousel') + '</th></tr>' +
+    PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).map(sez =>
+      '<tr><td style="' + td + '">' + esc(getSectionLabel(sez)) + '</td>' +
+      '<td style="' + td + 'text-align:center;"><input type="checkbox" id="car-' + sez + '"' +
+        (_vaInCarosello(sez) ? ' checked' : '') + '></td></tr>').join('') +
+    '</table></div>' +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
+      '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaCaroselliTDA()">' + (it ? 'Salva i caroselli' : 'Save carousels') + '</button>' +
+      '<span id="caroselli-tda-feedback" style="font-size:0.85rem;color:var(--text);"></span>' +
+    '</div>';
+}
+
+// Si salvano TUTTE le righe, accese e spente: una riga spenta e' una decisione, e deve
+// vincere sul descrittore quanto una accesa.
+async function salvaCaroselliTDA() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const voci = {};
+  PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).forEach(sez => {
+    const el = document.getElementById('car-' + sez);
+    if (el) voci[sez] = !!el.checked;
+  });
+  try {
+    await fsSave('settings', { id: 'caroselli', voci });
+    _impostaCaroselli({ voci });
+    const fb = document.getElementById('caroselli-tda-feedback');
+    if (fb) {
+      fb.textContent = it ? '✅ Salvato. I caroselli lo fanno da subito.' : '✅ Saved.';
+      setTimeout(() => { fb.textContent = ''; }, 4000);
+    }
+  } catch (e) {
+    console.error('salvaCaroselliTDA', e);
     toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
   }
 }
@@ -53381,7 +53478,7 @@ function adminTab(tab) {
   const tabEl = document.getElementById('admin-' + tab);
   if (tabEl) { tabEl.classList.add('active'); }
   if (tab === 'series') renderAdminSeries();
-  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione();
+  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminCaroselliTDA();   // v6.982
     renderCampiMassiviConfig(); _aggiornaCampiMassiviDaConfigurazione().then(renderCampiMassiviConfig); }   // v6.842: qui, non in Impostazioni   // v6.221, v6.233, v6.234
   if (tab === 'figurines') renderAdminFigs();
   if (tab === 'contacts') { renderAdminContacts(); updateMsgBadge(); }
