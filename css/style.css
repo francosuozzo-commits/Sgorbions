@@ -2670,3 +2670,8 @@ footer {
 @media (max-width: 860px) {
   #page-catalog { padding-top: 0; }
 }
+
+/* 🆕 v7.010 - `.solo-telefono`: si vede sotto gli 860px e basta (Franco: «nella versione mobile, nella
+   home page… metterei una frase»). */
+.solo-telefono { display: none; }
+@media (max-width: 860px) { .solo-telefono { display: block; } }
