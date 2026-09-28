@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.009 - Modificato js/app.js (e la versione in index.html). 📋 Nella ricerca della pagina della
+//          tipologia il riquadro «Filtra per appartenenza alla tua lista»: Nella mia lista, Non nella
+//          mia lista, Ciò che cerco - come nelle sezioni, per chi ha fatto l'accesso (Franco).
 // v7.008 - Modificato js/app.js (e la versione in index.html). 💊 Le pillole delle serie col nome
 //          BREVE (pagina della tipologia e personaggi), e nella pagina della tipologia la pillola
 //          della base dice «Versioni base», come la ricerca delle sezioni (Franco).
@@ -30480,7 +30483,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.008';
+const JS_VERSION = 'v7.009';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33781,13 +33784,15 @@ let _rt = null;
 function _rtNuovo() {
   return { testo: '', cat: '', sottocat: '', serie: new Set(), versioni: new Set(),
            _fotoFilter: null, _noteFilter: false, _senzaRaritaFilter: false, _senzaPersonaggioFilter: false,
-           _conNomiAlternativiFilter: false, _conNomeCaroselloFilter: false, _visibilitaFilter: 'all' };
+           _conNomiAlternativiFilter: false, _conNomeCaroselloFilter: false, _visibilitaFilter: 'all',
+           _ownedFilter: 'all', _wishlistFilter: false };   // 🆕 v7.009 - la tua lista
 }
 function _rtAcceso() {
   const x = _rt;
   return !!(x && (x.testo.trim() || x.cat.trim() || x.sottocat.trim() || x.serie.size || x.versioni.size
     || x._fotoFilter || x._noteFilter || x._senzaRaritaFilter || x._senzaPersonaggioFilter
-    || x._conNomiAlternativiFilter || x._conNomeCaroselloFilter || x._visibilitaFilter !== 'all'));
+    || x._conNomiAlternativiFilter || x._conNomeCaroselloFilter || x._visibilitaFilter !== 'all'
+    || x._ownedFilter !== 'all' || x._wishlistFilter));   // v7.009
 }
 // La versione di un articolo: 'base' o la chiave della sua versione (le chiavi di `VERSIONI_ARTICOLO`).
 function _rtVersione(f) {
@@ -33807,13 +33812,19 @@ function _rtFiltrati(esclusa) {
     _ixPersFiltro: (x._senzaPersonaggioFilter && _personaggiDati) ? _indiciPersonaggi() : null,
     _conNomiAlternativiFilter: x._conNomiAlternativiFilter, _conNomeCaroselloFilter: x._conNomeCaroselloFilter,
     _visibilitaFilter: x._visibilitaFilter } : null;
+  // 🆕 v7.009 - la lista e ciò che cerchi si leggono una volta, e solo a filtro acceso
+  const mia = (currentUser && x._ownedFilter !== 'all') ? getOwned() : null;
+  const cerco = (currentUser && x._wishlistFilter) ? getWishlist() : null;
   return tutte.filter(f => (f.section || 'figurines') === sec
     && (!qn || _figMatchRicerca(f, qn))
     && (!qc || _matchRicerca(f.category, qc))
     && (!qs || _matchRicerca(f.subcategory, qs))
     && (esclusa === 'serie' || !x.serie.size || x.serie.has(f.seriesId))
     && (esclusa === 'versioni' || !x.versioni.size || x.versioni.has(_rtVersione(f)))
-    && (!st || _passaFiltriAdmin(f, tutte, st)));
+    && (!st || _passaFiltriAdmin(f, tutte, st))
+    // 🆕 v7.009 - la tua lista: le stesse due domande della ricerca delle sezioni
+    && (!mia || (x._ownedFilter === 'owned' ? mia.includes(f.id) : !mia.includes(f.id)))
+    && (!cerco || cerco.includes(f.id)));
 }
 // Le pillole: il nome = solo questa (ripremuta da sola, la spegne), il «+» = aggiungi o togli.
 function _rtSolo(tipo, val) {
@@ -33835,12 +33846,14 @@ function _rtToggle(chiave) {
   renderRicercaTipologia();
 }
 function _rtFoto(quale) { _rt._fotoFilter = (_rt._fotoFilter === quale) ? null : quale; renderRicercaTipologia(); }
+// 🆕 v7.009 - «Nella mia lista» / «Non nella mia lista»: accenderne una spegne l'altra
+function _rtPossesso(quale) { _rt._ownedFilter = (_rt._ownedFilter === quale) ? 'all' : quale; renderRicercaTipologia(); }
 function _rtVisibilita(quale) { _rt._visibilitaFilter = (_rt._visibilitaFilter === quale) ? 'all' : quale; renderRicercaTipologia(); }
 function _rtAzzera() { _rt = _rtNuovo(); renderRicercaTipologia(); }
 // 🆕 v6.997 (Franco: «quei due filtri rendili collassabili e parti in collassato») - sul telefono
 //    «Filtra per serie» e «Filtra per versione» si aprono e si chiudono toccando il titolo, e
 //    partono chiusi. Lo stato vale per la sessione: tornando sulla pagina si ritrovano come lasciati.
-const _rtAperti = { serie: false, versioni: false, admin: false };   // v6.999: + admin
+const _rtAperti = { serie: false, versioni: false, lista: false, admin: false };   // v6.999: + admin; v7.009: + lista
 function _rtApri(k) { _rtAperti[k] = !_rtAperti[k]; renderRicercaTipologia(); }
 function _rtScrivi(campo, valore) { _rt[campo] = valore; renderRicercaTipologia(); }
 // 🆕 v7.001 - mentre si scrive: lo stato e i soli risultati, il riquadro resta (e con lui le proposte)
@@ -33961,11 +33974,21 @@ function renderRicercaTipologia() {
         '<div style="' + (mob ? 'display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));grid-auto-flow:column;grid-template-rows:repeat(' + Math.max(1, Math.ceil((pSerie.split("_rtSolo('serie'").length - 1) / 2)) + ', auto);' : 'display:flex;flex-wrap:wrap;align-items:center;') + 'gap:0.4rem;">' + pSerie + '</div>') : '')
     + chiudibile('versioni', it ? 'Filtra per versione' : 'Filter by version', x.versioni.size,
         '<div id="rt-versioni" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + pVer + '</div>')   // v7.000: id per le due colonne
+    // 🆕 v7.009 (Franco: «lo chiamerei "Filtra per appartenenza alla tua lista"») - solo per chi ha
+    //    fatto l'accesso: senza una lista questi filtri non vogliono dire niente (v5.910)
+    + (currentUser ? chiudibile('lista', it ? 'Filtra per appartenenza alla tua lista' : 'Filter by your list',
+        (x._ownedFilter !== 'all' ? 1 : 0) + (x._wishlistFilter ? 1 : 0),
+        '<div id="rt-lista" style="display:flex;flex-wrap:wrap;gap:0.6rem 1.2rem;">'
+        + bott(x._ownedFilter === 'owned', "_rtPossesso('owned')", it ? (mob ? 'Nella mia lista' : 'Presenti nella mia lista') : 'In my list')
+        + bott(x._ownedFilter === 'missing', "_rtPossesso('missing')", it ? (mob ? 'Non nella mia lista' : 'Mancanti dalla mia lista') : 'Missing from my list')
+        + bott(x._wishlistFilter, "_rtToggle('_wishlistFilter')", it ? 'Ciò che cerco' : "What I'm looking for")
+        + '</div>') : '')
     + adminHTML
     + '</div>';
   if (idAtt) { const el = document.getElementById(idAtt); if (el) { el.focus(); try { el.setSelectionRange(cur, cur); } catch (e) {} } }
   // 🆕 v7.000 - sul telefono anche le versioni su due colonne, se i nomi ci stanno (Franco)
   if (_rtAperti.versioni) _dueColonneSeCiStanno(document.getElementById('rt-versioni'));
+  if (_rtAperti.lista) _dueColonneSeCiStanno(document.getElementById('rt-lista'));   // v7.009
   _rtRisultati();
 }
 // 🆕 v7.001 - i risultati da soli (li chiama anche `_rtDigita`, mentre si scrive): accesa la ricerca,
