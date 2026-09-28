@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.999 - Modificato js/app.js (e la versione in index.html). 📱 Sul telefono anche «Filtri
+//          aggiuntivi admin» della ricerca nella pagina della tipologia è chiudibile e parte chiuso:
+//          così lo sono tutti e tre i riquadri (Franco: «volevo che nascessero tutti collassati»).
+//          E da chiuso è una BARRA DA TOCCARE, alta 44px, con «Apri ▼» / «Chiudi ▲» (Franco: «non è
+//          molto intuitivo perché è bassissimo»).
 // v6.998 - Modificato js/app.js (e la versione in index.html). 📱 Le pillole delle serie, sul telefono,
 //          riempiono prima la prima colonna e poi la seconda (Franco).
 // v6.997 - Modificato js/app.js (e la versione in index.html). 📱 Sul telefono, nella ricerca della
@@ -30444,7 +30449,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.998';
+const JS_VERSION = 'v6.999';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33804,7 +33809,7 @@ function _rtAzzera() { _rt = _rtNuovo(); renderRicercaTipologia(); }
 // 🆕 v6.997 (Franco: «quei due filtri rendili collassabili e parti in collassato») - sul telefono
 //    «Filtra per serie» e «Filtra per versione» si aprono e si chiudono toccando il titolo, e
 //    partono chiusi. Lo stato vale per la sessione: tornando sulla pagina si ritrovano come lasciati.
-const _rtAperti = { serie: false, versioni: false };
+const _rtAperti = { serie: false, versioni: false, admin: false };   // v6.999: + admin
 function _rtApri(k) { _rtAperti[k] = !_rtAperti[k]; renderRicercaTipologia(); }
 function _rtScrivi(campo, valore) { _rt[campo] = valore; renderRicercaTipologia(); }
 
@@ -33831,10 +33836,15 @@ function renderRicercaTipologia() {
   const chiudibile = (k, tit, accese, dentro) => {
     if (!mob) return riquadro(tit, dentro);
     const aperto = !!_rtAperti[k];
-    return '<div style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:' + (aperto ? '0.95rem 0.9rem 0.8rem' : '0.55rem 0.9rem 0.25rem') + ';">'
-      + '<div onclick="_rtApri(\'' + k + '\')" style="' + bordo + 'pointer-events:auto;cursor:pointer;">' + (aperto ? '▾ ' : '▸ ') + tit
-      + (accese ? ' <span style="color:var(--accent);">(' + accese + ')</span>' : '') + '</div>'
-      + (aperto ? dentro : '') + '</div>';
+    // 🔄 v6.999 (Franco: «una persona che non lo sa… non è molto intuitivo perché è bassissimo») - UNA
+    //    BARRA DA TOCCARE: alta almeno 44px (la misura di un dito), il titolo dentro e non sul bordo, e
+    //    a destra la parola che dice cosa succede - «Apri ▼» / «Chiudi ▲». Un triangolino da solo lo
+    //    capisce chi sa già che c'è.
+    const testa = '<button type="button" onclick="_rtApri(\'' + k + '\')" aria-expanded="' + aperto + '" style="width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:0.6rem;background:transparent;border:none;color:var(--text);font-family:inherit;font-size:0.9rem;font-weight:600;padding:0.55rem 0.9rem;cursor:pointer;text-align:left;">'
+      + '<span>' + tit + (accese ? ' <span style="color:var(--accent);">(' + accese + ')</span>' : '') + '</span>'
+      + '<span style="font-size:0.8rem;font-weight:400;opacity:0.85;white-space:nowrap;">' + (aperto ? (it ? 'Chiudi ▲' : 'Close ▲') : (it ? 'Apri ▼' : 'Open ▼')) + '</span></button>';
+    return '<div style="margin-top:0.8rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);">'
+      + testa + (aperto ? '<div style="padding:0 0.9rem 0.8rem;">' + dentro + '</div>' : '') + '</div>';
   };
   const buca = (id, campo, etichetta, ph) => '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;flex:1 1 220px;">'
     + '<span style="' + bordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + etichetta + '</span>'
@@ -33862,7 +33872,11 @@ function renderRicercaTipologia() {
   }).join('');
   // i filtri admin: le stesse parole della ricerca di sezione
   const bott = (acceso, onclick, et) => '<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ' + (acceso ? 'on' : '') + '" onclick="' + onclick + '" title="' + et + '"></button><span style="font-size:0.82rem;color:var(--text);">' + et + '</span></div>';
-  const adminHTML = !adm ? '' : riquadro(it ? 'Filtri aggiuntivi admin' : 'Admin filters',
+  // 🔄 v6.999 (Franco: «volevo che nascessero tutti collassati») - chiudibile anche lui, e il conto
+  //    da chiuso sono i filtri admin accesi
+  const _nAdmin = [x._fotoFilter, x._noteFilter, x._senzaRaritaFilter, x._senzaPersonaggioFilter,
+    x._conNomiAlternativiFilter, x._conNomeCaroselloFilter, x._visibilitaFilter !== 'all'].filter(Boolean).length;
+  const adminHTML = !adm ? '' : chiudibile('admin', it ? 'Filtri aggiuntivi admin' : 'Admin filters', _nAdmin,
     '<div style="display:flex;flex-wrap:wrap;gap:0.6rem 1.2rem;">'
     + bott(x._fotoFilter === 'senza', "_rtFoto('senza')", it ? 'Senza foto' : 'Without photo')
     + bott(x._fotoFilter === 'con', "_rtFoto('con')", it ? 'Con foto' : 'With photo')
