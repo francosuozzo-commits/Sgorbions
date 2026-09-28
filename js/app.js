@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.006 - Modificato css/style.css (e la versione in index.html e app.js). 📱 Sul telefono la pagina
+//          dell'Inventario sale di 56px: via il margine in cima, nato per una barra sospesa che oggi
+//          sta nel flusso (Franco: «c'è del nero sopra la scritta L'inventario»).
 // v7.005 - Modificato index.html (e la versione in app.js). 📱 Sul telefono il logo della hero più
 //          piccolo del 25%, da 300 a 225px (Franco: «riducilo di un fattore 25%»); e il testo
 //          alternativo del logo dice «l'inventario degli Sgorbions».
@@ -30470,7 +30473,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.005';
+const JS_VERSION = 'v7.006';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
