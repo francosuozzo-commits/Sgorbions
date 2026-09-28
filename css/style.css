@@ -1780,12 +1780,13 @@ footer {
   .nav-links #nav-search-link    { order: 3; }
   .nav-links #nav-blog           { order: 4; }
   .nav-links #nav-mialista-link  { order: 5; }
-  .nav-links #nav-wishlist       { order: 6; }
-  .nav-links #nav-wantlist       { order: 7; }
-  .nav-links #nav-classifica     { order: 8; }
-  .nav-links #nav-newsletter-btn { order: 9; }
-  .nav-links a[data-page="contact"] { order: 10; }
-  .nav-links #nav-logout-link    { order: 11; }
+  .nav-links #nav-questionario-link { order: 6; }   /* v7.014 - subito dopo «Mia lista» */
+  .nav-links #nav-wishlist       { order: 7; }
+  .nav-links #nav-wantlist       { order: 8; }
+  .nav-links #nav-classifica     { order: 9; }
+  .nav-links #nav-newsletter-btn { order: 10; }
+  .nav-links a[data-page="contact"] { order: 11; }
+  .nav-links #nav-logout-link    { order: 12; }
 
   #navbar .nav-logo img { height: 30px; }
 }
@@ -2687,4 +2688,72 @@ footer {
   #bivio-inventario::before { content: ''; order: 1; flex-basis: 100%; height: 0; }
   #bivio-inventario > div { order: 2; }
   #btn-info-tutte-serie { order: 0; min-height: 1.5rem !important; padding: 0.1rem 0.8rem !important; font-size: 0.72rem !important; }
+}
+
+/* 🆕 v7.014 - IL PERCORSO GUIDATO PER COSTRUIRE LA LISTA (Franco: «non ti dimenticare l'aspetto grafico:
+   per ogni schermata ci devono essere delle foto»). Una finestra a tutto schermo, il piede coi comandi
+   fisso in basso (sul telefono sta sotto il pollice), foto grandi dove si sceglie. */
+.wz-pulsante { font-size: 1.12rem; padding: 0.9rem 1.8rem; border-radius: 999px; box-shadow: 0 6px 22px rgba(37,99,235,0.35); }
+.wz-overlay { position: fixed; inset: 0; z-index: 3000; background: rgba(8,5,18,0.96); overflow-y: auto; }
+.wz-pannello { max-width: 980px; margin: 0 auto; padding: 1.2rem 1rem 7rem; }
+.wz-piede { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3001; display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.75rem 1rem; background: rgba(14,10,26,0.97); border-top: 1px solid var(--border); }
+.wz-grande { font-size: 1.05rem; padding: 0.7rem 1.4rem; margin-left: auto; }
+.wz-titolo { font-family: var(--font-display); font-size: 2rem; color: var(--accent); text-align: center; margin: 0.6rem 0 0.4rem; }
+.wz-testo { text-align: center; color: var(--text); font-size: 1rem; margin: 0.4rem auto 1rem; max-width: 640px; line-height: 1.45; }
+.wz-nota { text-align: center; color: var(--text); opacity: 0.85; font-size: 0.85rem; max-width: 640px; margin: 1rem auto 0; }
+.wz-mosaico { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.8rem; margin: 1rem 0; }
+.wz-mosaico-voce { background: var(--card); border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 0.5rem; text-align: center; font-size: 0.8rem; color: var(--text); }
+.wz-mosaico-voce img, .wz-mosaico-voce .wz-senza-foto { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 8px; background: var(--card2); }
+.wz-piu { color: var(--accent); font-weight: 800; font-size: 1rem; }
+.wz-testa { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; }
+.wz-copertina-piccola { width: 64px; height: 64px; object-fit: contain; border-radius: 10px; background: var(--card2); flex-shrink: 0; }
+.wz-serie-nome { font-family: var(--font-display); font-size: 1.25rem; color: var(--nome-entita); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wz-avanzamento { font-size: 0.8rem; color: var(--text); margin: 0.15rem 0 0.3rem; }
+.wz-barra { height: 7px; background: var(--card2); border-radius: 999px; overflow: hidden; }
+.wz-barra > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.3s; }
+.wz-grande-foto { text-align: center; margin: 0.4rem 0 1rem; }
+.wz-grande-foto img { max-width: 100%; max-height: 300px; object-fit: contain; border-radius: var(--radius-lg); }
+.wz-domanda { display: flex; align-items: center; justify-content: center; gap: 0.7rem; font-family: var(--font-ui); font-weight: 800; font-size: 1.35rem; color: var(--text); text-align: center; margin: 0.6rem 0; }
+.wz-icona-sez { width: 52px; height: 52px; object-fit: contain; border-radius: 10px; background: var(--card2); }
+.wz-scelte { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.9rem; margin: 0.6rem 0; }
+.wz-carta { background: var(--card); border: 2px solid var(--border2); border-radius: var(--radius-lg); padding: 0.9rem; cursor: pointer; text-align: center; color: var(--text); font: inherit; transition: transform 0.15s, border-color 0.15s; }
+.wz-carta:hover { transform: translateY(-3px); border-color: var(--accent); }
+.wz-carta.on { border-color: var(--accent); background: rgba(181,255,46,0.12); }
+.wz-carta-ferma { cursor: default; }
+/* le fpa finché non è acceso l'album */
+.wz-carta.wz-grigia { opacity: 0.35; filter: grayscale(1); cursor: not-allowed; }
+.wz-carta.wz-grigia:hover { transform: none; border-color: var(--border2); }
+/* la risposta proposta (dalla lista, o data prima): un'etichetta sopra la carta accesa */
+.wz-carta { position: relative; }
+.wz-proposta { position: absolute; top: -0.65rem; left: 50%; transform: translateX(-50%); background: var(--accent); color: #111; font-size: 0.7rem; font-weight: 800; padding: 0.1rem 0.6rem; border-radius: 999px; white-space: nowrap; }
+.wz-carta-ferma:hover { transform: none; border-color: var(--border2); }
+.wz-carta img, .wz-carta .wz-senza-foto { width: 100%; height: 150px; object-fit: contain; border-radius: 8px; }
+.wz-carta-titolo { font-weight: 800; font-size: 1.05rem; margin-top: 0.4rem; }
+.wz-carta-sotto { font-size: 0.85rem; opacity: 0.85; margin-top: 0.15rem; }
+.wz-emoji { font-size: 2.6rem; line-height: 1.2; }
+.wz-senza-foto { display: flex; align-items: center; justify-content: center; font-size: 2rem; background: var(--card2); }
+.wz-comandi { display: flex; justify-content: center; gap: 0.6rem; margin: 0 0 0.8rem; }
+.wz-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 0.5rem; }
+.wz-tile { position: relative; background: var(--card); border: 2px solid var(--border2); border-radius: 10px; padding: 0.3rem; cursor: pointer; color: var(--text); font: inherit; text-align: center; }
+.wz-tile img, .wz-tile .wz-senza-foto { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 6px; }
+.wz-tile.on { border-color: var(--accent); background: rgba(181,255,46,0.14); }
+.wz-tile.on::after { content: '✓'; position: absolute; top: 3px; right: 6px; color: var(--accent); font-weight: 900; font-size: 1.1rem; }
+.wz-num { font-weight: 800; font-size: 0.85rem; margin-top: 0.15rem; }
+.wz-nome { font-size: 0.62rem; line-height: 1.15; max-height: 2.3em; overflow: hidden; }
+.wz-mia { position: absolute; top: 3px; left: 4px; font-size: 0.58rem; color: #fff; background: var(--action); border-radius: 999px; padding: 0 0.35rem; }
+.wz-conto-testo { font-size: 0.9rem; color: var(--text); }
+/* l'azzeramento: il pulsante discreto nella prima schermata, e le due conferme in rosso */
+.wz-azzera { border-color: var(--danger) !important; color: var(--danger) !important; }
+.wz-rosso { background: var(--danger) !important; border-color: var(--danger) !important; }
+.wz-avviso { max-width: 620px; margin: 1.5rem auto; padding: 1.2rem 1.4rem; border: 2px solid var(--danger); border-radius: var(--radius-lg); background: rgba(255,60,60,0.08); color: var(--text); font-size: 1.05rem; line-height: 1.5; text-align: center; }
+.wz-conto-testo b { color: var(--accent); font-size: 1.1rem; }
+@media (max-width: 860px) {
+  .wz-titolo { font-size: 1.6rem; }
+  .wz-domanda { font-size: 1.12rem; }
+  .wz-scelte { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+  .wz-carta img, .wz-carta .wz-senza-foto { height: 110px; }
+  .wz-griglia { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.35rem; }
+  .wz-mosaico { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+  .wz-pulsante { font-size: 1rem; padding: 0.8rem 1.3rem; }
+  .wz-piede .btn-secondary, .wz-piede .btn-primary { font-size: 0.85rem; padding: 0.55rem 0.8rem; }
 }
