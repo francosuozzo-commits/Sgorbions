@@ -2657,3 +2657,6 @@ footer {
 .bm-box:not(.bm-aperto) > :not(.bm-barra) { display: none !important; }
 .bm-box.bm-aperto > :not(.bm-barra):not(.bm-etichetta) { margin-left: 0.9rem; margin-right: 0.9rem; }
 .bm-box.bm-aperto > :last-child { margin-bottom: 0.8rem; }
+/* 🔄 v7.003 (Franco: «così guadagniamo spazio in verticale») - aperto, il titolo sta sul bordo
+   (`.bm-barra-bordo`, assoluto): il riquadro gli fa da riferimento e gli lascia posto in alto. */
+.bm-box.bm-aperto { position: relative !important; padding-top: 1.05rem !important; margin-top: 1.15rem; }
