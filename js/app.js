@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.003 - Modificato js/app.js, css/style.css e index.html. 🎛️ Da APERTO il titolo del riquadro e
+//          «Chiudi ▲» stanno sul bordo della cornice (Franco: «così guadagniamo spazio in verticale»);
+//          da chiuso resta la barra da toccare.
 // v7.002 - Modificato js/app.js (e la versione in index.html). 🎛️ Sul computer «Apri ▼» / «Chiudi ▲»
 //          sta a SINISTRA, prima del titolo, come un piccolo pulsante (Franco: «a dx è veramente
 //          lontana»); sul telefono resta a destra. Una barra sola per tutti i riquadri.
@@ -30460,7 +30463,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.002';
+const JS_VERSION = 'v7.003';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33857,8 +33860,10 @@ function renderRicercaTipologia() {
     //    capisce chi sa già che c'è.
     // 🔄 v7.002 - la barra è quella di tutti (`_bmBarraHTML`), con lo stato di questa pagina
     const testa = _bmBarraHTML(k, tit, accese, aperto, "_rtApri('" + k + "')");
-    return '<div style="margin-top:0.8rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);">'
-      + testa + (aperto ? '<div style="padding:0 0.9rem 0.8rem;">' + dentro + '</div>' : '') + '</div>';
+    // 🔄 v7.003 - aperto: posizione relativa e margine per l'etichetta sul bordo, e il contenuto parte
+    //    subito sotto la cornice
+    return '<div style="' + (aperto ? 'position:relative;margin-top:1.15rem;' : 'margin-top:0.8rem;') + 'background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);">'
+      + testa + (aperto ? '<div style="padding:1.05rem 0.9rem 0.8rem;">' + dentro + '</div>' : '') + '</div>';
   };
   // 🔄 v7.001 - `proposte`: l'elenco dell'autocompletamento (un <datalist>). Mentre si scrive si rifanno
   //    SOLO i risultati (`_rtDigita`): ridisegnare il riquadro a ogni lettera chiuderebbe l'elenco delle
@@ -51289,6 +51294,13 @@ function _bmBarraHTML(chiave, tit, accese, aperto, onclick) {
   const titolo = '<span>' + esc(tit) + (accese ? ' <span style="color:var(--accent);">(' + accese + ')</span>' : '') + '</span>';
   const comando = '<span style="font-size:0.8rem;font-weight:400;white-space:nowrap;' + (mob ? 'opacity:0.85;' : 'border:1px solid var(--border2);border-radius:999px;padding:0.1rem 0.65rem;') + '">'
     + (aperto ? (it ? 'Chiudi ▲' : 'Close ▲') : (it ? 'Apri ▼' : 'Open ▼')) + '</span>';
+  // 🔄 v7.003 (Franco: «quando è esploso la frase "filtra per…" puoi metterla in overlay alla cornice
+  //    del box? così guadagniamo spazio in verticale») - DA APERTO LA BARRA SALE SUL BORDO: titolo e
+  //    «Chiudi ▲» a cavallo della cornice, come le etichette di sempre, e il contenuto guadagna la riga
+  //    che la barra occupava. Il riquadro deve farle posto in alto (`.bm-box.bm-aperto` nel foglio, e
+  //    `chiudibile` nella pagina della tipologia).
+  if (aperto) return '<button type="button" class="bm-barra bm-barra-bordo" onclick="' + (onclick || ('_bmApri(\'' + chiave + '\')')) + '" aria-expanded="true" style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);border:none;padding:0 0.4rem;display:flex;align-items:center;gap:0.6rem;color:var(--text);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">'
+    + (mob ? titolo + comando : comando + titolo) + '</button>';
   return '<button type="button" class="bm-barra" onclick="' + (onclick || ('_bmApri(\'' + chiave + '\')')) + '" aria-expanded="' + aperto + '" style="width:100%;min-height:44px;display:flex;align-items:center;justify-content:' + (mob ? 'space-between' : 'flex-start') + ';gap:' + (mob ? '0.6rem' : '0.8rem') + ';background:transparent;border:none;color:var(--text);font-family:inherit;font-size:0.9rem;font-weight:600;padding:0.55rem 0.9rem;cursor:pointer;text-align:left;">'
     + (mob ? titolo + comando : comando + titolo) + '</button>';
 }
