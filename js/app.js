@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.001 - Modificato js/app.js (e la versione in index.html). 🔎 Nella ricerca della pagina della
+//          tipologia: via il campo Sottocategoria; la Categoria propone le categorie mentre scrivi
+//          (autocompletamento); la buca di testo senza suggerimento (Franco).
 // v7.000 - Modificato js/app.js, css/style.css e index.html. 🎛️ LE BARRE DA TOCCARE DAPPERTUTTO: ogni
 //          riquadro dei filtri delle pagine di ricerca (sezione di una serie, personaggi, tipologia)
 //          è una barra che si apre e si chiude, parte chiusa e da chiusa dice quanti filtri ha accesi.
@@ -30454,7 +30457,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.000';
+const JS_VERSION = 'v7.001';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33817,6 +33820,8 @@ function _rtAzzera() { _rt = _rtNuovo(); renderRicercaTipologia(); }
 const _rtAperti = { serie: false, versioni: false, admin: false };   // v6.999: + admin
 function _rtApri(k) { _rtAperti[k] = !_rtAperti[k]; renderRicercaTipologia(); }
 function _rtScrivi(campo, valore) { _rt[campo] = valore; renderRicercaTipologia(); }
+// 🆕 v7.001 - mentre si scrive: lo stato e i soli risultati, il riquadro resta (e con lui le proposte)
+function _rtDigita(campo, valore) { _rt[campo] = valore; _rtRisultati(); }
 
 function renderRicercaTipologia() {
   const box = document.getElementById('prodotto-ricerca');
@@ -33830,7 +33835,9 @@ function renderRicercaTipologia() {
   const cur = idAtt ? att.selectionStart : null;
   const miei = getData('figurines', []).filter(f => (f.section || 'figurines') === sec);
   const conCat = miei.some(f => String(f.category || '').trim());
-  const conSottocat = miei.some(f => String(f.subcategory || '').trim());
+  // 🗑️ v7.001 - via la Sottocategoria (Franco: «tanto le sottocategorie sono pochissime»)
+  // 🆕 v7.001 - le categorie per l'autocompletamento: tutte quelle della tipologia, una volta sola
+  const categorie = [...new Set(miei.map(f => String(f.category || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it'));
   const bordo = 'position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;pointer-events:none;';
   const riquadro = (titolo, dentro) => '<div style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
     + '<div style="' + bordo + '">' + titolo + '</div>' + dentro + '</div>';
@@ -33851,10 +33858,16 @@ function renderRicercaTipologia() {
     return '<div style="margin-top:0.8rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);">'
       + testa + (aperto ? '<div style="padding:0 0.9rem 0.8rem;">' + dentro + '</div>' : '') + '</div>';
   };
-  const buca = (id, campo, etichetta, ph) => '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;flex:1 1 220px;">'
+  // 🔄 v7.001 - `proposte`: l'elenco dell'autocompletamento (un <datalist>). Mentre si scrive si rifanno
+  //    SOLO i risultati (`_rtDigita`): ridisegnare il riquadro a ogni lettera chiuderebbe l'elenco delle
+  //    proposte. Il riquadro si rifà quando si lascia il campo o si sceglie una proposta (`onchange`).
+  const buca = (id, campo, etichetta, ph, proposte) => '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;flex:1 1 220px;">'
     + '<span style="' + bordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + etichetta + '</span>'
     + '<div class="search-input-wrap"><span class="search-icon">🔍</span>'
-    + '<input class="search-input" type="text" id="' + id + '" value="' + esc(x[campo]) + '" placeholder="' + esc(ph) + '" oninput="_rtScrivi(\'' + campo + '\', this.value)">'
+    + '<input class="search-input" type="text" id="' + id + '" value="' + esc(x[campo]) + '" placeholder="' + esc(ph) + '"'
+    + (proposte ? ' list="' + id + '-proposte" autocomplete="off"' : '')
+    + ' oninput="_rtDigita(\'' + campo + '\', this.value)" onchange="_rtScrivi(\'' + campo + '\', this.value)">'
+    + (proposte ? '<datalist id="' + id + '-proposte">' + proposte.map(p => '<option value="' + esc(p) + '"></option>').join('') + '</datalist>' : '')
     + (x[campo] ? '<span class="search-clear-btn" onclick="_rtScrivi(\'' + campo + '\', \'\')">✕</span>' : '')
     + '</div></div>';
   // le serie che di questa tipologia hanno qualcosa, nell'ordine delle serie
@@ -33907,12 +33920,11 @@ function renderRicercaTipologia() {
     + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + titolo + '</div>'
     + (_rtAcceso() ? '<button type="button" class="btn-primary" onclick="_rtAzzera()" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>' : '')
     + '</div>'
-    // Franco: «nel suggerimento della buca scrivi solo questo: "Nome, famiglia categoria, sottocategoria, ecc"»
-    + buca('rt-testo', 'testo', t('items.searchHint'), it ? 'Nome, famiglia, categoria, sottocategoria, ecc.' : 'Name, family, category, subcategory, etc.')
-    + ((conCat || conSottocat) ? '<div style="display:flex;flex-wrap:wrap;gap:0 0.9rem;">'
-      + (conCat ? buca('rt-cat', 'cat', it ? 'Categoria' : 'Category', it ? 'es. ricercato' : 'e.g. wanted') : '')
-      + (conSottocat ? buca('rt-sottocat', 'sottocat', it ? 'Sottocategoria' : 'Subcategory', '') : '')
-      + '</div>' : '')
+    // 🔄 v7.001 (Franco: «togli il suggerimento nella buca di ricerca numero 1») - sul bordo c'è già
+    //    «Ricerca per parola chiave»: dentro niente
+    + buca('rt-testo', 'testo', t('items.searchHint'), '')
+    // 🔄 v7.001 (Franco: «deve essere un campo ad autocompletamento») - la Categoria, e basta
+    + (conCat ? buca('rt-cat', 'cat', it ? 'Categoria' : 'Category', '', categorie) : '')
     // 🔄 v6.997 - sul telefono chiudibili, e le serie su due colonne (Franco)
     + (pSerie ? chiudibile('serie', it ? 'Filtra per serie' : 'Filter by series', x.serie.size,
         // 🔄 v6.998 (Franco: «prima esaurisci la prima colonna e poi cominci con la seconda») - la
@@ -33926,12 +33938,19 @@ function renderRicercaTipologia() {
   if (idAtt) { const el = document.getElementById(idAtt); if (el) { el.focus(); try { el.setSelectionRange(cur, cur); } catch (e) {} } }
   // 🆕 v7.000 - sul telefono anche le versioni su due colonne, se i nomi ci stanno (Franco)
   if (_rtAperti.versioni) _dueColonneSeCiStanno(document.getElementById('rt-versioni'));
+  _rtRisultati();
+}
+// 🆕 v7.001 - i risultati da soli (li chiama anche `_rtDigita`, mentre si scrive): accesa la ricerca,
+//    via i box delle serie e dentro i risultati della ricerca globale; spenta, il contrario.
+function _rtRisultati() {
+  const ris = document.getElementById('prodotto-risultati');
+  const griglia = document.getElementById('prodotto-serie-grid');
   const acceso = _rtAcceso();
   if (griglia) griglia.style.display = acceso ? 'none' : '';
   if (!ris) return;
   ris.style.display = acceso ? '' : 'none';
   if (!acceso) { ris.innerHTML = ''; return; }
-  renderCatalogSearch(x.testo, { el: ris, figs: _rtFiltrati() });
+  renderCatalogSearch(_rt.testo, { el: ris, figs: _rtFiltrati() });
 }
 
 // ---- CAROSELLO DELL'HUB DI UN PRODOTTO (v6.073, Franco) ---------------------------------------
