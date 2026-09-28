@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.985 - Modificato js/app.js (e la versione in index.html). 🐛 Nel carosello della pagina della
+//          serie le tipologie si ALTERNANO - una figurina, un retro, una figurina... (Franco: «baco:
+//          nella pagina della serie 1 il carosello mostra solo retro»). L'ordine era per numero, e i
+//          retro, che il numero non ce l'hanno, finivano tutti in testa.
 // v6.984 - Modificato js/app.js e index.html. 🎠 IL QUARTO CAROSELLO: dentro la sezione di una
 //          serie (Serie 1 → Retro), in cima e sopra la ricerca, gli articoli base con foto di
 //          QUELLA serie e di QUELLA tipologia - se la tipologia ha la spunta «Carosello» (Franco:
@@ -30377,7 +30381,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.984';
+const JS_VERSION = 'v6.985';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33560,6 +33564,9 @@ function renderCaroselloSerie() {
     .filter(f => f.seriesId === currentSeriesId && _vaInCarosello(f.section)
       && _eBase(f) && _fotoFigurina(f, _figs))
     .sort((a, b) => (a.number || 0) - (b.number || 0));
+  // 🐛 v6.985 (Franco: «nella pagina della serie 1 il carosello mostra solo retro») - le tipologie
+  //    si alternano: per numero i retro (senza numero, cioe' 0) venivano tutti prima delle figurine.
+  base.splice(0, base.length, ..._caroselloAlterna(base));
   if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x, true)])); // v6.080, v6.493: sempre il nome BREVE
   // v6.081 - qui il filtro e' f.seriesId === currentSeriesId, quindi vale sempre false. Si calcola
@@ -33578,6 +33585,27 @@ function renderCaroselloSerie() {
   box.onmouseenter = () => _caroselloSpegni('serie');
   box.onmouseleave = () => _caroselloAvviaBox(box, 'serie', vivo);
   _caroselloAvviaBox(box, 'serie', vivo);
+}
+
+// 🆕 v6.985 - UNA DI OGNI TIPOLOGIA, A TURNO: la prima figurina, il primo retro, la seconda
+//    figurina, il secondo retro... Dentro ogni tipologia l'ordine resta quello ricevuto; le
+//    tipologie si danno il turno nell'ordine dell'Inventario (`PRODOTTI_INVENTARIO`). Quando una
+//    finisce, le altre continuano. Serve al carosello della serie, l'unico che ne mescola piu' d'una
+//    con un ordine suo (la home mescola a caso, gli altri due hanno una tipologia sola).
+function _caroselloAlterna(elenco) {
+  const gruppi = new Map();
+  (elenco || []).forEach(f => {
+    const k = f.section || 'figurines';
+    if (!gruppi.has(k)) gruppi.set(k, []);
+    gruppi.get(k).push(f);
+  });
+  const pos = k => { const i = PRODOTTI_INVENTARIO.indexOf(k); return i < 0 ? 999 : i; };
+  const turni = [...gruppi.keys()].sort((a, b) => pos(a) - pos(b)).map(k => gruppi.get(k));
+  const fila = [];
+  for (let i = 0; fila.length < (elenco || []).length; i++) {
+    turni.forEach(g => { if (i < g.length) fila.push(g[i]); });
+  }
+  return fila;
 }
 
 // ---- CAROSELLO DENTRO LA SEZIONE DI UNA SERIE (v6.984, Franco) ---------------------------------
