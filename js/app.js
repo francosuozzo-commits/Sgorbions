@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.008 - Modificato js/app.js (e la versione in index.html). 💊 Le pillole delle serie col nome
+//          BREVE (pagina della tipologia e personaggi), e nella pagina della tipologia la pillola
+//          della base dice «Versioni base», come la ricerca delle sezioni (Franco).
 // v7.007 - Modificato js/app.js e index.html. 🔠 «Inventario» sempre con la I maiuscola, e in inglese
 //          «Inventory» (Franco: «Inventario sempre con la i iniziale maiuscola. Anche nella sua versione
 //          inglese»): hero, titolo e descrizioni per Google, suggerimento della newsletter, messaggio
@@ -30477,7 +30480,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.007';
+const JS_VERSION = 'v7.008';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33896,7 +33899,8 @@ function renderRicercaTipologia() {
   const serieConRoba = new Set(miei.map(f => f.seriesId));
   const pSerie = (getData('series', []) || []).filter(z => serieConRoba.has(z.id) || x.serie.has(z.id))
     .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
-    .map(z => _chipTipoHTML({ etichetta: _nomeSerieCard(z), n: perSerie.get(z.id) || 0, attiva: x.serie.has(z.id), it,
+    // 🔄 v7.008 (Franco: «nelle pillole delle serie usiamo sempre il nome breve della serie»)
+    .map(z => _chipTipoHTML({ etichetta: _nomeSerieCard(z, true), n: perSerie.get(z.id) || 0, attiva: x.serie.has(z.id), it,
       onSet: '_rtSolo(\'serie\', \'' + esc(z.id) + '\')', onAdd: '_rtAggiungi(\'serie\', \'' + esc(z.id) + '\')',
       titolo: it ? 'Solo questa serie' : 'This series only' })).join('');
   // le versioni che questa tipologia può avere, più la base
@@ -33904,7 +33908,10 @@ function renderRicercaTipologia() {
   const vers = ['base'].concat(_versioniDellaTDA(sec));
   const pVer = vers.map(k => {
     const v = VERSIONI_ARTICOLO.find(y => y.chiave === k);
-    const et = k === 'base' ? 'Base' : (it ? (v && (v.filtroIt || v.pluraleIt || v.it)) : (v && (v.filtroEn || v.pluraleEn || v.en))) || k;
+    // 🔄 v7.008 (Franco: «nelle pillole delle versioni sostituire "Base" con "Versioni base"») - le
+    //    parole sono quelle della ricerca delle sezioni (`_RAGGR_VERSIONE.etichettaDi`, v6.475/v6.514):
+    //    una sola fonte, così le due ricerche dicono la stessa cosa
+    const et = _RAGGR_VERSIONE.etichettaDi(k);
     return _chipTipoHTML({ etichetta: et, n: perVer.get(k) || 0, attiva: x.versioni.has(k), it,
       onSet: '_rtSolo(\'versioni\', \'' + k + '\')', onAdd: '_rtAggiungi(\'versioni\', \'' + k + '\')',
       titolo: it ? 'Solo questa versione' : 'This version only' });
@@ -41978,7 +41985,7 @@ function renderCatalogPersonaggi(grid) {
   const _pilloleSerie = (getData('series', []) || []).filter(s => _conPersonaggi.has(s.id) || _personaggiSerie.has(s.id))
     .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
     .map(s => _chipTipoHTML({
-      etichetta: _nomeSerieCard(s), n: _contoSerie.get(s.id) || 0, attiva: _personaggiSerie.has(s.id), it,
+      etichetta: _nomeSerieCard(s, true), n: _contoSerie.get(s.id) || 0, attiva: _personaggiSerie.has(s.id), it,   // v7.008: il nome breve (Franco)
       onSet: '_personaggiSerieSolo(\'' + esc(s.id) + '\')', onAdd: '_personaggiSerieAggiungi(\'' + esc(s.id) + '\')',
       titolo: it ? 'Solo questa serie' : 'This series only'
     })).join('');
