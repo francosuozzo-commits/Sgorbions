@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.988 - Modificato js/app.js (e la versione in index.html). 🐛 Il filtro FAMIGLIA è indipendente
+//          dagli altri riquadri e va in AND con loro (Franco: «se filtro per Famiglia=famiglia 1 e
+//          poi clicco sulla pillola "versioni base", il filtro famiglia si perde; invece non si deve
+//          mai perdere per colpa della selezione di una pillola di un'altra sezione»).
 // v6.987 - Modificato js/app.js (e la versione in index.html). 🔎 Nei «Filtri aggiuntivi» admin di
 //          ogni ricerca di tipologia, «Con nomi alternativi»: gli articoli che hanno il campo
 //          «Nome alternativo» scritto (Franco: «deve tornare articoli con nome alternativo
@@ -30392,7 +30396,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.987';
+const JS_VERSION = 'v6.988';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40089,6 +40093,11 @@ const _RAGGR_FAMIGLIA = {
   //    ne sono. Con la stringa vuota nascerebbe una pillola «(Senza tipo)» su TUTTE le serie, e
   //    sarebbe un filtro che non filtra niente offerto a tutti.
   valoreDi: f => (f.famiglia || '').trim() || undefined,
+  // 🆕 v6.988 (Franco: «il filtro per Famiglia deve essere indipendente dagli altri; deve andare in
+  //    AND; questo perché la famiglia è un dato in più, trasversale alle versioni») - premere una
+  //    pillola di un ALTRO riquadro non la svuota, e premere una sua non svuota gli altri. Vedi
+  //    `_soloQuestoRaggr`. L'AND c'era già: il setaccio vuole che passino tutti i riquadri accesi.
+  indipendente: true,
 };
 const _RAGGRUPPAMENTI = [_RAGGR_VERSIONE, _RAGGR_FAMIGLIA, ..._VERSIONI_CON_TIPO];
 
@@ -51261,8 +51270,14 @@ function _toggleLatoErrore(lato) {
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (_toggleLatoErrore)', e); }
 }
+// 🔄 v6.988 - I RIQUADRI INDIPENDENTI (oggi la Famiglia) NON SI TOCCANO: scegliere «Base» non
+//    deve cancellare «famiglia 1» (Franco: «non si deve mai perdere per colpa della selezione di una
+//    pillola di un'altra sezione»). E una pillola della Famiglia non spegne le versioni o i tipi.
+//    Gli altri riquadri restano come prima: uno esclude l'altro.
 function _soloQuestoRaggr(chiave) {
-  for (const v of _RAGGRUPPAMENTI) if (v.chiave !== chiave) _raggr(v.chiave).filtro = new Set();
+  const questo = _RAGGRUPPAMENTI.find(v => v.chiave === chiave);
+  if (questo && questo.indipendente) return;
+  for (const v of _RAGGRUPPAMENTI) if (v.chiave !== chiave && !v.indipendente) _raggr(v.chiave).filtro = new Set();
 }
 // v6.096 - SOSTITUISCE la selezione. Il riclick azzera solo se quel tipo era l'unico acceso: se ce
 // ne sono altri, il clic sull'etichetta vuol dire "voglio vedere solo questo", che e' un'intenzione
