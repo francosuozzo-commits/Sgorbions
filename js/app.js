@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.981 - Modificato js/app.js (e la versione in index.html). 🐛 Nei caroselli, su telefono, il
+//          nome della figurina non va più a capo a ogni parola: va a capo solo quando la parola
+//          successiva non ci sta intera (Franco: «non sfrutta bene lo spazio; bisogna andare a capo
+//          solo quando una parola non si sta per intera»).
 // v6.980 - Modificato js/app.js (e la versione in index.html). Nove cose, le prime quattro nella pagina
 //          del personaggio:
 //          1. 🧑‍🎤 Sotto la serie, la SOTTOSERIE dell'articolo; senza sottoserie la riga resta
@@ -30357,7 +30361,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.980';
+const JS_VERSION = 'v6.981';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33273,7 +33277,11 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
     }
     // Le figurine restano come deciso prima: serie, numero, e il nome parola per parola - li' sono
     // due parole e la spezzatura le rende leggibili invece che troncate.
-    const parole = String(f.name || '').trim().split(/\s+/).filter(Boolean).map(esc).join('<br>');
+    // 🔄 v6.981 (Franco: «il nome è mostrato utilizzando sempre al massimo una parola per riga;
+    //    non sfrutta bene lo spazio; bisogna andare a capo solo quando una parola non si sta per
+    //    intera»). Via i `<br>` fra le parole: il testo va a capo da sé dove finisce lo spazio, e
+    //    le parole non si spezzano. L'altezza resta 'auto', come prima.
+    const parole = esc(String(f.name || '').trim().split(/\s+/).filter(Boolean).join(' '));
     const righe = rigaSerie('0.62rem');
     // v6.277 (Franco) - numero e nome in azzurro, come sulle card.
     if (_haNumero(f) && f.number) righe.push({ t: esc(String(f.number)), col: COL_IDENTITA, dim: '0.66rem', alt: '1.2em' });
