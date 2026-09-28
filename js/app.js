@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.013 - Modificato js/app.js (e la versione in index.html). 📝 La seconda lista di TODO (Franco):
+//          sul telefono le numeriche della mia lista nascoste dietro «Mostra numeri mia lista»;
+//          la numerica delle Figurine per album col solo numero; sul telefono le pillole di «Filtra
+//          per serie» dei personaggi larghe uguali; le frecce delle pagine dei personaggi anche in
+//          alto.
 // v7.012 - Modificato css/style.css (e la versione in index.html e app.js). 📱 Sul telefono «Mostra
 //          numeriche delle serie» alto la metà e sulla riga di «Sfoglia per», con il selettore sotto
 //          (Franco).
@@ -30493,7 +30498,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.012';
+const JS_VERSION = 'v7.013';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42117,7 +42122,9 @@ function renderCatalogPersonaggi(grid) {
       + '</div></div>';
   };
   // 🆕 v7.010 (Franco: «analogamente, quando il selettore è su "Personaggi", scrivi "I PERSONAGGI SGORBIONS"»)
-  grid.innerHTML = _rigaTitoloHub(it ? 'I PERSONAGGI SGORBIONS' : 'THE SGORBIONS CHARACTERS') + cerca + (pagina.length ? pagina.map(card).join('')
+  // 🔄 v7.013 (Franco: «nella griglia dei personaggi le frecce di cambio pagina sono solo in basso; nelle
+  //    altre griglie sono sopra e sotto») - anche sopra, fra la ricerca e le card
+  grid.innerHTML = _rigaTitoloHub(it ? 'I PERSONAGGI SGORBIONS' : 'THE SGORBIONS CHARACTERS') + cerca + _paginazionePersonaggi(pagine) + (pagina.length ? pagina.map(card).join('')
       : '<div class="empty-state" style="grid-column:1/-1;"><p class="empty-title">' + (it ? 'Nessun personaggio con questo nome.' : 'No character with this name.') + '</p></div>')
     + _paginazionePersonaggi(pagine);
   // 🆕 v7.000 - «Filtra per serie» e «Filtri aggiuntivi» diventano barre
@@ -46854,6 +46861,11 @@ function _blocchiHub(cats, sezRows, _pfx, BULLET, colonna) {
         : '');
 }
 
+// 🆕 v7.013 (Franco: «nella versione mobile, nella pagina della serie, dove ci sono le numeriche, non
+//    mostrare le numeriche relative alla mia lista; metti un piccolo bottoncino che si chiama "Mostra
+//    numeri mia lista"; le numeriche le mostri solo se viene premuto») - lo stato, per la sessione.
+let _mostraNumeriMiaLista = false;
+function toggleNumeriMiaLista() { _mostraNumeriMiaLista = !_mostraNumeriMiaLista; try { refreshSeriesMeta(); } catch (e) { console.error('refreshSeriesMeta', e); } }
 function renderSeriesMeta(s) {
   const metaEl = document.getElementById('detail-meta');
   if (!metaEl || !s) return;
@@ -46884,6 +46896,14 @@ function renderSeriesMeta(s) {
   const miei = elenco => elenco.filter(f => ownedIds.includes(f.id)).length;
   const nfmt = n => n.toLocaleString(it ? 'it-IT' : 'en-US');
   const inLista = it ? 'nella tua lista' : 'in your list';
+  // 🆕 v7.013 - sul telefono le righe della mia lista non si scrivono finché non si preme il pulsante;
+  //    `_haMiaLista` dice se almeno una ce ne sarebbe, cioè se il pulsante serve.
+  const _nascondiMiaLista = _isMobileViewport() && !_mostraNumeriMiaLista;
+  let _haMiaLista = false;
+  const _bottoneMiaLista = () => (currentUser && _isMobileViewport() && _haMiaLista)
+    ? '<div style="width:100%;margin-top:0.45rem;"><button type="button" class="btn-primary" onclick="toggleNumeriMiaLista()" style="font-size:0.75rem;padding:0.2rem 0.85rem;border-radius:999px;">'
+      + (_mostraNumeriMiaLista ? (it ? 'Nascondi numeri mia lista' : 'Hide my list numbers') : (it ? 'Mostra numeri mia lista' : 'Show my list numbers')) + '</button></div>'
+    : '';
 
   // CODICE COLORE (v5.703): ogni contatore prende il colore del suo tipo, letto dalle
   // variabili CSS. Il bullet e' un quadrato con background:currentColor, quindi si
@@ -46947,7 +46967,8 @@ function renderSeriesMeta(s) {
       // in 6. Una riga di testo che non si preme, dipinta del colore dei bottoni, promette un
       // gesto che non c'e'.
       // 📌 E il grassetto RESTA: la riga perde il colore, non il rilievo.
-      riga2 = `<span class="col-own" style="color:var(--text);font-weight:600;">${testo}</span>`;
+      _haMiaLista = true;   // v7.013
+      riga2 = _nascondiMiaLista ? '' : `<span class="col-own" style="color:var(--text);font-weight:600;">${testo}</span>`;
     }
     // 🔄 v6.675 - `flex-basis:100%` prende tutta la riga. Il contenitore delle numeriche e'
     //    un `flex-wrap`, quindi una voce larga quanto la riga manda a capo se stessa e chi
@@ -47044,8 +47065,12 @@ function renderSeriesMeta(s) {
     //    famiglie di numeri, questa e quella delle pagine per Google.
     // ⚠️ NIENTE APICI INVERSI IN QUESTE RIGHE: questo pezzo viene RITAGLIATO da prova-v6907 e
     //    infilato in un template literal, e un apice inverso lo chiude. Preso al primo lancio.
-    const _nomeNum = _numNomeCorto(sez2, g.base.length === 1, it)
-      || ((g.base.length === 1) ? nm.s : nm.p);
+    // 🔄 v7.013 (Franco: «nella numerica "figurine album" indichiamo solo il numero e non anche la
+    //    parola figurina; questo vale anche per il desktop») - per le Figurine per album l'etichetta è
+    //    vuota, e `colonna` scrive il solo numero (v6.778). Il nome della tipologia c'è già: nella prima
+    //    colonna dell'hub, e nella testata dentro la sezione.
+    const _nomeNum = (sez2 === 'attaccare') ? ''
+      : (_numNomeCorto(sez2, g.base.length === 1, it) || ((g.base.length === 1) ? nm.s : nm.p));
     if (g.base.length) m.push(colonna(BULLET, g.base,
       (_altreVersioni
         // 🔄 v6.907 (Franco: «nelle numeriche della pagina della serie, il primo numero e' sempre
@@ -47344,14 +47369,14 @@ function renderSeriesMeta(s) {
       //    ricostruendolo avrebbe contato due volte tutti gli articoli della serie a ogni
       //    apertura. La riga sopra descriveva il pericolo; questa release ci e' passata accanto.
       _corpoHub +
-      '</div>';
+      '</div>' + _bottoneMiaLista();   // v7.013: sotto l'ultima numerica
     posizionaTestataSerie();   // v5.936 — dopo il render: qui la descrizione torna in coda al blocco eroe
     try { _applicaChiusuraTestata(); } catch(e) {}   // v6.001
     return;
   }
 
   metaEl.classList.remove('meta-hub');
-  metaEl.innerHTML = sezRows(sez).join('');
+  metaEl.innerHTML = sezRows(sez).join('') + _bottoneMiaLista();   // v7.013: sotto l'ultima numerica
   posizionaTestataSerie();     // v5.936 — dopo il render, perché entra DENTRO #detail-meta
   try { _applicaChiusuraTestata(); } catch(e) {}   // v6.001
 }
@@ -51388,6 +51413,7 @@ function _bmApplica(box, chiave) {
   box.classList.toggle('bm-aperto', !!_bmAperti[chiave]);
   box.insertAdjacentHTML('afterbegin', _bmBarraHTML(chiave, tit, accese, !!_bmAperti[chiave]));
   if (_bmAperti[chiave] && chiave !== 'admin') _dueColonneSeCiStanno(box);   // v7.000, sul telefono
+  if (_bmAperti[chiave] && chiave === 'pers-serie') _pilloleLargheUguali(box);   // v7.013
 }
 // 🆕 v7.000 (Franco: «da telefonino non sono solo le serie che passano a due colonne ma anche gli altri,
 //    perché l'obiettivo è sempre quello di non avere un lenzuolo»; «ma chiaramente se il nome delle
@@ -51396,6 +51422,20 @@ function _bmApplica(box, chiave) {
 //    la prima, v6.998). Le voci sono i figli di un contenitore fatti tutti di pillole o di interruttori;
 //    se anche UNA non ci sta in mezza riga il contenitore resta com'era. Si misura a riquadro aperto,
 //    cioè quando le voci hanno una larghezza.
+// 🆕 v7.013 (Franco: «nella versione mobile, il riquadro "filtra per serie" della pagina di ricerca per
+//    personaggi, organizzalo in modo che le pillole siano tutte larghe uguali; ovviamente usa la
+//    larghezza della pillola massima») - si misura a riquadro aperto; il nome si allarga e il «+» resta
+//    in fondo a destra.
+function _pilloleLargheUguali(box) {
+  if (!box || !_isMobileViewport()) return;
+  const pill = [...box.querySelectorAll('span[style*="border-radius:999px"]')]
+    .filter(p => !(p.parentElement && p.parentElement.closest('span[style*="border-radius:999px"]')));
+  if (pill.length < 2) return;
+  pill.forEach(p => { p.style.width = ''; });
+  const max = Math.ceil(Math.max(...pill.map(p => p.getBoundingClientRect().width)));
+  if (!max) return;
+  pill.forEach(p => { p.style.width = max + 'px'; if (p.firstElementChild) p.firstElementChild.style.flex = '1 1 auto'; });
+}
 function _dueColonneSeCiStanno(box) {
   if (!box || !_isMobileViewport()) return;
   const vocePillola = c => /border-radius:\s*999px/.test(c.getAttribute('style') || '') || !!c.querySelector(':scope > .toggle-btn-blue');
