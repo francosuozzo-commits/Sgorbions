@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.989 - Modificato index.html e js/app.js. Tre cose nella scheda di un articolo:
+//          1. 🎯 le due frecce e «N di M» al CENTRO della testata, la X a destra (Franco:
+//             «potremmo avere queste 3 cose al centro?»);
+//          2. 💾 «Salva e previous», gemello di «Salva e next»: salva e va all'articolo prima
+//             (Franco: «analogo al già presente "salva e next", che salva e va indietro»);
+//          3. 🔎 «Nome alternativo» diventa «Nomi alternativi», e sta sotto Nome, prima di
+//             Sottonome, in lettura e in modifica (Franco).
 // v6.988 - Modificato js/app.js (e la versione in index.html). 🐛 Il filtro FAMIGLIA è indipendente
 //          dagli altri riquadri e va in AND con loro (Franco: «se filtro per Famiglia=famiglia 1 e
 //          poi clicco sulla pillola "versioni base", il filtro famiglia si perde; invece non si deve
@@ -30396,7 +30403,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.988';
+const JS_VERSION = 'v6.989';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -55605,14 +55612,15 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   // mentre lo stesso sottonome si vedeva regolarmente sulle card e dentro il Nome completo: il
   // posto dove il dato non si vedeva era proprio la sua scheda. Fra i due campi non c'e' nessun
   // nesso — il Sottonome e' la seconda parte del NOME, e infatti ora sta subito dopo il Nome.
-  if (_haSottonome(f.section) && (f.subname || '').trim()) {
-    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottonome' : 'Subname')}</span><span class="detail-value">${esc(f.subname.trim())}</span></div>`);
-  }
-  // 🆕 v6.986 - il NOME ALTERNATIVO, solo per l'admin (Franco: «admin visibile»), dopo il sottonome
-  //    come nella scheda in modifica. Se arriva dalla base lo si dice.
+  // 🆕 v6.986 - i NOMI ALTERNATIVI, solo per l'admin (Franco: «admin visibile»). Se arrivano dalla
+  //    base lo si dice. 🔄 v6.989 (Franco: «diventa Nomi alternativi e nella form va sotto Nome,
+  //    prima di Sottonome») - qui come nella scheda in modifica.
   if (currentUser?.isAdmin && _nomiAlternativi(f).length) {
     const _daBase = !String(f.nomeAlternativo || '').trim();
-    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome alternativo' : 'Alternative name')}</span><span class="detail-value">${esc(_nomiAlternativi(f).join(', '))}${_daBase ? ' <span style="font-size:0.8rem;">' + (currentLang === 'it' ? '(dalla base)' : '(from the base)') + '</span>' : ''}</span></div>`);
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nomi alternativi' : 'Alternative names')}</span><span class="detail-value">${esc(_nomiAlternativi(f).join(', '))}${_daBase ? ' <span style="font-size:0.8rem;">' + (currentLang === 'it' ? '(dalla base)' : '(from the base)') + '</span>' : ''}</span></div>`);
+  }
+  if (_haSottonome(f.section) && (f.subname || '').trim()) {
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottonome' : 'Subname')}</span><span class="detail-value">${esc(f.subname.trim())}</span></div>`);
   }
   // 🆕 v6.966 (Franco: «una visualizzazione stile campo singolo») - IL PERSONAGGIO, subito dopo il
   //    nome. Le righe nascono vuote e le riempie `_riempiRigaPersonaggi` quando la scheda è a
@@ -58402,11 +58410,8 @@ function switchToEditMode(figId) {
   // Sottocategoria e Numero, cioe' in mezzo ai campi della categoria e prima ancora del Nome: la
   // stessa disposizione che la v6.026 aveva gia' corretto nella VISTA della scheda. Vista e
   // modifica devono coincidere (regola di Franco, v5.782), e finora non coincidevano.
-  if (_haSottonome(f.section)) {
-    html += '<div class="detail-row" style="' + _eredStile('subname') + '"' + _eredAttr('subname') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"' + _eredRO('subname') + '></span></div>';
-  }
-
   // 🆕 v6.986 (Franco: «mi serve un campo sugli articoli, chiamato "Nome alternativo"») - uno o
+  //    🔄 v6.989 - «Nomi alternativi», sotto Nome e prima di Sottonome (Franco).
   //    piu' nomi separati da virgola. Vuoto su una versione = quello della base, che il segnaposto
   //    mostra. La scheda in modifica la apre solo l'admin, ma la condizione resta scritta.
   if (currentUser?.isAdmin) {
@@ -58414,7 +58419,10 @@ function switchToEditMode(figId) {
     const _phAlt = _altBase.length
       ? (currentLang === 'it' ? 'dalla base: ' : 'from the base: ') + _altBase.join(', ')
       : (currentLang === 'it' ? 'es. ADDORMENTATA, DORMIENTE' : 'e.g. ADDORMENTATA, DORMIENTE');
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome alternativo':'Alternative name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-alternativo" value="' + esc(f.nomeAlternativo || '') + '" placeholder="' + esc(_phAlt) + '" title="' + esc(currentLang==='it' ? 'Solo per la ricerca: gli utenti non lo vedono, ma cercandolo trovano questo articolo. Più nomi separati da virgola.' : 'Search only: users do not see it.') + '"></span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nomi alternativi':'Alternative names') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-alternativo" value="' + esc(f.nomeAlternativo || '') + '" placeholder="' + esc(_phAlt) + '" title="' + esc(currentLang==='it' ? 'Solo per la ricerca: gli utenti non lo vedono, ma cercandolo trovano questo articolo. Più nomi separati da virgola.' : 'Search only: users do not see it.') + '"></span></div>';
+  }
+  if (_haSottonome(f.section)) {
+    html += '<div class="detail-row" style="' + _eredStile('subname') + '"' + _eredAttr('subname') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"' + _eredRO('subname') + '></span></div>';
   }
 
   // 🔄 v6.797 (Franco) - L'ORDINAMENTO SCENDE, E SI FERMA PRIMA DELLA RARITÀ. Parole sue:
@@ -58916,7 +58924,17 @@ function switchToEditMode(figId) {
       const _ids = _navIdsCorrenti(f.id);
       const _i = _ids.indexOf(f.id);
       const _ultimo = _i === _ids.length - 1;
+      // 🆕 v6.989 (Franco: «mi serve anche un pulsante "salva e previous", analogo al già presente
+      //    "salva e next", che salva e va indietro») - il gemello, PRIMA di «Salva e next»:
+      //    stessa condizione (le frecce ci sono), e sul PRIMO articolo si spegne, come la ◀.
+      const _primo = _i === 0;
       return (_i === -1) ? '' :
+        '<button id="fig-edit-save-prev-btn" data-fig-id="' + f.id + '" class="btn-barra-admin pieno"' +
+        (_primo ? ' disabled style="opacity:0.3;"' : '') +
+        ' title="' + (currentLang === 'it'
+          ? (_primo ? 'Sei sul primo articolo dell\'elenco' : 'Salva e apri l\'articolo precedente')
+          : (_primo ? 'This is the first item in the list' : 'Save and open the previous item')) +
+        '">💾 Salva e previous</button>' +
         '<button id="fig-edit-save-next-btn" data-fig-id="' + f.id + '" class="btn-barra-admin pieno"' +
         (_ultimo ? ' disabled style="opacity:0.3;"' : '') +
         ' title="' + (currentLang === 'it'
@@ -58946,6 +58964,11 @@ function switchToEditMode(figId) {
   const nextBtn2 = document.getElementById('fig-edit-save-next-btn');
   if (nextBtn2) nextBtn2.addEventListener('click', function() {
     saveFigFromDetail(nextBtn2.getAttribute('data-fig-id'), { next: true });
+  });
+  // 🆕 v6.989 - «Salva e previous», la stessa strada con l'opzione rovesciata
+  const prevBtn2 = document.getElementById('fig-edit-save-prev-btn');
+  if (prevBtn2) prevBtn2.addEventListener('click', function() {
+    saveFigFromDetail(prevBtn2.getAttribute('data-fig-id'), { prev: true });
   });
 
   // v6.103 (§12.1) - i due riquadri eBay che hanno bisogno delle impostazioni (scelta account e
@@ -61251,7 +61274,8 @@ async function saveFigFromDetail(figId, opzioni) {
   //    sull'oggetto dopo sarebbe un lampeggio, e soprattutto perderebbe la pila di «da dove sei
   //    arrivato» (v6.524) - le frecce invece la rispettano gia'.
   const _next = !!(opzioni && opzioni.next);
-  const _resta = _next || !!(opzioni && opzioni.resta);
+  const _prev = !!(opzioni && opzioni.prev);   // 🆕 v6.989 - «Salva e previous»
+  const _resta = _next || _prev || !!(opzioni && opzioni.resta);
   // i due pulsanti si spengono durante il salvataggio: con "Salva e resta" la scheda rimane
   // aperta, quindi il secondo clic e' a portata di dito piu' che mai
   // 🆕 v6.728 - E IL TERZO PULSANTE ENTRA IN QUESTO ELENCO, che e' la ragione per cui l'elenco
@@ -61261,7 +61285,7 @@ async function saveFigFromDetail(figId, opzioni) {
   // 🔴 `!b.disabled` non e' prudenza: sull'ULTIMO articolo «Salva e next» nasce gia' spento, e
   //    `_riaccendi()` lo riaccenderebbe alla prima uscita dal salvataggio - cioe' il pulsante
   //    tornerebbe premibile proprio dove non ha un prossimo dove andare.
-  const _bottoni = ['fig-edit-save-btn', 'fig-edit-save-stay-btn', 'fig-edit-save-next-btn']
+  const _bottoni = ['fig-edit-save-btn', 'fig-edit-save-stay-btn', 'fig-edit-save-next-btn', 'fig-edit-save-prev-btn']   // v6.989: + previous
     .map(id => document.getElementById(id)).filter(b => b && !b.disabled);
   _bottoni.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
   const _riaccendi = () => _bottoni.forEach(b => { b.disabled = false; b.style.opacity = ''; });
@@ -61830,6 +61854,7 @@ async function saveFigFromDetail(figId, opzioni) {
     // 📌 Si passa da `navigateFigDetail`, la stessa funzione della freccia ▶: se un domani quella
     //    cambia (l'elenco, la pila, il contesto che segue l'oggetto), questo la segue da se'.
     if (_next) { try { navigateFigDetail(1); } catch (e) { console.error('salva e next', e); } }
+    if (_prev) { try { navigateFigDetail(-1); } catch (e) { console.error('salva e previous', e); } }   // 🆕 v6.989
     // v6.105 (§12.1, tappa 2) - IL RITORNO ALLA PAGINA ERRORI. Chi arriva da "Correggi"
     // (`switchToSeriesFromErrori`) ha lasciato una pagina aperta e si aspetta di ritrovarla: prima
     // se ne occupava il salvataggio della finestra, che da questa release non viene piu' chiamato.
