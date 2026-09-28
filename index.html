@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.004">
+<link rel="stylesheet" href="css/style.css?v=7.005">
 
 
 <style>
@@ -701,7 +701,9 @@
   .hero-top { grid-template-columns:minmax(0,1fr);
               grid-template-areas:"logo" "intro" "sx" "dx";
               gap:0.9rem 0; }
-  #hero .hero-top .hero-logo-img { max-width:300px !important; }
+  /* 🔄 v7.005 (Franco: «nella versione mobile la Hero è troppo alta… riducilo di un fattore 25%») -
+     da 300 a 225px: la larghezza comanda, l'altezza scende nella stessa misura. */
+  #hero .hero-top .hero-logo-img { max-width:225px !important; }
   .hero-stats-left, .hero-stats-right {
     grid-template-rows:none; grid-template-columns:repeat(3, minmax(0,1fr)); grid-auto-flow:row;
     width:100%; justify-content:stretch; gap:0.6rem 0.5rem; }
@@ -1880,7 +1882,7 @@ button.back-btn { color:#ffffff; }
          uno potresti farlo diventare un tasto freccia che punta ai tasti Accedi/Registrati») —
          QUI STAVA IL GEMELLO DI SINISTRA, e se n'è andato. Erano due copie dello stesso invito
          a due dita di distanza: la seconda non aggiungeva una ragione, aggiungeva un bottone. -->
-  <h1 class="hero-h1"><img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="figurineSgorbions.it — il database degli Sgorbions" style="max-width:360px;width:100%;margin:0 auto;display:block;"></h1>
+  <h1 class="hero-h1"><img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="figurineSgorbions.it — l'inventario degli Sgorbions" style="max-width:360px;width:100%;margin:0 auto;display:block;"></h1>
     <!-- 🔄 v6.952 — IL SUPERSTITE È QUELLO DI DESTRA, E NON È INDIFFERENTE: i tasti
          Accedi/Registrati stanno in alto A DESTRA, quindi la freccia che li indica parte da
          qui e sale verso di loro. Messa a sinistra, punterebbe fuori dalla pagina.
@@ -5724,7 +5726,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.004"></script>
+<script src="js/app.js?v=7.005"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5748,7 +5750,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.004'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.005'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
