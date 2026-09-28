@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.010">
+<link rel="stylesheet" href="css/style.css?v=7.011">
 
 
 <style>
@@ -2065,7 +2065,9 @@ button.back-btn { color:#ffffff; }
              ci sono sotto al bottone sfoglia l'inventario, metterei una frase; proviamo con "Cosa puoi
              fare in questo sito ?"») - solo sul telefono (`.solo-telefono`, nel foglio), con la veste
              del titolo del carosello («Le figurine»). -->
-        <h2 class="carosello-titolo solo-telefono" data-i18n="home.cosaFare">Cosa puoi fare in questo sito ?</h2>
+        <!-- 🔄 v7.011 (Franco: «deve essere in giallo, e allineata a sx; e un po' più piccola») - il giallo
+             è quello dei nomi delle categorie (`COL_CATEGORIA`, #ffd84d); da 1,45 a 1,15rem. -->
+        <h2 class="carosello-titolo solo-telefono" style="color:#ffd84d;text-align:left;font-size:1.15rem;" data-i18n="home.cosaFare">Cosa puoi fare in questo sito ?</h2>
       </div>
       <div id="home-how-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;font-size:1.15em;" class="reveal">
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('catalog')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
@@ -5734,7 +5736,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.010"></script>
+<script src="js/app.js?v=7.011"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5758,7 +5760,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.010'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.011'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
