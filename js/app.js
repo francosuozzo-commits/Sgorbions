@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.986 - Modificato js/app.js (e la versione in index.html). 🔎 IL «NOME ALTERNATIVO» (Franco:
+//          «il nome del personaggio, per come è scritto nella card, è scritto con un typo; però gli
+//          utenti potrebbero cercarle con quel nome... mi serve un campo sugli articoli, chiamato
+//          "Nome alternativo"; admin visibile, sulla form degli articoli, ma gli utenti devono
+//          poterlo sfruttare in ricerca»). Campo `nomeAlternativo` su ogni articolo, uno o più nomi
+//          separati da virgola; nella scheda lo vede solo l'admin; la ricerca di sezione e quella
+//          globale lo usano per tutti. Una versione senza il suo prende quello della base.
 // v6.985 - Modificato js/app.js (e la versione in index.html). 🐛 Nel carosello della pagina della
 //          serie le tipologie si ALTERNANO - una figurina, un retro, una figurina... (Franco: «baco:
 //          nella pagina della serie 1 il carosello mostra solo retro»). L'ordine era per numero, e i
@@ -30381,7 +30388,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.985';
+const JS_VERSION = 'v6.986';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -43448,6 +43455,30 @@ function _matchRicerca(testo, qn) {
 // non e' un contrassegno scritto sull'oggetto: e' l'assenza di contrassegni, e non si cerca.
 // 📌 L'etichetta e' nella lingua corrente, quindi si cerca nella lingua che si sta leggendo — che e'
 // l'unica cosa che chi cerca puo' aspettarsi.
+// 🆕 v6.986 (Franco: «mi serve un campo sugli articoli, chiamato "Nome alternativo"; admin visibile,
+//    sulla form degli articoli, ma gli utenti devono poterlo sfruttare in ricerca») - I NOMI
+//    ALTERNATIVI DI UN ARTICOLO: il campo `nomeAlternativo`, uno o piu' nomi separati da virgola.
+//    Serve ai nomi stampati con un refuso: a schermo resta il nome com'e' scritto sulla figurina,
+//    ma chi cerca il nome giusto la trova.
+// 📌 UNA VERSIONE SENZA IL SUO PRENDE QUELLO DELLA BASE (`baseFigurineId`), come prende il Nome:
+//    si scrive una volta sulla base e la ricerca trova anche change, variazioni, omaggi ed errori.
+//    Se la versione ne ha uno suo, vale il suo.
+// ⚠️ La base si cerca in una mappa per id rifatta solo quando cambia l'elenco: la ricerca gira a
+//    ogni tasto su migliaia di articoli, e un `find` per ogni versione la rallenterebbe.
+let _idxArticoliPerId = { arr: null, map: null };
+function _nomiAlternativi(f) {
+  let t = String((f && f.nomeAlternativo) || '').trim();
+  if (!t && f && f.baseFigurineId) {
+    const a = (_cache && _cache.figurines) || [];
+    if (_idxArticoliPerId.arr !== a || !_idxArticoliPerId.map.has(f.baseFigurineId)) {
+      _idxArticoliPerId = { arr: a, map: new Map(a.map(x => [x.id, x])) };
+    }
+    const b = _idxArticoliPerId.map.get(f.baseFigurineId);
+    t = String((b && b.nomeAlternativo) || '').trim();
+  }
+  return t ? t.split(',').map(s => s.trim()).filter(Boolean) : [];
+}
+
 function _campiRicercaFigurina(f) {
   // 🔄 v6.792 - il tipo di change entra DEDOTTO. 🔴 Se restasse `f.changeType` nudo, la
   //    ricerca funzionerebbe **per sbaglio**: trova quelle 114 figurine solo finché la copia è
@@ -43455,6 +43486,7 @@ function _campiRicercaFigurina(f) {
   //    deve trovare le figurine perché il loro retro è una mosca nera, non perché qualcuno
   //    gliel'aveva copiato.
   const campi = [f.name, f.subseries, f.desc, f.category, f.subcategory, f.subname, f.fullName,
+                 ..._nomiAlternativi(f),                             // 🆕 v6.986 - per tutti, anche se non si vede
                  (f.isChange ? _tipoChange(f) : f.changeType),        // v6.792
                  f.printErrorType,
                  (f.isFreeVersion ? _tipoOmaggio(f) : f.freeVersionType),   // 🔄 v6.795
@@ -43482,7 +43514,8 @@ function _campiRicercaFigurina(f) {
 function _attinenzaFcrRG(f, qn) {
   if (!qn) return 0;
   if (String(f.number || '').includes(qn)) return 0;
-  return (_matchRicerca(f.name, qn) || _matchRicerca(f.subname, qn)) ? 0 : 1;
+  return (_matchRicerca(f.name, qn) || _matchRicerca(f.subname, qn)
+    || _nomiAlternativi(f).some(v => _matchRicerca(v, qn))) ? 0 : 1;   // v6.986 - e' il suo nome
 }
 function _ordinaPerAttinenzaRG(items, qn, chiaveGruppo) {
   if (!qn) return items;
@@ -55537,6 +55570,12 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   if (_haSottonome(f.section) && (f.subname || '').trim()) {
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottonome' : 'Subname')}</span><span class="detail-value">${esc(f.subname.trim())}</span></div>`);
   }
+  // 🆕 v6.986 - il NOME ALTERNATIVO, solo per l'admin (Franco: «admin visibile»), dopo il sottonome
+  //    come nella scheda in modifica. Se arriva dalla base lo si dice.
+  if (currentUser?.isAdmin && _nomiAlternativi(f).length) {
+    const _daBase = !String(f.nomeAlternativo || '').trim();
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome alternativo' : 'Alternative name')}</span><span class="detail-value">${esc(_nomiAlternativi(f).join(', '))}${_daBase ? ' <span style="font-size:0.8rem;">' + (currentLang === 'it' ? '(dalla base)' : '(from the base)') + '</span>' : ''}</span></div>`);
+  }
   // 🆕 v6.966 (Franco: «una visualizzazione stile campo singolo») - IL PERSONAGGIO, subito dopo il
   //    nome. Le righe nascono vuote e le riempie `_riempiRigaPersonaggi` quando la scheda è a
   //    schermo: i personaggi si leggono solo quando servono.
@@ -58327,6 +58366,17 @@ function switchToEditMode(figId) {
   // modifica devono coincidere (regola di Franco, v5.782), e finora non coincidevano.
   if (_haSottonome(f.section)) {
     html += '<div class="detail-row" style="' + _eredStile('subname') + '"' + _eredAttr('subname') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"' + _eredRO('subname') + '></span></div>';
+  }
+
+  // 🆕 v6.986 (Franco: «mi serve un campo sugli articoli, chiamato "Nome alternativo"») - uno o
+  //    piu' nomi separati da virgola. Vuoto su una versione = quello della base, che il segnaposto
+  //    mostra. La scheda in modifica la apre solo l'admin, ma la condizione resta scritta.
+  if (currentUser?.isAdmin) {
+    const _altBase = String(f.nomeAlternativo || '').trim() ? [] : _nomiAlternativi(f);
+    const _phAlt = _altBase.length
+      ? (currentLang === 'it' ? 'dalla base: ' : 'from the base: ') + _altBase.join(', ')
+      : (currentLang === 'it' ? 'es. ADDORMENTATA, DORMIENTE' : 'e.g. ADDORMENTATA, DORMIENTE');
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome alternativo':'Alternative name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-alternativo" value="' + esc(f.nomeAlternativo || '') + '" placeholder="' + esc(_phAlt) + '" title="' + esc(currentLang==='it' ? 'Solo per la ricerca: gli utenti non lo vedono, ma cercandolo trovano questo articolo. Più nomi separati da virgola.' : 'Search only: users do not see it.') + '"></span></div>';
   }
 
   // 🔄 v6.797 (Franco) - L'ORDINAMENTO SCENDE, E SI FERMA PRIMA DELLA RARITÀ. Parole sue:
@@ -61417,6 +61467,11 @@ async function saveFigFromDetail(figId, opzioni) {
       category: _catEff, // v6.038
       subcategory: _subcatEff, // v6.038
       subname: _subnameEff, // v6.038
+      // 🆕 v6.986 - i nomi alternativi, ripuliti (spazi, virgole doppie). Solo se il campo era in
+      //    pagina: senza, il salvataggio scriverebbe vuoto e cancellerebbe quello che c'e'.
+      ...(document.getElementById('fe-nome-alternativo')
+        ? { nomeAlternativo: document.getElementById('fe-nome-alternativo').value.split(',').map(s => s.trim()).filter(Boolean).join(', ') }
+        : {}),
       // 🔴 QUI SI SCRIVONO LE CINQUE VERSIONI, E UNA CHE MANCASSE SI CANCELLEREBBE A OGNI
       // SALVATAGGIO. E' il baco della v5.711 e poi della v6.235: una casella che esiste nella form
       // e non nel salvataggio non da' errore — legge `null`, scrive `false`, e distrugge il dato in
