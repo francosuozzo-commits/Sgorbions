@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.012 - Modificato css/style.css (e la versione in index.html e app.js). 📱 Sul telefono «Mostra
+//          numeriche delle serie» alto la metà e sulla riga di «Sfoglia per», con il selettore sotto
+//          (Franco).
 // v7.011 - Modificato index.html (e la versione in app.js). «Cosa puoi fare in questo sito ?» in giallo,
 //          a sinistra e più piccola (Franco).
 // v7.010 - Modificato js/app.js, index.html e css/style.css. 📝 LE CINQUE TODO di Franco («falle
@@ -30490,7 +30493,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.011';
+const JS_VERSION = 'v7.012';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
