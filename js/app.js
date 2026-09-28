@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.997 - Modificato js/app.js (e la versione in index.html). 📱 Sul telefono, nella ricerca della
+//          pagina della tipologia: le pillole delle serie su DUE COLONNE, e «Filtra per serie» e
+//          «Filtra per versione» chiudibili, chiusi all'apertura (Franco). Sul computer come prima.
 // v6.996 - Modificato js/app.js (e la versione in index.html). 🔎 Il titoletto della ricerca nella
 //          pagina della tipologia: sul telefono «Cerca in tutte le serie», sul computer «Cerca le
 //          figurine con retro in tutte le serie» (Franco).
@@ -30439,7 +30442,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.996';
+const JS_VERSION = 'v6.997';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33796,6 +33799,11 @@ function _rtToggle(chiave) {
 function _rtFoto(quale) { _rt._fotoFilter = (_rt._fotoFilter === quale) ? null : quale; renderRicercaTipologia(); }
 function _rtVisibilita(quale) { _rt._visibilitaFilter = (_rt._visibilitaFilter === quale) ? 'all' : quale; renderRicercaTipologia(); }
 function _rtAzzera() { _rt = _rtNuovo(); renderRicercaTipologia(); }
+// 🆕 v6.997 (Franco: «quei due filtri rendili collassabili e parti in collassato») - sul telefono
+//    «Filtra per serie» e «Filtra per versione» si aprono e si chiudono toccando il titolo, e
+//    partono chiusi. Lo stato vale per la sessione: tornando sulla pagina si ritrovano come lasciati.
+const _rtAperti = { serie: false, versioni: false };
+function _rtApri(k) { _rtAperti[k] = !_rtAperti[k]; renderRicercaTipologia(); }
 function _rtScrivi(campo, valore) { _rt[campo] = valore; renderRicercaTipologia(); }
 
 function renderRicercaTipologia() {
@@ -33814,6 +33822,18 @@ function renderRicercaTipologia() {
   const bordo = 'position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;pointer-events:none;';
   const riquadro = (titolo, dentro) => '<div style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
     + '<div style="' + bordo + '">' + titolo + '</div>' + dentro + '</div>';
+  // 🆕 v6.997 - il riquadro che sul telefono si chiude: il titolo è il comando (▸ chiuso, ▾ aperto),
+  //    e da chiuso dice quante voci sono accese, perché un filtro acceso che non si vede svuota la
+  //    griglia senza dire perché (v6.095). Sul computer è il riquadro di sempre.
+  const mob = _isMobileViewport();
+  const chiudibile = (k, tit, accese, dentro) => {
+    if (!mob) return riquadro(tit, dentro);
+    const aperto = !!_rtAperti[k];
+    return '<div style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:' + (aperto ? '0.95rem 0.9rem 0.8rem' : '0.55rem 0.9rem 0.25rem') + ';">'
+      + '<div onclick="_rtApri(\'' + k + '\')" style="' + bordo + 'pointer-events:auto;cursor:pointer;">' + (aperto ? '▾ ' : '▸ ') + tit
+      + (accese ? ' <span style="color:var(--accent);">(' + accese + ')</span>' : '') + '</div>'
+      + (aperto ? dentro : '') + '</div>';
+  };
   const buca = (id, campo, etichetta, ph) => '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;flex:1 1 220px;">'
     + '<span style="' + bordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + etichetta + '</span>'
     + '<div class="search-input-wrap"><span class="search-icon">🔍</span>'
@@ -33872,8 +33892,11 @@ function renderRicercaTipologia() {
       + (conCat ? buca('rt-cat', 'cat', it ? 'Categoria' : 'Category', it ? 'es. ricercato' : 'e.g. wanted') : '')
       + (conSottocat ? buca('rt-sottocat', 'sottocat', it ? 'Sottocategoria' : 'Subcategory', '') : '')
       + '</div>' : '')
-    + (pSerie ? riquadro(it ? 'Filtra per serie' : 'Filter by series', '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + pSerie + '</div>') : '')
-    + riquadro(it ? 'Filtra per versione' : 'Filter by version', '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + pVer + '</div>')
+    // 🔄 v6.997 - sul telefono chiudibili, e le serie su due colonne (Franco)
+    + (pSerie ? chiudibile('serie', it ? 'Filtra per serie' : 'Filter by series', x.serie.size,
+        '<div style="' + (mob ? 'display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));' : 'display:flex;flex-wrap:wrap;align-items:center;') + 'gap:0.4rem;">' + pSerie + '</div>') : '')
+    + chiudibile('versioni', it ? 'Filtra per versione' : 'Filter by version', x.versioni.size,
+        '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + pVer + '</div>')
     + adminHTML
     + '</div>';
   if (idAtt) { const el = document.getElementById(idAtt); if (el) { el.focus(); try { el.setSelectionRange(cur, cur); } catch (e) {} } }
