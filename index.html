@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.981">
+<link rel="stylesheet" href="css/style.css?v=6.982">
 
 
 <style>
@@ -2288,8 +2288,10 @@ di tutte le serie</button>
                    🔴 E quello che stava accanto al titolo se n'e' andato: apriva questa stessa
                    finestra, e due comandi identici nella stessa schermata sono due posti da tenere
                    allineati. -->
+              <!-- 🔄 v6.982 (Franco: «sì, anche sul telefono») - si vede anche sul telefono, come
+                   «Opzioni» della serie qui sopra. -->
               <button id="detail-tipo-admin-btn" onclick="openAddTipoProdottoModal(_tipoProdottoCorrente)"
-                      class="btn-primary btn-admin"
+                      class="btn-primary btn-admin admin-anche-telefono"
                       style="display:none;">⚙️ Modifica tipo di articolo</button>
               <!-- 📌 Il pannello si chiude da se' su QUALUNQUE clic che ci passi dentro:
                    un solo `onclick` sul contenitore invece di quattro sulle voci, e una
@@ -3258,6 +3260,8 @@ di tutte le serie</button>
             <button class="admin-subtab" onclick="tdaSubTab('legende')">📖 Definizioni delle legende</button>
             <button class="admin-subtab" onclick="tdaSubTab('partenze')">🔀 Da chi nasce una versione</button>
             <button class="admin-subtab" onclick="tdaSubTab('massivi')">✏️ Campi dell'aggiornamento massivo</button>
+            <!-- 🆕 v6.982 (Franco: «carosello si-no per tda») -->
+            <button class="admin-subtab" onclick="tdaSubTab('caroselli')">🎠 Caroselli</button>
           </div>
           <div class="tda-sub" id="tda-sub-tipi">
           <div id="admin-tipo-articolo-tabella"></div>
@@ -3279,6 +3283,10 @@ di tutte le serie</button>
                della definizione che non serve piu'. -->
           <div class="tda-sub" id="tda-sub-legende" style="display:none;">
           <div id="admin-legende-definizioni"></div>
+          </div>
+          <!-- 🆕 v6.982 — una spunta per tipologia: comanda i tre caroselli (`renderAdminCaroselliTDA`). -->
+          <div class="tda-sub" id="tda-sub-caroselli" style="display:none;">
+          <div id="admin-caroselli-tda"></div>
           </div>
           <!-- 🆕 v6.234 — da chi può nascere ogni versione. SOLA LETTURA: descrive com'è
                fatto il modello, non cosa contiene questa collezione. È il descrittore
@@ -5695,7 +5703,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.981"></script>
+<script src="js/app.js?v=6.982"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5719,7 +5727,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.981'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.982'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
