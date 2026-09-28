@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.000 - Modificato js/app.js, css/style.css e index.html. 🎛️ LE BARRE DA TOCCARE DAPPERTUTTO: ogni
+//          riquadro dei filtri delle pagine di ricerca (sezione di una serie, personaggi, tipologia)
+//          è una barra che si apre e si chiude, parte chiusa e da chiusa dice quanti filtri ha accesi.
+//          Su telefono E su computer (Franco: «ti do il via per applicarli in tutti gli altri box
+//          delle pagine di ricerca», «potresti farli così anche per la versione desktop?»).
 // v6.999 - Modificato js/app.js (e la versione in index.html). 📱 Sul telefono anche «Filtri
 //          aggiuntivi admin» della ricerca nella pagina della tipologia è chiudibile e parte chiuso:
 //          così lo sono tutti e tre i riquadri (Franco: «volevo che nascessero tutti collassati»).
@@ -30449,7 +30454,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.999';
+const JS_VERSION = 'v7.000';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33834,7 +33839,7 @@ function renderRicercaTipologia() {
   //    griglia senza dire perché (v6.095). Sul computer è il riquadro di sempre.
   const mob = _isMobileViewport();
   const chiudibile = (k, tit, accese, dentro) => {
-    if (!mob) return riquadro(tit, dentro);
+    // 🔄 v7.000 (Franco: «potresti farli così anche per la versione desktop?») - anche sul computer
     const aperto = !!_rtAperti[k];
     // 🔄 v6.999 (Franco: «una persona che non lo sa… non è molto intuitivo perché è bassissimo») - UNA
     //    BARRA DA TOCCARE: alta almeno 44px (la misura di un dito), il titolo dentro e non sul bordo, e
@@ -33915,10 +33920,12 @@ function renderRicercaTipologia() {
         //    a metà delle pillole, arrotondate per eccesso: la prima colonna è quella più lunga.
         '<div style="' + (mob ? 'display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));grid-auto-flow:column;grid-template-rows:repeat(' + Math.max(1, Math.ceil((pSerie.split("_rtSolo('serie'").length - 1) / 2)) + ', auto);' : 'display:flex;flex-wrap:wrap;align-items:center;') + 'gap:0.4rem;">' + pSerie + '</div>') : '')
     + chiudibile('versioni', it ? 'Filtra per versione' : 'Filter by version', x.versioni.size,
-        '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + pVer + '</div>')
+        '<div id="rt-versioni" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + pVer + '</div>')   // v7.000: id per le due colonne
     + adminHTML
     + '</div>';
   if (idAtt) { const el = document.getElementById(idAtt); if (el) { el.focus(); try { el.setSelectionRange(cur, cur); } catch (e) {} } }
+  // 🆕 v7.000 - sul telefono anche le versioni su due colonne, se i nomi ci stanno (Franco)
+  if (_rtAperti.versioni) _dueColonneSeCiStanno(document.getElementById('rt-versioni'));
   const acceso = _rtAcceso();
   if (griglia) griglia.style.display = acceso ? 'none' : '';
   if (!ris) return;
@@ -41967,7 +41974,7 @@ function renderCatalogPersonaggi(grid) {
       + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + _pilloleSerie + '</div></div>' : '')
     // 🆕 v6.966 - «Senza figurine», per tutti (Franco: «user visible»). Lo stesso interruttore
     //    blu dei filtri della ricerca di sezione.
-    + '<div style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
+    + '<div id="personaggi-filtri-agg" style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'   // v7.000: id per la barra
     + '<div style="' + _etichettaBordo + '">' + (it ? 'Filtri aggiuntivi' : 'More filters') + '</div>'
     + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);">'
     + '<button type="button" class="toggle-btn-blue ' + (_personaggiSenzaFigurine ? 'on' : '') + '" onclick="_personaggiSenzaFigurine=!_personaggiSenzaFigurine;_personaggiPagina=1;renderCatalog();"></button>'
@@ -42021,6 +42028,9 @@ function renderCatalogPersonaggi(grid) {
   grid.innerHTML = cerca + (pagina.length ? pagina.map(card).join('')
       : '<div class="empty-state" style="grid-column:1/-1;"><p class="empty-title">' + (it ? 'Nessun personaggio con questo nome.' : 'No character with this name.') + '</p></div>')
     + _paginazionePersonaggi(pagine);
+  // 🆕 v7.000 - «Filtra per serie» e «Filtri aggiuntivi» diventano barre
+  _bmApplica(document.getElementById('personaggi-filtro-serie'), 'pers-serie');
+  _bmApplica(document.getElementById('personaggi-filtri-agg'), 'pers-agg');
 }
 
 function _paginazionePersonaggi(tot) {
@@ -49117,7 +49127,8 @@ function renderItemTypeFilters() {
       // 📌 Il box resta, con la sua etichetta sul bordo: e' il comando per riaprirlo.
       const _triAdm = document.getElementById('items-admin-filters-tri');
       if (_triAdm) _triAdm.textContent = _adminFiltriAperti ? '\u25bc' : '\u25b6';
-      elAdmT.style.display = _adminFiltriAperti ? 'flex' : 'none';
+      // 🔄 v7.000 - il contenuto si vede sempre: ad aprire e chiudere ci pensa la barra
+      elAdmT.style.display = 'flex';
     }
   }
 
@@ -49183,6 +49194,9 @@ function renderItemTypeFilters() {
     const introTextEl = document.getElementById('items-filter-intro-text');
     if (introTextEl) introTextEl.textContent = t('items.filterIntro');
   }
+  // 🆕 v7.000 - «Filtri legati alla tua lista» e «Filtri aggiuntivi admin» diventano barre
+  _bmApplica(document.getElementById('items-collection-box'), 'lista');
+  _bmApplica(document.getElementById('items-admin-filters'), 'admin');
 }
 
 // Usata dalla modalità "Fronte e retro sempre grandi": aspetta di conoscere
@@ -50275,7 +50289,8 @@ function _pannelloCategorieRisultati() {
   const _vive = new Map(_retroCatCounts(getCurrentlyFilteredItems({ skipCategory: true, skipSubcategory: true })).map(v => [v[0], v]));
   const _elenco = _retroCatCounts(getCurrentlyFilteredItems({ skipCategory: true, skipSubcategory: true, skipLato: true }));
   const pairs = _elenco.map(v => _vive.get(v[0]) || [v[0], 0, (v[2] || []).map(s => [s[0], 0])]);
-  return pairs.length ? _retroCatPanelHTML(pairs, _retroCatResultsOpen, true, 'toggleRetroCatResults') : '';
+  // 🔄 v7.000 - sempre aperto dentro: ad aprire e chiudere ci pensa la barra
+  return pairs.length ? _retroCatPanelHTML(pairs, true, true, null) : '';
 }
 // 🆕 v6.269 - TOGLIERE UNA CATEGORIA PORTA VIA LE SUE SOTTOCATEGORIE. Lasciarle selezionate
 // sarebbe la definizione di filtro invisibile: quei chip non si vedono piu' (il loro gruppo e'
@@ -51231,6 +51246,66 @@ function _riquadriAvrannoMaiQualcosa() {
     return !(v.unaSolaInerte && pairs.length < 2);
   });
 }
+// 🆕 v7.000 (Franco: «questi filtri mi piacciono tantissimo… applicali in tutti gli altri box delle
+//    pagine di ricerca»; «potresti farli così anche per la versione desktop?») - LE BARRE DA TOCCARE,
+//    la forma della v6.999 per ogni riquadro dei filtri. UN PASSAGGIO SOLO, DOPO IL DISEGNO: chi
+//    disegna i riquadri (i raggruppamenti, le categorie, «lista», «admin», i personaggi) resta com'era,
+//    e `_bmApplica` gli mette davanti la barra e ne nasconde il contenuto finché è chiuso. Riscrivere
+//    cinque disegnatori per dargli la stessa testata sarebbe stato cinque copie della stessa testata.
+// 📌 Il titolo è quello che il riquadro scriveva sul bordo (l'etichetta si nasconde, la barra la dice);
+//    il numero sono i filtri accesi dentro: interruttori (`.toggle-btn-blue.on`) e pillole accese (lo
+//    sfondo lime `var(--accent)`, lo stesso che le fa vedere accese). Partono tutti chiusi, e lo stato
+//    resta per la sessione (`_bmAperti`).
+const _bmAperti = {};
+function _bmBarraHTML(chiave, tit, accese, aperto) {
+  const it = currentLang === 'it';
+  return '<button type="button" class="bm-barra" onclick="_bmApri(\'' + chiave + '\')" aria-expanded="' + aperto + '" style="width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:0.6rem;background:transparent;border:none;color:var(--text);font-family:inherit;font-size:0.9rem;font-weight:600;padding:0.55rem 0.9rem;cursor:pointer;text-align:left;">'
+    + '<span>' + esc(tit) + (accese ? ' <span style="color:var(--accent);">(' + accese + ')</span>' : '') + '</span>'
+    + '<span style="font-size:0.8rem;font-weight:400;opacity:0.85;white-space:nowrap;">' + (aperto ? (it ? 'Chiudi ▲' : 'Close ▲') : (it ? 'Apri ▼' : 'Open ▼')) + '</span></button>';
+}
+function _bmApplica(box, chiave) {
+  if (!box) return;
+  const et = box.querySelector(':scope > .bm-etichetta')
+    || [...box.children].find(c => !c.classList.contains('bm-barra') && getComputedStyle(c).position === 'absolute');
+  if (et) et.classList.add('bm-etichetta');
+  const tit = String(et ? et.textContent : '').replace(/[▶▼▲▸▾►]/g, '').replace(/\(\s*\d+\s*(totali|total)\s*\)/i, '').replace(/\s+/g, ' ').trim();
+  const vecchia = box.querySelector(':scope > .bm-barra');
+  if (vecchia) vecchia.remove();
+  const accese = box.querySelectorAll('.toggle-btn-blue.on').length + box.querySelectorAll('span[style*="background:var(--accent)"]').length;
+  box.classList.add('bm-box');
+  box.dataset.bmChiave = chiave;
+  box.classList.toggle('bm-aperto', !!_bmAperti[chiave]);
+  box.insertAdjacentHTML('afterbegin', _bmBarraHTML(chiave, tit, accese, !!_bmAperti[chiave]));
+  if (_bmAperti[chiave] && chiave !== 'admin') _dueColonneSeCiStanno(box);   // v7.000, sul telefono
+}
+// 🆕 v7.000 (Franco: «da telefonino non sono solo le serie che passano a due colonne ma anche gli altri,
+//    perché l'obiettivo è sempre quello di non avere un lenzuolo»; «ma chiaramente se il nome delle
+//    opzioni è troppo lungo lascia stare»; «non mi interessa risolvere il problema del lenzuolo per la
+//    sezione admin») - SUL TELEFONO LE VOCI DI UN RIQUADRO SU DUE COLONNE, riempite per colonne (prima
+//    la prima, v6.998). Le voci sono i figli di un contenitore fatti tutti di pillole o di interruttori;
+//    se anche UNA non ci sta in mezza riga il contenitore resta com'era. Si misura a riquadro aperto,
+//    cioè quando le voci hanno una larghezza.
+function _dueColonneSeCiStanno(box) {
+  if (!box || !_isMobileViewport()) return;
+  const vocePillola = c => /border-radius:\s*999px/.test(c.getAttribute('style') || '') || !!c.querySelector(':scope > .toggle-btn-blue');
+  const cont = [box, ...box.querySelectorAll('*')].find(el => el.children.length >= 3 && [...el.children].every(vocePillola));
+  if (!cont || cont.dataset.dueColonne) return;
+  const voci = [...cont.children];
+  const meta = (cont.clientWidth - 6) / 2;
+  if (!meta || voci.some(v => v.scrollWidth > meta)) return;   // un nome troppo lungo: si lascia stare
+  cont.dataset.dueColonne = '1';
+  cont.style.display = 'grid';
+  cont.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+  cont.style.gridAutoFlow = 'column';
+  cont.style.gridTemplateRows = 'repeat(' + Math.ceil(voci.length / 2) + ', auto)';
+  cont.style.gap = '0.4rem';
+  voci.forEach(v => { v.style.justifySelf = 'start'; });
+}
+function _bmApri(chiave) {
+  _bmAperti[chiave] = !_bmAperti[chiave];
+  document.querySelectorAll('[data-bm-chiave="' + chiave + '"]').forEach(b => _bmApplica(b, chiave));
+}
+
 function renderRaggrSummaries() {
   const el = document.getElementById('raggr-summary-results');
   if (!el) return;
@@ -51270,7 +51345,7 @@ function renderRaggrSummaries() {
   const html = _ORDINE_RIQUADRI.map(chiave => {
     if (chiave === 'categoria') {
       const cat = _pannelloCategorieRisultati();
-      return cat ? `<div style="width:100%;">` + cat + `</div>` : '';
+      return cat ? `<div style="width:100%;" data-bm="categoria">` + cat + `</div>` : '';   // v7.000: la barra
     }
     const v = _RAGGRUPPAMENTI.find(x => x.chiave === chiave);
     if (!v) return '';
@@ -51306,13 +51381,16 @@ function renderRaggrSummaries() {
     // altro contenitore con 0.6rem, e l'ultimo riquadro lasciava un margine appeso in fondo al box.
     // 📌 Un margine per figlio e' una distanza scritta N volte; un `gap` sul padre e' scritta una
     // volta e non puo' essere diversa fra due coppie. Le spaziature disuguali nascono cosi'.
-    return `<div style="width:100%;">`
+    return `<div style="width:100%;" data-bm="${v.chiave}">`   // v7.000: la barra
       // 🆕 v6.330 - stato e toggle tornano. Che poi si veda o no un triangolino lo decide il
       // PANNELLO in base a quante opzioni ha: qui non si sa e non si deve sapere.
-      + _raggrPanelHTML(v, pairs, _raggr(v.chiave).aperto, true, `_toggleRaggrRisultati('${v.chiave}')`, 0)
+      // 🔄 v7.000 - sempre aperto dentro, e senza triangolino: ad aprire e chiudere ci pensa la barra
+      + _raggrPanelHTML(v, pairs, true, true, null, 0)
       + `</div>`;
   }).join('');
   el.innerHTML = html;
+  // 🆕 v7.000 - ogni riquadro diventa una barra da toccare
+  el.querySelectorAll(':scope > div[data-bm]').forEach(w => _bmApplica(w.firstElementChild, 'raggr-' + w.dataset.bm));
   // v6.268/v6.329 - in colonna, e la distanza fra i riquadri e' un `gap` solo.
   el.style.flexDirection = 'column';
   el.style.gap = '0.75rem';
