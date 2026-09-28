@@ -2647,3 +2647,13 @@ footer {
   #newsletter-users-list .nl-col-email { display: none; }
   #newsletter-users-list .nl-email-nome { display: block; font-size: 0.75rem; color: var(--text); margin-top: 0.15rem; }
 }
+
+/* 🆕 v7.000 (Franco: «applicali in tutti gli altri box delle pagine di ricerca»; «anche per la versione
+   desktop») - IL RIQUADRO CON LA BARRA DA TOCCARE. `_bmApplica` gli mette `bm-box` e la barra in testa:
+   chiuso resta la sola barra, aperto il contenuto di sempre sotto. L'etichetta sul bordo si nasconde,
+   perché il titolo lo dice la barra. `!important` perché i riquadri hanno il padding scritto addosso. */
+.bm-box { padding: 0 !important; }
+.bm-box > .bm-etichetta { display: none !important; }
+.bm-box:not(.bm-aperto) > :not(.bm-barra) { display: none !important; }
+.bm-box.bm-aperto > :not(.bm-barra):not(.bm-etichetta) { margin-left: 0.9rem; margin-right: 0.9rem; }
+.bm-box.bm-aperto > :last-child { margin-bottom: 0.8rem; }
