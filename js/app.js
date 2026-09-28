@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.993 - Modificato js/app.js (e la versione in index.html). 🖼️ Nella scheda in modifica il
+//          fronte e il «Retro associato» AFFIANCATI, come le due facce delle spille (v6.866):
+//          nelle fcr e in ogni tipologia col retro come articolo collegato (Franco: «sì, affiancale
+//          anche nelle fcr e nelle altre tipologie di articolo in cui non lo è»).
 // v6.992 - Modificato js/app.js (e la versione in index.html). 🔎 Nei «Filtri aggiuntivi» admin di
 //          ogni ricerca di tipologia, «Con Nome carosello mobile alterato»: gli articoli col campo
 //          «Nome carosello mobile» scritto (Franco). Gemello di «Con nomi alternativi».
@@ -30418,7 +30422,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.992';
+const JS_VERSION = 'v6.993';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -59154,6 +59158,24 @@ function _linkModifica(id, testo) {
   return '<a href="javascript:void(0)" onclick="apriModificaItem(\'' + id + '\')" style="color:var(--nome-entita);text-decoration:underline;">' + esc(testo) + '</a>';
 }
 function _slotFotoEdit(slot, url, f, stretto) {
+  // 🆕 v6.993 (Franco: «sì, affiancale anche nelle fcr e nelle altre tipologie di articolo in cui non
+  //    lo è») - IL FRONTE E IL RETRO ASSOCIATO AFFIANCATI. Dove il retro e' un ALTRO articolo (le fcr,
+  //    e ogni tipologia col retro collegato) la scheda ha una sola foto propria e, sotto, l'anteprima
+  //    del retro: una sopra l'altra, coi pulsanti del fronte larghi tutta la colonna. Adesso il
+  //    riquadro diventa una riga a due colonne, come le due facce delle spille (v6.866): a sinistra
+  //    il fronte coi suoi comandi impilati (`slot-stretto`, la stessa classe), a destra il retro.
+  // 📌 L'id `fig-slot-fronte` resta sul contenitore esterno: `_ridisegnaSlotFoto` rifa' il riquadro
+  //    intero, retro compreso, come prima.
+  // 📌 Senza retro associato non cambia niente: il riquadro e' quello di sempre.
+  const _apriSlotFoto = (slot, cls, flex, titolo, riqRetro) => {
+    if (!riqRetro) return '<div id="fig-slot-' + slot + '" class="fig-slot' + cls + '" style="margin-bottom:0.6rem;' + flex + '">' + titolo;
+    const tf = '<div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? 'Fronte' : 'Front') + '</div>';
+    return '<div id="fig-slot-' + slot + '" class="fig-slot slot-stretto" style="margin-bottom:0.6rem;display:flex;gap:0.3rem;align-items:flex-start;">'
+      + '<div style="flex:1;min-width:0;">' + tf;
+  };
+  const _chiudiSlotFoto = riqRetro => {
+    return riqRetro ? '</div><div style="flex:1;min-width:0;">' + riqRetro + '</div></div>' : '</div>';
+  };
   // ⚠️ La classe, non uno stile in linea: `prova-v6637` pretende che il verso dei comandi si
   //    decida nel FOGLIO e in un posto solo - due correzioni per lo stesso difetto vogliono dire
   //    che togliendone una non succede niente e nessuno sa piu' quale teneva su cosa.
@@ -59174,11 +59196,11 @@ function _slotFotoEdit(slot, url, f, stretto) {
   const _retroAss = (slot === 'fronte') ? _retroDellaScheda(f) : null;
   // ⚠️ Solo dove il retro NON ha già un riquadro suo (la seconda faccia sta sul record: album…).
   const _riqRetro = (_retroAss && !(_schedaDueFoto(f) && _secondaFacciaSulRecord(f.section)))
-    ? '<div style="margin-top:0.6rem;">'
+    ? '<div>'   // v6.993 - accanto al fronte, non sotto: niente stacco sopra
       + '<div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? 'Retro associato' : 'Linked back') + '</div>'
       + (_retroAss.img
-          ? '<img src="' + cloudinaryUrl(_retroAss.img, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:160px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;">'
-          : _senzaFotoHTML(!!_retroAss.fotoNonDisponibile, 'position:relative;width:100%;height:60px;border-radius:8px;display:flex;align-items:center;justify-content:center;'))   // v6.977
+          ? '<img src="' + cloudinaryUrl(_retroAss.img, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;">'   // v6.993: 200 come il fronte
+          : _senzaFotoHTML(!!_retroAss.fotoNonDisponibile, 'position:relative;width:100%;height:200px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;'))   // v6.977, v6.993
       // v6.976 - «da lì» è un link al retro, aperto in modifica (Franco: «con un click arrivo a poterli modificare»)
       + '<div style="font-size:0.72rem;color:var(--text);margin-top:0.3rem;">' + (currentLang === 'it' ? 'È la foto dell\'articolo retro: si cambia ' + _linkModifica(_retroAss.id, 'da lì') + '.' : 'This is the back item\'s photo: change it ' + _linkModifica(_retroAss.id, 'there') + '.') + '</div>'
       + '</div>'
@@ -59219,13 +59241,12 @@ function _slotFotoEdit(slot, url, f, stretto) {
     // 🆕 v6.599 - il contenitore porta un id: cosi' questo riquadro si puo' RIDISEGNARE da
     //    solo quando la foto cambia, senza toccare il resto della scheda.
     const _vista = url || _ered;   // v6.975: la foto che arriva davvero, non il riquadro vuoto
-    return '<div id="fig-slot-' + slot + '" class="fig-slot' + _cls + '" style="margin-bottom:0.6rem;' + _flex + '">' + titolo +
+    return _apriSlotFoto(slot, _cls, _flex, titolo, _riqRetro) +
       (_vista
         ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(_vista, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0;">'
         : _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:200px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;', s.preview)) +   // v6.977
       '<div style="font-size:0.72rem;color:var(--text);margin-top:0.4rem;">' + nota + '</div>' +
-      _riqRetro +
-    '</div>';
+      _chiudiSlotFoto(_riqRetro);
   }
   // 🆕 v6.965 (Franco: «clono, metto change, scelgo partenza e retro: non mostra le foto, né fronte
   //    né retro; neanche dopo "salva e resta". Per vederle devo salvare e riaprire») — IN MODIFICA
@@ -59238,7 +59259,7 @@ function _slotFotoEdit(slot, url, f, stretto) {
   // (v6.975: `_ered`, `_retroAss` e `_riqRetro` si calcolano più su, prima del ramo delle schede
   //  senza foto propria, che li usa anche lui)
   // 🆕 v6.599 - stesso id dell'altro ramo: chi ridisegna non deve sapere quale dei due e'.
-  return '<div id="fig-slot-' + slot + '" class="fig-slot' + _cls + '" style="margin-bottom:0.6rem;' + _flex + '">' + titolo +
+  return _apriSlotFoto(slot, _cls, _flex, titolo, _riqRetro) +
     (url
       ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(url, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
       : _ered
@@ -59283,8 +59304,7 @@ function _slotFotoEdit(slot, url, f, stretto) {
       '<button onclick="removeFigPhoto(\'' + slot + '\')" class="btn-foto elimina" style="flex:1;">\u{1F5D1}\uFE0F ' + (currentLang === 'it' ? 'Rimuovi foto' : 'Remove photo') + '</button>' +
       '<button id="' + s.btn + '" onclick="removeBgFromEdit(\'' + slot + '\')" class="btn-foto" style="flex:1;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' +
     '</div>' : '') +
-    _riqRetro +
-  '</div>';
+    _chiudiSlotFoto(_riqRetro);
 }
 
 // \uD83C\uDD95 v6.965 - LE FOTO CHE UNA FIGURINA CON RETRO EREDITA, lette dalla scheda aperta.
