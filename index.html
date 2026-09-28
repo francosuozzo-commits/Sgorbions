@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.983">
+<link rel="stylesheet" href="css/style.css?v=6.984">
 
 
 <style>
@@ -2595,6 +2595,15 @@ di tutte le serie</button>
            l'allineamento fra il tasto e il titolo che gli stava accanto. Adesso accanto al titolo
            non c'e' piu', quindi `align-items:stretch` su questa riga non allinea piu' niente - ma
            resta scritto li' perche' la riga ha ancora due gruppi che possono andare a capo. -->
+    </div>
+    <!-- 🆕 v6.984 (Franco: «all'interno di una sezione di una serie mostriamo il carosello se per
+         quella tipologia di articolo è previsto un carosello») - IL QUARTO CAROSELLO, in cima alla
+         sezione e sopra la ricerca. Nasce spento: lo accende `renderCaroselloSezione`. Frecce e fila
+         sono quelle del carosello della serie, con ID suoi. -->
+    <div id="sezione-carosello-sez" class="carosello-largo" style="display:none;position:relative;margin-bottom:1rem;">
+      <button type="button" id="sezione-carosello-prec" aria-label="Precedente" style="position:absolute;left:-6px;top:42%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.3rem;line-height:1;padding:0.4rem 0.55rem;border-radius:999px;cursor:pointer;">&#8249;</button>
+      <div id="sezione-carosello" style="display:flex;gap:0.9rem;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;padding:0.2rem 0.4rem 0.6rem;"></div>
+      <button type="button" id="sezione-carosello-succ" aria-label="Successivo" style="position:absolute;right:-6px;top:42%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.3rem;line-height:1;padding:0.4rem 0.55rem;border-radius:999px;cursor:pointer;">&#8250;</button>
     </div>
     <!-- v5.796 — blocchi admin Classifica/Ebay spostati SOTTO i risultati di ricerca (vedi sotto) -->
     <!-- 🆕 v6.333 (Franco) — LA CORNICE E' BLU, del blu delle AZIONI UTENTE (`--action`, quello
@@ -5703,7 +5712,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.983"></script>
+<script src="js/app.js?v=6.984"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5727,7 +5736,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.983'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.984'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
