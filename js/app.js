@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.995 - Modificato js/app.js (e la versione in index.html). 🏷️ Via «Sgorbions» dal titolo della
+//          pagina della tipologia: «Le Figurine con retro», «I Retro» (Franco: «togli "sgorbions"
+//          dopo il nome della tda»).
 // v6.994 - Modificato js/app.js e index.html. 🔎 LA RICERCA IN TUTTE LE SERIE, nella pagina della
 //          tipologia (Franco: «non abbiamo una ricerca cross serie che offra le stesse feature della
 //          ricerca fatta su singola serie, per una data tipologia»). Sotto il carosello: buca di
@@ -30433,7 +30436,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.994';
+const JS_VERSION = 'v6.995';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41166,8 +41169,9 @@ function _titoloProdotto(sec) {
   const a = ARTICOLI[sec];
   if (!a) return getSectionLabel(sec);
   return currentLang === 'it'
-    ? _articoloPlurale(a.it, a.genere) + ' ' + a.it + ' Sgorbions'
-    : 'The Sgorbions ' + a.en;
+    // 🔄 v6.995 (Franco: «togli "sgorbions" dopo il nome della tda») - articolo e nome, e basta
+    ? _articoloPlurale(a.it, a.genere) + ' ' + a.it
+    : 'The ' + a.en;
 }
 
 // La scomposizione per tipologia, COI COLORI del codice tipologie (v5.703): base, variazione
