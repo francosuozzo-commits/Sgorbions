@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.991 - Modificato js/app.js (e la versione in index.html). 📱 IL «NOME CAROSELLO MOBILE»
+//          (Franco: «questo lavoro con il file xls, di definire come andare a capo, sta finendo per
+//          essere hard-codizzato, ma domani potrei cambiare idea... altro campo sulla scheda
+//          articolo, sotto "Nomi alternativi", chiamato "Nome carosello mobile"; admin
+//          visible»). Campo `nomeCaroselloMobile`: il nome con una barra | dove andare a capo.
+//          Solo nei caroselli sul telefono, e solo se la parola non ci sta: «VIDEOREGI-» e sotto
+//          «STRATORE». Vuoto = il Nome di sempre. Nasce vuoto; una versione senza il suo prende
+//          quello della base.
 // v6.990 - Modificato index.html (e la versione in app.js). 🎯 Nella scheda i tasti SOPRA a tutto:
 //          in cima frecce e «N di M» al centro e la X a destra, sotto il nome completo su tutta la
 //          larghezza (Franco: «hai messo i tasti al centro a scapito del nome completo... metti i
@@ -30407,7 +30415,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.990';
+const JS_VERSION = 'v6.991';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33323,7 +33331,8 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
         { t: esc(f.subcategory || ''), col: COL_SOTTOCAT,    dim: '0.64rem', alt: '1.2em' },
         // 🔄 v6.722 - anche qui la stella e' la coda del nome, non una riga sua: una riga in
         //    meno su telefono e' proprio cio' che la v6.080 cercava.
-        { t: esc(_etichettaR), col: COL_IDENTITA, dim: '0.7rem', alt: 'auto',
+        // 🆕 v6.991 - e anche qui il «Nome carosello mobile», se c'e', vince sull'etichetta
+        { t: (_nomeCaroselloMobile(f) ? _nomeCaroselloHTML(_nomeCaroselloMobile(f)) : esc(_etichettaR)), col: COL_IDENTITA, dim: '0.7rem', alt: 'auto',
           coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.66rem' }
       ];
     }
@@ -33333,7 +33342,9 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
     //    non sfrutta bene lo spazio; bisogna andare a capo solo quando una parola non si sta per
     //    intera»). Via i `<br>` fra le parole: il testo va a capo da sé dove finisce lo spazio, e
     //    le parole non si spezzano. L'altezza resta 'auto', come prima.
-    const parole = esc(String(f.name || '').trim().split(/\s+/).filter(Boolean).join(' '));
+    // 🆕 v6.991 - col «Nome carosello mobile» scritto, vale quello (con i suoi punti di taglio)
+    const _ncm = _nomeCaroselloMobile(f);
+    const parole = _ncm ? _nomeCaroselloHTML(_ncm) : esc(String(f.name || '').trim().split(/\s+/).filter(Boolean).join(' '));
     const righe = rigaSerie('0.62rem');
     // v6.277 (Franco) - numero e nome in azzurro, come sulle card.
     if (_haNumero(f) && f.number) righe.push({ t: esc(String(f.number)), col: COL_IDENTITA, dim: '0.66rem', alt: '1.2em' });
@@ -43507,6 +43518,31 @@ function _nomiAlternativi(f) {
     t = String((b && b.nomeAlternativo) || '').trim();
   }
   return t ? t.split(',').map(s => s.trim()).filter(Boolean) : [];
+}
+
+// 🆕 v6.991 (Franco: «altro campo sulla scheda articolo, sotto "Nomi alternativi", chiamato "Nome
+//    carosello mobile"») - IL NOME CHE LA CARD DEL CAROSELLO MOSTRA SUL TELEFONO, con una barra |
+//    nei punti in cui una parola troppo larga puo' andare a capo. Il taglio e' un DATO che Franco
+//    cambia dal sito, non una regola del codice: e' la ragione per cui il campo esiste.
+// 📌 Vuoto = il Nome di sempre. Una versione senza il suo prende quello della base, come i nomi
+//    alternativi (stessa mappa per id).
+function _nomeCaroselloMobile(f) {
+  let t = String((f && f.nomeCaroselloMobile) || '').trim();
+  if (!t && f && f.baseFigurineId) {
+    const a = (_cache && _cache.figurines) || [];
+    if (_idxArticoliPerId.arr !== a || !_idxArticoliPerId.map.has(f.baseFigurineId)) {
+      _idxArticoliPerId = { arr: a, map: new Map(a.map(x => [x.id, x])) };
+    }
+    const b = _idxArticoliPerId.map.get(f.baseFigurineId);
+    t = String((b && b.nomeCaroselloMobile) || '').trim();
+  }
+  return t;
+}
+// La barra diventa un TRATTINO MORBIDO (&shy;): il browser va a capo li' SOLO se la parola non ci
+// sta, e allora scrive il trattino - «VIDEOREGI-» e sotto «STRATORE», come ha chiesto Franco. Dove
+// la parola ci sta, resta intera e il trattino non si vede.
+function _nomeCaroselloHTML(s) {
+  return esc(String(s || '').trim().split(/\s+/).filter(Boolean).join(' ')).replace(/\s*\|\s*/g, '&shy;');
 }
 
 function _campiRicercaFigurina(f) {
@@ -55623,6 +55659,12 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     const _daBase = !String(f.nomeAlternativo || '').trim();
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nomi alternativi' : 'Alternative names')}</span><span class="detail-value">${esc(_nomiAlternativi(f).join(', '))}${_daBase ? ' <span style="font-size:0.8rem;">' + (currentLang === 'it' ? '(dalla base)' : '(from the base)') + '</span>' : ''}</span></div>`);
   }
+  // 🆕 v6.991 - il «Nome carosello mobile», solo per l'admin, sotto i nomi alternativi. La barra
+  //    resta scritta: e' il punto di taglio, ed e' cio' che l'admin deve poter rileggere.
+  if (currentUser?.isAdmin && _nomeCaroselloMobile(f)) {
+    const _daBaseC = !String(f.nomeCaroselloMobile || '').trim();
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome carosello mobile' : 'Mobile carousel name')}</span><span class="detail-value">${esc(_nomeCaroselloMobile(f))}${_daBaseC ? ' <span style="font-size:0.8rem;">' + (currentLang === 'it' ? '(dalla base)' : '(from the base)') + '</span>' : ''}</span></div>`);
+  }
   if (_haSottonome(f.section) && (f.subname || '').trim()) {
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottonome' : 'Subname')}</span><span class="detail-value">${esc(f.subname.trim())}</span></div>`);
   }
@@ -58424,6 +58466,15 @@ function switchToEditMode(figId) {
       ? (currentLang === 'it' ? 'dalla base: ' : 'from the base: ') + _altBase.join(', ')
       : (currentLang === 'it' ? 'es. ADDORMENTATA, DORMIENTE' : 'e.g. ADDORMENTATA, DORMIENTE');
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nomi alternativi':'Alternative names') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-alternativo" value="' + esc(f.nomeAlternativo || '') + '" placeholder="' + esc(_phAlt) + '" title="' + esc(currentLang==='it' ? 'Solo per la ricerca: gli utenti non lo vedono, ma cercandolo trovano questo articolo. Più nomi separati da virgola.' : 'Search only: users do not see it.') + '"></span></div>';
+  }
+  // 🆕 v6.991 (Franco: «altro campo... sotto "Nomi alternativi", chiamato "Nome carosello mobile"»)
+  //    - nasce vuoto e lo si compila quando serve; su una versione vuota il segnaposto mostra la base.
+  if (currentUser?.isAdmin) {
+    const _ncmBase = String(f.nomeCaroselloMobile || '').trim() ? '' : _nomeCaroselloMobile(f);
+    const _phNcm = _ncmBase
+      ? (currentLang === 'it' ? 'dalla base: ' : 'from the base: ') + _ncmBase
+      : (currentLang === 'it' ? 'es. VIDEOREGI|STRATORE' : 'e.g. VIDEOREGI|STRATORE');
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome carosello mobile':'Mobile carousel name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-carosello-mobile" value="' + esc(f.nomeCaroselloMobile || '') + '" placeholder="' + esc(_phNcm) + '" title="' + esc(currentLang==='it' ? 'Il nome nella card del carosello sul telefono. Una barra | dove una parola troppo lunga può andare a capo (col trattino, solo se serve). Vuoto = il Nome.' : 'The name on the phone carousel card. A bar | where a long word may break.') + '"></span></div>';
   }
   if (_haSottonome(f.section)) {
     html += '<div class="detail-row" style="' + _eredStile('subname') + '"' + _eredAttr('subname') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"' + _eredRO('subname') + '></span></div>';
@@ -61537,6 +61588,10 @@ async function saveFigFromDetail(figId, opzioni) {
       //    pagina: senza, il salvataggio scriverebbe vuoto e cancellerebbe quello che c'e'.
       ...(document.getElementById('fe-nome-alternativo')
         ? { nomeAlternativo: document.getElementById('fe-nome-alternativo').value.split(',').map(s => s.trim()).filter(Boolean).join(', ') }
+        : {}),
+      // 🆕 v6.991 - il «Nome carosello mobile», spazi ripuliti; stessa cautela del campo sopra
+      ...(document.getElementById('fe-nome-carosello-mobile')
+        ? { nomeCaroselloMobile: document.getElementById('fe-nome-carosello-mobile').value.trim().split(/\s+/).filter(Boolean).join(' ').replace(/\s*\|\s*/g, '|') }
         : {}),
       // 🔴 QUI SI SCRIVONO LE CINQUE VERSIONI, E UNA CHE MANCASSE SI CANCELLEREBBE A OGNI
       // SALVATAGGIO. E' il baco della v5.711 e poi della v6.235: una casella che esiste nella form
