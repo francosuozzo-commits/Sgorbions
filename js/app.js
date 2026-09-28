@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.992 - Modificato js/app.js (e la versione in index.html). 🔎 Nei «Filtri aggiuntivi» admin di
+//          ogni ricerca di tipologia, «Con Nome carosello mobile alterato»: gli articoli col campo
+//          «Nome carosello mobile» scritto (Franco). Gemello di «Con nomi alternativi».
 // v6.991 - Modificato js/app.js (e la versione in index.html). 📱 IL «NOME CAROSELLO MOBILE»
 //          (Franco: «questo lavoro con il file xls, di definire come andare a capo, sta finendo per
 //          essere hard-codizzato, ma domani potrei cambiare idea... altro campo sulla scheda
@@ -30415,7 +30418,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.991';
+const JS_VERSION = 'v6.992';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32508,6 +32511,10 @@ let _senzaPersonaggioFilter = false;   // v6.980
 //    SULL'ARTICOLO: una versione che lo prende soltanto dalla base non c'e', perche' li' non c'e'
 //    niente da rivedere - si rivede la base.
 let _conNomiAlternativiFilter = false;   // v6.987
+// 🆕 v6.992 (Franco: «un campo per la ricerca admin che trovi gli articoli con questo campo
+//    popolato; chiamalo "Con Nome carosello mobile alterato"») - gemello di quello sopra: il
+//    campo `nomeCaroselloMobile` scritto SULL'ARTICOLO, non quello preso dalla base.
+let _conNomeCaroselloFilter = false;   // v6.992
 // 🆕 v6.540 (Franco) - IL FILTRO DEI SEMILAVORATI: gli articoli con `invisibile`, cioe'
 // quelli che gli utenti normali non vedono finche' non sono pronti (campo della v6.080).
 // 🔴 v6.542 - LA v6.540 GUARDAVA IL CAMPO SBAGLIATO, `fotoNonDisponibile`. Quello dice «la
@@ -48608,6 +48615,12 @@ function toggleConNomiAlternativiFilter() {
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (toggleConNomiAlternativiFilter)', e); }
 }
+// 🆕 v6.992 - «Con Nome carosello mobile alterato», copiato da «Con nomi alternativi»
+function toggleConNomeCaroselloFilter() {
+  _conNomeCaroselloFilter = !_conNomeCaroselloFilter;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleConNomeCaroselloFilter)', e); }
+}
 function toggleSenzaRaritaFilter() {
   _senzaRaritaFilter = !_senzaRaritaFilter;
   currentItemPage = 1;
@@ -48777,6 +48790,7 @@ function renderItemTypeFilters() {
       _senzaRaritaFilter = false;   // v6.502 - idem, ed e' il punto che si dimentica
       _senzaPersonaggioFilter = false;   // v6.980 - e il suo gemello
       _conNomiAlternativiFilter = false;   // v6.987 - e l'ultimo arrivato
+      _conNomeCaroselloFilter = false;   // v6.992 - e il suo gemello
       _visibilitaFilter = 'all';    // v6.545 - e questo e' quel punto
     } else {
       const itl = (currentLang === 'it');
@@ -48839,6 +48853,8 @@ function renderItemTypeFilters() {
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_senzaPersonaggioFilter ? 'on' : ''}" onclick="toggleSenzaPersonaggioFilter()" title="${itl ? 'Senza personaggio' : 'Without character'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Senza personaggio' : 'Without character'}</span></div>`;
       // 🆕 v6.987 - «Con nomi alternativi», copiato da «Senza personaggio»
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conNomiAlternativiFilter ? 'on' : ''}" onclick="toggleConNomiAlternativiFilter()" title="${itl ? 'Con nomi alternativi' : 'With alternative names'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con nomi alternativi' : 'With alternative names'}</span></div>`;
+      // 🆕 v6.992 - «Con Nome carosello mobile alterato», copiato da quello sopra
+      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conNomeCaroselloFilter ? 'on' : ''}" onclick="toggleConNomeCaroselloFilter()" title="${itl ? 'Con Nome carosello mobile alterato' : 'With altered mobile carousel name'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con Nome carosello mobile alterato' : 'With altered mobile carousel name'}</span></div>`;
       // 🆕 v6.540 - «Invisibili», accanto a «Senza rarità»: stesso interruttore, stessa riga.
       // 🔄 v6.545 - e con lei «Visibili». Sono due facce dello stesso stato: accenderne una
       // spegne l'altra, e non c'e' modo di averle accese insieme.
@@ -49362,6 +49378,8 @@ const _FILTRI = [
                                   acceso: () => _senzaPersonaggioFilter },
   { nome: 'con nomi alternativi', azzera: () => { _conNomiAlternativiFilter = false; },   // v6.987
                                   acceso: () => _conNomiAlternativiFilter },
+  { nome: 'con nome carosello',   azzera: () => { _conNomeCaroselloFilter = false; },   // v6.992
+                                  acceso: () => _conNomeCaroselloFilter },
   { nome: 'visibilita',           azzera: () => { _visibilitaFilter = 'all'; },
                                   acceso: () => _visibilitaFilter !== 'all' },
   // 🔴 IL COLPEVOLE DEL 5 SETTEMBRE: c'era nelle prime due liste e non nella terza.
@@ -49593,6 +49611,8 @@ function getCurrentlyFilteredItems(opts) {
     if (_ixPersFiltro && personaggiDiArticolo(f, _ixPersFiltro).length) return false;
     // 🆕 v6.987 - «Con nomi alternativi»: il campo scritto sull'articolo, non quello della base
     if (_conNomiAlternativiFilter && !String(f.nomeAlternativo || '').trim()) return false;
+    // 🆕 v6.992 - «Con Nome carosello mobile alterato»: il campo scritto sull'articolo
+    if (_conNomeCaroselloFilter && !String(f.nomeCaroselloMobile || '').trim()) return false;
     // 🔄 v6.545 - tre posizioni: 'invisibili' tiene solo i nascosti, 'visibili' solo gli
     // altri, 'all' non filtra. Le due domande sono l'una il complemento dell'altra, quindi
     // si scrivono in una riga sola: due righe separate si sarebbero potute contraddire.
