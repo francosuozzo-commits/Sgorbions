@@ -2660,3 +2660,13 @@ footer {
 /* 🔄 v7.003 (Franco: «così guadagniamo spazio in verticale») - aperto, il titolo sta sul bordo
    (`.bm-barra-bordo`, assoluto): il riquadro gli fa da riferimento e gli lascia posto in alto. */
 .bm-box.bm-aperto { position: relative !important; padding-top: 1.05rem !important; margin-top: 1.15rem; }
+
+/* 🆕 v7.006 (Franco: «nella versione mobile l'hub inventario, con le sue tre sezioni, è troppo in basso;
+   vedo che c'è del nero sopra la scritta L'inventario, quindi possiamo tirare tutto su») - SUL TELEFONO
+   LA PAGINA DELL'INVENTARIO PERDE I 56px IN CIMA.
+   📏 Misurato: #navbar è `position: relative`, quindi occupa già il suo posto e la pagina comincia dove
+   finisce lei; `.page { padding-top: 56px }` è nato per una barra `fixed` e qui era solo nero.
+   ⚠️ Solo l'Inventario e solo il telefono: le altre pagine non le ha nominate nessuno. */
+@media (max-width: 860px) {
+  #page-catalog { padding-top: 0; }
+}
