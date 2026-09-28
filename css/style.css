@@ -771,7 +771,12 @@ body {
    cio' che fa uscire la griglia dal contenitore stretto in cui sta. */
 @media (min-width: 861px) {
   #catalog-grid,
-  #prodotto-serie-grid {
+  #prodotto-serie-grid,
+  /* 🆕 v6.994 (Franco: «quel box di ricerca lo allargherei sino ad essere largo quanto il contenitore
+     dell'hub sottostante») - la ricerca della pagina della tipologia e i suoi risultati, larghi come
+     i box delle serie: la stessa regola, non una misura nuova. */
+  #prodotto-ricerca,
+  #prodotto-risultati {
     /* la larghezza del carosello della home MOLTIPLICATA PER IL SUO ZOOM: e' cio' che si vede,
        non cio' che si chiede. Verificata a tre misure: a 1440 fanno 1238 tutti e due, a 1920
        1620 tutti e due, a 2554 1620 tutti e due. */
