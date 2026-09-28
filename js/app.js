@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.987 - Modificato js/app.js (e la versione in index.html). 🔎 Nei «Filtri aggiuntivi» admin di
+//          ogni ricerca di tipologia, «Con nomi alternativi»: gli articoli che hanno il campo
+//          «Nome alternativo» scritto (Franco: «deve tornare articoli con nome alternativo
+//          impostato»). Gemello di «Senza rarità».
 // v6.986 - Modificato js/app.js (e la versione in index.html). 🔎 IL «NOME ALTERNATIVO» (Franco:
 //          «il nome del personaggio, per come è scritto nella card, è scritto con un typo; però gli
 //          utenti potrebbero cercarle con quel nome... mi serve un campo sugli articoli, chiamato
@@ -30388,7 +30392,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.986';
+const JS_VERSION = 'v6.987';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32475,6 +32479,12 @@ let _senzaRaritaFilter = false;   // v6.502
 //    `personaggiDiArticolo` non ne trova nessuno: la stessa regola della scheda e della VT (una
 //    figurina lo prende anche dalla sua fpa o dalla base, una versione dalla base).
 let _senzaPersonaggioFilter = false;   // v6.980
+// 🆕 v6.987 (Franco: «aggiungi un filtro admin nella form di ricerca delle tda: "Con nomi
+//    alternativi"; deve tornare articoli con nome alternativo impostato») - gemello di
+//    `_senzaRaritaFilter`, negli stessi punti. «Impostato» = il campo `nomeAlternativo` scritto
+//    SULL'ARTICOLO: una versione che lo prende soltanto dalla base non c'e', perche' li' non c'e'
+//    niente da rivedere - si rivede la base.
+let _conNomiAlternativiFilter = false;   // v6.987
 // 🆕 v6.540 (Franco) - IL FILTRO DEI SEMILAVORATI: gli articoli con `invisibile`, cioe'
 // quelli che gli utenti normali non vedono finche' non sono pronti (campo della v6.080).
 // 🔴 v6.542 - LA v6.540 GUARDAVA IL CAMPO SBAGLIATO, `fotoNonDisponibile`. Quello dice «la
@@ -48536,6 +48546,12 @@ function toggleSenzaPersonaggioFilter() {
   try { renderItems(); } catch(e) { console.error('renderItems (toggleSenzaPersonaggioFilter)', e); }
 }
 
+// 🆕 v6.987 - «Con nomi alternativi», copiato da «Senza rarità»
+function toggleConNomiAlternativiFilter() {
+  _conNomiAlternativiFilter = !_conNomiAlternativiFilter;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleConNomiAlternativiFilter)', e); }
+}
 function toggleSenzaRaritaFilter() {
   _senzaRaritaFilter = !_senzaRaritaFilter;
   currentItemPage = 1;
@@ -48704,6 +48720,7 @@ function renderItemTypeFilters() {
       _noteFilter = false;   // v6.113 - stessa ragione: un non-admin non ha come spegnerlo
       _senzaRaritaFilter = false;   // v6.502 - idem, ed e' il punto che si dimentica
       _senzaPersonaggioFilter = false;   // v6.980 - e il suo gemello
+      _conNomiAlternativiFilter = false;   // v6.987 - e l'ultimo arrivato
       _visibilitaFilter = 'all';    // v6.545 - e questo e' quel punto
     } else {
       const itl = (currentLang === 'it');
@@ -48764,6 +48781,8 @@ function renderItemTypeFilters() {
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_senzaRaritaFilter ? 'on' : ''}" onclick="toggleSenzaRaritaFilter()" title="${itl ? 'Senza rarità' : 'Without rarity'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Senza rarità' : 'Without rarity'}</span></div>`;
       // 🆕 v6.980 - «Senza personaggio», copiato da «Senza rarità»
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_senzaPersonaggioFilter ? 'on' : ''}" onclick="toggleSenzaPersonaggioFilter()" title="${itl ? 'Senza personaggio' : 'Without character'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Senza personaggio' : 'Without character'}</span></div>`;
+      // 🆕 v6.987 - «Con nomi alternativi», copiato da «Senza personaggio»
+      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conNomiAlternativiFilter ? 'on' : ''}" onclick="toggleConNomiAlternativiFilter()" title="${itl ? 'Con nomi alternativi' : 'With alternative names'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con nomi alternativi' : 'With alternative names'}</span></div>`;
       // 🆕 v6.540 - «Invisibili», accanto a «Senza rarità»: stesso interruttore, stessa riga.
       // 🔄 v6.545 - e con lei «Visibili». Sono due facce dello stesso stato: accenderne una
       // spegne l'altra, e non c'e' modo di averle accese insieme.
@@ -49285,6 +49304,8 @@ const _FILTRI = [
                                   acceso: () => _senzaRaritaFilter },
   { nome: 'senza personaggio',    azzera: () => { _senzaPersonaggioFilter = false; },   // v6.980
                                   acceso: () => _senzaPersonaggioFilter },
+  { nome: 'con nomi alternativi', azzera: () => { _conNomiAlternativiFilter = false; },   // v6.987
+                                  acceso: () => _conNomiAlternativiFilter },
   { nome: 'visibilita',           azzera: () => { _visibilitaFilter = 'all'; },
                                   acceso: () => _visibilitaFilter !== 'all' },
   // 🔴 IL COLPEVOLE DEL 5 SETTEMBRE: c'era nelle prime due liste e non nella terza.
@@ -49514,6 +49535,8 @@ function getCurrentlyFilteredItems(opts) {
     // 🆕 v6.980 - «Senza personaggio». Finché i personaggi non sono arrivati non si filtra
     //    (`_ixPersFiltro` è null): li chiede il suo interruttore, che poi ridisegna.
     if (_ixPersFiltro && personaggiDiArticolo(f, _ixPersFiltro).length) return false;
+    // 🆕 v6.987 - «Con nomi alternativi»: il campo scritto sull'articolo, non quello della base
+    if (_conNomiAlternativiFilter && !String(f.nomeAlternativo || '').trim()) return false;
     // 🔄 v6.545 - tre posizioni: 'invisibili' tiene solo i nascosti, 'visibili' solo gli
     // altri, 'all' non filtra. Le due domande sono l'una il complemento dell'altra, quindi
     // si scrivono in una riga sola: due righe separate si sarebbero potute contraddire.
