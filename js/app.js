@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.983 - Modificato js/app.js (e la versione in index.html). 🐛 «Salva i caroselli» conferma con
+//          il popup, come gli altri salvataggi (Franco: «non mi è parso di vedere il popup di
+//          conferma salvataggio»). Prima era un testo piccolo accanto al pulsante.
 // v6.982 - Modificato js/app.js e index.html. 🎠 «CAROSELLO SÌ/NO» PER TIPOLOGIA, DALLA CONSOLE
 //          (Franco: «carosello si-no per tda», «va messa in cfg»). Admin console → Tipo di
 //          articolo → «🎠 Caroselli»: una spunta per tipologia, salvata in `settings/caroselli`.
@@ -30369,7 +30372,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.982';
+const JS_VERSION = 'v6.983';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -38808,7 +38811,6 @@ function renderAdminCaroselliTDA() {
     '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaCaroselliTDA()">' + (it ? 'Salva i caroselli' : 'Save carousels') + '</button>' +
-      '<span id="caroselli-tda-feedback" style="font-size:0.85rem;color:var(--text);"></span>' +
     '</div>';
 }
 
@@ -38825,11 +38827,9 @@ async function salvaCaroselliTDA() {
   try {
     await fsSave('settings', { id: 'caroselli', voci });
     _impostaCaroselli({ voci });
-    const fb = document.getElementById('caroselli-tda-feedback');
-    if (fb) {
-      fb.textContent = it ? '✅ Salvato. I caroselli lo fanno da subito.' : '✅ Saved.';
-      setTimeout(() => { fb.textContent = ''; }, 4000);
-    }
+    // 🔄 v6.983 (Franco: «non mi è parso di vedere il popup di conferma salvataggio») - il
+    //    popup, come gli altri salvataggi: il testo accanto al pulsante sul telefono non si vedeva.
+    toast(it ? '✅ Caroselli salvati. Valgono da subito.' : '✅ Carousels saved.', 'success');
   } catch (e) {
     console.error('salvaCaroselliTDA', e);
     toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
