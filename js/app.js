@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.990 - Modificato index.html (e la versione in app.js). 🎯 Nella scheda i tasti SOPRA a tutto:
+//          in cima frecce e «N di M» al centro e la X a destra, sotto il nome completo su tutta la
+//          larghezza (Franco: «hai messo i tasti al centro a scapito del nome completo... metti i
+//          tasti sopra a tutto»).
 // v6.989 - Modificato index.html e js/app.js. Tre cose nella scheda di un articolo:
 //          1. 🎯 le due frecce e «N di M» al CENTRO della testata, la X a destra (Franco:
 //             «potremmo avere queste 3 cose al centro?»);
@@ -30403,7 +30407,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.989';
+const JS_VERSION = 'v6.990';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
