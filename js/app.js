@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.998 - Modificato js/app.js (e la versione in index.html). 📱 Le pillole delle serie, sul telefono,
+//          riempiono prima la prima colonna e poi la seconda (Franco).
 // v6.997 - Modificato js/app.js (e la versione in index.html). 📱 Sul telefono, nella ricerca della
 //          pagina della tipologia: le pillole delle serie su DUE COLONNE, e «Filtra per serie» e
 //          «Filtra per versione» chiudibili, chiusi all'apertura (Franco). Sul computer come prima.
@@ -30442,7 +30444,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.997';
+const JS_VERSION = 'v6.998';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33894,7 +33896,10 @@ function renderRicercaTipologia() {
       + '</div>' : '')
     // 🔄 v6.997 - sul telefono chiudibili, e le serie su due colonne (Franco)
     + (pSerie ? chiudibile('serie', it ? 'Filtra per serie' : 'Filter by series', x.serie.size,
-        '<div style="' + (mob ? 'display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));' : 'display:flex;flex-wrap:wrap;align-items:center;') + 'gap:0.4rem;">' + pSerie + '</div>') : '')
+        // 🔄 v6.998 (Franco: «prima esaurisci la prima colonna e poi cominci con la seconda») - la
+        //    griglia scorre per COLONNE (`grid-auto-flow:column`), con tante righe quante ne servono
+        //    a metà delle pillole, arrotondate per eccesso: la prima colonna è quella più lunga.
+        '<div style="' + (mob ? 'display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));grid-auto-flow:column;grid-template-rows:repeat(' + Math.max(1, Math.ceil((pSerie.split("_rtSolo('serie'").length - 1) / 2)) + ', auto);' : 'display:flex;flex-wrap:wrap;align-items:center;') + 'gap:0.4rem;">' + pSerie + '</div>') : '')
     + chiudibile('versioni', it ? 'Filtra per versione' : 'Filter by version', x.versioni.size,
         '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + pVer + '</div>')
     + adminHTML
