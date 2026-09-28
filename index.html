@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=6.989">
+<link rel="stylesheet" href="css/style.css?v=6.990">
 
 
 <style>
@@ -5397,10 +5397,14 @@ di tutte le serie</button>
          potremmo avere queste 3 cose al centro?») - LA TESTATA E' UNA GRIGLIA A TRE COLONNE:
          titolo | frecce e contatore | X. Le due laterali sono `1fr`, larghe uguali, quindi quella
          di mezzo sta al centro vero della scheda qualunque sia la lunghezza del titolo. Sul
-         telefono il titolo e' nascosto (v5.849) e la colonna resta vuota: il centro non si sposta. -->
+         telefono il titolo e' nascosto (v5.849) e la colonna resta vuota: il centro non si sposta.
+         🔄 v6.990 (Franco: «hai messo i tasti al centro a scapito del nome completo, che ora, quando
+         ci va a sbattere contro, va a capo; no. metti i tasti sopra a tutto») - DUE RIGHE: in cima
+         i tasti (frecce e contatore al centro, X a destra), sotto il nome completo su TUTTA la
+         larghezza (`grid-column:1 / -1`). Il titolo non divide piu' la riga con nessuno. -->
     <div class="modal-header" style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:0.5rem;">
-      <h2 class="modal-title" id="fig-detail-title" data-i18n="modal.figdetail.title" style="overflow:hidden;white-space:normal;word-break:break-word;line-height:1.25;font-size:1.1rem;min-width:0;flex:1;">Dettaglio figurina</h2>
-      <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0;grid-column:2;">
+      <h2 class="modal-title" id="fig-detail-title" data-i18n="modal.figdetail.title" style="overflow:hidden;white-space:normal;word-break:break-word;line-height:1.25;font-size:1.1rem;min-width:0;grid-column:1 / -1;grid-row:2;">Dettaglio figurina</h2>
+      <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0;grid-column:2;grid-row:1;">
         <button id="fig-detail-prev-btn" onclick="navigateFigDetail(-1)" class="btn-secondary btn-admin-ghost" style="padding:0.35rem 0.65rem;flex-shrink:0;" title="Previous">◀</button>
         <!-- v6.097 (Franco) — il contatore fra le due frecce. Niente data-i18n: la stringa la
              compone app.js insieme ai due numeri, quindi applyI18n() non deve toccarla (§5). -->
@@ -5408,7 +5412,7 @@ di tutte le serie</button>
         <button id="fig-detail-next-btn" onclick="navigateFigDetail(1)" class="btn-secondary btn-admin-ghost" style="padding:0.35rem 0.65rem;flex-shrink:0;" title="Next">▶</button>
       </div>
       <!-- v6.989 - la X nella terza colonna, a destra -->
-      <div style="display:flex;align-items:center;gap:0.5rem;justify-self:end;grid-column:3;">
+      <div style="display:flex;align-items:center;gap:0.5rem;justify-self:end;grid-column:3;grid-row:1;">
         <!-- v6.524 (Franco) - QUESTO TASTO NON CHIUDE SEMPRE: se sei arrivato qui da un link
              dentro un'altra scheda, torna a quella. Il glifo e il titolo li scrive app.js
              a ogni apertura (✕ chiude, ↩ torna indietro), quindi qui restano solo i valori
@@ -5720,7 +5724,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=6.989"></script>
+<script src="js/app.js?v=6.990"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5744,7 +5748,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.989'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.990'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
