@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.996 - Modificato js/app.js (e la versione in index.html). 🔎 Il titoletto della ricerca nella
+//          pagina della tipologia: sul telefono «Cerca in tutte le serie», sul computer «Cerca le
+//          figurine con retro in tutte le serie» (Franco).
 // v6.995 - Modificato js/app.js (e la versione in index.html). 🏷️ Via «Sgorbions» dal titolo della
 //          pagina della tipologia: «Le Figurine con retro», «I Retro» (Franco: «togli "sgorbions"
 //          dopo il nome della tda»).
@@ -30436,7 +30439,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.995';
+const JS_VERSION = 'v6.996';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33850,7 +33853,14 @@ function renderRicercaTipologia() {
     + bott(x._visibilitaFilter === 'visibili', "_rtVisibilita('visibili')", it ? 'Visibili' : 'Visible')
     + bott(x._visibilitaFilter === 'invisibili', "_rtVisibilita('invisibili')", it ? 'Invisibili' : 'Invisible')
     + '</div>');
-  const titolo = it ? 'Cerca in tutte le serie: ' + esc(getSectionLabel(sec)) : 'Search all series: ' + esc(getSectionLabel(sec));
+  // 🔄 v6.996 (Franco: «lascia che sia "Cerca in tutte le serie"; non serve ripetere il nome della
+  //    tda; questo da mobile. Nella desktop mettilo prima; esempio: "Cerca le figurine con retro in
+  //    tutte le serie"») - sul computer articolo e nome in minuscolo, con `_articoloPlurale`.
+  const _nomeTda = String((ARTICOLI[sec] && (it ? ARTICOLI[sec].it : ARTICOLI[sec].en)) || getSectionLabel(sec));
+  const titolo = _isMobileViewport()
+    ? (it ? 'Cerca in tutte le serie' : 'Search all series')
+    : (it ? 'Cerca ' + _articoloPlurale(_nomeTda, ARTICOLI[sec] && ARTICOLI[sec].genere).toLowerCase() + ' ' + esc(_nomeTda.toLowerCase()) + ' in tutte le serie'
+          : 'Search ' + esc(_nomeTda.toLowerCase()) + ' in all series');
   box.innerHTML = '<div id="rt-search-box" style="background:var(--card);border:1px solid var(--action);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-bottom:1.2rem;">'
     + '<div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.9rem;">'
     + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + titolo + '</div>'
