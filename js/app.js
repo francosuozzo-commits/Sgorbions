@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.984 - Modificato js/app.js e index.html. 🎠 IL QUARTO CAROSELLO: dentro la sezione di una
+//          serie (Serie 1 → Retro), in cima e sopra la ricerca, gli articoli base con foto di
+//          QUELLA serie e di QUELLA tipologia - se la tipologia ha la spunta «Carosello» (Franco:
+//          «all'interno di una sezione di una serie mostriamo il carosello se per quella
+//          tipologia di articolo è previsto un carosello»). Una spunta sola per i quattro.
 // v6.983 - Modificato js/app.js (e la versione in index.html). 🐛 «Salva i caroselli» conferma con
 //          il popup, come gli altri salvataggi (Franco: «non mi è parso di vedere il popup di
 //          conferma salvataggio»). Prima era un testo piccolo accanto al pulsante.
@@ -30372,7 +30377,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.983';
+const JS_VERSION = 'v6.984';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32978,7 +32983,7 @@ window.addEventListener('resize', () => { try { _aggiornaLogoNavbar(); } catch (
 // sciolte e _caroselloSpegni() sceglieva quale fermare a colpi di "diverso da": con due caroselli
 // funzionava, col terzo no — "diverso da serie" avrebbe spento anche quello nuovo. Una mappa non
 // ha questo problema e non va ritoccata quando se ne aggiunge un quarto.
-const _caroselloTimers = { home: null, serie: null, prodotto: null };
+const _caroselloTimers = { home: null, serie: null, prodotto: null, sezione: null };   // v6.984: + sezione
 const CAROSELLO_MAX = 20;                                 // v6.066 (Franco): da 15 a 20
 // v6.066: altro +15% sulla velocita'. I fattori restano scritti uno per uno invece del risultato:
 // cosi' si legge la storia (4 secondi di partenza, poi -30%, poi -15%) e non un numero magico.
@@ -33387,6 +33392,7 @@ function _impostaCaroselli(d) {
   try { if (inVista('home-carosello-sez')) renderCarosello(); } catch (e) { console.error('renderCarosello', e); }
   try { if (inVista('serie-carosello-sez')) renderCaroselloSerie(); } catch (e) { console.error('renderCaroselloSerie', e); }
   try { if (inVista('prodotto-carosello-sez')) renderCaroselloProdotto(); } catch (e) { console.error('renderCaroselloProdotto', e); }
+  try { if (inVista('sezione-carosello-sez')) renderCaroselloSezione(); } catch (e) { console.error('renderCaroselloSezione', e); }   // v6.984
 }
 
 function _caroselloMostraSerie(elenco) {
@@ -33572,6 +33578,49 @@ function renderCaroselloSerie() {
   box.onmouseenter = () => _caroselloSpegni('serie');
   box.onmouseleave = () => _caroselloAvviaBox(box, 'serie', vivo);
   _caroselloAvviaBox(box, 'serie', vivo);
+}
+
+// ---- CAROSELLO DENTRO LA SEZIONE DI UNA SERIE (v6.984, Franco) ---------------------------------
+// Il quarto: Serie 1 → Retro mostra i retro base con foto della Serie 1, se i retro hanno la spunta
+// «Carosello» (Franco: «all'interno di una sezione di una serie mostriamo il carosello se per quella
+// tipologia di articolo è previsto un carosello»). E' il carosello della serie ristretto a UNA
+// tipologia: stessa card, stessa misura, stesso ordine (per numero), solo base per la stessa
+// ragione della v6.073 (una versione ha i campi della base e sarebbe una card doppia).
+// 📌 Dentro un gruppo di sottoserie si guarda quel gruppo, come la griglia sotto.
+// 📌 Dentro un box «senza serie» (`_tipoProdottoCorrente`) non c'e': li' la tipologia e' della
+//    console, non di `ARTICOLI`, e la spunta non la conosce.
+function renderCaroselloSezione() {
+  const sez = document.getElementById('sezione-carosello-sez');
+  const box = document.getElementById('sezione-carosello');
+  if (!sez || !box) return;
+  _caroselloSpegni('sezione');
+  const spento = () => { sez.style.display = 'none'; box.innerHTML = ''; };
+  if (!currentSeriesId || !currentSection || _tipoProdottoCorrente || !_vaInCarosello(currentSection)) { spento(); return; }
+  const serieAperta = currentSeriesId, sezAperta = currentSection;
+  const gruppo = (typeof _sottoserieAttiva === 'string' && _sottoserieAttiva) ? _sottoserieAttiva : '';
+  const _figs = getData('figurines', []);
+  const base = _figs
+    .filter(f => f.seriesId === serieAperta && (f.section || 'figurines') === sezAperta
+      && (!gruppo || String(f.subseries || '').trim() === gruppo)
+      && _eBase(f) && _fotoFigurina(f, _figs))
+    .sort((a, b) => (a.number || 0) - (b.number || 0));
+  if (base.length < 2) { spento(); return; }
+  const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x, true)]));
+  const mostraSerie = _caroselloMostraSerie(base);   // una serie sola: la riga della serie non c'e'
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs)).join('');
+  box.scrollLeft = 0;
+  sez.style.display = '';
+  const prec = document.getElementById('sezione-carosello-prec');
+  const succ = document.getElementById('sezione-carosello-succ');
+  if (prec) prec.onclick = () => _caroselloScorriBox(box, -1);
+  if (succ) succ.onclick = () => _caroselloScorriBox(box, 1);
+  // vivo finche' si resta in QUESTA sezione di QUESTA serie: uscendo il timer si spegne da solo
+  const vivo = () => currentSeriesId === serieAperta && currentSection === sezAperta
+    && document.getElementById('items-section')?.style.display !== 'none'
+    && document.getElementById('series-detail')?.style.display !== 'none';
+  box.onmouseenter = () => _caroselloSpegni('sezione');
+  box.onmouseleave = () => _caroselloAvviaBox(box, 'sezione', vivo);
+  _caroselloAvviaBox(box, 'sezione', vivo);
 }
 
 // ---- CAROSELLO DELL'HUB DI UN PRODOTTO (v6.073, Franco) ---------------------------------------
@@ -47537,6 +47586,7 @@ function openSeriesSection(section, sottoserie) {
   // ✅ Adesso scrive solo `aggiornaTestiRicercaSezione`, e sa fare tutti e due i casi:
   //    dentro un box il singolare del TIPO (v6.164), fuori il singolare dell'ARTICOLO.
   renderItems();
+  try { renderCaroselloSezione(); } catch (e) { console.error('renderCaroselloSezione', e); }   // v6.984
   // Show WIP banner if less than 50% of stickers have photos
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -47805,6 +47855,9 @@ function _tornaInventarioProdotti() {
 }
 
 function closeItemsSection() {
+  // 🆕 v6.984 - uscendo dalla sezione il suo carosello si spegne subito, senza aspettare il timer.
+  _caroselloSpegni('sezione');
+  { const _cz = document.getElementById('sezione-carosello-sez'); if (_cz) _cz.style.display = 'none'; }
   // v6.153 (Franco) - DENTRO UN BOX DI TIPO PRODOTTO, "indietro" torna all'INVENTARIO, non alle
   // sezioni. Le sezioni di "Extra serie" sono un piano che non si e' mai attraversato: chi e'
   // entrato da un box non ci e' passato, e mandarlo li' non e' tornare indietro, e' portarlo in un
