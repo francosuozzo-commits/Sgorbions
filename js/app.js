@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.014 - Modificato js/app.js, index.html e css/style.css. 🧭 IL PERCORSO GUIDATO PER COSTRUIRE LA
+//          LISTA (Franco): un pulsante grande in home, nel profilo e nell'Inventario apre una procedura
+//          a schermate illustrate, serie per serie e tipologia per tipologia (tutte quelle che la serie ha)
+//          che chiede cosa hai (tutte / alcune / nessuna; e fra le alcune, le meno numerose) e aggiorna
+//          il set base nella lista, serie per serie. Si rifà quando si vuole: le risposte partono da
+//          quello che c'è già nella lista, e se si cambiano la lista segue. Fatto una volta, il pulsante
+//          diventa «Riprendi il questionario»; dalla prima schermata si azzera la lista (doppia conferma).
 // v7.013 - Modificato js/app.js (e la versione in index.html). 📝 La seconda lista di TODO (Franco):
 //          sul telefono le numeriche della mia lista nascoste dietro «Mostra numeri mia lista»;
 //          la numerica delle Figurine per album col solo numero; sul telefono le pillole di «Filtra
@@ -30498,7 +30505,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.013';
+const JS_VERSION = 'v7.014';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32174,7 +32181,7 @@ const i18n = {
 'how.2.title':'Build Your List','how.2.desc':'Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.',
 'how.3.title':'Connect and Ask','how.3.desc':'Ask questions and get answers from the administrator and other collectors.',
 'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
-'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions items ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Item types','catalog.allSeriesInfo':'Show summary information\non all series','catalog.allSeriesInfoShort':'Show series figures','catalog.allSeriesInfoTitle':'The Sgorbions series','home.cosaFare':'What can you do on this site ?','series.articoliTitolo':'THE ITEMS OF THE SERIES','catalog.addseries':'+ Add Series',
+'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions items ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Item types','catalog.allSeriesInfo':'Show summary information\non all series','catalog.allSeriesInfoShort':'Show series figures','catalog.allSeriesInfoTitle':'The Sgorbions series','home.cosaFare':'What can you do on this site ?','wz.pulsante':'✨ Create your list with the Sgorbions Questionnaire','nav.questionario':'Sgorbions Questionnaire','wz.riprendi':'✨ Resume the questionnaire','series.articoliTitolo':'THE ITEMS OF THE SERIES','catalog.addseries':'+ Add Series',
 'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them !',
 'back':'Inventory','detail.addfig':'+ Add Sticker',
 'blog.title':'Blog / Q&A','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New Question / News','blog.empty':'No posts yet. Start the conversation !',
@@ -32279,7 +32286,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Tipologie di articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra numeriche delle serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions','home.cosaFare':'Cosa puoi fare in questo sito ?','series.articoliTitolo':'GLI ARTICOLI DELLA SERIE','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine per album','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','catalog.backToSeries':'Serie','form.series.firstNumber':'N. prima figurina','form.series.lastNumber':'N. ultima figurina','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Tipologie di articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra numeriche delle serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions','home.cosaFare':'Cosa puoi fare in questo sito ?','wz.pulsante':'✨ Crea la tua lista col Questionario Sgorbions','nav.questionario':'Questionario Sgorbions','wz.riprendi':'✨ Riprendi il questionario','series.articoliTitolo':'GLI ARTICOLI DELLA SERIE','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine per album','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','catalog.backToSeries':'Serie','form.series.firstNumber':'N. prima figurina','form.series.lastNumber':'N. ultima figurina','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione !',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici !',
@@ -35351,7 +35358,7 @@ function updateNavUser() {
     guestNav.style.display = 'none';
     userNav.style.display = 'flex';
     if (wantlistLink) wantlistLink.style.display = '';
-    ['nav-catalog','nav-blog','nav-classifica','nav-mialista-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+    ['nav-catalog','nav-blog','nav-classifica','nav-mialista-link','nav-questionario-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
     const navBlogEl = document.getElementById('nav-blog');
     // 🔄 v6.834 - admin e visitatori leggono la stessa voce: «Blog / D&R» è diventato «Blog» per tutti.
     if (navBlogEl) navBlogEl.textContent = t('nav.blog');
@@ -35407,7 +35414,7 @@ function updateNavUser() {
     if (bellBtn2) bellBtn2.style.display = 'none';
     const quotaBtn2 = document.getElementById('nav-quota-warning-btn');
     if (quotaBtn2) quotaBtn2.style.display = 'none';
-    ['nav-catalog','nav-blog','nav-classifica','nav-wishlist','nav-mialista-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    ['nav-catalog','nav-blog','nav-classifica','nav-wishlist','nav-mialista-link','nav-questionario-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     // 🔴 v6.913 — QUI C'ERA `mostraNumeroniHero(false)`, ed è la riga che questa release toglie:
     //    era l'unico motivo per cui un ospite non vedeva i dodici numeri. Non è stata sostituita
     //    da un `true` — la decisione sta fuori dall'`if`, dove non dipende più da chi guarda.
@@ -43733,6 +43740,8 @@ function renderCatalog() {
   //    personaggi mettono il doppio delle colonne, e i Prodotti su desktop non le ripuliscono.
   if (grid) { grid.style.gridTemplateColumns = ''; grid.style.gap = ''; grid.style.width = ''; grid.style.maxWidth = ''; }   // v6.972: e la larghezza della pagina del personaggio
   if (_taglioInventario === 'prodotti') { if (grid) renderCatalogProdotti(grid); return; }
+  // 🆕 v7.014 - il pulsante del percorso guidato, solo per chi ha fatto l'accesso
+  { const _wzp = document.getElementById('wz-pulsante-inv'); if (_wzp) _wzp.style.display = currentUser ? '' : 'none'; }
   if (_taglioInventario === 'personaggi') { if (grid) renderCatalogPersonaggi(grid); return; }   // 🆕 v6.966
   // v6.080 - tornando al taglio per SERIE la griglia riprende le sue colonne: e' lo stesso
   // elemento, e lo stile inline messo dal taglio Prodotti gli resterebbe addosso.
@@ -48804,6 +48813,384 @@ function cloneFigurine(itemId) {
   toast((currentLang === 'it' ? '📋 Copia pronta: cambia Numero/Nome e salva' : '📋 Copy ready: change Number/Name and save'), 'success', 'alto');   // v6.971: più in alto (Franco)
 }
 
+// ============================================================
+// 🆕 v7.014 (Franco) — IL PERCORSO GUIDATO PER COSTRUIRE LA LISTA
+// ------------------------------------------------------------
+// Franco: «penso che sia difficile, quantomeno la prima volta, capire quale sia il meccanismo per creare la
+// propria lista… mettere un bottone bello grosso che consenta di far partire una procedura guidata, un vero
+// e proprio wizard, che attraverso una serie di domande… chieda una volta sola tutto ciò che fa parte della
+// sua lista»; «non ti dimenticare l'aspetto grafico: per ogni schermata ci devono essere delle foto».
+// 📌 NESSUN «NOI» (Franco: «non esiste un noi, fa tutto l'utente»): le frasi parlano a chi costruisce la
+//    lista e di quello che fa lui - né «ti chiediamo», né il sito in prima persona («Aggiungo»).
+// DECISO CON LUI: serie per serie; SOLO IL SET BASE (change, variazioni, omaggi ed errori si segnano dalle
+// pagine, come sempre); TUTTE LE TIPOLOGIE CHE LA SERIE HA, nell'ordine dell'Inventario (Franco: «mancano
+// le spille» → «tutte le tipologie che una serie ha»); pulsante in home, profilo e Inventario. Scelta mia:
+// si salva ALLA FINE DI OGNI SERIE, così chi esce a metà non perde quelle fatte.
+// 🔄 SI RIFÀ, E LE RISPOSTE SONO GIÀ DATE (Franco: «deve essere possibile rifarlo più volte. Il risultato
+//    di ogni esecuzione aggiorna il db»; «proponiamo la risposta in base a quello che ha»; «se ha già
+//    marcato l'album della serie 1… quella domanda la do per già risposta»). Ogni domanda parte da
+//    quello che c'è nella lista (`_wzProposta`: la carta proposta è accesa, e «Avanti» la conferma), e il
+//    salvataggio di fine serie SOSTITUISCE il set base delle tipologie di quella serie: chi toglie una
+//    spunta, toglie l'articolo. Fuori resta tutto: change, variazioni, omaggi, errori, serie saltate.
+// 📌 LE SCHERMATE: introduzione (le copertine delle serie) → per ogni serie: «Hai qualcosa?» (la copertina
+//    grande), Album (le loro foto da spuntare), Figurine per album e Figurine con retro (la copertina della
+//    sezione; «Tutte / Alcune / Nessuna»; e con «Alcune»: «di più quelle che hai o quelle che ti mancano?»,
+//    poi la griglia delle MENO numerose, con le miniature), riepilogo e salvataggio → finale.
+// 📌 LE SERIE sono quelle che il sito conta (`_serieDaContare`: niente in arrivo, nascoste, contenitore) e
+//    che hanno almeno uno dei tre; gli articoli quelli che il sito conta (`_articoliDaContareSito`).
+// ⚠️ Toccare una miniatura NON ridisegna la schermata (la griglia è lunga, e si perderebbe il punto in cui
+//    si era arrivati): cambia la classe della miniatura e il conto in fondo.
+let _wz = null;
+// 🆕 «Riprendi il questionario» (Franco: «se il questionario è stato già fatto almeno una volta»). Il segno
+//    sta nel documento `owned` (campo `questionario`, scritto con merge: la lista non si tocca).
+let _wzFatto = false;
+function _wzNomePulsanti() {
+  const chiave = _wzFatto ? 'wz.riprendi' : 'wz.pulsante';
+  document.querySelectorAll('.wz-pulsante').forEach(b => { b.setAttribute('data-i18n', chiave); b.textContent = t(chiave); });
+}
+async function _wzSegna(fatto) {
+  _wzFatto = fatto;
+  _wzNomePulsanti();
+  try {
+    await fsSave('owned', { id: currentUser.id, userId: currentUser.id, authUid: currentUser.authUid || null,
+      questionario: fatto ? { fatto: true, quando: new Date().toISOString() } : null });
+  } catch (e) { console.warn('segno del questionario', e); }   // è solo il nome del pulsante: non ferma niente
+}
+// 📌 L'ORDINE È DI FRANCO: «la prima casella deve essere l'album; la seconda le fpa… poi fcr, poi retro, poi
+//    il resto». Il resto nell'ordine dell'Inventario.
+const _WZ_PRIMA = ['albums', 'attaccare', 'figurines', 'retros'];
+function _wzSezioni() {
+  const tutte = (Array.isArray(PRODOTTI_INVENTARIO) ? PRODOTTI_INVENTARIO : ARTICOLI_ORDINE_DICHIARATO).slice();
+  return _WZ_PRIMA.filter(z => tutte.includes(z)).concat(tutte.filter(z => !_WZ_PRIMA.includes(z)));
+}
+const _wzAScelta = z => z !== 'albums';   // gli album hanno la loro schermata: le foto da spuntare
+function _wzSerie() {
+  return _serieDaContare(Array.isArray(_cache.series) ? _cache.series : []).slice()
+    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+}
+function _wzArticoli(sid, sez) {
+  return _articoliDaContareSito().filter(f => f.seriesId === sid && (f.section || 'figurines') === sez && _eBase(f))
+    .sort((a, b) => ((+a.number || 0) - (+b.number || 0)) || String(a.name || '').localeCompare(String(b.name || ''), 'it'));
+}
+function _wzFotoSez(sez, sid) {
+  return _fotoSezioneSerie(sez, sid) || _fotoBoxUrl(sez) || ((typeof SECTION_IMAGES !== 'undefined' && SECTION_IMAGES[sez]) || '');
+}
+function _wzImg(url, w, h, cls) {
+  if (!url) return '<div class="' + (cls || '') + ' wz-senza-foto">🎴</div>';
+  const u = /^https?:\/\/res\.cloudinary/.test(url) || !/^https?:/.test(url) ? cloudinaryUrl(url, 'w_' + w + ',h_' + h + ',c_fit,q_auto,f_auto') : url;
+  return '<img class="' + (cls || '') + '" src="' + u + '" alt="" loading="lazy">';
+}
+// 📌 LA PROPOSTA: quanti di quella tipologia ci sono già nella lista. Tutti → «Tutte», nessuno →
+//    «Nessuna», altrimenti «Alcune», e il verso è quello delle meno numerose (a pari, «quelle che hai»).
+//    `selVerso` dice per quale verso è stata riempita la griglia: cambiando verso si riparte dalla lista.
+function _wzProposta(sid, z) {
+  const tutti = _wzArticoli(sid, z).map(f => f.id), mie = new Set(getOwned());
+  const n = tutti.filter(id => mie.has(id)).length;
+  return { modo: null, verso: null, sel: new Set(), selVerso: null,
+    pModo: n === 0 ? 'nessuna' : n === tutti.length ? 'tutte' : 'alcune',
+    pVerso: n <= tutti.length - n ? 'ho' : 'manca' };
+}
+function apriWizardLista() {
+  if (!currentUser) { openAuth('login'); return; }
+  const serie = _wzSerie().filter(s => _wzSezioni().some(z => _wzArticoli(s.id, z).length));
+  _wz = { serie, i: -1, passo: 'intro', passi: [], k: 0, scelte: null, aggiunti: 0, tolti: 0, fatte: [] };
+  _wzDisegna();
+}
+function _wzIniziaSerie(i) {
+  const w = _wz;
+  if (i >= w.serie.length) { w.passo = 'finale'; _wzDisegna(); return; }
+  const s = w.serie[i], mie = new Set(getOwned());
+  w.i = i; w.passo = 'serie'; w.k = 0;
+  // tutte le tipologie della serie; le schermate sono solo quelle delle card accese (`_wzConfermaTda`)
+  w.sezSerie = _wzSezioni().filter(z => _wzArticoli(s.id, z).length);
+  w.passi = ['serie', 'fine'];
+  // gli album già nella lista sono già spuntati
+  w.scelte = { albums: new Set(_wzArticoli(s.id, 'albums').map(f => f.id).filter(id => mie.has(id))) };
+  w.sezSerie.forEach(z => { if (_wzAScelta(z)) w.scelte[z] = _wzProposta(s.id, z); });
+  // la proposta: accese le tipologie di cui c'è già qualcosa nella lista
+  w.accese = new Set(w.sezSerie.filter(z => _wzArticoli(s.id, z).some(f => mie.has(f.id))));
+  if (!_wzFpaLibera()) w.accese.delete('attaccare');
+  _wzDisegna();
+}
+// ⚠️ LE FPA SONO GRIGIE FINCHÉ NON È ACCESO L'ALBUM (Franco): senza album non si attaccano. Se la serie
+//    non ha album, non c'è niente da aspettare.
+function _wzFpaLibera() { const w = _wz; return !w.sezSerie.includes('albums') || w.accese.has('albums'); }
+function _wzToccaTda(z) {
+  const w = _wz;
+  if (z === 'attaccare' && !_wzFpaLibera()) return;
+  if (w.accese.has(z)) w.accese.delete(z); else w.accese.add(z);
+  if (!_wzFpaLibera()) w.accese.delete('attaccare');
+  _wzDisegna();
+}
+// «quando ha finito preme il pulsante per procedere»: le schermate sono quelle delle card accese
+function _wzConfermaTda() {
+  const w = _wz;
+  w.passi = ['serie'].concat(w.sezSerie.filter(z => w.accese.has(z))).concat(['fine']);
+  _wzAvanti();
+}
+function _wzAvanti() { const w = _wz; w.k = Math.min(w.k + 1, w.passi.length - 1); w.passo = w.passi[w.k]; _wzDisegna(); }
+// ⚠️ Tornando indietro la risposta data diventa la proposta: la si ritrova accesa, non si perde.
+function _wzRiapri(c) { if (c.modo) c.pModo = c.modo; if (c.verso) c.pVerso = c.verso; c.modo = null; c.verso = null; }
+function _wzIndietro() {
+  const w = _wz;
+  const p = w.passi[w.k];
+  if (w.scelte[p] && _wzAScelta(p)) {
+    const c = w.scelte[p];
+    if (c.verso) { c.pVerso = c.verso; c.verso = null; _wzDisegna(); return; }
+    if (c.modo) { c.pModo = c.modo; c.modo = null; _wzDisegna(); return; }
+  }
+  if (w.k === 0) { if (w.i > 0) _wzIniziaSerie(w.i - 1); else { w.passo = 'intro'; _wzDisegna(); } return; }
+  w.k--; w.passo = w.passi[w.k];
+  if (w.scelte[w.passo] && _wzAScelta(w.passo)) _wzRiapri(w.scelte[w.passo]);
+  _wzDisegna();
+}
+function _wzModo(sez, modo) {
+  const c = _wz.scelte[sez];
+  c.modo = modo; c.verso = null;
+  if (modo === 'alcune') _wzDisegna(); else _wzAvanti();
+}
+function _wzVerso(sez, verso) {
+  const w = _wz, c = w.scelte[sez];
+  if (c.selVerso !== verso) {
+    const tutti = _wzArticoli(w.serie[w.i].id, sez).map(f => f.id), mie = new Set(getOwned());
+    c.sel = new Set(tutti.filter(id => verso === 'ho' ? mie.has(id) : !mie.has(id)));
+    c.selVerso = verso;
+  }
+  c.verso = verso;
+  _wzDisegna();
+}
+function _wzTocca(chiave, id, el) {
+  const w = _wz;
+  const set = chiave === 'albums' ? w.scelte.albums : w.scelte[chiave].sel;
+  if (set.has(id)) set.delete(id); else set.add(id);
+  if (el) el.classList.toggle('on', set.has(id));
+  const n = document.getElementById('wz-conto');
+  if (n) n.textContent = String(set.size);
+}
+function _wzTutte(chiave, accendi) {
+  const w = _wz, s = w.serie[w.i];
+  const set = chiave === 'albums' ? w.scelte.albums : w.scelte[chiave].sel;
+  set.clear();
+  if (accendi) _wzArticoli(s.id, chiave).forEach(f => set.add(f.id));
+  _wzDisegna();
+}
+// cosa, secondo le risposte, è nella lista (fra gli articoli di cui si è parlato)
+function _wzDaAggiungere() {
+  const w = _wz, s = w.serie[w.i];
+  const out = w.passi.includes('albums') ? [...w.scelte.albums] : [];
+  w.passi.filter(z => w.scelte[z] && _wzAScelta(z)).forEach(z => {
+    const c = w.scelte[z], tutti = _wzArticoli(s.id, z).map(f => f.id);
+    if (c.modo === 'tutte') out.push(...tutti);
+    else if (c.modo === 'alcune') {
+      if (c.verso === 'ho') out.push(...c.sel);
+      else if (c.verso === 'manca') out.push(...tutti.filter(id => !c.sel.has(id)));
+    }
+  });
+  return out;
+}
+// e di quali articoli si è parlato: il set base di TUTTE le tipologie della serie, anche le card spente
+// (spenta = «di questa non ho niente»). Chi non vuole toccare una serie usa «Salta».
+function _wzToccati() {
+  const w = _wz, s = w.serie[w.i];
+  return new Set((w.sezSerie || []).flatMap(z => _wzArticoli(s.id, z).map(f => f.id)));
+}
+// la lista nuova: fuori da quello di cui si è parlato resta com'era, dentro vale la risposta
+function _wzListaNuova() {
+  const prima = getOwned(), toccati = _wzToccati(), scelti = new Set(_wzDaAggiungere());
+  const dopo = prima.filter(id => !toccati.has(id) || scelti.has(id)), presenti = new Set(dopo);
+  scelti.forEach(id => { if (!presenti.has(id)) { presenti.add(id); dopo.push(id); } });
+  const primaSet = new Set(prima);
+  return { dopo, nuovi: dopo.filter(id => !primaSet.has(id)).length, tolti: prima.filter(id => !presenti.has(id)).length };
+}
+async function _wzSalvaSerie() {
+  const w = _wz, s = w.serie[w.i];
+  const { dopo, nuovi, tolti } = _wzListaNuova();
+  if (nuovi || tolti) {
+    const b = document.getElementById('wz-salva'); if (b) { b.disabled = true; b.textContent = currentLang === 'it' ? 'Salvataggio…' : 'Saving…'; }
+    if (!_cache.ownedMap) _cache.ownedMap = {};
+    _cache.ownedMap[currentUser.id] = dopo;
+    LOCAL.set('owned_' + currentUser.id, dopo);
+    const ok = await saveOwnedToFirebase(currentUser.id, dopo);
+    if (!ok) { if (b) { b.disabled = false; b.textContent = currentLang === 'it' ? 'Riprova a salvare' : 'Retry saving'; } return; }
+  }
+  if (!_wzFatto) _wzSegna(true);
+  w.aggiunti += nuovi; w.tolti += tolti;
+  w.fatte.push({ s, n: nuovi, t: tolti });
+  _wzIniziaSerie(w.i + 1);
+}
+// 🆕 L'AZZERAMENTO (Franco: «resettare la propria lista riazzerando il questionario… con domanda da doppia
+//    conferma»). Dalla prima schermata; due schermate di conferma, non la finestrella del browser. Toglie
+//    TUTTA la lista (anche change, variazioni, omaggi ed errori: è «la propria lista») e spegne il segno.
+function _wzAzzera(passo) { _wz.passo = passo; _wzDisegna(); }
+async function _wzAzzeraDavvero() {
+  const b = document.getElementById('wz-azzera-si'); if (b) { b.disabled = true; b.textContent = currentLang === 'it' ? 'Azzeramento…' : 'Resetting…'; }
+  if (!_cache.ownedMap) _cache.ownedMap = {};
+  _cache.ownedMap[currentUser.id] = [];
+  LOCAL.set('owned_' + currentUser.id, []);
+  const ok = await saveOwnedToFirebase(currentUser.id, []);
+  if (!ok) { if (b) { b.disabled = false; b.textContent = currentLang === 'it' ? 'Riprova' : 'Retry'; } return; }
+  await _wzSegna(false);
+  toast(currentLang === 'it' ? 'La tua lista è stata azzerata.' : 'Your list has been reset.', 'success');
+  _wz.passo = 'intro'; _wzDisegna();
+}
+function _wzChiudi() {
+  const ov = document.getElementById('wz-overlay');
+  if (ov) ov.remove();
+  document.body.style.overflow = '';
+  _wz = null;
+  try { renderProfile(); } catch (e) {}
+  try { refreshSeriesMeta(); } catch (e) {}
+  try { if (currentSeriesId && currentSection) renderItems(); } catch (e) {}
+}
+function _wzTesta(s) {
+  const w = _wz, it = currentLang === 'it';
+  const pct = Math.round(((w.i + (w.k / Math.max(1, w.passi.length))) / Math.max(1, w.serie.length)) * 100);
+  return '<div class="wz-testa">' + _wzImg(s.img, 160, 160, 'wz-copertina-piccola')
+    + '<div style="flex:1;min-width:0;"><div class="wz-serie-nome">' + esc(_nomeSerieCard(s)) + '</div>'
+    + '<div class="wz-avanzamento">' + (it ? 'Serie ' + (w.i + 1) + ' di ' + w.serie.length : 'Series ' + (w.i + 1) + ' of ' + w.serie.length) + '</div>'
+    + '<div class="wz-barra"><span style="width:' + pct + '%;"></span></div></div></div>';
+}
+// «+3 −1», «+3», «−1»: quello che cambia
+function _wzCambio(n, t) { return [n ? '+' + nfmtWz(n) : '', t ? '−' + nfmtWz(t) : ''].filter(Boolean).join(' ') || '='; }
+function _wzDisegna() {
+  const w = _wz; if (!w) return;
+  const it = currentLang === 'it';
+  let ov = document.getElementById('wz-overlay');
+  if (!ov) { ov = document.createElement('div'); ov.id = 'wz-overlay'; ov.className = 'wz-overlay'; document.body.appendChild(ov); document.body.style.overflow = 'hidden'; }
+  const esci = '<button type="button" class="btn-secondary" onclick="_wzChiudi()">' + (it ? 'Esci' : 'Exit') + '</button>';
+  const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">◀ ' + (it ? 'Indietro' : 'Back') + '</button>';
+  const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Avanti ▶' : 'Next ▶') + '</button>';
+  const giaTua = '<div class="wz-proposta">' + (it ? 'la tua risposta' : 'your answer') + '</div>';
+  let corpo = '', piede = '';
+  if (w.passo === 'intro') {
+    corpo = '<div class="wz-titolo">' + (it ? 'Il questionario Sgorbions' : 'The Sgorbions questionnaire') + '</div>'
+      + '<p class="wz-testo">' + (it
+        ? 'Col questionario Sgorbions puoi costruire in pochi minuti una tua lista personale degli articoli della collezione Sgorbions.<br>'
+        + 'Quando lo avrai completato, la tua lista Sgorbions personale sarà completata.<br>'
+        + 'Potrai così scalare la vetta della Classifica !'
+        : 'With the Sgorbions questionnaire you can build, in a few minutes, your own personal list of the items of the Sgorbions collection.<br>'
+        + 'When you have completed it, your personal Sgorbions list will be complete.<br>'
+        + 'You can then climb to the top of the Leaderboard !') + '</p>'
+      + '<div class="wz-mosaico">' + w.serie.map(s => '<div class="wz-mosaico-voce">' + _wzImg(s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(s)) + '</div></div>').join('') + '</div>'
+      + '<p class="wz-nota">' + (it
+        ? '📌 Puoi rifare il questionario quando vuoi: trovi già le risposte di quello che hai nella tua lista, e se le cambi la lista si aggiorna. Si segna il set base di ogni tipologia: change, variazioni, omaggi ed errori di stampa li segni dalle pagine delle serie.'
+        : '📌 You can take it again whenever you like: your answers start from your list, and if you change them the list is updated. Only the base set.') + '</p>';
+    const nMie = getOwned().length;
+    if (nMie || _wzFatto) corpo += '<div style="text-align:center;margin-top:1.2rem;"><button type="button" class="btn-secondary wz-azzera" onclick="_wzAzzera(\'azzera1\')">🗑️ '
+      + (it ? 'Azzera la mia lista e ricomincia il questionario' : 'Reset my list and restart the questionnaire') + '</button></div>';
+    piede = esci + '<button type="button" class="btn-primary wz-grande" onclick="_wzIniziaSerie(0)">' + (it ? 'Inizia il questionario !' : 'Start the questionnaire !') + '</button>';
+  } else if (w.passo === 'azzera1' || w.passo === 'azzera2') {
+    const n = getOwned().length, primo = w.passo === 'azzera1';
+    corpo = '<div class="wz-titolo">🗑️ ' + (it ? 'Azzera la tua lista' : 'Reset your list') + '</div>'
+      + '<div class="wz-avviso">' + (primo
+        ? (it ? 'Vuoi azzerare la tua lista ? Tutti i <b>' + nfmtWz(n) + '</b> articoli che hai segnato verranno tolti, compresi change, variazioni, omaggi ed errori di stampa, e il questionario ripartirà da zero.'
+              : 'Do you want to reset your list ? All <b>' + nfmtWz(n) + '</b> items you marked will be removed, and the questionnaire will start from scratch.')
+        : (it ? '⚠️ Ultima conferma: l\'azzeramento non si può annullare. La tua lista resterà vuota e la tua posizione in Classifica ripartirà da zero.'
+              : '⚠️ Last confirmation: this cannot be undone. Your list will be empty and your Leaderboard position will start from zero.')) + '</div>';
+    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+      + (primo
+        ? '<button type="button" class="btn-primary wz-grande wz-rosso" onclick="_wzAzzera(\'azzera2\')">' + (it ? 'Sì, azzera' : 'Yes, reset') + '</button>'
+        : '<button type="button" id="wz-azzera-si" class="btn-primary wz-grande wz-rosso" onclick="_wzAzzeraDavvero()">' + (it ? 'Azzera definitivamente' : 'Reset permanently') + '</button>');
+  } else if (w.passo === 'finale') {
+    corpo = '<div class="wz-titolo">🎉 ' + (it ? 'Fatto !' : 'Done !') + '</div>'
+      + '<p class="wz-testo">' + (it
+        ? (w.aggiunti || w.tolti
+          ? 'La tua lista è aggiornata: ' + [w.aggiunti ? '<b>' + nfmtWz(w.aggiunti) + '</b> articoli aggiunti' : '', w.tolti ? '<b>' + nfmtWz(w.tolti) + '</b> tolti' : ''].filter(Boolean).join(', ') + '.'
+          : 'La tua lista era già in ordine: nessun cambiamento.')
+        : (w.aggiunti || w.tolti ? 'Your list is updated: +' + nfmtWz(w.aggiunti) + ' / −' + nfmtWz(w.tolti) + '.' : 'Your list was already up to date.')) + '</p>'
+      + '<div class="wz-mosaico">' + w.fatte.map(x => '<div class="wz-mosaico-voce">' + _wzImg(x.s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(x.s)) + '</div><div class="wz-piu">' + _wzCambio(x.n, x.t) + '</div></div>').join('') + '</div>';
+    piede = '<button type="button" class="btn-secondary" onclick="_wzChiudi()">' + (it ? 'Chiudi' : 'Close') + '</button>'
+      + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'profile\')">' + (it ? 'Vai alla tua lista ▶' : 'Go to your list ▶') + '</button>';
+  } else {
+    const s = w.serie[w.i], p = w.passo;
+    corpo = _wzTesta(s);
+    if (p === 'serie') {
+      const mie = new Set(getOwned()), gia = [..._wzToccati()].filter(id => mie.has(id)).length;
+      corpo += '<div class="wz-titolo">' + (it ? (w.i === 0 ? 'Iniziamo con la serie ' : 'Continuiamo con la serie ') : (w.i === 0 ? "Let's start with the series " : "Let's go on with the series ")) + esc(_nomeSerieCard(s)) + '</div>'
+        + '<div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div>'
+        + '<div class="wz-domanda">' + (it ? 'Cosa hai di questa serie?' : 'What do you have from this series?') + '</div>'
+        + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che raffigura gli articoli che hai' : 'Click on the tiles showing the items you have') + '</p>'
+        + (gia ? '<p class="wz-testo">' + (it
+            ? 'Nella tua lista ci sono già <b>' + nfmtWz(gia) + '</b> articoli di questa serie: trovi le risposte già date, e puoi cambiarle.'
+            : 'Your list already has <b>' + nfmtWz(gia) + '</b> items of this series: your answers are already filled in.') + '</p>' : '')
+        + '<div class="wz-scelte">' + w.sezSerie.map(z => {
+            const grigia = z === 'attaccare' && !_wzFpaLibera();
+            return '<button type="button" class="wz-carta' + (w.accese.has(z) ? ' on' : '') + (grigia ? ' wz-grigia' : '') + '"' + (grigia ? ' disabled' : '') + ' onclick="_wzToccaTda(\'' + z + '\')">'
+              + _wzImg(_wzFotoSez(z, s.id), 400, 300, '') + '<div class="wz-carta-titolo">' + esc(getSectionLabel(z)) + '</div>'
+              + '<div class="wz-carta-sotto">' + (grigia ? (it ? 'prima accendi l\'album' : 'light the album first') : nfmtWz(_wzArticoli(s.id, z).length)) + '</div></button>';
+          }).join('') + '</div>';
+      piede = indietro + '<button type="button" class="btn-secondary" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta questa serie' : 'Skip this series') + '</button>'
+        + '<span class="wz-conto-testo"><b>' + w.accese.size + '</b> ' + (it ? 'accese' : 'selected') + '</span>'
+        + avanti('_wzConfermaTda()');
+    } else if (p === 'albums') {
+      const alb = _wzArticoli(s.id, 'albums'), figs = getData('figurines', []);
+      corpo += '<div class="wz-domanda">' + _wzImg(_wzFotoSez('albums', s.id), 120, 120, 'wz-icona-sez') + (it ? 'Quali album hai?' : 'Which albums do you have?') + '</div>'
+        + '<p class="wz-testo">' + (it ? 'Tocca quelli che hai. Se non ne hai, vai avanti.' : 'Tap the ones you have.') + '</p>'
+        + '<div class="wz-scelte">' + alb.map(f =>
+            '<button type="button" class="wz-carta' + (w.scelte.albums.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'albums\',\'' + f.id + '\',this)">'
+            + _wzImg(_fotoFigurina(f, figs) || f.img, 400, 400, '') + '<div class="wz-carta-titolo">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
+      piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + w.scelte.albums.size + '</b> ' + (it ? 'scelti' : 'chosen') + '</span>'
+        + avanti('_wzAvanti()');
+    } else if (w.scelte[p] && _wzAScelta(p)) {
+      const c = w.scelte[p], tutti = _wzArticoli(s.id, p), nome = esc(getSectionLabel(p));
+      const intest = '<div class="wz-domanda">' + _wzImg(_wzFotoSez(p, s.id), 120, 120, 'wz-icona-sez') + nome + '</div>';
+      if (!c.modo) {
+        // la carta proposta (quello che dice la lista, o la risposta data prima) è accesa; «Avanti» la conferma
+        const carta = (modo, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (c.pModo === modo ? ' on' : '') + '" onclick="_wzModo(\'' + p + '\',\'' + modo + '\')">'
+          + (c.pModo === modo ? giaTua : '')
+          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
+        corpo += intest + '<div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div>'
+          + '<p class="wz-testo">' + (it ? 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?' : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>'
+          + '<div class="wz-scelte">'
+          + carta('tutte', '🏆', it ? 'Tutte' : 'All', it ? 'il set base completo' : 'the full base set')
+          + carta('alcune', '🧩', it ? 'Alcune' : 'Some', it ? 'scegli quali' : 'choose which')
+          + carta('nessuna', '➖', it ? 'Nessuna' : 'None', it ? 'si passa oltre' : 'skip')
+          + '</div>';
+        piede = indietro + avanti("_wzModo('" + p + "','" + c.pModo + "')");
+      } else if (!c.verso) {
+        const carta = (verso, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (c.pVerso === verso ? ' on' : '') + '" onclick="_wzVerso(\'' + p + '\',\'' + verso + '\')">'
+          + (c.pVerso === verso ? giaTua : '')
+          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
+        corpo += intest + '<p class="wz-testo">' + (it ? 'Sono di più quelle che hai o quelle che ti mancano? Tocchi le meno numerose, e fai prima.' : 'Do you have more, or are you missing more? You will tap the fewer ones.') + '</p>'
+          + '<div class="wz-scelte">'
+          + carta('ho', '✅', it ? 'Ne ho di meno' : 'I have fewer', it ? 'tocco quelle che HO' : 'I tap the ones I HAVE')
+          + carta('manca', '❔', it ? 'Me ne mancano di meno' : 'I miss fewer', it ? 'tocco quelle che MI MANCANO' : 'I tap the MISSING ones')
+          + '</div>';
+        piede = indietro + avanti("_wzVerso('" + p + "','" + c.pVerso + "')");
+      } else {
+        const figs = getData('figurines', []), mie = new Set(getOwned());
+        corpo += intest + '<p class="wz-testo">' + (c.verso === 'ho'
+            ? (it ? 'Tocca quelle che <b>hai</b>.' : 'Tap the ones you <b>have</b>.')
+            : (it ? 'Tocca quelle che <b>ti mancano</b>: tutte le altre entrano nella tua lista.' : 'Tap the ones you are <b>missing</b>.')) + '</p>'
+          + '<div class="wz-comandi"><button type="button" class="btn-secondary" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Tocca tutte' : 'Select all') + '</button>'
+          + '<button type="button" class="btn-secondary" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Nessuna' : 'None') + '</button></div>'
+          + '<div class="wz-griglia">' + tutti.map(f =>
+              '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
+              + (mie.has(f.id) ? '<span class="wz-mia">' + (it ? 'già tua' : 'yours') + '</span>' : '')
+              + _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, '')
+              + '<div class="wz-num">' + esc(String(f.number || '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
+        piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + c.sel.size + '</b> ' + (it ? 'toccate' : 'tapped') + '</span>'
+          + avanti('_wzAvanti()');
+      }
+    } else if (p === 'fine') {
+      const { nuovi, tolti } = _wzListaNuova();
+      const frase = it
+        ? (nuovi && tolti ? 'Stai aggiungendo <b>' + nfmtWz(nuovi) + '</b> articoli di questa serie alla tua lista, e ne stai togliendo <b>' + nfmtWz(tolti) + '</b>'
+          : nuovi ? 'Stai aggiungendo <b>' + nfmtWz(nuovi) + '</b> articoli di questa serie alla tua lista'
+          : tolti ? 'Stai togliendo <b>' + nfmtWz(tolti) + '</b> articoli di questa serie dalla tua lista'
+          : 'La tua lista di questa serie resta com\'è')
+        : (nuovi || tolti ? 'You are adding <b>' + nuovi + '</b> and removing <b>' + tolti + '</b> items of this series' : 'Your list for this series stays as it is');
+      corpo += '<div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div>'
+        + '<div class="wz-domanda">' + frase + '</div>';
+      piede = indietro + '<button type="button" id="wz-salva" class="btn-primary wz-grande" onclick="_wzSalvaSerie()">'
+        + (nuovi || tolti ? (it ? 'Salva e continua ▶' : 'Save and continue ▶') : (it ? 'Continua ▶' : 'Continue ▶')) + '</button>';
+    }
+  }
+  ov.innerHTML = '<div class="wz-pannello">' + corpo + '</div><div class="wz-piede">' + piede + '</div>';
+  ov.scrollTop = 0;
+}
+function nfmtWz(n) { return Number(n || 0).toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US'); }
+
 function getOwned() {
   const uid = currentUser?.id || 'guest';
   // Use cached Firebase data if available, fallback to localStorage
@@ -48932,12 +49319,14 @@ async function loadAllOwnedFromFirebase() {
       const allOwned = await fsGetAll('owned');
       for (const doc of allOwned) {
         _cache.ownedMap[doc.userId] = doc.owned || [];
+        if (doc.userId === currentUser.id) _wzFatto = !!(doc.questionario && doc.questionario.fatto);   // v7.014
       }
     } else if (currentUser) {
       // Un utente normale legge solo il proprio documento: 'owned' è privata,
       // la Classifica ora usa il punteggio già aggregato in public_profiles
       const own = await fsGet('owned', currentUser.id);
       if (own) _cache.ownedMap[currentUser.id] = own.owned || [];
+      _wzFatto = !!(own && own.questionario && own.questionario.fatto);   // v7.014 - «Riprendi il questionario»
     }
     // Migrate current user's localStorage data to Firebase if not yet saved
     if (currentUser && (!_cache.ownedMap[currentUser.id] || !_cache.ownedMap[currentUser.id].length)) {
@@ -48947,6 +49336,7 @@ async function loadAllOwnedFromFirebase() {
         await saveOwnedToFirebase(currentUser.id, localOwned);
       }
     }
+    _wzNomePulsanti();
   } catch(e) { console.error('loadAllOwned error', e); }
 }
 
