@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.034 - Modificato js/app.js (e index per la versione). 🧭 «CHE COLLEZIONISTA SEI ?» (Franco): la prima
+//          domanda del questionario. Amatore = set base; Esperto = + variazioni ufficiali; Collezionista = +
+//          tutte le versioni. Le versioni hanno una schermata ciascuna dopo la loro tipologia. Il livello si
+//          salva col segno del questionario e la volta dopo è già scelto.
 // v7.033 - Modificato js/app.js (e index per la versione). Questionario: toccare una card non riporta più
 //          in cima (Franco); in «Quali album hai?» «Se non sai quali hai, seleziona il primo della lista.»
 // v7.032 - Modificato js/app.js e css/style.css. Nelle conferme dell'azzeramento il pulsante rosso al
@@ -30549,7 +30553,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.033';
+const JS_VERSION = 'v7.034';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -48888,6 +48892,25 @@ let _wz = null;
 // 🆕 «Riprendi il questionario» (Franco: «se il questionario è stato già fatto almeno una volta»). Il segno
 //    sta nel documento `owned` (campo `questionario`, scritto con merge: la lista non si tocca).
 let _wzFatto = false;
+// 🆕 v7.034 - il livello («Che collezionista sei ?»): letto col segno, salvato con lui
+let _wzLivello = null;
+const _WZ_LIVELLI = {
+  amatore:       [],
+  esperto:       ['variation'],
+  collezionista: ['variation', 'unofficialVariation', 'change', 'free', 'printError'],
+};
+// le versioni che il livello chiede, fra quelle che il codice riconosce oggi
+function _wzVersioni() {
+  const vol = _WZ_LIVELLI[(_wz && _wz.livello) || 'amatore'] || [];
+  return _VERSIONI_VIVE.filter(v => vol.includes(v.chiave));
+}
+async function _wzSalvaLivello(l) {
+  if (_wzLivello === l) return;
+  _wzLivello = l;
+  try {   // merge: il segno «fatto» resta com'è
+    await fsSave('owned', { id: currentUser.id, userId: currentUser.id, authUid: currentUser.authUid || null, questionario: { livello: l } });
+  } catch (e) { console.warn('livello del questionario', e); }
+}
 function _wzNomePulsanti() {
   const chiave = _wzFatto ? 'wz.riprendi' : 'wz.pulsante';
   document.querySelectorAll('.wz-pulsante').forEach(b => { b.setAttribute('data-i18n', chiave); b.textContent = t(chiave); });
@@ -48897,7 +48920,8 @@ async function _wzSegna(fatto) {
   _wzNomePulsanti();
   try {
     await fsSave('owned', { id: currentUser.id, userId: currentUser.id, authUid: currentUser.authUid || null,
-      questionario: fatto ? { fatto: true, quando: new Date().toISOString() } : null });
+      questionario: fatto ? { fatto: true, quando: new Date().toISOString(), livello: _wzLivello } : null });
+    if (!fatto) _wzLivello = null;   // l'azzeramento riparte da zero anche qui
   } catch (e) { console.warn('segno del questionario', e); }   // è solo il nome del pulsante: non ferma niente
 }
 // 📌 L'ORDINE È DI FRANCO: «la prima casella deve essere l'album; la seconda le fpa… poi fcr, poi retro, poi
@@ -48907,16 +48931,27 @@ function _wzSezioni() {
   const tutte = (Array.isArray(PRODOTTI_INVENTARIO) ? PRODOTTI_INVENTARIO : ARTICOLI_ORDINE_DICHIARATO).slice();
   return _WZ_PRIMA.filter(z => tutte.includes(z)).concat(tutte.filter(z => !_WZ_PRIMA.includes(z)));
 }
+// v7.034: nome a schermo di una schermata («Figurine con retro», o «Figurine con retro · Change»)
+function _wzNome(key) {
+  const [z, ver] = String(key).split('|');
+  const v = ver && _VERSIONI_VIVE.find(x => x.chiave === ver);
+  return getSectionLabel(z) + (v ? ' · ' + (currentLang === 'it' ? v.it : v.en) : '');
+}
 const _wzAScelta = z => z !== 'albums';   // gli album hanno la loro schermata: le foto da spuntare
 function _wzSerie() {
   return _serieDaContare(Array.isArray(_cache.series) ? _cache.series : []).slice()
     .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
 }
+// 🔄 v7.034 - `sez` può essere `sezione|versione` (es. `figurines|change`): allora gli articoli di quella
+//    versione, invece del set base.
 function _wzArticoli(sid, sez) {
-  return _articoliDaContareSito().filter(f => f.seriesId === sid && (f.section || 'figurines') === sez && _eBase(f))
+  const [z, ver] = String(sez).split('|');
+  const campo = ver ? ((_VERSIONI_VIVE.find(v => v.chiave === ver) || {}).campo || '__nessuno') : null;
+  return _articoliDaContareSito().filter(f => f.seriesId === sid && (f.section || 'figurines') === z && (campo ? !!f[campo] : _eBase(f)))
     .sort((a, b) => ((+a.number || 0) - (+b.number || 0)) || String(a.name || '').localeCompare(String(b.name || ''), 'it'));
 }
 function _wzFotoSez(sez, sid) {
+  sez = String(sez).split('|')[0];   // v7.034: la versione ha la foto della sua tipologia
   return _fotoSezioneSerie(sez, sid) || _fotoBoxUrl(sez) || ((typeof SECTION_IMAGES !== 'undefined' && SECTION_IMAGES[sez]) || '');
 }
 function _wzImg(url, w, h, cls) {
@@ -48951,8 +48986,11 @@ function _wzIniziaSerie(i) {
   // gli album già nella lista sono già spuntati
   w.scelte = { albums: new Set(_wzArticoli(s.id, 'albums').map(f => f.id).filter(id => mie.has(id))) };
   w.sezSerie.forEach(z => { if (_wzAScelta(z)) w.scelte[z] = _wzProposta(s.id, z); });
-  // la proposta: accese le tipologie di cui c'è già qualcosa nella lista
-  w.accese = new Set(w.sezSerie.filter(z => _wzArticoli(s.id, z).some(f => mie.has(f.id))));
+  // v7.034 - le versioni che il livello chiede e che la serie ha, tipologia per tipologia
+  w.chiaviVer = w.sezSerie.flatMap(z => _wzVersioni().map(v => z + '|' + v.chiave)).filter(k => _wzArticoli(s.id, k).length);
+  w.chiaviVer.forEach(k => { w.scelte[k] = _wzProposta(s.id, k); });
+  // la proposta: accese le tipologie di cui c'è già qualcosa nella lista (anche fra le versioni chieste)
+  w.accese = new Set(w.sezSerie.filter(z => [z].concat(w.chiaviVer.filter(k => k.startsWith(z + '|'))).some(k => _wzArticoli(s.id, k).some(f => mie.has(f.id)))));
   if (!_wzFpaLibera()) w.accese.delete('attaccare');
   _wzDisegna();
 }
@@ -48969,9 +49007,14 @@ function _wzToccaTda(z) {
 // «quando ha finito preme il pulsante per procedere»: le schermate sono quelle delle card accese
 function _wzConfermaTda() {
   const w = _wz;
-  w.passi = ['serie'].concat(w.sezSerie.filter(z => w.accese.has(z))).concat(['fine']);
+  // v7.034 - dopo ogni tipologia accesa, le sue versioni
+  w.passi = ['serie'].concat(w.sezSerie.filter(z => w.accese.has(z)).flatMap(z => [z].concat((w.chiaviVer || []).filter(k => k.startsWith(z + '|'))))).concat(['fine']);
   _wzAvanti();
 }
+// 🆕 v7.034 - il livello: proposto quello salvato, confermato con «Avanti», salvato se è cambiato
+function _wzAlLivello() { _wz.passo = 'livello'; if (!_wz.livello) _wz.livello = _wzLivello; _wzDisegna(); }
+function _wzScegliLivello(l) { _wz.livello = l; _wzDisegna(true); }
+function _wzConfermaLivello() { if (!_wz.livello) return; _wzSalvaLivello(_wz.livello); _wzIniziaSerie(0); }
 function _wzAvanti() { const w = _wz; w.k = Math.min(w.k + 1, w.passi.length - 1); w.passo = w.passi[w.k]; _wzDisegna(); }
 // ⚠️ Tornando indietro la risposta data diventa la proposta: la si ritrova accesa, non si perde.
 function _wzRiapri(c) { if (c.modo) c.pModo = c.modo; if (c.verso) c.pVerso = c.verso; c.modo = null; c.verso = null; }
@@ -48983,7 +49026,7 @@ function _wzIndietro() {
     if (c.verso) { c.pVerso = c.verso; c.verso = null; _wzDisegna(); return; }
     if (c.modo) { c.pModo = c.modo; c.modo = null; _wzDisegna(); return; }
   }
-  if (w.k === 0) { if (w.i > 0) _wzIniziaSerie(w.i - 1); else { w.passo = 'intro'; _wzDisegna(); } return; }
+  if (w.k === 0) { if (w.i > 0) _wzIniziaSerie(w.i - 1); else { w.passo = 'livello'; _wzDisegna(); } return; }   // v7.034: prima c'è il livello
   w.k--; w.passo = w.passi[w.k];
   if (w.scelte[w.passo] && _wzAScelta(w.passo)) _wzRiapri(w.scelte[w.passo]);
   _wzDisegna();
@@ -49036,7 +49079,7 @@ function _wzDaAggiungere() {
 // (spenta = «di questa non ho niente»). Chi non vuole toccare una serie usa «Salta».
 function _wzToccati() {
   const w = _wz, s = w.serie[w.i];
-  return new Set((w.sezSerie || []).flatMap(z => _wzArticoli(s.id, z).map(f => f.id)));
+  return new Set((w.sezSerie || []).concat(w.chiaviVer || []).flatMap(z => _wzArticoli(s.id, z).map(f => f.id)));   // v7.034: e le versioni chieste
 }
 // la lista nuova: fuori da quello di cui si è parlato resta com'era, dentro vale la risposta
 function _wzListaNuova() {
@@ -49123,7 +49166,21 @@ function _wzDisegna(tieni) {
     const nMie = getOwned().length;
     if (nMie || _wzFatto) corpo += '<div style="text-align:center;margin-top:1.2rem;"><button type="button" class="btn-secondary wz-azzera" onclick="_wzAzzera(\'azzera1\')">🗑️ '
       + (it ? 'Azzera la mia lista e ricomincia il questionario' : 'Reset my list and restart the questionnaire') + '</button></div>';
-    piede = esci + '<button type="button" class="btn-primary wz-grande" onclick="_wzIniziaSerie(0)">' + (it ? 'Inizia il questionario !' : 'Start the questionnaire !') + '</button>';
+    piede = esci + '<button type="button" class="btn-primary wz-grande" onclick="_wzAlLivello()">' + (it ? 'Inizia il questionario !' : 'Start the questionnaire !') + '</button>';
+  } else if (w.passo === 'livello') {
+    // 🆕 v7.034 (Franco) - «Che collezionista sei ?»: la risposta decide quali versioni si chiedono
+    const carta = (l, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (w.livello === l ? ' on' : '') + '" onclick="_wzScegliLivello(\'' + l + '\')">'
+      + (w.livello === l && _wzLivello === l ? giaTua : '')
+      + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
+    corpo = '<div class="wz-titolo">' + (it ? 'Che collezionista sei ?' : 'What kind of collector are you ?') + '</div>'
+      + '<p class="wz-testo">' + (it ? 'Scegli il livello che ti somiglia di più: il questionario ti farà solo le domande che fanno per te.' : 'Choose the level that suits you best: the questionnaire will only ask what fits you.') + '</p>'
+      + '<div class="wz-scelte">'
+      + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'segni gli articoli base: figurine, album e gli altri articoli' : 'you mark the base items')
+      + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'in più segni le variazioni ufficiali' : 'you also mark the official variations')
+      + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'segni tutto: anche variazioni non ufficiali, change, omaggi ed errori di stampa' : 'you mark everything: unofficial variations, change, free versions and print errors too')
+      + '</div>';
+    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">◀ ' + (it ? 'Indietro' : 'Back') + '</button>'
+      + (w.livello ? avanti('_wzConfermaLivello()') : '');
   } else if (w.passo === 'azzera1' || w.passo === 'azzera2') {
     const n = getOwned().length, primo = w.passo === 'azzera1';
     corpo = '<div class="wz-titolo">🗑️ ' + (it ? 'Azzera la tua lista' : 'Reset your list') + '</div>'
@@ -49179,7 +49236,7 @@ function _wzDisegna(tieni) {
       piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + w.scelte.albums.size + '</b> ' + (it ? 'scelti' : 'chosen') + '</span>'
         + avanti('_wzAvanti()');
     } else if (w.scelte[p] && _wzAScelta(p)) {
-      const c = w.scelte[p], tutti = _wzArticoli(s.id, p), nome = esc(getSectionLabel(p));
+      const c = w.scelte[p], tutti = _wzArticoli(s.id, p), nome = esc(_wzNome(p)), ver = String(p).includes('|');
       const intest = '<div class="wz-domanda">' + _wzImg(_wzFotoSez(p, s.id), 120, 120, 'wz-icona-sez') + nome + '</div>';
       if (!c.modo) {
         // la carta proposta (quello che dice la lista, o la risposta data prima) è accesa; «Avanti» la conferma
@@ -49187,9 +49244,11 @@ function _wzDisegna(tieni) {
           + (c.pModo === modo ? giaTua : '')
           + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
         corpo += intest + '<div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div>'
-          + '<p class="wz-testo">' + (it ? 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?' : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>'
+          + '<p class="wz-testo">' + (it
+              ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
+              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>'
           + '<div class="wz-scelte">'
-          + carta('tutte', '🏆', it ? 'Tutte' : 'All', it ? 'il set base completo' : 'the full base set')
+          + carta('tutte', '🏆', it ? 'Tutte' : 'All', ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
           + carta('alcune', '🧩', it ? 'Alcune' : 'Some', it ? 'scegli quali' : 'choose which')
           + carta('nessuna', '➖', it ? 'Nessuna' : 'None', it ? 'si passa oltre' : 'skip')
           + '</div>';
@@ -49367,7 +49426,7 @@ async function loadAllOwnedFromFirebase() {
       const allOwned = await fsGetAll('owned');
       for (const doc of allOwned) {
         _cache.ownedMap[doc.userId] = doc.owned || [];
-        if (doc.userId === currentUser.id) _wzFatto = !!(doc.questionario && doc.questionario.fatto);   // v7.014
+        if (doc.userId === currentUser.id) { _wzFatto = !!(doc.questionario && doc.questionario.fatto); _wzLivello = (doc.questionario && doc.questionario.livello) || null; }   // v7.014, v7.034
       }
     } else if (currentUser) {
       // Un utente normale legge solo il proprio documento: 'owned' è privata,
@@ -49375,6 +49434,7 @@ async function loadAllOwnedFromFirebase() {
       const own = await fsGet('owned', currentUser.id);
       if (own) _cache.ownedMap[currentUser.id] = own.owned || [];
       _wzFatto = !!(own && own.questionario && own.questionario.fatto);   // v7.014 - «Riprendi il questionario»
+      _wzLivello = (own && own.questionario && own.questionario.livello) || null;   // v7.034
     }
     // Migrate current user's localStorage data to Firebase if not yet saved
     if (currentUser && (!_cache.ownedMap[currentUser.id] || !_cache.ownedMap[currentUser.id].length)) {
