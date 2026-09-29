@@ -2759,6 +2759,8 @@ footer {
 .wz-conto-testo { font-size: 0.9rem; color: var(--text); }
 /* l'azzeramento: il pulsante discreto nella prima schermata, e le due conferme in rosso */
 .wz-azzera { border-color: var(--danger) !important; color: var(--danger) !important; }
+.wz-azzera-centro { text-align: center; margin: 0.5rem 0 1rem; }   /* v7.032 */
+.wz-azzera-centro .wz-grande { margin-left: 0; }
 .wz-rosso { background: var(--danger) !important; border-color: var(--danger) !important; }
 .wz-avviso { max-width: 620px; margin: 1.5rem auto; padding: 1.2rem 1.4rem; border: 2px solid var(--danger); border-radius: var(--radius-lg); background: rgba(255,60,60,0.08); color: var(--text); font-size: 1.05rem; line-height: 1.5; text-align: center; }
 .wz-conto-testo b { color: var(--accent); font-size: 1.1rem; }
