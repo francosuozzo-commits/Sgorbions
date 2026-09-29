@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.017">
+<link rel="stylesheet" href="css/style.css?v=7.018">
 
 
 <style>
@@ -5151,12 +5151,13 @@ di tutte le serie</button>
     </div>
     <p class="ml-intro">«La mia lista Sgorbions» è il modo con cui puoi costruire una tua lista personale della collezione Sgorbions.</p>
     <p class="ml-intro">Puoi costruire questa lista in un batter d'occhio con il <strong style="color:#ffd84d;">Questionario Sgorbions</strong>.</p>
-    <p class="ml-intro">Oppure spuntando a mano il flag <em>Mia lista</em> sugli articoli.</p>
-    <h3 class="ml-titoletto">Questionario Sgorbions</h3>
+    <p class="ml-intro">Oppure spuntando a mano il flag <strong style="color:#ffd84d;">Mia lista</strong> sugli articoli.</p>
+    <h3 class="ml-titoletto">Il questionario Sgorbions</h3>
     <div style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary wz-pulsante" onclick="closeModal('demo-toggle-modal');apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
     <h3 class="ml-titoletto">La mia lista Sgorbions</h3>
-    <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;">Tocca il selettore <em>Mia lista</em> per aggiungere una figurina alla tua lista personale.<br>Il colore cambierà per indicarti che è nella lista !</p>
-    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.5rem;font-style:italic;"><strong style="font-style:normal;color:var(--text);">NOTA</strong> — È semplicemente una lista tua: cosa significhi per te (che tu la possieda, l'abbia vista, o qualsiasi altra cosa) lo decidi solo tu — <span style="color:var(--danger);">non è visibile né interpretabile da altri utenti.</span></p>
+    <p class="ml-domanda">Come funziona «La mia lista Sgorbions» ?</p>
+    <p style="font-size:0.88rem;color:var(--text);margin-bottom:0.75rem;">Tocca il selettore <em>Mia lista</em> per aggiungere una figurina alla tua lista personale.<br>Il colore cambierà per indicarti che è nella lista !</p>
+    <p style="font-size:0.82rem;color:var(--text);margin-bottom:1.5rem;font-style:italic;"><strong style="font-style:normal;color:var(--text);">NOTA</strong> — È semplicemente una lista tua: cosa significhi per te (che tu la possieda, l'abbia vista, o qualsiasi altra cosa) lo decidi solo tu — <span style="color:var(--danger);">non è visibile né interpretabile da altri utenti.</span></p>
     <div style="display:flex;align-items:center;gap:1.5rem;background:var(--card2);border-radius:12px;padding:1.25rem;">
       <!-- v5.956 — il riquadro parte con l'emoji e app.js ci mette la foto VERA della figurina
              (Gastone Bubbone, n. 1 della "Serie 1") cercandola nei dati: vedi openDemoToggleModal().
@@ -5173,7 +5174,7 @@ di tutte le serie</button>
     </div>
     <!-- v5.957 — data-i18n-html e NON data-i18n: applyI18n scrive i primi con textContent, che
          cancellerebbe il corsivo di Mia lista. Il testo vero sta nel dizionario in app.js. -->
-    <p style="font-size:0.8rem;color:var(--muted);text-align:center;margin-top:1rem;" data-i18n-html="profile.sliderHint">Prova a toccare il selettore <em>Mia lista</em> !!!</p>
+    <p style="font-size:0.8rem;color:var(--text);text-align:center;margin-top:1rem;" data-i18n-html="profile.sliderHint">Prova a toccare il selettore <em>Mia lista</em> !!!</p>
   </div>
 </div>
 
@@ -5757,7 +5758,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.017"></script>
+<script src="js/app.js?v=7.018"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5781,7 +5782,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.017'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.018'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
