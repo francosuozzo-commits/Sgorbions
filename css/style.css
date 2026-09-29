@@ -2681,6 +2681,11 @@ footer {
      anche la Classifica: via i 56px, e la sua prima sezione parte a 1rem invece di 2,5. */
   #page-classifica { padding-top: 0; }
   #page-classifica > .section:first-child { padding-top: 1rem; }
+  /* 🆕 v7.038 (Franco: «stessa cosa per le pagine successive (Serie, tda, o Personaggi)») - via il nero in
+     cima anche lì. I 64px sono in linea (nati per una barra `fixed`, oggi `relative`), da qui `!important`. */
+  #series-detail, #prodotto-detail { padding-top: 0 !important; }
+  #page-catalog > .section:first-of-type { padding-top: 0 !important; }
+  #series-detail .series-hero, #prodotto-detail .series-hero { padding-top: 0.5rem; }
 }
 
 /* 🆕 v7.010 - `.solo-telefono`: si vede sotto gli 860px e basta (Franco: «nella versione mobile, nella
