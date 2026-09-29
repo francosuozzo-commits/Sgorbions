@@ -2683,6 +2683,18 @@ footer {
 .serie-nav-btn img, .serie-nav-btn .serie-nav-vuota { width: 30px; height: 30px; object-fit: contain; display: block; font-size: 1rem; text-align: center; }
 .serie-nav-btn .serie-nav-freccia { font-size: 1.05rem; font-weight: 700; }   /* v7.043: ← →, un po' più grandi dei triangoli */
 @media (max-width: 860px) { .serie-nav-btn .serie-nav-freccia { margin-top: 5px; } }   /* v7.043: più staccata dalla foto */
+/* 🆕 v7.044 (Franco: «su mobile una delle due frecce va a capo»; «l'anno sotto al nome, tra () e centrato»).
+   `!important` sul display perché quello del gruppo è scritto in linea (flex). */
+@media (max-width: 860px) {
+  #series-detail div:has(> #detail-name) { display: grid !important; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 0.5rem; row-gap: 0.15rem; width: 100%; }
+  #series-detail div:has(> #detail-name) > .serie-nav-prec { grid-column: 1; grid-row: 1 / span 3; }
+  #series-detail div:has(> #detail-name) > .serie-nav-succ { grid-column: 3; grid-row: 1 / span 3; }
+  #series-detail #detail-name { grid-column: 2; grid-row: 1; text-align: center; overflow-wrap: anywhere; }
+  #series-detail #detail-year { grid-column: 2; grid-row: 2; text-align: center; margin: 0; }
+  #series-detail #detail-subname { grid-column: 2; grid-row: 3; text-align: center; }
+  #series-detail #detail-year:not(:empty)::before { content: '('; }
+  #series-detail #detail-year:not(:empty)::after { content: ')'; }
+}
 @media (max-width: 860px) { .serie-nav-btn img, .serie-nav-btn .serie-nav-vuota { width: 24px; height: 24px; } }
 /* v7.042 (Franco: «un po' più a dx e sx, rispettivamente»; «le due parole su due righe e centrate»;
    «su mobile niente scritte») */
