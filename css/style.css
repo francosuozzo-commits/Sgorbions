@@ -811,6 +811,14 @@ body {
   /* 🆕 v7.049 (Franco: «sfrutta la larghezza del carosello») - i box della home coi valori di `.carosello-largo`
      (qui sopra): stanno nello stesso zoom del carosello, e a 1920 misurano 1620 come la sua fila. */
   #home-how-grid { width: min(1800px, calc(100vw - 4rem)); max-width: 1800px; margin-left: 50%; margin-right: 0; transform: translateX(-50%); }
+  /* 🆕 v7.051 (Franco: «la nota mettila su una sola riga») - 📏 una riga non ci sta (2549px a 0,88rem): larga
+     quanto il carosello e con «NOTA:» sulla stessa riga, scende da tre righe a due. */
+  #home-nota { max-width: none !important; padding: 0 !important; width: min(1800px, calc(100vw - 4rem)); margin-left: 50% !important; transform: translateX(-50%); }
+  #home-nota br { display: none; }
+  #home-nota strong { margin-right: 0.35rem; }
+  /* 🆕 v7.051 (Franco: «il footer è troppo alto; alla fine ha una sola riga») - un padding solo, e piccolo */
+  footer { padding-top: 0.45rem; padding-bottom: 0.45rem; }
+  #footer-copy-row { padding-top: 0 !important; padding-bottom: 0 !important; }
   /* 🆕 v7.048 (Franco: «box poco alti») - i sei box della home: icona accanto al titolo, meno padding.
      `!important` perché gli stili dei box sono scritti in linea. */
   #home-how-grid > div { padding: 0.9rem 1rem !important; display: grid; grid-template-columns: auto 1fr; column-gap: 0.6rem; align-items: center; text-align: left !important; }
