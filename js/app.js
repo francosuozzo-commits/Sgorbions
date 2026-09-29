@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.051 - Modificato index.html e css/style.css. Desktop (Franco): la nota della home larga quanto il
+//          carosello e con «NOTA:» sulla riga del testo (da tre righe a due: una sola non ci sta, misurato);
+//          il footer più basso.
 // v7.050 - Modificato js/app.js e css/style.css. La prima schermata del questionario (Franco): più larga sul
 //          desktop, la prima frase su una riga, le serie su due righe uguali e più grandi, «Inizia il
 //          questionario !» grande al centro, più aria, azzeramento più in basso, «Esci dal questionario» con conferma.
@@ -30589,7 +30592,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.050';
+const JS_VERSION = 'v7.051';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
