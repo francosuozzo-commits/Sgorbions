@@ -2677,6 +2677,10 @@ footer {
    ⚠️ Solo l'Inventario e solo il telefono: le altre pagine non le ha nominate nessuno. */
 @media (max-width: 860px) {
   #page-catalog { padding-top: 0; }
+  /* 🆕 v7.025 (Franco: «la pagina della classifica presenta notevole spazio vuoto prima del titolo») -
+     anche la Classifica: via i 56px, e la sua prima sezione parte a 1rem invece di 2,5. */
+  #page-classifica { padding-top: 0; }
+  #page-classifica > .section:first-child { padding-top: 1rem; }
 }
 
 /* 🆕 v7.010 - `.solo-telefono`: si vede sotto gli 860px e basta (Franco: «nella versione mobile, nella
