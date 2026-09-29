@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.040 - Modificato css/style.css (e index/app.js per la versione). Pagina della serie, desktop (Franco): il
+//          titolo al centro, e «Opzioni admin» spostato a destra fino al bordo del carosello.
 // v7.039 - Modificato css/style.css e index.html. Anche sul desktop via il vuoto in cima all'Inventario, alla
 //          serie, alla tipologia e ai personaggi (Franco): i 56px di `.page`, i 64px di #series-detail e
 //          #prodotto-detail, la testata da 3 a 1rem; «← Inventario» sopra i 1440px a `top: 1rem`. E (TODO 1)
@@ -30566,7 +30568,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.039';
+const JS_VERSION = 'v7.040';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
