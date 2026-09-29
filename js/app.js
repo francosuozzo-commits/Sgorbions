@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.046 - Modificato index.html (e js/app.js per la versione). Le icone dei due box della lista, della
+//          stessa famiglia: 📝 il questionario, ✍️ «La mia lista Sgorbions» (Franco).
 // v7.045 - Modificato index.html e js/app.js. In home il box del questionario si spezza in due (Franco): il
 //          questionario, e «La mia lista Sgorbions» col flag Mia lista. Sei box, tre colonne sul desktop.
 // v7.044 - Modificato css/style.css (e index/app.js per la versione). Sul telefono la testata della serie a
@@ -30578,7 +30580,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.045';
+const JS_VERSION = 'v7.046';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
