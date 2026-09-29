@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.030 - Modificato js/app.js (e index per la versione). In «Cosa hai di questa serie?» la seconda frase
+//          diventa «I quadranti già selezionati sono quelli per i quali hai articoli nella tua lista» (Franco).
 // v7.029 - Modificato js/app.js (e index per la versione). Nel titolo della serie del questionario via la
 //          parola «serie» minuscola (Franco): «Iniziamo con la Serie 1», non «…la serie Serie 1».
 // v7.028 - Modificato js/app.js (e index per la versione). Nella prima conferma dell'azzeramento via
@@ -30541,7 +30543,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.029';
+const JS_VERSION = 'v7.030';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49146,8 +49148,8 @@ function _wzDisegna() {
         + '<div class="wz-domanda">' + (it ? 'Cosa hai di questa serie?' : 'What do you have from this series?') + '</div>'
         + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che raffigura gli articoli che hai' : 'Click on the tiles showing the items you have') + '</p>'
         + (gia ? '<p class="wz-testo">' + (it
-            ? 'Nella tua lista ci sono già <b>' + nfmtWz(gia) + '</b> articoli di questa serie: trovi le risposte già date, e puoi cambiarle.'
-            : 'Your list already has <b>' + nfmtWz(gia) + '</b> items of this series: your answers are already filled in.') + '</p>' : '')
+            ? 'I quadranti già selezionati sono quelli per i quali hai articoli nella tua lista'
+            : 'The tiles already selected are those for which you have items in your list') + '</p>' : '')
         + '<div class="wz-scelte">' + w.sezSerie.map(z => {
             const grigia = z === 'attaccare' && !_wzFpaLibera();
             return '<button type="button" class="wz-carta' + (w.accese.has(z) ? ' on' : '') + (grigia ? ' wz-grigia' : '') + '"' + (grigia ? ' disabled' : '') + ' onclick="_wzToccaTda(\'' + z + '\')">'
