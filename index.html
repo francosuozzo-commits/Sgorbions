@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.014">
+<link rel="stylesheet" href="css/style.css?v=7.015">
 
 
 <style>
@@ -815,7 +815,7 @@ button.back-btn { color:#ffffff; }
    Chi la accende e' updateNavUser() in app.js, insieme alle altre voci riservate agli utenti
    registrati: la media query qui sotto la spegne comunque su desktop, cosi' i due comandi non
    possono comparire insieme. */
-@media (min-width:861px) { #nav-logout-link, #nav-mialista-link, #nav-questionario-link { display:none !important; } }
+@media (min-width:861px) { #nav-logout-link, #nav-mialista-link { display:none !important; } }
 @media (max-width:860px) { #user-nav .btn-logout { display:none; } }
 
 /* 🆕 v6.353 (Franco) — «IMPERSONA UN UTENTE» SOLO SU TELEFONO.
@@ -1692,11 +1692,10 @@ button.back-btn { color:#ffffff; }
     <!-- v5.973 — TELEFONO: voce che apre la mini guida del selettore "Mia lista", la stessa che
          si apre dal riquadro "Costruisci la Tua Lista" in home. Sta PRIMA del Logout, che per
          richiesta di Franco resta l'ultima voce del panino. -->
-    <a onclick="openDemoToggleModal()" id="nav-mialista-link" data-i18n="nav.mialista" style="display:none;">Mia lista</a>
-    <!-- 🆕 v7.014 (Franco: «da mobile gli darei una dignità di una riga nel menu») - il questionario,
-         subito dopo «Mia lista» (`order: 6` nel foglio, le successive scalano di uno), solo sul
-         telefono e solo con l'accesso, come quella. -->
-    <a onclick="apriWizardLista()" id="nav-questionario-link" data-i18n="nav.questionario" style="display:none;">Questionario Sgorbions</a>
+    <a onclick="openDemoToggleModal()" id="nav-mialista-link" data-i18n="nav.mialista" style="display:none;">La mia lista Sgorbions</a>
+    <!-- 🔄 v7.015 - la riga «Questionario Sgorbions» della v7.014 non c'è più (Franco: «da mobile cancella
+         la riga di menu il questionario e modifichiamo invece la riga esistente»): il questionario si
+         apre dalla finestra di «La mia lista Sgorbions», qui sopra. -->
     <a onclick="logout()" id="nav-logout-link" data-i18n="nav.logout" style="display:none;">Logout</a>
     </div>
   </div>
@@ -5144,9 +5143,18 @@ di tutte le serie</button>
 <div class="modal-overlay hidden" id="demo-toggle-modal">
   <div class="modal" style="max-width:650px;">
     <div class="modal-header">
-      <h2 class="modal-title">Come funziona il selettore <em>Mia lista</em></h2>
+      <!-- 🔄 v7.015 (Franco) - «LA MIA LISTA SGORBIONS»: titolo, introduzione, il questionario, e sotto il
+           titoletto della lista la guida al selettore che c'era già (il titolo di prima era «Come
+           funziona il selettore Mia lista»). -->
+      <h2 class="modal-title">La mia lista Sgorbions</h2>
       <button class="modal-close" onclick="closeModal('demo-toggle-modal')">✕</button>
     </div>
+    <p class="ml-intro">«La mia lista Sgorbions» è il modo con cui puoi costruire una tua lista personale della collezione Sgorbions.</p>
+    <p class="ml-intro">Puoi costruire questa lista in un batter d'occhio con il Questionario Sgorbions.</p>
+    <p class="ml-intro">Oppure spuntando a mano il flag <em>Mia lista</em> sugli articoli.</p>
+    <h3 class="ml-titoletto">Questionario Sgorbions</h3>
+    <div style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary wz-pulsante" onclick="closeModal('demo-toggle-modal');apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
+    <h3 class="ml-titoletto">La mia lista Sgorbions</h3>
     <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;">Tocca il selettore <em>Mia lista</em> per aggiungere una figurina alla tua lista personale.<br>Il colore cambierà per indicarti che è nella lista !</p>
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.5rem;font-style:italic;"><strong style="font-style:normal;color:var(--text);">NOTA</strong> — È semplicemente una lista tua: cosa significhi per te (che tu la possieda, l'abbia vista, o qualsiasi altra cosa) lo decidi solo tu — <span style="color:var(--danger);">non è visibile né interpretabile da altri utenti.</span></p>
     <div style="display:flex;align-items:center;gap:1.5rem;background:var(--card2);border-radius:12px;padding:1.25rem;">
@@ -5749,7 +5757,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.014"></script>
+<script src="js/app.js?v=7.015"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5773,7 +5781,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.014'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.015'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
