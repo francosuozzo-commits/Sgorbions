@@ -2669,6 +2669,13 @@ footer {
    (`.bm-barra-bordo`, assoluto): il riquadro gli fa da riferimento e gli lascia posto in alto. */
 .bm-box.bm-aperto { position: relative !important; padding-top: 1.05rem !important; margin-top: 1.15rem; }
 
+/* 🆕 v7.039 (Franco: «il vuoto avevo chiesto di toglierlo dalla desktop») - ANCHE SUL DESKTOP la barra è
+   `relative` (index, v6.947): i 56px di `.page` e i 64px in linea di serie e tipologia sono solo nero.
+   Qui per tutte le larghezze; il blocco del telefono qui sotto toglie ancora qualcosa. */
+#page-catalog { padding-top: 0; }
+#series-detail, #prodotto-detail { padding-top: 0 !important; }
+#series-detail .series-hero, #prodotto-detail .series-hero { padding-top: 1rem; }
+
 /* 🆕 v7.006 (Franco: «nella versione mobile l'hub inventario, con le sue tre sezioni, è troppo in basso;
    vedo che c'è del nero sopra la scritta L'inventario, quindi possiamo tirare tutto su») - SUL TELEFONO
    LA PAGINA DELL'INVENTARIO PERDE I 56px IN CIMA.
