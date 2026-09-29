@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.049 - Modificato css/style.css (e index/app.js per la versione). I box della home prendono la regola
+//          del carosello (`.carosello-largo`): a 1920 sono larghi 1620px come la sua fila (erano 1458).
 // v7.048 - Modificato css/style.css (e index/app.js per la versione). Sul desktop i sei box della home
 //          larghi quanto il carosello della home, e bassi: icona accanto al titolo, meno padding (Franco).
 // v7.047 - Modificato index.html (e js/app.js per la versione). Sul desktop i sei box della home su una
@@ -30584,7 +30586,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.048';
+const JS_VERSION = 'v7.049';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
