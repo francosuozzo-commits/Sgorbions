@@ -776,8 +776,7 @@ body {
      dell'hub sottostante») - la ricerca della pagina della tipologia e i suoi risultati, larghi come
      i box delle serie: la stessa regola, non una misura nuova. */
   #prodotto-ricerca,
-  #prodotto-risultati,
-  #home-how-grid {   /* v7.048 (Franco: «sfrutta la larghezza del carosello») */
+  #prodotto-risultati {
     /* la larghezza del carosello della home MOLTIPLICATA PER IL SUO ZOOM: e' cio' che si vede,
        non cio' che si chiede. Verificata a tre misure: a 1440 fanno 1238 tutti e due, a 1920
        1620 tutti e due, a 2554 1620 tutti e due. */
@@ -809,6 +808,9 @@ body {
      3,2px in meno ciascuna. E' il prezzo dell'allineamento, ed e' quello che Franco ha chiesto
      guardando i due bordi. */
   #catalog-grid { padding-left: 0.4rem; padding-right: 0.4rem; }
+  /* 🆕 v7.049 (Franco: «sfrutta la larghezza del carosello») - i box della home coi valori di `.carosello-largo`
+     (qui sopra): stanno nello stesso zoom del carosello, e a 1920 misurano 1620 come la sua fila. */
+  #home-how-grid { width: min(1800px, calc(100vw - 4rem)); max-width: 1800px; margin-left: 50%; margin-right: 0; transform: translateX(-50%); }
   /* 🆕 v7.048 (Franco: «box poco alti») - i sei box della home: icona accanto al titolo, meno padding.
      `!important` perché gli stili dei box sono scritti in linea. */
   #home-how-grid > div { padding: 0.9rem 1rem !important; display: grid; grid-template-columns: auto 1fr; column-gap: 0.6rem; align-items: center; text-align: left !important; }
