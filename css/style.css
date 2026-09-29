@@ -2246,6 +2246,14 @@ footer {
   #footer-copy-row .footer-sep { display: none; }
 
   #home-how-grid { grid-template-columns: 1fr !important; font-size: 1em !important; }
+  /* 🔴 v7.019 (Franco: «sono scomparsi tutti i box») - sul telefono niente effetto di comparsa: la griglia
+     partiva trasparente (`.reveal`) e sul telefono di Franco non si accendeva più. */
+  #home-how-grid.reveal { opacity: 1 !important; transform: none !important; }
+  /* 🆕 v7.019 (Franco: «fai in modo che la x di chiusura stia sopra al titolo») - nella finestra di «La mia
+     lista Sgorbions» la ✕ su una riga sua, a destra, e il titolo su una riga intera. */
+  #demo-toggle-modal .modal-header { flex-direction: column-reverse; align-items: stretch; gap: 0.5rem; }
+  #demo-toggle-modal .modal-header .modal-close { align-self: flex-end; }
+  #demo-toggle-modal .modal-title { white-space: nowrap; font-size: min(1.5rem, 6.4vw); }
   #home-how-grid > div { padding: 1rem 1.1rem !important; text-align: left !important; }
   #home-how-grid > div > div:first-child { font-size: 1.8rem !important; margin-bottom: 0.4rem !important; }
   #home-how-grid h3 { font-size: 1.05rem !important; }
