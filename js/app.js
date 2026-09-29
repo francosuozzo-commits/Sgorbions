@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.031 - Modificato js/app.js (e index per la versione). In «Cosa hai di questa serie?» le card senza il
+//          numero degli articoli (Franco: «a quel punto è presto per mostrarlo»).
 // v7.030 - Modificato js/app.js (e index per la versione). In «Cosa hai di questa serie?» la seconda frase
 //          diventa «I quadranti già selezionati sono quelli per i quali hai articoli nella tua lista» (Franco).
 // v7.029 - Modificato js/app.js (e index per la versione). Nel titolo della serie del questionario via la
@@ -30543,7 +30545,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.030';
+const JS_VERSION = 'v7.031';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49154,7 +49156,8 @@ function _wzDisegna() {
             const grigia = z === 'attaccare' && !_wzFpaLibera();
             return '<button type="button" class="wz-carta' + (w.accese.has(z) ? ' on' : '') + (grigia ? ' wz-grigia' : '') + '"' + (grigia ? ' disabled' : '') + ' onclick="_wzToccaTda(\'' + z + '\')">'
               + _wzImg(_wzFotoSez(z, s.id), 400, 300, '') + '<div class="wz-carta-titolo">' + esc(getSectionLabel(z)) + '</div>'
-              + '<div class="wz-carta-sotto">' + (grigia ? (it ? 'prima accendi l\'album' : 'light the album first') : nfmtWz(_wzArticoli(s.id, z).length)) + '</div></button>';
+              // v7.031 - niente numero (Franco: «a quel punto è presto per mostrarlo»): resta solo l'avviso delle fpa
+              + (grigia ? '<div class="wz-carta-sotto">' + (it ? 'prima accendi l\'album' : 'light the album first') + '</div>' : '') + '</button>';
           }).join('') + '</div>';
       piede = indietro + '<button type="button" class="btn-secondary" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta questa serie' : 'Skip this series') + '</button>'
         + '<span class="wz-conto-testo"><b>' + w.accese.size + '</b> ' + (it ? 'accese' : 'selected') + '</span>'
