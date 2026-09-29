@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.036 - Modificato js/app.js (e index per la versione). Sotto «Che collezionista sei ?» la frase di
+//          Franco: «Indica il livello che corrisponde di più a te: il questionario farà le domande più adatte a te.»
 // v7.035 - Modificato js/app.js e css/style.css. Nel questionario il titolo viola solo nella prima
 //          schermata (`.wz-titolo-intro`); nelle altre giallo #ffd84d (Franco).
 // v7.034 - Modificato js/app.js (e index per la versione). 🧭 «CHE COLLEZIONISTA SEI ?» (Franco): la prima
@@ -30555,7 +30557,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.035';
+const JS_VERSION = 'v7.036';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49175,7 +49177,7 @@ function _wzDisegna(tieni) {
       + (w.livello === l && _wzLivello === l ? giaTua : '')
       + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
     corpo = '<div class="wz-titolo">' + (it ? 'Che collezionista sei ?' : 'What kind of collector are you ?') + '</div>'
-      + '<p class="wz-testo">' + (it ? 'Scegli il livello che ti somiglia di più: il questionario ti farà solo le domande che fanno per te.' : 'Choose the level that suits you best: the questionnaire will only ask what fits you.') + '</p>'
+      + '<p class="wz-testo">' + (it ? 'Indica il livello che corrisponde di più a te: il questionario farà le domande più adatte a te.' : 'Choose the level that fits you best: the questionnaire will ask the questions best suited to you.') + '</p>'
       + '<div class="wz-scelte">'
       + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'segni gli articoli base: figurine, album e gli altri articoli' : 'you mark the base items')
       + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'in più segni le variazioni ufficiali' : 'you also mark the official variations')
