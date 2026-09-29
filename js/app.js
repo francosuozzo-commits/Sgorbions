@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.050 - Modificato js/app.js e css/style.css. La prima schermata del questionario (Franco): più larga sul
+//          desktop, la prima frase su una riga, le serie su due righe uguali e più grandi, «Inizia il
+//          questionario !» grande al centro, più aria, azzeramento più in basso, «Esci dal questionario» con conferma.
 // v7.049 - Modificato css/style.css (e index/app.js per la versione). I box della home prendono la regola
 //          del carosello (`.carosello-largo`): a 1920 sono larghi 1620px come la sua fila (erano 1458).
 // v7.048 - Modificato css/style.css (e index/app.js per la versione). Sul desktop i sei box della home
@@ -30586,7 +30589,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.049';
+const JS_VERSION = 'v7.050';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49172,6 +49175,8 @@ async function _wzSalvaSerie() {
 //    conferma»). Dalla prima schermata; due schermate di conferma, non la finestrella del browser. Toglie
 //    TUTTA la lista (anche change, variazioni, omaggi ed errori: è «la propria lista») e spegne il segno.
 function _wzAzzera(passo) { _wz.passo = passo; _wzDisegna(); }
+// 🆕 v7.050 - «Esci dal questionario» chiede conferma; «Resta» torna dove si era
+function _wzChiediEsci() { _wz.primaDiEsci = _wz.passo; _wz.passo = 'esci'; _wzDisegna(); }
 async function _wzAzzeraDavvero() {
   const b = document.getElementById('wz-azzera-si'); if (b) { b.disabled = true; b.textContent = currentLang === 'it' ? 'Azzeramento…' : 'Resetting…'; }
   if (!_cache.ownedMap) _cache.ownedMap = {};
@@ -49209,7 +49214,8 @@ function _wzDisegna(tieni) {
   const it = currentLang === 'it';
   let ov = document.getElementById('wz-overlay');
   if (!ov) { ov = document.createElement('div'); ov.id = 'wz-overlay'; ov.className = 'wz-overlay'; document.body.appendChild(ov); document.body.style.overflow = 'hidden'; }
-  const esci = '<button type="button" class="btn-secondary" onclick="_wzChiudi()">' + (it ? 'Esci' : 'Exit') + '</button>';
+  // 🔄 v7.050 (Franco: «il tasto Esci chiamalo Esci dal questionario, e chiedi conferma per uscire»)
+  const esci = '<button type="button" class="btn-secondary" onclick="_wzChiediEsci()">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';
   const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">◀ ' + (it ? 'Indietro' : 'Back') + '</button>';
   const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Avanti ▶' : 'Next ▶') + '</button>';
   const giaTua = '<div class="wz-proposta">' + (it ? 'la tua risposta' : 'your answer') + '</div>';
@@ -49217,19 +49223,28 @@ function _wzDisegna(tieni) {
   if (w.passo === 'intro') {
     corpo = '<div class="wz-titolo wz-titolo-intro">' + (it ? 'Il Questionario Sgorbions' : 'The Sgorbions questionnaire') + '</div>'
       + '<p class="wz-testo">' + (it
-        ? 'Col <strong style="color:#ffd84d;">Questionario Sgorbions</strong> puoi costruire in pochi minuti una tua lista personale degli articoli della collezione Sgorbions.<br><br>'   // v7.025: la riga vuota voluta da Franco
+        ? '<span class="wz-riga-sola">Col <strong style="color:#ffd84d;">Questionario Sgorbions</strong> puoi costruire in pochi minuti una tua lista personale degli articoli della collezione Sgorbions.</span><br><br>'   // v7.025: la riga vuota voluta da Franco
         + 'Completalo e scala la vetta della <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Classifica</a> !'
         : 'With the <strong style="color:#ffd84d;">Sgorbions Questionnaire</strong> you can build, in a few minutes, your own personal list of the items of the Sgorbions collection.<br><br>'
         + 'Complete it and climb to the top of the <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Leaderboard</a> !') + '</p>'
-      + '<p class="wz-testo">' + (it ? 'Ecco le serie coinvolte nel questionario.' : 'Here are the series included in the questionnaire.') + '</p>'   // v7.026 (Franco)
-      + '<div class="wz-mosaico">' + w.serie.map(s => '<div class="wz-mosaico-voce">' + _wzImg(s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(s)) + '</div></div>').join('') + '</div>'
-      + '<p class="wz-nota">' + (it
+      + '<p class="wz-testo wz-prima-serie">' + (it ? 'Ecco le serie coinvolte nel questionario.' : 'Here are the series included in the questionnaire.') + '</p>'   // v7.026 (Franco)
+      // 🔄 v7.050 (Franco: «il numero di serie diviso 2, su ogni riga») - le colonne le dice `--wz-col`
+      + '<div class="wz-mosaico wz-mosaico-intro" style="--wz-col:' + Math.max(1, Math.ceil(w.serie.length / 2)) + ';">' + w.serie.map(s => '<div class="wz-mosaico-voce">' + _wzImg(s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(s)) + '</div></div>').join('') + '</div>'
+      // 🆕 v7.050 - «Inizia il questionario !» qui, grande e al centro (era nell'angolo, in basso a destra)
+      + '<div class="wz-inizia"><button type="button" class="btn-primary wz-grande" onclick="_wzAlLivello()">' + (it ? 'Inizia il questionario !' : 'Start the questionnaire !') + '</button></div>'
+      + '<p class="wz-nota wz-nota-intro">' + (it
         ? '📌 Puoi rifare il questionario quante volte vuoi.<br>Ogni volta riparte dalla prima serie.<br>Se vuoi, puoi anche resettarlo e cominciare da capo.'
         : '📌 You can take the questionnaire as many times as you like.<br>Each time it starts again from the first series.<br>If you like, you can also reset it and start over.') + '</p>';
     const nMie = getOwned().length;
-    if (nMie || _wzFatto) corpo += '<div style="text-align:center;margin-top:1.2rem;"><button type="button" class="btn-secondary wz-azzera" onclick="_wzAzzera(\'azzera1\')">🗑️ '
+    if (nMie || _wzFatto) corpo += '<div style="text-align:center;margin-top:3rem;"><button type="button" class="btn-secondary wz-azzera" onclick="_wzAzzera(\'azzera1\')">🗑️ '
       + (it ? 'Azzera la mia lista e ricomincia il questionario' : 'Reset my list and restart the questionnaire') + '</button></div>';
-    piede = esci + '<button type="button" class="btn-primary wz-grande" onclick="_wzAlLivello()">' + (it ? 'Inizia il questionario !' : 'Start the questionnaire !') + '</button>';
+    piede = esci;   // v7.050: «Inizia» è salito nel corpo
+  } else if (w.passo === 'esci') {
+    // 🆕 v7.050 - la conferma dell'uscita
+    corpo = '<div class="wz-titolo">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</div>'
+      + '<p class="wz-testo">' + (it ? 'Vuoi davvero uscire dal questionario ? Le serie che hai già salvato restano nella tua lista.' : 'Do you really want to exit ? The series you already saved stay in your list.') + '</p>'
+      + '<div class="wz-inizia"><button type="button" class="btn-primary wz-grande" onclick="_wzChiudi()">' + (it ? 'Sì, esci' : 'Yes, exit') + '</button></div>';
+    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(_wz.primaDiEsci || \'intro\')">◀ ' + (it ? 'Resta nel questionario' : 'Stay') + '</button>';
   } else if (w.passo === 'livello') {
     // 🆕 v7.034 (Franco) - «Che collezionista sei ?»: la risposta decide quali versioni si chiedono
     const carta = (l, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (w.livello === l ? ' on' : '') + '" onclick="_wzScegliLivello(\'' + l + '\')">'
