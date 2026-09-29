@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.022 - Modificato css/style.css (e index/app.js per la versione). I titoli del questionario in viola,
+//          `--accent3` (Franco: «nella pagina del questionario il titolo deve essere viola»).
 // v7.021 - Modificato index.html e js/app.js. Nel box del questionario «sarà pronta» invece di «è pronta» (Franco).
 // v7.020 - Modificato index.html e js/app.js. In home un box solo per la lista (Franco): via «Costruisci la
 //          Tua Lista», resta «Crea la tua lista col Questionario Sgorbions», con la frase «Oppure aggiungi
@@ -30524,7 +30526,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.021';
+const JS_VERSION = 'v7.022';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
