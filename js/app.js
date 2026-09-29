@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.035 - Modificato js/app.js e css/style.css. Nel questionario il titolo viola solo nella prima
+//          schermata (`.wz-titolo-intro`); nelle altre giallo #ffd84d (Franco).
 // v7.034 - Modificato js/app.js (e index per la versione). 🧭 «CHE COLLEZIONISTA SEI ?» (Franco): la prima
 //          domanda del questionario. Amatore = set base; Esperto = + variazioni ufficiali; Collezionista = +
 //          tutte le versioni. Le versioni hanno una schermata ciascuna dopo la loro tipologia. Il livello si
@@ -30553,7 +30555,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.034';
+const JS_VERSION = 'v7.035';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49152,7 +49154,7 @@ function _wzDisegna(tieni) {
   const giaTua = '<div class="wz-proposta">' + (it ? 'la tua risposta' : 'your answer') + '</div>';
   let corpo = '', piede = '';
   if (w.passo === 'intro') {
-    corpo = '<div class="wz-titolo">' + (it ? 'Il Questionario Sgorbions' : 'The Sgorbions questionnaire') + '</div>'
+    corpo = '<div class="wz-titolo wz-titolo-intro">' + (it ? 'Il Questionario Sgorbions' : 'The Sgorbions questionnaire') + '</div>'
       + '<p class="wz-testo">' + (it
         ? 'Col <strong style="color:#ffd84d;">Questionario Sgorbions</strong> puoi costruire in pochi minuti una tua lista personale degli articoli della collezione Sgorbions.<br><br>'   // v7.025: la riga vuota voluta da Franco
         + 'Completalo e scala la vetta della <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Classifica</a> !'
