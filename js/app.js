@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.033 - Modificato js/app.js (e index per la versione). Questionario: toccare una card non riporta più
+//          in cima (Franco); in «Quali album hai?» «Se non sai quali hai, seleziona il primo della lista.»
 // v7.032 - Modificato js/app.js e css/style.css. Nelle conferme dell'azzeramento il pulsante rosso al
 //          centro dello schermo, sotto l'avviso (Franco); nel piede resta «Annulla».
 // v7.031 - Modificato js/app.js (e index per la versione). In «Cosa hai di questa serie?» le card senza il
@@ -30547,7 +30549,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.032';
+const JS_VERSION = 'v7.033';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -48962,7 +48964,7 @@ function _wzToccaTda(z) {
   if (z === 'attaccare' && !_wzFpaLibera()) return;
   if (w.accese.has(z)) w.accese.delete(z); else w.accese.add(z);
   if (!_wzFpaLibera()) w.accese.delete('attaccare');
-  _wzDisegna();
+  _wzDisegna(true);   // v7.033: si resta dove si era
 }
 // «quando ha finito preme il pulsante per procedere»: le schermate sono quelle delle card accese
 function _wzConfermaTda() {
@@ -49014,7 +49016,7 @@ function _wzTutte(chiave, accendi) {
   const set = chiave === 'albums' ? w.scelte.albums : w.scelte[chiave].sel;
   set.clear();
   if (accendi) _wzArticoli(s.id, chiave).forEach(f => set.add(f.id));
-  _wzDisegna();
+  _wzDisegna(true);   // v7.033: si resta dove si era
 }
 // cosa, secondo le risposte, è nella lista (fra gli articoli di cui si è parlato)
 function _wzDaAggiungere() {
@@ -49094,7 +49096,9 @@ function _wzTesta(s) {
 }
 // «+3 −1», «+3», «−1»: quello che cambia
 function _wzCambio(n, t) { return [n ? '+' + nfmtWz(n) : '', t ? '−' + nfmtWz(t) : ''].filter(Boolean).join(' ') || '='; }
-function _wzDisegna() {
+// 🔄 v7.033 (Franco: «ogni volta che clicco su una card il focus si sposta sulla parte alta») - `tieni`:
+//    ridisegnando la STESSA schermata la posizione resta; si torna in cima solo cambiando schermata.
+function _wzDisegna(tieni) {
   const w = _wz; if (!w) return;
   const it = currentLang === 'it';
   let ov = document.getElementById('wz-overlay');
@@ -49168,7 +49172,7 @@ function _wzDisegna() {
     } else if (p === 'albums') {
       const alb = _wzArticoli(s.id, 'albums'), figs = getData('figurines', []);
       corpo += '<div class="wz-domanda">' + _wzImg(_wzFotoSez('albums', s.id), 120, 120, 'wz-icona-sez') + (it ? 'Quali album hai?' : 'Which albums do you have?') + '</div>'
-        + '<p class="wz-testo">' + (it ? 'Tocca quelli che hai. Se non ne hai, vai avanti.' : 'Tap the ones you have.') + '</p>'
+        + '<p class="wz-testo">' + (it ? 'Tocca quelli che hai. Se non ne hai, vai avanti.<br>Se non sai quali hai, seleziona il primo della lista.' : 'Tap the ones you have.<br>If you do not know which ones you have, select the first one.') + '</p>'
         + '<div class="wz-scelte">' + alb.map(f =>
             '<button type="button" class="wz-carta' + (w.scelte.albums.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'albums\',\'' + f.id + '\',this)">'
             + _wzImg(_fotoFigurina(f, figs) || f.img, 400, 400, '') + '<div class="wz-carta-titolo">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
@@ -49229,8 +49233,9 @@ function _wzDisegna() {
         + (nuovi || tolti ? (it ? 'Salva e continua ▶' : 'Save and continue ▶') : (it ? 'Continua ▶' : 'Continue ▶')) + '</button>';
     }
   }
+  const _wzY = ov.scrollTop;
   ov.innerHTML = '<div class="wz-pannello">' + corpo + '</div><div class="wz-piede">' + piede + '</div>';
-  ov.scrollTop = 0;
+  ov.scrollTop = tieni ? _wzY : 0;
 }
 function nfmtWz(n) { return Number(n || 0).toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US'); }
 
