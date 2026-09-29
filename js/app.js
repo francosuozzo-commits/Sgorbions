@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.026 - Modificato js/app.js (e index per la versione). Prima schermata del questionario (Franco): «Ecco
+//          le serie coinvolte nel questionario.» prima delle foto, e la nota con la puntina nuova.
 // v7.025 - Modificato css/style.css (e index/app.js per la versione). Sul telefono la Classifica senza il
 //          vuoto in cima (Franco): via i 56px di `.page` e la prima sezione da 2,5rem a 1rem. E nella prima
 //          schermata del questionario la riga vuota prima di «Completalo e scala…», voluta da Franco.
@@ -30533,7 +30535,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.025';
+const JS_VERSION = 'v7.026';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49097,10 +49099,11 @@ function _wzDisegna() {
         + 'Completalo e scala la vetta della <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Classifica</a> !'
         : 'With the <strong style="color:#ffd84d;">Sgorbions Questionnaire</strong> you can build, in a few minutes, your own personal list of the items of the Sgorbions collection.<br><br>'
         + 'Complete it and climb to the top of the <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Leaderboard</a> !') + '</p>'
+      + '<p class="wz-testo">' + (it ? 'Ecco le serie coinvolte nel questionario.' : 'Here are the series included in the questionnaire.') + '</p>'   // v7.026 (Franco)
       + '<div class="wz-mosaico">' + w.serie.map(s => '<div class="wz-mosaico-voce">' + _wzImg(s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(s)) + '</div></div>').join('') + '</div>'
       + '<p class="wz-nota">' + (it
-        ? '📌 Puoi rifare il questionario quando vuoi: trovi già le risposte di quello che hai nella tua lista, e se le cambi la lista si aggiorna. Si segna il set base di ogni tipologia: change, variazioni, omaggi ed errori di stampa li segni dalle pagine delle serie.'
-        : '📌 You can take it again whenever you like: your answers start from your list, and if you change them the list is updated. Only the base set.') + '</p>';
+        ? '📌 Puoi rifare il questionario quante volte vuoi.<br>Ogni volta riparte da dove lo hai lasciato.<br>Se vuoi, puoi anche resettarlo e cominciare da capo.'
+        : '📌 You can take the questionnaire as many times as you like.<br>Each time it starts again from where you left it.<br>If you like, you can also reset it and start over.') + '</p>';
     const nMie = getOwned().length;
     if (nMie || _wzFatto) corpo += '<div style="text-align:center;margin-top:1.2rem;"><button type="button" class="btn-secondary wz-azzera" onclick="_wzAzzera(\'azzera1\')">🗑️ '
       + (it ? 'Azzera la mia lista e ricomincia il questionario' : 'Reset my list and restart the questionnaire') + '</button></div>';
