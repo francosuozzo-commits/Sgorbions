@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.039 - Modificato css/style.css e index.html. Anche sul desktop via il vuoto in cima all'Inventario, alla
+//          serie, alla tipologia e ai personaggi (Franco): i 56px di `.page`, i 64px di #series-detail e
+//          #prodotto-detail, la testata da 3 a 1rem; «← Inventario» sopra i 1440px a `top: 1rem`. E (TODO 1)
+//          il campo «Disponibilità» (testo libero, `disponibilita`) in cima al tab Ebay della scheda.
 // v7.038 - Modificato css/style.css (e index/app.js per la versione). Sul telefono via il vuoto in cima
 //          all'Inventario, alla serie, alla tipologia e ai personaggi (Franco): i 64px in linea di
 //          #series-detail e #prodotto-detail, i 0,5rem della sezione dell'Inventario, e la testata da 1,5 a 0,5rem.
@@ -30562,7 +30566,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.038';
+const JS_VERSION = 'v7.039';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -57171,6 +57175,9 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   if (isAdmin && !_isMobileViewport()) {
     const conditionLabel = f.condition === 'used' ? (currentLang === 'it' ? 'Usato' : 'Used') : (currentLang === 'it' ? 'Nuovo' : 'New');
     const ebayRows = [];
+    // 🆕 v7.039 - la disponibilità, in cima come nella scheda in modifica
+    ebayRows.push('<div class="detail-row"><span class="detail-label">📦 ' + (currentLang === 'it' ? 'Disponibilità' : 'Availability') + '</span><span class="detail-value">'
+      + (f.disponibilita ? esc(f.disponibilita) : '<span style="color:var(--muted);font-style:italic;">—</span>') + '</span></div>');
     ebayRows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Ebay' : 'For sale'}</span><span class="detail-value">${f.forSale ? `<span style="color:var(--success);">✓ €${(f.price||0).toFixed(2)} · ${currentLang === 'it' ? 'Q.tà' : 'Qty'} ${f.quantity||1} · ${conditionLabel}</span>` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'no' : 'no') + '</span>'}</span></div>`);
     // v6.103 (§12.1, segnalato da Franco) - QUESTA VISTA ERA IL TERZO ELENCO DEGLI STESSI CAMPI, e
     // nessuno lo contava: il §12.1 parla di DUE form, ma i campi eBay si scrivono in tre posti - la
@@ -59162,7 +59169,7 @@ function _bozzaNuovoItem(sezione, seriesId) {
     baseFigurineId: null, retroId: null, retroBianco: false,
     changeType: '', printErrorType: null,
     img: null, imgRetro: null, ebayImg: null,
-    forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new',
+    forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new', disponibilita: null,
     ebayTitleIt: null, ebayTitleEn: null, ebayDescIt: null, ebayDescEn: null,
     ebayAccounts: null, daPubblicare: false,
     // v6.144 - il box da cui si sta creando. Fuori da un box e' null, e resta null: cosi' un
@@ -59880,6 +59887,10 @@ function switchToEditMode(figId) {
 
   // Tab Ebay: Vendita (Da vendere / Prezzo / Quantità / Condizione) + foto dedicata
   html += '<div id="fe-tab-ebay" style="display:none;">';
+  // 🆕 v7.039 (Franco: «un campo chiamato disponibilità, admin visible… va nella scheda Ebay») - testo libero,
+  //    sempre visibile: non dipende da «In vendita». Il tab lo vede solo l'admin.
+  html += '<div style="margin-bottom:0.75rem;"><label class="detail-label" style="display:block;margin-bottom:0.3rem;">📦 ' + (currentLang==='it'?'Disponibilità':'Availability') + '</label>'
+    + '<input class="form-input" type="text" id="fe-disponibilita" value="' + esc(f.disponibilita || '') + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>';
   html += '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">' +
     '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;font-weight:600;margin-bottom:' + (f.forSale ? '0.6rem' : '0') + ';">' +
     '<input type="checkbox" id="fe-for-sale" onchange="toggleFeForSaleFields()" ' + (f.forSale ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
@@ -62646,6 +62657,8 @@ async function saveFigFromDetail(figId, opzioni) {
       // 🔴 v6.253 - SENZA QUESTA RIGA IL TIPO DI OMAGGIO NON SI SALVAVA AFFATTO dalla scheda.
       freeVersionType: document.getElementById('fe-free-version-type')?.value || null,
       printErrorType: document.getElementById('fe-print-error-type')?.value.trim() || null,
+      // 🆕 v7.039 - la disponibilità: il vuoto diventa null
+      disponibilita: (document.getElementById('fe-disponibilita')?.value || '').trim() || null,
       forSale: document.getElementById('fe-for-sale')?.checked || false,
       price: document.getElementById('fe-for-sale')?.checked ? (parseFloat(document.getElementById('fe-price').value) || 0) : null,
       quantity: document.getElementById('fe-for-sale')?.checked ? (parseInt(document.getElementById('fe-quantity').value) || 1) : null,
