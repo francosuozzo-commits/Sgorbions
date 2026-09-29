@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.029 - Modificato js/app.js (e index per la versione). Nel titolo della serie del questionario via la
+//          parola «serie» minuscola (Franco): «Iniziamo con la Serie 1», non «…la serie Serie 1».
 // v7.028 - Modificato js/app.js (e index per la versione). Nella prima conferma dell'azzeramento via
 //          «compresi change, variazioni, omaggi ed errori di stampa» (Franco).
 // v7.027 - Modificato js/app.js (e index per la versione). Nella nota del questionario «Ogni volta riparte
@@ -30539,7 +30541,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.028';
+const JS_VERSION = 'v7.029';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49139,7 +49141,7 @@ function _wzDisegna() {
     corpo = _wzTesta(s);
     if (p === 'serie') {
       const mie = new Set(getOwned()), gia = [..._wzToccati()].filter(id => mie.has(id)).length;
-      corpo += '<div class="wz-titolo">' + (it ? (w.i === 0 ? 'Iniziamo con la serie ' : 'Continuiamo con la serie ') : (w.i === 0 ? "Let's start with the series " : "Let's go on with the series ")) + esc(_nomeSerieCard(s)) + '</div>'
+      corpo += '<div class="wz-titolo">' + (it ? (w.i === 0 ? 'Iniziamo con la ' : 'Continuiamo con la ') : (w.i === 0 ? "Let's start with " : "Let's go on with ")) + esc(_nomeSerieCard(s)) + '</div>'
         + '<div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div>'
         + '<div class="wz-domanda">' + (it ? 'Cosa hai di questa serie?' : 'What do you have from this series?') + '</div>'
         + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che raffigura gli articoli che hai' : 'Click on the tiles showing the items you have') + '</p>'
