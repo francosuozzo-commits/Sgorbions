@@ -2675,6 +2675,15 @@ footer {
    (`.bm-barra-bordo`, assoluto): il riquadro gli fa da riferimento e gli lascia posto in alto. */
 .bm-box.bm-aperto { position: relative !important; padding-top: 1.05rem !important; margin-top: 1.15rem; }
 
+/* 🆕 v7.041 (Franco) - le frecce per la serie precedente e la successiva, ai lati del titolo: una piccola
+   freccia con sopra la miniatura della serie. */
+.serie-nav-btn { align-self: center; display: inline-flex; flex-direction: column; align-items: center; gap: 1px; flex-shrink: 0;
+  background: var(--card); border: 1px solid var(--border2); border-radius: 8px; padding: 3px 4px; cursor: pointer; color: var(--text); line-height: 1; }
+.serie-nav-btn:hover { border-color: var(--accent); }
+.serie-nav-btn img, .serie-nav-btn .serie-nav-vuota { width: 30px; height: 30px; object-fit: contain; display: block; font-size: 1rem; text-align: center; }
+.serie-nav-btn .serie-nav-freccia { font-size: 0.8rem; }
+@media (max-width: 860px) { .serie-nav-btn img, .serie-nav-btn .serie-nav-vuota { width: 24px; height: 24px; } }
+
 /* 🆕 v7.039 (Franco: «il vuoto avevo chiesto di toglierlo dalla desktop») - ANCHE SUL DESKTOP la barra è
    `relative` (index, v6.947): i 56px di `.page` e i 64px in linea di serie e tipologia sono solo nero.
    Qui per tutte le larghezze; il blocco del telefono qui sotto toglie ancora qualcosa. */
