@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.038 - Modificato css/style.css (e index/app.js per la versione). Sul telefono via il vuoto in cima
+//          all'Inventario, alla serie, alla tipologia e ai personaggi (Franco): i 64px in linea di
+//          #series-detail e #prodotto-detail, i 0,5rem della sezione dell'Inventario, e la testata da 1,5 a 0,5rem.
 // v7.037 - Modificato js/app.js (e index per la versione). Le scritte sotto le card del livello con le
 //          parole di Franco.
 // v7.036 - Modificato js/app.js (e index per la versione). Sotto «Che collezionista sei ?» la frase di
@@ -30559,7 +30562,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.037';
+const JS_VERSION = 'v7.038';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
