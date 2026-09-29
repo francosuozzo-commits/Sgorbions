@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.028 - Modificato js/app.js (e index per la versione). Nella prima conferma dell'azzeramento via
+//          «compresi change, variazioni, omaggi ed errori di stampa» (Franco).
 // v7.027 - Modificato js/app.js (e index per la versione). Nella nota del questionario «Ogni volta riparte
 //          dalla prima serie.» (Franco): le risposte si ritrovano, la posizione no.
 // v7.026 - Modificato js/app.js (e index per la versione). Prima schermata del questionario (Franco): «Ecco
@@ -30537,7 +30539,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.027';
+const JS_VERSION = 'v7.028';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49114,7 +49116,7 @@ function _wzDisegna() {
     const n = getOwned().length, primo = w.passo === 'azzera1';
     corpo = '<div class="wz-titolo">🗑️ ' + (it ? 'Azzera la tua lista' : 'Reset your list') + '</div>'
       + '<div class="wz-avviso">' + (primo
-        ? (it ? 'Vuoi azzerare la tua lista ? Tutti i <b>' + nfmtWz(n) + '</b> articoli che hai segnato verranno tolti, compresi change, variazioni, omaggi ed errori di stampa, e il questionario ripartirà da zero.'
+        ? (it ? 'Vuoi azzerare la tua lista ? Tutti i <b>' + nfmtWz(n) + '</b> articoli che hai segnato verranno tolti, e il questionario ripartirà da zero.'
               : 'Do you want to reset your list ? All <b>' + nfmtWz(n) + '</b> items you marked will be removed, and the questionnaire will start from scratch.')
         : (it ? '⚠️ Ultima conferma: l\'azzeramento non si può annullare. La tua lista resterà vuota e la tua posizione in Classifica ripartirà da zero.'
               : '⚠️ Last confirmation: this cannot be undone. Your list will be empty and your Leaderboard position will start from zero.')) + '</div>';
