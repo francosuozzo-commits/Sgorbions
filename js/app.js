@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.025 - Modificato css/style.css (e index/app.js per la versione). Sul telefono la Classifica senza il
+//          vuoto in cima (Franco): via i 56px di `.page` e la prima sezione da 2,5rem a 1rem. E nella prima
+//          schermata del questionario la riga vuota prima di «Completalo e scala…», voluta da Franco.
 // v7.024 - Modificato js/app.js (e index per la versione). Il testo nuovo della prima schermata del
 //          questionario (Franco), e «Classifica» è un link che la apre in un'altra scheda (`#classifica`).
 // v7.023 - Modificato js/app.js (e index per la versione). Nella prima schermata del questionario
@@ -30530,7 +30533,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.024';
+const JS_VERSION = 'v7.025';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49090,9 +49093,9 @@ function _wzDisegna() {
   if (w.passo === 'intro') {
     corpo = '<div class="wz-titolo">' + (it ? 'Il Questionario Sgorbions' : 'The Sgorbions questionnaire') + '</div>'
       + '<p class="wz-testo">' + (it
-        ? 'Col <strong style="color:#ffd84d;">Questionario Sgorbions</strong> puoi costruire in pochi minuti una tua lista personale degli articoli della collezione Sgorbions.<br>'
+        ? 'Col <strong style="color:#ffd84d;">Questionario Sgorbions</strong> puoi costruire in pochi minuti una tua lista personale degli articoli della collezione Sgorbions.<br><br>'   // v7.025: la riga vuota voluta da Franco
         + 'Completalo e scala la vetta della <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Classifica</a> !'
-        : 'With the <strong style="color:#ffd84d;">Sgorbions Questionnaire</strong> you can build, in a few minutes, your own personal list of the items of the Sgorbions collection.<br>'
+        : 'With the <strong style="color:#ffd84d;">Sgorbions Questionnaire</strong> you can build, in a few minutes, your own personal list of the items of the Sgorbions collection.<br><br>'
         + 'Complete it and climb to the top of the <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Leaderboard</a> !') + '</p>'
       + '<div class="wz-mosaico">' + w.serie.map(s => '<div class="wz-mosaico-voce">' + _wzImg(s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(s)) + '</div></div>').join('') + '</div>'
       + '<p class="wz-nota">' + (it
