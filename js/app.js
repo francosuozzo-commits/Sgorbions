@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.018 - Modificato index.html (e js/app.js per la versione). «La mia lista Sgorbions» (Franco): «Mia
+//          lista» in giallo e grassetto nell'introduzione, il titoletto «Il questionario Sgorbions», la
+//          domanda gialla «Come funziona La mia lista Sgorbions ?» in testa alla guida, testi bianchi.
 // v7.017 - Modificato index.html (e js/app.js per la versione). Nell'introduzione di «La mia lista
 //          Sgorbions», «Questionario Sgorbions» in giallo #ffd84d e grassetto (Franco).
 // v7.016 - Modificato index.html (e js/app.js per la versione). Il titolo della finestra «La mia lista
@@ -30513,7 +30516,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.017';
+const JS_VERSION = 'v7.018';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
