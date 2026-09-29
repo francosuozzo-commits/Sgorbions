@@ -808,6 +808,12 @@ body {
      3,2px in meno ciascuna. E' il prezzo dell'allineamento, ed e' quello che Franco ha chiesto
      guardando i due bordi. */
   #catalog-grid { padding-left: 0.4rem; padding-right: 0.4rem; }
+  /* 🆕 v7.040 (Franco: «il titolo delle serie lo metterei al centro; il bottone Opzioni spostalo tutto a dx,
+     che pareggi il lato destro con la fine del carosello»). Il titolo (con anno e sottonome) occupa lo
+     spazio libero e ci sta in mezzo; «Opzioni admin» scivola a destra di quanto il carosello (`.carosello-largo`,
+     qui sopra) è più largo della testata: metà della sua larghezza meno metà di quella della testata. */
+  #series-detail div:has(> #detail-name) { flex: 1; justify-content: center; text-align: center; }
+  #series-detail #detail-admin-menu { right: calc(min(550px, 50vw - 2rem) - min(900px, 50vw - 2rem)); }
 }
 
 /* 🔄 v6.457 (Franco: *"non ci siamo. devono avere tutti le classiche caratteristiche di tasto admin
