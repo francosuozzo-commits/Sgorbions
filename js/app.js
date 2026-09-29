@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.023 - Modificato js/app.js (e index per la versione). Nella prima schermata del questionario
+//          «Questionario Sgorbions» in giallo #ffd84d, grassetto e con la Q maiuscola; Q maiuscola anche nel titolo.
 // v7.022 - Modificato css/style.css (e index/app.js per la versione). I titoli del questionario in viola,
 //          `--accent3` (Franco: «nella pagina del questionario il titolo deve essere viola»).
 // v7.021 - Modificato index.html e js/app.js. Nel box del questionario «sarà pronta» invece di «è pronta» (Franco).
@@ -30526,7 +30528,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.022';
+const JS_VERSION = 'v7.023';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49084,12 +49086,12 @@ function _wzDisegna() {
   const giaTua = '<div class="wz-proposta">' + (it ? 'la tua risposta' : 'your answer') + '</div>';
   let corpo = '', piede = '';
   if (w.passo === 'intro') {
-    corpo = '<div class="wz-titolo">' + (it ? 'Il questionario Sgorbions' : 'The Sgorbions questionnaire') + '</div>'
+    corpo = '<div class="wz-titolo">' + (it ? 'Il Questionario Sgorbions' : 'The Sgorbions questionnaire') + '</div>'
       + '<p class="wz-testo">' + (it
-        ? 'Col questionario Sgorbions puoi costruire in pochi minuti una tua lista personale degli articoli della collezione Sgorbions.<br>'
+        ? 'Col <strong style="color:#ffd84d;">Questionario Sgorbions</strong> puoi costruire in pochi minuti una tua lista personale degli articoli della collezione Sgorbions.<br>'
         + 'Quando lo avrai completato, la tua lista Sgorbions personale sarà completata.<br>'
         + 'Potrai così scalare la vetta della Classifica !'
-        : 'With the Sgorbions questionnaire you can build, in a few minutes, your own personal list of the items of the Sgorbions collection.<br>'
+        : 'With the <strong style="color:#ffd84d;">Sgorbions Questionnaire</strong> you can build, in a few minutes, your own personal list of the items of the Sgorbions collection.<br>'
         + 'When you have completed it, your personal Sgorbions list will be complete.<br>'
         + 'You can then climb to the top of the Leaderboard !') + '</p>'
       + '<div class="wz-mosaico">' + w.serie.map(s => '<div class="wz-mosaico-voce">' + _wzImg(s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(s)) + '</div></div>').join('') + '</div>'
