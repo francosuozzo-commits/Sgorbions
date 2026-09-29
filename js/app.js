@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.032 - Modificato js/app.js e css/style.css. Nelle conferme dell'azzeramento il pulsante rosso al
+//          centro dello schermo, sotto l'avviso (Franco); nel piede resta «Annulla».
 // v7.031 - Modificato js/app.js (e index per la versione). In «Cosa hai di questa serie?» le card senza il
 //          numero degli articoli (Franco: «a quel punto è presto per mostrarlo»).
 // v7.030 - Modificato js/app.js (e index per la versione). In «Cosa hai di questa serie?» la seconda frase
@@ -30545,7 +30547,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.031';
+const JS_VERSION = 'v7.032';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49126,10 +49128,11 @@ function _wzDisegna() {
               : 'Do you want to reset your list ? All <b>' + nfmtWz(n) + '</b> items you marked will be removed, and the questionnaire will start from scratch.')
         : (it ? '⚠️ Ultima conferma: l\'azzeramento non si può annullare. La tua lista resterà vuota e la tua posizione in Classifica ripartirà da zero.'
               : '⚠️ Last confirmation: this cannot be undone. Your list will be empty and your Leaderboard position will start from zero.')) + '</div>';
-    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">' + (it ? 'Annulla' : 'Cancel') + '</button>'
-      + (primo
+    // 🔄 v7.032 (Franco: «il pulsante dell'azzeramento lo metterei in centro allo schermo») - sotto l'avviso, centrato
+    corpo += '<div class="wz-azzera-centro">' + (primo
         ? '<button type="button" class="btn-primary wz-grande wz-rosso" onclick="_wzAzzera(\'azzera2\')">' + (it ? 'Sì, azzera' : 'Yes, reset') + '</button>'
-        : '<button type="button" id="wz-azzera-si" class="btn-primary wz-grande wz-rosso" onclick="_wzAzzeraDavvero()">' + (it ? 'Azzera definitivamente' : 'Reset permanently') + '</button>');
+        : '<button type="button" id="wz-azzera-si" class="btn-primary wz-grande wz-rosso" onclick="_wzAzzeraDavvero()">' + (it ? 'Azzera definitivamente' : 'Reset permanently') + '</button>') + '</div>';
+    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">' + (it ? 'Annulla' : 'Cancel') + '</button>';
   } else if (w.passo === 'finale') {
     corpo = '<div class="wz-titolo">🎉 ' + (it ? 'Fatto !' : 'Done !') + '</div>'
       + '<p class="wz-testo">' + (it
