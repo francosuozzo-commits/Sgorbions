@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.041 - Modificato js/app.js e css/style.css. Nella pagina della serie le frecce per la serie precedente
+//          e la successiva, con la miniatura della serie sopra, ai lati del titolo (Franco); desktop e telefono.
 // v7.040 - Modificato css/style.css (e index/app.js per la versione). Pagina della serie, desktop (Franco): il
 //          titolo al centro, e «Opzioni admin» spostato a destra fino al bordo del carosello.
 // v7.039 - Modificato css/style.css e index.html. Anche sul desktop via il vuoto in cima all'Inventario, alla
@@ -30568,7 +30570,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.040';
+const JS_VERSION = 'v7.041';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -47509,8 +47511,35 @@ function refreshSeriesMeta() {
   try { renderSeriesMeta(s); } catch(e) { console.error('renderSeriesMeta (refresh)', e); }
 }
 
+// 🆕 v7.041 (Franco) - LE FRECCE PER LA SERIE PRECEDENTE E LA SUCCESSIVA, ai lati del titolo. L'ordine è
+//    quello dell'Inventario, senza la serie contenitore; niente giro. Non nella pagina della tipologia.
+function _serieVicine() {
+  const cont = (typeof _serieSenzaSerie === 'function' && _serieSenzaSerie()) || null;
+  const tutte = _serieOrdinate(getData('series', []) || []).filter(s => !cont || s.id !== cont.id);
+  const i = tutte.findIndex(s => String(s.id) === String(currentSeriesId));
+  return i < 0 ? { prec: null, succ: null } : { prec: tutte[i - 1] || null, succ: tutte[i + 1] || null };
+}
+function _disegnaNavSerie() {
+  document.querySelectorAll('#series-detail .serie-nav-btn').forEach(b => b.remove());
+  const nome = document.getElementById('detail-name');
+  if (!nome || !nome.parentElement || _tipoProdottoCorrente) return;
+  const it = currentLang === 'it', { prec, succ } = _serieVicine();
+  const bott = (s, verso) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'serie-nav-btn serie-nav-' + verso;
+    b.title = (verso === 'prec' ? (it ? 'Serie precedente: ' : 'Previous series: ') : (it ? 'Serie successiva: ' : 'Next series: ')) + (s.name || '');
+    b.innerHTML = (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_96,h_96,c_fit,q_auto,f_auto') + '" alt="">' : '<span class="serie-nav-vuota">🎴</span>')
+      + '<span class="serie-nav-freccia">' + (verso === 'prec' ? '◀' : '▶') + '</span>';
+    b.onclick = () => { openSeriesDetail(s.id); try { window.scrollTo(0, 0); } catch (e) {} };
+    return b;
+  };
+  if (prec) nome.parentElement.insertBefore(bott(prec, 'prec'), nome.parentElement.firstChild);
+  if (succ) nome.parentElement.appendChild(bott(succ, 'succ'));
+}
 function openSeriesDetail(seriesId) {
   currentSeriesId = seriesId;
+  setTimeout(() => { try { _disegnaNavSerie(); } catch (e) { console.error('frecce delle serie', e); } }, 0);   // v7.041
   currentSection = null;
   // v6.144 - aprendo una serie si esce da qualunque box di tipo prodotto. L'azzeramento sta QUI e
   // non in chi va via: aprire una serie e' l'unico modo di arrivare a una griglia di oggetti, ed e'
