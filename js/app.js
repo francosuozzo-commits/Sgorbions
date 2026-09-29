@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.042 - Modificato js/app.js e css/style.css. Le frecce delle serie più staccate dal titolo e, sul
+//          desktop, con sotto «serie / precedente» e «prossima / serie» su due righe (Franco).
 // v7.041 - Modificato js/app.js e css/style.css. Nella pagina della serie le frecce per la serie precedente
 //          e la successiva, con la miniatura della serie sopra, ai lati del titolo (Franco); desktop e telefono.
 // v7.040 - Modificato css/style.css (e index/app.js per la versione). Pagina della serie, desktop (Franco): il
@@ -30570,7 +30572,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.041';
+const JS_VERSION = 'v7.042';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -47530,7 +47532,9 @@ function _disegnaNavSerie() {
     b.className = 'serie-nav-btn serie-nav-' + verso;
     b.title = (verso === 'prec' ? (it ? 'Serie precedente: ' : 'Previous series: ') : (it ? 'Serie successiva: ' : 'Next series: ')) + (s.name || '');
     b.innerHTML = (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_96,h_96,c_fit,q_auto,f_auto') + '" alt="">' : '<span class="serie-nav-vuota">🎴</span>')
-      + '<span class="serie-nav-freccia">' + (verso === 'prec' ? '◀' : '▶') + '</span>';
+      + '<span class="serie-nav-freccia">' + (verso === 'prec' ? '◀' : '▶') + '</span>'
+      // v7.042 (Franco) - sotto la freccia, su due righe; sul telefono il foglio la spegne
+      + '<span class="serie-nav-scritta">' + (verso === 'prec' ? (it ? 'serie<br>precedente' : 'previous<br>series') : (it ? 'prossima<br>serie' : 'next<br>series')) + '</span>';
     b.onclick = () => { openSeriesDetail(s.id); try { window.scrollTo(0, 0); } catch (e) {} };
     return b;
   };
