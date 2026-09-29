@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.015 - Modificato js/app.js, index.html e css/style.css. «LA MIA LISTA SGORBIONS» (Franco): sul
+//          telefono via la riga di menu del questionario, e «Mia lista» diventa «La mia lista Sgorbions»;
+//          la sua finestra ha titolo, introduzione, il titoletto «Questionario Sgorbions» col pulsante, e
+//          il titoletto «La mia lista Sgorbions» sopra la guida al selettore che c'era già.
 // v7.014 - Modificato js/app.js, index.html e css/style.css. 🧭 IL PERCORSO GUIDATO PER COSTRUIRE LA
 //          LISTA (Franco): un pulsante grande in home, nel profilo e nell'Inventario apre una procedura
 //          a schermate illustrate, serie per serie e tipologia per tipologia (tutte quelle che la serie ha)
@@ -30505,7 +30509,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.014';
+const JS_VERSION = 'v7.015';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32165,7 +32169,7 @@ const i18n = {
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message !',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
 'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.introNumeri':'On this site you will find...','hero.tagline':'Made with 💚 for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.spille':'Pins','catalog.attaccare':'Album stickers','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','catalog.backToSeries':'Series','form.series.firstNumber':'First sticker N.','form.series.lastNumber':'Last sticker N.','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
-'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','rc.title':'Reload the site bypassing the browser cache','nav.mialista':'My list',
+'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','rc.title':'Reload the site bypassing the browser cache','nav.mialista':'My Sgorbions list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
 'hero.challenge':'Challenge others','hero.challengeDesc':'Who has the highest-scoring list? You can also choose to appear anonymously.',
@@ -32274,7 +32278,7 @@ const i18n = {
 
 
 
-'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','rc.title':'Ricarica il sito saltando la cache del browser','nav.mialista':'Mia lista',
+'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','rc.title':'Ricarica il sito saltando la cache del browser','nav.mialista':'La mia lista Sgorbions',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista con maggior punteggio? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'L\'Inventario non ufficiale della leggendaria serie anni \'90.','hero.descShort':'L\'Inventario non ufficiale della leggendaria serie anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Le figurine','hero.cta2':'Inizia a collezionare gli Sgorbions !',
@@ -35358,7 +35362,7 @@ function updateNavUser() {
     guestNav.style.display = 'none';
     userNav.style.display = 'flex';
     if (wantlistLink) wantlistLink.style.display = '';
-    ['nav-catalog','nav-blog','nav-classifica','nav-mialista-link','nav-questionario-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+    ['nav-catalog','nav-blog','nav-classifica','nav-mialista-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
     const navBlogEl = document.getElementById('nav-blog');
     // 🔄 v6.834 - admin e visitatori leggono la stessa voce: «Blog / D&R» è diventato «Blog» per tutti.
     if (navBlogEl) navBlogEl.textContent = t('nav.blog');
@@ -35414,7 +35418,7 @@ function updateNavUser() {
     if (bellBtn2) bellBtn2.style.display = 'none';
     const quotaBtn2 = document.getElementById('nav-quota-warning-btn');
     if (quotaBtn2) quotaBtn2.style.display = 'none';
-    ['nav-catalog','nav-blog','nav-classifica','nav-wishlist','nav-mialista-link','nav-questionario-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    ['nav-catalog','nav-blog','nav-classifica','nav-wishlist','nav-mialista-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     // 🔴 v6.913 — QUI C'ERA `mostraNumeroniHero(false)`, ed è la riga che questa release toglie:
     //    era l'unico motivo per cui un ospite non vedeva i dodici numeri. Non è stata sostituita
     //    da un `true` — la decisione sta fuori dall'`if`, dove non dipende più da chi guarda.
