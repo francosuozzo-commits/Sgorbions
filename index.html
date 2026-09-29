@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.015">
+<link rel="stylesheet" href="css/style.css?v=7.016">
 
 
 <style>
@@ -5146,7 +5146,7 @@ di tutte le serie</button>
       <!-- 🔄 v7.015 (Franco) - «LA MIA LISTA SGORBIONS»: titolo, introduzione, il questionario, e sotto il
            titoletto della lista la guida al selettore che c'era già (il titolo di prima era «Come
            funziona il selettore Mia lista»). -->
-      <h2 class="modal-title">La mia lista Sgorbions</h2>
+      <h2 class="modal-title" style="color:var(--accent3);">La mia lista Sgorbions</h2>
       <button class="modal-close" onclick="closeModal('demo-toggle-modal')">✕</button>
     </div>
     <p class="ml-intro">«La mia lista Sgorbions» è il modo con cui puoi costruire una tua lista personale della collezione Sgorbions.</p>
@@ -5757,7 +5757,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.015"></script>
+<script src="js/app.js?v=7.016"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5781,7 +5781,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.015'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.016'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
