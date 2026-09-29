@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.044 - Modificato css/style.css (e index/app.js per la versione). Sul telefono la testata della serie a
+//          tre colonne (← | nome, (anno), sottonome | →): nessuna freccia va più a capo (Franco).
 // v7.043 - Modificato js/app.js e css/style.css. Le frecce delle serie: ← → invece dei triangoli, la freccia
 //          sotto la scritta, e sul telefono più staccata dalla foto (Franco).
 // v7.042 - Modificato js/app.js e css/style.css. Le frecce delle serie più staccate dal titolo e, sul
@@ -30574,7 +30576,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.043';
+const JS_VERSION = 'v7.044';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
