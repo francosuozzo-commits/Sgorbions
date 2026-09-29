@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.037 - Modificato js/app.js (e index per la versione). Le scritte sotto le card del livello con le
+//          parole di Franco.
 // v7.036 - Modificato js/app.js (e index per la versione). Sotto «Che collezionista sei ?» la frase di
 //          Franco: «Indica il livello che corrisponde di più a te: il questionario farà le domande più adatte a te.»
 // v7.035 - Modificato js/app.js e css/style.css. Nel questionario il titolo viola solo nella prima
@@ -30557,7 +30559,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.036';
+const JS_VERSION = 'v7.037';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49179,9 +49181,9 @@ function _wzDisegna(tieni) {
     corpo = '<div class="wz-titolo">' + (it ? 'Che collezionista sei ?' : 'What kind of collector are you ?') + '</div>'
       + '<p class="wz-testo">' + (it ? 'Indica il livello che corrisponde di più a te: il questionario farà le domande più adatte a te.' : 'Choose the level that fits you best: the questionnaire will ask the questions best suited to you.') + '</p>'
       + '<div class="wz-scelte">'
-      + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'segni gli articoli base: figurine, album e gli altri articoli' : 'you mark the base items')
-      + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'in più segni le variazioni ufficiali' : 'you also mark the official variations')
-      + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'segni tutto: anche variazioni non ufficiali, change, omaggi ed errori di stampa' : 'you mark everything: unofficial variations, change, free versions and print errors too')
+      + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'solo articoli base' : 'base items only')
+      + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'aggiungi le variazioni ufficiali' : 'add the official variations')
+      + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'aggiungi variazioni non ufficiali e altre carte speciali' : 'add unofficial variations and other special cards')
       + '</div>';
     piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">◀ ' + (it ? 'Indietro' : 'Back') + '</button>'
       + (w.livello ? avanti('_wzConfermaLivello()') : '');
