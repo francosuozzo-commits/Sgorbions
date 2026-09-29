@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.024 - Modificato js/app.js (e index per la versione). Il testo nuovo della prima schermata del
+//          questionario (Franco), e «Classifica» è un link che la apre in un'altra scheda (`#classifica`).
 // v7.023 - Modificato js/app.js (e index per la versione). Nella prima schermata del questionario
 //          «Questionario Sgorbions» in giallo #ffd84d, grassetto e con la Q maiuscola; Q maiuscola anche nel titolo.
 // v7.022 - Modificato css/style.css (e index/app.js per la versione). I titoli del questionario in viola,
@@ -30528,7 +30530,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.023';
+const JS_VERSION = 'v7.024';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49089,11 +49091,9 @@ function _wzDisegna() {
     corpo = '<div class="wz-titolo">' + (it ? 'Il Questionario Sgorbions' : 'The Sgorbions questionnaire') + '</div>'
       + '<p class="wz-testo">' + (it
         ? 'Col <strong style="color:#ffd84d;">Questionario Sgorbions</strong> puoi costruire in pochi minuti una tua lista personale degli articoli della collezione Sgorbions.<br>'
-        + 'Quando lo avrai completato, la tua lista Sgorbions personale sarà completata.<br>'
-        + 'Potrai così scalare la vetta della Classifica !'
+        + 'Completalo e scala la vetta della <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Classifica</a> !'
         : 'With the <strong style="color:#ffd84d;">Sgorbions Questionnaire</strong> you can build, in a few minutes, your own personal list of the items of the Sgorbions collection.<br>'
-        + 'When you have completed it, your personal Sgorbions list will be complete.<br>'
-        + 'You can then climb to the top of the Leaderboard !') + '</p>'
+        + 'Complete it and climb to the top of the <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Leaderboard</a> !') + '</p>'
       + '<div class="wz-mosaico">' + w.serie.map(s => '<div class="wz-mosaico-voce">' + _wzImg(s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(s)) + '</div></div>').join('') + '</div>'
       + '<p class="wz-nota">' + (it
         ? '📌 Puoi rifare il questionario quando vuoi: trovi già le risposte di quello che hai nella tua lista, e se le cambi la lista si aggiorna. Si segna il set base di ogni tipologia: change, variazioni, omaggi ed errori di stampa li segni dalle pagine delle serie.'
