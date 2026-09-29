@@ -2681,7 +2681,8 @@ footer {
   background: var(--card); border: 1px solid var(--border2); border-radius: 8px; padding: 3px 4px; cursor: pointer; color: var(--text); line-height: 1; }
 .serie-nav-btn:hover { border-color: var(--accent); }
 .serie-nav-btn img, .serie-nav-btn .serie-nav-vuota { width: 30px; height: 30px; object-fit: contain; display: block; font-size: 1rem; text-align: center; }
-.serie-nav-btn .serie-nav-freccia { font-size: 0.8rem; }
+.serie-nav-btn .serie-nav-freccia { font-size: 1.05rem; font-weight: 700; }   /* v7.043: ← →, un po' più grandi dei triangoli */
+@media (max-width: 860px) { .serie-nav-btn .serie-nav-freccia { margin-top: 5px; } }   /* v7.043: più staccata dalla foto */
 @media (max-width: 860px) { .serie-nav-btn img, .serie-nav-btn .serie-nav-vuota { width: 24px; height: 24px; } }
 /* v7.042 (Franco: «un po' più a dx e sx, rispettivamente»; «le due parole su due righe e centrate»;
    «su mobile niente scritte») */
