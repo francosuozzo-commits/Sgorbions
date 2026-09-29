@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.019">
+<link rel="stylesheet" href="css/style.css?v=7.020">
 
 
 <style>
@@ -2074,24 +2074,21 @@ button.back-btn { color:#ffffff; }
         <!-- 🔄 v7.019 - qui stava il pulsante del questionario (v7.014): Franco l'ha voluto come box della
              griglia qui sotto («un'altra sezione come quelle, graficamente»). -->
       </div>
-      <!-- 🔄 v7.019 - sei box: sul desktop tre colonne (erano cinque, e il sesto sarebbe rimasto solo) -->
-      <div id="home-how-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;font-size:1.15em;" class="reveal">
+      <!-- 🔄 v7.020 - di nuovo cinque box, e cinque colonne (la v7.019 ne aveva sei, su tre colonne) -->
+      <div id="home-how-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;font-size:1.15em;" class="reveal">
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('catalog')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">📖</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.1.title">Browse the Inventory</h3>
           <p style="font-size:0.88rem;" data-i18n="how.1.desc">Explore all Sgorbions series and figurines, complete with photos and descriptions.</p>
         </div>
-        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="openDemoToggleModal()" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
-          <div style="font-size:2.875rem;margin-bottom:1rem;">✅</div>
-          <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.2.title">Build Your List</h3>
-          <p style="font-size:0.88rem;" data-i18n="how.2.desc">Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.</p>
-        </div>
+        <!-- 🗑️ v7.020 - qui stava «Costruisci la Tua Lista» (apriva la guida al selettore): Franco, «abbiamo due
+             box relativi alla stessa cosa» - resta quello del questionario, qui sotto. -->
         <!-- 🆕 v7.019 (Franco) - il questionario, come box: «il nome della sezione può essere "crea la tua lista
              col questionario sgorbions"». La descrizione l'ho scritta io. -->
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="apriWizardLista()" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">✨</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.q.title">Crea la tua lista col Questionario Sgorbions</h3>
-          <p style="font-size:0.88rem;" data-i18n="how.q.desc">Rispondi a poche domande, serie per serie: la tua lista Sgorbions è pronta in un batter d'occhio.</p>
+          <p style="font-size:0.88rem;" data-i18n="how.q.desc">Rispondi a poche domande, serie per serie: la tua lista Sgorbions è pronta in un batter d'occhio. Oppure aggiungi manualmente gli articoli Sgorbions alla tua lista.</p>
         </div>
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('contact')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">🤝</div>
@@ -5764,7 +5761,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.019"></script>
+<script src="js/app.js?v=7.020"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5788,7 +5785,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.019'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.020'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
