@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.027 - Modificato js/app.js (e index per la versione). Nella nota del questionario «Ogni volta riparte
+//          dalla prima serie.» (Franco): le risposte si ritrovano, la posizione no.
 // v7.026 - Modificato js/app.js (e index per la versione). Prima schermata del questionario (Franco): «Ecco
 //          le serie coinvolte nel questionario.» prima delle foto, e la nota con la puntina nuova.
 // v7.025 - Modificato css/style.css (e index/app.js per la versione). Sul telefono la Classifica senza il
@@ -30535,7 +30537,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.026';
+const JS_VERSION = 'v7.027';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49102,8 +49104,8 @@ function _wzDisegna() {
       + '<p class="wz-testo">' + (it ? 'Ecco le serie coinvolte nel questionario.' : 'Here are the series included in the questionnaire.') + '</p>'   // v7.026 (Franco)
       + '<div class="wz-mosaico">' + w.serie.map(s => '<div class="wz-mosaico-voce">' + _wzImg(s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(s)) + '</div></div>').join('') + '</div>'
       + '<p class="wz-nota">' + (it
-        ? '📌 Puoi rifare il questionario quante volte vuoi.<br>Ogni volta riparte da dove lo hai lasciato.<br>Se vuoi, puoi anche resettarlo e cominciare da capo.'
-        : '📌 You can take the questionnaire as many times as you like.<br>Each time it starts again from where you left it.<br>If you like, you can also reset it and start over.') + '</p>';
+        ? '📌 Puoi rifare il questionario quante volte vuoi.<br>Ogni volta riparte dalla prima serie.<br>Se vuoi, puoi anche resettarlo e cominciare da capo.'
+        : '📌 You can take the questionnaire as many times as you like.<br>Each time it starts again from the first series.<br>If you like, you can also reset it and start over.') + '</p>';
     const nMie = getOwned().length;
     if (nMie || _wzFatto) corpo += '<div style="text-align:center;margin-top:1.2rem;"><button type="button" class="btn-secondary wz-azzera" onclick="_wzAzzera(\'azzera1\')">🗑️ '
       + (it ? 'Azzera la mia lista e ricomincia il questionario' : 'Reset my list and restart the questionnaire') + '</button></div>';
