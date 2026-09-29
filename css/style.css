@@ -1780,13 +1780,12 @@ footer {
   .nav-links #nav-search-link    { order: 3; }
   .nav-links #nav-blog           { order: 4; }
   .nav-links #nav-mialista-link  { order: 5; }
-  .nav-links #nav-questionario-link { order: 6; }   /* v7.014 - subito dopo «Mia lista» */
-  .nav-links #nav-wishlist       { order: 7; }
-  .nav-links #nav-wantlist       { order: 8; }
-  .nav-links #nav-classifica     { order: 9; }
-  .nav-links #nav-newsletter-btn { order: 10; }
-  .nav-links a[data-page="contact"] { order: 11; }
-  .nav-links #nav-logout-link    { order: 12; }
+  .nav-links #nav-wishlist       { order: 6; }
+  .nav-links #nav-wantlist       { order: 7; }
+  .nav-links #nav-classifica     { order: 8; }
+  .nav-links #nav-newsletter-btn { order: 9; }
+  .nav-links a[data-page="contact"] { order: 10; }
+  .nav-links #nav-logout-link    { order: 11; }
 
   #navbar .nav-logo img { height: 30px; }
 }
@@ -2693,6 +2692,9 @@ footer {
 /* 🆕 v7.014 - IL PERCORSO GUIDATO PER COSTRUIRE LA LISTA (Franco: «non ti dimenticare l'aspetto grafico:
    per ogni schermata ci devono essere delle foto»). Una finestra a tutto schermo, il piede coi comandi
    fisso in basso (sul telefono sta sotto il pollice), foto grandi dove si sceglie. */
+/* 🆕 v7.015 - la finestra «La mia lista Sgorbions»: l'introduzione e i due titoletti */
+.ml-intro { font-size: 0.95rem; color: var(--text); margin: 0 0 0.45rem; line-height: 1.45; }
+.ml-titoletto { font-family: var(--font-ui); font-weight: 800; font-size: 1.05rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; margin: 1.3rem 0 0.7rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border2); }
 .wz-pulsante { font-size: 1.12rem; padding: 0.9rem 1.8rem; border-radius: 999px; box-shadow: 0 6px 22px rgba(37,99,235,0.35); }
 .wz-overlay { position: fixed; inset: 0; z-index: 3000; background: rgba(8,5,18,0.96); overflow-y: auto; }
 .wz-pannello { max-width: 980px; margin: 0 auto; padding: 1.2rem 1rem 7rem; }
