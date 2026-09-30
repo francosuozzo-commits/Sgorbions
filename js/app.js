@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.062 - Modificato index.html (app.js per la versione). «Salta questa serie» sotto la foto piccolo come «Esci dal
+// v7.063 - Modificato js/app.js e index.html. Sul telefono «Salta questa serie» diventa «Salta serie» (Franco).
+//          In «Quali album hai?» meno vuoto sopra e sotto la foto dell'album (`.wz-scelte-album`, regola nell'index).
+// v7.062 -Modificato index.html (app.js per la versione). «Salta questa serie» sotto la foto piccolo come «Esci dal
 //          questionario» in cima (Franco: «è fin troppo grande»).
 // v7.061 -Modificato js/app.js e index.html. Questionario (Franco): le frasi finiscono col punto (sottotitoli dei
 //          livelli, «Clicca sul quadrante…», «I quadranti già accesi…», il riepilogo della serie); «Esci dal
@@ -30647,7 +30649,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.062';
+const JS_VERSION = 'v7.063';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49397,7 +49399,7 @@ function _wzDisegna(tieni) {
         // 🆕 v7.054 (Franco: «nel mobile, il tasto che permette di saltare la serie deve esserci anche sotto la foto
         //    della serie») - un secondo «Salta questa serie», uguale a quello del piede; `.wz-salta-foto` si vede
         //    solo sotto gli 861px (regola nell'index).
-        + '<div class="wz-salta-foto"><button type="button" class="btn-secondary wz-scritta-rossa" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta questa serie' : 'Skip this series') + '</button></div>'
+        + '<div class="wz-salta-foto"><button type="button" class="btn-secondary wz-scritta-rossa" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta serie' : 'Skip series') + '</button></div>'
         + '<div class="wz-domanda wz-rosa">' + (it ? 'Cosa hai di questa serie?' : 'What do you have from this series?') + '</div>'
         + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che mostra i tuoi articoli.' : 'Click on the tiles showing the items you have.') + '</p>'
         + (gia ? '<p class="wz-testo">' + (it
@@ -49417,7 +49419,7 @@ function _wzDisegna(tieni) {
           }).join('') + '</div>';
       // 🔄 v7.052 (Franco) - «Salta questa serie» al centro (`wz-centro`), e via il conto delle accese: «non serve
       //    se ora abbiamo la conferma prima di procedere»
-      piede = indietro + '<button type="button" class="btn-secondary wz-centro wz-scritta-rossa" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta questa serie' : 'Skip this series') + '</button>'
+      piede = indietro + '<button type="button" class="btn-secondary wz-centro wz-scritta-rossa" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta <span class="wz-solo-desktop">questa </span>serie' : 'Skip <span class="wz-solo-desktop">this </span>series') + '</button>'
         + avanti('_wzRiepilogoTda(true)');   // v7.052: prima il riepilogo
       // 🆕 v7.052 (Franco: «quando premo Avanti, mostra un popup che riepiloga cosa è stato selezionato e ne
       //    chiede conferma») - la finestrella sopra la schermata, nell'ordine delle card. Le parole sono mie.
@@ -49439,7 +49441,7 @@ function _wzDisegna(tieni) {
       const alb = _wzArticoli(s.id, 'albums'), figs = getData('figurines', []);
       corpo += '<div class="wz-domanda">' + _wzImg(_wzFotoSez('albums', s.id), 120, 120, 'wz-icona-sez') + (it ? 'Quali album hai?' : 'Which albums do you have?') + '</div>'
         + '<p class="wz-testo">' + (it ? 'Tocca quelli che hai. Se non ne hai, vai avanti.<br>Se non sai quale selezionare, scegli il primo.' : 'Tap the ones you have.<br>If you do not know which one to select, choose the first one.')   // v7.058: la frase di Franco + '</p>'
-        + '<div class="wz-scelte">' + alb.map(f =>
+        + '<div class="wz-scelte wz-scelte-album">' + alb.map(f =>
             '<button type="button" class="wz-carta' + (w.scelte.albums.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'albums\',\'' + f.id + '\',this)">'
             + _wzImg(_fotoFigurina(f, figs) || f.img, 400, 400, '') + '<div class="wz-carta-titolo">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
       piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + w.scelte.albums.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(w.scelte.albums.size) + '</span></span>'
