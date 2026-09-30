@@ -1,9 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.059 - Modificato js/app.js (e index per la versione). Nel questionario le Figurine album hanno quattro carte in
+//          una schermata (Franco): Tutte, Nessuna, Poche («Indica quali»), Molte («Indica quali mancano»); la
+//          schermata «ne ho di meno / me ne mancano di meno» per loro non c'è più (`_wzQuattro`, `_wzModo4`).
 // v7.058 - Modificato js/app.js e index.html. Questionario (Franco): «Esci dal questionario» rosso (`btn-danger`),
 //          «Conferma 👍» del riepilogo verde e col pollice al posto della freccia; in «Quali album hai?» la frase
-//          «Se non sai quale selezionare, scegli il primo.»
+//          «Se non sai quale selezionare, scegli il primo.» Nel questionario le Figurine per album si chiamano
+//          «Figurine album» (`_wzEtichetta`); il conto in basso dice «1 selezionato» / «N selezionati».
 // v7.057 -Modificato js/app.js e index.html. Nel questionario, sul telefono, la foto della serie più piccola del
 //          40% (Franco): 180px al posto di 300, regola nell'index. E la frase sui grigi, di Franco: «I quadranti
 //          grigi si attivano da soli all'occorrenza.»
@@ -30634,7 +30638,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.058';
+const JS_VERSION = 'v7.059';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49162,6 +49166,7 @@ function _wzIndietro() {
   const p = w.passi[w.k];
   if (w.scelte[p] && _wzAScelta(p)) {
     const c = w.scelte[p];
+    if (c.verso && _wzQuattro(p)) { _wzRiapri(c); _wzDisegna(); return; }   // v7.059: la scelta del verso è nella prima schermata
     if (c.verso) { c.pVerso = c.verso; c.verso = null; _wzDisegna(); return; }
     if (c.modo) { c.pModo = c.modo; c.modo = null; _wzDisegna(); return; }
   }
@@ -49174,6 +49179,16 @@ function _wzModo(sez, modo) {
   const c = _wz.scelte[sez];
   c.modo = modo; c.verso = null;
   if (modo === 'alcune') _wzDisegna(); else _wzAvanti();
+}
+// 🆕 v7.059 (Franco: «nella pagina delle figurine per album: opzione 1 tutte, 2 nessuna, 3 poche, 4 molte»; «poche:
+//    indica quali»; «molte: indica quali mancano») - QUATTRO CARTE IN UNA SCHERMATA, solo per le Figurine album (anche
+//    nelle loro versioni). «Poche» e «Molte» sono le vecchie «Alcune» + «ne ho di meno / me ne mancano di meno»: il verso
+//    si sceglie qui e la seconda schermata non c'è. Il resto (griglia, proposta, Indietro) è quello di sempre.
+function _wzQuattro(p) { return String(p).split('|')[0] === 'attaccare'; }
+function _wzScelta4(c) { return c.pModo === 'alcune' ? (c.pVerso === 'manca' ? 'molte' : 'poche') : c.pModo; }
+function _wzModo4(sez, scelta) {
+  if (scelta === 'poche' || scelta === 'molte') { _wz.scelte[sez].modo = 'alcune'; _wzVerso(sez, scelta === 'poche' ? 'ho' : 'manca'); }
+  else _wzModo(sez, scelta);
 }
 function _wzVerso(sez, verso) {
   const w = _wz, c = w.scelte[sez];
@@ -49423,7 +49438,24 @@ function _wzDisegna(tieni) {
     } else if (w.scelte[p] && _wzAScelta(p)) {
       const c = w.scelte[p], tutti = _wzArticoli(s.id, p), nome = esc(_wzNome(p)), ver = String(p).includes('|');
       const intest = '<div class="wz-domanda">' + _wzImg(_wzFotoSez(p, s.id), 120, 120, 'wz-icona-sez') + nome + '</div>';
-      if (!c.modo) {
+      if (!c.modo && _wzQuattro(p)) {
+        // 🆕 v7.059 - le quattro carte delle Figurine album (vedi `_wzModo4`)
+        const prop = _wzScelta4(c);
+        const carta4 = (sc, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (prop === sc ? ' on' : '') + '" onclick="_wzModo4(\'' + p + '\',\'' + sc + '\')">'
+          + (prop === sc ? giaTua : '')
+          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
+        corpo += intest + '<div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div>'
+          + '<p class="wz-testo">' + (it
+              ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
+              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>'
+          + '<div class="wz-scelte">'
+          + carta4('tutte', '🏆', it ? 'Tutte' : 'All', ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
+          + carta4('nessuna', '➖', it ? 'Nessuna' : 'None', it ? 'si passa oltre' : 'skip')
+          + carta4('poche', '🤏', it ? 'Poche' : 'A few', it ? 'Indica quali' : 'Tell us which')
+          + carta4('molte', '📚', it ? 'Molte' : 'Many', it ? 'Indica quali mancano' : 'Tell us which are missing')
+          + '</div>';
+        piede = indietro + avanti("_wzModo4('" + p + "','" + prop + "')");
+      } else if (!c.modo) {
         // la carta proposta (quello che dice la lista, o la risposta data prima) è accesa; «Avanti» la conferma
         const carta = (modo, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (c.pModo === modo ? ' on' : '') + '" onclick="_wzModo(\'' + p + '\',\'' + modo + '\')">'
           + (c.pModo === modo ? giaTua : '')
