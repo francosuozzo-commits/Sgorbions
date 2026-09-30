@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.051">
+<link rel="stylesheet" href="css/style.css?v=7.052">
 
 
 <style>
@@ -1074,10 +1074,17 @@ button.back-btn { color:#ffffff; }
    🔄 v6.783 - prima si chiamava "Articoli non base", e il nome vecchio resta scritto qui una
    volta sola, dichiarato come vecchio: chi cerca la vecchia parola la trova e capisce subito che
    non e' piu' quella. */
+/* 🔄 v7.052 (Franco: «i titoletti delle sezioni (Figurine con retro, Retro, Album, ecc) falli in giallo») -
+   `--warn`, il giallo che in questa stessa finestra hanno già «Tipologie di articoli della serie» e «Servono
+   per la serie completa». La classe intesta solo tipologie: anche «Figurine per album» nel tab Generale. */
 #add-series-modal .series-sottotitolo {
-  font-size:0.95rem; color:var(--text); font-weight:700;
+  font-size:0.95rem; color:var(--warn); font-weight:700;
   margin:1.1rem 0 0.5rem; padding-bottom:0.25rem; border-bottom:1px solid var(--border);
 }
+/* 🆕 v7.052 - le sezioni richiudibili del tab «Versioni non base»: il titoletto si tocca, il triangolino
+   del browser dice se è aperta; aperta, il titoletto si stacca da quello che c'è sotto */
+#add-series-modal summary.series-sottotitolo { cursor:pointer; user-select:none; }
+#add-series-modal details.series-sezione:not([open]) > summary.series-sottotitolo { margin-bottom:0; }
 #add-series-modal .series-flag-riga { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; }
 #add-series-modal .series-conteggio { display:flex; align-items:center; gap:0.4rem; margin:0 0 0 auto; }
 
@@ -2086,7 +2093,8 @@ button.back-btn { color:#ffffff; }
              box relativi alla stessa cosa» - resta quello del questionario, qui sotto. -->
         <!-- 🆕 v7.019 (Franco) - il questionario, come box: «il nome della sezione può essere "crea la tua lista
              col questionario sgorbions"». La descrizione l'ho scritta io. -->
-        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="apriWizardLista()" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
+        <!-- v7.052: `solo-wz`, il questionario lo vede solo l'admin finché non è finito -->
+        <div class="solo-wz" style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="apriWizardLista()" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">📝</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.q.title">Crea la tua lista col Questionario Sgorbions</h3>
           <p style="font-size:0.88rem;" data-i18n="how.q.desc">Rispondi a poche domande, serie per serie: la tua lista Sgorbions sarà pronta in un batter d'occhio.</p>
@@ -2157,7 +2165,7 @@ button.back-btn { color:#ffffff; }
           <p id="catalog-sub" style="color:var(--text);font-size:0.9rem;" data-i18n="catalog.sub">All Sgorbions series published</p>
           <!-- 🆕 v7.014 - il percorso guidato anche dall'Inventario; lo accende `renderCatalog` solo a chi
                ha fatto l'accesso -->
-          <div id="wz-pulsante-inv" style="display:none;margin-top:0.6rem;"><button type="button" class="btn-primary wz-pulsante" onclick="apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
+          <div id="wz-pulsante-inv" class="solo-wz" style="display:none;margin-top:0.6rem;"><button type="button" class="btn-primary wz-pulsante" onclick="apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
         </div>
         <div id="admin-add-series-btn" style="display:none;justify-self:end;">
           <button class="btn-primary btn-admin" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
@@ -3143,7 +3151,7 @@ di tutte le serie</button>
   <section class="section">
     <div class="section-inner">
       <!-- 🆕 v7.014 - il percorso guidato anche dal profilo, sopra la tua lista -->
-      <div style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary wz-pulsante" onclick="apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
+      <div class="solo-wz" style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary wz-pulsante" onclick="apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
       <div id="profile-content">
 <!-- 🔄 v6.685 (Franco: «il tasto "Torna a home" non e' bianco come gli altri tasti di navigazione pagine») — DA `--muted` A BIANCO.
            🔴 `--muted` e' il colore delle NOTE, di cio' che si puo' non leggere: su un COMANDO dice «questo conta meno». Gli altri tasti indietro sono bianchi per la regola `button.back-btn` in cima a questo file; questo quella classe non ce l'ha.
@@ -4640,7 +4648,13 @@ di tutte le serie</button>
            togliere una bugia: accorciarle è una sua decisione, non una pulizia da fare di
            passaggio. Sta nella TODO. -->
 
-      <div class="series-sottotitolo" style="margin-top:0;">Figurine con retro</div>
+      <!-- 🆕 v7.052 (Franco: «quella sezione sta diventando molto lunga. Possiamo mettere le spunte per
+           collassare quelle sezioni? forse addirittura conviene che partano sempre chiuse») - OGNI TIPOLOGIA
+           È UN `<details>`, il titoletto il suo `<summary>`. 🔴 CHIUSO NASCONDE, NON TOGLIE: le caselle restano
+           nel DOM e `saveSeries` le legge tutte come prima (la regola della v6.217 sui tab). Le chiude
+           `openAddSeriesModal` a ogni apertura; quelle generate nascono chiuse. -->
+      <details class="series-sezione">
+      <summary class="series-sottotitolo" style="margin-top:0;">Figurine con retro</summary>
       <div class="form-hint" style="margin-bottom:0.35rem;">Le versioni che questa serie ha sulle figurine con retro, e i tipi che le loro tendine offrono.</div>
       <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <div class="series-flag-riga">
@@ -4757,10 +4771,12 @@ di tutte le serie</button>
       <div class="form-group" style="margin-top:0.6rem;">
         <label class="form-label" data-lista-versione="printError"></label>
         <textarea class="form-input" id="series-front-print-error-types-input" rows="5" style="resize:vertical;font-family:inherit;"></textarea>
-        
-      </div>
 
-      <div class="series-sottotitolo" style="margin-top:1.1rem;">Retro</div>
+      </div>
+      </details><!-- v7.052: chiude Figurine con retro -->
+
+      <details class="series-sezione">
+      <summary class="series-sottotitolo" style="margin-top:1.1rem;">Retro</summary>
       <div class="form-hint" style="margin-bottom:0.35rem;">Le versioni che questa serie ha sui retro, e i tipi che le loro tendine offrono.</div>
       <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <div class="series-flag-riga">
@@ -4817,8 +4833,9 @@ di tutte le serie</button>
       <div class="form-group" style="margin-top:0.6rem;">
         <label class="form-label" data-lista-versione="printError"></label>
         <textarea class="form-input" id="series-retro-print-error-types-input" rows="5" style="resize:vertical;font-family:inherit;"></textarea>
-        
+
       </div>
+      </details><!-- v7.052: chiude Retro -->
 
       <!-- 🆕 v6.784 (Franco: «ci servono quantomeno per le bustine e per gli album») - I
            BLOCCHI PER TIPOLOGIA, e qui c'e' soltanto il CONTENITORE.
@@ -5161,10 +5178,11 @@ di tutte le serie</button>
       <button class="modal-close" onclick="closeModal('demo-toggle-modal')">✕</button>
     </div>
     <p class="ml-intro">«La mia lista Sgorbions» è il modo con cui puoi costruire una tua lista personale della collezione Sgorbions.</p>
-    <p class="ml-intro">Puoi costruire questa lista in un batter d'occhio con il <strong style="color:#ffd84d;">Questionario Sgorbions</strong>.</p>
-    <p class="ml-intro">Oppure spuntando a mano il flag <strong style="color:#ffd84d;">Mia lista</strong> sugli articoli.</p>
-    <h3 class="ml-titoletto">Il questionario Sgorbions</h3>
-    <div style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary wz-pulsante" onclick="closeModal('demo-toggle-modal');apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
+    <!-- v7.052: le quattro righe del questionario solo per l'admin («Oppure…» senza la riga prima non regge) -->
+    <p class="ml-intro solo-wz">Puoi costruire questa lista in un batter d'occhio con il <strong style="color:#ffd84d;">Questionario Sgorbions</strong>.</p>
+    <p class="ml-intro solo-wz">Oppure spuntando a mano il flag <strong style="color:#ffd84d;">Mia lista</strong> sugli articoli.</p>
+    <h3 class="ml-titoletto solo-wz">Il questionario Sgorbions</h3>
+    <div class="solo-wz" style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary wz-pulsante" onclick="closeModal('demo-toggle-modal');apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
     <h3 class="ml-titoletto">La mia lista Sgorbions</h3>
     <p class="ml-domanda">Come funziona «La mia lista Sgorbions» ?</p>
     <p style="font-size:0.88rem;color:var(--text);margin-bottom:0.75rem;">Tocca il selettore <em>Mia lista</em> per aggiungere una figurina alla tua lista personale.<br>Il colore cambierà per indicarti che è nella lista !</p>
@@ -5769,7 +5787,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.051"></script>
+<script src="js/app.js?v=7.052"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5793,7 +5811,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.051'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.052'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
