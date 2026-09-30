@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.056 - Modificato js/app.js (e index per la versione). La frase sotto il titolo del questionario, di Franco:
+//          «Col Questionario Sgorbions costruisci in pochi minuti una tua lista degli articoli della collezione.»
+//          E il sottotitolo di Collezionista comincia con «Aggiungiamo» (Franco), come quello di Esperto.
 // v7.055 - Modificato js/app.js (e index per la versione e lo stile). Dal questionario si esce da ogni schermata,
 //          non solo dalla prima (Franco): «✕ Esci dal questionario» in cima, con la stessa conferma.
 // v7.054 -Modificato js/app.js, index.html e css/style.css (tutte le domande del questionario in giallo, Franco). Sul telefono il box «Crea la tua lista col Questionario Sgorbions»
@@ -30625,7 +30628,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.055';
+const JS_VERSION = 'v7.056';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49285,9 +49288,9 @@ function _wzDisegna(tieni) {
   if (w.passo === 'intro') {
     corpo = '<div class="wz-titolo wz-titolo-intro">' + (it ? 'Il Questionario Sgorbions' : 'The Sgorbions questionnaire') + '</div>'
       + '<p class="wz-testo">' + (it
-        ? '<span class="wz-riga-sola">Col <strong style="color:#ffd84d;">Questionario Sgorbions</strong> puoi costruire in pochi minuti una tua lista personale degli articoli della collezione Sgorbions.</span><br><br>'   // v7.025: la riga vuota voluta da Franco
+        ? '<span class="wz-riga-sola">Col <strong style="color:#ffd84d;">Questionario Sgorbions</strong> costruisci in pochi minuti una tua lista degli articoli della collezione.</span><br><br>'   // v7.025: la riga vuota voluta da Franco; v7.056: la frase riscritta da Franco
         + 'Completalo e scala la vetta della <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Classifica</a> !'
-        : 'With the <strong style="color:#ffd84d;">Sgorbions Questionnaire</strong> you can build, in a few minutes, your own personal list of the items of the Sgorbions collection.<br><br>'
+        : 'With the <strong style="color:#ffd84d;">Sgorbions Questionnaire</strong> you build, in a few minutes, your own list of the items of the collection.<br><br>'
         + 'Complete it and climb to the top of the <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Leaderboard</a> !') + '</p>'
       + '<p class="wz-testo wz-prima-serie">' + (it ? 'Ecco le serie coinvolte nel questionario.' : 'Here are the series included in the questionnaire.') + '</p>'   // v7.026 (Franco)
       // 🔄 v7.050 (Franco: «il numero di serie diviso 2, su ogni riga») - le colonne le dice `--wz-col`
@@ -49319,7 +49322,7 @@ function _wzDisegna(tieni) {
       // 🔄 v7.052 (Franco) - le scritte sotto le card; l'inglese è mio
       + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'Solo articoli in versione base' : 'Base version items only')
       + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'Aggiungiamo le variazioni ufficiali degli articoli' : "Let's add the official variations of the items")
-      + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'Andiamo ad aggiungere le variazioni non ufficiali ed altri articoli molto rari' : "Let's add the unofficial variations and other very rare items")
+      + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'Aggiungiamo le variazioni non ufficiali ed altri articoli molto rari' : "Let's add the unofficial variations and other very rare items")
       + '</div>';
     piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">← ' + (it ? 'Indietro' : 'Back') + '</button>'
       + (w.livello ? avanti('_wzConfermaLivello()') : '');
