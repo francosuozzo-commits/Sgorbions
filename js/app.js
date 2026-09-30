@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.054 - Modificato js/app.js, index.html e css/style.css (tutte le domande del questionario in giallo, Franco). Sul telefono il box «Crea la tua lista col Questionario Sgorbions»
+// v7.055 - Modificato js/app.js (e index per la versione e lo stile). Dal questionario si esce da ogni schermata,
+//          non solo dalla prima (Franco): «✕ Esci dal questionario» in cima, con la stessa conferma.
+// v7.054 -Modificato js/app.js, index.html e css/style.css (tutte le domande del questionario in giallo, Franco). Sul telefono il box «Crea la tua lista col Questionario Sgorbions»
 //          va a capo prima di «Questionario Sgorbions», che sta tutto sulla seconda riga (Franco): `how.q.title`
 //          passa a `data-i18n-html` con lo `<span class="how-q-a-capo">`, blocco solo sotto gli 861px.
 //          E in «Che collezionista sei ?» la seconda frase comincia a capo (Franco): un `<br>` fra le due.
@@ -30623,7 +30625,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.054';
+const JS_VERSION = 'v7.055';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49457,6 +49459,11 @@ function _wzDisegna(tieni) {
         + (nuovi || tolti ? (it ? 'Salva e continua →' : 'Save and continue →') : (it ? 'Continua →' : 'Continue →')) + '</button>';
     }
   }
+  // 🆕 v7.055 (Franco: «deve essere sempre possibile uscire dal questionario, non solo la prima pagina») - in cima a
+  //    ogni schermata che non ne ha già una via (la prima ha il suo pulsante, la finale «Chiudi», le conferme le loro).
+  //    Passa dalla stessa conferma della prima pagina: «Resta nel questionario» torna alla schermata di prima.
+  if (!['intro', 'esci', 'azzera1', 'azzera2', 'finale'].includes(w.passo))
+    corpo = '<div class="wz-esci-alto"><button type="button" class="btn-secondary" onclick="_wzChiediEsci()">✕ ' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button></div>' + corpo;
   const _wzY = ov.scrollTop;
   ov.innerHTML = '<div class="wz-pannello">' + corpo + '</div><div class="wz-piede">' + piede + '</div>';
   ov.scrollTop = tieni ? _wzY : 0;
