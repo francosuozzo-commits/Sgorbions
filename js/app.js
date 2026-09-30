@@ -1,7 +1,25 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.051 - Modificato index.html e css/style.css. Desktop (Franco): la nota della home larga quanto il
+// v7.052 - Modificato js/app.js, index.html e css/style.css. Il questionario si nasconde finché non è finito
+//          (Franco: «sino a che non è finito mostralo solo admin oppure sotto impersonificazione»): box della
+//          home, pulsanti di profilo e Inventario, e la sua parte nella finestra «La mia lista Sgorbions».
+//          Sotto «Che collezionista sei ?» la frase nuova di Franco: «Indica il livello di collezionista che più
+//          corrisponde a te. Il questionario sarà tarato su quel livello.» E le scritte nuove sotto le tre card.
+//          Avanti e Indietro non più fissi in fondo allo schermo: sotto la schermata, sempre a 1,5rem.
+//          🐛 «Iniziamo con la Serie 1», non «…la Sgorbions serie 1»: sul desktop prendeva il nome lungo.
+//          Sotto «I quadranti già selezionati…»: «I quadranti in grigio si attivano quando selezioni un
+//          quadrante collegato.» (Franco), nelle serie che hanno fpa e album. «Cosa hai di questa serie?» in
+//          rosa (#ff6ec7). «Avanti» diventa «Prosegui»; e dalla schermata della serie «Prosegui» apre prima un
+//          riepilogo delle card accese, con «Modifica» e «Conferma» (`_wzRiepilogoTda`).
+//          🐛 Scheda dell'album con «Errore di stampa»: l'elenco delle partenze era vuoto. `_stessoGruppoDi`
+//          restringeva allo stesso numero anche dove il numero è solo l'ordinamento: ora solo dove è d'inventario.
+//          Nella schermata della serie «Salta questa serie» al centro, e via il conto delle card accese.
+//          Scheda della serie: i titoletti delle tipologie (`.series-sottotitolo`) in giallo `--warn`.
+//          🐛 Tab «Versioni non base» senza i riquadri di album, bustine & c.: `_rendiTDAVersioni` chiamava
+//          `nfmt`, che lì non esisteva, appena una versione aveva articoli (il primo album errore di stampa).
+//          E le sezioni del tab diventano richiudibili (`<details>`), chiuse a ogni apertura della scheda.
+// v7.051 -Modificato index.html e css/style.css. Desktop (Franco): la nota della home larga quanto il
 //          carosello e con «NOTA:» sulla riga del testo (da tre righe a due: una sola non ci sta, misurato);
 //          il footer più basso.
 // v7.050 - Modificato js/app.js e css/style.css. La prima schermata del questionario (Franco): più larga sul
@@ -30592,7 +30610,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.051';
+const JS_VERSION = 'v7.052';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35378,6 +35396,7 @@ window.addEventListener('resize', () => { try { _frecciaSottoAccedi(); } catch (
 function updateNavUser() {
   // 🆕 v6.953 — dopo che questa funzione ha acceso o spento «Accedi», la freccia si rimette sotto.
   requestAnimationFrame(() => { try { _frecciaSottoAccedi(); _aggiornaLogoNavbar(); } catch (e) {} });
+  try { _wzAggiornaVisibile(); } catch (e) {}   // v7.052: il questionario solo per l'admin
   // 🐛 v6.960 (Franco: «sulla app, dopo che mi autentico, si vede ancora la fascia delle serie,
   //    quella per invogliare al login») — LA FASCIA SI RIDECIDE QUI. `renderHomeSeries` sa già
   //    che da loggati non va mostrata, ma nessuno la richiamava dopo il login: né `doLogin` né
@@ -37529,6 +37548,9 @@ function openAddSeriesModal(seriesId) {
   // release chiude, e senza dare errore.
   _tabellaColonneSerie();
   _caselleArticoliSerie();   // v6.216 - anche queste PRIMA del ripristino, che le spunta
+  // 🆕 v7.052 (Franco: «conviene che partano sempre chiuse») - le sezioni del tab «Versioni non base»
+  //    scritte a mano si chiudono a ogni apertura; quelle generate nascono chiuse da sé
+  document.querySelectorAll('#add-series-modal details.series-sezione').forEach(d => { d.open = false; });
   _caselleCompletezzaSerie(seriesId);   // v6.716 - stessa ragione, stesso momento
                                         // v6.751 - e con la serie: l'elenco dipende da lei
   if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
@@ -40261,6 +40283,13 @@ function _rendiTDAVersioni(s) {
   const box = document.getElementById('series-tda-versioni');
   if (!box) return;
   const it = currentLang === 'it';
+  // 🐛 v7.052 (Franco: «giurerei di averla vista; eppure dopo che ho fatto una modifica è sparita») - QUESTA
+  //    RIGA MANCAVA. `nfmt` qui sotto non esisteva: le altre funzioni che la usano se la dichiarano dentro,
+  //    questa no. Si chiamava solo col conto maggiore di zero, e fino al primo album «Errore di stampa»
+  //    nessuna versione delle nove tipologie disegnate aveva articoli: il primo ha fatto saltare il
+  //    disegno intero, e il tab «Versioni non base» è rimasto senza nessun riquadro (misurato sul sito,
+  //    Serie 1: `ReferenceError: nfmt is not defined`). Il `try` di chi la chiama lo mandava in console.
+  const nfmt = n => Number(n || 0).toLocaleString(it ? 'it-IT' : 'en-US');
   const figs = getData('figurines', []);
   box.innerHTML = _TDA_DISEGNATE_NELLA_FORM().map(tda => {
     const dich = s && s.perTDA && s.perTDA[tda];
@@ -40313,13 +40342,16 @@ function _rendiTDAVersioni(s) {
     //    essere nulla legato alle TDA non ammesse; invece io vedo il nome sezione e il flag
     //    relativo agli errori di stampa»* - nella Serie 1 comparivano Figurine, Carte, Spille,
     //    Tatuaggi e Trasferelli, che quella serie non ha.
-    return '<div class="tda-blocco" data-tda="' + esc(tda) + '">'
-      + '<div class="series-sottotitolo" style="margin-top:1rem;">' + esc(getSectionLabel(tda)) + '</div>'
+    // 🔄 v7.052 (Franco: «le spunte per collassare quelle sezioni… che partano sempre chiuse») - un
+    //    `<details>` chiuso, come i due scritti a mano nell'index. Chiuso nasconde, non toglie: le caselle
+    //    restano nel DOM e il salvataggio le legge.
+    return '<details class="tda-blocco series-sezione" data-tda="' + esc(tda) + '">'
+      + '<summary class="series-sottotitolo" style="margin-top:1rem;">' + esc(getSectionLabel(tda)) + '</summary>'
       + '<div class="form-hint" style="margin-bottom:0.35rem;">'
       + esc(it ? 'Le versioni che questa serie ha in questa tipologia, e i tipi che la tendina offre. Solo il FRONTE.'
                : 'The versions this series has in this item type, and the types its dropdown offers. Front only.')
       + '</div>' + righe + liste
-      + '</div>';
+      + '</details>';
   }).join('');
   _mostraTDAAmmesse();   // 🆕 v6.795 - appena disegnate, si nasconde quello che la serie non ha
 }
@@ -49038,8 +49070,16 @@ function _wzProposta(sid, z) {
     pModo: n === 0 ? 'nessuna' : n === tutti.length ? 'tutte' : 'alcune',
     pVerso: n <= tutti.length - n ? 'ho' : 'manca' };
 }
+// 🆕 v7.052 (Franco: «al momento nascondi il questionario; sino a che non è finito mostralo solo admin oppure
+//    sotto impersonificazione») - CHI LO VEDE. Tutto ciò che lo apre porta la classe `solo-wz`, che il foglio
+//    nasconde finché il `body` non ha `wz-visibile`; la classe la mette `updateNavUser`, che passa da login,
+//    logout e impersonificazione. ⚠️ Impersonando `currentUser` è l'utente, non l'admin: per questo `isImpersonating`.
+//    Quando il questionario è finito si toglie questa funzione, e con lei la classe.
+function _wzVisibile() { return !!currentUser && (!!currentUser.isAdmin || isImpersonating()); }
+function _wzAggiornaVisibile() { document.body.classList.toggle('wz-visibile', _wzVisibile()); }
 function apriWizardLista() {
   if (!currentUser) { openAuth('login'); return; }
+  if (!_wzVisibile()) return;   // v7.052
   const serie = _wzSerie().filter(s => _wzSezioni().some(z => _wzArticoli(s.id, z).length));
   _wz = { serie, i: -1, passo: 'intro', passi: [], k: 0, scelte: null, aggiunti: 0, tolti: 0, fatte: [] };
   _wzDisegna();
@@ -49048,7 +49088,7 @@ function _wzIniziaSerie(i) {
   const w = _wz;
   if (i >= w.serie.length) { w.passo = 'finale'; _wzDisegna(); return; }
   const s = w.serie[i], mie = new Set(getOwned());
-  w.i = i; w.passo = 'serie'; w.k = 0;
+  w.i = i; w.passo = 'serie'; w.k = 0; w.riepilogo = false;   // v7.052: il riepilogo si chiude cambiando serie
   // tutte le tipologie della serie; le schermate sono solo quelle delle card accese (`_wzConfermaTda`)
   w.sezSerie = _wzSezioni().filter(z => _wzArticoli(s.id, z).length);
   w.passi = ['serie', 'fine'];
@@ -49074,8 +49114,11 @@ function _wzToccaTda(z) {
   _wzDisegna(true);   // v7.033: si resta dove si era
 }
 // «quando ha finito preme il pulsante per procedere»: le schermate sono quelle delle card accese
+// 🆕 v7.052 - il riepilogo prima di proseguire: `true` lo apre, `false` lo chiude e si resta dove si era
+function _wzRiepilogoTda(apri) { _wz.riepilogo = !!apri; _wzDisegna(true); }
 function _wzConfermaTda() {
   const w = _wz;
+  w.riepilogo = false;   // v7.052
   // v7.034 - dopo ogni tipologia accesa, le sue versioni
   w.passi = ['serie'].concat(w.sezSerie.filter(z => w.accese.has(z)).flatMap(z => [z].concat((w.chiaviVer || []).filter(k => k.startsWith(z + '|'))))).concat(['fine']);
   _wzAvanti();
@@ -49220,7 +49263,8 @@ function _wzDisegna(tieni) {
   // 🔄 v7.050 (Franco: «il tasto Esci chiamalo Esci dal questionario, e chiedi conferma per uscire»)
   const esci = '<button type="button" class="btn-secondary" onclick="_wzChiediEsci()">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';
   const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">◀ ' + (it ? 'Indietro' : 'Back') + '</button>';
-  const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Avanti ▶' : 'Next ▶') + '</button>';
+  // 🔄 v7.052 (Franco: «Cambia "Avanti" con "Prosegui"»)
+  const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Prosegui ▶' : 'Next ▶') + '</button>';
   const giaTua = '<div class="wz-proposta">' + (it ? 'la tua risposta' : 'your answer') + '</div>';
   let corpo = '', piede = '';
   if (w.passo === 'intro') {
@@ -49254,11 +49298,13 @@ function _wzDisegna(tieni) {
       + (w.livello === l && _wzLivello === l ? giaTua : '')
       + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
     corpo = '<div class="wz-titolo">' + (it ? 'Che collezionista sei ?' : 'What kind of collector are you ?') + '</div>'
-      + '<p class="wz-testo">' + (it ? 'Indica il livello che corrisponde di più a te: il questionario farà le domande più adatte a te.' : 'Choose the level that fits you best: the questionnaire will ask the questions best suited to you.') + '</p>'
+      // 🔄 v7.052 (Franco) - la frase nuova; l'inglese è mio
+      + '<p class="wz-testo">' + (it ? 'Indica il livello di collezionista che più corrisponde a te. Il questionario sarà tarato su quel livello.' : 'Choose the collector level that fits you best. The questionnaire will be tuned to that level.') + '</p>'
       + '<div class="wz-scelte">'
-      + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'solo articoli base' : 'base items only')
-      + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'aggiungi le variazioni ufficiali' : 'add the official variations')
-      + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'aggiungi variazioni non ufficiali e altre carte speciali' : 'add unofficial variations and other special cards')
+      // 🔄 v7.052 (Franco) - le scritte sotto le card; l'inglese è mio
+      + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'Solo articoli in versione base' : 'Base version items only')
+      + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'Andiamo ad aggiungere le variazioni ufficiali degli articoli' : "Let's add the official variations of the items")
+      + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'Andiamo ad aggiungere le variazioni non ufficiali ed altri articoli molto rari' : "Let's add the unofficial variations and other very rare items")
       + '</div>';
     piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">◀ ' + (it ? 'Indietro' : 'Back') + '</button>'
       + (w.livello ? avanti('_wzConfermaLivello()') : '');
@@ -49290,13 +49336,18 @@ function _wzDisegna(tieni) {
     corpo = _wzTesta(s);
     if (p === 'serie') {
       const mie = new Set(getOwned()), gia = [..._wzToccati()].filter(id => mie.has(id)).length;
-      corpo += '<div class="wz-titolo">' + (it ? (w.i === 0 ? 'Iniziamo con la ' : 'Continuiamo con la ') : (w.i === 0 ? "Let's start with " : "Let's go on with ")) + esc(_nomeSerieCard(s)) + '</div>'
+      corpo += '<div class="wz-titolo">' + (it ? (w.i === 0 ? 'Iniziamo con la ' : 'Continuiamo con la ') : (w.i === 0 ? "Let's start with " : "Let's go on with ")) + esc(_nomeSerieCard(s, true)) + '</div>'   // v7.052: sempre il nome corto (Franco: «Iniziamo con la Serie 1», non «…la Sgorbions serie 1»)
         + '<div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div>'
-        + '<div class="wz-domanda">' + (it ? 'Cosa hai di questa serie?' : 'What do you have from this series?') + '</div>'
+        + '<div class="wz-domanda wz-rosa">' + (it ? 'Cosa hai di questa serie?' : 'What do you have from this series?') + '</div>'
         + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che raffigura gli articoli che hai' : 'Click on the tiles showing the items you have') + '</p>'
         + (gia ? '<p class="wz-testo">' + (it
             ? 'I quadranti già selezionati sono quelli per i quali hai articoli nella tua lista'
             : 'The tiles already selected are those for which you have items in your list') + '</p>' : '')
+        // 🆕 v7.052 (Franco) - la frase sui grigi, quando la serie può averne (fpa e album): c'è anche ad album
+        //    acceso, così la schermata non cambia sotto il dito. L'inglese è mio.
+        + (w.sezSerie.includes('attaccare') && w.sezSerie.includes('albums') ? '<p class="wz-testo">' + (it
+            ? 'I quadranti in grigio si attivano quando selezioni un quadrante collegato.'
+            : 'The grey tiles become active when you select a linked tile.') + '</p>' : '')
         + '<div class="wz-scelte">' + w.sezSerie.map(z => {
             const grigia = z === 'attaccare' && !_wzFpaLibera();
             return '<button type="button" class="wz-carta' + (w.accese.has(z) ? ' on' : '') + (grigia ? ' wz-grigia' : '') + '"' + (grigia ? ' disabled' : '') + ' onclick="_wzToccaTda(\'' + z + '\')">'
@@ -49304,9 +49355,25 @@ function _wzDisegna(tieni) {
               // v7.031 - niente numero (Franco: «a quel punto è presto per mostrarlo»): resta solo l'avviso delle fpa
               + (grigia ? '<div class="wz-carta-sotto">' + (it ? 'prima accendi l\'album' : 'light the album first') + '</div>' : '') + '</button>';
           }).join('') + '</div>';
-      piede = indietro + '<button type="button" class="btn-secondary" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta questa serie' : 'Skip this series') + '</button>'
-        + '<span class="wz-conto-testo"><b>' + w.accese.size + '</b> ' + (it ? 'accese' : 'selected') + '</span>'
-        + avanti('_wzConfermaTda()');
+      // 🔄 v7.052 (Franco) - «Salta questa serie» al centro (`wz-centro`), e via il conto delle accese: «non serve
+      //    se ora abbiamo la conferma prima di procedere»
+      piede = indietro + '<button type="button" class="btn-secondary wz-centro" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta questa serie' : 'Skip this series') + '</button>'
+        + avanti('_wzRiepilogoTda(true)');   // v7.052: prima il riepilogo
+      // 🆕 v7.052 (Franco: «quando premo Avanti, mostra un popup che riepiloga cosa è stato selezionato e ne
+      //    chiede conferma») - la finestrella sopra la schermata, nell'ordine delle card. Le parole sono mie.
+      if (w.riepilogo) {
+        const scelte = w.sezSerie.filter(z => w.accese.has(z));
+        corpo += '<div class="wz-popup-sfondo"><div class="wz-popup">'
+          + '<div class="wz-popup-titolo">' + (it ? 'Riepilogo' : 'Summary') + '</div>'
+          + (scelte.length
+            ? '<p class="wz-testo">' + (it ? 'Di questa serie hai selezionato:' : 'From this series you selected:') + '</p>'
+              + '<ul class="wz-popup-lista">' + scelte.map(z => '<li>' + _wzImg(_wzFotoSez(z, s.id), 80, 80, 'wz-popup-foto') + '<span>' + esc(getSectionLabel(z)) + '</span></li>').join('') + '</ul>'
+            : '<p class="wz-testo">' + (it ? 'Non hai selezionato nessun quadrante di questa serie.' : 'You did not select any tile from this series.') + '</p>')
+          + '<p class="wz-testo">' + (it ? 'Confermi ?' : 'Do you confirm ?') + '</p>'
+          + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzRiepilogoTda(false)">◀ ' + (it ? 'Modifica' : 'Change') + '</button>'
+          + '<button type="button" class="btn-primary wz-grande" onclick="_wzConfermaTda()">' + (it ? 'Conferma ▶' : 'Confirm ▶') + '</button></div>'
+          + '</div></div>';
+      }
     } else if (p === 'albums') {
       const alb = _wzArticoli(s.id, 'albums'), figs = getData('figurines', []);
       corpo += '<div class="wz-domanda">' + _wzImg(_wzFotoSez('albums', s.id), 120, 120, 'wz-icona-sez') + (it ? 'Quali album hai?' : 'Which albums do you have?') + '</div>'
@@ -63788,6 +63855,13 @@ function _sottoserieBloccata(f) {
 }
 
 function _stessoGruppoDi(figlio, candidato) {
+  // 🐛 v7.052 (Franco: «nella form dell'album, se spunto "Errore di stampa" poi non mi fa selezionare alcun
+  //    album di partenza») - IL GRUPPO VALE SOLO DOVE IL NUMERO È D'INVENTARIO. In album, bustine e gli altri
+  //    oggetti il numero è l'ORDINAMENTO (`numero: 'ordinamento'`): una posizione in griglia, non un'identità.
+  //    Lì l'elenco teneva solo gli album con lo stesso numero d'ordine, e un album nuovo col suo numero non
+  //    ne trovava nessuno. È la stessa forma della v6.198 qui sotto: una difesa delle figurine applicata a chi
+  //    non ha niente da difendere. Salvando, il figlio prende comunque l'ordine della sua partenza, e sta accanto a lei.
+  if (_art(figlio.section || 'figurines').numero !== 'inventario') return true;
   const n = figlio.number;
   // v6.133 - LA DIFESA: il numero di un figlio non si scrive, si EREDITA dalla figurina di
   // partenza al salvataggio. Scegliere dall'elenco un oggetto con un altro numero RINUMERA il
