@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.061 - Modificato js/app.js e index.html. Questionario (Franco): le frasi finiscono col punto (sottotitoli dei
+// v7.062 - Modificato index.html (app.js per la versione). «Salta questa serie» sotto la foto piccolo come «Esci dal
+//          questionario» in cima (Franco: «è fin troppo grande»).
+// v7.061 -Modificato js/app.js e index.html. Questionario (Franco): le frasi finiscono col punto (sottotitoli dei
 //          livelli, «Clicca sul quadrante…», «I quadranti già accesi…», il riepilogo della serie); «Esci dal
 //          questionario» e «Salta questa serie» bianchi con la scritta rossa (`.wz-scritta-rossa`); rosso pieno
 //          resta solo «Azzera definitivamente».
@@ -30645,7 +30647,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.061';
+const JS_VERSION = 'v7.062';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
