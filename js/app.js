@@ -1,7 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.056 - Modificato js/app.js (e index per la versione). La frase sotto il titolo del questionario, di Franco:
+// v7.057 - Modificato js/app.js e index.html. Nel questionario, sul telefono, la foto della serie più piccola del
+//          40% (Franco): 180px al posto di 300, regola nell'index. E la frase sui grigi, di Franco: «I quadranti
+//          grigi si attivano da soli all'occorrenza.»
+// v7.056 -Modificato js/app.js (e index per la versione). La frase sotto il titolo del questionario, di Franco:
 //          «Col Questionario Sgorbions costruisci in pochi minuti una tua lista degli articoli della collezione.»
 //          E il sottotitolo di Collezionista comincia con «Aggiungiamo» (Franco), come quello di Esperto.
 // v7.055 - Modificato js/app.js (e index per la versione e lo stile). Dal questionario si esce da ogni schermata,
@@ -30628,7 +30631,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.056';
+const JS_VERSION = 'v7.057';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49368,8 +49371,8 @@ function _wzDisegna(tieni) {
         // 🆕 v7.052 (Franco) - la frase sui grigi, quando la serie può averne (fpa e album): c'è anche ad album
         //    acceso, così la schermata non cambia sotto il dito. L'inglese è mio.
         + (w.sezSerie.includes('attaccare') && w.sezSerie.includes('albums') ? '<p class="wz-testo">' + (it
-            ? 'I quadranti in grigio si attivano quando selezioni un quadrante collegato.'
-            : 'The grey tiles become active when you select a linked tile.') + '</p>' : '')
+            ? 'I quadranti grigi si attivano da soli all\'occorrenza.'   // v7.057: la frase di Franco
+            : 'The grey tiles become active by themselves when needed.') + '</p>' : '')
         + '<div class="wz-scelte">' + w.sezSerie.map(z => {
             const grigia = z === 'attaccare' && !_wzFpaLibera();
             return '<button type="button" class="wz-carta' + (w.accese.has(z) ? ' on' : '') + (grigia ? ' wz-grigia' : '') + '"' + (grigia ? ' disabled' : '') + ' onclick="_wzToccaTda(\'' + z + '\')">'
