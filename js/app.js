@@ -1,7 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.059 - Modificato js/app.js (e index per la versione). Nel questionario le Figurine album hanno quattro carte in
+// v7.060 - Modificato js/app.js e index.html. Questionario (Franco): in «Che collezionista sei ?», sul telefono, la
+//          terza carta al centro della seconda riga (`.wz-scelte-livelli`, regola nell'index); «Indietro» diventa
+//          «Torna indietro».
+// v7.059 -Modificato js/app.js (e index per la versione). Nel questionario le Figurine album hanno quattro carte in
 //          una schermata (Franco): Tutte, Nessuna, Poche («Indica quali»), Molte («Indica quali mancano»); la
 //          schermata «ne ho di meno / me ne mancano di meno» per loro non c'è più (`_wzQuattro`, `_wzModo4`).
 // v7.058 - Modificato js/app.js e index.html. Questionario (Franco): «Esci dal questionario» rosso (`btn-danger`),
@@ -30638,7 +30641,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.059';
+const JS_VERSION = 'v7.060';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49309,7 +49312,7 @@ function _wzDisegna(tieni) {
   if (!ov) { ov = document.createElement('div'); ov.id = 'wz-overlay'; ov.className = 'wz-overlay'; document.body.appendChild(ov); document.body.style.overflow = 'hidden'; }
   // 🔄 v7.050 (Franco: «il tasto Esci chiamalo Esci dal questionario, e chiedi conferma per uscire»)
   const esci = '<button type="button" class="btn-danger wz-esci" onclick="_wzChiediEsci()">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';   // v7.058: rosso (Franco)
-  const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">← ' + (it ? 'Indietro' : 'Back') + '</button>';
+  const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">← ' + (it ? 'Torna indietro' : 'Go back') + '</button>';
   // 🔄 v7.052 (Franco: «Cambia "Avanti" con "Prosegui"»)
   const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Prosegui →' : 'Next →') + '</button>';
   const giaTua = '<div class="wz-proposta">' + (it ? 'la tua risposta' : 'your answer') + '</div>';
@@ -49347,13 +49350,13 @@ function _wzDisegna(tieni) {
     corpo = '<div class="wz-titolo">' + (it ? 'Che collezionista sei ?' : 'What kind of collector are you ?') + '</div>'
       // 🔄 v7.052 (Franco) - la frase nuova; l'inglese è mio
       + '<p class="wz-testo">' + (it ? 'Indica il livello di collezionista che più corrisponde a te.<br>Il questionario sarà tarato su quel livello.' : 'Choose the collector level that fits you best.<br>The questionnaire will be tuned to that level.') + '</p>'
-      + '<div class="wz-scelte">'
+      + '<div class="wz-scelte wz-scelte-livelli">'   // v7.060: sul telefono la terza al centro (regola nell'index)
       // 🔄 v7.052 (Franco) - le scritte sotto le card; l'inglese è mio
       + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'Solo articoli in versione base' : 'Base version items only')
       + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'Aggiungiamo le variazioni ufficiali degli articoli' : "Let's add the official variations of the items")
       + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'Aggiungiamo le variazioni non ufficiali ed altri articoli molto rari' : "Let's add the unofficial variations and other very rare items")
       + '</div>';
-    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">← ' + (it ? 'Indietro' : 'Back') + '</button>'
+    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">← ' + (it ? 'Torna indietro' : 'Go back') + '</button>'
       + (w.livello ? avanti('_wzConfermaLivello()') : '');
   } else if (w.passo === 'azzera1' || w.passo === 'azzera2') {
     const n = getOwned().length, primo = w.passo === 'azzera1';
