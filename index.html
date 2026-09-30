@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.062">
+<link rel="stylesheet" href="css/style.css?v=7.063">
 
 
 <style>
@@ -619,6 +619,15 @@
 .wz-salta-foto { display: none; }
 /* 🔄 v7.062 (Franco: «è fin troppo grande, fallo piccolo come l'altro») - la misura di «Esci dal questionario» in cima */
 .wz-salta-foto .btn-secondary { font-size: 0.8rem; padding: 0.35rem 0.8rem; }
+/* 🆕 v7.063 (Franco: «solo nel mobile, il tasto salta questa serie chiamalo "salta serie"») - «questa» sparisce sotto
+   gli 861px; il pulsante sotto la foto c'è solo lì, e dice già «Salta serie». */
+@media (max-width: 860px) { .wz-solo-desktop { display: none; } }
+/* 🆕 v7.063 (Franco: «ridurrei un minimo lo spazio tra la parte alta e bassa del quadrante con la foto dell'album e
+   la fine del quadrante») - in «Quali album hai?» la foto non ha più un'altezza fissa (che lasciava vuoto sopra e
+   sotto le copertine larghe): prende la sua, fino al massimo di prima. E un po' meno margine in alto e in basso. */
+.wz-scelte-album .wz-carta { padding-top: 0.55rem; padding-bottom: 0.55rem; }
+.wz-scelte-album .wz-carta img { height: auto; max-height: 150px; }
+@media (max-width: 860px) { .wz-scelte-album .wz-carta img { height: auto; max-height: 110px; } }
 /* 🆕 v7.057 (Franco: «nella versione mobile la foto della copertina della serie è troppo grande… facciamo 40») -
    nel questionario, sul telefono, la foto della serie al 60%: larghezza e altezza massime (300px → 180px). */
 @media (max-width: 860px) { .wz-grande-foto img { max-width: 60%; max-height: 180px; } }
@@ -5820,7 +5829,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.062"></script>
+<script src="js/app.js?v=7.063"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5844,7 +5853,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.062'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.063'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
