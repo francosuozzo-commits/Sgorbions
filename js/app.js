@@ -1,7 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.052 - Modificato js/app.js, index.html e css/style.css. Il questionario si nasconde finché non è finito
+// v7.053 - Modificato js/app.js (e index per la versione). 🐛 Un album non si salvava come Variazione ufficiale:
+//          chiedeva il «Retro associato», che nella sua scheda non c'è. Nasce il CARTONCINO ASSOCIATO (Franco:
+//          «i retro per gli album variazione sono le tda Cartoncini»): `cartoncinoId`, i Cartoncini senza serie,
+//          obbligatorio per gli album variazione; nella scheda del cartoncino il tab «Album con questo cartoncino (N)».
+// v7.052 -Modificato js/app.js, index.html e css/style.css. Il questionario si nasconde finché non è finito
 //          (Franco: «sino a che non è finito mostralo solo admin oppure sotto impersonificazione»): box della
 //          home, pulsanti di profilo e Inventario, e la sua parte nella finestra «La mia lista Sgorbions».
 //          Sotto «Che collezionista sei ?» la frase nuova di Franco: «Indica il livello di collezionista che più
@@ -30610,7 +30614,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.052';
+const JS_VERSION = 'v7.053';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -57056,6 +57060,17 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     }
   }
 
+  // 🆕 v7.053 - il cartoncino dell'album variazione, cliccabile (e in rosso se punta a un record sparito,
+  //    come fa la riga del retro qui sopra)
+  if (f.cartoncinoId) {
+    const _c = getData('figurines', []).find(x => x.id === f.cartoncinoId);
+    rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Cartoncino associato' : 'Associated card'}</span>`
+      + (_c
+        ? `<span class="detail-value"><a href="#" onclick="openFigDetail('${_c.id}');return false;" style="color:var(--accent);text-decoration:underline;">${esc(_nomeCartoncino(_c))}</a></span>`
+        : `<span class="detail-value" style="color:var(--danger);">${currentLang === 'it' ? 'ID collegato non trovato: ' : 'Linked ID not found: '}${esc(f.cartoncinoId)}</span>`)
+      + `</div>`);
+  }
+
   // Descrizione
   if (f.desc) {
     rows.push(`<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">${currentLang === 'it' ? 'Descrizione' : 'Description'}</span><span class="detail-value" style="font-size:0.88rem;line-height:1.5;">${f.desc}</span></div>`);
@@ -58659,6 +58674,37 @@ function _campoTipoDelTab(chiave) {
   return v?.campoTipo || null;
 }
 
+// 🆕 v7.053 (Franco: «i retro per gli album variazione sono le tda Cartoncini… partendo dal cartoncino si
+//    possa vedere quali sono gli album che lo usano») - IL CARTONCINO DI UN ALBUM VARIAZIONE.
+// 📌 I Cartoncini sono un tipo di «Articoli senza serie» (`tipoProdotto`), non una sezione: si trovano
+//    dal NOME del tipo, perché l'id (`tp_…`) è nato nei dati e scriverlo qui lo legherebbe a un database.
+// 🔴 IL LEGAME STA IN UN CAMPO SUO, `cartoncinoId`, e NON in `retroId`: quello lo leggono decine di punti
+//    che si aspettano un RETRO (conteggi, «Figurine con questo retro», il nome completo delle variazioni).
+function _idTipoCartoncini() {
+  const t = (_cache.tipiProdotto || []).find(x => (x.nome || '').trim().toLowerCase() === 'cartoncini');
+  return t ? t.id : null;
+}
+function _cartoncini() {
+  const id = _idTipoCartoncini();
+  return id ? getData('figurines', []).filter(f => f.tipoProdotto === id) : [];
+}
+function _nomeCartoncino(c) {
+  if (!c) return '';
+  return [c.category, c.subcategory, (c.fullName && c.fullName.trim()) || c.name].filter(Boolean).join(' · ');
+}
+// le voci della tendina nella scheda dell'album: raggruppate per categoria, ordinate per nome
+function _opzioniCartoncino(scelto) {
+  const cc = _cartoncini().slice().sort((a, b) => _nomeCartoncino(a).localeCompare(_nomeCartoncino(b), 'it', { numeric: true }));
+  const gruppi = {};
+  cc.forEach(c => { const k = c.category || ''; (gruppi[k] = gruppi[k] || []).push(c); });
+  const opz = c => '<option value="' + esc(c.id) + '"' + (c.id === scelto ? ' selected' : '') + '>'
+    + esc([c.subcategory, (c.fullName && c.fullName.trim()) || c.name].filter(Boolean).join(' · ')) + '</option>';
+  return '<option value="">' + (currentLang === 'it' ? '— scegli —' : '— choose —') + '</option>'
+    + Object.keys(gruppi).map(k => k ? '<optgroup label="' + esc(k) + '">' + gruppi[k].map(opz).join('') + '</optgroup>' : gruppi[k].map(opz).join('')).join('');
+}
+// solo gli album VARIAZIONE UFFICIALE hanno il cartoncino (scelta di Franco)
+const _vuoleCartoncino = (sezione, isVariation) => sezione === 'albums' && !!isVariation;
+
 function buildLinkedFiguresTabsHTML(baseId) {
   const allFigs = getData('figurines', []);
   const linked = allFigs.filter(x => x.baseFigurineId === baseId);
@@ -58669,7 +58715,10 @@ function buildLinkedFiguresTabsHTML(baseId) {
   const _usano = _selfRetro
     ? _figurineCheUsanoIlRetro(baseId, allFigs)
     : { items: [], ereditati: new Set() };
-  if (!linked.length && !_usano.items.length) return '';
+  // 🆕 v7.053 - gli album che usano questo cartoncino. Si chiede al dato, non al tipo: il tab c'è
+  //    dove qualcuno punta davvero qui.
+  const _albumDelCartoncino = allFigs.filter(x => x.cartoncinoId === baseId);
+  if (!linked.length && !_usano.items.length && !_albumDelCartoncino.length) return '';
 
   // 🔴 v6.376 (Franco, baco) — L'OMAGGIO NON AVEVA IL SUO TAB, E LA CAUSA E' L'ELENCO SCRITTO A MANO.
   // *"Nella form di dettaglio del retro manca il tab relativo ai retro omaggio che usano quel retro
@@ -58708,6 +58757,8 @@ function buildLinkedFiguresTabsHTML(baseId) {
 
   const groups = [
     { key: 'usaRetro', label: currentLang === 'it' ? 'Figurine con questo retro' : 'Figurines with this back', icon: '🎴', items: _usano.items, ereditati: _usano.ereditati },
+    // 🆕 v7.053 (Franco: «N -> tab») - il conto sta nel titolo del tab, come per gli altri
+    { key: 'usaCartoncino', label: currentLang === 'it' ? 'Album con questo cartoncino' : 'Albums with this card', icon: '📒', items: _albumDelCartoncino },
     ...VERSIONI_ARTICOLO.map(v => ({
       key: v.chiave,
       // v6.025 (Franco) — nella scheda di un RETRO i tab dicono "di questo retro", in parallelo col
@@ -58812,6 +58863,12 @@ function buildLinkedFiguresTabsHTML(baseId) {
         // Il "(dalla base)" non e' un dettaglio estetico: dice che quella riga viene da un dato che
         // sul record NON c'e', e che quindi cambia da sola se si cambia il retro della base.
         if (g.ereditati && g.ereditati.has(item.id)) label += currentLang === 'it' ? ' (dalla base)' : ' (from base)';
+      } else if (g.key === 'usaCartoncino') {
+        // 🆕 v7.053 - il nome completo dell'album, e sotto la sua serie: gli album di serie diverse
+        //    possono chiamarsi uguale («W gli Sgorbions» sta in tre serie)
+        label = (item.fullName && item.fullName.trim()) ? item.fullName : computeFullName(item, allFigs);
+        const _s = getData('series', []).find(x => x.id === item.seriesId);
+        if (_s) labelExtra = `<div style="font-size:0.78rem;color:var(--info);margin-top:1px;">${esc(_nomeSerieCard(_s, true))}</div>`;
       } else if (_campoTipoDelTab(g.key)) {
         // Mostriamo il TIPO (più utile del Nome, che coincide con quello della base).
         // v5.779 — vale sia per i Change di Retro sia per quelli di figurina, entrambi con Tipo.
@@ -59007,6 +59064,8 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
     }
   }
   group.style.display = showBase ? '' : 'none';
+  // 🆕 v7.053 - il Cartoncino associato (c'è solo nella scheda degli album) segue «Variazione ufficiale»
+  { const cg = document.getElementById('fe-cartoncino-group'); if (cg) cg.style.display = _v.isVariation ? '' : 'none'; }
   // 🆕 v6.965 (Franco: «se arrivo da un clone di una base potrebbe propormi quella») — IL CLONE
   //    PROPONE LA SUA SORGENTE COME PARTENZA, quando la versione ne chiede una e il campo è vuoto.
   //    Solo se la sorgente è fra le partenze AMMESSE: clonando un change, la sorgente non lo è, e
@@ -59923,6 +59982,21 @@ function switchToEditMode(figId) {
       '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">' +
       '<input type="checkbox" id="fe-retro-bianco" onchange="toggleFeRetroBianco()" ' + (f.retroBianco ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
       '</label></span></div>';   // v6.106 (Franco) - via la spiegazione accanto alla casella
+  }
+
+  // 🆕 v7.053 (Franco) - IL CARTONCINO ASSOCIATO, solo negli album: si vede con «Variazione ufficiale»
+  //    spuntata (lo accende e spegne `toggleFeBaseFigurineGroup`). Una tendina e non una ricerca: i
+  //    Cartoncini sono venticinque, divisi per categoria come i retro.
+  if (f.section === 'albums') {
+    html += '<div class="detail-row" id="fe-cartoncino-group" style="' + (_vuoleCartoncino(f.section, f.isVariation) ? '' : 'display:none;') + '">'
+      + '<span class="detail-label">' + (currentLang === 'it' ? 'Cartoncino associato' : 'Associated card') + '</span>'
+      + '<span class="detail-value"><select class="form-input" id="fe-cartoncino" style="padding:0.3rem 0.5rem;font-size:0.9rem;max-width:100%;">'
+      + _opzioniCartoncino(f.cartoncinoId) + '</select></span></div>';
+    // ⚠️ i tipi senza serie si caricano a richiesta: se non ci sono ancora, la tendina si riempie all'arrivo
+    if (_cache.tipiProdotto === undefined) getTipiProdotto().then(() => {
+      const sel = document.getElementById('fe-cartoncino');
+      if (sel) sel.innerHTML = _opzioniCartoncino(sel.value || f.cartoncinoId);
+    }).catch(() => {});
   }
 
   // v6.079 (Franco) - "LA FOTO NON CE L'HO". Non e' un difetto da correggere: e' un fatto
@@ -62946,7 +63020,19 @@ async function saveFigFromDetail(figId, opzioni) {
       toast((currentLang === 'it' ? `Il campo "${label}" è obbligatorio per Variazioni, Change, Omaggi ed Errori di stampa` : `The "${label}" field is required when a Variation, Change or Print error is selected`), 'error');
       return;
     }
-    if (existingForCheck?.section !== 'retros' && (updates.isVariation || updates.isUnofficialVariation) && !document.getElementById('fe-retro')?.value) {
+    // 🐛 v7.053 (Franco: «salvando un album come variazione ufficiale, non salva, perché mi chiede di
+    //    selezionare il retro associato») - LA DOMANDA ERA «NON È UN RETRO?», e un album non è un retro: il
+    //    controllo pretendeva un campo che nella scheda di un album non esiste, quindi nessun album poteva
+    //    diventare una variazione. Adesso chiede il retro solo a chi il campo ce l'ha (`#fe-retro` nel DOM,
+    //    cioè `_retroPerArticolo`), e agli album il loro cartoncino.
+    if (_vuoleCartoncino(existingForCheck?.section, updates.isVariation) && !document.getElementById('fe-cartoncino')?.value) {
+      toast((currentLang === 'it' ? 'Il campo "Cartoncino associato" è obbligatorio per un album Variazione ufficiale' : 'The "Associated card" field is required for an official Variation album'), 'error');
+      return;
+    }
+    // solo sugli album: sulle altre tipologie il campo non nasce nemmeno vuoto
+    if (existingForCheck?.section === 'albums') updates.cartoncinoId = _vuoleCartoncino('albums', updates.isVariation)
+      ? (document.getElementById('fe-cartoncino')?.value || null) : null;
+    if (document.getElementById('fe-retro') && (updates.isVariation || updates.isUnofficialVariation) && !document.getElementById('fe-retro')?.value) {
       toast((currentLang === 'it' ? 'Il campo "Retro associato" è obbligatorio quando è selezionata una Variazione ufficiale o non ufficiale' : 'The "Associated retro" field is required when an official or unofficial Variation is selected'), 'error');
       return;
     }
