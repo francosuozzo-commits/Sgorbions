@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.057">
+<link rel="stylesheet" href="css/style.css?v=7.058">
 
 
 <style>
@@ -622,7 +622,12 @@
 @media (max-width: 860px) { .wz-grande-foto img { max-width: 60%; max-height: 180px; } }
 /* 🆕 v7.055 (Franco) - «Esci dal questionario» in cima a ogni schermata, piccolo e a destra */
 .wz-esci-alto { text-align: right; margin: 0 0 0.3rem; }
-.wz-esci-alto .btn-secondary { font-size: 0.8rem; padding: 0.35rem 0.8rem; }
+.wz-esci-alto .wz-esci { font-size: 0.8rem; padding: 0.35rem 0.8rem; }   /* v7.058: era .btn-secondary, ora rosso */
+/* 🆕 v7.058 (Franco) - «Esci dal questionario» rosso (`btn-danger`, il rosso dei comandi di uscita); «Conferma 👍»
+   del riepilogo verde, perché è il passo in più chiesto apposta */
+.wz-esci { font-weight: 700; }
+.wz-conferma { background: #16a34a !important; color: #ffffff; box-shadow: 0 6px 22px rgba(22,163,74,0.35); }
+.wz-conferma:hover { background: #15803d !important; box-shadow: 0 8px 30px rgba(22,163,74,0.45); }
 @media (max-width: 860px) { .wz-salta-foto { display: block; text-align: center; margin: 0.8rem 0 0.4rem; } }
 
 /* 🔴 v6.932 (Franco: «anche "ricerca in tutto il sito"») — IL SEGNAPOSTO DELLA CASELLA DI RICERCA.
@@ -5800,7 +5805,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.057"></script>
+<script src="js/app.js?v=7.058"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5824,7 +5829,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.057'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.058'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
