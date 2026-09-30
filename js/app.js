@@ -1,7 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.053 - Modificato js/app.js (e index per la versione). 🐛 Un album non si salvava come Variazione ufficiale:
+// v7.054 - Modificato js/app.js, index.html e css/style.css (tutte le domande del questionario in giallo, Franco). Sul telefono il box «Crea la tua lista col Questionario Sgorbions»
+//          va a capo prima di «Questionario Sgorbions», che sta tutto sulla seconda riga (Franco): `how.q.title`
+//          passa a `data-i18n-html` con lo `<span class="how-q-a-capo">`, blocco solo sotto gli 861px.
+//          E in «Che collezionista sei ?» la seconda frase comincia a capo (Franco): un `<br>` fra le due.
+//          Il sottotitolo di Esperto comincia con «Aggiungiamo le variazioni» (Franco). Sul telefono «Salta
+//          questa serie» anche sotto la foto della serie (Franco): `.wz-salta-foto`, regola nell'index. Le due
+//          frasi sotto «Cosa hai di questa serie?» riscritte da Franco: «Clicca sul quadrante che mostra i tuoi
+//          articoli» e «I quadranti già accesi si riferiscono ad articoli già nella tua lista». I pulsanti
+//          del questionario portano la freccia delle serie (← →) al posto dei triangoli ◀ ▶ (Franco).
+// v7.053 -Modificato js/app.js (e index per la versione). 🐛 Un album non si salvava come Variazione ufficiale:
 //          chiedeva il «Retro associato», che nella sua scheda non c'è. Nasce il CARTONCINO ASSOCIATO (Franco:
 //          «i retro per gli album variazione sono le tda Cartoncini»): `cartoncinoId`, i Cartoncini senza serie,
 //          obbligatorio per gli album variazione; nella scheda del cartoncino il tab «Album con questo cartoncino (N)».
@@ -30614,7 +30623,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.053';
+const JS_VERSION = 'v7.054';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32287,7 +32296,7 @@ const i18n = {
 'home.featured.btn':'View All Series →',
 'home.how.eyebrow':'How It Works','home.how.title':'Your Collection, Organised',
 'how.1.title':'Browse the Inventory','how.1.desc':'Explore all Sgorbions series with photos and full descriptions.',
-'how.q.title':'Create your list with the Sgorbions Questionnaire','how.q.desc':'Answer a few questions, series by series: your Sgorbions list will be ready in the blink of an eye.','how.m.title':'My Sgorbions list','how.m.desc':'Add Sgorbions items to your list by hand.','how.2.title':'Build Your List','how.2.desc':'Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.',
+'how.q.title':'Create your list with the <span class="how-q-a-capo">Sgorbions Questionnaire</span>','how.q.desc':'Answer a few questions, series by series: your Sgorbions list will be ready in the blink of an eye.','how.m.title':'My Sgorbions list','how.m.desc':'Add Sgorbions items to your list by hand.','how.2.title':'Build Your List','how.2.desc':'Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.',
 'how.3.title':'Connect and Ask','how.3.desc':'Ask questions and get answers from the administrator and other collectors.',
 'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
 'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions items ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Item types','catalog.allSeriesInfo':'Show summary information\non all series','catalog.allSeriesInfoShort':'Show series figures','catalog.allSeriesInfoTitle':'The Sgorbions series','home.cosaFare':'What can you do on this site ?','wz.pulsante':'✨ Create your list with the Sgorbions Questionnaire','nav.questionario':'Sgorbions Questionnaire','wz.riprendi':'✨ Resume the questionnaire','series.articoliTitolo':'THE ITEMS OF THE SERIES','catalog.addseries':'+ Add Series',
@@ -32392,7 +32401,7 @@ const i18n = {
     'home.featured.btn':'Vedi Tutte le Serie →',
     'home.how.eyebrow':'Come Funziona','home.how.title':'La Tua Collezione, Organizzata',
     'how.1.title':'Sfoglia l\'Inventario','how.1.desc':'Esplora tutte le serie di Sgorbions con foto e descrizioni complete.',
-    'how.q.title':'Crea la tua lista col Questionario Sgorbions','how.q.desc':'Rispondi a poche domande, serie per serie: la tua lista Sgorbions sarà pronta in un batter d\'occhio.','how.m.title':'La mia lista Sgorbions','how.m.desc':'Aggiungi manualmente gli articoli Sgorbions alla tua lista.','how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
+    'how.q.title':'Crea la tua lista col <span class="how-q-a-capo">Questionario Sgorbions</span>','how.q.desc':'Rispondi a poche domande, serie per serie: la tua lista Sgorbions sarà pronta in un batter d\'occhio.','how.m.title':'La mia lista Sgorbions','how.m.desc':'Aggiungi manualmente gli articoli Sgorbions alla tua lista.','how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
     'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Tipologie di articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra numeriche delle serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions','home.cosaFare':'Cosa puoi fare in questo sito ?','wz.pulsante':'✨ Crea la tua lista col Questionario Sgorbions','nav.questionario':'Questionario Sgorbions','wz.riprendi':'✨ Riprendi il questionario','series.articoliTitolo':'GLI ARTICOLI DELLA SERIE','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine per album','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','catalog.backToSeries':'Serie','form.series.firstNumber':'N. prima figurina','form.series.lastNumber':'N. ultima figurina','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
@@ -49266,9 +49275,9 @@ function _wzDisegna(tieni) {
   if (!ov) { ov = document.createElement('div'); ov.id = 'wz-overlay'; ov.className = 'wz-overlay'; document.body.appendChild(ov); document.body.style.overflow = 'hidden'; }
   // 🔄 v7.050 (Franco: «il tasto Esci chiamalo Esci dal questionario, e chiedi conferma per uscire»)
   const esci = '<button type="button" class="btn-secondary" onclick="_wzChiediEsci()">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';
-  const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">◀ ' + (it ? 'Indietro' : 'Back') + '</button>';
+  const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">← ' + (it ? 'Indietro' : 'Back') + '</button>';
   // 🔄 v7.052 (Franco: «Cambia "Avanti" con "Prosegui"»)
-  const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Prosegui ▶' : 'Next ▶') + '</button>';
+  const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Prosegui →' : 'Next →') + '</button>';
   const giaTua = '<div class="wz-proposta">' + (it ? 'la tua risposta' : 'your answer') + '</div>';
   let corpo = '', piede = '';
   if (w.passo === 'intro') {
@@ -49295,7 +49304,7 @@ function _wzDisegna(tieni) {
     corpo = '<div class="wz-titolo">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</div>'
       + '<p class="wz-testo">' + (it ? 'Vuoi davvero uscire dal questionario ? Le serie che hai già salvato restano nella tua lista.' : 'Do you really want to exit ? The series you already saved stay in your list.') + '</p>'
       + '<div class="wz-inizia"><button type="button" class="btn-primary wz-grande" onclick="_wzChiudi()">' + (it ? 'Sì, esci' : 'Yes, exit') + '</button></div>';
-    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(_wz.primaDiEsci || \'intro\')">◀ ' + (it ? 'Resta nel questionario' : 'Stay') + '</button>';
+    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(_wz.primaDiEsci || \'intro\')">← ' + (it ? 'Resta nel questionario' : 'Stay') + '</button>';
   } else if (w.passo === 'livello') {
     // 🆕 v7.034 (Franco) - «Che collezionista sei ?»: la risposta decide quali versioni si chiedono
     const carta = (l, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (w.livello === l ? ' on' : '') + '" onclick="_wzScegliLivello(\'' + l + '\')">'
@@ -49303,14 +49312,14 @@ function _wzDisegna(tieni) {
       + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
     corpo = '<div class="wz-titolo">' + (it ? 'Che collezionista sei ?' : 'What kind of collector are you ?') + '</div>'
       // 🔄 v7.052 (Franco) - la frase nuova; l'inglese è mio
-      + '<p class="wz-testo">' + (it ? 'Indica il livello di collezionista che più corrisponde a te. Il questionario sarà tarato su quel livello.' : 'Choose the collector level that fits you best. The questionnaire will be tuned to that level.') + '</p>'
+      + '<p class="wz-testo">' + (it ? 'Indica il livello di collezionista che più corrisponde a te.<br>Il questionario sarà tarato su quel livello.' : 'Choose the collector level that fits you best.<br>The questionnaire will be tuned to that level.') + '</p>'
       + '<div class="wz-scelte">'
       // 🔄 v7.052 (Franco) - le scritte sotto le card; l'inglese è mio
       + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'Solo articoli in versione base' : 'Base version items only')
-      + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'Andiamo ad aggiungere le variazioni ufficiali degli articoli' : "Let's add the official variations of the items")
+      + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'Aggiungiamo le variazioni ufficiali degli articoli' : "Let's add the official variations of the items")
       + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'Andiamo ad aggiungere le variazioni non ufficiali ed altri articoli molto rari' : "Let's add the unofficial variations and other very rare items")
       + '</div>';
-    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">◀ ' + (it ? 'Indietro' : 'Back') + '</button>'
+    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">← ' + (it ? 'Indietro' : 'Back') + '</button>'
       + (w.livello ? avanti('_wzConfermaLivello()') : '');
   } else if (w.passo === 'azzera1' || w.passo === 'azzera2') {
     const n = getOwned().length, primo = w.passo === 'azzera1';
@@ -49334,7 +49343,7 @@ function _wzDisegna(tieni) {
         : (w.aggiunti || w.tolti ? 'Your list is updated: +' + nfmtWz(w.aggiunti) + ' / −' + nfmtWz(w.tolti) + '.' : 'Your list was already up to date.')) + '</p>'
       + '<div class="wz-mosaico">' + w.fatte.map(x => '<div class="wz-mosaico-voce">' + _wzImg(x.s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(x.s)) + '</div><div class="wz-piu">' + _wzCambio(x.n, x.t) + '</div></div>').join('') + '</div>';
     piede = '<button type="button" class="btn-secondary" onclick="_wzChiudi()">' + (it ? 'Chiudi' : 'Close') + '</button>'
-      + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'profile\')">' + (it ? 'Vai alla tua lista ▶' : 'Go to your list ▶') + '</button>';
+      + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'profile\')">' + (it ? 'Vai alla tua lista →' : 'Go to your list →') + '</button>';
   } else {
     const s = w.serie[w.i], p = w.passo;
     corpo = _wzTesta(s);
@@ -49342,10 +49351,14 @@ function _wzDisegna(tieni) {
       const mie = new Set(getOwned()), gia = [..._wzToccati()].filter(id => mie.has(id)).length;
       corpo += '<div class="wz-titolo">' + (it ? (w.i === 0 ? 'Iniziamo con la ' : 'Continuiamo con la ') : (w.i === 0 ? "Let's start with " : "Let's go on with ")) + esc(_nomeSerieCard(s, true)) + '</div>'   // v7.052: sempre il nome corto (Franco: «Iniziamo con la Serie 1», non «…la Sgorbions serie 1»)
         + '<div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div>'
+        // 🆕 v7.054 (Franco: «nel mobile, il tasto che permette di saltare la serie deve esserci anche sotto la foto
+        //    della serie») - un secondo «Salta questa serie», uguale a quello del piede; `.wz-salta-foto` si vede
+        //    solo sotto gli 861px (regola nell'index).
+        + '<div class="wz-salta-foto"><button type="button" class="btn-secondary" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta questa serie' : 'Skip this series') + '</button></div>'
         + '<div class="wz-domanda wz-rosa">' + (it ? 'Cosa hai di questa serie?' : 'What do you have from this series?') + '</div>'
-        + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che raffigura gli articoli che hai' : 'Click on the tiles showing the items you have') + '</p>'
+        + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che mostra i tuoi articoli' : 'Click on the tiles showing the items you have') + '</p>'
         + (gia ? '<p class="wz-testo">' + (it
-            ? 'I quadranti già selezionati sono quelli per i quali hai articoli nella tua lista'
+            ? 'I quadranti già accesi si riferiscono ad articoli già nella tua lista'
             : 'The tiles already selected are those for which you have items in your list') + '</p>' : '')
         // 🆕 v7.052 (Franco) - la frase sui grigi, quando la serie può averne (fpa e album): c'è anche ad album
         //    acceso, così la schermata non cambia sotto il dito. L'inglese è mio.
@@ -49374,8 +49387,8 @@ function _wzDisegna(tieni) {
               + '<ul class="wz-popup-lista">' + scelte.map(z => '<li>' + _wzImg(_wzFotoSez(z, s.id), 80, 80, 'wz-popup-foto') + '<span>' + esc(getSectionLabel(z)) + '</span></li>').join('') + '</ul>'
             : '<p class="wz-testo">' + (it ? 'Non hai selezionato nessun quadrante di questa serie.' : 'You did not select any tile from this series.') + '</p>')
           + '<p class="wz-testo">' + (it ? 'Confermi ?' : 'Do you confirm ?') + '</p>'
-          + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzRiepilogoTda(false)">◀ ' + (it ? 'Modifica' : 'Change') + '</button>'
-          + '<button type="button" class="btn-primary wz-grande" onclick="_wzConfermaTda()">' + (it ? 'Conferma ▶' : 'Confirm ▶') + '</button></div>'
+          + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzRiepilogoTda(false)">← ' + (it ? 'Modifica' : 'Change') + '</button>'
+          + '<button type="button" class="btn-primary wz-grande" onclick="_wzConfermaTda()">' + (it ? 'Conferma →' : 'Confirm →') + '</button></div>'
           + '</div></div>';
       }
     } else if (p === 'albums') {
@@ -49441,7 +49454,7 @@ function _wzDisegna(tieni) {
       corpo += '<div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div>'
         + '<div class="wz-domanda">' + frase + '</div>';
       piede = indietro + '<button type="button" id="wz-salva" class="btn-primary wz-grande" onclick="_wzSalvaSerie()">'
-        + (nuovi || tolti ? (it ? 'Salva e continua ▶' : 'Save and continue ▶') : (it ? 'Continua ▶' : 'Continue ▶')) + '</button>';
+        + (nuovi || tolti ? (it ? 'Salva e continua →' : 'Save and continue →') : (it ? 'Continua →' : 'Continue →')) + '</button>';
     }
   }
   const _wzY = ov.scrollTop;
