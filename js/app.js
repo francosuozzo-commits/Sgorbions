@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.063 - Modificato js/app.js e index.html. Sul telefono «Salta questa serie» diventa «Salta serie» (Franco).
+// v7.064 - Modificato js/app.js (e index per la versione). Nel questionario la carta «Nessuna» ha la faccina triste
+//          😢 al posto di ➖ e nessun sottotitolo (Franco); le carte senza sottotitolo non disegnano la riga vuota.
+// v7.063 -Modificato js/app.js e index.html. Sul telefono «Salta questa serie» diventa «Salta serie» (Franco).
 //          In «Quali album hai?» meno vuoto sopra e sotto la foto dell'album (`.wz-scelte-album`, regola nell'index).
 // v7.062 -Modificato index.html (app.js per la versione). «Salta questa serie» sotto la foto piccolo come «Esci dal
 //          questionario» in cima (Franco: «è fin troppo grande»).
@@ -30649,7 +30651,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.063';
+const JS_VERSION = 'v7.064';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49354,7 +49356,7 @@ function _wzDisegna(tieni) {
     // 🆕 v7.034 (Franco) - «Che collezionista sei ?»: la risposta decide quali versioni si chiedono
     const carta = (l, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (w.livello === l ? ' on' : '') + '" onclick="_wzScegliLivello(\'' + l + '\')">'
       + (w.livello === l && _wzLivello === l ? giaTua : '')
-      + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
+      + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
     corpo = '<div class="wz-titolo">' + (it ? 'Che collezionista sei ?' : 'What kind of collector are you ?') + '</div>'
       // 🔄 v7.052 (Franco) - la frase nuova; l'inglese è mio
       + '<p class="wz-testo">' + (it ? 'Indica il livello di collezionista che più corrisponde a te.<br>Il questionario sarà tarato su quel livello.' : 'Choose the collector level that fits you best.<br>The questionnaire will be tuned to that level.') + '</p>'
@@ -49454,14 +49456,14 @@ function _wzDisegna(tieni) {
         const prop = _wzScelta4(c);
         const carta4 = (sc, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (prop === sc ? ' on' : '') + '" onclick="_wzModo4(\'' + p + '\',\'' + sc + '\')">'
           + (prop === sc ? giaTua : '')
-          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
+          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
         corpo += intest + '<div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div>'
           + '<p class="wz-testo">' + (it
               ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
               : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>'
           + '<div class="wz-scelte">'
           + carta4('tutte', '🏆', it ? 'Tutte' : 'All', ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
-          + carta4('nessuna', '➖', it ? 'Nessuna' : 'None', it ? 'si passa oltre' : 'skip')
+          + carta4('nessuna', '😢', it ? 'Nessuna' : 'None', '')
           + carta4('poche', '🤏', it ? 'Poche' : 'A few', it ? 'Indica quali' : 'Tell us which')
           + carta4('molte', '📚', it ? 'Molte' : 'Many', it ? 'Indica quali mancano' : 'Tell us which are missing')
           + '</div>';
@@ -49470,7 +49472,7 @@ function _wzDisegna(tieni) {
         // la carta proposta (quello che dice la lista, o la risposta data prima) è accesa; «Avanti» la conferma
         const carta = (modo, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (c.pModo === modo ? ' on' : '') + '" onclick="_wzModo(\'' + p + '\',\'' + modo + '\')">'
           + (c.pModo === modo ? giaTua : '')
-          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
+          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
         corpo += intest + '<div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div>'
           + '<p class="wz-testo">' + (it
               ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
@@ -49478,13 +49480,13 @@ function _wzDisegna(tieni) {
           + '<div class="wz-scelte">'
           + carta('tutte', '🏆', it ? 'Tutte' : 'All', ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
           + carta('alcune', '🧩', it ? 'Alcune' : 'Some', it ? 'scegli quali' : 'choose which')
-          + carta('nessuna', '➖', it ? 'Nessuna' : 'None', it ? 'si passa oltre' : 'skip')
+          + carta('nessuna', '😢', it ? 'Nessuna' : 'None', '')
           + '</div>';
         piede = indietro + avanti("_wzModo('" + p + "','" + c.pModo + "')");
       } else if (!c.verso) {
         const carta = (verso, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (c.pVerso === verso ? ' on' : '') + '" onclick="_wzVerso(\'' + p + '\',\'' + verso + '\')">'
           + (c.pVerso === verso ? giaTua : '')
-          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
+          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
         corpo += intest + '<p class="wz-testo">' + (it ? 'Sono di più quelle che hai o quelle che ti mancano? Tocchi le meno numerose, e fai prima.' : 'Do you have more, or are you missing more? You will tap the fewer ones.') + '</p>'
           + '<div class="wz-scelte">'
           + carta('ho', '✅', it ? 'Ne ho di meno' : 'I have fewer', it ? 'tocco quelle che HO' : 'I tap the ones I HAVE')
