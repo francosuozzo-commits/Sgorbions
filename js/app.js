@@ -1,7 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.060 - Modificato js/app.js e index.html. Questionario (Franco): in «Che collezionista sei ?», sul telefono, la
+// v7.061 - Modificato js/app.js e index.html. Questionario (Franco): le frasi finiscono col punto (sottotitoli dei
+//          livelli, «Clicca sul quadrante…», «I quadranti già accesi…», il riepilogo della serie); «Esci dal
+//          questionario» e «Salta questa serie» bianchi con la scritta rossa (`.wz-scritta-rossa`); rosso pieno
+//          resta solo «Azzera definitivamente».
+// v7.060 -Modificato js/app.js e index.html. Questionario (Franco): in «Che collezionista sei ?», sul telefono, la
 //          terza carta al centro della seconda riga (`.wz-scelte-livelli`, regola nell'index); «Indietro» diventa
 //          «Torna indietro».
 // v7.059 -Modificato js/app.js (e index per la versione). Nel questionario le Figurine album hanno quattro carte in
@@ -30641,7 +30645,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.060';
+const JS_VERSION = 'v7.061';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49311,7 +49315,7 @@ function _wzDisegna(tieni) {
   let ov = document.getElementById('wz-overlay');
   if (!ov) { ov = document.createElement('div'); ov.id = 'wz-overlay'; ov.className = 'wz-overlay'; document.body.appendChild(ov); document.body.style.overflow = 'hidden'; }
   // 🔄 v7.050 (Franco: «il tasto Esci chiamalo Esci dal questionario, e chiedi conferma per uscire»)
-  const esci = '<button type="button" class="btn-danger wz-esci" onclick="_wzChiediEsci()">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';   // v7.058: rosso (Franco)
+  const esci = '<button type="button" class="btn-secondary wz-esci wz-scritta-rossa" onclick="_wzChiediEsci()">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';   // v7.058: rosso (Franco)
   const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">← ' + (it ? 'Torna indietro' : 'Go back') + '</button>';
   // 🔄 v7.052 (Franco: «Cambia "Avanti" con "Prosegui"»)
   const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Prosegui →' : 'Next →') + '</button>';
@@ -49352,9 +49356,9 @@ function _wzDisegna(tieni) {
       + '<p class="wz-testo">' + (it ? 'Indica il livello di collezionista che più corrisponde a te.<br>Il questionario sarà tarato su quel livello.' : 'Choose the collector level that fits you best.<br>The questionnaire will be tuned to that level.') + '</p>'
       + '<div class="wz-scelte wz-scelte-livelli">'   // v7.060: sul telefono la terza al centro (regola nell'index)
       // 🔄 v7.052 (Franco) - le scritte sotto le card; l'inglese è mio
-      + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'Solo articoli in versione base' : 'Base version items only')
-      + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'Aggiungiamo le variazioni ufficiali degli articoli' : "Let's add the official variations of the items")
-      + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'Aggiungiamo le variazioni non ufficiali ed altri articoli molto rari' : "Let's add the unofficial variations and other very rare items")
+      + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'Solo articoli in versione base.' : 'Base version items only.')
+      + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'Aggiungiamo le variazioni ufficiali degli articoli.' : "Let's add the official variations of the items.")
+      + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'Aggiungiamo le variazioni non ufficiali ed altri articoli molto rari.' : "Let's add the unofficial variations and other very rare items.")
       + '</div>';
     piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">← ' + (it ? 'Torna indietro' : 'Go back') + '</button>'
       + (w.livello ? avanti('_wzConfermaLivello()') : '');
@@ -49391,12 +49395,12 @@ function _wzDisegna(tieni) {
         // 🆕 v7.054 (Franco: «nel mobile, il tasto che permette di saltare la serie deve esserci anche sotto la foto
         //    della serie») - un secondo «Salta questa serie», uguale a quello del piede; `.wz-salta-foto` si vede
         //    solo sotto gli 861px (regola nell'index).
-        + '<div class="wz-salta-foto"><button type="button" class="btn-secondary" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta questa serie' : 'Skip this series') + '</button></div>'
+        + '<div class="wz-salta-foto"><button type="button" class="btn-secondary wz-scritta-rossa" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta questa serie' : 'Skip this series') + '</button></div>'
         + '<div class="wz-domanda wz-rosa">' + (it ? 'Cosa hai di questa serie?' : 'What do you have from this series?') + '</div>'
-        + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che mostra i tuoi articoli' : 'Click on the tiles showing the items you have') + '</p>'
+        + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che mostra i tuoi articoli.' : 'Click on the tiles showing the items you have.') + '</p>'
         + (gia ? '<p class="wz-testo">' + (it
-            ? 'I quadranti già accesi si riferiscono ad articoli già nella tua lista'
-            : 'The tiles already selected are those for which you have items in your list') + '</p>' : '')
+            ? 'I quadranti già accesi si riferiscono ad articoli già nella tua lista.'
+            : 'The tiles already selected are those for which you have items in your list.') + '</p>' : '')
         // 🆕 v7.052 (Franco) - la frase sui grigi, quando la serie può averne (fpa e album): c'è anche ad album
         //    acceso, così la schermata non cambia sotto il dito. L'inglese è mio.
         + (w.sezSerie.includes('attaccare') && w.sezSerie.includes('albums') ? '<p class="wz-testo">' + (it
@@ -49411,7 +49415,7 @@ function _wzDisegna(tieni) {
           }).join('') + '</div>';
       // 🔄 v7.052 (Franco) - «Salta questa serie» al centro (`wz-centro`), e via il conto delle accese: «non serve
       //    se ora abbiamo la conferma prima di procedere»
-      piede = indietro + '<button type="button" class="btn-secondary wz-centro" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta questa serie' : 'Skip this series') + '</button>'
+      piede = indietro + '<button type="button" class="btn-secondary wz-centro wz-scritta-rossa" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta questa serie' : 'Skip this series') + '</button>'
         + avanti('_wzRiepilogoTda(true)');   // v7.052: prima il riepilogo
       // 🆕 v7.052 (Franco: «quando premo Avanti, mostra un popup che riepiloga cosa è stato selezionato e ne
       //    chiede conferma») - la finestrella sopra la schermata, nell'ordine delle card. Le parole sono mie.
@@ -49507,7 +49511,7 @@ function _wzDisegna(tieni) {
           : 'La tua lista di questa serie resta com\'è')
         : (nuovi || tolti ? 'You are adding <b>' + nuovi + '</b> and removing <b>' + tolti + '</b> items of this series' : 'Your list for this series stays as it is');
       corpo += '<div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div>'
-        + '<div class="wz-domanda">' + frase + '</div>';
+        + '<div class="wz-domanda">' + frase + '.</div>';   // v7.061: col punto (Franco)
       piede = indietro + '<button type="button" id="wz-salva" class="btn-primary wz-grande" onclick="_wzSalvaSerie()">'
         + (nuovi || tolti ? (it ? 'Salva e continua →' : 'Save and continue →') : (it ? 'Continua →' : 'Continue →')) + '</button>';
     }
@@ -49516,7 +49520,7 @@ function _wzDisegna(tieni) {
   //    ogni schermata che non ne ha già una via (la prima ha il suo pulsante, la finale «Chiudi», le conferme le loro).
   //    Passa dalla stessa conferma della prima pagina: «Resta nel questionario» torna alla schermata di prima.
   if (!['intro', 'esci', 'azzera1', 'azzera2', 'finale'].includes(w.passo))
-    corpo = '<div class="wz-esci-alto"><button type="button" class="btn-danger wz-esci" onclick="_wzChiediEsci()">✕ ' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button></div>' + corpo;
+    corpo = '<div class="wz-esci-alto"><button type="button" class="btn-secondary wz-esci wz-scritta-rossa" onclick="_wzChiediEsci()">✕ ' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button></div>' + corpo;
   const _wzY = ov.scrollTop;
   ov.innerHTML = '<div class="wz-pannello">' + corpo + '</div><div class="wz-piede">' + piede + '</div>';
   ov.scrollTop = tieni ? _wzY : 0;
