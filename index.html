@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.056">
+<link rel="stylesheet" href="css/style.css?v=7.057">
 
 
 <style>
@@ -617,6 +617,9 @@
 @media (max-width: 860px) { .how-q-a-capo { display: block; white-space: nowrap; } }
 /* 🆕 v7.054 (Franco) - nel questionario, sul telefono, «Salta questa serie» anche sotto la foto della serie */
 .wz-salta-foto { display: none; }
+/* 🆕 v7.057 (Franco: «nella versione mobile la foto della copertina della serie è troppo grande… facciamo 40») -
+   nel questionario, sul telefono, la foto della serie al 60%: larghezza e altezza massime (300px → 180px). */
+@media (max-width: 860px) { .wz-grande-foto img { max-width: 60%; max-height: 180px; } }
 /* 🆕 v7.055 (Franco) - «Esci dal questionario» in cima a ogni schermata, piccolo e a destra */
 .wz-esci-alto { text-align: right; margin: 0 0 0.3rem; }
 .wz-esci-alto .btn-secondary { font-size: 0.8rem; padding: 0.35rem 0.8rem; }
@@ -5797,7 +5800,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.056"></script>
+<script src="js/app.js?v=7.057"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5821,7 +5824,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.056'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.057'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
