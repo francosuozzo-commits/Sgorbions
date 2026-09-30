@@ -2772,8 +2772,12 @@ footer {
 .ml-titoletto { font-family: var(--font-ui); font-weight: 800; font-size: 1.05rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; margin: 1.3rem 0 0.7rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border2); }
 .wz-pulsante { font-size: 1.12rem; padding: 0.9rem 1.8rem; border-radius: 999px; box-shadow: 0 6px 22px rgba(37,99,235,0.35); }
 .wz-overlay { position: fixed; inset: 0; z-index: 3000; background: rgba(8,5,18,0.96); overflow-y: auto; }
-.wz-pannello { max-width: 980px; margin: 0 auto; padding: 1.2rem 1rem 7rem; }
-.wz-piede { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3001; display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.75rem 1rem; background: rgba(14,10,26,0.97); border-top: 1px solid var(--border); }
+/* 🔄 v7.052 (Franco: «i tasti Avanti ed Indietro li metterei sempre sotto alla schermata corrente; adotterei
+   una distanza dal testo da tenere sempre quella») - IL PIEDE NON È PIÙ FISSO IN FONDO: segue la schermata,
+   largo quanto lei. 📏 La distanza è sempre 1,5rem perché il pannello non ha padding sotto: il margine
+   dell'ultimo elemento (mai più di 1,5rem) si fonde con quello del piede, e vince il più grande. */
+.wz-pannello { max-width: 980px; margin: 0 auto; padding: 1.2rem 1rem 0; }
+.wz-piede { max-width: 980px; margin: 1.5rem auto 0; display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0 1rem 2rem; }
 .wz-grande { font-size: 1.05rem; padding: 0.7rem 1.4rem; margin-left: auto; }
 .wz-titolo { font-family: var(--font-display); font-size: 2rem; color: #ffd84d;   /* v7.035: giallo; viola solo la prima schermata */ text-align: center; margin: 0.6rem 0 0.4rem; }
 .wz-titolo.wz-titolo-intro { color: var(--accent3); }   /* v7.035 */
@@ -2792,6 +2796,21 @@ footer {
 .wz-grande-foto { text-align: center; margin: 0.4rem 0 1rem; }
 .wz-grande-foto img { max-width: 100%; max-height: 300px; object-fit: contain; border-radius: var(--radius-lg); }
 .wz-domanda { display: flex; align-items: center; justify-content: center; gap: 0.7rem; font-family: var(--font-ui); font-weight: 800; font-size: 1.35rem; color: var(--text); text-align: center; margin: 0.6rem 0; }
+/* 🆕 v7.052 (Franco) - il riepilogo prima di proseguire dalla schermata della serie: una finestrella sopra */
+.wz-popup-sfondo { position: fixed; inset: 0; z-index: 3002; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.wz-popup { background: var(--card); border: 2px solid var(--accent3); border-radius: var(--radius-lg); padding: 1.2rem 1.3rem; width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto; }
+.wz-popup-titolo { font-family: var(--font-display); font-size: 1.5rem; color: #ffd84d; text-align: center; margin-bottom: 0.4rem; }
+.wz-popup-lista { list-style: none; padding: 0; margin: 0.4rem auto 0.8rem; max-width: 360px; }
+.wz-popup-lista li { display: flex; align-items: center; gap: 0.7rem; padding: 0.3rem 0; font-weight: 800; color: var(--text); }
+.wz-popup-foto { width: 40px; height: 40px; object-fit: contain; border-radius: 6px; background: var(--card2); flex-shrink: 0; font-size: 1.2rem; }
+.wz-popup-comandi { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; margin-top: 1rem; }
+.wz-popup-comandi .wz-grande { margin-left: 0; }
+/* 🆕 v7.052 (Franco: «il tasto "Salta questa serie" mettilo al centro») - tre colonne: le due ai lati uguali,
+   così quello in mezzo sta al centro vero, qualunque sia la larghezza di «Indietro» e «Prosegui» */
+.wz-piede:has(.wz-centro) { display: grid; grid-template-columns: 1fr auto 1fr; }
+.wz-piede:has(.wz-centro) > :first-child { justify-self: start; }
+.wz-piede:has(.wz-centro) > :last-child { justify-self: end; margin-left: 0; }
+.wz-domanda.wz-rosa { color: #ff6ec7; }   /* v7.052 (Franco): «Cosa hai di questa serie?» in rosa, un fucsia fuori dai colori del sito */
 .wz-icona-sez { width: 52px; height: 52px; object-fit: contain; border-radius: 10px; background: var(--card2); }
 .wz-scelte { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.9rem; margin: 0.6rem 0; }
 .wz-carta { background: var(--card); border: 2px solid var(--border2); border-radius: var(--radius-lg); padding: 0.9rem; cursor: pointer; text-align: center; color: var(--text); font: inherit; transition: transform 0.15s, border-color 0.15s; }
@@ -2826,7 +2845,7 @@ footer {
 .wz-inizia .wz-grande { margin-left: 0; font-size: 1.2rem; padding: 0.85rem 2.2rem; }
 .wz-nota-intro { margin-top: 2.2rem; line-height: 2.1; }
 @media (min-width: 861px) {
-  .wz-pannello { max-width: 1200px; }
+  .wz-pannello, .wz-piede { max-width: 1200px; }   /* v7.052: il piede largo quanto la schermata */
   .wz-testo .wz-riga-sola { white-space: nowrap; }
   .wz-testo:has(.wz-riga-sola) { max-width: none; }
   .wz-mosaico-intro { grid-template-columns: repeat(var(--wz-col, 4), minmax(0, 1fr)); gap: 1rem; }
@@ -2847,4 +2866,11 @@ footer {
   .wz-mosaico { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
   .wz-pulsante { font-size: 1rem; padding: 0.8rem 1.3rem; }
   .wz-piede .btn-secondary, .wz-piede .btn-primary { font-size: 0.85rem; padding: 0.55rem 0.8rem; }
+}
+/* 🆕 v7.052 (Franco: «sino a che non è finito mostralo solo admin oppure sotto impersonificazione») - il
+   questionario si vede solo col `body.wz-visibile` (`_wzAggiornaVisibile` in app.js). `!important` perché
+   molti di quegli elementi hanno lo stile in linea. Sul desktop i box della home restano in una riga: cinque. */
+body:not(.wz-visibile) .solo-wz { display: none !important; }
+@media (min-width: 861px) {
+  body:not(.wz-visibile) #home-how-grid { grid-template-columns: repeat(5, 1fr) !important; }
 }
