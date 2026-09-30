@@ -1,7 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.057 - Modificato js/app.js e index.html. Nel questionario, sul telefono, la foto della serie più piccola del
+// v7.058 - Modificato js/app.js e index.html. Questionario (Franco): «Esci dal questionario» rosso (`btn-danger`),
+//          «Conferma 👍» del riepilogo verde e col pollice al posto della freccia; in «Quali album hai?» la frase
+//          «Se non sai quale selezionare, scegli il primo.»
+// v7.057 -Modificato js/app.js e index.html. Nel questionario, sul telefono, la foto della serie più piccola del
 //          40% (Franco): 180px al posto di 300, regola nell'index. E la frase sui grigi, di Franco: «I quadranti
 //          grigi si attivano da soli all'occorrenza.»
 // v7.056 -Modificato js/app.js (e index per la versione). La frase sotto il titolo del questionario, di Franco:
@@ -30631,7 +30634,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.057';
+const JS_VERSION = 'v7.058';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49057,8 +49060,11 @@ function _wzSezioni() {
 function _wzNome(key) {
   const [z, ver] = String(key).split('|');
   const v = ver && _VERSIONI_VIVE.find(x => x.chiave === ver);
-  return getSectionLabel(z) + (v ? ' · ' + (currentLang === 'it' ? v.it : v.en) : '');
+  return _wzEtichetta(z) + (v ? ' · ' + (currentLang === 'it' ? v.it : v.en) : '');
 }
+// 🆕 v7.058 (Franco: «nel quadrante che raffigura le figurine per album, cambiamo il nome in "figurine album"») -
+//    solo nel questionario: la tipologia resta «Figurine per album» nel resto del sito.
+function _wzEtichetta(z) { return z === 'attaccare' ? (currentLang === 'it' ? 'Figurine album' : 'Album stickers') : getSectionLabel(z); }
 const _wzAScelta = z => z !== 'albums';   // gli album hanno la loro schermata: le foto da spuntare
 function _wzSerie() {
   return _serieDaContare(Array.isArray(_cache.series) ? _cache.series : []).slice()
@@ -49186,7 +49192,12 @@ function _wzTocca(chiave, id, el) {
   if (el) el.classList.toggle('on', set.has(id));
   const n = document.getElementById('wz-conto');
   if (n) n.textContent = String(set.size);
+  const p = document.getElementById('wz-conto-parola');
+  if (p) p.textContent = _wzParolaConto(set.size);
 }
+// 🆕 v7.058 (Franco: «quando scrivi in basso "1 scelti", cambia in "1 selezionato"») - la parola accanto al conto,
+//    al singolare con uno. La stessa per gli album e per gli articoli toccati uno a uno.
+function _wzParolaConto(n) { return currentLang === 'it' ? (n === 1 ? 'selezionato' : 'selezionati') : 'selected'; }
 function _wzTutte(chiave, accendi) {
   const w = _wz, s = w.serie[w.i];
   const set = chiave === 'albums' ? w.scelte.albums : w.scelte[chiave].sel;
@@ -49282,7 +49293,7 @@ function _wzDisegna(tieni) {
   let ov = document.getElementById('wz-overlay');
   if (!ov) { ov = document.createElement('div'); ov.id = 'wz-overlay'; ov.className = 'wz-overlay'; document.body.appendChild(ov); document.body.style.overflow = 'hidden'; }
   // 🔄 v7.050 (Franco: «il tasto Esci chiamalo Esci dal questionario, e chiedi conferma per uscire»)
-  const esci = '<button type="button" class="btn-secondary" onclick="_wzChiediEsci()">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';
+  const esci = '<button type="button" class="btn-danger wz-esci" onclick="_wzChiediEsci()">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';   // v7.058: rosso (Franco)
   const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">← ' + (it ? 'Indietro' : 'Back') + '</button>';
   // 🔄 v7.052 (Franco: «Cambia "Avanti" con "Prosegui"»)
   const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Prosegui →' : 'Next →') + '</button>';
@@ -49376,7 +49387,7 @@ function _wzDisegna(tieni) {
         + '<div class="wz-scelte">' + w.sezSerie.map(z => {
             const grigia = z === 'attaccare' && !_wzFpaLibera();
             return '<button type="button" class="wz-carta' + (w.accese.has(z) ? ' on' : '') + (grigia ? ' wz-grigia' : '') + '"' + (grigia ? ' disabled' : '') + ' onclick="_wzToccaTda(\'' + z + '\')">'
-              + _wzImg(_wzFotoSez(z, s.id), 400, 300, '') + '<div class="wz-carta-titolo">' + esc(getSectionLabel(z)) + '</div>'
+              + _wzImg(_wzFotoSez(z, s.id), 400, 300, '') + '<div class="wz-carta-titolo">' + esc(_wzEtichetta(z)) + '</div>'
               // v7.031 - niente numero (Franco: «a quel punto è presto per mostrarlo»): resta solo l'avviso delle fpa
               + (grigia ? '<div class="wz-carta-sotto">' + (it ? 'prima accendi l\'album' : 'light the album first') + '</div>' : '') + '</button>';
           }).join('') + '</div>';
@@ -49392,21 +49403,22 @@ function _wzDisegna(tieni) {
           + '<div class="wz-popup-titolo">' + (it ? 'Riepilogo' : 'Summary') + '</div>'
           + (scelte.length
             ? '<p class="wz-testo">' + (it ? 'Di questa serie hai selezionato:' : 'From this series you selected:') + '</p>'
-              + '<ul class="wz-popup-lista">' + scelte.map(z => '<li>' + _wzImg(_wzFotoSez(z, s.id), 80, 80, 'wz-popup-foto') + '<span>' + esc(getSectionLabel(z)) + '</span></li>').join('') + '</ul>'
+              + '<ul class="wz-popup-lista">' + scelte.map(z => '<li>' + _wzImg(_wzFotoSez(z, s.id), 80, 80, 'wz-popup-foto') + '<span>' + esc(_wzEtichetta(z)) + '</span></li>').join('') + '</ul>'
             : '<p class="wz-testo">' + (it ? 'Non hai selezionato nessun quadrante di questa serie.' : 'You did not select any tile from this series.') + '</p>')
           + '<p class="wz-testo">' + (it ? 'Confermi ?' : 'Do you confirm ?') + '</p>'
           + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzRiepilogoTda(false)">← ' + (it ? 'Modifica' : 'Change') + '</button>'
-          + '<button type="button" class="btn-primary wz-grande" onclick="_wzConfermaTda()">' + (it ? 'Conferma →' : 'Confirm →') + '</button></div>'
+          // 🔄 v7.058 (Franco: «è un tasto in più che chiediamo appositamente: lo farei verde, e al posto della freccia un pollice»)
+          + '<button type="button" class="btn-primary wz-grande wz-conferma" onclick="_wzConfermaTda()">' + (it ? 'Conferma 👍' : 'Confirm 👍') + '</button></div>'
           + '</div></div>';
       }
     } else if (p === 'albums') {
       const alb = _wzArticoli(s.id, 'albums'), figs = getData('figurines', []);
       corpo += '<div class="wz-domanda">' + _wzImg(_wzFotoSez('albums', s.id), 120, 120, 'wz-icona-sez') + (it ? 'Quali album hai?' : 'Which albums do you have?') + '</div>'
-        + '<p class="wz-testo">' + (it ? 'Tocca quelli che hai. Se non ne hai, vai avanti.<br>Se non sai quali hai, seleziona il primo della lista.' : 'Tap the ones you have.<br>If you do not know which ones you have, select the first one.') + '</p>'
+        + '<p class="wz-testo">' + (it ? 'Tocca quelli che hai. Se non ne hai, vai avanti.<br>Se non sai quale selezionare, scegli il primo.' : 'Tap the ones you have.<br>If you do not know which one to select, choose the first one.')   // v7.058: la frase di Franco + '</p>'
         + '<div class="wz-scelte">' + alb.map(f =>
             '<button type="button" class="wz-carta' + (w.scelte.albums.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'albums\',\'' + f.id + '\',this)">'
             + _wzImg(_fotoFigurina(f, figs) || f.img, 400, 400, '') + '<div class="wz-carta-titolo">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
-      piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + w.scelte.albums.size + '</b> ' + (it ? 'scelti' : 'chosen') + '</span>'
+      piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + w.scelte.albums.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(w.scelte.albums.size) + '</span></span>'
         + avanti('_wzAvanti()');
     } else if (w.scelte[p] && _wzAScelta(p)) {
       const c = w.scelte[p], tutti = _wzArticoli(s.id, p), nome = esc(_wzNome(p)), ver = String(p).includes('|');
@@ -49448,7 +49460,7 @@ function _wzDisegna(tieni) {
               + (mie.has(f.id) ? '<span class="wz-mia">' + (it ? 'già tua' : 'yours') + '</span>' : '')
               + _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, '')
               + '<div class="wz-num">' + esc(String(f.number || '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
-        piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + c.sel.size + '</b> ' + (it ? 'toccate' : 'tapped') + '</span>'
+        piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + c.sel.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(c.sel.size) + '</span></span>'
           + avanti('_wzAvanti()');
       }
     } else if (p === 'fine') {
@@ -49469,7 +49481,7 @@ function _wzDisegna(tieni) {
   //    ogni schermata che non ne ha già una via (la prima ha il suo pulsante, la finale «Chiudi», le conferme le loro).
   //    Passa dalla stessa conferma della prima pagina: «Resta nel questionario» torna alla schermata di prima.
   if (!['intro', 'esci', 'azzera1', 'azzera2', 'finale'].includes(w.passo))
-    corpo = '<div class="wz-esci-alto"><button type="button" class="btn-secondary" onclick="_wzChiediEsci()">✕ ' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button></div>' + corpo;
+    corpo = '<div class="wz-esci-alto"><button type="button" class="btn-danger wz-esci" onclick="_wzChiediEsci()">✕ ' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button></div>' + corpo;
   const _wzY = ov.scrollTop;
   ov.innerHTML = '<div class="wz-pannello">' + corpo + '</div><div class="wz-piede">' + piede + '</div>';
   ov.scrollTop = tieni ? _wzY : 0;
