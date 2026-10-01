@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.076 - Modificato js/app.js e index.html. Questionario (Franco): nel riepilogo, sul telefono, al posto della
+// v7.077 - Modificato index.html (app.js per la versione). Home, sul telefono: nei numeri (score) l'etichetta sta
+//          affianco al numero e non sotto (Franco: «prova»).
+// v7.076 -Modificato js/app.js e index.html. Questionario (Franco): nel riepilogo, sul telefono, al posto della
 //          foto della tipologia le foto dei primi due articoli affiancate e più grandi (`_wzCoppia`).
 // v7.075 - Modificato js/app.js (e index per la versione). Questionario (Franco): «N selezionati» segue il genere
 //          della tipologia («selezionate» per le figurine); alla fine della serie e nel messaggio a comparsa i
@@ -30678,7 +30680,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.076';
+const JS_VERSION = 'v7.077';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
