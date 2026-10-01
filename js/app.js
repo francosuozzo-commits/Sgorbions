@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.067 - Modificato js/app.js (e index per la versione). Questionario (Franco): la carta «Cliccando sull'album»
+//          diventa «Cliccando direttamente sulle pagine», senza sottotitolo.
 // v7.066 - Modificato js/app.js e index.html. Questionario (Franco): sul telefono «Torna indietro» diventa «Vai
 //          indietro» (`.wz-solo-tel`, regola nell'index); il pulsante del riepilogo dice «Confermo 👍».
 // v7.065 -Modificato js/app.js e index.html. Questionario (Franco): dopo «Poche/Molte» (o «Alcune» + verso), dove la
@@ -30657,7 +30659,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.066';
+const JS_VERSION = 'v7.067';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49541,12 +49543,13 @@ function _wzDisegna(tieni) {
         //    sull'album, opzione 2 selezionandole da una griglia») - LA DOMANDA, solo dove la tipologia ha la mappa.
         const prop = c.pVista || 'album';
         const carta = (v, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (prop === v ? ' on' : '') + '" onclick="_wzVista(\'' + p + '\',\'' + v + '\')">'
-          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div><div class="wz-carta-sotto">' + sotto + '</div></button>';
+          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
         corpo += intest + '<div class="wz-domanda">' + (c.verso === 'ho'
             ? (it ? 'Come vuoi selezionare le figurine che hai?' : 'How do you want to select the stickers you have?')
             : (it ? 'Come vuoi selezionare le figurine che ti mancano?' : 'How do you want to select the stickers you are missing?')) + '</div>'
           + '<div class="wz-scelte">'
-          + carta('album', '📖', it ? 'Cliccando sull\'album' : 'Clicking on the album', it ? 'Sfogli le pagine dell\'album e tocchi le figurine.' : 'Leaf through the album pages and tap the stickers.')
+          // 🔄 v7.067 (Franco: «il titolo diventa "Cliccando direttamente sulle pagine"; niente sottotitolo»)
+          + carta('album', '📖', it ? 'Cliccando direttamente sulle pagine' : 'Clicking directly on the pages', '')
           + carta('griglia', '🔲', it ? 'Da una griglia' : 'From a grid', it ? 'Tutte le figurine in fila, una accanto all\'altra.' : 'All the stickers side by side.')
           + '</div>';
         piede = indietro + avanti("_wzVista('" + p + "','" + prop + "')");
