@@ -1,7 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.077 - Modificato index.html (app.js per la versione). Home, sul telefono: nei numeri (score) l'etichetta sta
+// v7.078 - Modificato js/app.js e index.html. 🆕 LA «VERSIONE SIGILLATA» (Franco), solo per gli album: sesta voce
+//          di `VERSIONI_ARTICOLO` (`isSealed`, colore turchese `--type-sealed`, badge, filtri, colonne, eBay
+//          «SIGILLATO»), senza spunta per serie (`sempre: true`). Per gli album la griglia perde la Variazione
+//          («l'album variazione non esiste»): chi la ha già la vede finché Franco non lo converte. Il Cartoncino
+//          associato passa dalle variazioni ai sigillati e non è più obbligatorio. Nel questionario dall'Esperto.
+// v7.077 -Modificato index.html (app.js per la versione). Home, sul telefono: nei numeri (score) l'etichetta sta
 //          affianco al numero e non sotto (Franco: «prova»).
 // v7.076 -Modificato js/app.js e index.html. Questionario (Franco): nel riepilogo, sul telefono, al posto della
 //          foto della tipologia le foto dei primi due articoli affiancate e più grandi (`_wzCoppia`).
@@ -30680,7 +30685,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.077';
+const JS_VERSION = 'v7.078';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -39678,7 +39683,10 @@ const VERSIONI_PER_TDA = {
   //    parole a schermo le sceglie lui (v6.754). E' un debito DICHIARATO, non una dimenticanza:
   //    sta qui, sta nel documento, e finche' non e' pagato la spiegazione e' piu' vecchia della
   //    regola - il difetto che questo progetto paga piu' spesso.
-  albums:      ['variation', 'change', 'free', 'printError'],
+  // 🔄 v7.078 (Franco: «possiamo dire che l'album variazione non esiste: il cartoncino in realtà non era attaccato
+  //    all'album, o parte di esso») - VIA LA VARIAZIONE, ENTRA LA VERSIONE SIGILLATA. Gli album che già sono
+  //    «Variazione ufficiale» continuano a vederla (la rete di `_versioneAmmessa`) finché Franco non li converte.
+  albums:      ['sealed', 'change', 'free', 'printError'],
   spille:      ['change', 'printError'],
   trasferelli: ['printError'],
   carte:       ['printError'],
@@ -39951,6 +39959,21 @@ const VERSIONI_ARTICOLO = [
     esportaParolaIt: 'Variazioni non ufficiali', esportaParolaEn: 'unofficial variations',
     colore: 'var(--type-unofficial)',  badge: 'fig-badge-unofficial',  marcatoreEbay: 'VARIAZIONE NON UFFICIALE',
     iconaTab: '🎨' },
+  // 🆕 v7.078 (Franco: «mi serve una nuova tipologia di versione; si chiama "versione sigillata"; valida solo per gli
+  //    album») - LA SESTA VERSIONE. Sta qui, fra le versioni «capo», perché come la variazione è un album diverso
+  //    e non una piccola modifica di un altro. Esiste solo per gli album (`VERSIONI_PER_TDA`). `sempre: true`: non
+  //    ha una spunta per serie, ogni album può esserlo (scelta di Claude, detta a Franco). Colore turchese, scelto
+  //    da Franco fra tre proposte. Il retro di un album sigillato può essere un Cartoncino, non obbligatorio.
+  { chiave: 'sealed',              campo: 'isSealed',              it: 'Versione sigillata',       en: 'Sealed version',
+    filtroIt: 'Versioni sigillate', filtroEn: 'Sealed versions',
+    pluraleIt: 'Versioni sigillate', pluraleEn: 'Sealed versions',
+    badgeIt: 'Versione<br>sigillata', badgeEn: 'Sealed<br>version',
+    itBreve: 'Sigillata', enBreve: 'Sealed', livello: 'capo', partenza: ['base'],
+    idForm: 'fe-is-sealed', sempre: true,
+    esportaIt: 'Versioni sigillate', esportaEn: 'sealed versions',
+    esportaParolaIt: 'Versioni sigillate', esportaParolaEn: 'sealed versions',
+    colore: 'var(--type-sealed)',      badge: 'fig-badge-sealed',      marcatoreEbay: 'SIGILLATO',
+    iconaTab: '🔒' },
   { chiave: 'change',              campo: 'isChange',              it: 'Change',                   en: 'Change',
     // 🐛 v6.965 (Franco: «se cerco la 560 la sua mosca viene contata nei change, ma nelle pillole
     //    dei change quella figurina non compare con tipo "MOSCA NERA": come tipo ha ""») — IL TIPO
@@ -40280,6 +40303,7 @@ function _versioneAmmessa(chiave, f, serie) {
   if (f && v.campo && f[v.campo]) return true;   // la rete
   const sez = (f && f.section) || 'figurines';
   if (!_versioneEsistePerTDA(chiave, sez)) return false;   // livello 1: non esiste
+  if (v.sempre) return true;   // v7.078: la versione sigillata non ha spunta per serie
   const detta = _dichiarazionePerTDA(serie, sez, chiave);  // livello 2
   return detta === null ? _ripiegoStorico(serie, sez, v) : detta;
 }
@@ -40365,7 +40389,8 @@ function _rendiTDAVersioni(s) {
     const dich = s && s.perTDA && s.perTDA[tda];
     // 🔄 v6.787 - SOLO LE VERSIONI CHE ESISTONO per questa tipologia (livello 1). Le altre
     //    non sono caselle spente: non si disegnano.
-    const righe = _VERSIONI_VIVE.filter(v => _versioneEsistePerTDA(v.chiave, tda)).map(v => {
+    // v7.078: le versioni `sempre` (la sigillata) non hanno spunta per serie, quindi nessuna casella
+    const righe = _VERSIONI_VIVE.filter(v => !v.sempre && _versioneEsistePerTDA(v.chiave, tda)).map(v => {
       // 🔴 v6.787 - IL VALORE DI PARTENZA E' QUELLO CHE QUELLA TIPOLOGIA AVEVA PRIMA, cioe'
       //    la spunta delle figurine da cui ereditava. NON si chiama `_versioneAmmessa`: da questa
       //    release quella risponde NO a chi non ha dichiarato, quindi la casella nascerebbe spenta
@@ -49067,8 +49092,9 @@ let _wzFatto = false;
 let _wzLivello = null;
 const _WZ_LIVELLI = {
   amatore:       [],
-  esperto:       ['variation'],
-  collezionista: ['variation', 'unofficialVariation', 'change', 'free', 'printError'],
+  // v7.078: la versione sigillata dal livello Esperto (Franco)
+  esperto:       ['variation', 'sealed'],
+  collezionista: ['variation', 'sealed', 'unofficialVariation', 'change', 'free', 'printError'],
 };
 // le versioni che il livello chiede, fra quelle che il codice riconosce oggi
 function _wzVersioni() {
@@ -58964,8 +58990,10 @@ function _opzioniCartoncino(scelto) {
   return '<option value="">' + (currentLang === 'it' ? '— scegli —' : '— choose —') + '</option>'
     + Object.keys(gruppi).map(k => k ? '<optgroup label="' + esc(k) + '">' + gruppi[k].map(opz).join('') + '</optgroup>' : gruppi[k].map(opz).join('')).join('');
 }
-// solo gli album VARIAZIONE UFFICIALE hanno il cartoncino (scelta di Franco)
-const _vuoleCartoncino = (sezione, isVariation) => sezione === 'albums' && !!isVariation;
+// 🔄 v7.078 (Franco: «il retro come cartoncino vale solo per gli album sigillati… un album di versione sigillata
+//    non deve avere il retro obbligatorio») - il cartoncino è degli album SIGILLATI, non più delle variazioni, e
+//    non è obbligatorio
+const _vuoleCartoncino = (sezione, isSealed) => sezione === 'albums' && !!isSealed;
 
 function buildLinkedFiguresTabsHTML(baseId) {
   const allFigs = getData('figurines', []);
@@ -59326,8 +59354,8 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
     }
   }
   group.style.display = showBase ? '' : 'none';
-  // 🆕 v7.053 - il Cartoncino associato (c'è solo nella scheda degli album) segue «Variazione ufficiale»
-  { const cg = document.getElementById('fe-cartoncino-group'); if (cg) cg.style.display = _v.isVariation ? '' : 'none'; }
+  // 🆕 v7.053 - il Cartoncino associato (c'è solo nella scheda degli album) segue la versione: dalla v7.078 la Sigillata
+  { const cg = document.getElementById('fe-cartoncino-group'); if (cg) cg.style.display = _v.isSealed ? '' : 'none'; }
   // 🆕 v6.965 (Franco: «se arrivo da un clone di una base potrebbe propormi quella») — IL CLONE
   //    PROPONE LA SUA SORGENTE COME PARTENZA, quando la versione ne chiede una e il campo è vuoto.
   //    Solo se la sorgente è fra le partenze AMMESSE: clonando un change, la sorgente non lo è, e
@@ -60039,6 +60067,9 @@ function switchToEditMode(figId) {
     html += '<div class="detail-row">' + _labelVersione('variation') + '<span class="detail-value"><input type="checkbox" id="fe-is-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-variation\')" ' + (f.isVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
     if (_versioneAmmessa('unofficialVariation', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('unofficialVariation') + '<span class="detail-value"><input type="checkbox" id="fe-is-unofficial-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-unofficial-variation\')" ' + (f.isUnofficialVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+    // 🆕 v7.078 - la Versione sigillata (solo album): dopo le variazioni, come nel descrittore
+    if (_versioneAmmessa('sealed', f, figSeries))
+    html += '<div class="detail-row">' + _labelVersione('sealed') + '<span class="detail-value"><input type="checkbox" id="fe-is-sealed" onchange="toggleFeBaseFigurineGroup(\'fe-is-sealed\')" ' + (f.isSealed?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   }
   if (!_extraSerie) {   // v6.146 - Change ed Errore di stampa: stessa ragione
     if (_versioneAmmessa('change', f, figSeries))
@@ -60250,7 +60281,7 @@ function switchToEditMode(figId) {
   //    spuntata (lo accende e spegne `toggleFeBaseFigurineGroup`). Una tendina e non una ricerca: i
   //    Cartoncini sono venticinque, divisi per categoria come i retro.
   if (f.section === 'albums') {
-    html += '<div class="detail-row" id="fe-cartoncino-group" style="' + (_vuoleCartoncino(f.section, f.isVariation) ? '' : 'display:none;') + '">'
+    html += '<div class="detail-row" id="fe-cartoncino-group" style="' + (_vuoleCartoncino(f.section, f.isSealed) ? '' : 'display:none;') + '">'
       + '<span class="detail-label">' + (currentLang === 'it' ? 'Cartoncino associato' : 'Associated card') + '</span>'
       + '<span class="detail-value"><select class="form-input" id="fe-cartoncino" style="padding:0.3rem 0.5rem;font-size:0.9rem;max-width:100%;">'
       + _opzioniCartoncino(f.cartoncinoId) + '</select></span></div>';
@@ -63287,12 +63318,10 @@ async function saveFigFromDetail(figId, opzioni) {
     //    controllo pretendeva un campo che nella scheda di un album non esiste, quindi nessun album poteva
     //    diventare una variazione. Adesso chiede il retro solo a chi il campo ce l'ha (`#fe-retro` nel DOM,
     //    cioè `_retroPerArticolo`), e agli album il loro cartoncino.
-    if (_vuoleCartoncino(existingForCheck?.section, updates.isVariation) && !document.getElementById('fe-cartoncino')?.value) {
-      toast((currentLang === 'it' ? 'Il campo "Cartoncino associato" è obbligatorio per un album Variazione ufficiale' : 'The "Associated card" field is required for an official Variation album'), 'error');
-      return;
-    }
+    // 🔄 v7.078 - il cartoncino è degli album SIGILLATI e NON è obbligatorio (Franco): via il controllo che lo
+    //    pretendeva per le variazioni. Un album che smette di essere sigillato lo perde.
     // solo sugli album: sulle altre tipologie il campo non nasce nemmeno vuoto
-    if (existingForCheck?.section === 'albums') updates.cartoncinoId = _vuoleCartoncino('albums', updates.isVariation)
+    if (existingForCheck?.section === 'albums') updates.cartoncinoId = _vuoleCartoncino('albums', updates.isSealed)
       ? (document.getElementById('fe-cartoncino')?.value || null) : null;
     if (document.getElementById('fe-retro') && (updates.isVariation || updates.isUnofficialVariation) && !document.getElementById('fe-retro')?.value) {
       toast((currentLang === 'it' ? 'Il campo "Retro associato" è obbligatorio quando è selezionata una Variazione ufficiale o non ufficiale' : 'The "Associated retro" field is required when an official or unofficial Variation is selected'), 'error');
