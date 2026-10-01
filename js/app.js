@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.069 - Modificato js/app.js (e index per la versione). Questionario (Franco): il sottotitolo di «Poche» diventa
+//          «Indica quali ci sono» («Molte» resta «Indica quali mancano»).
 // v7.068 - Modificato js/app.js (e index per la versione). Questionario (Franco): «Da una griglia» diventa
 //          «Selezionandole da una griglia».
 // v7.067 - Modificato js/app.js (e index per la versione). Questionario (Franco): la carta «Cliccando sull'album»
@@ -30661,7 +30663,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.068';
+const JS_VERSION = 'v7.069';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49511,7 +49513,7 @@ function _wzDisegna(tieni) {
           + '<div class="wz-scelte">'
           + carta4('tutte', '🏆', it ? 'Tutte' : 'All', ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
           + carta4('nessuna', '😢', it ? 'Nessuna' : 'None', '')
-          + carta4('poche', '🤏', it ? 'Poche' : 'A few', it ? 'Indica quali' : 'Tell us which')
+          + carta4('poche', '🤏', it ? 'Poche' : 'A few', it ? 'Indica quali ci sono' : 'Tell us which you have')
           + carta4('molte', '📚', it ? 'Molte' : 'Many', it ? 'Indica quali mancano' : 'Tell us which are missing')
           + '</div>';
         piede = indietro + avanti("_wzModo4('" + p + "','" + prop + "')");
