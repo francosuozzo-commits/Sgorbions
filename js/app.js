@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.070 - Modificato js/app.js (e index per la versione). Questionario (Franco): anche la carta «Selezionandole da una
+//          griglia» senza sottotitolo.
 // v7.069 - Modificato js/app.js (e index per la versione). Questionario (Franco): il sottotitolo di «Poche» diventa
 //          «Indica quali ci sono» («Molte» resta «Indica quali mancano»).
 // v7.068 - Modificato js/app.js (e index per la versione). Questionario (Franco): «Da una griglia» diventa
@@ -30663,7 +30665,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.069';
+const JS_VERSION = 'v7.070';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49555,7 +49557,7 @@ function _wzDisegna(tieni) {
           // 🔄 v7.067 (Franco: «il titolo diventa "Cliccando direttamente sulle pagine"; niente sottotitolo»)
           + carta('album', '📖', it ? 'Cliccando direttamente sulle pagine' : 'Clicking directly on the pages', '')
           // 🔄 v7.068 (Franco: «"Da una griglia" diventa "Selezionandole da una griglia"»)
-          + carta('griglia', '🔲', it ? 'Selezionandole da una griglia' : 'Selecting them from a grid', it ? 'Tutte le figurine in fila, una accanto all\'altra.' : 'All the stickers side by side.')
+          + carta('griglia', '🔲', it ? 'Selezionandole da una griglia' : 'Selecting them from a grid', '')
           + '</div>';
         piede = indietro + avanti("_wzVista('" + p + "','" + prop + "')");
       } else if (c.vista === 'album' && _wzMappa(s.id, p)) {
