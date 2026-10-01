@@ -1,7 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.074 - Modificato js/app.js (e index per la versione). Questionario (Franco): dopo «Salva e continua» un
+// v7.075 - Modificato js/app.js (e index per la versione). Questionario (Franco): «N selezionati» segue il genere
+//          della tipologia («selezionate» per le figurine); alla fine della serie e nel messaggio a comparsa i
+//          conti sono per tipologia («256 figurine album e 1 album», `_wzPerTipo`), non un totale unico.
+// v7.074 -Modificato js/app.js (e index per la versione). Questionario (Franco): dopo «Salva e continua» un
 //          messaggio a comparsa dice quanti articoli della serie sono entrati nella lista (e quanti tolti).
 // v7.073 - Modificato js/app.js e index.html. Questionario, sulle pagine dell'album (Franco): nei pulsanti «Pagina
 //          precedente / successiva» la freccia va a capo, al centro (`.wz-freccia`); «Tutte e due» diventa «2 pagine».
@@ -30673,7 +30676,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.074';
+const JS_VERSION = 'v7.075';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49280,7 +49283,7 @@ function _wzTocca(chiave, id, el) {
   const n = document.getElementById('wz-conto');
   if (n) n.textContent = String(set.size);
   const p = document.getElementById('wz-conto-parola');
-  if (p) p.textContent = _wzParolaConto(set.size);
+  if (p) p.textContent = _wzParolaConto(set.size, chiave);
   // v7.072: un tocco a mano spegne il verde di «Tocca tutte» / «Nessuna»
   if (chiave !== 'albums' && w.scelte[chiave].ultimo) {
     w.scelte[chiave].ultimo = null;
@@ -49289,7 +49292,35 @@ function _wzTocca(chiave, id, el) {
 }
 // 🆕 v7.058 (Franco: «quando scrivi in basso "1 scelti", cambia in "1 selezionato"») - la parola accanto al conto,
 //    al singolare con uno. La stessa per gli album e per gli articoli toccati uno a uno.
-function _wzParolaConto(n) { return currentLang === 'it' ? (n === 1 ? 'selezionato' : 'selezionati') : 'selected'; }
+// 🔄 v7.075 (Franco: «"N selezionati" deve seguire il genere dell'articolo: per le figurine è femminile») - il
+//    genere è quello del descrittore della tipologia (`genere: 'f'`), come nel resto del sito
+function _wzParolaConto(n, chiave) {
+  if (currentLang !== 'it') return 'selected';
+  const f = !!chiave && (_art(String(chiave).split('|')[0]) || {}).genere === 'f';
+  return f ? (n === 1 ? 'selezionata' : 'selezionate') : (n === 1 ? 'selezionato' : 'selezionati');
+}
+// 🆕 v7.075 (Franco: «hai contato anche l'album, così non mi piace: devi dire quanti oggetti per ogni tda») -
+//    QUANTI PER TIPOLOGIA: «256 figurine album e 1 album». Le versioni hanno il loro nome fra parentesi.
+//    `grassetto` mette i numeri in <b> (la frase di fine serie); il messaggio a comparsa li vuole semplici.
+function _wzPerTipo(ids, grassetto) {
+  const it = currentLang === 'it', figs = new Map(getData('figurines', []).map(f => [f.id, f])), gruppi = new Map();
+  for (const id of ids) {
+    const f = figs.get(id); if (!f) continue;
+    const z = f.section || 'figurines', v = _VERSIONI_VIVE.find(x => f[x.campo]);
+    const k = z + '|' + (v ? v.chiave : '');
+    if (!gruppi.has(k)) gruppi.set(k, { z, v, n: 0 });
+    gruppi.get(k).n++;
+  }
+  const ordine = _wzSezioni();
+  const parti = [...gruppi.values()].sort((a, b) => ordine.indexOf(a.z) - ordine.indexOf(b.z)).map(g => {
+    const a = _art(g.z) || {};
+    const plur = _wzEtichetta(g.z), sing = g.z === 'attaccare' ? (it ? 'Figurina album' : 'Album sticker') : ((it ? a.itSing : a.enSing) || plur);
+    const nome = (g.n === 1 ? sing : plur).toLowerCase() + (g.v ? ' (' + (it ? g.v.it : g.v.en) + ')' : '');
+    return (grassetto ? '<b>' + nfmtWz(g.n) + '</b>' : nfmtWz(g.n)) + ' ' + nome;
+  });
+  if (parti.length < 2) return parti.join('');
+  return parti.slice(0, -1).join(', ') + (it ? ' e ' : ' and ') + parti[parti.length - 1];
+}
 function _wzTutte(chiave, accendi) {
   const w = _wz, s = w.serie[w.i];
   const set = chiave === 'albums' ? w.scelte.albums : w.scelte[chiave].sel;
@@ -49326,11 +49357,12 @@ function _wzListaNuova() {
   const dopo = prima.filter(id => !toccati.has(id) || scelti.has(id)), presenti = new Set(dopo);
   scelti.forEach(id => { if (!presenti.has(id)) { presenti.add(id); dopo.push(id); } });
   const primaSet = new Set(prima);
-  return { dopo, nuovi: dopo.filter(id => !primaSet.has(id)).length, tolti: prima.filter(id => !presenti.has(id)).length };
+  const idNuovi = dopo.filter(id => !primaSet.has(id)), idTolti = prima.filter(id => !presenti.has(id));
+  return { dopo, nuovi: idNuovi.length, tolti: idTolti.length, idNuovi, idTolti };
 }
 async function _wzSalvaSerie() {
   const w = _wz, s = w.serie[w.i];
-  const { dopo, nuovi, tolti } = _wzListaNuova();
+  const { dopo, nuovi, tolti, idNuovi, idTolti } = _wzListaNuova();
   if (nuovi || tolti) {
     const b = document.getElementById('wz-salva'); if (b) { b.disabled = true; b.textContent = currentLang === 'it' ? 'Salvataggio…' : 'Saving…'; }
     if (!_cache.ownedMap) _cache.ownedMap = {};
@@ -49346,10 +49378,10 @@ async function _wzSalvaSerie() {
   //    mia lista per quella serie») - il messaggio a comparsa del sito, sopra la schermata della serie dopo
   if (nuovi || tolti) {
     const it = currentLang === 'it', nome = _nomeSerieCard(s, true);
-    const pz = (n, uno, tanti) => nfmtWz(n) + ' ' + (n === 1 ? uno : tanti);
+    // v7.075: per tipologia (Franco: «devi dire quanti oggetti per ogni tda»)
     toast(it
-      ? nome + ': ' + [nuovi ? 'hai aggiunto ' + pz(nuovi, 'articolo', 'articoli') + ' alla tua lista' : '', tolti ? (nuovi ? 'e ne hai tolti ' + nfmtWz(tolti) : 'hai tolto ' + pz(tolti, 'articolo', 'articoli') + ' dalla tua lista') : ''].filter(Boolean).join(' ') + '.'
-      : nome + ': ' + (nuovi ? nuovi + ' added' : '') + (nuovi && tolti ? ', ' : '') + (tolti ? tolti + ' removed' : '') + '.', 'success');
+      ? nome + ': ' + [nuovi ? 'hai aggiunto alla tua lista ' + _wzPerTipo(idNuovi) : '', tolti ? (nuovi ? 'e hai tolto ' : 'hai tolto dalla tua lista ') + _wzPerTipo(idTolti) : ''].filter(Boolean).join(', ') + '.'
+      : nome + ': ' + [nuovi ? 'added ' + _wzPerTipo(idNuovi) : '', tolti ? 'removed ' + _wzPerTipo(idTolti) : ''].filter(Boolean).join(', ') + '.', 'success');
   }
   _wzIniziaSerie(w.i + 1);
 }
@@ -49522,7 +49554,7 @@ function _wzDisegna(tieni) {
         + '<div class="wz-scelte wz-scelte-album">' + alb.map(f =>
             '<button type="button" class="wz-carta' + (w.scelte.albums.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'albums\',\'' + f.id + '\',this)">'
             + _wzImg(_fotoFigurina(f, figs) || f.img, 400, 400, '') + '<div class="wz-carta-titolo">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
-      piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + w.scelte.albums.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(w.scelte.albums.size) + '</span></span>'
+      piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + w.scelte.albums.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(w.scelte.albums.size, 'albums') + '</span></span>'
         + avanti('_wzAvanti()');
     } else if (w.scelte[p] && _wzAScelta(p)) {
       const c = w.scelte[p], tutti = _wzArticoli(s.id, p), nome = esc(_wzNome(p)), ver = String(p).includes('|');
@@ -49622,7 +49654,7 @@ function _wzDisegna(tieni) {
                 + '<div class="wz-num">' + esc(String(f.number || '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>' : '');
         // la pagina dopo si scarica mentre si tocca questa
         if (m.pagine[pg + 1]) { const im = new Image(); im.src = cloudinaryUrl(m.pagine[pg + 1].url, 'w_1600,c_limit,q_auto,f_auto'); }
-        piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + c.sel.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(c.sel.size) + '</span></span>'
+        piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + c.sel.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(c.sel.size, p) + '</span></span>'
           + avanti('_wzAvanti()');
       } else {
         const figs = getData('figurines', []), mie = new Set(getOwned());
@@ -49636,19 +49668,21 @@ function _wzDisegna(tieni) {
               + (mie.has(f.id) ? '<span class="wz-mia">' + (it ? 'già tua' : 'yours') + '</span>' : '')
               + _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, '')
               + '<div class="wz-num">' + esc(String(f.number || '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
-        piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + c.sel.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(c.sel.size) + '</span></span>'
+        piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + c.sel.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(c.sel.size, p) + '</span></span>'
           + avanti('_wzAvanti()');
       }
     } else if (p === 'fine') {
-      const { nuovi, tolti } = _wzListaNuova();
+      const { nuovi, tolti, idNuovi, idTolti } = _wzListaNuova();
+      // 🔄 v7.075 (Franco: «devi dire quanti oggetti per ogni tda») - per tipologia, non un totale unico
       const frase = it
-        ? (nuovi && tolti ? 'Stai aggiungendo <b>' + nfmtWz(nuovi) + '</b> articoli di questa serie alla tua lista, e ne stai togliendo <b>' + nfmtWz(tolti) + '</b>'
-          : nuovi ? 'Stai aggiungendo <b>' + nfmtWz(nuovi) + '</b> articoli di questa serie alla tua lista'
-          : tolti ? 'Stai togliendo <b>' + nfmtWz(tolti) + '</b> articoli di questa serie dalla tua lista'
+        ? (nuovi && tolti ? 'Stai aggiungendo alla tua lista ' + _wzPerTipo(idNuovi, true) + ', e stai togliendo ' + _wzPerTipo(idTolti, true)
+          : nuovi ? 'Stai aggiungendo alla tua lista ' + _wzPerTipo(idNuovi, true)
+          : tolti ? 'Stai togliendo dalla tua lista ' + _wzPerTipo(idTolti, true)
           : 'La tua lista di questa serie resta com\'è')
         : (nuovi || tolti ? 'You are adding <b>' + nuovi + '</b> and removing <b>' + tolti + '</b> items of this series' : 'Your list for this series stays as it is');
       corpo += '<div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div>'
-        + '<div class="wz-domanda">' + frase + '.</div>';   // v7.061: col punto (Franco)
+        // v7.061: col punto (Franco). v7.075: dentro uno <span>, perché `.wz-domanda` è flex e ogni <b> diventava un blocco a sé
+        + '<div class="wz-domanda"><span>' + frase + '.</span></div>';
       piede = indietro + '<button type="button" id="wz-salva" class="btn-primary wz-grande" onclick="_wzSalvaSerie()">'
         + (nuovi || tolti ? (it ? 'Salva e continua →' : 'Save and continue →') : (it ? 'Continua →' : 'Continue →')) + '</button>';
     }
