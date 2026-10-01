@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.071">
+<link rel="stylesheet" href="css/style.css?v=7.072">
 
 
 <style>
@@ -622,6 +622,8 @@
 /* 🆕 v7.063 (Franco: «solo nel mobile, il tasto salta questa serie chiamalo "salta serie"») - «questa» sparisce sotto
    gli 861px; il pulsante sotto la foto c'è solo lì, e dice già «Salta serie». */
 @media (max-width: 860px) { .wz-solo-desktop { display: none; } }
+/* 🆕 v7.072 (Franco) - «Tocca tutte» / «Nessuna» verdi dopo averli premuti, finché non si tocca una figurina */
+.wz-comandi .wz-cmd-on { background: #16a34a !important; border-color: #16a34a !important; color: #ffffff !important; }
 /* 🆕 v7.066 (Franco: «da mobile il tasto "torna indietro" diventa "vai indietro"») - il gemello di .wz-solo-desktop */
 .wz-solo-tel { display: none; }
 @media (max-width: 860px) { .wz-solo-tel { display: inline; } }
@@ -5852,7 +5854,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.071"></script>
+<script src="js/app.js?v=7.072"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5876,7 +5878,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.071'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.072'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
