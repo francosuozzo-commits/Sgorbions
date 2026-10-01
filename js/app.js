@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.071 - Modificato js/app.js (e index per la versione). Questionario, sulle pagine dell'album (Franco): «…che ti
+// v7.072 - Modificato js/app.js e index.html. Questionario (Franco): «Tocca tutte» / «Nessuna» diventano verdi dopo
+//          averli premuti (`c.ultimo`, `.wz-cmd-on`) e si spengono al primo tocco su una figurina.
+// v7.071 -Modificato js/app.js (e index per la versione). Questionario, sulle pagine dell'album (Franco): «…che ti
 //          mancano: le altre entreranno nella tua lista.»
 // v7.070 - Modificato js/app.js (e index per la versione). Questionario (Franco): anche la carta «Selezionandole da una
 //          griglia» senza sottotitolo.
@@ -30667,7 +30669,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.071';
+const JS_VERSION = 'v7.072';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49275,6 +49277,11 @@ function _wzTocca(chiave, id, el) {
   if (n) n.textContent = String(set.size);
   const p = document.getElementById('wz-conto-parola');
   if (p) p.textContent = _wzParolaConto(set.size);
+  // v7.072: un tocco a mano spegne il verde di «Tocca tutte» / «Nessuna»
+  if (chiave !== 'albums' && w.scelte[chiave].ultimo) {
+    w.scelte[chiave].ultimo = null;
+    document.querySelectorAll('.wz-cmd-on').forEach(b => b.classList.remove('wz-cmd-on'));
+  }
 }
 // 🆕 v7.058 (Franco: «quando scrivi in basso "1 scelti", cambia in "1 selezionato"») - la parola accanto al conto,
 //    al singolare con uno. La stessa per gli album e per gli articoli toccati uno a uno.
@@ -49284,6 +49291,9 @@ function _wzTutte(chiave, accendi) {
   const set = chiave === 'albums' ? w.scelte.albums : w.scelte[chiave].sel;
   set.clear();
   if (accendi) _wzArticoli(s.id, chiave).forEach(f => set.add(f.id));
+  // 🆕 v7.072 (Franco: «se premo "tutte" o "nessuna" colora di verde quel bottone, ma non appena faccio qualsiasi
+  //    modifica, spegnilo») - il pulsante premuto per ultimo resta verde finché non si tocca una figurina (`_wzTocca`)
+  if (chiave !== 'albums') w.scelte[chiave].ultimo = accendi ? 'tutte' : 'nessuna';
   _wzDisegna(true);   // v7.033: si resta dove si era
 }
 // cosa, secondo le risposte, è nella lista (fra gli articoli di cui si è parlato)
@@ -49579,8 +49589,8 @@ function _wzDisegna(tieni) {
         corpo += intest + '<p class="wz-testo">' + (c.verso === 'ho'
             ? (it ? 'Sfoglia l\'album e tocca le figurine che <b>hai</b>.' : 'Leaf through the album and tap the stickers you <b>have</b>.')
             : (it ? 'Sfoglia l\'album e tocca le figurine che <b>ti mancano</b>: le altre entreranno nella tua lista.' : 'Leaf through the album and tap the stickers you are <b>missing</b>.')) + '</p>'
-          + '<div class="wz-comandi"><button type="button" class="btn-secondary" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Tocca tutte' : 'Select all') + '</button>'
-          + '<button type="button" class="btn-secondary" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Nessuna' : 'None') + '</button></div>'
+          + '<div class="wz-comandi"><button type="button" class="btn-secondary wz-cmd' + (c.ultimo === 'tutte' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Tocca tutte' : 'Select all') + '</button>'
+          + '<button type="button" class="btn-secondary wz-cmd' + (c.ultimo === 'nessuna' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Nessuna' : 'None') + '</button></div>'
           + nav(false)
           + '<div id="wz-album" class="wz-album' + (meta === 'sx' ? ' meta' : meta === 'dx' ? ' meta dx' : '') + '"><div class="wz-album-foglio">'
           + '<img src="' + cloudinaryUrl(P.url, 'w_1600,c_limit,q_auto,f_auto') + '" alt="">'
@@ -49606,8 +49616,8 @@ function _wzDisegna(tieni) {
         corpo += intest + '<p class="wz-testo">' + (c.verso === 'ho'
             ? (it ? 'Tocca quelle che <b>hai</b>.' : 'Tap the ones you <b>have</b>.')
             : (it ? 'Tocca quelle che <b>ti mancano</b>: tutte le altre entrano nella tua lista.' : 'Tap the ones you are <b>missing</b>.')) + '</p>'
-          + '<div class="wz-comandi"><button type="button" class="btn-secondary" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Tocca tutte' : 'Select all') + '</button>'
-          + '<button type="button" class="btn-secondary" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Nessuna' : 'None') + '</button></div>'
+          + '<div class="wz-comandi"><button type="button" class="btn-secondary wz-cmd' + (c.ultimo === 'tutte' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Tocca tutte' : 'Select all') + '</button>'
+          + '<button type="button" class="btn-secondary wz-cmd' + (c.ultimo === 'nessuna' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Nessuna' : 'None') + '</button></div>'
           + '<div class="wz-griglia">' + tutti.map(f =>
               '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
               + (mie.has(f.id) ? '<span class="wz-mia">' + (it ? 'già tua' : 'yours') + '</span>' : '')
