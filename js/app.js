@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.065 - Modificato js/app.js e index.html. Questionario (Franco): dopo «Poche/Molte» (o «Alcune» + verso), dove la
+// v7.066 - Modificato js/app.js e index.html. Questionario (Franco): sul telefono «Torna indietro» diventa «Vai
+//          indietro» (`.wz-solo-tel`, regola nell'index); il pulsante del riepilogo dice «Confermo 👍».
+// v7.065 -Modificato js/app.js e index.html. Questionario (Franco): dopo «Poche/Molte» (o «Alcune» + verso), dove la
 //          tipologia della serie ha la mappa dell'album, la domanda «Come vuoi selezionare le figurine…?» con due
 //          carte: «Cliccando sull'album» (si sfogliano le pagine e si toccano le figurine, `_wzMappa`, `_WZ_MAPPE`)
 //          e «Da una griglia» (quella di sempre). Mappe: serie 1, 2, 3, Mitici, W gli Sgorbions (1.308 riquadri).
@@ -30655,7 +30657,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.065';
+const JS_VERSION = 'v7.066';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49363,7 +49365,7 @@ function _wzDisegna(tieni) {
   if (!ov) { ov = document.createElement('div'); ov.id = 'wz-overlay'; ov.className = 'wz-overlay'; document.body.appendChild(ov); document.body.style.overflow = 'hidden'; }
   // 🔄 v7.050 (Franco: «il tasto Esci chiamalo Esci dal questionario, e chiedi conferma per uscire»)
   const esci = '<button type="button" class="btn-secondary wz-esci wz-scritta-rossa" onclick="_wzChiediEsci()">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';   // v7.058: rosso (Franco)
-  const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">← ' + (it ? 'Torna indietro' : 'Go back') + '</button>';
+  const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">← ' + (it ? '<span class="wz-solo-desktop">Torna</span><span class="wz-solo-tel">Vai</span> indietro' : 'Go back') + '</button>';
   // 🔄 v7.052 (Franco: «Cambia "Avanti" con "Prosegui"»)
   const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Prosegui →' : 'Next →') + '</button>';
   const giaTua = '<div class="wz-proposta">' + (it ? 'la tua risposta' : 'your answer') + '</div>';
@@ -49407,7 +49409,7 @@ function _wzDisegna(tieni) {
       + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'Aggiungiamo le variazioni ufficiali degli articoli.' : "Let's add the official variations of the items.")
       + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'Aggiungiamo le variazioni non ufficiali ed altri articoli molto rari.' : "Let's add the unofficial variations and other very rare items.")
       + '</div>';
-    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">← ' + (it ? 'Torna indietro' : 'Go back') + '</button>'
+    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">← ' + (it ? '<span class="wz-solo-desktop">Torna</span><span class="wz-solo-tel">Vai</span> indietro' : 'Go back') + '</button>'
       + (w.livello ? avanti('_wzConfermaLivello()') : '');
   } else if (w.passo === 'azzera1' || w.passo === 'azzera2') {
     const n = getOwned().length, primo = w.passo === 'azzera1';
@@ -49477,7 +49479,7 @@ function _wzDisegna(tieni) {
           + '<p class="wz-testo">' + (it ? 'Confermi ?' : 'Do you confirm ?') + '</p>'
           + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzRiepilogoTda(false)">← ' + (it ? 'Modifica' : 'Change') + '</button>'
           // 🔄 v7.058 (Franco: «è un tasto in più che chiediamo appositamente: lo farei verde, e al posto della freccia un pollice»)
-          + '<button type="button" class="btn-primary wz-grande wz-conferma" onclick="_wzConfermaTda()">' + (it ? 'Conferma 👍' : 'Confirm 👍') + '</button></div>'
+          + '<button type="button" class="btn-primary wz-grande wz-conferma" onclick="_wzConfermaTda()">' + (it ? 'Confermo 👍' : 'Confirm 👍') + '</button></div>'
           + '</div></div>';
       }
     } else if (p === 'albums') {
