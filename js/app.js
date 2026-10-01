@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.076 - Modificato js/app.js e index.html. Questionario (Franco): nel riepilogo, sul telefono, al posto della
+//          foto della tipologia le foto dei primi due articoli affiancate e più grandi (`_wzCoppia`).
 // v7.075 - Modificato js/app.js (e index per la versione). Questionario (Franco): «N selezionati» segue il genere
 //          della tipologia («selezionate» per le figurine); alla fine della serie e nel messaggio a comparsa i
 //          conti sono per tipologia («256 figurine album e 1 album», `_wzPerTipo`), non un totale unico.
@@ -30676,7 +30678,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.075';
+const JS_VERSION = 'v7.076';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49124,6 +49126,16 @@ function _wzFotoSez(sez, sid) {
   sez = String(sez).split('|')[0];   // v7.034: la versione ha la foto della sua tipologia
   return _fotoSezioneSerie(sez, sid) || _fotoBoxUrl(sez) || ((typeof SECTION_IMAGES !== 'undefined' && SECTION_IMAGES[sez]) || '');
 }
+// 🆕 v7.076 (Franco: «le foto del riepilogo da mobile sono troppo piccole: solo da mobile usiamo una foto fatta
+//    unendo le foto di due articoli, i primi due della lista») - le foto dei primi due articoli della tipologia,
+//    affiancate; il foglio la mostra solo sul telefono e lì nasconde `.wz-popup-foto`. Con meno di due foto: niente
+//    (resta quella della tipologia, che il telefono allora non nasconde).
+function _wzCoppia(z, sid) {
+  const figs = getData('figurines', []);
+  const foto = _wzArticoli(sid, z).map(f => _fotoFigurina(f, figs) || f.img).filter(Boolean).slice(0, 2);
+  if (foto.length < 2) return '';
+  return '<span class="wz-popup-coppia">' + foto.map(u => _wzImg(u, 200, 260, '')).join('') + '</span>';
+}
 function _wzImg(url, w, h, cls) {
   if (!url) return '<div class="' + (cls || '') + ' wz-senza-foto">🎴</div>';
   const u = /^https?:\/\/res\.cloudinary/.test(url) || !/^https?:/.test(url) ? cloudinaryUrl(url, 'w_' + w + ',h_' + h + ',c_fit,q_auto,f_auto') : url;
@@ -49539,7 +49551,7 @@ function _wzDisegna(tieni) {
           + '<div class="wz-popup-titolo">' + (it ? 'Riepilogo' : 'Summary') + '</div>'
           + (scelte.length
             ? '<p class="wz-testo">' + (it ? 'Di questa serie hai selezionato:' : 'From this series you selected:') + '</p>'
-              + '<ul class="wz-popup-lista">' + scelte.map(z => '<li>' + _wzImg(_wzFotoSez(z, s.id), 80, 80, 'wz-popup-foto') + '<span>' + esc(_wzEtichetta(z)) + '</span></li>').join('') + '</ul>'
+              + '<ul class="wz-popup-lista">' + scelte.map(z => '<li>' + _wzImg(_wzFotoSez(z, s.id), 80, 80, 'wz-popup-foto') + _wzCoppia(z, s.id) + '<span>' + esc(_wzEtichetta(z)) + '</span></li>').join('') + '</ul>'
             : '<p class="wz-testo">' + (it ? 'Non hai selezionato nessun quadrante di questa serie.' : 'You did not select any tile from this series.') + '</p>')
           + '<p class="wz-testo">' + (it ? 'Confermi ?' : 'Do you confirm ?') + '</p>'
           + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzRiepilogoTda(false)">← ' + (it ? 'Modifica' : 'Change') + '</button>'
