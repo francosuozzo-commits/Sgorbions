@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.079 - Modificato js/app.js (e index per la versione). Questionario (Franco): nel sottotitolo di Collezionista
+// v7.080 - Modificato js/app.js e index.html. Questionario (Franco): in «Cosa hai di questa serie?» meno spazio fra la
+//          foto e il titolo dei quadranti (`.wz-scelte-tda`, foto ad altezza propria).
+// v7.079 -Modificato js/app.js (e index per la versione). Questionario (Franco): nel sottotitolo di Collezionista
 //          «molto rari» diventa «rari».
 // v7.078 -Modificato js/app.js e index.html. 🆕 LA «VERSIONE SIGILLATA» (Franco), solo per gli album: sesta voce
 //          di `VERSIONI_ARTICOLO` (`isSealed`, colore turchese `--type-sealed`, badge, filtri, colonne, eBay
@@ -30687,7 +30689,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.079';
+const JS_VERSION = 'v7.080';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49562,7 +49564,7 @@ function _wzDisegna(tieni) {
         + (w.sezSerie.includes('attaccare') && w.sezSerie.includes('albums') ? '<p class="wz-testo">' + (it
             ? 'I quadranti grigi si attivano da soli all\'occorrenza.'   // v7.057: la frase di Franco
             : 'The grey tiles become active by themselves when needed.') + '</p>' : '')
-        + '<div class="wz-scelte">' + w.sezSerie.map(z => {
+        + '<div class="wz-scelte wz-scelte-tda">' + w.sezSerie.map(z => {   // v7.080: classe per lo spazio foto-titolo
             const grigia = z === 'attaccare' && !_wzFpaLibera();
             return '<button type="button" class="wz-carta' + (w.accese.has(z) ? ' on' : '') + (grigia ? ' wz-grigia' : '') + '"' + (grigia ? ' disabled' : '') + ' onclick="_wzToccaTda(\'' + z + '\')">'
               + _wzImg(_wzFotoSez(z, s.id), 400, 300, '') + '<div class="wz-carta-titolo">' + esc(_wzEtichetta(z)) + '</div>'
