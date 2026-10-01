@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.074 - Modificato js/app.js (e index per la versione). Questionario (Franco): dopo «Salva e continua» un
+//          messaggio a comparsa dice quanti articoli della serie sono entrati nella lista (e quanti tolti).
 // v7.073 - Modificato js/app.js e index.html. Questionario, sulle pagine dell'album (Franco): nei pulsanti «Pagina
 //          precedente / successiva» la freccia va a capo, al centro (`.wz-freccia`); «Tutte e due» diventa «2 pagine».
 // v7.072 - Modificato js/app.js e index.html. Questionario (Franco): «Tocca tutte» / «Nessuna» diventano verdi dopo
@@ -30671,7 +30673,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.073';
+const JS_VERSION = 'v7.074';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49340,6 +49342,15 @@ async function _wzSalvaSerie() {
   if (!_wzFatto) _wzSegna(true);
   w.aggiunti += nuovi; w.tolti += tolti;
   w.fatte.push({ s, n: nuovi, t: tolti });
+  // 🆕 v7.074 (Franco: «quando premo "Salva e continua" manda un pop-up che dice quante figurine ho aggiunto alla
+  //    mia lista per quella serie») - il messaggio a comparsa del sito, sopra la schermata della serie dopo
+  if (nuovi || tolti) {
+    const it = currentLang === 'it', nome = _nomeSerieCard(s, true);
+    const pz = (n, uno, tanti) => nfmtWz(n) + ' ' + (n === 1 ? uno : tanti);
+    toast(it
+      ? nome + ': ' + [nuovi ? 'hai aggiunto ' + pz(nuovi, 'articolo', 'articoli') + ' alla tua lista' : '', tolti ? (nuovi ? 'e ne hai tolti ' + nfmtWz(tolti) : 'hai tolto ' + pz(tolti, 'articolo', 'articoli') + ' dalla tua lista') : ''].filter(Boolean).join(' ') + '.'
+      : nome + ': ' + (nuovi ? nuovi + ' added' : '') + (nuovi && tolti ? ', ' : '') + (tolti ? tolti + ' removed' : '') + '.', 'success');
+  }
   _wzIniziaSerie(w.i + 1);
 }
 // 🆕 L'AZZERAMENTO (Franco: «resettare la propria lista riazzerando il questionario… con domanda da doppia
