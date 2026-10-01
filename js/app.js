@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.071 - Modificato js/app.js (e index per la versione). Questionario, sulle pagine dell'album (Franco): «…che ti
+//          mancano: le altre entreranno nella tua lista.»
 // v7.070 - Modificato js/app.js (e index per la versione). Questionario (Franco): anche la carta «Selezionandole da una
 //          griglia» senza sottotitolo.
 // v7.069 - Modificato js/app.js (e index per la versione). Questionario (Franco): il sottotitolo di «Poche» diventa
@@ -30665,7 +30667,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.070';
+const JS_VERSION = 'v7.071';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49576,7 +49578,7 @@ function _wzDisegna(tieni) {
           + '</div>';
         corpo += intest + '<p class="wz-testo">' + (c.verso === 'ho'
             ? (it ? 'Sfoglia l\'album e tocca le figurine che <b>hai</b>.' : 'Leaf through the album and tap the stickers you <b>have</b>.')
-            : (it ? 'Sfoglia l\'album e tocca le figurine che <b>ti mancano</b>: tutte le altre entrano nella tua lista.' : 'Leaf through the album and tap the stickers you are <b>missing</b>.')) + '</p>'
+            : (it ? 'Sfoglia l\'album e tocca le figurine che <b>ti mancano</b>: le altre entreranno nella tua lista.' : 'Leaf through the album and tap the stickers you are <b>missing</b>.')) + '</p>'
           + '<div class="wz-comandi"><button type="button" class="btn-secondary" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Tocca tutte' : 'Select all') + '</button>'
           + '<button type="button" class="btn-secondary" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Nessuna' : 'None') + '</button></div>'
           + nav(false)
