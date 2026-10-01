@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.080">
+<link rel="stylesheet" href="css/style.css?v=7.081">
 
 
 <style>
@@ -634,8 +634,14 @@
    foto di due articoli affiancate al posto della foto della tipologia */
 .wz-popup-coppia { display: none; }
 @media (max-width: 860px) {
-  .wz-popup-coppia { display: flex; gap: 3px; flex-shrink: 0; }
-  .wz-popup-coppia img { width: 56px; height: 76px; object-fit: contain; border-radius: 5px; background: var(--card2); }
+  /* 🔄 v7.081 (Franco: «parzialmente sovrapposte, come a formare un piccolo mazzo») - la seconda foto sopra la
+     prima, spostata a destra; tutte e due un po' ruotate e con un'ombra, come carte tenute in mano */
+  .wz-popup-coppia { display: block; position: relative; width: 84px; height: 82px; flex-shrink: 0; }
+  .wz-popup-coppia img { position: absolute; width: 54px; height: 72px; object-fit: cover; border-radius: 5px;
+    background: var(--card2); box-shadow: 0 2px 6px rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.15); }
+  .wz-popup-coppia img:first-child { left: 2px; top: 6px; transform: rotate(-8deg); }
+  .wz-popup-coppia img:nth-child(2) { left: 26px; top: 2px; transform: rotate(7deg); }
+  .wz-popup-coppia.una img:first-child { left: 15px; top: 5px; transform: none; }
   .wz-popup-lista li:has(.wz-popup-coppia) .wz-popup-foto { display: none; }
 }
 /* 🆕 v7.073 (Franco: «la freccia sui tasti pagina precedente e successiva mettila a capo e al centro») */
@@ -5878,7 +5884,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.080"></script>
+<script src="js/app.js?v=7.081"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5902,7 +5908,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.080'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.081'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
