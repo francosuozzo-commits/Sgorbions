@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.078 - Modificato js/app.js e index.html. 🆕 LA «VERSIONE SIGILLATA» (Franco), solo per gli album: sesta voce
+// v7.079 - Modificato js/app.js (e index per la versione). Questionario (Franco): nel sottotitolo di Collezionista
+//          «molto rari» diventa «rari».
+// v7.078 -Modificato js/app.js e index.html. 🆕 LA «VERSIONE SIGILLATA» (Franco), solo per gli album: sesta voce
 //          di `VERSIONI_ARTICOLO` (`isSealed`, colore turchese `--type-sealed`, badge, filtri, colonne, eBay
 //          «SIGILLATO»), senza spunta per serie (`sempre: true`). Per gli album la griglia perde la Variazione
 //          («l'album variazione non esiste»): chi la ha già la vede finché Franco non lo converte. Il Cartoncino
@@ -30685,7 +30687,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.078';
+const JS_VERSION = 'v7.079';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49512,7 +49514,7 @@ function _wzDisegna(tieni) {
       // 🔄 v7.052 (Franco) - le scritte sotto le card; l'inglese è mio
       + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'Solo articoli in versione base.' : 'Base version items only.')
       + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'Aggiungiamo le variazioni ufficiali degli articoli.' : "Let's add the official variations of the items.")
-      + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'Aggiungiamo le variazioni non ufficiali ed altri articoli molto rari.' : "Let's add the unofficial variations and other very rare items.")
+      + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'Aggiungiamo le variazioni non ufficiali ed altri articoli rari.' : "Let's add the unofficial variations and other rare items.")
       + '</div>';
     piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">← ' + (it ? '<span class="wz-solo-desktop">Torna</span><span class="wz-solo-tel">Vai</span> indietro' : 'Go back') + '</button>'
       + (w.livello ? avanti('_wzConfermaLivello()') : '');
