@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.076">
+<link rel="stylesheet" href="css/style.css?v=7.077">
 
 
 <style>
@@ -784,6 +784,12 @@
   .hero-stats-left, .hero-stats-right {
     grid-template-rows:none; grid-template-columns:repeat(3, minmax(0,1fr)); grid-auto-flow:row;
     width:100%; justify-content:stretch; gap:0.6rem 0.5rem; }
+  /* 🆕 v7.077 (Franco: «nella home prova a mettere l'etichetta affianco al numero, e non sotto; mi riferisco agli
+     score») - SOLO SUL TELEFONO: numero e nome sulla stessa riga, il nome a sinistra e libero di andare a capo.
+     Sul desktop no: i dodici numeri stanno su una riga sola, e coi nomi affianco non ci starebbero. */
+  .hero-stats-side .stat-item { display:flex; align-items:center; justify-content:flex-start; gap:0.3rem; text-align:left; }
+  .hero-stats-side .stat-num { flex-shrink:0; }
+  .hero-stats-side .stat-label { margin:0; text-align:left; line-height:1.1; }
 }
 /* v5.950 → v5.952 — SCHEDA SERIE: i due bottoni di ritorno nel MARGINE ESTERNO (Franco).
    "← Inventario" (chiude la scheda serie) e "← Sezioni" (chiude una sezione) stavano ciascuno su
@@ -5864,7 +5870,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.076"></script>
+<script src="js/app.js?v=7.077"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5888,7 +5894,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.076'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.077'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
