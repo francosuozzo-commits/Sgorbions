@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.073 - Modificato js/app.js e index.html. Questionario, sulle pagine dell'album (Franco): nei pulsanti «Pagina
+//          precedente / successiva» la freccia va a capo, al centro (`.wz-freccia`); «Tutte e due» diventa «2 pagine».
 // v7.072 - Modificato js/app.js e index.html. Questionario (Franco): «Tocca tutte» / «Nessuna» diventano verdi dopo
 //          averli premuti (`c.ultimo`, `.wz-cmd-on`) e si spengono al primo tocco su una figurina.
 // v7.071 -Modificato js/app.js (e index per la versione). Questionario, sulle pagine dell'album (Franco): «…che ti
@@ -30669,7 +30671,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.072';
+const JS_VERSION = 'v7.073';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49581,10 +49583,10 @@ function _wzDisegna(tieni) {
         const meta = c.meta;
         const bv = (v, t) => '<button type="button" class="btn-secondary' + (meta === v ? ' wz-on' : '') + '" onclick="_wzMeta(\'' + p + '\',\'' + v + '\')">' + t + '</button>';
         const nav = (giu) => '<div class="wz-album-nav">'
-          + '<button type="button" class="btn-secondary" onclick="_wzPagina(\'' + p + '\',-1)"' + (pg === 0 ? ' disabled' : '') + '>← ' + (it ? 'Pagina precedente' : 'Previous page') + '</button>'
+          + '<button type="button" class="btn-secondary" onclick="_wzPagina(\'' + p + '\',-1)"' + (pg === 0 ? ' disabled' : '') + '>' + (it ? 'Pagina precedente' : 'Previous page') + '<span class="wz-freccia">←</span></button>'
           + '<span class="wz-album-dove">' + (it ? 'Pagina ' : 'Page ') + (pg + 1) + (it ? ' di ' : ' of ') + m.pagine.length + '</span>'
-          + '<button type="button" class="btn-secondary" onclick="_wzPagina(\'' + p + '\',1)"' + (pg === m.pagine.length - 1 ? ' disabled' : '') + '>' + (it ? 'Pagina successiva' : 'Next page') + ' →</button>'
-          + (giu ? '' : '<span class="wz-album-meta">' + bv('tutte', it ? 'Tutte e due' : 'Both') + bv('sx', it ? 'Sinistra' : 'Left') + bv('dx', it ? 'Destra' : 'Right') + '</span>')
+          + '<button type="button" class="btn-secondary" onclick="_wzPagina(\'' + p + '\',1)"' + (pg === m.pagine.length - 1 ? ' disabled' : '') + '>' + (it ? 'Pagina successiva' : 'Next page') + '<span class="wz-freccia">→</span></button>'
+          + (giu ? '' : '<span class="wz-album-meta">' + bv('tutte', it ? '2 pagine' : '2 pages') + bv('sx', it ? 'Sinistra' : 'Left') + bv('dx', it ? 'Destra' : 'Right') + '</span>')
           + '</div>';
         corpo += intest + '<p class="wz-testo">' + (c.verso === 'ho'
             ? (it ? 'Sfoglia l\'album e tocca le figurine che <b>hai</b>.' : 'Leaf through the album and tap the stickers you <b>have</b>.')
