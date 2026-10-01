@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.068 - Modificato js/app.js (e index per la versione). Questionario (Franco): «Da una griglia» diventa
+//          «Selezionandole da una griglia».
 // v7.067 - Modificato js/app.js (e index per la versione). Questionario (Franco): la carta «Cliccando sull'album»
 //          diventa «Cliccando direttamente sulle pagine», senza sottotitolo.
 // v7.066 - Modificato js/app.js e index.html. Questionario (Franco): sul telefono «Torna indietro» diventa «Vai
@@ -30659,7 +30661,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.067';
+const JS_VERSION = 'v7.068';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49550,7 +49552,8 @@ function _wzDisegna(tieni) {
           + '<div class="wz-scelte">'
           // 🔄 v7.067 (Franco: «il titolo diventa "Cliccando direttamente sulle pagine"; niente sottotitolo»)
           + carta('album', '📖', it ? 'Cliccando direttamente sulle pagine' : 'Clicking directly on the pages', '')
-          + carta('griglia', '🔲', it ? 'Da una griglia' : 'From a grid', it ? 'Tutte le figurine in fila, una accanto all\'altra.' : 'All the stickers side by side.')
+          // 🔄 v7.068 (Franco: «"Da una griglia" diventa "Selezionandole da una griglia"»)
+          + carta('griglia', '🔲', it ? 'Selezionandole da una griglia' : 'Selecting them from a grid', it ? 'Tutte le figurine in fila, una accanto all\'altra.' : 'All the stickers side by side.')
           + '</div>';
         piede = indietro + avanti("_wzVista('" + p + "','" + prop + "')");
       } else if (c.vista === 'album' && _wzMappa(s.id, p)) {
