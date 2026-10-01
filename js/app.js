@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.081 - Modificato js/app.js e index.html. Questionario, riepilogo sul telefono (Franco): le due foto diventano
+//          un mazzetto, sovrapposte e un po' ruotate; con un articolo solo (un album unico) una foto sola.
 // v7.080 - Modificato js/app.js e index.html. Questionario (Franco): in «Cosa hai di questa serie?» meno spazio fra la
 //          foto e il titolo dei quadranti (`.wz-scelte-tda`, foto ad altezza propria).
 // v7.079 -Modificato js/app.js (e index per la versione). Questionario (Franco): nel sottotitolo di Collezionista
@@ -30689,7 +30691,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.080';
+const JS_VERSION = 'v7.081';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49162,11 +49164,15 @@ function _wzFotoSez(sez, sid) {
 //    unendo le foto di due articoli, i primi due della lista») - le foto dei primi due articoli della tipologia,
 //    affiancate; il foglio la mostra solo sul telefono e lì nasconde `.wz-popup-foto`. Con meno di due foto: niente
 //    (resta quella della tipologia, che il telefono allora non nasconde).
+// 🔄 v7.081 (Franco: «le due fotografie in miniatura mettile parzialmente sovrapposte, come a formare un piccolo
+//    mazzo; per l'album, se ce ne sono due usale») - UN MAZZETTO: le prime due foto, la seconda sopra e spostata,
+//    un po' ruotate. Con un articolo solo (un album unico) una foto sola, dritta. Senza foto: niente, e resta la
+//    foto della tipologia.
 function _wzCoppia(z, sid) {
   const figs = getData('figurines', []);
   const foto = _wzArticoli(sid, z).map(f => _fotoFigurina(f, figs) || f.img).filter(Boolean).slice(0, 2);
-  if (foto.length < 2) return '';
-  return '<span class="wz-popup-coppia">' + foto.map(u => _wzImg(u, 200, 260, '')).join('') + '</span>';
+  if (!foto.length) return '';
+  return '<span class="wz-popup-coppia' + (foto.length === 1 ? ' una' : '') + '">' + foto.map(u => _wzImg(u, 200, 260, '')).join('') + '</span>';
 }
 function _wzImg(url, w, h, cls) {
   if (!url) return '<div class="' + (cls || '') + ' wz-senza-foto">🎴</div>';
