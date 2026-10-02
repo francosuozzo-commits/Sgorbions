@@ -1,7 +1,27 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.081 - Modificato js/app.js e index.html. Questionario, riepilogo sul telefono (Franco): le due foto diventano
+// v7.082 - Modificato js/app.js e index.html. Album (Franco): CATEGORIA e SOTTOCATEGORIA, nella scheda
+//          in modifica (con i valori già usati dagli album come suggerimento), nel dettaglio e sulla card della
+//          griglia, queste due solo se popolate (`TDA_CON_CATEGORIA`).
+//          🆕 E L'ORDINAMENTO DELLE GRIGLIE CONFIGURABILE PER TIPOLOGIA: Admin console → Tipo di articolo →
+//          «↕️ Ordinamento delle griglie» (`settings/ordinamenti`), chiavi con la sintassi dei tipi senza serie;
+//          vuoto = la regola di sempre. Ordina le famiglie (mai spezzate), anche nella vista tabellare.
+//          Figurine con retro in sola lettura.
+//          Per gli ALBUM l'ordine «ad albero» (Franco): capi gruppo le basi, ogni album subito dopo quello da
+//          cui nasce, fra fratelli prima il tipo di versione e poi le chiavi (`_comparatoreAlbero`); in console
+//          una nota sopra ogni riga dice cosa comanda oltre alle chiavi.
+//          🔄 La VERSIONE SIGILLATA passa in fondo a `VERSIONI_ARTICOLO`, dopo l'errore di stampa (Franco: «questo
+//          sarà così ovunque»): griglie, colonne, filtri, tab, legende e questionario la mettono ultima.
+//          Nella scheda il campo Ordinamento suggerisce «Inserire un numero» e non più «1» (Franco: «sembra quasi
+//          un numero vero»).
+//          Scheda dell'album in modifica: le due foto in alto a destra nel tab Generale, accanto ai campi
+//          (`.fe-con-foto`), e niente più campo Sottoserie (Franco: «non ha senso»).
+//          Sulla card dell'album collegato a un cartoncino, le righe del cartoncino (categoria, sottocategoria,
+//          nome), come quelle del retro sulla card di una figurina (`cartoncinoHTML`).
+//          E nelle griglie il NOME parte alla stessa altezza in tutta la riga (`_allineaRigheRetro`), anche
+//          quando uno va su due righe o ha sotto più roba (Franco: «allinea verso l'alto il nome»).
+// v7.081 -Modificato js/app.js e index.html. Questionario, riepilogo sul telefono (Franco): le due foto diventano
 //          un mazzetto, sovrapposte e un po' ruotate; con un articolo solo (un album unico) una foto sola.
 // v7.080 - Modificato js/app.js e index.html. Questionario (Franco): in «Cosa hai di questa serie?» meno spazio fra la
 //          foto e il titolo dei quadranti (`.wz-scelte-tda`, foto ad altezza propria).
@@ -30691,7 +30711,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.081';
+const JS_VERSION = 'v7.082';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33722,6 +33742,33 @@ function _impostaCaroselli(d) {
   try { if (inVista('sezione-carosello-sez')) renderCaroselloSezione(); } catch (e) { console.error('renderCaroselloSezione', e); }   // v6.984
 }
 
+// 🆕 v7.082 (Franco: «dobbiamo rendere anche questo aspetto configurabile da me [...] in admin console
+//    nella sezione delle tda, un tab specifico») - L'ORDINAMENTO DELLA GRIGLIA, PER TIPOLOGIA.
+//    Admin console → Tipo di articolo → «↕️ Ordinamento delle griglie», documento `settings/ordinamenti`
+//    ({ voci: { albums: 'categoria, nome', ... } }), con la sintassi dei tipi senza serie
+//    (`_passiOrdinamento`, v6.155).
+// 📌 Casella vuota = la regola di sempre (`_ORDINE_DI_SEMPRE`), scritta qui solo per mostrarla in grigio.
+// 🔴 Le chiavi ordinano le FAMIGLIE (si confrontano i capi, `_capoFamiglia`): una famiglia non si spezza
+//    mai, e dentro la famiglia le versioni restano nell'ordine dichiarato. Le sottoserie restano sopra.
+// 🔴 Le figurine con retro NO: il loro ordine (numero, poi le versioni secondo il retro) non si scrive
+//    con queste chiavi. La console le mostra in sola lettura.
+let _ORDINAMENTI_CFG = {};
+const _ORDINE_DI_SEMPRE = sez => sez === 'retros' ? 'categoria, sottocategoria, nome' : 'ordinamento, nome';
+const _ordineConfigurabile = sez => !!ARTICOLI[sez] && sez !== 'figurines';
+
+function _impostaOrdinamenti(d) {
+  const prima = JSON.stringify(_ORDINAMENTI_CFG);
+  _ORDINAMENTI_CFG = (d && d.voci && typeof d.voci === 'object') ? d.voci : {};
+  if (JSON.stringify(_ORDINAMENTI_CFG) === prima) return;
+  try { if (currentSeriesId && currentSection && document.getElementById('items-grid')) renderItems(); } catch (e) { console.error('renderItems', e); }
+}
+
+// Il confronto delle chiavi scritte in console per quella tipologia, oppure null (vale quello di sempre).
+function _comparatoreOrdineTDA(sez) {
+  if (!_ordineConfigurabile(sez)) return null;
+  return _comparatoreDaPassi(_passiOrdinamento(_ORDINAMENTI_CFG[sez]).passi);
+}
+
 function _caroselloMostraSerie(elenco) {
   return new Set((elenco || []).map(f => f.seriesId)).size > 1;
 }
@@ -35896,8 +35943,24 @@ function cmpVistaTabellare(sezione) {
   // v6.155 - stesso ordinamento della griglia dentro un box di tipo: due viste degli stessi oggetti
   // che si ordinano diversamente sarebbero due verita' sulla stessa cosa.
   const _cmpTipo = _tipoProdottoCorrente ? _comparatoreTipo(_tipoProdottoCorrente) : null;
+  // 🆕 v7.082 - e l'ordinamento scritto in console per la tipologia, come nella griglia: sulle
+  //    famiglie, dopo la sottoserie (che qui raggruppa le due tabelle eBay).
+  const _cmpCfg = _comparatoreOrdineTDA(sezione);
+  const _ixCfg = (_cmpCfg || sezione === 'albums') ? new Map(getData('figurines', []).map(x => [x.id, x])) : null;
+  // 🆕 v7.082 - gli album con l'ordine ad albero della griglia, dopo la sottoserie.
+  const _cmpAlbero = sezione === 'albums' ? _comparatoreAlbero(sezione, _ixCfg, getData('figurines', [])) : null;
   return (a, b) => {
     if (_cmpTipo) return _cmpTipo(a, b);
+    if (_cmpAlbero) {
+      const ss = (a.subseries||'').localeCompare(b.subseries||'', 'it');
+      return ss !== 0 ? ss : _cmpAlbero(a, b);
+    }
+    if (_cmpCfg) {
+      const ss = (a.subseries||'').localeCompare(b.subseries||'', 'it');
+      if (ss !== 0) return ss;
+      const capoA = _capoFamiglia(a, _ixCfg), capoB = _capoFamiglia(b, _ixCfg);
+      if (capoA !== capoB) { const r = _cmpCfg(capoA, capoB); if (r) return r; }
+    }
     if (sezione === 'retros') {
       const catCmp = (a.category||'').localeCompare(b.category||'', 'it');
       if (catCmp !== 0) return catCmp;
@@ -39197,6 +39260,7 @@ async function _caricaLegendeDefinizioni() {
     const d = docs.find(x => x.id === 'legende');
     _LEGENDE_DEF = (d && d.voci) || {};
     _impostaCaroselli(docs.find(x => x.id === 'caroselli'));   // v6.982 - stesso giro di letture
+    _impostaOrdinamenti(docs.find(x => x.id === 'ordinamenti'));   // v7.082 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -39478,6 +39542,114 @@ async function salvaCaroselliTDA() {
   }
 }
 
+// 🆕 v7.082 (Franco) - LA TABELLA DEGLI ORDINAMENTI, sotto-tab «↕️ Ordinamento delle griglie» di
+//    Tipo di articolo. Una riga per tipologia, una casella con le chiavi (sintassi dei tipi senza
+//    serie); vuota, in grigio la regola di sempre. Le figurine con retro in sola lettura.
+function renderAdminOrdinamentiTDA() {
+  const box = document.getElementById('admin-ordinamenti-tda');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);';
+  const nomi = Object.keys(CAMPI_ORDINAMENTO_TIPO).join(', ');
+  // 🆕 v7.082 (Franco: «[...] se c'è una nota da dire (qualcosa che va on top
+  //    all'ordinamento per mezzo della cfg) scrivilo») - LA NOTA DI OGNI TIPOLOGIA: cio' che comanda
+  //    prima, o accanto, alle chiavi della casella. Ricavata, non scritta a mano per riga: la regola ad
+  //    albero dagli album, i tipi di versione da `VERSIONI_PER_TDA`, i box dai tipi senza serie che ci sono.
+  const sezConTipi = new Set(getData('figurines', []).filter(x => x.tipoProdotto).map(x => x.section || 'figurines'));
+  const sezConSottoserie = new Set(getData('figurines', []).filter(x => String(x.subseries || '').trim()).map(x => x.section || 'figurines'));
+  const nota = sez => {
+    if (!_ordineConfigurabile(sez)) return '';
+    // 🔄 v7.082 (Franco: «volevo leggere [...] cosa viene considerato, ai fini dell'ordinamento, in top ai
+    //    campi specificati sopra; quindi... prima una base, che fa da capo gruppo, ecc»; e «parli di
+    //    sottoserie quando negli album non ce ne sono») - la nota dice in ordine cosa conta PRIMA delle
+    //    chiavi, e la sottoserie solo dove la tipologia ne ha davvero.
+    const tipi = _VERSIONI_VIVE.filter(v => (VERSIONI_PER_TDA[sez] || []).includes(v.chiave)).map(v => (v.pluraleIt || v.it).toLowerCase());
+    const pezzi = [];
+    const conSs = sezConSottoserie.has(sez);
+    if (conSs) pezzi.push('prima di tutto la sottoserie;');
+    const fine = s => s.replace(/;$/, '.');
+    if (sez === 'albums') {
+      // 🔄 v7.082 - il testo è di Franco, parola per parola («scrivi questo, come NOTA, per gli album»);
+      //    l'elenco dei tipi resta ricavato, cosi' segue l'ordine delle versioni se un giorno cambia.
+      pezzi.push((conSs ? 'poi la ' : 'regola di ordinamento: Prima una ') + 'base, che fa da capo gruppo; dopo ogni base, le sue versioni, per tipologia ('
+        + tipi.join(', ') + '; tra versioni dello stesso tipo decidono i campi specificati qui sopra); '
+        + 'ogni versione si porta dietro, subito dopo, quelle nate da lei. «ordinamento», infine, sposta un album fra quelli del suo livello.');
+    } else {
+      pezzi.push((conSs ? 'poi ' : '') + 'l’articolo di partenza, che fa da capo gruppo (fra loro li ordinano le chiavi);');
+      if (tipi.length) pezzi.push('dopo ogni articolo di partenza le sue versioni, per tipo: ' + tipi.join(', ') + ' (fra versioni dello stesso tipo decide il nome).');
+      else pezzi[pezzi.length - 1] = fine(pezzi[pezzi.length - 1]);
+    }
+    if (sez !== 'albums' || conSs) pezzi[0] = _maiuscola(pezzi[0]);
+    if (sezConTipi.has(sez)) pezzi.push('Dentro il box di un tipo senza serie comanda l’ordinamento scritto sul tipo.');
+    // 🔄 v7.082 (Franco: «la nota mettila dopo l'ordinamento in cfg; non prima / precedi la nota con
+    //    "NOTA: " / fai partire la nota dall'inizio del campo») - sotto la riga, nella colonna della casella.
+    return '<tr><td style="border-bottom:1px solid var(--border);"></td>'
+      + '<td style="padding:2px 8px 8px;font-size:0.76rem;color:var(--warn);line-height:1.45;white-space:normal;border-bottom:1px solid var(--border);">'
+      + 'NOTA: ' + esc(pezzi.join(' ')) + '</td></tr>';
+  };
+  const riga = sez => {
+    // 🔄 v7.082 (Franco: «il nome della tda mettilo azzurro serie») - `--info`, l'azzurro del titolo di una serie.
+    // Con la nota sotto, la riga della casella non ha filo: lo porta la nota, cosi' le due si leggono insieme.
+    const filo = _ordineConfigurabile(sez) ? 'border-bottom:none;' : '';
+    const nome = '<td style="' + td + filo + 'white-space:nowrap;color:var(--info);font-weight:600;">' + esc(getSectionLabel(sez)) + '</td>';
+    if (!_ordineConfigurabile(sez)) return '<tr>' + nome + '<td style="' + td + '">' +
+      (it ? 'Numero; dentro lo stesso numero la figurina base e poi le sue versioni, in fila per Categoria, Sottocategoria e Nome del loro retro. Non si cambia da qui.'
+          : 'Number; within a number the base sticker, then its versions by their back’s Category, Subcategory and Name. Not editable here.') + '</td></tr>';
+    return '<tr>' + nome + '<td style="' + td + filo + '"><input class="form-input" type="text" id="ord-' + sez + '"' +
+      ' value="' + esc(_ORDINAMENTI_CFG[sez] || '') + '" placeholder="' + esc(_ORDINE_DI_SEMPRE(sez)) + '"' +
+      ' style="width:100%;min-width:16rem;padding:0.3rem 0.5rem;font-size:0.85rem;"></td></tr>';
+  };
+  box.innerHTML =
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">↕️ ' + (it ? 'Ordinamento delle griglie' : 'Grid sorting') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it
+        ? 'Le chiavi con cui si ordina la griglia di ogni tipologia, separate da virgola; il <strong>-</strong> davanti inverte. ' +
+          'Esempio: <code>categoria, sottocategoria, nome</code>. Chiavi ammesse: <code>' + esc(nomi) + '</code>.<br>' +
+          'Casella vuota: vale la regola di sempre, scritta in grigio. Sotto ogni casella, la NOTA dice quello che comanda oltre alle chiavi.'
+        : 'The keys each item type’s grid is sorted by, comma separated; a leading <strong>-</strong> reverses. ' +
+          'Allowed keys: <code>' + esc(nomi) + '</code>. Empty: the usual rule, shown in grey.') +
+    '</p>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:100%;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
+      '<th style="' + th + '">' + (it ? 'Ordinamento' : 'Sorting') + '</th></tr>' +
+    PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).map(sez => riga(sez) + nota(sez)).join('') +
+    '</table></div>' +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
+      '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaOrdinamentiTDA()">' + (it ? 'Salva gli ordinamenti' : 'Save sorting') + '</button>' +
+    '</div>';
+}
+
+// Si rilegge tutto dallo schermo: una casella svuotata si salva vuota e riporta la regola di sempre.
+// 🔴 Un nome che non esiste ferma il salvataggio e si nomina: ignorarlo darebbe un ordine diverso
+//    da quello scritto, senza che nessuno sappia perche' (stessa scelta della v6.155).
+async function salvaOrdinamentiTDA() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const voci = {}, errori = [];
+  PRODOTTI_INVENTARIO.filter(_ordineConfigurabile).forEach(sez => {
+    const el = document.getElementById('ord-' + sez);
+    if (!el) return;
+    const testo = el.value.trim();
+    const { passi, sconosciuti } = _passiOrdinamento(testo);
+    if (sconosciuti.length) errori.push(getSectionLabel(sez) + ': ' + sconosciuti.join(', '));
+    if (passi.length) voci[sez] = passi.map(p => (p.desc ? '-' : '') + p.nome).join(', ');
+  });
+  if (errori.length) {
+    toast((it ? '❌ Chiavi che non conosco — ' : '❌ Unknown keys — ') + errori.join(' · '), 'error');
+    return;
+  }
+  try {
+    await fsSave('settings', { id: 'ordinamenti', voci });
+    _impostaOrdinamenti({ voci });
+    renderAdminOrdinamentiTDA();
+    toast(it ? '✅ Ordinamenti salvati. Valgono da subito.' : '✅ Sorting saved.', 'success');
+  } catch (e) {
+    console.error('salvaOrdinamentiTDA', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
+}
+
 function renderAdminVersioniArticolo() {
   const box = document.getElementById('admin-versioni-articolo');
   if (!box) return;
@@ -39692,7 +39864,7 @@ const VERSIONI_PER_TDA = {
   // 🔄 v7.078 (Franco: «possiamo dire che l'album variazione non esiste: il cartoncino in realtà non era attaccato
   //    all'album, o parte di esso») - VIA LA VARIAZIONE, ENTRA LA VERSIONE SIGILLATA. Gli album che già sono
   //    «Variazione ufficiale» continuano a vederla (la rete di `_versioneAmmessa`) finché Franco non li converte.
-  albums:      ['sealed', 'change', 'free', 'printError'],
+  albums:      ['change', 'free', 'printError', 'sealed'],   // v7.082: la sigillata in fondo, come nell'elenco
   spille:      ['change', 'printError'],
   trasferelli: ['printError'],
   carte:       ['printError'],
@@ -39965,22 +40137,7 @@ const VERSIONI_ARTICOLO = [
     esportaParolaIt: 'Variazioni non ufficiali', esportaParolaEn: 'unofficial variations',
     colore: 'var(--type-unofficial)',  badge: 'fig-badge-unofficial',  marcatoreEbay: 'VARIAZIONE NON UFFICIALE',
     iconaTab: '🎨' },
-  // 🆕 v7.078 (Franco: «mi serve una nuova tipologia di versione; si chiama "versione sigillata"; valida solo per gli
-  //    album») - LA SESTA VERSIONE. Sta qui, fra le versioni «capo», perché come la variazione è un album diverso
-  //    e non una piccola modifica di un altro. Esiste solo per gli album (`VERSIONI_PER_TDA`). `sempre: true`: non
-  //    ha una spunta per serie, ogni album può esserlo (scelta di Claude, detta a Franco). Colore turchese, scelto
-  //    da Franco fra tre proposte. Il retro di un album sigillato può essere un Cartoncino, non obbligatorio.
-  { chiave: 'sealed',              campo: 'isSealed',              it: 'Versione sigillata',       en: 'Sealed version',
-    filtroIt: 'Versioni sigillate', filtroEn: 'Sealed versions',
-    pluraleIt: 'Versioni sigillate', pluraleEn: 'Sealed versions',
-    badgeIt: 'Versione<br>sigillata', badgeEn: 'Sealed<br>version',
-    itBreve: 'Sigillata', enBreve: 'Sealed', livello: 'capo', partenza: ['base'],
-    idForm: 'fe-is-sealed', sempre: true,
-    esportaIt: 'Versioni sigillate', esportaEn: 'sealed versions',
-    esportaParolaIt: 'Versioni sigillate', esportaParolaEn: 'sealed versions',
-    colore: 'var(--type-sealed)',      badge: 'fig-badge-sealed',      marcatoreEbay: 'SIGILLATO',
-    iconaTab: '🔒' },
-  { chiave: 'change',              campo: 'isChange',              it: 'Change',                   en: 'Change',
+  { chiave: 'change',             campo: 'isChange',              it: 'Change',                   en: 'Change',
     // 🐛 v6.965 (Franco: «se cerco la 560 la sua mosca viene contata nei change, ma nelle pillole
     //    dei change quella figurina non compare con tipo "MOSCA NERA": come tipo ha ""») — IL TIPO
     //    SI CHIEDE A `_tipoChange`, non al campo. Dove il change sta sul RETRO il campo della
@@ -40196,7 +40353,25 @@ const VERSIONI_ARTICOLO = [
     // frase cambia da riga a riga, quindi si dichiara invece di cercarla per regola.
     esportaParolaIt: 'Errori di stampa', esportaParolaEn: 'print errors',
     colore: 'var(--type-printerror)',  badge: 'fig-badge-printerror',  marcatoreEbay: 'ERRORE DI STAMPA',
-    iconaTab: '🖨️' }
+    iconaTab: '🖨️' },
+  // 🆕 v7.078 (Franco: «mi serve una nuova tipologia di versione; si chiama "versione sigillata"; valida solo per gli
+  //    album») - LA SESTA VERSIONE. Esiste solo per gli album (`VERSIONI_PER_TDA`). `sempre: true`: non
+  //    ha una spunta per serie, ogni album può esserlo (scelta di Claude, detta a Franco). Colore turchese, scelto
+  //    da Franco fra tre proposte. Il retro di un album sigillato può essere un Cartoncino, non obbligatorio.
+  // 🔄 v7.082 (Franco: «la versione sigillata va dopo l'errore di stampa; questo sarà così ovunque») - L'ULTIMA
+  //    DELL'ELENCO. Nata fra le versioni «capo», dopo le variazioni; spostata qui, in fondo, cambia posto
+  //    dappertutto da sé: ordine delle griglie, colonne, filtri, tab, legende. `livello: 'capo'` resta: dice
+  //    da chi può nascere e chi può farle da partenza, non dove si mette in fila.
+  { chiave: 'sealed',              campo: 'isSealed',              it: 'Versione sigillata',       en: 'Sealed version',
+    filtroIt: 'Versioni sigillate', filtroEn: 'Sealed versions',
+    pluraleIt: 'Versioni sigillate', pluraleEn: 'Sealed versions',
+    badgeIt: 'Versione<br>sigillata', badgeEn: 'Sealed<br>version',
+    itBreve: 'Sigillata', enBreve: 'Sealed', livello: 'capo', partenza: ['base'],
+    idForm: 'fe-is-sealed', sempre: true,
+    esportaIt: 'Versioni sigillate', esportaEn: 'sealed versions',
+    esportaParolaIt: 'Versioni sigillate', esportaParolaEn: 'sealed versions',
+    colore: 'var(--type-sealed)',      badge: 'fig-badge-sealed',      marcatoreEbay: 'SIGILLATO',
+    iconaTab: '🔒' }
 ];
 
 // Le versioni che il codice riconosce OGGI. La quinta entrera' qui con la v6.235, e in quel
@@ -45980,7 +46155,55 @@ function _familyKey(f, idx) {
                 : getData('figurines', []).find(x => x.id === f.baseFigurineId);
   if (!b) return f.id;   // base sparita: e' un gruppo suo, non un orfano senza collocazione
   const g = x => String(x.subseries || '').trim();
+  // 🆕 v7.082 (Franco: «un capo gruppo [...] è sempre una versione base»; «per ora applicala agli
+  //    album») - per gli ALBUM si risale fino alla base, non di un gradino: un errore di stampa nato da
+  //    una sigillata sta nel gruppo della base della sigillata. Stessa regola della sottoserie a ogni
+  //    gradino. Le altre tipologie restano come prima.
+  if (f.section === 'albums') return (_catenaAlbero(f, idx)[0] || f).id;
   return g(f) === g(b) ? b.id : f.id;
+}
+
+// 🆕 v7.082 - gli antenati di un articolo, dalla base a lui: [base, ..., genitore, f]. Ci si ferma
+//    dove il genitore manca, sta in un'altra sottoserie, o tornerebbe su se stesso (dato rotto).
+function _catenaAlbero(f, idx) {
+  const g = x => String(x.subseries || '').trim();
+  const catena = [f];
+  let cur = f;
+  for (let passi = 0; passi < 20 && cur && cur.baseFigurineId; passi++) {
+    const p = idx ? idx.get(cur.baseFigurineId) : getData('figurines', []).find(x => x.id === cur.baseFigurineId);
+    if (!p || g(p) !== g(cur) || catena.includes(p)) break;
+    catena.unshift(p);
+    cur = p;
+  }
+  return catena;
+}
+
+// 🆕 v7.082 (Franco) - L'ORDINE «AD ALBERO», per ora solo degli album:
+//    · i capi gruppo sono le basi, e ogni articolo sta subito dopo il suo genitore (con i suoi figli
+//      dietro, come i change di una variazione nelle figurine con retro);
+//    · fra le basi decidono le chiavi della console (o quelle di sempre);
+//    · fra i figli dello stesso genitore prima il TIPO di versione (l'ordine dichiarato), poi le chiavi;
+//    · a parita' il nome completo, e l'ultima parola all'id.
+function _comparatoreAlbero(sez, idx, tutti) {
+  const chiavi = _comparatoreOrdineTDA(sez) || _comparatoreDaPassi(_passiOrdinamento(_ORDINE_DI_SEMPRE(sez)).passi);
+  const catene = new Map();
+  const catena = f => { if (!catene.has(f.id)) catene.set(f.id, _catenaAlbero(f, idx)); return catene.get(f.id); };
+  const nomePieno = f => f.fullName || computeFullName(f, tutti) || f.name || '';
+  return (a, b) => {
+    const ca = catena(a), cb = catena(b);
+    let i = 0;
+    while (i < ca.length && i < cb.length && ca[i] === cb[i]) i++;
+    if (i === ca.length && i === cb.length) return 0;
+    if (i === ca.length) return -1;   // a e' un antenato di b
+    if (i === cb.length) return 1;
+    const x = ca[i], y = cb[i];
+    if (i > 0) { const p = _prioritaTipo(x) - _prioritaTipo(y); if (p) return p; }
+    const r = chiavi ? chiavi(x, y) : 0;
+    if (r) return r;
+    const n = nomePieno(x).localeCompare(nomePieno(y), 'it', { numeric: true });
+    if (n) return n;
+    return String(x.id || '').localeCompare(String(y.id || ''));
+  };
 }
 
 // 🆕 v6.799 (Franco, sul punto 27: *"non si spezza mai una famiglia"*).
@@ -49100,7 +49323,7 @@ const _WZ_LIVELLI = {
   amatore:       [],
   // v7.078: la versione sigillata dal livello Esperto (Franco)
   esperto:       ['variation', 'sealed'],
-  collezionista: ['variation', 'sealed', 'unofficialVariation', 'change', 'free', 'printError'],
+  collezionista: ['variation', 'unofficialVariation', 'change', 'free', 'printError', 'sealed'],   // v7.082: l'ordine dell'elenco
 };
 // le versioni che il livello chiede, fra quelle che il codice riconosce oggi
 function _wzVersioni() {
@@ -53047,8 +53270,17 @@ function _verificaSottoserieAttiva() {
 //    stanno FUORI restano a chi le chiama: le sottoserie a righe e l'ordinamento del box di un tipo
 //    sono cose della griglia aperta, la ricerca non le ha.
 function _comparatoreGriglia(sez, elenco, _idx, _allFigs) {
+  // 🆕 v7.082 (Franco: «questa regola per ora applicala agli album») - l'ordine ad albero.
+  if (sez === 'albums') return _comparatoreAlbero(sez, _idx, _allFigs);
   const _chiaviOrd = _chiaviOrdinamentoFigurine(elenco, _idx, sez);
+  // 🆕 v7.082 - le chiavi scritte in console per questa tipologia (null = la regola di sempre).
+  //    Confrontano i CAPI delle due famiglie; a parita' decide la regola di sempre, qui sotto.
+  const _cmpCfg = _comparatoreOrdineTDA(sez);
   return (a, b) => {
+    if (_cmpCfg) {
+      const cfgA = _capoFamiglia(a, _idx), cfgB = _capoFamiglia(b, _idx);
+      if (cfgA !== cfgB) { const r = _cmpCfg(cfgA, cfgB); if (r) return r; }
+    }
     if (sez === 'figurines') {
       const allFigsForSort = _idx;
       // Figurina di riferimento: se stessa se è base, altrimenti la figurina base collegata
@@ -53887,6 +54119,12 @@ function renderItems() {
     //    riservato o no lo decide `_allineaRigheRetro` dopo il disegno, come per le altre due.
     _rigaCard(_campoCard('ANNO: ', _articoloSenzaSerie(f) ? esc(String(f.year || '')) : '', COL_IDENTITA), 'font-size:0.78rem;margin-top:1px;', 'anno')
   );
+  // 🆕 v7.082 (Franco) - sugli album CATEGORIA e SOTTOCATEGORIA, con le stesse righe e gli stessi colori.
+  //    Vuote, `_allineaRigheRetro` le toglie dove nessuna card della riga di griglia le ha.
+  const _catTDARigheHTML = !TDA_CON_CATEGORIA.includes(f.section) ? '' : (
+    _rigaCard(_campoCard('CATEGORIA: ', esc((f.category || '').trim()), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
+    _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc((f.subcategory || '').trim()), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
+  );
   // 🔄 v6.667 - LA RIGA DEL SOTTONOME ESCE DAL BLOCCO DEI RETRO. Stava dentro
   //    `_retroRigheHTML` insieme a CATEGORIA e SOTTOCATEGORIA, che sono davvero roba da retro;
   //    il sottonome no - Franco lo vuole anche sulle spille, che categoria e sottocategoria non
@@ -54058,6 +54296,18 @@ function renderItems() {
   // l'informazione dove serve di piu', visto che i change sono i record piu' difficili da
   // distinguere fra loro - Nome, Categoria e Sottocategoria li ereditano dalla base (§13.1).
   // Nota: gli ERRORI DI STAMPA il retro lo mostravano gia'. L'esclusione era solo per i change.
+  // 🆕 v7.082 (Franco: «quando un album è collegato a un cartoncino, nella sua card deve leggersi le info
+  //    del cartoncino; come facciamo per le fcr e il retro») - le righe del CARTONCINO sotto quelle
+  //    dell'album, con la forma delle righe del retro sulla card di una figurina: categoria in giallo,
+  //    sottocategoria nel suo colore, nome in bianco, senza etichette. Sempre dichiarate sugli album:
+  //    vuote, `_allineaRigheRetro` le toglie dove nessuna card della riga ha un cartoncino.
+  const cartoncinoHTML = f.section !== 'albums' ? '' : (() => {
+    const _cart = f.cartoncinoId ? getData('figurines', []).find(x => x.id === f.cartoncinoId) : null;
+    const _campoCart = k => esc(((_cart && _cart[k]) || '').trim());
+    return _rigaCard(_campoCart('category'), 'font-size:0.78rem;color:' + COL_CATEGORIA + ';', 'cart-cat')
+      + _rigaCard(_campoCart('subcategory'), 'font-size:0.78rem;color:' + COL_SOTTOCAT + ';', 'cart-sub')
+      + _rigaCard(_cart ? esc(((_cart.fullName && _cart.fullName.trim()) || _cart.name || '').trim()) : '', 'font-size:0.78rem;color:var(--text);', 'cart-nome');
+  })();
   const retroNameHTML = (currentSection === 'figurines' && f.retroId && !_hideRetroName)
       ? (() => {
           const r = getData('figurines', []).find(x => x.id === f.retroId);
@@ -54126,8 +54376,8 @@ function renderItems() {
       ${_contrassegnoVariazioneHTML(f)}
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
-        ${_sottonomeRigaHTML}${_personaggioRigaHTML}${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : famigliaHTML)}
-        ${retroNameHTML}
+        ${_sottonomeRigaHTML}${_personaggioRigaHTML}${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : famigliaHTML + _catTDARigheHTML)}
+        ${retroNameHTML}${cartoncinoHTML}
         ${typeIndicatorHTML}
         ${descHTML}
         ${sizeHTML}
@@ -54245,10 +54495,19 @@ function _allineaRigheRetro() {
   const grid = document.getElementById('items-grid');
   if (!grid) return;
   const righe = grid.querySelectorAll('.retro-riga');
-  if (!righe.length) return;                       // nelle altre sezioni non c'e' niente da fare
   righe.forEach(r => { r.style.display = ''; });   // si riparte sempre da tutte riservate
+  // 🆕 v7.082 (Franco: «allinea verso l'alto il nome») - IL NOME PARTE ALLA STESSA ALTEZZA IN TUTTA
+  //    LA RIGA DI GRIGLIA. Il testo della card sta in basso (v6.501), quindi la scritta partiva tanto
+  //    piu' in alto quanta piu' roba aveva sotto: un nome su due righe, un «Sfoglia l'album !».
+  //    Misurato nell'anteprima sugli album della serie 1: 46px fra L. 1000 e L. 2000.
+  // 📌 In ogni riga si prende la card il cui nome parte piu' in alto, e agli altri nomi si allunga il
+  //    riquadro (min-height) di quanto manca: la scritta resta in cima al suo riquadro, e il riquadro
+  //    arriva dove arriva quello del vicino. Vale in tutte le sezioni, quindi qui non si esce piu'
+  //    quando le righe dei retro non ci sono.
+  const nomi = Array.from(grid.querySelectorAll('.fig-card .fig-name'));
+  nomi.forEach(n => { n.style.minHeight = ''; });
 
-  // LETTURA - tutti gli offsetTop in un giro solo, prima di toccare qualsiasi cosa.
+  // LETTURA - tutti gli offsetTop (e le altezze dei nomi) in un giro solo, prima di toccare qualsiasi cosa.
   const cards = Array.from(grid.querySelectorAll('.fig-card'));
   const gruppi = new Map();
   cards.forEach(c => {
@@ -54267,6 +54526,21 @@ function _allineaRigheRetro() {
     }));
     daValutare.forEach(r => { if (!serve.has(r.dataset.campo)) r.style.display = 'none'; });
   });
+
+  // v7.082 - I NOMI, dopo le righe: nascondere una riga vuota cambia quanto c'e' sotto il nome, quindi
+  //    si misura a righe gia' decise. Ancora una lettura tutta insieme e una scrittura tutta insieme.
+  //    «Estensione» = dall'inizio del nome al fondo del corpo della card.
+  const misure = [];
+  gruppi.forEach(gruppo => {
+    const suoi = gruppo.map(c => ({ n: c.querySelector('.fig-name'), b: c.querySelector('.fig-body') })).filter(x => x.n && x.b);
+    if (suoi.length < 2) return;
+    suoi.forEach(x => { x.est = x.b.getBoundingClientRect().bottom - x.n.getBoundingClientRect().top; x.h = x.n.offsetHeight; });
+    misure.push({ suoi, max: Math.max(...suoi.map(x => x.est)) });
+  });
+  misure.forEach(({ suoi, max }) => suoi.forEach(x => {
+    const manca = Math.round(max - x.est);
+    if (manca > 0) x.n.style.minHeight = (x.h + manca) + 'px';
+  }));
 }
 
 // v6.092 - allargando la finestra le colonne cambiano, quindi cambiano i gruppi: senza questo,
@@ -55143,7 +55417,7 @@ function adminTab(tab) {
   const tabEl = document.getElementById('admin-' + tab);
   if (tabEl) { tabEl.classList.add('active'); }
   if (tab === 'series') renderAdminSeries();
-  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminCaroselliTDA();   // v6.982
+  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminCaroselliTDA(); renderAdminOrdinamentiTDA();   // v6.982, v7.082
     renderCampiMassiviConfig(); _aggiornaCampiMassiviDaConfigurazione().then(renderCampiMassiviConfig); }   // v6.842: qui, non in Impostazioni   // v6.221, v6.233, v6.234
   if (tab === 'figurines') renderAdminFigs();
   if (tab === 'contacts') { renderAdminContacts(); updateMsgBadge(); }
@@ -56794,6 +57068,11 @@ function _famiglieSerie(seriesId) {
 }
 // 🆕 v6.837 - le due tipologie che hanno la famiglia.
 const TDA_CON_FAMIGLIA = ['figurines', 'attaccare'];
+// 🆕 v7.082 (Franco: «mettiamoli; sia sulla scheda di modifica che sulla form di dettaglio, da mostrare se
+//    popolati, sia sulla card della griglia») - le TDA di una serie con Categoria e Sottocategoria, oltre ai
+//    Retro (che le hanno da sempre, con regole loro) e agli articoli senza serie.
+// 📌 Su queste i due campi sono testo libero dell'articolo: nessuna eredità dalla base, nessun Nome completo.
+const TDA_CON_CATEGORIA = ['albums'];
 
 function _aggiornaCampiNumeriSerie() {
   const gF = document.getElementById('series-first-number-group');
@@ -57090,6 +57369,11 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     if (f.subcategory && (f.section === 'retros' || _eProdottoExtraSerie(f))) {
       (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottocategoria' : 'Subcategory')}</span><span class="detail-value">${esc(f.subcategory)}</span></div>`);
     }
+  }
+  // 🆕 v7.082 (Franco) - sugli album Categoria e Sottocategoria, ciascuna solo se popolata.
+  if (TDA_CON_CATEGORIA.includes(f.section)) {
+    if ((f.category || '').trim()) (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Categoria' : 'Category')}</span><span class="detail-value">${esc(f.category.trim())}</span></div>`);
+    if ((f.subcategory || '').trim()) (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottocategoria' : 'Subcategory')}</span><span class="detail-value">${esc(f.subcategory.trim())}</span></div>`);
   }
   // 🆕 v6.753 (Franco) - L'ANNO, sugli articoli delle TDA senza serie.
   // 🔴 VUOTO, LA RIGA NON C'E'. La prima stesura scriveva «non impostato» in grigio corsivo,
@@ -57963,8 +58247,14 @@ function _passiOrdinamento(testo) {
 // e' "il piu' piccolo", e' assente — metterlo in testa in decrescente direbbe una cosa falsa.
 function _comparatoreTipo(idTipo) {
   const t = idTipo ? _tipiProdotto().find(x => x.id === idTipo) : null;
-  const { passi } = _passiOrdinamento(t && t.ordina);
-  if (!passi.length) return null;
+  return _comparatoreDaPassi(_passiOrdinamento(t && t.ordina).passi);
+}
+
+// 🆕 v7.082 - la meta' che confronta, separata da chi legge il testo: la usano il tipo senza serie
+//    (`_comparatoreTipo`) e l'ordinamento delle griglie per tipologia (`_comparatoreOrdineTDA`).
+//    Una sintassi sola, un confronto solo.
+function _comparatoreDaPassi(passi) {
+  if (!passi || !passi.length) return null;
   return (a, b) => {
     for (const { nome, desc } of passi) {
       const c = CAMPI_ORDINAMENTO_TIPO[nome];
@@ -59872,7 +60162,10 @@ function switchToEditMode(figId) {
     _tabPagineBtn(f) +
     '<button type="button" id="fe-tab-btn-ebay" onclick="switchFeTab(\'ebay\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>' +
     '</div>';
-  html += '<div id="fe-tab-generale">';
+  // 🔄 v7.082 (Franco: «da quando le due foto dell'album, nella sua form, sono andate in basso a
+  //    tutto? mettile in alto a dx, come per le altre tda») - con le foto dentro il tab, il tab si
+  //    divide in due: i campi a sinistra (`.fe-gen-campi`), le foto a destra in cima.
+  html += _feFotoNelGenerale ? '<div id="fe-tab-generale" class="fe-con-foto"><div class="fe-gen-campi">' : '<div id="fe-tab-generale">';
 
   // Serie (prima informazione del tab Generale, sempre visibile, non modificabile qui)
   // v6.148 (Franco) - per un prodotto extra serie la Serie non si mostra: e' sempre la stessa,
@@ -59887,7 +60180,9 @@ function switchToEditMode(figId) {
   //    dopo il Nome e il Sottonome. Due posizioni per lo stesso campo a un clic di distanza:
   //    la v6.764 le fa coincidere, che e' la regola di Franco della v5.782.
   // Sottoserie (solo se la serie ha hasSubseries)
-  if (figSeries?.hasSubseries) {
+  // 🔄 v7.082 (Franco: «togli il campo Sottoserie dalla form dell'album; non ha senso») - mai sugli
+  //    album. Nessun album oggi ne ha una (misurato), quindi il salvataggio senza il campo non perde niente.
+  if (figSeries?.hasSubseries && f.section !== 'albums') {
     // 🔄 v6.656 - DA CASELLA DI TESTO A TENDINA. Il testo libero faceva tre danni in uno:
     //    non diceva quali sottoserie esistono, accettava un refuso che diventa un tab
     //    fantasma, e - il sospetto di Franco - si lasciava riempire dal browser.
@@ -59920,7 +60215,13 @@ function switchToEditMode(figId) {
   // v6.148 (Franco: "per i cartoncini mi serve la categoria") - la Categoria vale anche per i
   // prodotti extra serie. La SOTTOcategoria no: e' stata chiesta la categoria, e un campo in
   // piu' "gia' che ci siamo" e' un campo che nessuno riempie. Si aggiunge in una riga se serve.
-  if (isRetrosItem || _extraSerie) {
+  // 🆕 v7.082 (Franco) - e per gli album (`TDA_CON_CATEGORIA`), coi suggerimenti presi dagli altri album.
+  const _conCatTDA = TDA_CON_CATEGORIA.includes(f.section);
+  const _catSuggerite = _extraSerie || _conCatTDA;
+  const _catStessoGruppo = _extraSerie
+    ? (x => (x.tipoProdotto || '') === (f.tipoProdotto || ''))
+    : (x => x.section === f.section);
+  if (isRetrosItem || _extraSerie || _conCatTDA) {
   // v6.150 (Franco) - LA CATEGORIA DI UN PRODOTTO EXTRA SERIE PROPONE I VALORI GIA' USATI in quel
   // tipo. Non un elenco chiuso: resta testo libero con suggerimenti, cosi' un valore nuovo si
   // scrive e basta. E' la stessa scelta fatta il 14 agosto per i tipi di prodotto (etichetta o
@@ -59928,18 +60229,18 @@ function switchToEditMode(figId) {
   // partenza.
   // I suggerimenti vengono dal MEDESIMO tipo, non da tutti: proporre a un Cartoncino le categorie
   // dei Poster sarebbe un elenco che cresce e non aiuta.
-    html += '<div class="detail-row" style="' + _eredStile('category') + '"' + _eredAttr('category') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category"' + (_extraSerie ? ' list="fe-cat-list"' : '') + ' value="' + esc((f.category||'')) + '"' + _eredRO('category') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
-  if (_extraSerie) {
+    html += '<div class="detail-row" style="' + _eredStile('category') + '"' + _eredAttr('category') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category"' + (_catSuggerite ? ' list="fe-cat-list"' : '') + ' value="' + esc((f.category||'')) + '"' + _eredRO('category') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+  if (_catSuggerite) {
     const _cats = [...new Set((getData('figurines', []) || [])
-      .filter(x => (x.tipoProdotto || '') === (f.tipoProdotto || '') && (x.category || '').trim())
+      .filter(x => _catStessoGruppo(x) && (x.category || '').trim())
       .map(x => x.category.trim()))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
     html += '<datalist id="fe-cat-list">' + _cats.map(c => '<option value="' + esc(c) + '"></option>').join('') + '</datalist>';
     const _subs = [...new Set((getData('figurines', []) || [])
-      .filter(x => (x.tipoProdotto || '') === (f.tipoProdotto || '') && (x.subcategory || '').trim())
+      .filter(x => _catStessoGruppo(x) && (x.subcategory || '').trim())
       .map(x => x.subcategory.trim()))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
     html += '<datalist id="fe-subcat-list">' + _subs.map(c => '<option value="' + esc(c) + '"></option>').join('') + '</datalist>';
   }
-    if (isRetrosItem || _extraSerie) html += '<div class="detail-row" style="' + _eredStile('subcategory') + '"' + _eredAttr('subcategory') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory"' + (_extraSerie ? ' list="fe-subcat-list"' : '') + ' value="' + esc((f.subcategory||'')) + '"' + _eredRO('subcategory') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    if (isRetrosItem || _extraSerie || _conCatTDA) html += '<div class="detail-row" style="' + _eredStile('subcategory') + '"' + _eredAttr('subcategory') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory"' + (_catSuggerite ? ' list="fe-subcat-list"' : '') + ' value="' + esc((f.subcategory||'')) + '"' + _eredRO('subcategory') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   }
 
   // 🆕 v6.753 (Franco) - L'ANNO DELL'ARTICOLO, dove la serie non ce l'ha da dare.
@@ -60032,7 +60333,7 @@ function switchToEditMode(figId) {
   // la sua ragione d'essere (v6.311).
   const _mostraNumero  = _mostraCampoNumero(f.section, _eFiglioCollegato(f));
   const _numeroEOrdine = _numeroEOrdinamento(f.section);
-  html += '<div class="detail-row" id="fe-number-group" style="' + (_mostraNumero ? '' : 'display:none;') + '"><span class="detail-label">' + (_numeroEOrdine ? (currentLang==='it'?'Ordinamento':'Sort order') : 'N.') + '</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="' + (_numeroEOrdine ? '1' : '01') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;">' + (_numeroEOrdine ? '<span style="font-size:0.75rem;color:var(--text);">' + // 🔄 v6.660 (Franco: «scrivici davanti "NOTA: "») — accanto a una casella un testo si
+  html += '<div class="detail-row" id="fe-number-group" style="' + (_mostraNumero ? '' : 'display:none;') + '"><span class="detail-label">' + (_numeroEOrdine ? (currentLang==='it'?'Ordinamento':'Sort order') : 'N.') + '</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="' + (_numeroEOrdine ? (currentLang==='it' ? 'Inserire un numero' : 'Enter a number') : '01') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:' + (_numeroEOrdine ? '10rem' : '80px') + ';border:none;background:transparent;">' + (_numeroEOrdine ? '<span style="font-size:0.75rem;color:var(--text);">' + // 🔄 v6.660 (Franco: «scrivici davanti "NOTA: "») — accanto a una casella un testo si
         //    legge come un'istruzione su cosa scriverci; questo invece dice cosa quel numero FA
         //    e cosa NON e'. «NOTA:» lo dichiara prima che lo si legga col piede sbagliato.
         //    ⚠️ In inglese «NOTE:»: «NOTA» in mezzo a una frase inglese sarebbe un refuso, e i
@@ -60077,9 +60378,6 @@ function switchToEditMode(figId) {
     html += '<div class="detail-row">' + _labelVersione('variation') + '<span class="detail-value"><input type="checkbox" id="fe-is-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-variation\')" ' + (f.isVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
     if (_versioneAmmessa('unofficialVariation', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('unofficialVariation') + '<span class="detail-value"><input type="checkbox" id="fe-is-unofficial-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-unofficial-variation\')" ' + (f.isUnofficialVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
-    // 🆕 v7.078 - la Versione sigillata (solo album): dopo le variazioni, come nel descrittore
-    if (_versioneAmmessa('sealed', f, figSeries))
-    html += '<div class="detail-row">' + _labelVersione('sealed') + '<span class="detail-value"><input type="checkbox" id="fe-is-sealed" onchange="toggleFeBaseFigurineGroup(\'fe-is-sealed\')" ' + (f.isSealed?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   }
   if (!_extraSerie) {   // v6.146 - Change ed Errore di stampa: stessa ragione
     if (_versioneAmmessa('change', f, figSeries))
@@ -60096,6 +60394,9 @@ function switchToEditMode(figId) {
     html += '<div class="detail-row">' + _labelVersione('free') + '<span class="detail-value"><input type="checkbox" id="fe-is-free-version" onchange="toggleFeBaseFigurineGroup(\'fe-is-free-version\')" ' + (f.isFreeVersion?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
     if (_versioneAmmessa('printError', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('printError') + '<span class="detail-value"><input type="checkbox" id="fe-is-printerror" onchange="toggleFeBaseFigurineGroup(\'fe-is-printerror\')" ' + (f.isPrintError?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+    // 🆕 v7.078 - la Versione sigillata (solo album). 🔄 v7.082: ultima, dopo l'errore di stampa, come nel descrittore
+    if (_versioneAmmessa('sealed', f, figSeries))
+    html += '<div class="detail-row">' + _labelVersione('sealed') + '<span class="detail-value"><input type="checkbox" id="fe-is-sealed" onchange="toggleFeBaseFigurineGroup(\'fe-is-sealed\')" ' + (f.isSealed?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   }
   // 🔴 v6.782 (Franco: «nella form della bustina, se setto change=true mi chiede il tipo di
   //    change obbligatorio ma non c'e' il campo») - QUI STAVA UN BIVIO A DUE SEZIONI, e faceva un
@@ -60389,7 +60690,8 @@ function switchToEditMode(figId) {
   //    ("la scheda cominciava sotto lo schermo"), rimesso in piedi da un'altra parte.
   //    📌 Lo spazio prima e' dichiarato nel foglio (`margin-top`), non con un <br>: serve a
   //    separare due cose diverse, ed e' una regola, non un ritocco.
-  html += (_feFotoNelGenerale ? '<div class="fe-foto-larghe">' + _feFotoNelGenerale + '</div>' : '');
+  // 🔄 v7.082 - non piu' in fondo: a destra dei campi, in cima (vedi l'apertura del tab).
+  html += (_feFotoNelGenerale ? '</div><div class="fe-foto-larghe">' + _feFotoNelGenerale + '</div>' : '');
   html += '</div>'; // chiude fe-tab-generale
 
   // 🆕 v6.857 - IL TAB DELLE PAGINE, fra Generale ed Ebay (Franco). Il contenuto e' lo stesso
