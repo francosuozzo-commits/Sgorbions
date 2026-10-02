@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.081">
+<link rel="stylesheet" href="css/style.css?v=7.082">
 
 
 <style>
@@ -644,6 +644,12 @@
   .wz-popup-coppia.una img:first-child { left: 15px; top: 5px; transform: none; }
   .wz-popup-lista li:has(.wz-popup-coppia) .wz-popup-foto { display: none; }
 }
+/* 🆕 v7.082 (Franco: «le due foto dell'album, nella sua form [...] mettile in alto a dx, come per le altre tda»)
+   - nella scheda dell'album in modifica il tab Generale si divide: campi a sinistra, foto a destra in cima.
+   Su uno schermo stretto le foto vanno sotto i campi (`flex-wrap`), come prima. */
+#fe-tab-generale.fe-con-foto { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 2.5rem; }
+#fe-tab-generale.fe-con-foto > .fe-gen-campi { flex: 1 1 420px; max-width: 660px; min-width: 0; }
+#fe-tab-generale.fe-con-foto > .fe-foto-larghe { flex: 0 1 462px; margin: 0 0 1rem; }
 /* 🆕 v7.073 (Franco: «la freccia sui tasti pagina precedente e successiva mettila a capo e al centro») */
 .wz-album-nav .wz-freccia { display: block; text-align: center; line-height: 1.1; }
 /* 🆕 v7.072 (Franco) - «Tocca tutte» / «Nessuna» verdi dopo averli premuti, finché non si tocca una figurina */
@@ -3411,6 +3417,8 @@ di tutte le serie</button>
             <button class="admin-subtab" onclick="tdaSubTab('massivi')">✏️ Campi dell'aggiornamento massivo</button>
             <!-- 🆕 v6.982 (Franco: «carosello si-no per tda») -->
             <button class="admin-subtab" onclick="tdaSubTab('caroselli')">🎠 Caroselli</button>
+            <!-- 🆕 v7.082 (Franco: «rendere anche questo aspetto configurabile da me») -->
+            <button class="admin-subtab" onclick="tdaSubTab('ordinamenti')">↕️ Ordinamento delle griglie</button>
           </div>
           <div class="tda-sub" id="tda-sub-tipi">
           <div id="admin-tipo-articolo-tabella"></div>
@@ -3436,6 +3444,10 @@ di tutte le serie</button>
           <!-- 🆕 v6.982 — una spunta per tipologia: comanda i tre caroselli (`renderAdminCaroselliTDA`). -->
           <div class="tda-sub" id="tda-sub-caroselli" style="display:none;">
           <div id="admin-caroselli-tda"></div>
+          </div>
+          <!-- 🆕 v7.082 — le chiavi d'ordinamento della griglia per tipologia (`renderAdminOrdinamentiTDA`). -->
+          <div class="tda-sub" id="tda-sub-ordinamenti" style="display:none;">
+          <div id="admin-ordinamenti-tda"></div>
           </div>
           <!-- 🆕 v6.234 — da chi può nascere ogni versione. SOLA LETTURA: descrive com'è
                fatto il modello, non cosa contiene questa collezione. È il descrittore
@@ -5884,7 +5896,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.081"></script>
+<script src="js/app.js?v=7.082"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5908,7 +5920,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.081'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.082'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
