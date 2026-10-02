@@ -2277,9 +2277,13 @@ footer {
   #demo-toggle-modal .modal-header { flex-direction: column-reverse; align-items: stretch; gap: 0.5rem; }
   #demo-toggle-modal .modal-header .modal-close { align-self: flex-end; }
   #demo-toggle-modal .modal-title { white-space: nowrap; font-size: min(1.5rem, 6.4vw); }
-  #home-how-grid > div { padding: 1rem 1.1rem !important; text-align: left !important; }
-  #home-how-grid > div > div:first-child { font-size: 1.8rem !important; margin-bottom: 0.4rem !important; }
-  #home-how-grid h3 { font-size: 1.05rem !important; }
+  /* 🔄 v7.085 (Franco: «nei box della parte bassa, nella versione mobile, metti il titolo e la icona sulla
+     stessa riga; a sx la icona») - icona e titolo affiancati, la descrizione sotto, larga quanto il box. */
+  #home-how-grid > div { padding: 1rem 1.1rem !important; text-align: left !important;
+    display: grid; grid-template-columns: auto 1fr; column-gap: 0.6rem; align-items: center; }
+  #home-how-grid > div > div:first-child { font-size: 1.8rem !important; margin: 0 !important; }
+  #home-how-grid h3 { font-size: 1.05rem !important; margin: 0 !important; }
+  #home-how-grid > div > :not(:first-child):not(h3) { grid-column: 1 / -1; margin-top: 0.4rem; }
 }
 
 /* ---- v5.851 — CLASSIFICA SU TELEFONO ----
