@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.083 - Modificato index.html (app.js per la versione). Telefono (Franco): la versione sta nella barra in alto,
+// v7.084 - Modificato js/app.js e index.html. Home (Franco): 🐛 nel carosello solo articoli base (`_eBase`, come
+//          negli altri caroselli); il bottone «Esplora l'Inventario Sgorbions !» su una riga sola.
+// v7.083 -Modificato index.html (app.js per la versione). Telefono (Franco): la versione sta nella barra in alto,
 //          subito a destra del panino, e la striscia sotto la barra che la conteneva non c'è più.
 //          Home: meno spazio fra «In questo sito troverai...» e i numeri verdi; il titolo del carosello
 //          «Le figurine» diventa «Gli articoli Sgorbions» (Franco: «non contiene solo figurine»).
@@ -30715,7 +30717,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.083';
+const JS_VERSION = 'v7.084';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33873,6 +33875,7 @@ function renderCarosello() {
   _caroselloSpegni('home');
   // 🆕 v6.463 - la foto si chiede a `_fotoFigurina`, non si legge da `f.img`. L'elenco si legge UNA
   // volta e si passa: `_fotoFigurina` senza `figs` rifarebbe `getData` per ogni figurina.
+  // 🗄️ (fino alla v7.083; dalla v7.084 la home filtra `_eBase`, vedi sotto)
   // ⚠️ QUI IL CAMBIAMENTO SI VEDE ANCHE FUORI DALLE «DA ATTACCARE», ED E' BENE SAPERLO: la fila
   // della home non filtra per `_eBase`, quindi da adesso possono entrarci anche variazioni e change
   // di retro che una foto propria non ce l'hanno e la prendono dalla base. Non e' un effetto
@@ -33889,7 +33892,11 @@ function renderCarosello() {
   // 📌 L'elenco delle serie si legge UNA volta e serve a due cose (il filtro e i nomi):
   //    due `getData('series')` nella stessa funzione sarebbero due letture della stessa cosa.
   const _serie = new Map(getData('series', []).map(x => [x.id, x]));
+  // 🐛 v7.084 (Franco: «baco: nel carosello della home ci devono essere solo elementi base») - `_eBase`,
+  //    come negli altri tre caroselli. Il commento qui sopra (v6.463) raccontava che la home non lo
+  //    filtrava: era vero, e adesso è deciso il contrario.
   const disponibili = _figs.filter(f => _vaInCarosello(f.section)
+    && _eBase(f)
     && _serieInVetrina(_serie.get(f.seriesId))
     && _fotoFigurina(f, _figs));
   if (disponibili.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
