@@ -1,7 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.084 - Modificato js/app.js e index.html. Home (Franco): 🐛 nel carosello solo articoli base (`_eBase`, come
+// v7.085 - Modificato css/style.css (index e app.js per la versione). Home, sul telefono (Franco): nei box in basso
+//          l'icona a sinistra e il titolo sulla stessa riga, la descrizione sotto. Testi dei box (Franco): «Esplora
+//          tutte le serie Sgorbions, con foto…», «…pronta in un attimo.», «…alla tua lista personale.».
+// v7.084 -Modificato js/app.js e index.html. Home (Franco): 🐛 nel carosello solo articoli base (`_eBase`, come
 //          negli altri caroselli); il bottone «Esplora l'Inventario Sgorbions !» su una riga sola.
 // v7.083 -Modificato index.html (app.js per la versione). Telefono (Franco): la versione sta nella barra in alto,
 //          subito a destra del panino, e la striscia sotto la barra che la conteneva non c'è più.
@@ -30717,7 +30720,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.084';
+const JS_VERSION = 'v7.085';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32389,10 +32392,10 @@ const i18n = {
 'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
 'home.featured.btn':'View All Series →',
 'home.how.eyebrow':'How It Works','home.how.title':'Your Collection, Organised',
-'how.1.title':'Browse the Inventory','how.1.desc':'Explore all Sgorbions series with photos and full descriptions.',
-'how.q.title':'Create your list with the <span class="how-q-a-capo">Sgorbions Questionnaire</span>','how.q.desc':'Answer a few questions, series by series: your Sgorbions list will be ready in the blink of an eye.','how.m.title':'My Sgorbions list','how.m.desc':'Add Sgorbions items to your list by hand.','how.2.title':'Build Your List','how.2.desc':'Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.',
+'how.1.title':'Browse the Inventory','how.1.desc':'Explore all Sgorbions series, with photos and full descriptions.',
+'how.q.title':'Create your list with the <span class="how-q-a-capo">Sgorbions Questionnaire</span>','how.q.desc':'Answer a few questions, series by series: your Sgorbions list will be ready in no time.','how.m.title':'My Sgorbions list','how.m.desc':'Add Sgorbions items to your personal list by hand.','how.2.title':'Build Your List','how.2.desc':'Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.',
 'how.3.title':'Connect and Ask','how.3.desc':'Ask questions and get answers from the administrator and other collectors.',
-'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
+'how.4.title':'Your Profile','how.4.desc':'Decide which of your profile information to share with other collectors.',
 'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions items ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Item types','catalog.allSeriesInfo':'Show summary information\non all series','catalog.allSeriesInfoShort':'Show series figures','catalog.allSeriesInfoTitle':'The Sgorbions series','home.cosaFare':'What can you do on this site ?','wz.pulsante':'✨ Create your list with the Sgorbions Questionnaire','nav.questionario':'Sgorbions Questionnaire','wz.riprendi':'✨ Resume the questionnaire','series.articoliTitolo':'THE ITEMS OF THE SERIES','catalog.addseries':'+ Add Series',
 'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them !',
 'back':'Inventory','detail.addfig':'+ Add Sticker',
@@ -32494,10 +32497,10 @@ const i18n = {
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
     'home.how.eyebrow':'Come Funziona','home.how.title':'La Tua Collezione, Organizzata',
-    'how.1.title':'Sfoglia l\'Inventario','how.1.desc':'Esplora tutte le serie di Sgorbions con foto e descrizioni complete.',
-    'how.q.title':'Crea la tua lista col <span class="how-q-a-capo">Questionario Sgorbions</span>','how.q.desc':'Rispondi a poche domande, serie per serie: la tua lista Sgorbions sarà pronta in un batter d\'occhio.','how.m.title':'La mia lista Sgorbions','how.m.desc':'Aggiungi manualmente gli articoli Sgorbions alla tua lista.','how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
+    'how.1.title':'Sfoglia l\'Inventario','how.1.desc':'Esplora tutte le serie Sgorbions, con foto e descrizioni complete.',
+    'how.q.title':'Crea la tua lista col <span class="how-q-a-capo">Questionario Sgorbions</span>','how.q.desc':'Rispondi a poche domande, serie per serie: la tua lista Sgorbions sarà pronta in un attimo.','how.m.title':'La mia lista Sgorbions','how.m.desc':'Aggiungi manualmente gli articoli Sgorbions alla tua lista personale.','how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
-    'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
+    'how.4.title':'Il Tuo Profilo','how.4.desc':'Decidi quali informazioni del tuo profilo vuoi condividere con gli altri collezionisti.',
     'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Tipologie di articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra numeriche delle serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions','home.cosaFare':'Cosa puoi fare in questo sito ?','wz.pulsante':'✨ Crea la tua lista col Questionario Sgorbions','nav.questionario':'Questionario Sgorbions','wz.riprendi':'✨ Riprendi il questionario','series.articoliTitolo':'GLI ARTICOLI DELLA SERIE','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine per album','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','catalog.backToSeries':'Serie','form.series.firstNumber':'N. prima figurina','form.series.lastNumber':'N. ultima figurina','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione !',
