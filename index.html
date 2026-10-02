@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.084">
+<link rel="stylesheet" href="css/style.css?v=7.085">
 
 
 <style>
@@ -2217,14 +2217,14 @@ button.back-btn { color:#ffffff; }
         <div class="solo-wz" style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="apriWizardLista()" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">📝</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n-html="how.q.title">Crea la tua lista col <span class="how-q-a-capo">Questionario Sgorbions</span></h3>
-          <p style="font-size:0.88rem;" data-i18n="how.q.desc">Rispondi a poche domande, serie per serie: la tua lista Sgorbions sarà pronta in un batter d'occhio.</p>
+          <p style="font-size:0.88rem;" data-i18n="how.q.desc">Rispondi a poche domande, serie per serie: la tua lista Sgorbions sarà pronta in un attimo.</p>
         </div>
         <!-- 🆕 v7.045 (Franco: «blocco 2: dedicato al flag Mia lista»; «usa il testo che già hai») - apre la finestra
              «La mia lista Sgorbions», come la voce di menu che porta lo stesso nome. -->
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="openDemoToggleModal()" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">✍️</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.m.title">La mia lista Sgorbions</h3>
-          <p style="font-size:0.88rem;" data-i18n="how.m.desc">Aggiungi manualmente gli articoli Sgorbions alla tua lista.</p>
+          <p style="font-size:0.88rem;" data-i18n="how.m.desc">Aggiungi manualmente gli articoli Sgorbions alla tua lista personale.</p>
         </div>
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('contact')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">🤝</div>
@@ -2234,7 +2234,7 @@ button.back-btn { color:#ffffff; }
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('profile')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">👤</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.4.title">Your Profile</h3>
-          <p style="font-size:0.88rem;" data-i18n="how.4.desc">Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.</p>
+          <p style="font-size:0.88rem;" data-i18n="how.4.desc">Decidi quali informazioni del tuo profilo vuoi condividere con gli altri collezionisti.</p>
         </div>
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('classifica')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">🏆</div>
@@ -5913,7 +5913,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.084"></script>
+<script src="js/app.js?v=7.085"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5937,7 +5937,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.084'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.085'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
