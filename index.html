@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.082">
+<link rel="stylesheet" href="css/style.css?v=7.083">
 
 
 <style>
@@ -524,7 +524,10 @@
    ⚠️ E LO SPAZIO NON VA A ZERO: sotto restano i 14.4px di `gap` della griglia, che e' quello che
    tiene distinte la frase e la fila di numeri. Azzerare anche quello le farebbe sembrare la stessa
    cosa. */
-#hero-intro-numeri { grid-area:intro; margin:0.6rem 0 0.2rem; }
+/* 🔄 v7.083 (Franco: «riduci lo spazio che c'è tra la frase "in questo sito troverai" e i numeri verdi»)
+   - 📏 misurato a 390px: 17px (0.2rem di margine + 14.4px di `gap`). Il margine sotto diventa negativo e si
+   mangia mezzo `gap`: ne restano ~6px, abbastanza per non far sembrare la frase una riga dei numeri. */
+#hero-intro-numeri { grid-area:intro; margin:0.6rem 0 -0.5rem; }
 
 /* 🔄 v6.928 (Franco: «la miniatura la mettiamo in alto a dx, invece che in basso a dx; il tasto
    "opzioni admin" lo metti alla sx della miniatura (condivideranno il tetto), e lo chiami solo
@@ -964,12 +967,12 @@ button.back-btn { color:#ffffff; }
    IL RIMEDIO (scelto da Franco): la versione va a DESTRA. La targhetta e' ancorata a sinistra,
    quindi le due non si incontrano piu' — e non c'e' nessun numero da tarare sull'altezza della
    targhetta, che e' il motivo per cui non si e' scelto un margine in alto. */
-#mobile-version-bar { display:none; }
+/* 🔄 v7.083 (Franco) - la striscia sotto la barra non c'e' piu': la versione del telefono sta nella
+   barra, subito a destra del panino. */
+.nav-ver-tel { display:none; }
 @media (max-width:860px) {
-  #mobile-version-bar { display:block; text-align:right;
-    background:var(--bg); color:var(--muted);
-    font-family:var(--font-ui); font-size:0.72rem;
-    padding:0.25rem 1rem; border-bottom:1px solid var(--border); }
+  .nav-ver-tel { display:inline-block; margin-left:0.5rem; color:var(--muted);
+    font-family:var(--font-ui); font-size:0.72rem; white-space:nowrap; flex-shrink:0; }
   #navbar #nav-app-version { display:none; }
 }
 
@@ -1709,6 +1712,9 @@ button.back-btn { color:#ffffff; }
 <!-- NAVBAR -->
 <nav id="navbar">
   <button id="nav-hamburger" class="nav-hamburger" aria-label="Menu" aria-expanded="false" onclick="toggleNavMenu()">☰</button>
+  <!-- 🆕 v7.083 (Franco: «da mobile la versione possiamo metterla sulla riga in alto, quella del panino,
+       proprio a fianco al panino?») - si vede solo sotto gli 860px, dove c'e' il panino. -->
+  <span id="nav-app-version-mobile" class="nav-ver-tel"></span>
   <div style="display:flex;align-items:center;gap:0;flex:1;min-width:0;">
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
@@ -1911,7 +1917,9 @@ button.back-btn { color:#ffffff; }
        piu' nessuna «construction». Rinominarlo tocca l'id qui, il getElementById in app.js e il
        CSS: tre punti per un guadagno di sola lettura. Il nome adesso racconta la storia, non il
        contenuto. -->
-  <div id="mobile-version-bar"><span id="nav-app-version-mobile"></span></div>
+  <!-- 🗑️ v7.083 (Franco: «quella striscia nera nella quale adesso è contenuta la cancelliamo e recuperiamo
+       spazio») - QUI STAVA #mobile-version-bar. La versione del telefono sta ora nella barra in alto,
+       accanto al panino (#nav-app-version-mobile, stesso id: app.js la riempie come prima). -->
 </div>
 <div id="page-home" class="page active">
   <!-- 🆕 v6.878 (Franco: «un pulsante che se premuto comanda lo svuotamento della cache del
@@ -2106,7 +2114,9 @@ button.back-btn { color:#ffffff; }
            che continua. Il titolo non spiega piu' le figurine: le distingue dalle serie.
            📌 Viola come gli altri titoli grandi (regola di Franco del 25 agosto: «il viola e'
            solo per i titoli grandi»), e centrato come ha chiesto. -->
-      <h2 class="carosello-titolo" data-i18n="home.figurine">Le figurine</h2>
+      <!-- 🔄 v7.083 (Franco: «il titolo del carosello della home si chiama figurine ma non contiene solo
+           figurine. Chiamalo "Gli articoli Sgorbions"») -->
+      <h2 class="carosello-titolo" data-i18n="home.figurine">Gli articoli Sgorbions</h2>
       <!-- v6.065 (Franco) — via il titolo "Un assaggio dall'Inventario": le figurine si spiegano
            da sole, e una riga di titolo sopra una fila di immagini e' spazio che non aggiunge
            niente. Tolte anche le due voci dal dizionario: una chiave che nessuno usa piu' e' una
@@ -5896,7 +5906,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.082"></script>
+<script src="js/app.js?v=7.083"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -5920,7 +5930,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.082'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.083'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
