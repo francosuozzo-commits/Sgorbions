@@ -1,7 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.086 - Modificato index.html e js/app.js. Home (Franco): il titolo del box della classifica «Sfida gli altri»
+// v7.087 - Modificato index.html e js/app.js. Desktop (Franco): i titoli delle otto pagine tutti uguali — font,
+//          misura, colore, al centro e subito sotto la barra come l'Inventario (`.titolo-pagina`); la voce
+//          «Questionario» nella navbar; la LINGUETTA del questionario fissa sul bordo sinistro, in alto, blu, di ogni pagina
+//          (`#wz-linguetta`, al passaggio del mouse «Crea la tua lista Sgorbions col Questionario»). Tutte e due
+//          solo per chi vede il questionario (`solo-wz`) e solo sul desktop. Nel questionario, sul desktop, più spazio
+//          sotto il titolo della prima schermata e frasi un poco più grandi (`.wz-testo` 1,08rem, `.wz-nota` 0,92rem);
+//          «🚪 Esci dal questionario» (era ✕) in cima e, sul desktop, anche fisso in fondo a destra (`.wz-esci-basso`);
+//          in «Che collezionista sei ?» le tre carte un poco più in basso e più grandi; nella schermata della serie
+//          «Salta serie» sulla riga del nome, a destra (finisce dove finisce la barra), e i quadranti su una riga
+//          sola; «Figurine per album» al posto di «Figurine album» (`_wzEtichetta`, solo desktop); nel riepilogo il
+//          mazzetto di foto anche sul desktop; in «Quali album hai?» le tre frasi su tre righe (desktop e telefono).
+//          🐛 «Tutte» e «Nessuna» accendono la carta e non passano più alla schermata dopo: si va avanti con
+//          «Prosegui» (`_wzProponi`).
+//          🆕 Admin console → Funzioni → «6. Copia gli articoli di una serie in un’altra» (Franco: le Carte del 2018
+//          nei Kakkones): tipologia, nome e numero degli articoli base, cambia solo la serie; anteprima, conferma,
+//          riconto; rilanciabile senza doppioni (`_pianoCopiaSerie`).
+//          Nella scheda in modifica con due facce (album, bustine…) «✨ Rimuovi sfondo da entrambe», centrato sotto
+//          le due foto: prima il fronte, poi il retro (`removeBgEntrambe`); sopra, «📷 Carica entrambe le foto» (due
+//          file: il nome che dice «retro» va sul retro, se no il primo per nome è il fronte) e «⇄ Scambia».
+// v7.086 -Modificato index.html e js/app.js. Home (Franco): il titolo del box della classifica «Sfida gli altri»
 //          diventa «Sfida gli altri collezionisti».
 // v7.085 -Modificato css/style.css (index e app.js per la versione). Home, sul telefono (Franco): nei box in basso
 //          l'icona a sinistra e il titolo sulla stessa riga, la descrizione sotto. Testi dei box (Franco): «Esplora
@@ -30722,7 +30741,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.086';
+const JS_VERSION = 'v7.087';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32361,7 +32380,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.questionarioBreve':'Questionnaire','wz.linguetta':'Build your Sgorbions list with the Questionnaire','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -32450,7 +32469,7 @@ const i18n = {
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with backs) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in your list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in your list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Liste','nav.questionarioBreve':'Questionario','wz.linguetta':'Crea la tua lista Sgorbions col Questionario','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
@@ -49381,7 +49400,9 @@ function _wzNome(key) {
 }
 // 🆕 v7.058 (Franco: «nel quadrante che raffigura le figurine per album, cambiamo il nome in "figurine album"») -
 //    solo nel questionario: la tipologia resta «Figurine per album» nel resto del sito.
-function _wzEtichetta(z) { return z === 'attaccare' ? (currentLang === 'it' ? 'Figurine album' : 'Album stickers') : getSectionLabel(z); }
+// 🔄 v7.087 (Franco: «nella versione dsk, "Figurine album" diventa "Figurine per album"; in tutto il questionario»)
+//    - il nome intero sul desktop, quello corto resta al telefono.
+function _wzEtichetta(z) { return z === 'attaccare' ? (currentLang === 'it' ? (_isMobileViewport() ? 'Figurine album' : 'Figurine per album') : 'Album stickers') : getSectionLabel(z); }
 const _wzAScelta = z => z !== 'albums';   // gli album hanno la loro schermata: le foto da spuntare
 function _wzSerie() {
   return _serieDaContare(Array.isArray(_cache.series) ? _cache.series : []).slice()
@@ -49550,6 +49571,15 @@ function _wzPagina(sez, d) {
 }
 function _wzMeta(sez, m) { _wz.scelte[sez].meta = m; _wzDisegna(true); }
 function _wzScelta4(c) { return c.pModo === 'alcune' ? (c.pVerso === 'manca' ? 'molte' : 'poche') : c.pModo; }
+// 🐛 v7.087 (Franco: «se premo il tasto "Nessuna" o il tasto "Tutte", il questionario va alla pagina successiva
+//    immediatamente. No: io devo premere "Prosegui"») - toccare «Tutte» o «Nessuna» accende la carta e basta;
+//    a passare avanti è «Prosegui», che conferma la carta accesa (`_wzModo` / `_wzModo4`, come prima).
+//    «Alcune», «Poche» e «Molte» aprono ancora la loro schermata di scelta: lì c'è qualcosa da fare.
+function _wzProponi(sez, scelta) {
+  const c = _wz.scelte[sez];
+  c.pModo = scelta;
+  _wzDisegna(true);
+}
 function _wzModo4(sez, scelta) {
   if (scelta === 'poche' || scelta === 'molte') { _wz.scelte[sez].modo = 'alcune'; _wzVerso(sez, scelta === 'poche' ? 'ho' : 'manca'); }
   else _wzModo(sez, scelta);
@@ -49703,8 +49733,13 @@ function _wzChiudi() {
 function _wzTesta(s) {
   const w = _wz, it = currentLang === 'it';
   const pct = Math.round(((w.i + (w.k / Math.max(1, w.passi.length))) / Math.max(1, w.serie.length)) * 100);
+  // 🆕 v7.087 (Franco: «il tasto "Salta serie" mettilo in alto, nella stessa riga del nome della serie, sulla dx; il
+  //    suo lato dx finisca con la fine della barra "Serie N di M"») - nella colonna della barra, quindi i due bordi
+  //    destri coincidono. Solo nella schermata della serie, e il foglio lo accende solo sul desktop (`.wz-salta-alto`).
+  const salta = w.passo === 'serie'
+    ? '<button type="button" class="btn-secondary wz-scritta-rossa wz-salta-alto" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta serie' : 'Skip series') + '</button>' : '';
   return '<div class="wz-testa">' + _wzImg(s.img, 160, 160, 'wz-copertina-piccola')
-    + '<div style="flex:1;min-width:0;"><div class="wz-serie-nome">' + esc(_nomeSerieCard(s)) + '</div>'
+    + '<div style="flex:1;min-width:0;"><div class="wz-serie-riga"><div class="wz-serie-nome">' + esc(_nomeSerieCard(s)) + '</div>' + salta + '</div>'
     + '<div class="wz-avanzamento">' + (it ? 'Serie ' + (w.i + 1) + ' di ' + w.serie.length : 'Series ' + (w.i + 1) + ' of ' + w.serie.length) + '</div>'
     + '<div class="wz-barra"><span style="width:' + pct + '%;"></span></div></div></div>';
 }
@@ -49839,7 +49874,9 @@ function _wzDisegna(tieni) {
     } else if (p === 'albums') {
       const alb = _wzArticoli(s.id, 'albums'), figs = getData('figurines', []);
       corpo += '<div class="wz-domanda">' + _wzImg(_wzFotoSez('albums', s.id), 120, 120, 'wz-icona-sez') + (it ? 'Quali album hai?' : 'Which albums do you have?') + '</div>'
-        + '<p class="wz-testo">' + (it ? 'Tocca quelli che hai. Se non ne hai, vai avanti.<br>Se non sai quale selezionare, scegli il primo.' : 'Tap the ones you have.<br>If you do not know which one to select, choose the first one.')   // v7.058: la frase di Franco + '</p>'
+        // v7.058: la frase di Franco. 🔄 v7.087 (Franco: «le tre frasi, mettile ognuna su una riga dedicata»), e il
+        //    `</p>` torna: stava dopo un commento a metà riga, quindi non veniva mai scritto.
+        + '<p class="wz-testo">' + (it ? 'Tocca quelli che hai.<br>Se non ne hai, vai avanti.<br>Se non sai quale selezionare, scegli il primo.' : 'Tap the ones you have.<br>If you have none, go on.<br>If you do not know which one to select, choose the first one.') + '</p>'
         + '<div class="wz-scelte wz-scelte-album">' + alb.map(f =>
             '<button type="button" class="wz-carta' + (w.scelte.albums.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'albums\',\'' + f.id + '\',this)">'
             + _wzImg(_fotoFigurina(f, figs) || f.img, 400, 400, '') + '<div class="wz-carta-titolo">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
@@ -49851,7 +49888,7 @@ function _wzDisegna(tieni) {
       if (!c.modo && _wzQuattro(p)) {
         // 🆕 v7.059 - le quattro carte delle Figurine album (vedi `_wzModo4`)
         const prop = _wzScelta4(c);
-        const carta4 = (sc, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (prop === sc ? ' on' : '') + '" onclick="_wzModo4(\'' + p + '\',\'' + sc + '\')">'
+        const carta4 = (sc, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (prop === sc ? ' on' : '') + '" onclick="' + (sc === 'tutte' || sc === 'nessuna' ? '_wzProponi' : '_wzModo4') + '(\'' + p + '\',\'' + sc + '\')">'
           + (prop === sc ? giaTua : '')
           + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
         corpo += intest + '<div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div>'
@@ -49867,7 +49904,7 @@ function _wzDisegna(tieni) {
         piede = indietro + avanti("_wzModo4('" + p + "','" + prop + "')");
       } else if (!c.modo) {
         // la carta proposta (quello che dice la lista, o la risposta data prima) è accesa; «Avanti» la conferma
-        const carta = (modo, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (c.pModo === modo ? ' on' : '') + '" onclick="_wzModo(\'' + p + '\',\'' + modo + '\')">'
+        const carta = (modo, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (c.pModo === modo ? ' on' : '') + '" onclick="' + (modo === 'alcune' ? '_wzModo' : '_wzProponi') + '(\'' + p + '\',\'' + modo + '\')">'
           + (c.pModo === modo ? giaTua : '')
           + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
         corpo += intest + '<div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div>'
@@ -49979,10 +50016,15 @@ function _wzDisegna(tieni) {
   // 🆕 v7.055 (Franco: «deve essere sempre possibile uscire dal questionario, non solo la prima pagina») - in cima a
   //    ogni schermata che non ne ha già una via (la prima ha il suo pulsante, la finale «Chiudi», le conferme le loro).
   //    Passa dalla stessa conferma della prima pagina: «Resta nel questionario» torna alla schermata di prima.
-  if (!['intro', 'esci', 'azzera1', 'azzera2', 'finale'].includes(w.passo))
-    corpo = '<div class="wz-esci-alto"><button type="button" class="btn-secondary wz-esci wz-scritta-rossa" onclick="_wzChiediEsci()">✕ ' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button></div>' + corpo;
+  // 🔄 v7.087 (Franco, desktop: «il tasto per uscire dal questionario mettilo sia in alto che in basso allo schermo,
+  //    in fondo a dx; aggiungi anche una icona rappresentativa della uscita») - 🚪 al posto di ✕, e una seconda
+  //    copia in fondo a destra, sotto il piede (`.wz-esci-basso`, che il foglio accende solo sopra gli 860px).
+  const _wzConEsci = !['intro', 'esci', 'azzera1', 'azzera2', 'finale'].includes(w.passo);
+  const _wzBtnEsci = '<button type="button" class="btn-secondary wz-esci wz-scritta-rossa" onclick="_wzChiediEsci()">🚪 ' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';
+  if (_wzConEsci) corpo = '<div class="wz-esci-alto">' + _wzBtnEsci + '</div>' + corpo;
   const _wzY = ov.scrollTop;
-  ov.innerHTML = '<div class="wz-pannello">' + corpo + '</div><div class="wz-piede">' + piede + '</div>';
+  ov.innerHTML = '<div class="wz-pannello">' + corpo + '</div><div class="wz-piede">' + piede + '</div>'
+    + (_wzConEsci ? '<div class="wz-esci-basso">' + _wzBtnEsci + '</div>' : '');
   ov.scrollTop = tieni ? _wzY : 0;
 }
 function nfmtWz(n) { return Number(n || 0).toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US'); }
@@ -60117,6 +60159,16 @@ function switchToEditMode(figId) {
     const _fotoHTML = (_dueFacce ? '<div style="display:flex;gap:0.3rem;align-items:flex-start;">' : '')
       + _slotFotoEdit('fronte', f.img, f, _dueFacce)
       + (_dueFacce ? _slotFotoEdit('retro', f.imgRetro, f, _dueFacce) + '</div>' : '')
+      // 🆕 v7.087 (Franco: «posizionalo centrato, che cade a metà sotto la prima foto e a metà sotto l'altra»)
+      // 🆕 v7.087 (Franco: «un pulsante "Carica entrambe le foto" che seleziona 2 foto, una la usa come fronte ed
+      //    una come retro») - sopra «Rimuovi sfondo da entrambe»: chi mette sta sopra, chi toglie sotto (v6.605).
+      //    Accanto «⇄ Scambia», per quando le due foto finiscono al contrario (vedi `handleEntrambeFoto`).
+      + (_dueFacce ? '<div style="display:flex;justify-content:center;gap:0.4rem;flex-wrap:wrap;margin-top:0.4rem;">'
+          + '<label style="cursor:pointer;"><span class="btn-foto" style="display:inline-block;">\u{1F4F7} ' + (currentLang === 'it' ? 'Carica entrambe le foto' : 'Upload both photos') + '</span>'
+          + '<input type="file" accept="image/*" multiple style="display:none;" onchange="handleEntrambeFoto(event)"></label>'
+          + '<button type="button" class="btn-foto" onclick="scambiaFronteRetro()">⇄ ' + (currentLang === 'it' ? 'Scambia' : 'Swap') + '</button></div>'
+          + '<div style="text-align:center;margin-top:0.4rem;"><button type="button" id="fe-bg-entrambe" class="btn-foto" onclick="removeBgEntrambe()">✨ '
+          + (currentLang === 'it' ? 'Rimuovi sfondo da entrambe' : 'Remove background from both') + '</button></div>' : '')
       // 🔄 v6.857 (Franco: «metti un tab apposito, per le pagine dell'album, nella scheda
       //    dell'album ... tra il tab Generale ed il tab Ebay») - LE PAGINE NON STANNO PIU' QUI.
       //    Erano sotto i riquadri delle facce, in coda a una colonna da 320px: N miniature
@@ -62495,15 +62547,36 @@ async function removeBgFromEdit(slot) {
   try {
     const blob = await (await fetch(preview.src)).blob();
     const croppedBlob = await _togliSfondoDaBlob(blob, (pct, fase) => _bottoneSfondoAvanzamento(btn, pct, fase));
-    const reader = new FileReader();
-    reader.onload = e => {
-      _scriviSlot(slot, e.target.result);
-      preview.src = _datiSlot(slot);
-      if (btn) { btn.disabled = false; btn.textContent = _ETICHETTA_SFONDO(); }
-      toast(currentLang === 'it' ? '\u2705 Sfondo rimosso !' : '\u2705 Background removed !', 'success');
-    };
-    reader.readAsDataURL(croppedBlob);
+    // \uD83D\uDD04 v7.087 - si ASPETTA anche la lettura del risultato, cos\u00EC chi chiama sa quando questa foto \u00E8 finita
+    //    (\u00ABRimuovi sfondo da entrambe\u00BB fa il retro solo dopo il fronte).
+    await new Promise((fatto, errore) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        _scriviSlot(slot, e.target.result);
+        preview.src = _datiSlot(slot);
+        if (btn) { btn.disabled = false; btn.textContent = _ETICHETTA_SFONDO(); }
+        toast(currentLang === 'it' ? '\u2705 Sfondo rimosso !' : '\u2705 Background removed !', 'success');
+        fatto();
+      };
+      reader.onerror = () => errore(reader.error);
+      reader.readAsDataURL(croppedBlob);
+    });
   } catch(e) { _erroreSfondo(e, btn); }
+}
+
+// \uD83C\uDD95 v7.087 (Franco: \u00ABun pulsante che toglie lo sfondo ad entrambe le foto, fronte e retro, facendole
+//    chiaramente una alla volta; chiamalo "Rimuovi sfondo da entrambe"\u00BB) - prima il fronte, poi il retro,
+//    ognuna col suo \u00ABRimuovi sfondo\u00BB (stessa funzione, stessi avanzamenti sul suo bottone). Una foto che non
+//    c'\u00E8 si salta. Il risultato, come per il singolo, resta in anteprima finch\u00E9 non si salva.
+async function removeBgEntrambe() {
+  const it = currentLang === 'it';
+  const b = document.getElementById('fe-bg-entrambe');
+  const conFoto = slot => { const p = document.getElementById(_SLOT_FOTO[slot].preview); return !!(p && p.src && p.tagName === 'IMG' && p.src !== window.location.href); };
+  const slots = ['fronte', 'retro'].filter(conFoto);
+  if (!slots.length) { toast(it ? 'Carica prima una foto' : 'Upload a photo first', 'error'); return; }
+  if (b) { b.disabled = true; b.textContent = '\u23F3 ' + (it ? 'Una alla volta\u2026' : 'One at a time\u2026'); }
+  try { for (const s of slots) await removeBgFromEdit(s); }
+  finally { if (b) { b.disabled = false; b.textContent = '\u2728 ' + (it ? 'Rimuovi sfondo da entrambe' : 'Remove background from both'); } }
 }
 
 // v6.189 - lo stesso bottone sulla COPERTINA DELLA SERIE.
@@ -62715,6 +62788,42 @@ function handleFigEditImg(event, slot) {
   reader.readAsDataURL(file);
 }
 
+
+// 🆕 v7.087 (Franco: «Carica entrambe le foto: seleziona 2 foto, ed una la usa come fronte ed una come retro;
+//    solo mi domando come fai a capire quale sia l'una e quale l'altra») - LA REGOLA, in ordine:
+//    1. se il nome di un file dice «retro» (o back, dietro, rear) e l'altro no, quello è il retro;
+//    2. altrimenti vale l'ordine dei nomi: il primo è il fronte. Telefoni e macchine fotografiche numerano gli
+//       scatti in sequenza, e il fronte di solito si fotografa per primo.
+//    L'ordine in cui le si clicca nella finestra dei file NON si può usare: il browser non lo conserva.
+//    Se esce al contrario c'è «⇄ Scambia», e il messaggio dice quale file è finito dove.
+function handleEntrambeFoto(event) {
+  const it = currentLang === 'it';
+  const files = [...(event.target.files || [])];
+  event.target.value = '';
+  if (files.length !== 2) { toast(it ? 'Scegli due foto: una per il fronte e una per il retro' : 'Choose two photos: one for the front, one for the back', 'error'); return; }
+  const dice = f => /retro|back|dietro|rear/i.test(f.name);
+  let [fronte, retro] = files.sort((x, y) => x.name.localeCompare(y.name, 'it', { numeric: true }));
+  if (dice(fronte) && !dice(retro)) [fronte, retro] = [retro, fronte];
+  const leggi = (file, slot) => new Promise(fatto => {
+    const r = new FileReader();
+    r.onload = e => { _scriviSlot(slot, e.target.result); _ridisegnaSlotFoto(slot); fatto(); };
+    r.onerror = () => fatto();
+    r.readAsDataURL(file);
+  });
+  Promise.all([leggi(fronte, 'fronte'), leggi(retro, 'retro')]).then(() => toast(it
+    ? 'Fronte: ' + fronte.name + ' · Retro: ' + retro.name + '. Se sono al contrario, premi ⇄ Scambia.'
+    : 'Front: ' + fronte.name + ' · Back: ' + retro.name + '. If reversed, press ⇄ Swap.', 'success'));
+}
+// ⇄ - si scambiano le due foto NUOVE, non ancora salvate. Quelle già salvate sono un indirizzo, non un file:
+//    rimetterle nell'altro riquadro vorrebbe dire ricaricarle, e per quello c'è «Cambia foto».
+function scambiaFronteRetro() {
+  const it = currentLang === 'it';
+  const f = _datiSlot('fronte'), r = _datiSlot('retro');
+  const nuova = v => typeof v === 'string' && v.startsWith('data:');
+  if (!nuova(f) || !nuova(r)) { toast(it ? 'Scambia funziona sulle due foto appena caricate, prima di salvare' : 'Swap works on the two photos just uploaded, before saving', 'error'); return; }
+  _scriviSlot('fronte', r); _scriviSlot('retro', f);
+  _ridisegnaSlotFoto('fronte'); _ridisegnaSlotFoto('retro');
+}
 
 // v6.008 - gemello di toggleRetroBianco per la scheda. Stesso comportamento: il campo
 // sparisce e si svuota, la spunta resta per poter tornare indietro.
@@ -68712,6 +68821,38 @@ function renderAdminFunzioni() {
         '</div>' +
         '<div id="attacca-esito" style="margin-top:1rem;"></div>' +
       '</div>' +
+      // 🆕 v7.087 (Franco: «mi serve una funzione che crei le figurine per la serie Kakkones a partire da quelle
+      //    della serie 2018; sono uguali per nome e numero»; «copia tutto; tipologia, nome, numero; cambia solo
+      //    la serie») - LA FUNZIONE 6, scritta per una serie qualunque: chi la usa sceglie partenza, tipologia e
+      //    arrivo, così la prossima coppia di serie gemelle non chiede una release.
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1.25rem;">' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '6. Copia gli articoli di una serie in un’altra' : '6. Copy the items of a series into another') + '</h4>' +
+        '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
+          (it ? 'Crea nella <b>serie di arrivo</b> una copia di ogni articolo <b>base</b> della tipologia scelta della <b>serie di partenza</b>.<br><br>' +
+                '<b>Cosa si copia:</b> Tipologia, Nome, Numero (e «non ha numero»). Cambia solo la serie.<br>' +
+                '<b>Cosa no:</b> foto, rarità, sottoserie, categoria, descrizione, personaggi collegati, versioni.<br><br>' +
+                '<b>NOTE:</b><br>' +
+                'Si può <b>rilanciare</b>: un articolo con la stessa tipologia, lo stesso nome e lo stesso numero già presente nella serie di arrivo viene saltato.<br>' +
+                'Mostra l’anteprima e chiede conferma.'
+              : 'Creates in the <b>target series</b> a copy of every <b>base</b> item of the chosen type of the <b>source series</b>.<br><br>' +
+                '<b>Copied:</b> type, name, number. Only the series changes.<br><b>Not copied:</b> photos, rarity, subseries, category, description, characters, versions.<br><br>' +
+                '<b>NOTES:</b><br>It can be <b>re-run</b>: items already present are skipped.<br>It previews and asks for confirmation.') + '</p>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0.75rem;margin-bottom:0.75rem;">' +
+          '<div><label class="form-label">' + (it ? 'Serie di partenza' : 'Source series') + '</label>' +
+            '<select id="copia-da" class="form-select" onchange="_copiaTipologieDisponibili()"><option value="">—</option>' +
+            serie.map(x => '<option value="' + x.id + '">' + esc(x.name) + '</option>').join('') + '</select></div>' +
+          '<div><label class="form-label">' + (it ? 'Tipologia' : 'Type') + '</label>' +
+            '<select id="copia-sez" class="form-select"><option value="">—</option></select></div>' +
+          '<div><label class="form-label">' + (it ? 'Serie di arrivo' : 'Target series') + '</label>' +
+            '<select id="copia-a" class="form-select"><option value="">—</option>' +
+            serie.map(x => '<option value="' + x.id + '">' + esc(x.name) + '</option>').join('') + '</select></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
+          '<button class="btn-primary btn-admin" onclick="anteprimaCopiaSerie()">&#128269; ' + (it ? 'Anteprima' : 'Preview') + '</button>' +
+          '<button class="btn-primary btn-admin" id="copia-applica-btn" onclick="applicaCopiaSerie()" style="display:none;">&#9989; ' + (it ? 'Crea' : 'Create') + '</button>' +
+        '</div>' +
+        '<div id="copia-esito" style="margin-top:1rem;"></div>' +
+      '</div>' +
       // 🗄️ v6.980 - ARCHIVIATE LE FUNZIONI 6 E 7 (Franco: «per me puoi archiviare funzioni 6 e 7»).
       //    La 6 caricava i personaggi dai file (in pensione dal 26 settembre: i dati si toccano solo
       //    dal sito); la 7 trasformava in collegamenti i personaggi scritti nelle Note delle Mega,
@@ -68720,6 +68861,99 @@ function renderAdminFunzioni() {
   _pianoAllinea = null;
   _pianoFixRetro = null; // v6.085
   _pianoAttacca = null;  // v6.358 - un piano calcolato su un elenco vecchio non si applica
+  _pianoCopia = null;    // v7.087
+}
+
+// 🆕 v7.087 - LA FUNZIONE 6: copia gli articoli base di una tipologia da una serie a un'altra.
+// 📌 «Già presente» = stessa tipologia, stesso nome, stesso numero nella serie di arrivo, contati come un
+//    multiinsieme: nel 2018 lo stesso nome senza numero compare due volte (sottoserie diverse), e le due copie
+//    devono nascere tutte e due — ma una sola volta, anche rilanciando.
+let _pianoCopia = null;
+const _chiaveCopia = f => (f.section || 'figurines') + '|' + (f.number ?? '') + '|' + String(f.name || '').trim().toUpperCase();
+function _copiaTipologieDisponibili() {
+  const da = document.getElementById('copia-da')?.value || '';
+  const sel = document.getElementById('copia-sez');
+  if (!sel) return;
+  const per = {};
+  getData('figurines', []).filter(f => f.seriesId === da && _eBase(f)).forEach(f => { const z = f.section || 'figurines'; per[z] = (per[z] || 0) + 1; });
+  sel.innerHTML = '<option value="">—</option>' + Object.keys(per).map(z => '<option value="' + z + '">' + esc(getSectionLabel(z)) + ' (' + per[z] + ')</option>').join('');
+}
+function _pianoCopiaSerie(da, sez, a) {
+  const tutte = getData('figurines', []);
+  const gia = new Map();
+  tutte.filter(f => f.seriesId === a).forEach(f => { const k = _chiaveCopia(f); gia.set(k, (gia.get(k) || 0) + 1); });
+  const nuovi = [];
+  tutte.filter(f => f.seriesId === da && (f.section || 'figurines') === sez && _eBase(f))
+    .sort((x, y) => ((x.number ?? 1e9) - (y.number ?? 1e9)) || String(x.name || '').localeCompare(String(y.name || ''), 'it'))
+    .forEach(f => {
+      const k = _chiaveCopia(f), n = gia.get(k) || 0;
+      if (n > 0) { gia.set(k, n - 1); return; }
+      const rec = {
+        id: _generateFigurineId(), seriesId: a, section: sez,
+        name: f.name || '', number: (f.number === undefined ? null : f.number), noNumber: !!f.noNumber,
+        subseries: '', size: '', category: '', subcategory: '', subname: '', desc: '', score: 0, famiglia: '',
+        baseFigurineId: null, retroId: null, img: null
+      };
+      _VERSIONI_VIVE.forEach(v => { rec[v.campo] = false; });
+      _VERSIONI_CON_TIPO.forEach(v => { rec[v.campoTipo] = null; });
+      nuovi.push(rec);
+    });
+  return nuovi;
+}
+function anteprimaCopiaSerie() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('copia-esito'), btn = document.getElementById('copia-applica-btn');
+  const da = document.getElementById('copia-da')?.value || '', sez = document.getElementById('copia-sez')?.value || '', a = document.getElementById('copia-a')?.value || '';
+  _pianoCopia = null; if (btn) btn.style.display = 'none';
+  if (!esito) return;
+  if (!da || !sez || !a) { esito.innerHTML = '<div style="color:var(--warn);font-size:0.9rem;">' + (it ? 'Scegli serie di partenza, tipologia e serie di arrivo.' : 'Choose source series, type and target series.') + '</div>'; return; }
+  if (da === a) { esito.innerHTML = '<div style="color:var(--danger);font-size:0.9rem;">' + (it ? 'Partenza e arrivo sono la stessa serie.' : 'Source and target are the same series.') + '</div>'; return; }
+  const sA = getData('series', []).find(x => x.id === a);
+  const nuovi = _pianoCopiaSerie(da, sez, a);
+  // ⚠️ se la serie di arrivo non ammette la tipologia, gli articoli nascerebbero ma nel sito non si vedrebbero:
+  //    lo si dice prima, e la spunta si mette dalla form della serie (i dati si toccano solo dal sito).
+  const nonAmmessa = sA && !_serieAmmetteTipologia(sA, sez);
+  esito.innerHTML = '<div style="font-size:0.9rem;margin-bottom:0.6rem;">'
+    + (it ? '<b>' + nuovi.length + '</b> ' + esc(getSectionLabel(sez)) + ' da creare in <b>' + esc(sA?.name || '') + '</b>.'
+          : '<b>' + nuovi.length + '</b> ' + esc(getSectionLabel(sez)) + ' to create in <b>' + esc(sA?.name || '') + '</b>.')
+    + (nonAmmessa ? '<br><span style="color:var(--danger);">' + (it
+        ? '⚠️ La serie di arrivo non ha la tipologia «' + esc(getSectionLabel(sez)) + '» fra quelle ammesse: spuntala nella form della serie, o gli articoli non si vedranno.'
+        : '⚠️ The target series does not allow this type: tick it in the series form, or the items will not show.') + '</span>' : '')
+    + '</div>'
+    + (nuovi.length ? '<div style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.8rem;line-height:1.5;">'
+      + nuovi.map(n => esc((n.number != null ? n.number + ' ' : '— ') + n.name)).join('<br>') + '</div>' : '');
+  if (nuovi.length) { _pianoCopia = { da, sez, a, nuovi }; if (btn) btn.style.display = ''; }
+}
+async function applicaCopiaSerie() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('copia-esito'), btn = document.getElementById('copia-applica-btn');
+  if (!_pianoCopia || !_pianoCopia.nuovi.length) { toast(it ? 'Fai prima l’anteprima' : 'Run the preview first', 'error'); return; }
+  const { da, sez, a, nuovi } = _pianoCopia;
+  const sA = getData('series', []).find(x => x.id === a);
+  if (!sA) return;
+  // §14: la conferma nomina il numero
+  if (!confirm(it ? `Creare ${nuovi.length} ${getSectionLabel(sez)} in ${sA.name}?` : `Create ${nuovi.length} ${getSectionLabel(sez)} in ${sA.name}?`)) return;
+  if (btn) btn.disabled = true;
+  // UNA scrittura per la serie di arrivo, come la funzione 5: gli articoli vivono dentro il suo documento
+  const conNuovi = getData('figurines', []).concat(nuovi);
+  nuovi.forEach(n => { try { n.fullName = computeFullName(n, conNuovi); } catch (e) { console.error('computeFullName (copia)', e); } });
+  sA.items = sA.items || [];
+  const prima = sA.items.slice();
+  sA.items = sA.items.concat(nuovi);
+  let errore = '';
+  try {
+    await fsSave('series', sA);
+    const figs = getData('figurines', []); nuovi.forEach(n => figs.push(n)); _cache.figurines = figs;
+  } catch (e) { sA.items = prima; errore = e.message; }
+  if (btn) { btn.disabled = false; btn.style.display = 'none'; }
+  // §14, regola 3: si riconta da capo
+  const restanti = errore ? nuovi.length : _pianoCopiaSerie(da, sez, a).length;
+  _pianoCopia = null;
+  if (esito) esito.innerHTML = '<div style="font-size:0.9rem;color:' + (errore || restanti ? 'var(--warn)' : 'var(--success)') + ';">'
+    + (errore ? '❌ ' + esc(errore) : (it ? '✅ Creati <b>' + nuovi.length + '</b> articoli in ' + esc(sA.name) + '.' : '✅ Created <b>' + nuovi.length + '</b> items in ' + esc(sA.name) + '.'))
+    + '<br>' + (it ? 'Ricontati dopo la scrittura: ' : 'Recounted after writing: ') + '<b>' + restanti + '</b> ' + (it ? 'ancora da creare.' : 'still to create.') + '</div>';
+  if (!errore) toast(it ? `✅ ${nuovi.length} articoli creati in ${sA.name}` : `✅ ${nuovi.length} items created`, 'success');
+  try { updateSectionCounts(); } catch (e) {}
 }
 
 // v6.085 - il piano della funzione 3. Non calcola niente di suo: chiede a _changeConRetroErrato()
