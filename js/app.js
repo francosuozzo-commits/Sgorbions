@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.104 - Modificati index.html e js/app.js. Console → Tipo di articolo → «🔒 Foto protette» (Franco): le
+//          tipologie con la protezione d'ufficio (`settings/protezione`); l'articolo tiene la sua spunta solo se fa
+//          eccezione (`fotoProtetta` true/false, altrimenti null), vedi `_eProtetto`.
 // v7.103 - Modificato js/app.js (e index per la versione). LA FILIGRANA (Franco): spunta «Foto protetta» nella
 //          finestra di modifica (`fotoProtetta`); sulle foto di quegli articoli, per chi non è admin, Cloudinary
 //          scrive «figurinesgorbions.it» bianco col bordo, in diagonale e ripetuto (`_filigrana` in `cloudinaryUrl`).
@@ -30814,7 +30817,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.103';
+const JS_VERSION = 'v7.104';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -30961,7 +30964,8 @@ function _fotoProtette() {
   const figs = (typeof _cache !== 'undefined' && _cache && Array.isArray(_cache.figurines)) ? _cache.figurines : [];
   if (_fpCache.figs === figs && _fpCache.n === figs.length) return _fpCache.set;
   const set = new Set();
-  figs.forEach(f => { if (f && f.fotoProtetta) [f.img, f.imgRetro, f.ebayImg].forEach(u => { if (u) set.add(u); }); });
+  // v7.104: `_eProtetto` - la spunta dell'articolo, o quella della sua tipologia in console
+  figs.forEach(f => { if (_eProtetto(f)) [f.img, f.imgRetro, f.ebayImg].forEach(u => { if (u) set.add(u); }); });
   _fpCache = { figs, n: figs.length, set };
   return set;
 }
@@ -39407,6 +39411,7 @@ async function _caricaLegendeDefinizioni() {
     _LEGENDE_DEF = (d && d.voci) || {};
     _impostaCaroselli(docs.find(x => x.id === 'caroselli'));   // v6.982 - stesso giro di letture
     _impostaOrdinamenti(docs.find(x => x.id === 'ordinamenti'));   // v7.082 - idem
+    _impostaProtezione(docs.find(x => x.id === 'protezione'));   // v7.104 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -39792,6 +39797,85 @@ async function salvaOrdinamentiTDA() {
     toast(it ? '✅ Ordinamenti salvati. Valgono da subito.' : '✅ Sorting saved.', 'success');
   } catch (e) {
     console.error('salvaOrdinamentiTDA', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
+}
+
+// 🆕 v7.104 (Franco: «il campo per la protezione vorrei che fosse attivo d'ufficio per certe tipologie di articolo;
+//    possiamo aggiungere una mappa, in tal senso, in console?») - sotto-tab «🔒 Foto protette» di Tipo di articolo,
+//    documento `settings/protezione` ({ voci: { carte: true, ... } }), la forma dei Caroselli.
+//    📌 «D'UFFICIO» VUOL DIRE COSÌ: gli articoli di una tipologia accesa sono protetti, a meno che il singolo
+//    articolo dica di no; quelli di una tipologia spenta non lo sono, a meno che dica di sì. L'articolo tiene la sua
+//    spunta solo quando è un'ECCEZIONE (`fotoProtetta` true / 'no'); quando è uguale alla tipologia non scrive
+//    niente (`null`), così cambiando la mappa cambiano tutti quelli che la seguono. Vedi `_eProtetto`.
+let _PROTEZIONE_CFG = {};
+function _impostaProtezione(d) {
+  const prima = JSON.stringify(_PROTEZIONE_CFG);
+  _PROTEZIONE_CFG = (d && d.voci && typeof d.voci === 'object') ? d.voci : {};
+  try { _fotoProtetteRifai(); } catch (e) {}
+  if (JSON.stringify(_PROTEZIONE_CFG) === prima || currentUser?.isAdmin) return;
+  // 🔴 la mappa arriva DOPO il primo disegno (si legge con le altre impostazioni, senza aspettarla): quello che è
+  //    già a schermo si ridisegna, se no le prime foto della pagina resterebbero senza scritta
+  const inVista = id => { const el = document.getElementById(id); return !!(el && el.parentElement && el.parentElement.getClientRects().length); };
+  try { if (inVista('home-carosello-sez')) renderCarosello(); } catch (e) { console.error('renderCarosello', e); }
+  try { if (inVista('serie-carosello-sez')) renderCaroselloSerie(); } catch (e) { console.error('renderCaroselloSerie', e); }
+  try { if (inVista('prodotto-carosello-sez')) renderCaroselloProdotto(); } catch (e) { console.error('renderCaroselloProdotto', e); }
+  try { if (inVista('sezione-carosello-sez')) renderCaroselloSezione(); } catch (e) { console.error('renderCaroselloSezione', e); }
+  try { if (currentSeriesId && currentSection && document.getElementById('items-grid')) renderItems(); } catch (e) { console.error('renderItems', e); }
+  try { if (document.getElementById('page-catalog')?.classList.contains('active')) renderCatalog(); } catch (e) { console.error('renderCatalog', e); }
+}
+const _protettaDUfficio = sez => !!_PROTEZIONE_CFG[sez || 'figurines'];
+// 🔴 L'eccezione «no» si scrive 'no' e non `false`: la v7.103 scriveva `false` su OGNI articolo salvato con la spunta
+//    vuota, quindi `false` non vuol dire «escluso apposta». `true` = protetto a mano, 'no' = escluso a mano, tutto
+//    il resto (null, false, assente) = come la tipologia.
+function _eProtetto(f) {
+  if (!f) return false;
+  if (f.fotoProtetta === true) return true;
+  if (f.fotoProtetta === 'no') return false;
+  return _protettaDUfficio(f.section);
+}
+function renderAdminProtezioneTDA() {
+  const box = document.getElementById('admin-protezione-tda');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
+  // quanti articoli fanno eccezione, per tipologia: si vedono accanto alla spunta
+  const ecc = {};
+  getData('figurines', []).forEach(f => { if ((f.fotoProtetta === true || f.fotoProtetta === 'no') && _eProtetto(f) !== _protettaDUfficio(f.section)) { const s = f.section || 'figurines'; ecc[s] = (ecc[s] || 0) + 1; } });
+  box.innerHTML =
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🔒 ' + (it ? 'Foto protette' : 'Protected photos') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it
+        ? 'Accesa: gli articoli di quella tipologia hanno <strong>«Foto protetta» d’ufficio</strong>, e chi visita il sito vede le loro foto con la scritta «figurinesgorbions.it». ' +
+          'Spenta: nessuno, salvo gli articoli su cui la spunta è accesa a mano. Un articolo può sempre fare eccezione dalla sua finestra di modifica.'
+        : 'Checked: the items of that type are protected by default. Unchecked: none, except those ticked by hand. Each item can still be an exception.') +
+    '</p>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:100%;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
+      '<th style="' + th + 'text-align:center;">' + (it ? 'Protetta d’ufficio' : 'Protected by default') + '</th>' +
+      '<th style="' + th + '">' + (it ? 'Eccezioni' : 'Exceptions') + '</th></tr>' +
+    PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).map(sez =>
+      '<tr><td style="' + td + 'color:var(--info);font-weight:600;">' + esc(getSectionLabel(sez)) + '</td>' +
+      '<td style="' + td + 'text-align:center;"><input type="checkbox" id="prot-' + sez + '"' + (_protettaDUfficio(sez) ? ' checked' : '') + '></td>' +
+      '<td style="' + td + '">' + (ecc[sez] ? ecc[sez] + (it ? (ecc[sez] === 1 ? ' articolo' : ' articoli') : ' items') : '—') + '</td></tr>').join('') +
+    '</table></div>' +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
+      '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaProtezioneTDA()">' + (it ? 'Salva le foto protette' : 'Save protected photos') + '</button>' +
+    '</div>';
+}
+async function salvaProtezioneTDA() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const voci = {};
+  PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).forEach(sez => { const el = document.getElementById('prot-' + sez); if (el) voci[sez] = !!el.checked; });
+  try {
+    await fsSave('settings', { id: 'protezione', voci });
+    _impostaProtezione({ voci });
+    renderAdminProtezioneTDA();
+    toast(it ? '✅ Foto protette salvate. Valgono da subito.' : '✅ Protected photos saved.', 'success');
+  } catch (e) {
+    console.error('salvaProtezioneTDA', e);
     toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
   }
 }
@@ -55908,7 +55992,7 @@ function adminTab(tab) {
   const tabEl = document.getElementById('admin-' + tab);
   if (tabEl) { tabEl.classList.add('active'); }
   if (tab === 'series') renderAdminSeries();
-  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminCaroselliTDA(); renderAdminOrdinamentiTDA();   // v6.982, v7.082
+  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminCaroselliTDA(); renderAdminOrdinamentiTDA(); renderAdminProtezioneTDA();   // v6.982, v7.082, v7.104
     renderCampiMassiviConfig(); _aggiornaCampiMassiviDaConfigurazione().then(renderCampiMassiviConfig); }   // v6.842: qui, non in Impostazioni   // v6.221, v6.233, v6.234
   if (tab === 'figurines') renderAdminFigs();
   if (tab === 'contacts') { renderAdminContacts(); updateMsgBadge(); }
@@ -60486,7 +60570,7 @@ function _bozzaNuovoItem(sezione, seriesId) {
     baseFigurineId: null, retroId: null, retroBianco: false,
     changeType: '', printErrorType: null,
     img: null, imgRetro: null, ebayImg: null,
-    forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new', disponibilita: null, fotoProtetta: false,
+    forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new', disponibilita: null, fotoProtetta: null,   // v7.104: null = segue la tipologia
     ebayTitleIt: null, ebayTitleEn: null, ebayDescIt: null, ebayDescEn: null,
     ebayAccounts: null, daPubblicare: false,
     // v6.144 - il box da cui si sta creando. Fuori da un box e' null, e resta null: cosi' un
@@ -61241,8 +61325,12 @@ function switchToEditMode(figId) {
     // 🆕 v7.103 (Franco: «macchiare le immagini di certi articoli: creiamo un flag apposito») - la spunta della filigrana
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang === 'it' ? 'Foto protetta' : 'Protected photo') + '</span><span class="detail-value">'
       + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.88rem;">'
-      + '<input type="checkbox" id="fe-foto-protetta"' + (f.fotoProtetta ? ' checked' : '') + ' style="width:16px;height:16px;cursor:pointer;">'
-      + (currentLang === 'it' ? 'chi visita il sito vede le foto con la scritta «figurinesgorbions.it»' : 'visitors see the photos with «figurinesgorbions.it» written on them') + '</label></span></div>';
+      // 🔄 v7.104 - la spunta mostra lo stato vero (`_eProtetto`): quello della tipologia, se l'articolo non fa eccezione
+      + '<input type="checkbox" id="fe-foto-protetta"' + (_eProtetto(f) ? ' checked' : '') + ' style="width:16px;height:16px;cursor:pointer;">'
+      + (currentLang === 'it' ? 'chi visita il sito vede le foto con la scritta «figurinesgorbions.it»' : 'visitors see the photos with «figurinesgorbions.it» written on them') + '</label>'
+      + (_protettaDUfficio(f.section) ? '<div style="font-size:0.72rem;color:var(--text);opacity:0.75;margin-top:2px;">'
+          + (currentLang === 'it' ? 'D’ufficio per le ' + esc(getSectionLabel(f.section || 'figurines')) + ' (console → Tipo di articolo → Foto protette).' : 'Default for this item type.') + '</div>' : '')
+      + '</span></div>';
     // 🗑️ v7.093 - qui stava la riga del personaggio (v7.091): è salita dopo i nomi (vedi `_rigaPersonaggiEditHTML`)
     // v6.106 (Franco) - via il testo di aiuto dentro il campo
     html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">Note</span><span class="detail-value"><textarea id="fe-note" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + esc(f.note || '') + '</textarea></span></div>';
@@ -64139,7 +64227,10 @@ async function saveFigFromDetail(figId, opzioni) {
       printErrorType: document.getElementById('fe-print-error-type')?.value.trim() || null,
       // 🆕 v7.039 - la disponibilità: il vuoto diventa null
       disponibilita: (document.getElementById('fe-disponibilita')?.value || '').trim() || null,
-      fotoProtetta: document.getElementById('fe-foto-protetta')?.checked || false,   // 🆕 v7.103 - vedi `_fotoProtette`
+      // 🆕 v7.103 - vedi `_fotoProtette`. 🔄 v7.104: si scrive solo l'ECCEZIONE alla tipologia; uguale = null
+      fotoProtetta: (() => { const el = document.getElementById('fe-foto-protetta'); if (!el) return null;
+        const sez = ((typeof _recordInModifica === 'function' && _recordInModifica(figId)) || _bozzaCorrente || {}).section || 'figurines';
+        return el.checked === _protettaDUfficio(sez) ? null : (el.checked ? true : 'no'); })(),   // 'no': vedi `_eProtetto`
       forSale: document.getElementById('fe-for-sale')?.checked || false,
       price: document.getElementById('fe-for-sale')?.checked ? (parseFloat(document.getElementById('fe-price').value) || 0) : null,
       quantity: document.getElementById('fe-for-sale')?.checked ? (parseInt(document.getElementById('fe-quantity').value) || 1) : null,
