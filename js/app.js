@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.103 - Modificato js/app.js (e index per la versione). LA FILIGRANA (Franco): spunta «Foto protetta» nella
+//          finestra di modifica (`fotoProtetta`); sulle foto di quegli articoli, per chi non è admin, Cloudinary
+//          scrive «figurinesgorbions.it» bianco col bordo, in diagonale e ripetuto (`_filigrana` in `cloudinaryUrl`).
+//          E nella finestra di modifica delle Carte il Numero sopra il Nome (Franco).
 // v7.102 - Modificati index.html e js/app.js. Questionario, desktop (Franco: «proviamo»): divise in due, foto a
 //          sinistra e frase al centro (`.wz-due`), anche la schermata di ogni tipologia e quella di fine serie.
 // v7.101 - Modificati index.html e js/app.js. LE SERIE GEMELLE (Franco: Kakkones e Sgorbions 2018 hanno gli
@@ -30810,7 +30814,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.102';
+const JS_VERSION = 'v7.103';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -30940,7 +30944,38 @@ function _scambiaFotoGrandi(radice) {
 function cloudinaryUrl(url, opts = 'w_300,h_300,c_fit,q_auto,f_auto') {
   if (!url || !url.includes('cloudinary.com')) return url;
   // Insert transformation parameters after /upload/
-  return url.replace('/upload/', `/upload/${opts}/`);
+  // 🆕 v7.103 - e, sulle foto protette, la filigrana dopo il ridimensionamento (vedi `_filigrana`)
+  return url.replace('/upload/', `/upload/${opts}/${_filigrana(url, opts)}`);
+}
+// 🆕 v7.103 (Franco: «macchiare le immagini di certi articoli, in modo tale che nessuno che visita il sito possa
+//    scaricare la foto così come la vede, apponendo delle scritte che ne rovinerebbero la stampa»; «un flag apposito»,
+//    «ovunque», «figurinesgorbions.it», fra quattro esempi «la B») - LA FILIGRANA. Sulle foto degli articoli con
+//    `fotoProtetta` Cloudinary scrive «figurinesgorbions.it» bianco col contorno nero, in diagonale e ripetuto
+//    (`fl_tiled`), semitrasparente. La foto originale non cambia; l'admin la vede pulita (impersonando, con la scritta).
+//    📌 Passa da qui perché quasi tutte le foto del sito passano da `cloudinaryUrl`: miniature, schede, griglie,
+//    questionario. La grandezza della scritta segue quella della foto (`w_`), così su una miniatura non è enorme.
+//    ⚠️ Chi conosce l'indirizzo dell'originale lo trova pulito finché in Cloudinary non si accendono le «strict
+//    transformations»: è un'impostazione del pannello, la accende Franco.
+let _fpCache = { figs: null, n: -1, set: new Set() };
+function _fotoProtette() {
+  const figs = (typeof _cache !== 'undefined' && _cache && Array.isArray(_cache.figurines)) ? _cache.figurines : [];
+  if (_fpCache.figs === figs && _fpCache.n === figs.length) return _fpCache.set;
+  const set = new Set();
+  figs.forEach(f => { if (f && f.fotoProtetta) [f.img, f.imgRetro, f.ebayImg].forEach(u => { if (u) set.add(u); }); });
+  _fpCache = { figs, n: figs.length, set };
+  return set;
+}
+function _fotoProtetteRifai() { _fpCache = { figs: null, n: -1, set: new Set() }; }
+function _filigrana(url, opts) {
+  try {
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.isAdmin) return '';
+    if (!_fotoProtette().has(url)) return '';
+    // senza `w_` la foto arriva grande (l'originale): la scritta si fa come per una foto da 1000
+    const w = parseInt((String(opts).match(/(?:^|,)w_(\d+)/) || [])[1], 10) || 1000;
+    const px = Math.max(12, Math.round(w * 0.057));   // 34px su una foto da 600, come nell'esempio scelto
+    const bordo = Math.max(1, Math.round(px / 11));
+    return 'l_text:Arial_' + px + '_bold_stroke:figurinesgorbions.it,co_white,bo_' + bordo + 'px_solid_black,o_45,a_-30,fl_tiled/';
+  } catch (e) { return ''; }
 }
 
 function filterNationalities() {
@@ -60451,7 +60486,7 @@ function _bozzaNuovoItem(sezione, seriesId) {
     baseFigurineId: null, retroId: null, retroBianco: false,
     changeType: '', printErrorType: null,
     img: null, imgRetro: null, ebayImg: null,
-    forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new', disponibilita: null,
+    forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new', disponibilita: null, fotoProtetta: false,
     ebayTitleIt: null, ebayTitleEn: null, ebayDescIt: null, ebayDescEn: null,
     ebayAccounts: null, daPubblicare: false,
     // v6.144 - il box da cui si sta creando. Fuori da un box e' null, e resta null: cosi' un
@@ -61203,6 +61238,11 @@ function switchToEditMode(figId) {
   // sola era il difetto della v6.074 con `retroBianco`, esistito per una release solo nella
   // finestra: chi usava l'altra form non lo vedeva e, salvando, lo azzerava.
   if (currentUser?.isAdmin) {
+    // 🆕 v7.103 (Franco: «macchiare le immagini di certi articoli: creiamo un flag apposito») - la spunta della filigrana
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang === 'it' ? 'Foto protetta' : 'Protected photo') + '</span><span class="detail-value">'
+      + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.88rem;">'
+      + '<input type="checkbox" id="fe-foto-protetta"' + (f.fotoProtetta ? ' checked' : '') + ' style="width:16px;height:16px;cursor:pointer;">'
+      + (currentLang === 'it' ? 'chi visita il sito vede le foto con la scritta «figurinesgorbions.it»' : 'visitors see the photos with «figurinesgorbions.it» written on them') + '</label></span></div>';
     // 🗑️ v7.093 - qui stava la riga del personaggio (v7.091): è salita dopo i nomi (vedi `_rigaPersonaggiEditHTML`)
     // v6.106 (Franco) - via il testo di aiuto dentro il campo
     html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">Note</span><span class="detail-value"><textarea id="fe-note" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + esc(f.note || '') + '</textarea></span></div>';
@@ -61384,6 +61424,15 @@ function switchToEditMode(figId) {
   try { _aggiornaNumeroEreditato(); } catch (e) {}   // 🆕 v6.965 - il N. ereditato, già all'apertura
   // 🆕 v7.091 - il personaggio riparte dai dati a ogni apertura in modifica: una scelta non salvata non sopravvive
   try { _iniziaPersMod(f); } catch (e) { console.error('_iniziaPersMod', e); }
+  // 🔄 v7.103 (Franco: «nella maschera della card, il campo Numero deve essere sopra al campo Nome») - nelle Carte
+  //    le due righe del numero (la sua e quella del numero ereditato) salgono prima del Nome. Si spostano i nodi
+  //    già disegnati: il blocco del numero resta uno solo, scritto una volta (v6.797), per tutte le tipologie.
+  try {
+    if ((f.section || 'figurines') === 'carte') {
+      const nome = document.getElementById('fe-name-group');
+      ['fe-number-group', 'fe-number-ered-group'].forEach(id => { const r = document.getElementById(id); if (nome && r) nome.parentNode.insertBefore(r, nome); });
+    }
+  } catch (e) { console.error('numero sopra il nome', e); }
 
   // Listener sui due pulsanti Salva (evita problemi con onclick inline)
   const saveBtn = document.getElementById('fig-edit-save-btn');
@@ -64090,6 +64139,7 @@ async function saveFigFromDetail(figId, opzioni) {
       printErrorType: document.getElementById('fe-print-error-type')?.value.trim() || null,
       // 🆕 v7.039 - la disponibilità: il vuoto diventa null
       disponibilita: (document.getElementById('fe-disponibilita')?.value || '').trim() || null,
+      fotoProtetta: document.getElementById('fe-foto-protetta')?.checked || false,   // 🆕 v7.103 - vedi `_fotoProtette`
       forSale: document.getElementById('fe-for-sale')?.checked || false,
       price: document.getElementById('fe-for-sale')?.checked ? (parseFloat(document.getElementById('fe-price').value) || 0) : null,
       quantity: document.getElementById('fe-for-sale')?.checked ? (parseInt(document.getElementById('fe-quantity').value) || 1) : null,
@@ -64382,6 +64432,7 @@ async function saveFigFromDetail(figId, opzioni) {
     // 🆕 v7.091 - e il personaggio scelto nella finestra (`_persMod`), adesso che l'articolo è scritto. Se questa
     //    seconda scrittura non riesce lo dice il suo messaggio; l'articolo resta salvato.
     await _salvaPersMod(merged);
+    _fotoProtetteRifai();   // 🆕 v7.103 - la spunta «Foto protetta» può essere cambiata: l'elenco delle foto si rifà
     const savedLabel = getSectionLabelSingular(merged.section || 'figurines');
     // v6.053 - se la modifica ha toccato dei collegati lo si DICE: un salvataggio che ne modifica
     // altri in silenzio e' il modo in cui ci si accorge dei danni tre giorni dopo.
