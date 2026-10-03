@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.104">
+<link rel="stylesheet" href="css/style.css?v=7.105">
 
 
 <style>
@@ -435,15 +435,9 @@
   #nav-search { display:none !important; }
   #nav-search-mini { display:block; }
 }
-/* il suggerimento: nascosto, compare SOTTO la casella al passaggio del mouse o scrivendoci.
-   `right:0` e non `left:0`: la casella sta a destra, e ancorato a sinistra uscirebbe dallo schermo. */
-.nav-search-hint {
-  display:none; position:absolute; top:100%; right:0; margin-top:6px; z-index:1000;
-  background:var(--card); border:1px solid var(--border2); border-radius:8px;
-  padding:0.35rem 0.7rem; font-size:0.78rem; color:var(--text); font-family:var(--font-ui);
-  white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,0.35);
-}
-#nav-search:hover .nav-search-hint, #nav-search-input:focus + .nav-search-hint { display:block; }
+/* 🗑️ v7.105 (Franco: «nella RG il messaggio di suggerimento è sia in mouse over che dentro la cella: togliamo
+   quello in mouse-hovering») - QUI STAVA `.nav-search-hint`, il suggerimento che compariva SOTTO la casella al
+   passaggio del mouse (v6.852). Resta quello scritto dentro la casella (il segnaposto, chiave `nav.search`). */
 /* ⚠️ La larghezza è uscita dallo stile IN LINEA ed è venuta qui: uno stile in linea batte
    qualunque regola senza `!important`, quindi lasciandola lì la media query non avrebbe potuto
    allargarla nel panino. È la stessa trappola che la v6.162 aveva già pagato sulle colonne
@@ -2014,7 +2008,7 @@ button.back-btn { color:#ffffff; }
              data-i18n-placeholder="nav.search"
              onkeydown="if(event.key==='Enter'){event.preventDefault();ricercaGlobaleDaNavbar();}"
              style="background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:999px;color:var(--text);font-family:var(--font-ui);font-size:0.82rem;padding:0.3rem 0.75rem;outline:none;">
-      <span class="nav-search-hint" data-i18n="nav.search">Ricerca in tutto il sito</span>
+      <!-- 🗑️ v7.105 (Franco) - via il suggerimento al passaggio del mouse: basta quello dentro la casella -->
     </div>
     <a onclick="openRicercaGlobaleModal()" id="nav-search-link" data-i18n="nav.searchLink">🔍 Ricerca</a>
     <!-- 🆕 v6.853 - IL TASTO PICCOLO, per le finestre dove la casella non ci sta: apre la stessa
@@ -6144,7 +6138,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.104"></script>
+<script src="js/app.js?v=7.105"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6168,7 +6162,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.104'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.105'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
