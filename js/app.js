@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.112 - Modificati index.html e js/app.js (Franco): nella ricerca globale i PERSONAGGI, in fondo dopo tutti gli
+//          articoli (`_rgPersonaggiHTML`); la linguetta Inventario dice «Esplora l'Inventario Sgorbions !»; il
+//          carosello della home si intitola «Gli articoli Sgorbions censiti nel sito».
 // v7.111 - Modificato js/app.js (e index per la versione). Console «🔒 Foto protette» (Franco): una riga per ogni
 //          tipo senza serie (chiave `tipo:<id>`) e niente riga «Altri articoli», che i tipi coprono.
 // v7.110 - Modificati index.html e js/app.js. La linguetta «❤️ Ciò che cerco» (Franco): in tutte le pagine, sul
@@ -30835,7 +30838,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.111';
+const JS_VERSION = 'v7.112';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32506,7 +32509,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.questionarioBreve':'Questionnaire','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Resume the Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.questionarioBreve':'Questionnaire','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Resume the Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory !','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -32533,7 +32536,7 @@ const i18n = {
 'hero.challenge':'Challenge other collectors','hero.challengeDesc':'Who has the list with the highest rarity score? You can also appear anonymously.',
 'hero.desc':'The unofficial Inventory of the legendary \'90s series.','hero.descShort':'The unofficial Inventory of the legendary \'90s series.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
-'hero.cta1':'Explore the Sgorbions Inventory !','home.figurine':'The Sgorbions items','hero.cta2':'Start collecting Sgorbions !',
+'hero.cta1':'Explore the Sgorbions Inventory !','home.figurine':'The Sgorbions items listed on the site','hero.cta2':'Start collecting Sgorbions !',
 'hero.stat1':'Series','hero.stat3':'Collectors','hero.statLangs':'Site languages',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
 'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
@@ -32595,7 +32598,7 @@ const i18n = {
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with backs) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in your list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in your list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Liste','nav.questionarioBreve':'Questionario','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Riprendi il Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Liste','nav.questionarioBreve':'Questionario','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Riprendi il Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions !','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
@@ -32639,7 +32642,7 @@ const i18n = {
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','rc.title':'Ricarica il sito saltando la cache del browser','nav.mialista':'La mia lista Sgorbions',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri collezionisti','hero.challengeDesc':'Chi ha la lista con maggior punteggio rarità? Puoi anche apparire come anonimo.','hero.desc':'L\'Inventario non ufficiale della leggendaria serie anni \'90.','hero.descShort':'L\'Inventario non ufficiale della leggendaria serie anni \'90.',
-    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Gli articoli Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions !',
+    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Gli articoli Sgorbions censiti nel sito','hero.cta2':'Inizia a collezionare gli Sgorbions !',
     'hero.stat1':'Serie','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
@@ -45040,6 +45043,13 @@ function renderCatalogSearch(q) {
     }
   });
 
+  // 🆕 v7.112 (Franco: «nella RG non escono i Personaggi; li farei uscire, dopo tutti gli altri articoli») - il blocco
+  //    dei personaggi, in fondo (`_rgPersonaggiHTML`). Solo nella ricerca di tutto il sito, non dentro una tipologia.
+  //    Nel `try`: i personaggi sono un di più, e senza di loro la ricerca degli articoli deve restare quella di sempre
+  //    (anche nei banchi delle prove, che eseguono questa funzione senza il resto del sito).
+  let _rgPers = '';
+  try { if (!_dentro && q) _rgPers = _rgPersonaggiHTML(q, qn); } catch (e) { _rgPers = ''; }
+  if (!results.length && _rgPers) { resultsEl.innerHTML = _rgPers; return; }
   if (!results.length) {
     resultsEl.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><p class="empty-title">${(_dentro && !q) ? (currentLang === 'it' ? 'Nessun risultato' : 'No results') : currentLang === 'it' ? 'Nessun risultato per "' + esc(q) + '"' : 'No results for "' + esc(q) + '"'}</p></div>`;
     return;
@@ -45605,7 +45615,40 @@ function renderCatalogSearch(q) {
       ${seriesHeader}
       ${figsHTML}
     </div>`;
-  }).join('');
+  }).join('') + _rgPers;   // v7.112: i personaggi dopo tutti gli articoli
+}
+// 🆕 v7.112 (Franco) - I PERSONAGGI NELLA RICERCA GLOBALE: quelli il cui nome corrisponde (la stessa
+//    `_matchRicerca` degli articoli), ognuno col numero dei suoi articoli come nella card dell'hub (senza le
+//    figurine per album) e cliccabile verso la sua pagina. Chi non è admin, cercando un alter ego, trova il
+//    principale (come nell'hub, v6.972). I personaggi arrivano dopo i dati: se non ci sono ancora, si caricano e la
+//    ricerca si rifà, se la casella dice ancora la stessa cosa.
+function _rgPersonaggiHTML(q, qn) {
+  if (!_personaggiDati) {
+    caricaPersonaggi().then(() => {
+      const s = document.getElementById('series-search');
+      if (s && s.value.trim() === q) { try { renderCatalogSearch(q); } catch (e) { console.error('renderCatalogSearch', e); } }
+    }).catch(() => {});
+    return '';
+  }
+  const it = currentLang === 'it', admin = !!currentUser?.isAdmin, D = _personaggiDati, ix = _indiciPersonaggi();
+  const visti = new Map();
+  D.elenco.forEach(p => {
+    if (!_matchRicerca(p.nome, qn)) return;
+    const pid = (!admin && D.principaleDi.get(p.id)) || p.id;
+    if (visti.has(pid)) return;
+    const n = articoliDelPersonaggio(pid, ix).filter(a => a.section !== 'attaccare').length;
+    if (!n && !admin) return;   // un personaggio senza articoli, a chi visita il sito, non serve
+    visti.set(pid, n);
+  });
+  if (!visti.size) return '';
+  const voce = ([pid, n]) => '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + pid + '\')" style="display:inline-flex;align-items:baseline;gap:0.35rem;'
+    + 'padding:0.3rem 0.7rem;border:1px solid var(--border2);border-radius:999px;background:var(--card2);text-decoration:none;">'
+    + '<span style="color:var(--nome-entita);font-weight:600;">' + esc(D.perId.get(pid).nome) + '</span>'
+    + '<span style="font-size:0.78rem;color:var(--text);opacity:0.8;">' + n + ' ' + (it ? (n === 1 ? 'articolo' : 'articoli') : (n === 1 ? 'item' : 'items')) + '</span></a>';
+  return '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.6rem 0.75rem;margin-bottom:0.6rem;">'
+    + '<div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.6rem;">🧑‍🎤 ' + (it ? 'Personaggi' : 'Characters')
+    + ': <span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">' + visti.size + ' ' + (it ? (visti.size === 1 ? 'trovato' : 'trovati') : 'found') + '</span></div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">' + [...visti].sort((a, b) => D.perId.get(a[0]).nome.localeCompare(D.perId.get(b[0]).nome, 'it')).map(voce).join('') + '</div></div>';
 }
 
 // 🆕 v6.610 (Franco: *«un pulsante che se cliccato apre la vista tabellare di quegli
