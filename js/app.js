@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.110 - Modificati index.html e js/app.js. La linguetta «❤️ Ciò che cerco» (Franco): in tutte le pagine, sul
+//          desktop, a chi ha fatto l'accesso e non è admin; al passaggio «Le figurine che stai cercando». Le tre
+//          linguette stanno ora in una colonna (`#linguette`) e si impilano da sole. In console le tabelle dei
+//          Caroselli e delle Foto protette larghe quanto il contenuto: la spunta vicino al nome (Franco).
 // v7.109 - Modificato js/app.js (e index per la versione). Franco: via il messaggio «Fronte: … · Retro: …» dopo
 //          «Carica entrambe le foto»; il messaggio della gemella (Kakkones ↔ 2018) in alto, per 5 secondi.
 // v7.108 - Modificato index.html (e app.js per la versione). 🐛 Le due linguette a sinistra vibravano e si potevano
@@ -30829,7 +30833,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.109';
+const JS_VERSION = 'v7.110';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32500,7 +32504,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.questionarioBreve':'Questionnaire','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Resume the Questionnaire','inv.linguetta':'Explore the Sgorbions Inventory','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.questionarioBreve':'Questionnaire','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Resume the Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -32589,7 +32593,7 @@ const i18n = {
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with backs) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in your list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in your list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Liste','nav.questionarioBreve':'Questionario','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Riprendi il Questionario','inv.linguetta':'Esplora l\'Inventario Sgorbions','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Liste','nav.questionarioBreve':'Questionario','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Riprendi il Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
@@ -35755,6 +35759,8 @@ function updateNavUser() {
     // 🔄 v7.089 (Franco: «il tasto "Ciò che cerco" nella navbar, toglilo all'admin») - di nuovo solo per gli utenti.
     //    Impersonando un utente `currentUser.isAdmin` è falso, quindi lì la voce torna.
     const nwl = document.getElementById('nav-wishlist'); if (nwl) nwl.style.display = currentUser.isAdmin ? 'none' : '';
+    // 🆕 v7.110 - e la sua linguetta a sinistra, alle stesse condizioni
+    const ccl = document.getElementById('cc-linguetta'); if (ccl) ccl.style.display = currentUser.isAdmin ? 'none' : '';
     const nlBtn = document.getElementById('nav-newsletter-btn');
     if (nlBtn) nlBtn.style.display = currentUser.isAdmin ? '' : 'none';
     if (btnCollect) btnCollect.style.display = 'none';
@@ -35805,7 +35811,7 @@ function updateNavUser() {
     if (bellBtn2) bellBtn2.style.display = 'none';
     const quotaBtn2 = document.getElementById('nav-quota-warning-btn');
     if (quotaBtn2) quotaBtn2.style.display = 'none';
-    ['nav-catalog','nav-blog','nav-classifica','nav-wishlist','nav-mialista-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    ['nav-catalog','nav-blog','nav-classifica','nav-wishlist','nav-mialista-link','nav-logout-link','cc-linguetta' /* v7.110 */].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     // 🔴 v6.913 — QUI C'ERA `mostraNumeroniHero(false)`, ed è la riga che questa release toglie:
     //    era l'unico motivo per cui un ospite non vedeva i dodici numeri. Non è stata sostituita
     //    da un `true` — la decisione sta fuori dall'`if`, dove non dipende più da chi guarda.
@@ -39670,7 +39676,9 @@ function renderAdminCaroselliTDA() {
         : 'Checked: the base items with a photo of that type scroll in the <strong>three carousels</strong> ' +
           '(home, series page, item type page). Unchecked: in none of them.') +
     '</p>' +
-    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:100%;">' +
+    // 🔄 v7.110 (Franco: «nella tabella Caroselli la spunta è troppo lontana dalla voce; avvicinarla di molto») - la
+    //    tabella larga quanto il suo contenuto, non quanto la pagina (era `min-width:100%`)
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
     '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
       '<th style="' + th + 'text-align:center;">' + (it ? 'Carosello' : 'Carousel') + '</th></tr>' +
     PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).map(sez =>
@@ -39863,7 +39871,8 @@ function renderAdminProtezioneTDA() {
           'Spenta: nessuno, salvo gli articoli su cui la spunta è accesa a mano. Un articolo può sempre fare eccezione dalla sua finestra di modifica.'
         : 'Checked: the items of that type are protected by default. Unchecked: none, except those ticked by hand. Each item can still be an exception.') +
     '</p>' +
-    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:100%;">' +
+    // v7.110: larga quanto il contenuto, come i Caroselli (Franco: la spunta lontana dalla voce)
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
     '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
       '<th style="' + th + 'text-align:center;">' + (it ? 'Protetta d’ufficio' : 'Protected by default') + '</th>' +
       '<th style="' + th + '">' + (it ? 'Eccezioni' : 'Exceptions') + '</th></tr>' +
