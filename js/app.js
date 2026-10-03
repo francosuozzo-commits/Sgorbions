@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.102 - Modificati index.html e js/app.js. Questionario, desktop (Franco: «proviamo»): divise in due, foto a
+//          sinistra e frase al centro (`.wz-due`), anche la schermata di ogni tipologia e quella di fine serie.
 // v7.101 - Modificati index.html e js/app.js. LE SERIE GEMELLE (Franco: Kakkones e Sgorbions 2018 hanno gli
 //          stessi articoli): nella scheda della serie il campo «Serie gemella» (`serieGemellaId`, scritto su tutte e
 //          due da `_scriviGemellaSullAltra`) e il tasto «Allinea i personaggi» (`allineaPersonaggiGemella`: dove un
@@ -30808,7 +30810,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.101';
+const JS_VERSION = 'v7.102';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -50256,10 +50258,11 @@ function _wzDisegna(tieni) {
         const carta4 = (sc, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (prop === sc ? ' on' : '') + '" onclick="' + (sc === 'tutte' || sc === 'nessuna' ? '_wzProponi' : '_wzModo4') + '(\'' + p + '\',\'' + sc + '\')">'
           + (prop === sc ? giaTua : '')
           + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
-        corpo += intest + '<div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div>'
+        // 🔄 v7.102 (Franco: «proviamo» la schermata divisa in due anche qui) - foto a sinistra, frase al centro (`.wz-due`)
+        corpo += intest + '<div class="wz-due"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div></div><div class="wz-due-dx">'
           + '<p class="wz-testo">' + (it
               ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
-              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>'
+              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p></div></div>'
           + '<div class="wz-scelte">'
           + carta4('tutte', '🏆', it ? 'Tutte' : 'All', ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
           + carta4('nessuna', '😢', it ? 'Nessuna' : 'None', '')
@@ -50272,10 +50275,11 @@ function _wzDisegna(tieni) {
         const carta = (modo, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (c.pModo === modo ? ' on' : '') + '" onclick="' + (modo === 'alcune' ? '_wzModo' : '_wzProponi') + '(\'' + p + '\',\'' + modo + '\')">'
           + (c.pModo === modo ? giaTua : '')
           + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
-        corpo += intest + '<div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div>'
+        // 🔄 v7.102 - divisa in due anche questa, come quella delle quattro carte qui sopra
+        corpo += intest + '<div class="wz-due"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div></div><div class="wz-due-dx">'
           + '<p class="wz-testo">' + (it
               ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
-              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>'
+              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p></div></div>'
           + '<div class="wz-scelte">'
           + carta('tutte', '🏆', it ? 'Tutte' : 'All', ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
           + carta('alcune', '🧩', it ? 'Alcune' : 'Some', it ? 'scegli quali' : 'choose which')
@@ -50390,9 +50394,10 @@ function _wzDisegna(tieni) {
           : tolti ? 'Stai togliendo dalla tua lista ' + _wzPerTipo(idTolti, true)
           : 'La tua lista di questa serie resta com\'è')
         : (nuovi || tolti ? 'You are adding <b>' + nuovi + '</b> and removing <b>' + tolti + '</b> items of this series' : 'Your list for this series stays as it is');
-      corpo += '<div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div>'
+      // 🔄 v7.102 (Franco: «proviamo») - anche la fine della serie divisa in due: foto a sinistra, frase al centro
+      corpo += '<div class="wz-due"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div></div><div class="wz-due-dx">'
         // v7.061: col punto (Franco). v7.075: dentro uno <span>, perché `.wz-domanda` è flex e ogni <b> diventava un blocco a sé
-        + '<div class="wz-domanda"><span>' + frase + '.</span></div>';
+        + '<div class="wz-domanda"><span>' + frase + '.</span></div></div></div>';
       piede = indietro + '<button type="button" id="wz-salva" class="btn-primary wz-grande" onclick="_wzSalvaSerie()">'
         + (nuovi || tolti ? (it ? 'Salva e continua →' : 'Save and continue →') : (it ? 'Continua →' : 'Continue →')) + '</button>';
     }
