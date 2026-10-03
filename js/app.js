@@ -1,7 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.117 - Modificato js/app.js (e index per la versione). Pagina di sezione della serie (Franco): «Opzioni» sempre
+// v7.118 - Modificato js/app.js e index.html. Linguetta admin arancio a destra (solo desktop): «🎭 Impersona» apre una
+//          finestrella con gli utenti; impersonando diventa «🎭 Torna admin». Caroselli: in console una colonna per
+//          versione, per ogni tipologia (`ver:<sezione>:<versione>` in `settings/caroselli`); le versioni accese
+//          entrano nei caroselli se hanno una foto loro (`_inCaroselloPerVersione`).
+// v7.117 -Modificato js/app.js (e index per la versione). Pagina di sezione della serie (Franco): «Opzioni» sempre
 //          sotto la copertina piccola, spostato con `transform` così il titolo resta centrato.
 // v7.116 - Modificato js/app.js (e index per la versione). TODO 2, ritocco di Franco: nell'elenco degli articoli
 //          dei personaggi il nome della serie per esteso e in azzurro (`--info`).
@@ -30851,7 +30855,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.117';
+const JS_VERSION = 'v7.118';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33911,6 +33915,17 @@ function _vaInCarosello(sez) {
   if (typeof _CAROSELLI_CFG[k] === 'boolean') return _CAROSELLI_CFG[k];   // v6.982
   return !!ARTICOLI[k].carosello;
 }
+// 🆕 v7.118 (Franco: «per l'incastro caroselli e tda, aggiungiamo una dimensione: la versione [...] per ogni tda, le
+//    versioni possono essere dentro o fuori al carosello») - LA BASE C'È SEMPRE (la decide la colonna «Carosello»),
+//    una versione solo se la console l'ha accesa per quella tipologia: chiave `ver:<sezione>:<versione>` nello stesso
+//    documento `settings/caroselli`. Dove non c'è niente resta fuori, cioè il sito di prima (v7.084).
+// 📌 Una versione entra solo con una foto SUA (`f.img`): col ripiego sulla foto della base il carosello mostrerebbe
+//    due volte la stessa immagine.
+function _inCaroselloPerVersione(f) {
+  if (_eBase(f)) return true;
+  if (!f.img) return false;
+  return _CAROSELLI_CFG['ver:' + (f.section || 'figurines') + ':' + _rtVersione(f)] === true;
+}
 
 // 🆕 v6.982 - la chiama `_caricaLegendeDefinizioni`, che legge gia' tutto `settings`: nessuna
 //    lettura in piu'. Se la console dice qualcosa di diverso da prima, i caroselli della pagina
@@ -34075,7 +34090,7 @@ function renderCarosello() {
   //    come negli altri tre caroselli. Il commento qui sopra (v6.463) raccontava che la home non lo
   //    filtrava: era vero, e adesso è deciso il contrario.
   const disponibili = _figs.filter(f => _vaInCarosello(f.section)
-    && _eBase(f)
+    && _inCaroselloPerVersione(f)
     && _serieInVetrina(_serie.get(f.seriesId))
     && _fotoFigurina(f, _figs));
   if (disponibili.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
@@ -34122,7 +34137,7 @@ function renderCaroselloSerie() {
   //    il carosello della serie 1 si riempirebbe di change ed errori di stampa.
   const base = _figs
     .filter(f => f.seriesId === currentSeriesId && _vaInCarosello(f.section)
-      && _eBase(f) && _fotoFigurina(f, _figs))
+      && _inCaroselloPerVersione(f) && _fotoFigurina(f, _figs))
     .sort((a, b) => (a.number || 0) - (b.number || 0));
   // 🐛 v6.985 (Franco: «nella pagina della serie 1 il carosello mostra solo retro») - le tipologie
   //    si alternano: per numero i retro (senza numero, cioe' 0) venivano tutti prima delle figurine.
@@ -34190,7 +34205,7 @@ function renderCaroselloSezione() {
   const base = _figs
     .filter(f => f.seriesId === serieAperta && (f.section || 'figurines') === sezAperta
       && (!gruppo || String(f.subseries || '').trim() === gruppo)
-      && _eBase(f) && _fotoFigurina(f, _figs))
+      && _inCaroselloPerVersione(f) && _fotoFigurina(f, _figs))
     .sort((a, b) => (a.number || 0) - (b.number || 0));
   if (base.length < 2) { spento(); return; }
   const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x, true)]));
@@ -34471,7 +34486,7 @@ function renderCaroselloProdotto() {
   const _figs = getData('figurines', []);
   const base = _figs
     .filter(f => (f.section || 'figurines') === _prodottoCorrente
-      && _eBase(f) && _fotoFigurina(f, _figs));
+      && _inCaroselloPerVersione(f) && _fotoFigurina(f, _figs));
   if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   const serie = getData('series', []);
   const nomeSerie = new Map(serie.map(x => [x.id, _nomeSerieCard(x, true)])); // v6.080 - terzo carosello; v6.493: nome BREVE
@@ -35715,6 +35730,7 @@ function updateNavUser() {
   // 🆕 v6.953 — dopo che questa funzione ha acceso o spento «Accedi», la freccia si rimette sotto.
   requestAnimationFrame(() => { try { _frecciaSottoAccedi(); _aggiornaLogoNavbar(); } catch (e) {} });
   try { _wzAggiornaVisibile(); } catch (e) {}   // v7.052: il questionario solo per l'admin
+  try { _aggiornaLinguettaImpersona(); } catch (e) {}   // v7.118: la linguetta arancio a destra
   // 🐛 v6.960 (Franco: «sulla app, dopo che mi autentico, si vede ancora la fascia delle serie,
   //    quella per invogliare al login») — LA FASCIA SI RIDECIDE QUI. `renderHomeSeries` sa già
   //    che da loggati non va mostrata, ma nessuno la richiamava dopo il login: né `doLogin` né
@@ -39692,6 +39708,11 @@ async function salvaLegendeDefinizioni() {
 // 📌 La spunta si disegna da `_vaInCarosello`, cioe' da cio' che il sito fa ADESSO: dove la
 //    console non ha mai salvato niente mostra il descrittore, non una casella vuota che mente.
 // 📌 Il Salva porta .admin-anche-telefono: sul telefono i .btn-admin sono nascosti.
+// 🆕 v7.118 - le colonne delle versioni: quelle vive che almeno una tipologia dell'Inventario può avere.
+function _versioniCaroselli() {
+  const sezioni = PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]);
+  return _VERSIONI_VIVE.filter(v => sezioni.some(sez => _versioneEsistePerTDA(v.chiave, sez)));
+}
 function renderAdminCaroselliTDA() {
   const box = document.getElementById('admin-caroselli-tda');
   if (!box) return;
@@ -39703,19 +39724,28 @@ function renderAdminCaroselliTDA() {
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Accesa, gli articoli base con foto di quella tipologia girano nei <strong>tre caroselli</strong>: ' +
-          'la home, la pagina della serie e la pagina della tipologia. Spenta, in nessuno dei tre.'
+          'la home, la pagina della serie e la pagina della tipologia. Spenta, in nessuno dei tre. ' +
+          'Le colonne delle versioni aggiungono anche quelle versioni, se hanno una foto loro.'
         : 'Checked: the base items with a photo of that type scroll in the <strong>three carousels</strong> ' +
-          '(home, series page, item type page). Unchecked: in none of them.') +
+          '(home, series page, item type page). Unchecked: in none of them. ' +
+          'The version columns add those versions too, when they have their own photo.') +
     '</p>' +
     // 🔄 v7.110 (Franco: «nella tabella Caroselli la spunta è troppo lontana dalla voce; avvicinarla di molto») - la
     //    tabella larga quanto il suo contenuto, non quanto la pagina (era `min-width:100%`)
+    // 🆕 v7.118 - una colonna per versione, nell'ordine dichiarato; «—» dove quella tipologia la versione non ce l'ha
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
     '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
-      '<th style="' + th + 'text-align:center;">' + (it ? 'Carosello' : 'Carousel') + '</th></tr>' +
+      '<th style="' + th + 'text-align:center;">' + (it ? 'Carosello' : 'Carousel') + '</th>' +
+      _versioniCaroselli().map(v => '<th style="' + th + 'text-align:center;">' + esc(_RAGGR_VERSIONE.etichettaDi(v.chiave)) + '</th>').join('') +
+    '</tr>' +
     PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).map(sez =>
       '<tr><td style="' + td + '">' + esc(getSectionLabel(sez)) + '</td>' +
       '<td style="' + td + 'text-align:center;"><input type="checkbox" id="car-' + sez + '"' +
-        (_vaInCarosello(sez) ? ' checked' : '') + '></td></tr>').join('') +
+        (_vaInCarosello(sez) ? ' checked' : '') + '></td>' +
+      _versioniCaroselli().map(v => '<td style="' + td + 'text-align:center;">' + (_versioneEsistePerTDA(v.chiave, sez)
+        ? '<input type="checkbox" id="car-' + sez + '-' + v.chiave + '"' + (_CAROSELLI_CFG['ver:' + sez + ':' + v.chiave] === true ? ' checked' : '') + '>'
+        : '—') + '</td>').join('') +
+      '</tr>').join('') +
     '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaCaroselliTDA()">' + (it ? 'Salva i caroselli' : 'Save carousels') + '</button>' +
@@ -39731,6 +39761,10 @@ async function salvaCaroselliTDA() {
   PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).forEach(sez => {
     const el = document.getElementById('car-' + sez);
     if (el) voci[sez] = !!el.checked;
+    _versioniCaroselli().forEach(v => {   // v7.118: le versioni
+      const c = document.getElementById('car-' + sez + '-' + v.chiave);
+      if (c) voci['ver:' + sez + ':' + v.chiave] = !!c.checked;
+    });
   });
   try {
     await fsSave('settings', { id: 'caroselli', voci });
@@ -55978,6 +56012,42 @@ function _riempiTendinaImpersona() {
 function impersonaDaProfilo() {
   const id = document.getElementById('profile-impersona-select')?.value;
   if (id) impersonateUser(id);
+}
+// 🆕 v7.118 (Franco: «metti una linguetta admin (arancio) a dx, per la funzione di Impersonifica») - LA LINGUETTA
+//    A DESTRA. Si vede all'admin, e si vede anche mentre impersona: lì `currentUser.isAdmin` è falso, quindi la
+//    decide `_realAdmin`, e la scritta diventa «Torna admin». Le persone le sceglie la stessa regola della tendina
+//    del profilo (`_riempiTendinaImpersona`): solo i non-admin, per nickname. Sul telefono la spegne il CSS.
+function _aggiornaLinguettaImpersona() {
+  const ling = document.getElementById('imp-linguetta');
+  if (!ling) return;
+  const imp = typeof isImpersonating === 'function' && isImpersonating();
+  const admin = !!(currentUser && currentUser.isAdmin);
+  ling.style.display = (admin || imp) ? 'flex' : 'none';
+  ling.textContent = imp ? (currentLang === 'it' ? '🎭 Torna admin' : '🎭 Back to admin') : (currentLang === 'it' ? '🎭 Impersona' : '🎭 Impersonate');
+  const pan = document.getElementById('imp-pannello');
+  if (pan && (imp || !admin)) pan.style.display = 'none';
+}
+function _cliccaLinguettaImpersona() {
+  if (typeof isImpersonating === 'function' && isImpersonating()) { stopImpersonation(); return; }
+  if (!currentUser || !currentUser.isAdmin) return;
+  const pan = document.getElementById('imp-pannello'), sel = document.getElementById('imp-pannello-select');
+  if (!pan || !sel) return;
+  if (pan.style.display !== 'none') { pan.style.display = 'none'; return; }
+  const utenti = getData('users', [])
+    .filter(u => !u.isAdmin)
+    .sort((a, b) => (a.username || '').localeCompare(b.username || '', 'it', { sensitivity: 'base' }));
+  if (!utenti.length) { toast(currentLang === 'it' ? 'Nessun utente da impersonare' : 'No user to impersonate', 'info'); return; }
+  const scelto = sel.value;
+  sel.innerHTML = utenti.map(u =>
+    `<option value="${u.id}">${esc(u.username || u.email || '(senza nome)')}</option>`).join('');
+  if (scelto && utenti.some(u => u.id === scelto)) sel.value = scelto;
+  pan.style.display = 'flex';
+}
+function _impersonaDalPannello() {
+  const id = document.getElementById('imp-pannello-select')?.value;
+  if (!id) return;
+  document.getElementById('imp-pannello').style.display = 'none';
+  impersonateUser(id);
 }
 function renderProfile() {
   if (!currentUser) { showPage('home'); return; }
