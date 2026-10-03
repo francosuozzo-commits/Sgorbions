@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.095 - Modificato js/app.js (e index per la versione). Questionario (Franco): «I quadranti grigi si attivano
+//          da soli.» (via «all'occorrenza»).
 // v7.094 - Modificati index.html e js/app.js. Ricerca globale, telefono (Franco): via «Mostra in tabella», che
 //          portava alla vista tabellare, sul telefono assente (`.rg-mostra-tabella`, nascosto sotto gli 860px).
 //          🐛 Tab «Varianti dello stesso personaggio»: solo articoli base (`_eBase`), e si chiama «Articoli dello
@@ -30789,7 +30791,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.094';
+const JS_VERSION = 'v7.095';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -50066,8 +50068,9 @@ function _wzDisegna(tieni) {
         // 🆕 v7.052 (Franco) - la frase sui grigi, quando la serie può averne (fpa e album): c'è anche ad album
         //    acceso, così la schermata non cambia sotto il dito. L'inglese è mio.
         + (w.sezSerie.includes('attaccare') && w.sezSerie.includes('albums') ? '<p class="wz-testo">' + (it
-            ? 'I quadranti grigi si attivano da soli all\'occorrenza.'   // v7.057: la frase di Franco
-            : 'The grey tiles become active by themselves when needed.') + '</p>' : '')
+            // v7.057: la frase di Franco; 🔄 v7.095 (Franco): via «all'occorrenza»
+            ? 'I quadranti grigi si attivano da soli.'
+            : 'The grey tiles become active by themselves.') + '</p>' : '')
         + '</div></div>'   // v7.089: fine di `wz-due`
         + '<div class="wz-scelte wz-scelte-tda">' + w.sezSerie.map(z => {   // v7.080: classe per lo spazio foto-titolo
             const grigia = z === 'attaccare' && !_wzFpaLibera();
