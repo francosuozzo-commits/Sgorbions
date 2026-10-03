@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.100">
+<link rel="stylesheet" href="css/style.css?v=7.101">
 
 
 <style>
@@ -4713,6 +4713,18 @@ di tutte le serie</button>
             <input type="checkbox" id="series-personaggio-card-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
             <span>Mostra il personaggio sulle card</span>
           </label>
+          <!-- 🆕 v7.101 (Franco: «mi serve un meccanismo di allineamento automatico tra personaggio e card tra le
+               serie Kakkones e Sgorbions 2018: hanno gli stessi personaggi su figurine con lo stesso nome e numero»;
+               «un campo nella serie»; «il link sarà bidirezionale?») - LA SERIE GEMELLA. Due serie gemelle hanno gli
+               stessi articoli (stessa tipologia, numero e nome): collegando un personaggio a uno, al «Salva» si
+               collega anche al suo gemello. Il legame vale nei due sensi (`saveSeries` lo scrive su tutte e due).
+               «Allinea i personaggi» fa una volta sola, per tutte le coppie, quello che il «Salva» fa da qui in
+               poi (`allineaPersonaggiGemella`). -->
+          <div id="series-gemella-group" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;font-size:0.88rem;margin-top:0.35rem;">
+            <label for="series-gemella-input" class="form-label" style="margin:0;">Serie gemella</label>
+            <select id="series-gemella-input" class="form-input" style="max-width:260px;padding:0.25rem 0.5rem;font-size:0.85rem;"></select>
+            <button type="button" class="btn-primary btn-admin admin-anche-telefono" id="series-gemella-allinea-btn" onclick="allineaPersonaggiGemella()" style="padding:0.25rem 0.8rem;font-size:0.8rem;">Allinea i personaggi</button>
+          </div>
           <!-- 🆕 v6.369 (Franco: *"i campi «Senza numeri» e «Serie contenitore» mettili SOPRA il
                titoletto «Figurine da incollare»; altrimenti sembra che facciano parte di quella
                sezione"*) — LE DUE SPUNTE SALGONO.
@@ -6122,7 +6134,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.100"></script>
+<script src="js/app.js?v=7.101"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6146,7 +6158,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.100'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.101'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
