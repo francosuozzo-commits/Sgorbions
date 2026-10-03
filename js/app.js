@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.098 - Modificato js/app.js (e index per la versione). Questionario (Franco): 🐛 in «Come vuoi indicare…?»
+//          toccare una carta la accende e basta, si parte con «Prosegui» (`_wzProponiVista`); l'album si apre
+//          sempre a «2 pagine», anche sul telefono, e «Sinistra» / «Destra» restano per lo zoom.
 // v7.097 - Modificato js/app.js (e index per la versione). Questionario (Franco): «Come vuoi indicare le figurine
 //          che hai?» / «…che ti mancano?» (era «selezionare»).
 // v7.096 - Modificati index.html e js/app.js. Questionario, riepilogo della serie (Franco): la miniatura delle
@@ -30795,7 +30798,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.097';
+const JS_VERSION = 'v7.098';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49733,6 +49736,10 @@ function _wzMappa(sid, p) {
 }
 // la scelta della modalità («album» o «griglia»), la pagina e la metà mostrate
 function _wzVista(sez, v) { const c = _wz.scelte[sez]; c.vista = v; c.pVista = v; if (c.pag == null) c.pag = 0; _wzDisegna(); }
+// 🐛 v7.098 (Franco: «nella pagina della domanda sulla modalità di selezione, la scelta deve essere operativa solo
+//    dopo che premo Prosegui, invece parte subito appena clicco sul quadrante») - toccare una carta la ACCENDE
+//    soltanto (`pVista`); è «Prosegui» a chiamare `_wzVista` con la carta accesa. Come le altre domande del questionario.
+function _wzProponiVista(sez, v) { _wz.scelte[sez].pVista = v; _wzDisegna(true); }
 function _wzPagina(sez, d) {
   const w = _wz, c = w.scelte[sez], m = _wzMappa(w.serie[w.i].id, sez);
   if (!m) return;
@@ -50193,7 +50200,7 @@ function _wzDisegna(tieni) {
           const quattro = _wzArticoli(s.id, p).map(f => _fotoFigurina(f, figs) || f.img).filter(Boolean).slice(0, 4);
           return quattro.length === 4 ? '<div class="wz-griglia4">' + quattro.map(u => _wzImg(u, 160, 200, '')).join('') + '</div>' : '<div class="wz-emoji">🔲</div>';
         };
-        const carta = (v, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (prop === v ? ' on' : '') + '" onclick="_wzVista(\'' + p + '\',\'' + v + '\')">'
+        const carta = (v, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (prop === v ? ' on' : '') + '" onclick="_wzProponiVista(\'' + p + '\',\'' + v + '\')">'   // v7.098: accende, non parte
           + figura(v) + '<div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
         corpo += intest + '<div class="wz-domanda">' + (c.verso === 'ho'
             // 🔄 v7.097 (Franco: «"Come vuoi selezionare le figurine che hai?" diventa "Come vuoi indicare…"») - e così
@@ -50212,7 +50219,10 @@ function _wzDisegna(tieni) {
         //    posizione della mappa; toccarlo è lo stesso `_wzTocca` della griglia. Sul telefono una facciata alla volta.
         const m = _wzMappa(s.id, p), figs = getData('figurines', []), perId = new Map(tutti.map(f => [f.id, f]));
         const pg = Math.min(c.pag || 0, m.pagine.length - 1), P = m.pagine[pg];
-        if (!c.meta) c.meta = _isMobileViewport() ? 'sx' : 'tutte';
+        // 🔄 v7.098 (Franco: «nella visualizzazione dell'album direi di partire con la visualizzazione a due pagine,
+        //    lasciando la possibilità di fare lo zoom sulla pagina destra o sinistra come opzione») - anche sul telefono
+        //    si parte da «2 pagine»; «Sinistra» e «Destra» restano i pulsanti dello zoom
+        if (!c.meta) c.meta = 'tutte';
         const meta = c.meta;
         const bv = (v, t) => '<button type="button" class="btn-secondary' + (meta === v ? ' wz-on' : '') + '" onclick="_wzMeta(\'' + p + '\',\'' + v + '\')">' + t + '</button>';
         const nav = (giu) => '<div class="wz-album-nav">'
