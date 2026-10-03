@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.116 - Modificato js/app.js (e index per la versione). TODO 2, ritocco di Franco: nell'elenco degli articoli
+//          dei personaggi il nome della serie per esteso e in azzurro (`--info`).
 // v7.115 - Modificato js/app.js (e index per la versione). TODO 2 di Franco: nella ricerca globale ogni personaggio
 //          ha la sua miniatura e sotto l'elenco dei suoi articoli, senza foto: serie, nome e numero, cliccabili.
 //          🐛 Pagina di sezione della serie (Franco, con una foto): «prossima serie» andava sotto il titolo (ora
@@ -30847,7 +30849,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.115';
+const JS_VERSION = 'v7.116';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45677,7 +45679,8 @@ function _rgPersonaggiHTML(q, qn) {
   //    nell'ordine dell'Inventario, ognuno cliccabile verso la sua scheda. Le figurine per album restano fuori, come
   //    nel conto della card dell'hub.
   const ordSerie = new Map(_serieOrdinate(getData('series', [])).map((s, i) => [s.id, i]));
-  const nomeS = new Map(getData('series', []).map(s => [s.id, _nomeSerieCard(s, true)]));
+  // 🔄 v7.116 (Franco: «il nome della serie deve essere quello esteso») - `_nomeSerieCard(s)`, non quello breve
+  const nomeS = new Map(getData('series', []).map(s => [s.id, _nomeSerieCard(s)]));
   const ordina = l => l.slice().sort((a, b) => (ordSerie.get(a.seriesId) ?? 1e9) - (ordSerie.get(b.seriesId) ?? 1e9)
     || String(a.section || 'figurines').localeCompare(String(b.section || 'figurines')) || (parseInt(a.number, 10) || 0) - (parseInt(b.number, 10) || 0));
   // la misura della miniatura in un posto solo (prova-v6405 vieta le misure scritte a mano nella ricerca)
@@ -45688,7 +45691,8 @@ function _rgPersonaggiHTML(q, qn) {
       ? '<img src="' + cloudinaryUrl(foto, 'w_160,h_200,c_fit,q_auto,f_auto') + '" alt="" loading="lazy" style="' + _dimMini + 'object-fit:contain;border-radius:6px;background:var(--card2);flex-shrink:0;">'
       : '<span style="' + _dimMini + 'border-radius:6px;background:var(--card2);border:1px dashed var(--border);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">🧑‍🎤</span>';
     const elenco = ordina(arts).map(a => '<li><a href="javascript:void(0)" onclick="openFigFromSearch(\'' + a.id + '\',\'' + a.seriesId + '\',\'' + (a.section || 'figurines') + '\')" style="color:var(--text);text-decoration:none;">'
-      + esc(nomeS.get(a.seriesId) || '') + ' · ' + esc(a.name || '') + ((a.number != null && a.number !== '' && !a.noNumber) ? ' · n.' + esc(String(a.number)) : '') + '</a></li>').join('');
+      // v7.116 (Franco: «usa un colore che non sia bianco per il nome della serie») - l'azzurro dei titoli di serie (`--info`)
+      + '<span style="color:var(--info);">' + esc(nomeS.get(a.seriesId) || '') + '</span> · ' + esc(a.name || '') + ((a.number != null && a.number !== '' && !a.noNumber) ? ' · n.' + esc(String(a.number)) : '') + '</a></li>').join('');
     return '<div style="display:flex;gap:0.8rem;align-items:flex-start;padding:0.5rem 0;border-top:1px solid var(--border);">'
       + '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + pid + '\')" title="' + esc(D.perId.get(pid).nome) + '">' + mini + '</a>'
       + '<div style="min-width:0;">'
