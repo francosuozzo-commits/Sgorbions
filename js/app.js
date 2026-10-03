@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.105 - Modificato index.html (e app.js per la versione). Ricerca globale (Franco): via il suggerimento che
+//          compariva sotto la casella al passaggio del mouse (`.nav-search-hint`); resta quello dentro la casella.
 // v7.104 - Modificati index.html e js/app.js. Console → Tipo di articolo → «🔒 Foto protette» (Franco): le
 //          tipologie con la protezione d'ufficio (`settings/protezione`); l'articolo tiene la sua spunta solo se fa
 //          eccezione (`fotoProtetta` true/false, altrimenti null), vedi `_eProtetto`.
@@ -30817,7 +30819,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.104';
+const JS_VERSION = 'v7.105';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
