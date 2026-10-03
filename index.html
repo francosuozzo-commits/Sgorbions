@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.093">
+<link rel="stylesheet" href="css/style.css?v=7.094">
 
 
 <style>
@@ -837,6 +837,10 @@ body:not(.wz-visibile) #inv-linguetta { top: 80px; }
 .fe-tre-tasti > label { min-width: 0; display: flex; cursor: pointer; margin: 0; }
 .fe-tre-tasti > label > .btn-foto { flex: 1; min-width: 0; }
 .fe-tre-tasti .btn-foto { min-width: 0; font-size: 0.72rem; padding: 6px 4px; overflow: hidden; text-overflow: ellipsis; }
+/* 🆕 v7.094 (Franco: «nella versione mobile, a seguito di una ricerca globale, è visibile il tasto "Mostra in
+   tabella" che porta alla vista tabellare, che nel mobile non c'è») - sul telefono il tasto della ricerca globale
+   non c'è (`.rg-mostra-tabella`, in `renderCatalogSearch`). */
+@media (max-width: 860px) { .rg-mostra-tabella { display: none !important; } }
 /* 🆕 v7.089 (Franco) - il riepilogo dell'uscita dal questionario: per ogni serie la copertina piccola col nome e
    una tabella (tipologia, nella tua lista, aggiunti col questionario), i numeri allineati a destra. */
 .wz-uscita-serie { max-width: 760px; margin: 1.4rem auto 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem 1rem; }
@@ -6106,7 +6110,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.093"></script>
+<script src="js/app.js?v=7.094"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6130,7 +6134,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.093'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.094'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
