@@ -1,6 +1,23 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.089 - Modificato index.html e js/app.js. Navbar, desktop (Franco): via il box «Figurine nella tua lista
+//          N / M» («troppo lungo»); al suo posto «🏆 3° · 49.432 punti» (in inglese «3rd», niente °), il proprio
+//          punteggio e la posizione in Classifica, e cliccandolo si apre la Classifica (`#nav-owned-counter`,
+//          `updateOwnedCounter`). A zero punti solo «🏆 0 punti». Come prima, non per l'admin.
+//          Questionario (Franco): dopo «Sì, esci» il RIEPILOGO (`uscita`, `_wzUscita`, `_wzRigheUscita`): per
+//          serie una tabella con una riga per tipologia (e versione), «Nella tua lista» e «Aggiunti col
+//          questionario» (rispetto a `_wz.inizio`, la lista all'apertura); le serie vuote contate in una frase.
+//          E ancora (Franco): navbar dell'admin su tre righe (versione / JS e CSS / «Online dal»); via il pulsante
+//          del questionario dall'Inventario (`#wz-pulsante-inv`); schermata della serie divisa in due sul desktop
+//          (`.wz-due`: foto a sinistra, frasi a destra); in «Come vuoi selezionare…?» la foto delle pagine
+//          dell'album e una griglia 2×2 con le prime quattro figurine al posto delle icone 📖 e 🔲. Poi: foto
+//          della serie più piccola e a filo del bordo sinistro, frasi al centro; foto della prima schermata più
+//          piccole; riepilogo solo se la lista è cambiata; «Salta serie» sopra la foto (telefono); «Torna
+//          indietro» / «Prosegui» anche sotto la barra di progresso (`.wz-piede-alto`, copia senza id); «Clicca
+//          sul quadrante che raffigura gli articoli per la tua lista.». Scheda in modifica con due foto: i tre
+//          tasti su una riga larga quanto le foto (`.fe-due-foto`, `.fe-tre-tasti`); «Rimuovi sfondo da entrambe»
+//          spento finché mancano fronte o retro (`_aggiornaBgEntrambe`). Navbar: «Ciò che cerco» non più per l'admin.
 // v7.088 - Modificato js/app.js (e index per la versione). Ricerca dei personaggi (Franco): il riquadro «Filtri
 //          admin» con «Senza foto» (i personaggi la cui card non ha foto, `_fotoPersonaggio`) e «Alter ego», che
 //          stava fra i filtri per tutti. Questionario, desktop (Franco): l'«Esci» in fondo allineato a quello in
@@ -30748,7 +30765,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.088';
+const JS_VERSION = 'v7.089';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35639,7 +35656,9 @@ function updateNavUser() {
     // 🔄 v6.834 - admin e visitatori leggono la stessa voce: «Blog / D&R» è diventato «Blog» per tutti.
     if (navBlogEl) navBlogEl.textContent = t('nav.blog');
     // 🔄 v6.834 (Franco: «nella navbar, mostra "Ciò che cerco" anche all'admin») - la voce c'è per tutti.
-    const nwl = document.getElementById('nav-wishlist'); if (nwl) nwl.style.display = '';
+    // 🔄 v7.089 (Franco: «il tasto "Ciò che cerco" nella navbar, toglilo all'admin») - di nuovo solo per gli utenti.
+    //    Impersonando un utente `currentUser.isAdmin` è falso, quindi lì la voce torna.
+    const nwl = document.getElementById('nav-wishlist'); if (nwl) nwl.style.display = currentUser.isAdmin ? 'none' : '';
     const nlBtn = document.getElementById('nav-newsletter-btn');
     if (nlBtn) nlBtn.style.display = currentUser.isAdmin ? '' : 'none';
     if (btnCollect) btnCollect.style.display = 'none';
@@ -49481,6 +49500,7 @@ function apriWizardLista() {
   if (!_wzVisibile()) return;   // v7.052
   const serie = _wzSerie().filter(s => _wzSezioni().some(z => _wzArticoli(s.id, z).length));
   _wz = { serie, i: -1, passo: 'intro', passi: [], k: 0, scelte: null, aggiunti: 0, tolti: 0, fatte: [] };
+  _wz.inizio = new Set(getOwned());   // v7.089: la lista all'apertura, per il riepilogo dell'uscita
   _wzDisegna();
 }
 function _wzIniziaSerie(i) {
@@ -49703,12 +49723,14 @@ async function _wzSalvaSerie() {
   const w = _wz, s = w.serie[w.i];
   const { dopo, nuovi, tolti, idNuovi, idTolti } = _wzListaNuova();
   if (nuovi || tolti) {
+    // v7.089: anche la copia in alto (`.wz-salva-copia`) si spegne mentre si salva, e si riaccende se non riesce
+    document.querySelectorAll('.wz-salva-copia').forEach(x => { x.disabled = true; });
     const b = document.getElementById('wz-salva'); if (b) { b.disabled = true; b.textContent = currentLang === 'it' ? 'Salvataggio…' : 'Saving…'; }
     if (!_cache.ownedMap) _cache.ownedMap = {};
     _cache.ownedMap[currentUser.id] = dopo;
     LOCAL.set('owned_' + currentUser.id, dopo);
     const ok = await saveOwnedToFirebase(currentUser.id, dopo);
-    if (!ok) { if (b) { b.disabled = false; b.textContent = currentLang === 'it' ? 'Riprova a salvare' : 'Retry saving'; } return; }
+    if (!ok) { document.querySelectorAll('.wz-salva-copia').forEach(x => { x.disabled = false; }); if (b) { b.disabled = false; b.textContent = currentLang === 'it' ? 'Riprova a salvare' : 'Retry saving'; } return; }
   }
   if (!_wzFatto) _wzSegna(true);
   w.aggiunti += nuovi; w.tolti += tolti;
@@ -49730,6 +49752,38 @@ async function _wzSalvaSerie() {
 function _wzAzzera(passo) { _wz.passo = passo; _wzDisegna(); }
 // 🆕 v7.050 - «Esci dal questionario» chiede conferma; «Resta» torna dove si era
 function _wzChiediEsci() { _wz.primaDiEsci = _wz.passo; _wz.passo = 'esci'; _wzDisegna(); }
+// 🆕 v7.089 (Franco: «quando si esce dal questionario, dopo la conferma, deve apparire una schermata riepilogativa
+//    che dice, serie per serie, e tda per tda, quanti articoli sono nella lista complessivamente (precedenti al
+//    questionario più ottenuti dal questionario); eventualmente dicendo a parte gli stessi numeri solo aggiunti col
+//    questionario») - IL RIEPILOGO DELL'USCITA. «Sì, esci» porta qui (`uscita`), e da qui si chiude.
+//    📌 «Aggiunti col questionario» = nella lista adesso e non all'apertura (`_wz.inizio`, fotografata da
+//    `apriWizardLista` e svuotata dall'azzeramento). Gli articoli sono quelli che il sito conta
+//    (`_articoliDaContareSito`: fuori IN ARRIVO, nascosti e invisibili), di TUTTE le tipologie della serie.
+// 🔄 v7.089 (Franco: «non mostrarla se lo user esce alla prima schermata: magari aveva solo cliccato per curiosare;
+//    mettiamola se l'utente ha selezionato almeno un articolo durante la navigazione») - il riepilogo solo se la
+//    lista è cambiata da quando il questionario si è aperto (una serie salvata con qualcosa dentro o fuori);
+//    altrimenti si esce e basta. Le scelte di una serie non ancora salvata non contano: uscendo non entrano.
+function _wzUscita() {
+  const w = _wz, ora = new Set(getOwned()), inizio = w.inizio || new Set();
+  const cambiata = ora.size !== inizio.size || [...ora].some(id => !inizio.has(id));
+  if (!cambiata) { _wzChiudi(); return; }
+  w.passo = 'uscita'; _wzDisegna();
+}
+// per una serie: le righe della tabella, una per tipologia (e per versione, col suo nome fra parentesi)
+function _wzRigheUscita(s, mie, inizio) {
+  const it = currentLang === 'it', gruppi = new Map(), ordine = _wzSezioni();
+  for (const f of _articoliDaContareSito()) {
+    if (f.seriesId !== s.id || !mie.has(f.id)) continue;
+    const z = f.section || 'figurines', v = _VERSIONI_VIVE.find(x => f[x.campo]);
+    const k = z + '|' + (v ? v.chiave : '');
+    if (!gruppi.has(k)) gruppi.set(k, { z, v, n: 0, nuovi: 0 });
+    const g = gruppi.get(k); g.n++; if (!inizio.has(f.id)) g.nuovi++;
+  }
+  const pos = z => { const i = ordine.indexOf(z); return i < 0 ? 999 : i; };
+  return [...gruppi.values()]
+    .sort((a, b) => pos(a.z) - pos(b.z) || (a.v ? _VERSIONI_VIVE.indexOf(a.v) + 1 : 0) - (b.v ? _VERSIONI_VIVE.indexOf(b.v) + 1 : 0))
+    .map(g => ({ nome: _wzEtichetta(g.z) + (g.v ? ' (' + (it ? g.v.it : g.v.en) + ')' : ''), n: g.n, nuovi: g.nuovi }));
+}
 async function _wzAzzeraDavvero() {
   const b = document.getElementById('wz-azzera-si'); if (b) { b.disabled = true; b.textContent = currentLang === 'it' ? 'Azzeramento…' : 'Resetting…'; }
   if (!_cache.ownedMap) _cache.ownedMap = {};
@@ -49738,6 +49792,7 @@ async function _wzAzzeraDavvero() {
   const ok = await saveOwnedToFirebase(currentUser.id, []);
   if (!ok) { if (b) { b.disabled = false; b.textContent = currentLang === 'it' ? 'Riprova' : 'Retry'; } return; }
   await _wzSegna(false);
+  _wz.inizio = new Set();   // v7.089: dopo l'azzeramento, tutto quello che entra lo porta il questionario
   toast(currentLang === 'it' ? 'La tua lista è stata azzerata.' : 'Your list has been reset.', 'success');
   _wz.passo = 'intro'; _wzDisegna();
 }
@@ -49804,7 +49859,8 @@ function _wzDisegna(tieni) {
     // 🆕 v7.050 - la conferma dell'uscita
     corpo = '<div class="wz-titolo">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</div>'
       + '<p class="wz-testo">' + (it ? 'Vuoi davvero uscire dal questionario ? Le serie che hai già salvato restano nella tua lista.' : 'Do you really want to exit ? The series you already saved stay in your list.') + '</p>'
-      + '<div class="wz-inizia"><button type="button" class="btn-primary wz-grande" onclick="_wzChiudi()">' + (it ? 'Sì, esci' : 'Yes, exit') + '</button></div>';
+      // v7.089: «Sì, esci» porta al riepilogo (`_wzUscita`), e si chiude da lì
+      + '<div class="wz-inizia"><button type="button" class="btn-primary wz-grande" onclick="_wzUscita()">' + (it ? 'Sì, esci' : 'Yes, exit') + '</button></div>';
     piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(_wz.primaDiEsci || \'intro\')">← ' + (it ? 'Resta nel questionario' : 'Stay') + '</button>';
   } else if (w.passo === 'livello') {
     // 🆕 v7.034 (Franco) - «Che collezionista sei ?»: la risposta decide quali versioni si chiedono
@@ -49835,6 +49891,35 @@ function _wzDisegna(tieni) {
         ? '<button type="button" class="btn-primary wz-grande wz-rosso" onclick="_wzAzzera(\'azzera2\')">' + (it ? 'Sì, azzera' : 'Yes, reset') + '</button>'
         : '<button type="button" id="wz-azzera-si" class="btn-primary wz-grande wz-rosso" onclick="_wzAzzeraDavvero()">' + (it ? 'Azzera definitivamente' : 'Reset permanently') + '</button>') + '</div>';
     piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">' + (it ? 'Annulla' : 'Cancel') + '</button>';
+  } else if (w.passo === 'uscita') {
+    // 🆕 v7.089 (Franco) - il riepilogo dell'uscita: una tabella per serie, una riga per tipologia. Le serie di cui
+    //    nella lista non c'è niente non hanno tabella: le conta una frase in fondo. Le parole sono mie.
+    const mie = new Set(getOwned()), inizio = w.inizio || new Set();
+    const cifra = n => n ? nfmtWz(n) : '<span class="wz-uscita-zero">—</span>';
+    let tot = 0, totNuovi = 0, vuote = 0;
+    const blocchi = w.serie.map(s => {
+      const righe = _wzRigheUscita(s, mie, inizio);
+      if (!righe.length) { vuote++; return ''; }
+      const n = righe.reduce((a, r) => a + r.n, 0), nuovi = righe.reduce((a, r) => a + r.nuovi, 0);
+      tot += n; totNuovi += nuovi;
+      return '<div class="wz-uscita-serie"><div class="wz-uscita-testa">' + _wzImg(s.img, 120, 120, '') + '<span>' + esc(_nomeSerieCard(s)) + '</span></div>'
+        + '<table class="wz-uscita-tab"><thead><tr><th>' + (it ? 'Tipologia' : 'Item type') + '</th><th>' + (it ? 'Nella tua lista' : 'In your list') + '</th><th>'
+        + (it ? 'Aggiunti col questionario' : 'Added with the questionnaire') + '</th></tr></thead><tbody>'
+        + righe.map(r => '<tr><td>' + esc(r.nome) + '</td><td>' + nfmtWz(r.n) + '</td><td class="wz-uscita-nuovi">' + cifra(r.nuovi) + '</td></tr>').join('')
+        + (righe.length > 1 ? '<tr class="wz-uscita-totale"><td>' + (it ? 'Totale' : 'Total') + '</td><td>' + nfmtWz(n) + '</td><td class="wz-uscita-nuovi">' + cifra(nuovi) + '</td></tr>' : '')
+        + '</tbody></table></div>';
+    }).join('');
+    corpo = '<div class="wz-titolo">📋 ' + (it ? 'La tua lista Sgorbions' : 'Your Sgorbions list') + '</div>'
+      + '<p class="wz-testo">' + (it
+        ? (tot ? 'Nella tua lista ci sono <b>' + nfmtWz(tot) + '</b> articoli' + (totNuovi ? ', e <b>' + nfmtWz(totNuovi) + '</b> li hai aggiunti col questionario.' : '. Col questionario non ne hai aggiunti.') + '<br>Ecco quanti sono, serie per serie.'
+               : 'La tua lista è ancora vuota.')
+        : (tot ? 'Your list has <b>' + nfmtWz(tot) + '</b> items' + (totNuovi ? ', and you added <b>' + nfmtWz(totNuovi) + '</b> with the questionnaire.' : '. You added none with the questionnaire.') + '<br>Here they are, series by series.'
+               : 'Your list is still empty.')) + '</p>'
+      + blocchi
+      + (tot && vuote ? '<p class="wz-nota">' + (it ? (vuote === 1 ? 'Di 1 serie non hai ancora niente nella tua lista.' : 'Di ' + vuote + ' serie non hai ancora niente nella tua lista.')
+                                                  : (vuote === 1 ? 'You have nothing yet from 1 series.' : 'You have nothing yet from ' + vuote + ' series.')) + '</p>' : '');
+    piede = '<button type="button" class="btn-secondary" onclick="_wzChiudi()">' + (it ? 'Chiudi' : 'Close') + '</button>'
+      + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'profile\')">' + (it ? 'Vai alla tua lista →' : 'Go to your list →') + '</button>';
   } else if (w.passo === 'finale') {
     corpo = '<div class="wz-titolo">🎉 ' + (it ? 'Fatto !' : 'Done !') + '</div>'
       + '<p class="wz-testo">' + (it
@@ -49851,13 +49936,19 @@ function _wzDisegna(tieni) {
     if (p === 'serie') {
       const mie = new Set(getOwned()), gia = [..._wzToccati()].filter(id => mie.has(id)).length;
       corpo += '<div class="wz-titolo">' + (it ? (w.i === 0 ? 'Iniziamo con la ' : 'Continuiamo con la ') : (w.i === 0 ? "Let's start with " : "Let's go on with ")) + esc(_nomeSerieCard(s, true)) + '</div>'   // v7.052: sempre il nome corto (Franco: «Iniziamo con la Serie 1», non «…la Sgorbions serie 1»)
-        + '<div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div>'
+        // 🆕 v7.089 (Franco: «prova a dividere in 2 lo schermo: a sx la foto, a dx le 4 frasi») - `wz-due`: sul
+        //    desktop due colonne, sul telefono una sotto l'altra come prima (regola nell'index).
+        + '<div class="wz-due"><div class="wz-due-sx">'
         // 🆕 v7.054 (Franco: «nel mobile, il tasto che permette di saltare la serie deve esserci anche sotto la foto
         //    della serie») - un secondo «Salta questa serie», uguale a quello del piede; `.wz-salta-foto` si vede
         //    solo sotto gli 861px (regola nell'index).
+        // 🔄 v7.089 (Franco: «il tasto "Salta serie" mettilo sopra alla foto della serie, centrato») - prima della foto
         + '<div class="wz-salta-foto"><button type="button" class="btn-secondary wz-scritta-rossa" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta serie' : 'Skip series') + '</button></div>'
+        + '<div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div>'
+        + '</div><div class="wz-due-dx">'
         + '<div class="wz-domanda wz-rosa">' + (it ? 'Cosa hai di questa serie?' : 'What do you have from this series?') + '</div>'
-        + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che mostra i tuoi articoli.' : 'Click on the tiles showing the items you have.') + '</p>'
+        // 🔄 v7.089 (Franco, telefono e desktop) - la frase nuova; l'inglese è mio
+        + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che raffigura gli articoli per la tua lista.' : 'Click on the tiles showing the items for your list.') + '</p>'
         + (gia ? '<p class="wz-testo">' + (it
             ? 'I quadranti già accesi si riferiscono ad articoli già nella tua lista.'
             : 'The tiles already selected are those for which you have items in your list.') + '</p>' : '')
@@ -49866,6 +49957,7 @@ function _wzDisegna(tieni) {
         + (w.sezSerie.includes('attaccare') && w.sezSerie.includes('albums') ? '<p class="wz-testo">' + (it
             ? 'I quadranti grigi si attivano da soli all\'occorrenza.'   // v7.057: la frase di Franco
             : 'The grey tiles become active by themselves when needed.') + '</p>' : '')
+        + '</div></div>'   // v7.089: fine di `wz-due`
         + '<div class="wz-scelte wz-scelte-tda">' + w.sezSerie.map(z => {   // v7.080: classe per lo spazio foto-titolo
             const grigia = z === 'attaccare' && !_wzFpaLibera();
             return '<button type="button" class="wz-carta' + (w.accese.has(z) ? ' on' : '') + (grigia ? ' wz-grigia' : '') + '"' + (grigia ? ' disabled' : '') + ' onclick="_wzToccaTda(\'' + z + '\')">'
@@ -49953,8 +50045,22 @@ function _wzDisegna(tieni) {
         // 🆕 v7.065 (Franco: «come vuoi selezionare le figurine che hai o le figurine che non hai? Opzione 1 cliccando
         //    sull'album, opzione 2 selezionandole da una griglia») - LA DOMANDA, solo dove la tipologia ha la mappa.
         const prop = c.pVista || 'album';
+        // 🔄 v7.089 (Franco: «nel box "Cliccando direttamente sulle pagine" l'icona del libro sostituiscila con la foto
+        //    del box "Figurine per album" dell'hub della serie; per "Selezionandole da una griglia" una piccola griglia
+        //    di 4 immagini, le foto delle prime 4 figurine di quella serie») - `figura` è l'HTML dell'immagine; senza
+        //    foto restano le icone di prima. Dove la serie non ha le Figurine album (i Mitici: la mappa è delle Figurine
+        //    con retro) la foto è quella della tipologia della schermata.
+        const figura = v => {
+          if (v === 'album') {
+            const u = _fotoSezioneSerie('attaccare', s.id) || _wzFotoSez(p, s.id);
+            return u ? '<div class="wz-carta-foto">' + _wzImg(u, 400, 300, '') + '</div>' : '<div class="wz-emoji">📖</div>';
+          }
+          const figs = getData('figurines', []);
+          const quattro = _wzArticoli(s.id, p).map(f => _fotoFigurina(f, figs) || f.img).filter(Boolean).slice(0, 4);
+          return quattro.length === 4 ? '<div class="wz-griglia4">' + quattro.map(u => _wzImg(u, 160, 200, '')).join('') + '</div>' : '<div class="wz-emoji">🔲</div>';
+        };
         const carta = (v, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (prop === v ? ' on' : '') + '" onclick="_wzVista(\'' + p + '\',\'' + v + '\')">'
-          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
+          + figura(v) + '<div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
         corpo += intest + '<div class="wz-domanda">' + (c.verso === 'ho'
             ? (it ? 'Come vuoi selezionare le figurine che hai?' : 'How do you want to select the stickers you have?')
             : (it ? 'Come vuoi selezionare le figurine che ti mancano?' : 'How do you want to select the stickers you are missing?')) + '</div>'
@@ -50034,6 +50140,14 @@ function _wzDisegna(tieni) {
       piede = indietro + '<button type="button" id="wz-salva" class="btn-primary wz-grande" onclick="_wzSalvaSerie()">'
         + (nuovi || tolti ? (it ? 'Salva e continua →' : 'Save and continue →') : (it ? 'Continua →' : 'Continue →')) + '</button>';
     }
+    // 🆕 v7.089 (Franco: «i tasti "Prosegui" e "Torna indietro" mettili anche in alto, sotto alla barra di
+    //    progresso») - nelle schermate di una serie (quelle con la barra) una copia del piede subito sotto la
+    //    testa. Solo i due pulsanti: il conto delle selezionate e «Salta serie» restano in basso (quello in alto
+    //    ha già il suo, accanto al nome della serie), e la copia non ha id, così non ci sono doppioni.
+    const testa = _wzTesta(s);
+    const copia = piede.replace(/<span class="wz-conto-testo">[\s\S]*?<\/span><\/span>/, '').replace(/<button[^>]*wz-centro[\s\S]*?<\/button>/, '')
+      .replace('id="wz-salva" class="', 'class="wz-salva-copia ');
+    if (copia && corpo.startsWith(testa)) corpo = testa + '<div class="wz-piede wz-piede-alto">' + copia + '</div>' + corpo.slice(testa.length);
   }
   // 🆕 v7.055 (Franco: «deve essere sempre possibile uscire dal questionario, non solo la prima pagina») - in cima a
   //    ogni schermata che non ne ha già una via (la prima ha il suo pulsante, la finale «Chiudi», le conferme le loro).
@@ -50042,7 +50156,7 @@ function _wzDisegna(tieni) {
   //    in fondo a dx; aggiungi anche una icona rappresentativa della uscita») - 🚪 al posto di ✕, e una seconda
   //    copia in fondo a destra, sotto il piede (`.wz-esci-basso`, che il foglio accende solo sopra gli 860px).
   // 🔄 v7.088 (Franco) - anche la prima schermata, che prima aveva il suo «Esci» nel piede, a sinistra.
-  const _wzConEsci = !['esci', 'azzera1', 'azzera2', 'finale'].includes(w.passo);
+  const _wzConEsci = !['esci', 'uscita', 'azzera1', 'azzera2', 'finale'].includes(w.passo);   // v7.089: e il riepilogo
   const _wzBtnEsci = '<button type="button" class="btn-secondary wz-esci wz-scritta-rossa" onclick="_wzChiediEsci()">🚪 ' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';
   if (_wzConEsci) corpo = '<div class="wz-esci-alto">' + _wzBtnEsci + '</div>' + corpo;
   const _wzY = ov.scrollTop;
@@ -60179,19 +60293,27 @@ function switchToEditMode(figId) {
     //    colonna sta. Scrivere un secondo riquadro «per il tab Generale» sarebbe stata la copia
     //    numero due di un markup che questo file tiene in una funzione sola dalla v6.074, e che
     //    la v6.599 sa gia' ridisegnare da solo.
-    const _fotoHTML = (_dueFacce ? '<div style="display:flex;gap:0.3rem;align-items:flex-start;">' : '')
+    // 🆕 v7.089 - `.fe-due-foto` tiene insieme la riga delle due foto e quella dei tre tasti, così i tasti si
+    //    misurano sulle foto e non sulla colonna (vedi la regola nell'index).
+    const _fotoHTML = (_dueFacce ? '<div class="fe-due-foto"><div style="display:flex;gap:0.3rem;align-items:flex-start;">' : '')
       + _slotFotoEdit('fronte', f.img, f, _dueFacce)
       + (_dueFacce ? _slotFotoEdit('retro', f.imgRetro, f, _dueFacce) + '</div>' : '')
       // 🆕 v7.087 (Franco: «posizionalo centrato, che cade a metà sotto la prima foto e a metà sotto l'altra»)
       // 🆕 v7.087 (Franco: «un pulsante "Carica entrambe le foto" che seleziona 2 foto, una la usa come fronte ed
       //    una come retro») - sopra «Rimuovi sfondo da entrambe»: chi mette sta sopra, chi toglie sotto (v6.605).
       //    Accanto «⇄ Scambia», per quando le due foto finiscono al contrario (vedi `handleEntrambeFoto`).
-      + (_dueFacce ? '<div style="display:flex;justify-content:center;gap:0.4rem;flex-wrap:wrap;margin-top:0.4rem;">'
-          + '<label style="cursor:pointer;"><span class="btn-foto" style="display:inline-block;">\u{1F4F7} ' + (currentLang === 'it' ? 'Carica entrambe le foto' : 'Upload both photos') + '</span>'
+      // 🔄 v7.089 (Franco: «i tre tasti mettili su una sola riga, usando esattamente lo spazio occupato dalla coppia
+      //    di finestre che ospitano le due foto; così è tutto ben allineato») - UNA RIGA, `.fe-tre-tasti`: è larga
+      //    quanto la riga delle due foto (stesso genitore, stesso spazio fra i pezzi, 0,3rem) e i tre tasti se la
+      //    dividono (`flex: 1 1 0`, regola nell'index), quindi il bordo sinistro del primo e il destro dell'ultimo
+      //    cadono sui bordi delle due foto. Ordine: chi mette, chi scambia, chi toglie.
+      + (_dueFacce ? '<div class="fe-tre-tasti">'
+          + '<label><span class="btn-foto">\u{1F4F7} ' + (currentLang === 'it' ? 'Carica entrambe le foto' : 'Upload both photos') + '</span>'
           + '<input type="file" accept="image/*" multiple style="display:none;" onchange="handleEntrambeFoto(event)"></label>'
-          + '<button type="button" class="btn-foto" onclick="scambiaFronteRetro()">⇄ ' + (currentLang === 'it' ? 'Scambia' : 'Swap') + '</button></div>'
-          + '<div style="text-align:center;margin-top:0.4rem;"><button type="button" id="fe-bg-entrambe" class="btn-foto" onclick="removeBgEntrambe()">✨ '
-          + (currentLang === 'it' ? 'Rimuovi sfondo da entrambe' : 'Remove background from both') + '</button></div>' : '')
+          + '<button type="button" class="btn-foto" onclick="scambiaFronteRetro()">⇄ ' + (currentLang === 'it' ? 'Scambia' : 'Swap') + '</button>'
+          // v7.089: spento se manca una delle due foto (poi lo tiene aggiornato `_aggiornaBgEntrambe`)
+          + '<button type="button" id="fe-bg-entrambe" class="btn-foto" onclick="removeBgEntrambe()"' + (f.img && f.imgRetro ? '' : ' disabled title="' + (currentLang === 'it' ? 'Servono tutte e due le foto, fronte e retro' : 'Both photos are needed, front and back') + '"') + '>✨ '
+          + (currentLang === 'it' ? 'Rimuovi sfondo da entrambe' : 'Remove background from both') + '</button></div></div>' : '')
       // 🔄 v6.857 (Franco: «metti un tab apposito, per le pagine dell'album, nella scheda
       //    dell'album ... tra il tab Generale ed il tab Ebay») - LE PAGINE NON STANNO PIU' QUI.
       //    Erano sotto i riquadri delle facce, in coda a una colonna da 320px: N miniature
@@ -61030,6 +61152,24 @@ function _ridisegnaSlotFoto(slot) {
   const url = (pend === '__remove__') ? ''
             : (pend || (slot === 'retro' ? _figSlotF.imgRetro : _figSlotF.img));
   cont.outerHTML = _slotFotoEdit(slot, url, _figSlotF);
+  // v7.089: una foto entrata o uscita cambia se «Rimuovi sfondo da entrambe» si può premere. Nel `try` perché
+  //    il tasto è un di più: se qualcosa va storto lì, il riquadro è già ridisegnato (e prova-v6599 esegue questa
+  //    funzione in un banco che `_aggiornaBgEntrambe` non lo ha).
+  try { _aggiornaBgEntrambe(); } catch (e) {}
+}
+// 🆕 v7.089 (Franco: «il tasto "Rimuovi sfondo da entrambe" non dovrebbe essere premibile se non ci sono già due
+//    foto caricate») - spento finché fronte e retro non hanno tutti e due una foto (quella salvata o una appena
+//    caricata). Lo accende il disegno della scheda (`disabled` già nel markup) e ogni ridisegno di un riquadro.
+function _fotoNelRiquadro(slot) {
+  const p = document.getElementById(_SLOT_FOTO[slot].preview);
+  return !!(p && p.src && p.tagName === 'IMG' && p.src !== window.location.href);
+}
+function _aggiornaBgEntrambe() {
+  const b = document.getElementById('fe-bg-entrambe');
+  if (!b || b.dataset.lavora) return;   // mentre lavora resta spento: lo riaccende lei alla fine
+  const due = _fotoNelRiquadro('fronte') && _fotoNelRiquadro('retro');
+  b.disabled = !due;
+  b.title = due ? '' : (currentLang === 'it' ? 'Servono tutte e due le foto, fronte e retro' : 'Both photos are needed, front and back');
 }
 
 // 🔄 v6.866 - `stretto` dice che i due riquadri stanno AFFIANCATI: allora ognuno prende meta'
@@ -62597,9 +62737,13 @@ async function removeBgEntrambe() {
   const conFoto = slot => { const p = document.getElementById(_SLOT_FOTO[slot].preview); return !!(p && p.src && p.tagName === 'IMG' && p.src !== window.location.href); };
   const slots = ['fronte', 'retro'].filter(conFoto);
   if (!slots.length) { toast(it ? 'Carica prima una foto' : 'Upload a photo first', 'error'); return; }
-  if (b) { b.disabled = true; b.textContent = '\u23F3 ' + (it ? 'Una alla volta\u2026' : 'One at a time\u2026'); }
+  if (b) { b.disabled = true; b.dataset.lavora = '1'; b.textContent = '\u23F3 ' + (it ? 'Una alla volta\u2026' : 'One at a time\u2026'); }
   try { for (const s of slots) await removeBgFromEdit(s); }
-  finally { if (b) { b.disabled = false; b.textContent = '\u2728 ' + (it ? 'Rimuovi sfondo da entrambe' : 'Remove background from both'); } }
+  finally {
+    // v7.089: alla fine non si riaccende per forza, si rif\u00E0 la domanda \u00ABci sono due foto?\u00BB
+    const b2 = document.getElementById('fe-bg-entrambe');
+    if (b2) { delete b2.dataset.lavora; b2.textContent = '\u2728 ' + (it ? 'Rimuovi sfondo da entrambe' : 'Remove background from both'); _aggiornaBgEntrambe(); }
+  }
 }
 
 // v6.189 - lo stesso bottone sulla COPERTINA DELLA SERIE.
@@ -64547,11 +64691,29 @@ function updateOwnedCounter() {
   }
 
   // Navbar counter
+  // 🔄 v7.089 (Franco: «il box nella navbar che mostra il numero di articoli in possesso rispetto al totale,
+  //    togliamolo, è troppo lungo; mettiamo un contatore che mostra il proprio punteggio e la posizione in
+  //    classifica») - «🏆 3° · 49.432 punti», su una riga; cliccandolo si apre la Classifica.
+  //    📌 Il punteggio si conta qui, come lo conta `_updatePublicScore` (stessi articoli, stessa somma): quello
+  //    pubblicato arriva dopo il salvataggio, e il box resterebbe indietro di un clic. Gli altri vengono da
+  //    `public_profiles`, come nella Classifica, che a zero punti non elenca nessuno: a zero, niente posizione.
+  //    A pari punti la posizione è la migliore (chi ha di più, più uno).
   const navEl = document.getElementById('nav-owned-counter');
   if (navEl) {
     if (currentUser && !currentUser.isAdmin) {
+      const it = currentLang === 'it';
+      const mio = _articoliDaContareSito().filter(f => owned.includes(f.id)).reduce((s, f) => s + (f.score || 0), 0);
+      const davanti = getData('public_profiles', []).filter(p => p && p.id && p.id !== currentUser.id && (p.score || 0) > mio).length;
+      const pos = davanti + 1;
+      const ordinale = it ? pos + '°' : pos + ((pos % 100 >= 11 && pos % 100 <= 13) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[pos % 10] || 'th'));
       navEl.style.display = '';
-      navEl.innerHTML = '<div style="font-size:0.7rem;opacity:0.75;line-height:1.2;">' + (currentLang === 'it' ? 'Figurine nella tua lista' : "My list's stickers") + '</div><div style="font-size:0.7rem;line-height:1.2;">' + ownedCount + ' / ' + total + '</div>';
+      navEl.style.cursor = 'pointer';
+      navEl.title = it ? 'Apri la Classifica' : 'Open the Leaderboard';
+      navEl.onclick = () => showPage('classifica');
+      // il singolare a mano e non con `_codaPunti`: qui il numero c'è già, e questa funzione gira anche nei banchi
+      //    di prova-v6824, che `_codaPunti` non lo hanno
+      navEl.innerHTML = '🏆 ' + (mio > 0 ? ordinale + ' · ' : '') + mio.toLocaleString(it ? 'it-IT' : 'en-US')
+        + (it ? (mio === 1 ? ' punto' : ' punti') : (mio === 1 ? ' point' : ' points'));
     } else {
       navEl.style.display = 'none';
     }
