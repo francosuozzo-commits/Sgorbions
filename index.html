@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.098">
+<link rel="stylesheet" href="css/style.css?v=7.099">
 
 
 <style>
@@ -648,7 +648,14 @@
   .wz-popup-coppia img:nth-child(2) { left: 26px; top: 2px; transform: rotate(7deg); }
   .wz-popup-coppia.una img:first-child { left: 15px; top: 5px; transform: none; }
   .wz-popup-lista li:has(.wz-popup-coppia) .wz-popup-foto { display: none; }
-  /* 🆕 v7.096 (Franco) - le Figurine con retro: quattro foto in una griglia 2×2 (due fronti sopra, due retro sotto),
+  /* 🆕 v7.099 (Franco, fra tre proposte: «proviamo con la C») - I PULSANTI SECONDARI DEL QUESTIONARIO bianchi con la
+   scritta viola: «Vai indietro», «Tocca tutte», «Nessuna», le pagine dell'album, «2 pagine / Sinistra / Destra»,
+   «Modifica»… Stessa forma di «Esci» e «Salta» (`.wz-scritta-rossa`, che restano rossi), col viola del titolo del
+   Questionario. Restano come sono «Prosegui» (blu, `.btn-primary`) e i pulsanti accesi: verde `.wz-cmd-on`, giallo
+   `.wz-on`, che hanno già i loro `!important`. */
+#wz-overlay .btn-secondary:not(.wz-scritta-rossa):not(.wz-on):not(.wz-cmd-on) { background: #ffffff; color: #8a2bc2; border-color: #c84bff; font-weight: 700; }
+#wz-overlay .btn-secondary:not(.wz-scritta-rossa):not(.wz-on):not(.wz-cmd-on):hover:not(:disabled) { background: #f3e8ff; color: #6d1f9c; }
+/* 🆕 v7.096 (Franco) - le Figurine con retro: quattro foto in una griglia 2×2 (due fronti sopra, due retro sotto),
      nello stesso spazio del mazzetto; diritte e senza sovrapporsi, come un'immagine sola */
   .wz-popup-coppia.wz-popup-quattro { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: 46px 32px; gap: 3px; height: auto; }
   .wz-popup-coppia.wz-popup-quattro img { position: static; transform: none; width: 100%; height: 100%; }
@@ -2440,7 +2447,8 @@ button.back-btn { color:#ffffff; }
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('classifica')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">🏆</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="hero.challenge">Sfida gli altri collezionisti</h3>
-          <p style="font-size:0.88rem;" data-i18n="hero.challengeDesc">Chi ha la lista con maggior punteggio? Puoi anche scegliere di apparire in modo anonimo.</p>
+          <!-- 🔄 v7.099 (Franco: «Chi ha la lista con maggior punteggio rarità? Puoi anche apparire come anonimo.») -->
+          <p style="font-size:0.88rem;" data-i18n="hero.challengeDesc">Chi ha la lista con maggior punteggio rarità? Puoi anche apparire come anonimo.</p>
         </div>
       </div>
     </div>
@@ -6114,7 +6122,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.098"></script>
+<script src="js/app.js?v=7.099"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6138,7 +6146,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.098'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.099'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
