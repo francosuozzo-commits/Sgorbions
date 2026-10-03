@@ -1,7 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.087 - Modificato index.html e js/app.js. Desktop (Franco): i titoli delle otto pagine tutti uguali — font,
+// v7.088 - Modificato js/app.js (e index per la versione). Ricerca dei personaggi (Franco): il riquadro «Filtri
+//          admin» con «Senza foto» (i personaggi la cui card non ha foto, `_fotoPersonaggio`) e «Alter ego», che
+//          stava fra i filtri per tutti. Questionario, desktop (Franco): l'«Esci» in fondo allineato a quello in
+//          cima (`sticky` dentro la schermata, non più `fixed` sul bordo dello schermo); e i due «Esci» anche nella
+//          prima schermata, al posto di quello che stava nel piede. Home, desktop (Franco): la linguetta
+//          «🗂️ Inventario» (`#inv-linguetta`) sotto quella del questionario, al passaggio del mouse «Esplora
+//          l'Inventario Sgorbions» (`inv.linguetta`); apre l'Inventario.
+// v7.087 -Modificato index.html e js/app.js. Desktop (Franco): i titoli delle otto pagine tutti uguali — font,
 //          misura, colore, al centro e subito sotto la barra come l'Inventario (`.titolo-pagina`); la voce
 //          «Questionario» nella navbar; la LINGUETTA del questionario fissa sul bordo sinistro, in alto, blu, di ogni pagina
 //          (`#wz-linguetta`, al passaggio del mouse «Crea la tua lista Sgorbions col Questionario»). Tutte e due
@@ -30741,7 +30748,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.087';
+const JS_VERSION = 'v7.088';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32380,7 +32387,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.questionarioBreve':'Questionnaire','wz.linguetta':'Build your Sgorbions list with the Questionnaire','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.questionarioBreve':'Questionnaire','wz.linguetta':'Build your Sgorbions list with the Questionnaire','inv.linguetta':'Explore the Sgorbions Inventory','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -32469,7 +32476,7 @@ const i18n = {
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with backs) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in your list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in your list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Liste','nav.questionarioBreve':'Questionario','wz.linguetta':'Crea la tua lista Sgorbions col Questionario','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Liste','nav.questionarioBreve':'Questionario','wz.linguetta':'Crea la tua lista Sgorbions col Questionario','inv.linguetta':'Esplora l\'Inventario Sgorbions','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
@@ -42393,6 +42400,10 @@ let _personaggioAperto = null;
 //    FRONTE: una figurina che c'è perché lui sta sul retro non è «una sua figurina».
 let _personaggiSenzaFigurine = false;
 let _personaggiAlterEgo = false;   // 🆕 v6.972 - l'interruttore admin «Alter ego» dell'hub
+// 🆕 v7.088 (Franco: «sulla form della ricerca personaggi metterei una sezione "Filtri admin" con una spunta
+//    "Senza foto" che mostra i personaggi che nella griglia non hanno una foto») - la foto è quella della card,
+//    cioè `_fotoPersonaggio`: «senza foto» vuol dire che la card mostra il segnaposto.
+let _personaggiSenzaFoto = false;
 // 🆕 v6.980 (Franco: «nella maschera di ricerca PERS mettiamo un rettangolo per la ricerca nelle serie;
 //    dentro al rettangolo metti dei selettori a pillola, uno per serie; premendoli si cercano PERS
 //    coinvolti nella serie o nelle selezionate; il rettangolo ha il nome "Filtra per serie"») - LE
@@ -42460,7 +42471,8 @@ function renderCatalogPersonaggi(grid) {
   //    primo elenco, così ogni pillola dice quanti ne troveresti accendendo lei.
   const senzaSerie = _personaggiDati.elenco.filter(p => (soloAlterEgo ? principaleDi.has(p.id) : !principaleDi.has(p.id))
     && (!q || (soloAlterEgo ? [p.nome] : nomiDi(p)).some(n => _perRicerca(n).includes(q)))
-    && (!_personaggiSenzaFigurine || !_haFigurineSue(p.id, articoliDelPersonaggio(p.id, ix), ix)));
+    && (!_personaggiSenzaFigurine || !_haFigurineSue(p.id, articoliDelPersonaggio(p.id, ix), ix))
+    && (!(currentUser?.isAdmin && _personaggiSenzaFoto) || !_fotoPersonaggio(articoliDelPersonaggio(p.id, ix), p.id, ix)));   // v7.088
   const tutti = !_personaggiSerie.size ? senzaSerie
     : senzaSerie.filter(p => [..._seriePersonaggio(p.id, ix)].some(s => _personaggiSerie.has(s)));
   // Le pillole: una per serie che ha almeno un personaggio, nell'ordine delle serie. Una serie
@@ -42492,7 +42504,7 @@ function renderCatalogPersonaggi(grid) {
     + '<div id="personaggi-search-box" style="background:var(--card);border:1px solid var(--action);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-bottom:0.9rem;">'
     + '<div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.75rem;">'
     + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? 'Imposta i criteri per la tua ricerca' : 'Set your search criteria') + '</div>'
-    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiSerie=new Set();_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>'
+    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiSenzaFoto=false;_personaggiSerie=new Set();_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>'
     + '</div>'
     + '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;">'
     + '<span style="' + _etichettaBordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + t('items.searchHint')   /* v6.972 (Franco): la stessa etichetta delle form di serie e TDA */ + '</span>'
@@ -42512,11 +42524,19 @@ function renderCatalogPersonaggi(grid) {
     + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);">'
     + '<button type="button" class="toggle-btn-blue ' + (_personaggiSenzaFigurine ? 'on' : '') + '" onclick="_personaggiSenzaFigurine=!_personaggiSenzaFigurine;_personaggiPagina=1;renderCatalog();"></button>'
     + (it ? 'Senza figurine' : 'Without stickers') + '</label>'
-    // 🆕 v6.972 (Franco: «solo l'admin può cercare [gli alter ego], mediante apposito flag "Alter ego"»)
-    + (currentUser?.isAdmin ? '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);margin-left:1.4rem;">'
+    + '</div>'
+    // 🆕 v7.088 (Franco) - «Filtri admin», un riquadro suo, dopo quello dei filtri per tutti: dentro «Senza foto»
+    //    e «Alter ego» (v6.972), che stava fra i filtri per tutti con la scritta «(admin)» accanto.
+    + (currentUser?.isAdmin ? '<div id="personaggi-filtri-admin" style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
+      + '<div style="' + _etichettaBordo + '">' + (it ? 'Filtri admin' : 'Admin filters') + '</div>'
+      + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);">'
+      + '<button type="button" class="toggle-btn-blue ' + (_personaggiSenzaFoto ? 'on' : '') + '" onclick="_personaggiSenzaFoto=!_personaggiSenzaFoto;_personaggiPagina=1;renderCatalog();"></button>'
+      + (it ? 'Senza foto' : 'Without photo') + '</label>'
+      // 🆕 v6.972 (Franco: «solo l'admin può cercare [gli alter ego], mediante apposito flag "Alter ego"»)
+      + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);margin-left:1.4rem;">'
       + '<button type="button" class="toggle-btn-blue ' + (_personaggiAlterEgo ? 'on' : '') + '" onclick="_personaggiAlterEgo=!_personaggiAlterEgo;_personaggiPagina=1;renderCatalog();"></button>'
-      + 'Alter ego <span style="color:var(--muted);font-size:0.78rem;">(admin)</span></label>' : '')
-    + '</div></div>'
+      + 'Alter ego</label></div>' : '')
+    + '</div>'
     // 🔄 v6.972 (Franco: «prima di esporre i risultati manca anche questa sezione, che per figurine e
     //    TDA abbiamo: I risultati della tua ricerca: 2 articoli trovati») - la forma di
     //    `updateItemsCountDisplay`: il titolo sopra, il numero a 1,5rem nel colore d'accento.
@@ -49753,7 +49773,8 @@ function _wzDisegna(tieni) {
   let ov = document.getElementById('wz-overlay');
   if (!ov) { ov = document.createElement('div'); ov.id = 'wz-overlay'; ov.className = 'wz-overlay'; document.body.appendChild(ov); document.body.style.overflow = 'hidden'; }
   // 🔄 v7.050 (Franco: «il tasto Esci chiamalo Esci dal questionario, e chiedi conferma per uscire»)
-  const esci = '<button type="button" class="btn-secondary wz-esci wz-scritta-rossa" onclick="_wzChiediEsci()">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';   // v7.058: rosso (Franco)
+  // 🔄 v7.088 (Franco: «devono essere 2 anche lì e nella stessa posizione delle altre pagine») - la prima schermata
+  //    non ha più il suo pulsante nel piede: prende i due di tutte le altre (`_wzBtnEsci`, in fondo a questa funzione).
   const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">← ' + (it ? '<span class="wz-solo-desktop">Torna</span><span class="wz-solo-tel">Vai</span> indietro' : 'Go back') + '</button>';
   // 🔄 v7.052 (Franco: «Cambia "Avanti" con "Prosegui"»)
   const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Prosegui →' : 'Next →') + '</button>';
@@ -49777,7 +49798,8 @@ function _wzDisegna(tieni) {
     const nMie = getOwned().length;
     if (nMie || _wzFatto) corpo += '<div style="text-align:center;margin-top:3rem;"><button type="button" class="btn-secondary wz-azzera" onclick="_wzAzzera(\'azzera1\')">🗑️ '
       + (it ? 'Azzera la mia lista e ricomincia il questionario' : 'Reset my list and restart the questionnaire') + '</button></div>';
-    piede = esci;   // v7.050: «Inizia» è salito nel corpo
+    // v7.050: «Inizia» è salito nel corpo; v7.088: e l'uscita sta in cima e in fondo come nelle altre schermate
+    piede = '';
   } else if (w.passo === 'esci') {
     // 🆕 v7.050 - la conferma dell'uscita
     corpo = '<div class="wz-titolo">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</div>'
@@ -50019,7 +50041,8 @@ function _wzDisegna(tieni) {
   // 🔄 v7.087 (Franco, desktop: «il tasto per uscire dal questionario mettilo sia in alto che in basso allo schermo,
   //    in fondo a dx; aggiungi anche una icona rappresentativa della uscita») - 🚪 al posto di ✕, e una seconda
   //    copia in fondo a destra, sotto il piede (`.wz-esci-basso`, che il foglio accende solo sopra gli 860px).
-  const _wzConEsci = !['intro', 'esci', 'azzera1', 'azzera2', 'finale'].includes(w.passo);
+  // 🔄 v7.088 (Franco) - anche la prima schermata, che prima aveva il suo «Esci» nel piede, a sinistra.
+  const _wzConEsci = !['esci', 'azzera1', 'azzera2', 'finale'].includes(w.passo);
   const _wzBtnEsci = '<button type="button" class="btn-secondary wz-esci wz-scritta-rossa" onclick="_wzChiediEsci()">🚪 ' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';
   if (_wzConEsci) corpo = '<div class="wz-esci-alto">' + _wzBtnEsci + '</div>' + corpo;
   const _wzY = ov.scrollTop;
