@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.089">
+<link rel="stylesheet" href="css/style.css?v=7.090">
 
 
 <style>
@@ -814,8 +814,8 @@ body:not(.wz-visibile) #inv-linguetta { top: 80px; }
    senza il suo spazio sotto (quello serve solo in fondo) e un poco staccata dalla barra. */
 .wz-piede.wz-piede-alto { margin: 0.7rem auto 0.4rem; padding: 0; max-width: none; }
 /* 🆕 v7.089 (Franco) - i tre tasti sotto le due foto della scheda in modifica, su una riga larga quanto le foto.
-   Si dividono lo spazio in proporzione alle scritte: «Scambia» più stretto, gli altri due più larghi
-   (2 : 1 : 2.4). Scritta più piccola perché ci stia; se non ci sta, i puntini. Misurato: nell'album a 1920 le
+   (v7.090: i tasti sono diventati due, «Scambia» è salito sulle foto; prima si dividevano 2 : 1 : 2.4.)
+   Scritta più piccola perché ci stia; se non ci sta, i puntini. Misurato: nell'album a 1920 le
    foto vanno da 1030 a 1492 e la riga pure, nessuna scritta tagliata. */
 /* 🔴 `width: 0; min-width: 100%` e non `width: 100%` (Franco, con una foto: «si vede come il tasto fuoriesce dallo
    spazio che ti avevo indicato»): dove la colonna delle foto è larga quanto il suo contenuto, la riga dei tasti
@@ -823,12 +823,19 @@ body:not(.wz-visibile) #inv-linguetta { top: 80px; }
 /* E le due righe stanno in `.fe-due-foto`, una colonna senza larghezza sua: dove il genitore è un blocco è larga
    quanto lui (come prima), dove il genitore la stringe al contenuto è larga quanto le due foto - e i tasti, che
    non chiedono spazio, la seguono. */
-.fe-due-foto { display: flex; flex-direction: column; }
+.fe-due-foto { display: flex; flex-direction: column; position: relative; }
+/* 🔄 v7.090 (Franco) - «⇄ Scambia» a cavallo dei due riquadri: al centro in orizzontale (lo spazio fra le due foto è
+   a metà), e in verticale al centro della foto - la foto è alta 200px e sopra ha la sua etichetta («Fronte»,
+   «Retro»), 20px. Sopra le foto (`z-index`), con l'ombra perché si stacchi da tutte e due.
+   E gli altri due tasti si dividono la riga a metà: larghi ognuno quanto la foto sopra. */
+.fe-due-foto > .fe-scambia { position: absolute; left: 50%; top: 118px; transform: translate(-50%, -50%); z-index: 2;
+  font-size: 0.75rem; padding: 5px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.55); }
 .fe-tre-tasti { display: flex; gap: 0.3rem; margin-top: 0.4rem; width: 0; min-width: 100%; box-sizing: border-box; }
-.fe-tre-tasti > label { flex: 2 1 0; min-width: 0; display: flex; cursor: pointer; margin: 0; }
+/* metà riga a testa, meno metà dello spazio fra i due: proprio come le due foto (con `flex: 1 1 0` il tasto con
+   l'imbottitura propria veniva 10px più largo dell'etichetta, misurato 363 e 373 su foto da 368) */
+.fe-tre-tasti > label, .fe-tre-tasti > button { flex: 0 0 calc(50% - 0.15rem); box-sizing: border-box; }
+.fe-tre-tasti > label { min-width: 0; display: flex; cursor: pointer; margin: 0; }
 .fe-tre-tasti > label > .btn-foto { flex: 1; min-width: 0; }
-.fe-tre-tasti > button:nth-of-type(1) { flex: 1 1 0; }
-.fe-tre-tasti > button:nth-of-type(2) { flex: 2.4 1 0; }
 .fe-tre-tasti .btn-foto { min-width: 0; font-size: 0.72rem; padding: 6px 4px; overflow: hidden; text-overflow: ellipsis; }
 /* 🆕 v7.089 (Franco) - il riepilogo dell'uscita dal questionario: per ogni serie la copertina piccola col nome e
    una tabella (tipologia, nella tua lista, aggiunti col questionario), i numeri allineati a destra. */
@@ -6099,7 +6106,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.089"></script>
+<script src="js/app.js?v=7.090"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6123,7 +6130,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.089'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.090'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
