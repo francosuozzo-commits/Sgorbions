@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.111">
+<link rel="stylesheet" href="css/style.css?v=7.112">
 
 
 <style>
@@ -1940,7 +1940,7 @@ button.back-btn { color:#ffffff; }
      l'accesso. -->
 <button type="button" id="inv-linguetta" onclick="showPage('catalog')" aria-label="Esplora l'Inventario Sgorbions">
   <span class="wz-ling-corta">🗂️ <span data-i18n="nav.catalog">Inventario</span></span>
-  <span class="wz-ling-lunga" data-i18n="inv.linguetta">Esplora l'Inventario Sgorbions</span>
+  <span class="wz-ling-lunga" data-i18n="inv.linguetta">Esplora l'Inventario Sgorbions !</span>   <!-- v7.112: col «!» (Franco) -->
 </button>
 <!-- 🆕 v7.110 (Franco) - LA LINGUETTA DI «CIÒ CHE CERCO»: in tutte le pagine, solo sul desktop, a chi ha fatto
      l'accesso e non è admin (come la voce della barra dalla v7.089: la accende `updateNavUser`). -->
@@ -2365,7 +2365,8 @@ button.back-btn { color:#ffffff; }
            solo per i titoli grandi»), e centrato come ha chiesto. -->
       <!-- 🔄 v7.083 (Franco: «il titolo del carosello della home si chiama figurine ma non contiene solo
            figurine. Chiamalo "Gli articoli Sgorbions"») -->
-      <h2 class="carosello-titolo" data-i18n="home.figurine">Gli articoli Sgorbions</h2>
+      <!-- 🔄 v7.112 (Franco: «anche su mobile: il titolo del carosello della home diventa "Gli articoli Sgorbions censiti nel sito"») -->
+      <h2 class="carosello-titolo" data-i18n="home.figurine">Gli articoli Sgorbions censiti nel sito</h2>
       <!-- v6.065 (Franco) — via il titolo "Un assaggio dall'Inventario": le figurine si spiegano
            da sole, e una riga di titolo sopra una fila di immagini e' spazio che non aggiunge
            niente. Tolte anche le due voci dal dizionario: una chiave che nessuno usa piu' e' una
@@ -6175,7 +6176,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.111"></script>
+<script src="js/app.js?v=7.112"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6199,7 +6200,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.111'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.112'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
