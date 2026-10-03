@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.117 - Modificato js/app.js (e index per la versione). Pagina di sezione della serie (Franco): «Opzioni» sempre
+//          sotto la copertina piccola, spostato con `transform` così il titolo resta centrato.
 // v7.116 - Modificato js/app.js (e index per la versione). TODO 2, ritocco di Franco: nell'elenco degli articoli
 //          dei personaggi il nome della serie per esteso e in azzurro (`--info`).
 // v7.115 - Modificato js/app.js (e index per la versione). TODO 2 di Franco: nella ricerca globale ogni personaggio
@@ -30849,7 +30851,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.116';
+const JS_VERSION = 'v7.117';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -48490,13 +48492,24 @@ function _disegnaNavSerie() {
 function _opzioniSottoLaCopertina() {
   const menu = document.getElementById('detail-admin-menu'), mini = document.getElementById('detail-cover-serie');
   if (!menu) return;
-  // `top` e non `margin-top`: si sposta solo lui, e il resto della testata non scende (col margine scendeva di ~40px)
-  menu.style.position = ''; menu.style.top = '';
+  // 🔄 v7.117 (Franco: «il tasto Opzioni deve andare sotto alla foto della serie; a causa di dove lo hai messo ora il
+  //    titolo della pagina non è più centrato; lo hai messo alla sx dell'immagine») - SEMPRE SOTTO LA COPERTINA PICCOLA,
+  //    quando c'è, e spostato con `transform`: nella riga resta al suo posto, quindi il titolo (centrato nello spazio
+  //    accanto a lui, regola v7.040) non si muove, e a vista sta sotto la foto, col bordo sinistro allineato al suo.
+  //    📌 Misurato: anche spostato con `transform`, «Opzioni» teneva il suo posto nella riga e il titolo si centrava
+  //    nello spazio rimasto (a 1920 il centro del titolo era a 797px su 960). Quindi nelle pagine con la copertina
+  //    piccola esce dalla riga (`position:absolute`, appoggiato sotto la copertina) e il titolo si centra su tutto.
+  // 🔴 si riparte da `position:relative`, che il menu ha scritto nell'index: azzerarlo a '' (v7.115-116) gli toglieva
+  //    lo spostamento a destra della v7.040 anche nella pagina principale della serie, e il titolo si scentrava
+  menu.style.transform = ''; menu.style.position = 'relative'; menu.style.top = ''; menu.style.left = ''; menu.style.right = '';
   if (!mini || !mini.firstChild || !mini.getClientRects().length) return;
-  const a = menu.getBoundingClientRect(), b = mini.getBoundingClientRect();
-  if (!a.width || !b.width) return;
-  const siToccano = a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-  if (siToccano) { menu.style.position = 'relative'; menu.style.top = Math.round(b.bottom - a.top + 8) + 'px'; }
+  const area = menu.offsetParent || document.body;
+  const b = mini.getBoundingClientRect(), r = area.getBoundingClientRect();
+  if (!b.width) return;
+  menu.style.position = 'absolute';
+  menu.style.right = 'auto';
+  menu.style.left = Math.round(b.left - r.left) + 'px';
+  menu.style.top = Math.round(b.bottom - r.top + 8) + 'px';
 }
 window.addEventListener('resize', () => { try { _opzioniSottoLaCopertina(); } catch (e) {} });
 function openSeriesDetail(seriesId) {
