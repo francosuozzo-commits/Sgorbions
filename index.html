@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.107">
+<link rel="stylesheet" href="css/style.css?v=7.108">
 
 
 <style>
@@ -692,7 +692,12 @@
   display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.8rem 0.6rem 0.9rem; border: none; cursor: pointer;
   border-radius: 0 12px 12px 0; background: var(--action); color: #fff; font-family: var(--font-ui); font-weight: 700;
   font-size: 0.9rem; white-space: nowrap; box-shadow: 3px 3px 12px rgba(0,0,0,0.45); }
-#wz-linguetta .wz-ling-lunga { display: inline-block; max-width: 0; overflow: hidden; opacity: 0; transition: max-width 0.3s ease, opacity 0.2s ease; }
+/* 🐛 v7.108 (Franco: «le linguette sono premibili solo all'inizio a sx; passando il mouse da altre parti l'etichetta
+   vibra, appare-scompare, e non è cliccabile») - LA LARGHEZZA NON SI ANIMA PIÙ. La scritta corta spariva subito e
+   quella lunga partiva da larghezza 0: per un attimo la linguetta era stretta, il mouse ne usciva, lei tornava
+   corta, e da capo. Adesso la lunga arriva subito intera (è sempre più larga della corta, quindi il mouse resta
+   sopra) e si accende con la sola dissolvenza. Vale anche per quella dell'Inventario, qui sotto. */
+#wz-linguetta .wz-ling-lunga { display: inline-block; max-width: 0; overflow: hidden; opacity: 0; transition: opacity 0.2s ease; }
 #wz-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga { position: absolute; }
 #wz-linguetta:hover .wz-ling-corta, #wz-linguetta:focus-visible .wz-ling-corta { display: none; }
 #wz-linguetta:hover .wz-ling-lunga, #wz-linguetta:focus-visible .wz-ling-lunga { max-width: 26rem; opacity: 1; }
@@ -709,7 +714,7 @@ body:not(.wz-visibile) #inv-linguetta { top: 80px; }
    dell'Inventario sale al suo posto */
 body:not(.wz-ripresa) #wz-linguetta { display: none !important; }
 body:not(.wz-ripresa) #inv-linguetta { top: 80px; }
-#inv-linguetta .wz-ling-lunga { display: inline-block; max-width: 0; overflow: hidden; opacity: 0; transition: max-width 0.3s ease, opacity 0.2s ease; }
+#inv-linguetta .wz-ling-lunga { display: inline-block; max-width: 0; overflow: hidden; opacity: 0; transition: opacity 0.2s ease; }   /* v7.108: vedi sopra */
 #inv-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga { position: absolute; }
 #inv-linguetta:hover .wz-ling-corta, #inv-linguetta:focus-visible .wz-ling-corta { display: none; }
 #inv-linguetta:hover .wz-ling-lunga, #inv-linguetta:focus-visible .wz-ling-lunga { max-width: 26rem; opacity: 1; }
@@ -6146,7 +6151,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.107"></script>
+<script src="js/app.js?v=7.108"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6170,7 +6175,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.107'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.108'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
