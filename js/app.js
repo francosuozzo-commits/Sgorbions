@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.100 - Modificato js/app.js (e index per la versione). Tab «Articoli dello stesso personaggio» (Franco): le
+//          figurine per album solo delle serie con «Figurine per album diverse da figurine con retro» (`hasSizes`).
 // v7.099 - Modificati index.html e js/app.js. Questionario (Franco, proposta C fra tre): i pulsanti secondari
 //          bianchi con la scritta viola (regola in index, `#wz-overlay .btn-secondary`). Home, box Classifica:
 //          «Chi ha la lista con maggior punteggio rarità? Puoi anche apparire come anonimo.» (Franco).
@@ -30801,7 +30803,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.099';
+const JS_VERSION = 'v7.100';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -59668,7 +59670,12 @@ function buildLinkedFiguresTabsHTML(baseId) {
       const ix = _indiciPersonaggi(), visti = new Map();
       // 🐛 v7.094 (Franco: «nel tab Varianti dello stesso personaggio devono essere mostrati solo articoli base») -
       //    `_eBase`: le versioni (change, variazioni, omaggi, errori, sigillati) restano fuori
-      personaggiDiArticolo(_self, ix).forEach(pid => articoliDelPersonaggio(pid, ix).forEach(a => { if (a.id !== baseId && _eBase(a)) visti.set(a.id, a); }));
+      // 🔄 v7.100 (Franco: «non mettere mai le fpa, a meno che non siano di una serie con il flag "Figurine per album
+      //    diverse da figurine con retro" a TRUE») - le fpa solo dove la serie ha `hasSizes`: altrove hanno lo stesso
+      //    fronte della loro fcr, che nel tab c'è già
+      const _serieFpaDiverse = new Set(getData('series', []).filter(s => s.hasSizes).map(s => s.id));
+      const _entra = a => a.id !== baseId && _eBase(a) && (a.section !== 'attaccare' || _serieFpaDiverse.has(a.seriesId));
+      personaggiDiArticolo(_self, ix).forEach(pid => articoliDelPersonaggio(pid, ix).forEach(a => { if (_entra(a)) visti.set(a.id, a); }));
       // nell'ordine dell'Inventario: serie, poi tipologia, poi numero
       // `_serieOrdinate` e non l'ordine di `getData`, che per chi non è admin non è quello dell'Inventario (v6.947)
       const ordSerie = new Map(_serieOrdinate(getData('series', [])).map((s, i) => [s.id, i]));
