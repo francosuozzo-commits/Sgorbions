@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.091 - Modificato js/app.js (e index per la versione). Il collegamento al personaggio passa dalla scheda in
+//          lettura alla finestra di modifica (Franco): riga «Personaggio» con ✕ e casella + Collega, e si
+//          scrive solo con «Salva» (`_persMod`, `_disegnaPersMod`, `_persAggiungi`, `_persTogli`, `_salvaPersMod`);
+//          via `_collegaPersonaggio` e `_scollegaPersonaggio`. In lettura resta il nome, cliccabile.
+//          E (css/style.css) «Filtri aggiuntivi admin» delle ricerche di sezione anche sul telefono (Franco: «nella
+//          maschera di ricerca delle carte da mobile non c'è il filtro admin, mi serve anche lì»).
 // v7.090 - Modificato js/app.js (e index per la versione). 🐛 Scheda in modifica con due foto (Franco): dopo
 //          aver caricato le foto i due riquadri si stringevano e i tre tasti sotto uscivano dal loro spazio:
 //          `_ridisegnaSlotFoto` non passava `stretto` a `_slotFotoEdit`. Ora sì. Scheda di un articolo (Franco):
@@ -30772,7 +30778,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.090';
+const JS_VERSION = 'v7.091';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42887,18 +42893,12 @@ function _riempiRigaPersonaggi(f) {
   const link = pid => { const p = _personaggiDati.perId.get(pid); return p ? '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + pid + '\')" style="color:var(--nome-entita);">' + esc(p.nome) + '</a>' : ''; };
   const miei = personaggiDiArticolo(f, ix);
   const plurale = (f.section || 'figurines') !== 'figurines' && miei.length > 1;
-  // 🆕 v6.972 - per l'admin la ✕ accanto a ogni personaggio collegato a QUESTA riga, e la casella
-  //    per collegarne uno (vedi `_collegaPersonaggio`). La riga c'è anche vuota, se no non si collega.
-  const admin = !!currentUser?.isAdmin, riga = admin ? _rigaDelPersonaggio(f, ix) : null;
-  const diretti = riga ? (_personaggiDati.dirPerArt.get(riga.id) || []) : [];
-  const conX = pid => link(pid) + (admin && diretti.includes(pid) ? ' <button type="button" class="btn-secondary btn-admin-ghost" style="padding:0 0.4rem;font-size:0.75rem;" title="' + (it ? 'Scollega' : 'Unlink') + '" onclick="_scollegaPersonaggio(\'' + f.id + '\',\'' + pid + '\')">✕</button>' : '');
-  r1.innerHTML = '<span class="detail-label">' + (it ? (plurale ? 'Personaggi' : 'Personaggio') : (plurale ? 'Characters' : 'Character')) + '</span><span class="detail-value">' + miei.map(conX).join(' · ')
-    + (admin ? '<span style="display:inline-flex;gap:0.4rem;align-items:center;flex-wrap:wrap;margin-left:' + (miei.length ? '0.8rem' : '0') + ';">'
-      + '<input class="form-input" id="fig-personaggio-nuovo" list="dl-personaggi-scheda" placeholder="' + (it ? 'nome del personaggio' : 'character name') + '" style="max-width:240px;padding:0.2rem 0.5rem;font-size:0.82rem;">'
-      + '<datalist id="dl-personaggi-scheda">' + _personaggiDati.elenco.map(p => '<option value="' + esc(p.nome) + '"></option>').join('') + '</datalist>'
-      + '<button type="button" class="btn-primary btn-admin" style="padding:0.2rem 0.8rem;font-size:0.8rem;" onclick="_collegaPersonaggio(\'' + f.id + '\')">' + (it ? 'Collega' : 'Link') + '</button></span>' : '')
-    + '</span>';
-  r1.style.display = miei.length || admin ? '' : 'none';
+  // 🔄 v7.091 (Franco: «come mai il collegamento di un articolo col suo personaggio lo hai lasciato fuori dalla
+  //    finestra di modifica? si può fare solo dalla maschera di sola lettura, che però all'atto pratico fa una
+  //    modifica») - QUI SOLO LA LETTURA. La casella + Collega e la ✕ (v6.972) sono passate nella finestra di
+  //    modifica (`_disegnaPersMod`), dove si salvano con «Salva» insieme al resto. La riga c'è solo se c'è un nome.
+  r1.innerHTML = '<span class="detail-label">' + (it ? (plurale ? 'Personaggi' : 'Personaggio') : (plurale ? 'Characters' : 'Character')) + '</span><span class="detail-value">' + miei.map(link).join(' · ') + '</span>';
+  r1.style.display = miei.length ? '' : 'none';
   const dietro = personaggiDelRetroDi(f, ix);
   if (r2) {
     r2.innerHTML = '<span class="detail-label">' + (it ? 'Personaggi del retro' : 'Characters on the back') + '</span><span class="detail-value">' + dietro.map(link).join(' · ') + '</span>';
@@ -42962,37 +42962,98 @@ function _personaggioDaNome(nome, d, senzaConferma) {
   d.personaggi.push({ i: id, n: N });
   return id;
 }
-async function _collegaPersonaggio(figId) {
+// 🆕 v7.091 (Franco: «sposta il collegamento al personaggio nella finestra di modifica») - IL COLLEGAMENTO STA IN
+//    MODIFICA E SI SALVA CON «SALVA». Al posto di `_collegaPersonaggio` / `_scollegaPersonaggio` (v6.972), che
+//    scrivevano subito dalla scheda in lettura: qui «Collega» e la ✕ cambiano solo `_persMod`, la scelta in
+//    sospeso; `saveFigFromDetail`, a salvataggio dell'articolo riuscito, la scrive (`_salvaPersMod`). «Annulla»
+//    o chiudere la scheda la buttano: la prossima apertura in modifica riparte dai dati.
+//    📌 Le regole sono quelle di prima: la riga giusta (`_rigaDelPersonaggio`), una figurina ha UN personaggio
+//    (collegarne un altro sostituisce), un nome che non c'è si crea dopo una conferma - ma il personaggio nuovo
+//    nasce anche lui al «Salva», non prima.
+let _persMod = null;   // { f, orig: [pid…] diretti sulla riga, pids: [pid…] scelti, nuovi: [{i, n}], toccato }
+function _rigaPersonaggiEditHTML() {
+  return '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">' + (currentLang === 'it' ? 'Personaggio' : 'Character') + '</span>'
+    + '<span class="detail-value" id="fe-personaggi-valore">…</span></div>';
+}
+function _iniziaPersMod(f) { _persMod = { f, orig: null, pids: null, nuovi: [], toccato: false }; _disegnaPersMod(); }
+function _persUnoSolo(f, ix) {
+  const riga = f.id ? _rigaDelPersonaggio(f, ix) : f;
+  return ['figurines', 'attaccare'].includes((riga && riga.section) || 'figurines');
+}
+function _disegnaPersMod() {
+  const el = document.getElementById('fe-personaggi-valore');
+  if (!el || !_persMod) return;
+  if (!_personaggiDati) { caricaPersonaggi().then(_disegnaPersMod).catch(() => {}); return; }
+  const it = currentLang === 'it', m = _persMod, f = m.f, ix = _indiciPersonaggi();
+  if (m.pids === null) {
+    const riga = f.id ? _rigaDelPersonaggio(f, ix) : null;
+    m.orig = riga ? [...(_personaggiDati.dirPerArt.get(riga.id) || [])] : [];
+    m.pids = [...m.orig];
+  }
+  const nome = pid => (_personaggiDati.perId.get(pid) || {}).nome || ((m.nuovi.find(n => n.i === pid) || {}).n) || pid;
+  // quelli che arrivano da un'altra riga (la fpa per la sua fcr, la base per una versione): si vedono, non si tolgono qui
+  const ereditati = f.id ? personaggiDiArticolo(f, ix).filter(p => !m.orig.includes(p)) : [];
+  const chip = pid => '<span style="display:inline-flex;align-items:center;gap:0.25rem;">' + esc(nome(pid))
+    + (m.nuovi.some(n => n.i === pid) ? ' <span style="font-size:0.72rem;color:var(--warn);">(' + (it ? 'nuovo' : 'new') + ')</span>' : '')
+    + ' <button type="button" class="btn-secondary btn-admin-ghost" style="padding:0 0.4rem;font-size:0.75rem;" title="' + (it ? 'Scollega' : 'Unlink') + '" onclick="_persTogli(\'' + pid + '\')">✕</button></span>';
+  el.innerHTML = m.pids.map(chip).join(' · ')
+    + (ereditati.length ? (m.pids.length ? ' · ' : '') + ereditati.map(p => esc(nome(p))).join(' · ')
+        + ' <span style="font-size:0.72rem;color:var(--text);opacity:0.75;">(' + (it ? 'arriva da un articolo collegato' : 'comes from a linked item') + ')</span>' : '')
+    + '<span style="display:inline-flex;gap:0.4rem;align-items:center;flex-wrap:wrap;margin-left:' + (m.pids.length || ereditati.length ? '0.8rem' : '0') + ';">'
+    + '<input class="form-input" id="fe-personaggio-nuovo" list="dl-personaggi-modifica" placeholder="' + (it ? 'nome del personaggio' : 'character name') + '" style="max-width:240px;padding:0.2rem 0.5rem;font-size:0.82rem;" onkeydown="if(event.key===\'Enter\'){event.preventDefault();_persAggiungi();}">'
+    + '<datalist id="dl-personaggi-modifica">' + _personaggiDati.elenco.map(p => '<option value="' + esc(p.nome) + '"></option>').join('') + '</datalist>'
+    + '<button type="button" class="btn-primary btn-admin" style="padding:0.2rem 0.8rem;font-size:0.8rem;" onclick="_persAggiungi()">' + (it ? 'Collega' : 'Link') + '</button></span>'
+    + (m.toccato ? '<div style="font-size:0.72rem;color:var(--warn);margin-top:0.3rem;">' + (it ? 'Si salva con «Salva».' : 'Saved with «Save».') + '</div>' : '');
+}
+function _persAggiungi() {
+  const m = _persMod; if (!m || !_personaggiDati) return;
   const it = currentLang === 'it';
-  const f = getData('figurines', []).find(x => x.id === figId);
-  const nome = document.getElementById('fig-personaggio-nuovo')?.value || '';
-  if (!f || !nome.trim()) return;
-  const ix = _indiciPersonaggi(), riga = _rigaDelPersonaggio(f, ix);
-  const unoSolo = ['figurines', 'attaccare'].includes(riga.section || 'figurines');
-  let pid = null;
+  const N = String(document.getElementById('fe-personaggio-nuovo')?.value || '').trim().replace(/\s+/g, ' ').toUpperCase();
+  if (!N) return;
+  let pid = (_personaggiDati.elenco.find(p => (p.nome || '').toUpperCase() === N) || {}).id
+    || (m.nuovi.find(n => n.n === N) || {}).i;
+  if (!pid) {
+    const id = _slugPersonaggio(N);
+    if (!id) return;
+    const simile = _personaggiDati.perId.get(id);
+    if (simile) { toast((it ? 'Esiste già un personaggio scritto quasi uguale: ' : 'A character spelled almost the same already exists: ') + simile.nome, 'error'); return; }
+    if (!confirm(it ? 'Il personaggio «' + N + '» non esiste.\n\nLo creo? (nasce quando salvi)' : 'The character «' + N + '» does not exist.\n\nCreate it? (it is created when you save)')) return;
+    m.nuovi.push({ i: id, n: N });
+    pid = id;
+  }
+  // 🔴 una figurina ha un personaggio solo: collegarne un altro sostituisce (la regola della v6.972)
+  if (_persUnoSolo(m.f, _indiciPersonaggi())) m.pids = [pid];
+  else if (!m.pids.includes(pid)) m.pids.push(pid);
+  m.toccato = true;
+  _disegnaPersMod();
+}
+function _persTogli(pid) {
+  const m = _persMod; if (!m) return;
+  m.pids = m.pids.filter(p => p !== pid);
+  m.nuovi = m.nuovi.filter(n => n.i !== pid);
+  m.toccato = true;
+  _disegnaPersMod();
+}
+// chiamata da `saveFigFromDetail` DOPO che l'articolo è salvato: `f` è il record appena scritto (in creazione ha
+// già il suo id vero). Torna false se la scrittura dei personaggi non è riuscita: l'articolo resta salvato.
+async function _salvaPersMod(f) {
+  const m = _persMod;
+  if (!m || !m.toccato || !f || !f.id) return true;
+  const it = currentLang === 'it';
   try {
+    const riga = _rigaDelPersonaggio(f, _indiciPersonaggi());
     await _scriviPacchetto(d => {
-      pid = _personaggioDaNome(nome, d);
-      if (!pid) throw new Error('rinuncia');
-      if (unoSolo) d.associazioni = d.associazioni.filter(a => a.a !== riga.id);
-      if (!d.associazioni.some(a => a.a === riga.id && a.p === pid)) d.associazioni.push({ a: riga.id, p: pid });
+      m.nuovi.filter(n => m.pids.includes(n.i)).forEach(n => { if (!d.personaggi.some(p => p.i === n.i)) d.personaggi.push({ i: n.i, n: n.n }); });
+      d.associazioni = d.associazioni.filter(a => a.a !== riga.id);
+      m.pids.forEach(p => d.associazioni.push({ a: riga.id, p }));
     });
   } catch (e) {
-    if (e.message !== 'rinuncia') { console.error('_collegaPersonaggio', e); toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error'); }
-    return;
+    console.error('_salvaPersMod', e);
+    toast((it ? '⚠️ Personaggio NON salvato: ' : '⚠️ Character NOT saved: ') + (e?.message || e), 'error');
+    return false;
   }
-  toast((it ? 'Collegato: ' : 'Linked: ') + _personaggiDati.perId.get(pid).nome, 'success');
-  _riempiRigaPersonaggi(f);
-}
-async function _scollegaPersonaggio(figId, pid) {
-  const it = currentLang === 'it';
-  const f = getData('figurines', []).find(x => x.id === figId);
-  if (!f) return;
-  const riga = _rigaDelPersonaggio(f, _indiciPersonaggi());
-  try { await _scriviPacchetto(d => { d.associazioni = d.associazioni.filter(a => !(a.a === riga.id && a.p === pid)); }); }
-  catch (e) { console.error('_scollegaPersonaggio', e); toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error'); return; }
-  toast(it ? 'Scollegato' : 'Unlinked', 'success');
-  _riempiRigaPersonaggi(f);
+  _persMod = null;
+  return true;
 }
 async function _creaPersonaggio() {
   const it = currentLang === 'it', nome = document.getElementById('personaggio-crea')?.value || '';
@@ -60935,6 +60996,8 @@ function switchToEditMode(figId) {
   // sola era il difetto della v6.074 con `retroBianco`, esistito per una release solo nella
   // finestra: chi usava l'altra form non lo vedeva e, salvando, lo azzerava.
   if (currentUser?.isAdmin) {
+    // 🆕 v7.091 (Franco) - il personaggio, qui e non più nella lettura: si riempie con `_iniziaPersMod`
+    html += _rigaPersonaggiEditHTML();
     // v6.106 (Franco) - via il testo di aiuto dentro il campo
     html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">Note</span><span class="detail-value"><textarea id="fe-note" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + esc(f.note || '') + '</textarea></span></div>';
   }
@@ -61113,6 +61176,8 @@ function switchToEditMode(figId) {
 
   content.innerHTML = barra + html;
   try { _aggiornaNumeroEreditato(); } catch (e) {}   // 🆕 v6.965 - il N. ereditato, già all'apertura
+  // 🆕 v7.091 - il personaggio riparte dai dati a ogni apertura in modifica: una scelta non salvata non sopravvive
+  try { _iniziaPersMod(f); } catch (e) { console.error('_iniziaPersMod', e); }
 
   // Listener sui due pulsanti Salva (evita problemi con onclick inline)
   const saveBtn = document.getElementById('fig-edit-save-btn');
@@ -64108,6 +64173,9 @@ async function saveFigFromDetail(figId, opzioni) {
     // il salvataggio diceva comunque "salvato": la base andava avanti e i suoi figli restavano
     // indietro, in silenzio. Contarli ora e' esatto, prima era una stima ottimista.
     let _propagati = _collegati.length;
+    // 🆕 v7.091 - e il personaggio scelto nella finestra (`_persMod`), adesso che l'articolo è scritto. Se questa
+    //    seconda scrittura non riesce lo dice il suo messaggio; l'articolo resta salvato.
+    await _salvaPersMod(merged);
     const savedLabel = getSectionLabelSingular(merged.section || 'figurines');
     // v6.053 - se la modifica ha toccato dei collegati lo si DICE: un salvataggio che ne modifica
     // altri in silenzio e' il modo in cui ci si accorge dei danni tre giorni dopo.
