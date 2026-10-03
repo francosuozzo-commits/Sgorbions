@@ -2123,9 +2123,11 @@ footer {
   #admin-panel { display: none !important; }
 
   /* strumenti admin sparsi nelle pagine */
+  /* 🔄 v7.091 (Franco: «nella maschera di ricerca delle carte, da applicazione mobile, non c'è il filtro admin ma
+     mi serve anche lì») - via `#items-admin-filters` da questa lista: il riquadro «Filtri aggiuntivi admin» delle
+     ricerche di sezione si vede anche sul telefono (lo accende già app.js solo all'admin, e lì è una barra). */
   #admin-add-series-btn,
   #admin-add-item-btn,
-  #items-admin-filters,
   #admin-classifica-title, #admin-classifica-btn-wrap,
   #admin-ebay-title, #admin-ebay-btn-wrap,
   #detail-ebay-series-btn,
