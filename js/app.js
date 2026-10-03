@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.115 - Modificato js/app.js (e index per la versione). TODO 2 di Franco: nella ricerca globale ogni personaggio
+//          ha la sua miniatura e sotto l'elenco dei suoi articoli, senza foto: serie, nome e numero, cliccabili.
+//          🐛 Pagina di sezione della serie (Franco, con una foto): «prossima serie» andava sotto il titolo (ora
+//          dopo l'anno) e «Opzioni» stava sotto la copertina piccola (ora, se si toccano, scende sotto di lei).
 // v7.114 - Modificato css/style.css (e index, app.js per la versione). TODO 1 di Franco: «+ Aggiungi personaggio»
 //          alto come «+ Aggiungi Serie» e «+ Aggiungi tipologia di articolo» (entra nella regola comune).
 // v7.113 - Modificato js/app.js (e index per la versione). Franco: in console «Foto protette» la colonna «Anche nel
@@ -30843,7 +30847,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.114';
+const JS_VERSION = 'v7.115';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45658,19 +45662,45 @@ function _rgPersonaggiHTML(q, qn) {
     if (!_matchRicerca(p.nome, qn)) return;
     const pid = (!admin && D.principaleDi.get(p.id)) || p.id;
     if (visti.has(pid)) return;
-    const n = articoliDelPersonaggio(pid, ix).filter(a => a.section !== 'attaccare').length;
-    if (!n && !admin) return;   // un personaggio senza articoli, a chi visita il sito, non serve
-    visti.set(pid, n);
+    // 🔄 v7.115 - gli articoli stessi, non solo il loro numero: servono all'elenco sotto la miniatura
+    const tutti = articoliDelPersonaggio(pid, ix);
+    // solo gli articoli base: le versioni hanno la stessa serie, lo stesso nome e lo stesso numero, e nell'elenco
+    //    sarebbero righe uguali (come nel tab «Articoli dello stesso personaggio», v7.094)
+    const arts = tutti.filter(a => a.section !== 'attaccare' && _eBase(a));
+    if (!arts.length && !admin) return;   // un personaggio senza articoli, a chi visita il sito, non serve
+    visti.set(pid, { arts, tutti });
   });
   if (!visti.size) return '';
-  const voce = ([pid, n]) => '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + pid + '\')" style="display:inline-flex;align-items:baseline;gap:0.35rem;'
-    + 'padding:0.3rem 0.7rem;border:1px solid var(--border2);border-radius:999px;background:var(--card2);text-decoration:none;">'
-    + '<span style="color:var(--nome-entita);font-weight:600;">' + esc(D.perId.get(pid).nome) + '</span>'
-    + '<span style="font-size:0.78rem;color:var(--text);opacity:0.8;">' + n + ' ' + (it ? (n === 1 ? 'articolo' : 'articoli') : (n === 1 ? 'item' : 'items')) + '</span></a>';
+  // 🔄 v7.115 (Franco, TODO 2: «nei risultati della RG, per i Personaggi, mettere la miniatura ed elencare gli
+  //    articoli associati, senza miniature: solo serie, nome e numero») - UNA RIGA PER PERSONAGGIO: a sinistra la
+  //    miniatura (la foto della sua card, `_fotoPersonaggio`), a destra il nome e sotto l'elenco dei suoi articoli,
+  //    nell'ordine dell'Inventario, ognuno cliccabile verso la sua scheda. Le figurine per album restano fuori, come
+  //    nel conto della card dell'hub.
+  const ordSerie = new Map(_serieOrdinate(getData('series', [])).map((s, i) => [s.id, i]));
+  const nomeS = new Map(getData('series', []).map(s => [s.id, _nomeSerieCard(s, true)]));
+  const ordina = l => l.slice().sort((a, b) => (ordSerie.get(a.seriesId) ?? 1e9) - (ordSerie.get(b.seriesId) ?? 1e9)
+    || String(a.section || 'figurines').localeCompare(String(b.section || 'figurines')) || (parseInt(a.number, 10) || 0) - (parseInt(b.number, 10) || 0));
+  // la misura della miniatura in un posto solo (prova-v6405 vieta le misure scritte a mano nella ricerca)
+  const _MINI_PERS_L = 64, _MINI_PERS_A = 80, _dimMini = 'width:' + _MINI_PERS_L + 'px;height:' + _MINI_PERS_A + 'px;';
+  const riga = ([pid, { arts, tutti }]) => {
+    const foto = _fotoPersonaggio(tutti, pid, ix);
+    const mini = foto
+      ? '<img src="' + cloudinaryUrl(foto, 'w_160,h_200,c_fit,q_auto,f_auto') + '" alt="" loading="lazy" style="' + _dimMini + 'object-fit:contain;border-radius:6px;background:var(--card2);flex-shrink:0;">'
+      : '<span style="' + _dimMini + 'border-radius:6px;background:var(--card2);border:1px dashed var(--border);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">🧑‍🎤</span>';
+    const elenco = ordina(arts).map(a => '<li><a href="javascript:void(0)" onclick="openFigFromSearch(\'' + a.id + '\',\'' + a.seriesId + '\',\'' + (a.section || 'figurines') + '\')" style="color:var(--text);text-decoration:none;">'
+      + esc(nomeS.get(a.seriesId) || '') + ' · ' + esc(a.name || '') + ((a.number != null && a.number !== '' && !a.noNumber) ? ' · n.' + esc(String(a.number)) : '') + '</a></li>').join('');
+    return '<div style="display:flex;gap:0.8rem;align-items:flex-start;padding:0.5rem 0;border-top:1px solid var(--border);">'
+      + '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + pid + '\')" title="' + esc(D.perId.get(pid).nome) + '">' + mini + '</a>'
+      + '<div style="min-width:0;">'
+      + '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + pid + '\')" style="color:var(--nome-entita);font-weight:600;text-decoration:none;font-size:1rem;">' + esc(D.perId.get(pid).nome) + '</a>'
+      + (elenco ? '<ul style="margin:0.25rem 0 0;padding-left:1.1rem;font-size:0.85rem;line-height:1.5;">' + elenco + '</ul>'
+                : '<div style="font-size:0.82rem;color:var(--text);opacity:0.75;margin-top:0.2rem;">' + (it ? 'Nessun articolo' : 'No items') + '</div>')
+      + '</div></div>';
+  };
   return '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.6rem 0.75rem;margin-bottom:0.6rem;">'
-    + '<div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.6rem;">🧑‍🎤 ' + (it ? 'Personaggi' : 'Characters')
+    + '<div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.3rem;">🧑‍🎤 ' + (it ? 'Personaggi' : 'Characters')
     + ': <span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">' + visti.size + ' ' + (it ? (visti.size === 1 ? 'trovato' : 'trovati') : 'found') + '</span></div>'
-    + '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">' + [...visti].sort((a, b) => D.perId.get(a[0]).nome.localeCompare(D.perId.get(b[0]).nome, 'it')).map(voce).join('') + '</div></div>';
+    + [...visti].sort((a, b) => D.perId.get(a[0]).nome.localeCompare(D.perId.get(b[0]).nome, 'it')).map(riga).join('') + '</div>';
 }
 
 // 🆕 v6.610 (Franco: *«un pulsante che se cliccato apre la vista tabellare di quegli
@@ -48442,8 +48472,29 @@ function _disegnaNavSerie() {
     return b;
   };
   if (prec) nome.parentElement.insertBefore(bott(prec, 'prec'), nome.parentElement.firstChild);
-  if (succ) nome.parentElement.appendChild(bott(succ, 'succ'));
+  // 🐛 v7.115 (Franco, con una foto: «perché nella pagina della serie il tasto "prossima serie" sta sotto al titolo?»)
+  //    - nella pagina di una SEZIONE (o di una sottoserie) dopo l'anno c'è `#detail-subname`, che con
+  //    `flex-basis:100%` va a capo: la freccia, messa in coda, andava a capo con lui. Ora sta subito dopo l'anno.
+  const anno = document.getElementById('detail-year');
+  if (succ) nome.parentElement.insertBefore(bott(succ, 'succ'), anno && anno.parentElement === nome.parentElement ? anno.nextSibling : null);
+  setTimeout(_opzioniSottoLaCopertina, 0);
 }
+// 🐛 v7.115 (Franco: «il tasto Opzioni, admin visibile, si sovrappone alla foto della serie nella pagina della serie;
+//    abbassiamolo mettendolo sotto alla serie») - nelle pagine di sezione e di sottoserie in alto a destra c'è la
+//    copertina piccola della serie (`#detail-cover-serie`), e sotto i ~1600px cade sopra «Opzioni». Quando le due si
+//    toccano in orizzontale, «Opzioni» scende sotto la copertina; altrimenti resta dov'è. Si rimisura col resize.
+function _opzioniSottoLaCopertina() {
+  const menu = document.getElementById('detail-admin-menu'), mini = document.getElementById('detail-cover-serie');
+  if (!menu) return;
+  // `top` e non `margin-top`: si sposta solo lui, e il resto della testata non scende (col margine scendeva di ~40px)
+  menu.style.position = ''; menu.style.top = '';
+  if (!mini || !mini.firstChild || !mini.getClientRects().length) return;
+  const a = menu.getBoundingClientRect(), b = mini.getBoundingClientRect();
+  if (!a.width || !b.width) return;
+  const siToccano = a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  if (siToccano) { menu.style.position = 'relative'; menu.style.top = Math.round(b.bottom - a.top + 8) + 'px'; }
+}
+window.addEventListener('resize', () => { try { _opzioniSottoLaCopertina(); } catch (e) {} });
 function openSeriesDetail(seriesId) {
   currentSeriesId = seriesId;
   setTimeout(() => { try { _disegnaNavSerie(); } catch (e) { console.error('frecce delle serie', e); } }, 0);   // v7.041
@@ -49352,6 +49403,10 @@ function _vestiTestataPerSezione(s) {
     }
     sub.style.display = '';
   }
+  // v7.115 - la copertina piccola adesso c'è (o non c'è più): «Opzioni» si rimette al suo posto, anche quando la
+  //    copertina avrà preso la sua altezza (la decide la misura della riga del titolo, un attimo dopo)
+  //    (`typeof`: prova-v6719 esegue questa funzione in un banco che non ha il resto del sito)
+  if (typeof _opzioniSottoLaCopertina === 'function') { setTimeout(_opzioniSottoLaCopertina, 0); setTimeout(_opzioniSottoLaCopertina, 400); }
 }
 
 function _mostraTestataSerie() {
