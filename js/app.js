@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.109 - Modificato js/app.js (e index per la versione). Franco: via il messaggio «Fronte: … · Retro: …» dopo
+//          «Carica entrambe le foto»; il messaggio della gemella (Kakkones ↔ 2018) in alto, per 5 secondi.
 // v7.108 - Modificato index.html (e app.js per la versione). 🐛 Le due linguette a sinistra vibravano e si potevano
 //          premere solo sul bordo (Franco): la larghezza animata le stringeva sotto il mouse; ora la scritta lunga
 //          arriva subito intera e si accende con la sola dissolvenza.
@@ -30827,7 +30829,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.108';
+const JS_VERSION = 'v7.109';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -43326,7 +43328,10 @@ async function _salvaPersMod(f) {
       const sg = (getData('series', []).find(x => x.id === gemello.seriesId) || {}).name || '';
       const cosa = getSectionLabelSingular(gemello.section || 'figurines') + (gemello.number != null && gemello.number !== '' ? ' n.' + gemello.number : '');
       toast(it ? '🔗 Propagato anche alla gemella di ' + sg + ': ' + cosa + ' «' + gemello.name + '»'
-               : '🔗 Also applied to its twin in ' + sg + ': ' + cosa + ' «' + gemello.name + '»', 'success', null, 6000);
+               : '🔗 Also applied to its twin in ' + sg + ': ' + cosa + ' «' + gemello.name + '»',
+            // 🔄 v7.109 (Franco: «il popup della gemella mettilo più in alto e mostralo per 5 secondi») - `'alto'`
+            //    (la fascia alta dello schermo, v6.971) e 5 secondi invece di 6
+            'success', 'alto', 5000);
     }
   }
   // 🆕 v7.092 (Franco: «la tua proposta di chiedere conferma circa la cancellazione di un personaggio quando
@@ -63438,7 +63443,7 @@ function handleFigEditImg(event, slot) {
 //    2. altrimenti vale l'ordine dei nomi: il primo è il fronte. Telefoni e macchine fotografiche numerano gli
 //       scatti in sequenza, e il fronte di solito si fotografa per primo.
 //    L'ordine in cui le si clicca nella finestra dei file NON si può usare: il browser non lo conserva.
-//    Se esce al contrario c'è «⇄ Scambia», e il messaggio dice quale file è finito dove.
+//    Se esce al contrario c'è «⇄ Scambia» (dalla v7.109 senza messaggio: le foto si vedono nei riquadri).
 function handleEntrambeFoto(event) {
   const it = currentLang === 'it';
   const files = [...(event.target.files || [])];
@@ -63453,9 +63458,10 @@ function handleEntrambeFoto(event) {
     r.onerror = () => fatto();
     r.readAsDataURL(file);
   });
-  Promise.all([leggi(fronte, 'fronte'), leggi(retro, 'retro')]).then(() => toast(it
-    ? 'Fronte: ' + fronte.name + ' · Retro: ' + retro.name + '. Se sono al contrario, premi ⇄ Scambia.'
-    : 'Front: ' + fronte.name + ' · Back: ' + retro.name + '. If reversed, press ⇄ Swap.', 'success'));
+  // 🗑️ v7.109 (Franco: «quando si selezionano due foto col bottone apposito, non mi serve quel popup che dice il nome
+  //    delle 2 foto e ricorda di invertirle se necessario») - qui stava il messaggio «Fronte: … · Retro: …»: le due
+  //    foto si vedono già nei riquadri, e «⇄ Scambia» sta sopra di loro. Resta solo il messaggio d'errore qui sopra.
+  Promise.all([leggi(fronte, 'fronte'), leggi(retro, 'retro')]);
 }
 // ⇄ - si scambiano le due foto NUOVE, non ancora salvate. Quelle già salvate sono un indirizzo, non un file:
 //    rimetterle nell'altro riquadro vorrebbe dire ricaricarle, e per quello c'è «Cambia foto».
