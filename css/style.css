@@ -2095,6 +2095,9 @@ footer {
 #detail-tipo-admin-btn,
 #admin-add-series-btn .btn-primary,
 #admin-add-tipo-prodotto-btn .btn-primary,
+/* 🔄 v7.114 (Franco: «il tasto "Aggiungi personaggio" deve essere alto come "Aggiungi serie" e "Aggiungi tda"») -
+   ed era proprio la lezione qui sopra: nato nella v6.972, non era entrato in questo elenco (misurato 49px contro 33) */
+#admin-add-personaggio-btn .btn-primary,
 #admin-add-label {
   font-size: 0.9rem;
   padding: 0.4rem 1.1rem;
