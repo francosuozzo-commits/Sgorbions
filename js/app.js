@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.093 - Modificato js/app.js (e index per la versione). Personaggio nella finestra di modifica (Franco, dal
+//          telefono): 🐛 un nome scelto dai suggerimenti e lasciato nella casella non si collegava al «Salva»
+//          (serviva «Collega»): ora sì; di nuovo il messaggio «Collegato: …»; e la riga sale subito dopo i nomi.
 // v7.092 - Modificato js/app.js (e index per la versione). 🐛 Sul telefono, nella finestra di modifica, il
 //          pulsante «Collega» del personaggio non c'era: `.btn-admin` è nascosto sotto gli 860px; ora porta
 //          `.admin-anche-telefono` (Franco: «da mobile la modifica di un personaggio non mi sembra funzionare»).
@@ -30782,7 +30785,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.092';
+const JS_VERSION = 'v7.093';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -43044,6 +43047,12 @@ function _persTogli(pid) {
 // chiamata da `saveFigFromDetail` DOPO che l'articolo è salvato: `f` è il record appena scritto (in creazione ha
 // già il suo id vero). Torna false se la scrittura dei personaggi non è riuscita: l'articolo resta salvato.
 async function _salvaPersMod(f) {
+  // 🐛 v7.093 (Franco, dal telefono: «se scrivo il nome di un personaggio e seleziono dai suggerimenti, mi trovo il
+  //    nome nel campo, ma quando schiaccio Salva, a dispetto del fatto che dice "articolo salvato", non ha salvato
+  //    il personaggio») - il nome restava nella casella: entrava solo premendo «Collega». Adesso un nome lasciato
+  //    nella casella si collega al «Salva», con le stesse regole di «Collega» (un nome nuovo chiede conferma).
+  const _casella = document.getElementById('fe-personaggio-nuovo');
+  if (_persMod && _casella && _casella.value.trim()) _persAggiungi();
   const m = _persMod;
   if (!m || !m.toccato || !f || !f.id) return true;
   const it = currentLang === 'it';
@@ -43058,6 +43067,13 @@ async function _salvaPersMod(f) {
     console.error('_salvaPersMod', e);
     toast((it ? '⚠️ Personaggio NON salvato: ' : '⚠️ Character NOT saved: ') + (e?.message || e), 'error');
     return false;
+  }
+  // 🆕 v7.093 (Franco: «non c'è più il messaggio che diceva collegamento effettuato») - di nuovo, al «Salva»
+  {
+    const nomi = m.pids.map(p => ((_personaggiDati.perId.get(p) || {}).nome) || p);
+    toast(nomi.length
+      ? (it ? 'Collegato: ' : 'Linked: ') + nomi.join(', ')
+      : (it ? 'Nessun personaggio collegato' : 'No character linked'), 'success');
   }
   // 🆕 v7.092 (Franco: «la tua proposta di chiedere conferma circa la cancellazione di un personaggio quando
   //    questo si trova a non avere più articoli perché sull'articolo si è cambiata la relazione, a me sta bene») -
@@ -60646,9 +60662,15 @@ function switchToEditMode(figId) {
       : (currentLang === 'it' ? 'es. VIDEOREGI|STRATORE' : 'e.g. VIDEOREGI|STRATORE');
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome carosello mobile':'Mobile carousel name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-carosello-mobile" value="' + esc(f.nomeCaroselloMobile || '') + '" placeholder="' + esc(_phNcm) + '" title="' + esc(currentLang==='it' ? 'Il nome nella card del carosello sul telefono. Una barra | dove una parola troppo lunga può andare a capo (col trattino, solo se serve). Vuoto = il Nome.' : 'The name on the phone carousel card. A bar | where a long word may break.') + '"></span></div>';
   }
+  // 🔄 v7.093 (Franco: «il campo personaggio nella maschera di modifica è tutto in basso: mettilo in alto, subito
+  //    dopo la fine dei nomi dell'articolo») - dopo Nome, Nomi alternativi, Nome carosello mobile e Sottonome
+  //    (questo `if` qui sotto); era prima delle Note. Si riempie con `_iniziaPersMod`.
+  const _rigaPersDopoNomi = currentUser?.isAdmin ? _rigaPersonaggiEditHTML() : '';
+  // (il Sottonome, poi `_rigaPersDopoNomi` appena chiuso l'`if`)
   if (_haSottonome(f.section)) {
     html += '<div class="detail-row" style="' + _eredStile('subname') + '"' + _eredAttr('subname') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"' + _eredRO('subname') + '></span></div>';
   }
+  html += _rigaPersDopoNomi;
 
   // 🔄 v6.797 (Franco) - L'ORDINAMENTO SCENDE, E SI FERMA PRIMA DELLA RARITÀ. Parole sue:
   //    *«il campo Ordinamento, sulla form degli articoli (tutti) va + in basso; mettilo prima di
@@ -61019,8 +61041,7 @@ function switchToEditMode(figId) {
   // sola era il difetto della v6.074 con `retroBianco`, esistito per una release solo nella
   // finestra: chi usava l'altra form non lo vedeva e, salvando, lo azzerava.
   if (currentUser?.isAdmin) {
-    // 🆕 v7.091 (Franco) - il personaggio, qui e non più nella lettura: si riempie con `_iniziaPersMod`
-    html += _rigaPersonaggiEditHTML();
+    // 🗑️ v7.093 - qui stava la riga del personaggio (v7.091): è salita dopo i nomi (vedi `_rigaPersonaggiEditHTML`)
     // v6.106 (Franco) - via il testo di aiuto dentro il campo
     html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">Note</span><span class="detail-value"><textarea id="fe-note" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + esc(f.note || '') + '</textarea></span></div>';
   }
