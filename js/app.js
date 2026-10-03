@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.096 - Modificati index.html e js/app.js. Questionario, riepilogo della serie (Franco): la miniatura delle
+//          Figurine con retro è una griglia 2×2, due fronti e due retro della serie (`_wzCoppia`, `.wz-popup-quattro`).
 // v7.095 - Modificato js/app.js (e index per la versione). Questionario (Franco): «I quadranti grigi si attivano
 //          da soli.» (via «all'occorrenza»).
 // v7.094 - Modificati index.html e js/app.js. Ricerca globale, telefono (Franco): via «Mostra in tabella», che
@@ -30791,7 +30793,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.095';
+const JS_VERSION = 'v7.096';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49582,6 +49584,22 @@ function _wzFotoSez(sez, sid) {
 //    foto della tipologia.
 function _wzCoppia(z, sid) {
   const figs = getData('figurines', []);
+  // 🆕 v7.096 (Franco: «per la miniatura delle figurine con retro, nella finestra di recap del questionario, stiamo
+  //    usando la stessa delle figurine per album: non mi piace; una miniatura composta da quattro elementi, due
+  //    figurine e due retro: le prime due figurine della serie e i primi due retro della serie, un'immagine unica») -
+  //    per le fcr una griglia 2×2: sopra i due fronti, sotto i due retro. I retro sono quelli della tipologia Retro
+  //    della serie; se la serie ne ha meno di due, quelli collegati alle due figurine. Con meno di quattro foto si
+  //    resta al mazzetto di sempre.
+  if (String(z).split('|')[0] === 'figurines') {
+    const fronti = _wzArticoli(sid, z).map(f => _fotoFigurina(f, figs) || f.img).filter(Boolean).slice(0, 2);
+    let retri = _wzArticoli(sid, 'retros').map(f => f.img).filter(Boolean).slice(0, 2);
+    if (retri.length < 2) {
+      const perId = new Map(figs.map(f => [f.id, f]));
+      retri = _wzArticoli(sid, z).map(f => (perId.get(f.retroId) || {}).img).filter(Boolean).slice(0, 2);
+    }
+    if (fronti.length === 2 && retri.length === 2)
+      return '<span class="wz-popup-coppia wz-popup-quattro">' + fronti.concat(retri).map(u => _wzImg(u, 120, 140, '')).join('') + '</span>';
+  }
   const foto = _wzArticoli(sid, z).map(f => _fotoFigurina(f, figs) || f.img).filter(Boolean).slice(0, 2);
   if (!foto.length) return '';
   return '<span class="wz-popup-coppia' + (foto.length === 1 ? ' una' : '') + '">' + foto.map(u => _wzImg(u, 200, 260, '')).join('') + '</span>';
