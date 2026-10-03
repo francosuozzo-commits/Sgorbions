@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.105">
+<link rel="stylesheet" href="css/style.css?v=7.106">
 
 
 <style>
@@ -3477,8 +3477,9 @@ di tutte le serie</button>
 <div id="page-profile" class="page">
   <section class="section">
     <div class="section-inner">
-      <!-- 🆕 v7.014 - il percorso guidato anche dal profilo, sopra la tua lista -->
-      <div class="solo-wz" style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary wz-pulsante" onclick="apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
+      <!-- 🗑️ v7.106 (Franco: «il bottone "Riprendi o inizia il questionario" presente nella scheda profilo, togliamolo»)
+           - qui stava il pulsante del questionario della v7.014 (lo stesso dell'Inventario, tolto nella v7.089).
+           Restano la linguetta, la voce della barra, il box della home e la finestra «La mia lista Sgorbions». -->
       <div id="profile-content">
 <!-- 🔄 v6.685 (Franco: «il tasto "Torna a home" non e' bianco come gli altri tasti di navigazione pagine») — DA `--muted` A BIANCO.
            🔴 `--muted` e' il colore delle NOTE, di cio' che si puo' non leggere: su un COMANDO dice «questo conta meno». Gli altri tasti indietro sono bianchi per la regola `button.back-btn` in cima a questo file; questo quella classe non ce l'ha.
@@ -6138,7 +6139,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.105"></script>
+<script src="js/app.js?v=7.106"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6162,7 +6163,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.105'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.106'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
