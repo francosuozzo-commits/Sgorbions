@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.094 - Modificati index.html e js/app.js. Ricerca globale, telefono (Franco): via «Mostra in tabella», che
+//          portava alla vista tabellare, sul telefono assente (`.rg-mostra-tabella`, nascosto sotto gli 860px).
+//          🐛 Tab «Varianti dello stesso personaggio»: solo articoli base (`_eBase`), e si chiama «Articoli dello
+//          stesso personaggio».
 // v7.093 - Modificato js/app.js (e index per la versione). Personaggio nella finestra di modifica (Franco, dal
 //          telefono): 🐛 un nome scelto dai suggerimenti e lasciato nella casella non si collegava al «Salva»
 //          (serviva «Collega»): ora sì; di nuovo il messaggio «Collegato: …»; e la riga sale subito dopo i nomi.
@@ -30785,7 +30789,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.093';
+const JS_VERSION = 'v7.094';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45012,7 +45016,7 @@ function renderCatalogSearch(q) {
             <!-- 🆕 v6.610 - IL TITOLO DIVENTA UNA RIGA, per fare posto al pulsante senza
                  mandarlo a capo su schermi stretti. Il pulsante e' l'ULTIMO elemento e ha
                  «margin-left:auto»: sta a destra senza che nessuno debba misurare niente. -->
-            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(_b.eti)}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(_b.items.length)}</span>${_b.items.length > 1 ? `<button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',true)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" class="btn-primary" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u25A4</span>${currentLang === 'it' ? 'Mostra in tabella' : 'Show in table'}</button><button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',false)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista a griglia' : 'Open these results in the grid view'}" class="btn-primary" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u229E</span>${currentLang === 'it' ? 'Mostra in griglia' : 'Show in grid'}</button>` : ''}</div>
+            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(_b.eti)}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(_b.items.length)}</span>${_b.items.length > 1 ? `<button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',true)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" class="btn-primary rg-mostra-tabella" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u25A4</span>${currentLang === 'it' ? 'Mostra in tabella' : 'Show in table'}</button><button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',false)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista a griglia' : 'Open these results in the grid view'}" class="btn-primary" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u229E</span>${currentLang === 'it' ? 'Mostra in griglia' : 'Show in grid'}</button>` : ''}</div>
             <div style="display:flex;flex-wrap:wrap;gap:0.7rem;">
               ${gruppi.map(gruppo => '<div style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">' + gruppo.items.map(f => {
                 _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
@@ -59624,7 +59628,9 @@ function buildLinkedFiguresTabsHTML(baseId) {
       }).catch(() => {});
     } else {
       const ix = _indiciPersonaggi(), visti = new Map();
-      personaggiDiArticolo(_self, ix).forEach(pid => articoliDelPersonaggio(pid, ix).forEach(a => { if (a.id !== baseId) visti.set(a.id, a); }));
+      // 🐛 v7.094 (Franco: «nel tab Varianti dello stesso personaggio devono essere mostrati solo articoli base») -
+      //    `_eBase`: le versioni (change, variazioni, omaggi, errori, sigillati) restano fuori
+      personaggiDiArticolo(_self, ix).forEach(pid => articoliDelPersonaggio(pid, ix).forEach(a => { if (a.id !== baseId && _eBase(a)) visti.set(a.id, a); }));
       // nell'ordine dell'Inventario: serie, poi tipologia, poi numero
       // `_serieOrdinate` e non l'ordine di `getData`, che per chi non è admin non è quello dell'Inventario (v6.947)
       const ordSerie = new Map(_serieOrdinate(getData('series', [])).map((s, i) => [s.id, i]));
@@ -59700,7 +59706,8 @@ function buildLinkedFiguresTabsHTML(baseId) {
       items: linked.filter(x => x[v.campo])
     })),
     // 🆕 v7.090 (Franco) - in fondo, dopo le versioni: è l'unico tab che guarda fuori dall'articolo
-    { key: 'stessoPersonaggio', label: currentLang === 'it' ? 'Varianti dello stesso personaggio' : 'Variants of the same character', icon: '🧑‍🎤', items: _stessoPers },
+    // 🔄 v7.094 (Franco: «cambiamo il nome del tab: "articoli dello stesso personaggio"») - era «Varianti dello…»
+    { key: 'stessoPersonaggio', label: currentLang === 'it' ? 'Articoli dello stesso personaggio' : 'Items of the same character', icon: '🧑‍🎤', items: _stessoPers },
     ].filter(g => g.items.length > 0);
 
   if (!groups.length) return _vuoto;
