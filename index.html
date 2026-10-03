@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.103">
+<link rel="stylesheet" href="css/style.css?v=7.104">
 
 
 <style>
@@ -3649,6 +3649,8 @@ di tutte le serie</button>
             <button class="admin-subtab" onclick="tdaSubTab('caroselli')">🎠 Caroselli</button>
             <!-- 🆕 v7.082 (Franco: «rendere anche questo aspetto configurabile da me») -->
             <button class="admin-subtab" onclick="tdaSubTab('ordinamenti')">↕️ Ordinamento delle griglie</button>
+            <!-- 🆕 v7.104 (Franco: «la protezione attiva d'ufficio per certe tipologie: una mappa in console») -->
+            <button class="admin-subtab" onclick="tdaSubTab('protezione')">🔒 Foto protette</button>
           </div>
           <div class="tda-sub" id="tda-sub-tipi">
           <div id="admin-tipo-articolo-tabella"></div>
@@ -3678,6 +3680,10 @@ di tutte le serie</button>
           <!-- 🆕 v7.082 — le chiavi d'ordinamento della griglia per tipologia (`renderAdminOrdinamentiTDA`). -->
           <div class="tda-sub" id="tda-sub-ordinamenti" style="display:none;">
           <div id="admin-ordinamenti-tda"></div>
+          </div>
+          <!-- 🆕 v7.104 — le tipologie con «Foto protetta» d'ufficio (`renderAdminProtezioneTDA`). -->
+          <div class="tda-sub" id="tda-sub-protezione" style="display:none;">
+          <div id="admin-protezione-tda"></div>
           </div>
           <!-- 🆕 v6.234 — da chi può nascere ogni versione. SOLA LETTURA: descrive com'è
                fatto il modello, non cosa contiene questa collezione. È il descrittore
@@ -6138,7 +6144,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.103"></script>
+<script src="js/app.js?v=7.104"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6162,7 +6168,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.103'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.104'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
