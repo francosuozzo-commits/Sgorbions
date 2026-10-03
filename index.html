@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.087">
+<link rel="stylesheet" href="css/style.css?v=7.088">
 
 
 <style>
@@ -692,6 +692,19 @@
 #wz-linguetta:hover .wz-ling-corta, #wz-linguetta:focus-visible .wz-ling-corta { display: none; }
 #wz-linguetta:hover .wz-ling-lunga, #wz-linguetta:focus-visible .wz-ling-lunga { max-width: 26rem; opacity: 1; }
 @media (max-width: 860px) { #wz-linguetta { display: none !important; } }
+/* 🆕 v7.088 (Franco) - la linguetta dell'Inventario: stessa forma, solo nella home (`#page-home.active`), sotto
+   quella del questionario; dove quella non c'è (`body` senza `wz-visibile`) sale al suo posto. */
+#inv-linguetta { display: none; position: fixed; left: 0; top: 130px; z-index: 900;
+  align-items: center; gap: 0.5rem; padding: 0.6rem 0.8rem 0.6rem 0.9rem; border: none; cursor: pointer;
+  border-radius: 0 12px 12px 0; background: var(--action); color: #fff; font-family: var(--font-ui); font-weight: 700;
+  font-size: 0.9rem; white-space: nowrap; box-shadow: 3px 3px 12px rgba(0,0,0,0.45); }
+body:has(#page-home.active) #inv-linguetta { display: flex; }
+body:not(.wz-visibile) #inv-linguetta { top: 80px; }
+#inv-linguetta .wz-ling-lunga { display: inline-block; max-width: 0; overflow: hidden; opacity: 0; transition: max-width 0.3s ease, opacity 0.2s ease; }
+#inv-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga { position: absolute; }
+#inv-linguetta:hover .wz-ling-corta, #inv-linguetta:focus-visible .wz-ling-corta { display: none; }
+#inv-linguetta:hover .wz-ling-lunga, #inv-linguetta:focus-visible .wz-ling-lunga { max-width: 26rem; opacity: 1; }
+@media (max-width: 860px) { #inv-linguetta { display: none !important; } }
 /* 🆕 v7.087 (Franco, solo desktop: «lascia più spazio tra il titolo "Il questionario Sgorbions" e la riga "Col
    Questionario Sgorbions costruisci…"; il font per le frasi testuali del questionario aumentiamolo un minimo») */
 /* 🆕 v7.087 (Franco) - «Salta serie» sulla riga del nome della serie, a destra, solo sul desktop; lì quello del
@@ -701,8 +714,9 @@
 .wz-salta-alto { display: none; }
 @media (min-width: 861px) {
   .wz-salta-alto { display: inline-block; flex-shrink: 0; font-size: 0.8rem; padding: 0.35rem 0.8rem; }
-  /* l'«Esci» fisso in fondo a destra non deve coprire «Prosegui» quando si arriva in fondo */
-  .wz-piede { padding-bottom: 4.5rem; }
+  /* l'«Esci» fisso in fondo a destra non deve coprire «Prosegui» quando si arriva in fondo.
+     v7.088: ora sta nel flusso, sotto il piede, quindi basta poco spazio (era 4.5rem) */
+  .wz-piede { padding-bottom: 1rem; }
   .wz-piede .wz-centro { visibility: hidden; }
   /* 🆕 v7.087 (Franco: «nella pagina che mostra i quadranti della serie, mostra i quadranti usando una sola riga»)
      - tutti sulla stessa riga, larghi uguali */
@@ -780,9 +794,16 @@
 /* 🆕 v7.087 (Franco) - l'uscita anche in fondo, a destra: solo sul desktop */
 .wz-esci-basso { display: none; }
 @media (min-width: 861px) {
-  /* fisso in fondo allo schermo, a destra: anche su una schermata corta sta in basso, e non scorre via */
-  .wz-esci-basso { display: block; position: fixed; right: 1.5rem; bottom: 1.2rem; z-index: 3001; }
-  .wz-esci-basso .wz-esci { font-size: 0.8rem; padding: 0.35rem 0.8rem; }
+  /* 🔄 v7.088 (Franco: «quello in basso non è allineato orizzontalmente con quello in alto; è troppo a dx») - era
+     `fixed` a 1.5rem dal bordo dello schermo, mentre quello in cima finisce dove finisce la schermata (1200px al
+     centro, meno 1rem). Ora è `sticky` dentro il questionario, largo quanto la schermata: stesso bordo destro,
+     anche con la barra di scorrimento. Il questionario diventa una colonna, e `margin-top: auto` lo spinge in
+     fondo quando la schermata è corta. */
+  .wz-overlay { display: flex; flex-direction: column; }
+  .wz-overlay > .wz-pannello, .wz-overlay > .wz-piede { width: 100%; box-sizing: border-box; flex-shrink: 0; }
+  .wz-esci-basso { display: block; position: sticky; bottom: 1.2rem; z-index: 3001; width: 100%; max-width: 1200px; box-sizing: border-box;
+    margin: auto auto 1.2rem; padding: 0 1rem; text-align: right; flex-shrink: 0; pointer-events: none; }
+  .wz-esci-basso .wz-esci { font-size: 0.8rem; padding: 0.35rem 0.8rem; pointer-events: auto; }
 }
 /* 🔄 v7.061 (Franco: «non intendevo tutto il tasto in rosso, ma tasto bianco con la scritta in rosso, una cosa meno
    visiva»; e anche «Salta questa serie») - fondo bianco, scritta e bordo rossi. Rosso pieno resta solo «Azzera
@@ -1799,6 +1820,15 @@ button.back-btn { color:#ffffff; }
 <button type="button" id="wz-linguetta" class="solo-wz" onclick="apriWizardLista()" aria-label="Crea la tua lista Sgorbions col Questionario">
   <span class="wz-ling-corta">📝 <span data-i18n="nav.questionarioBreve">Questionario</span></span>
   <span class="wz-ling-lunga" data-i18n="wz.linguetta">Crea la tua lista Sgorbions col Questionario</span>
+</button>
+<!-- 🆕 v7.088 (Franco: «mettiamo un'altra linguetta sulla sinistra, nella home page; etichetta "Inventario"; quando
+     ci passi sopra, la scritta diventa "Esplora l'Inventario Sgorbions"») - LA LINGUETTA DELL'INVENTARIO. Uguale a
+     quella del questionario e subito sotto (o al suo posto, se quella non si vede); solo nella home e solo sul
+     desktop. Per tutti, come il pulsante «Esplora l'Inventario Sgorbions !»: a chi non è entrato `showPage` chiede
+     l'accesso. -->
+<button type="button" id="inv-linguetta" onclick="showPage('catalog')" aria-label="Esplora l'Inventario Sgorbions">
+  <span class="wz-ling-corta">🗂️ <span data-i18n="nav.catalog">Inventario</span></span>
+  <span class="wz-ling-lunga" data-i18n="inv.linguetta">Esplora l'Inventario Sgorbions</span>
 </button>
 
 <!-- NAVBAR -->
@@ -6002,7 +6032,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.087"></script>
+<script src="js/app.js?v=7.088"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6026,7 +6056,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.087'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.088'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
