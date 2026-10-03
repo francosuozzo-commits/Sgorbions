@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.101">
+<link rel="stylesheet" href="css/style.css?v=7.102">
 
 
 <style>
@@ -802,13 +802,17 @@ body:not(.wz-visibile) #inv-linguetta { top: 80px; }
   /* 🔄 v7.089 (Franco: «mettila tutta a sx, collimando col bordo sx della pagina; e rimetti le scritte in centro
      allo schermo») - tre colonne `1fr auto 1fr`: la foto nella prima, attaccata a sinistra; le frasi nella
      seconda, che sta esattamente al centro; la terza è vuota e fa da contrappeso. Così non si sovrappongono. */
-  .wz-due { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.5rem; align-items: center; margin: 0.6rem 0 1.2rem; }
-  .wz-due-sx { justify-self: start; }
+  /* 🔄 v7.102 - `minmax(0, 1fr)`: le colonne laterali restano uguali anche con una foto larga (le foto delle
+     tipologie sono spesso sdraiate), e la foto si stringe dentro la sua invece di spingere la frase */
+  .wz-due { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 1.5rem; align-items: center; margin: 0.6rem 0 1.2rem; }
+  .wz-due-sx { min-width: 0; }
+  /* v7.102: le frasi lunghe (la fine della serie elenca le tipologie) vanno a capo invece di allargare il centro */
+  .wz-due-dx { max-width: 640px; }
   /* 🔄 v7.089 (Franco: «riduci la dimensione della foto dell'album e mettila più a sx») - 240px invece di 340,
      e attaccata al bordo sinistro della colonna invece che centrata */
   .wz-due .wz-grande-foto { margin: 0; text-align: left; }
   /* `max-width: 100%` qui non va: la colonna è larga quanto il suo contenuto, e la foto si stringeva a zero */
-  .wz-due .wz-grande-foto img { max-height: 240px; max-width: 30vw; }
+  .wz-due .wz-grande-foto img { max-height: 240px; max-width: 100%; }   /* v7.102: dentro la colonna (era 30vw) */
   .wz-due-dx > :first-child { margin-top: 0; }
 }
 /* 🆕 v7.089 (Franco) - «Come vuoi selezionare…?»: nella carta dell'album la foto delle pagine, in quella della
@@ -6134,7 +6138,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.101"></script>
+<script src="js/app.js?v=7.102"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6158,7 +6162,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.101'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.102'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
