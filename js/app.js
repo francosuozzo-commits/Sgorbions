@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.113 - Modificato js/app.js (e index per la versione). Franco: in console «Foto protette» la colonna «Anche nel
+//          carosello» (`car:<chiave>`, `_urlCarosello` in `_caroselloCard`); nella scheda di una figurina per album
+//          il tab «Figurina con retro associata», primo dei tab.
 // v7.112 - Modificati index.html e js/app.js (Franco): nella ricerca globale i PERSONAGGI, in fondo dopo tutti gli
 //          articoli (`_rgPersonaggiHTML`); la linguetta Inventario dice «Esplora l'Inventario Sgorbions !»; il
 //          carosello della home si intitola «Gli articoli Sgorbions censiti nel sito».
@@ -30838,7 +30841,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.112';
+const JS_VERSION = 'v7.113';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -30991,8 +30994,20 @@ function _fotoProtette() {
   return set;
 }
 function _fotoProtetteRifai() { _fpCache = { figs: null, n: -1, set: new Set() }; }
+// 🆕 v7.113 (Franco: «per ogni tda vorrei poter decidere se macchiare anche il carosello oppure no») - nei caroselli
+//    la foto protetta ha la scritta solo se la sua riga in console (tipologia o tipo senza serie) ha accesa anche
+//    «Anche nel carosello» (`car:<chiave>`; se non è mai stata salvata, sì: come prima). `_fpSenzaScritta` dice a
+//    `_filigrana` di saltare, per la sola chiamata di `cloudinaryUrl` fatta da qui.
+let _fpSenzaScritta = false;
+function _urlCarosello(f, url, opts) {
+  let senza = false;
+  try { senza = _PROTEZIONE_CFG['car:' + _chiaveProtezione(f.section, f.tipoProdotto)] === false; } catch (e) {}
+  _fpSenzaScritta = senza;
+  try { return cloudinaryUrl(url, opts); } finally { _fpSenzaScritta = false; }
+}
 function _filigrana(url, opts) {
   try {
+    if (_fpSenzaScritta) return '';
     if (typeof currentUser !== 'undefined' && currentUser && currentUser.isAdmin) return '';
     if (!_fotoProtette().has(url)) return '';
     // senza `w_` la foto arriva grande (l'originale): la scritta si fa come per una foto da 1000
@@ -33980,7 +33995,8 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs)
     'style="flex:0 0 auto;width:' + larghezza + ';scroll-snap-align:start;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">' +
     // v6.080 - altezzaFoto 0 vuol dire "quadrata rispetto alla card" (telefono): niente altezza
     // fissa sotto una card stretta, che e' cio' che allungava il box in verticale.
-    '<img src="' + cloudinaryUrl(_fotoFigurina(f, figs) || f.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" ' +
+    // v7.113: nel carosello la scritta segue la colonna «anche nel carosello» della console (`_urlCarosello`)
+    '<img src="' + _urlCarosello(f, _fotoFigurina(f, figs) || f.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" ' +
       'style="width:100%;' + (altezzaFoto ? 'height:' + altezzaFoto + 'px;' : 'aspect-ratio:1;height:auto;') + 'object-fit:contain;border-radius:6px;background:var(--card);">' +
     righe +
   '</div>';
@@ -39881,18 +39897,22 @@ function renderAdminProtezioneTDA() {
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Accesa: gli articoli di quella tipologia hanno <strong>«Foto protetta» d’ufficio</strong>, e chi visita il sito vede le loro foto con la scritta «figurinesgorbions.it». ' +
-          'Spenta: nessuno, salvo gli articoli su cui la spunta è accesa a mano. Un articolo può sempre fare eccezione dalla sua finestra di modifica.'
+          'Spenta: nessuno, salvo gli articoli su cui la spunta è accesa a mano. Un articolo può sempre fare eccezione dalla sua finestra di modifica.<br>' +
+          '<strong>Anche nel carosello</strong>: accesa, le foto protette hanno la scritta anche nei caroselli; spenta, nei caroselli si vedono pulite.'
         : 'Checked: the items of that type are protected by default. Unchecked: none, except those ticked by hand. Each item can still be an exception.') +
     '</p>' +
     // v7.110: larga quanto il contenuto, come i Caroselli (Franco: la spunta lontana dalla voce)
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
     '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
       '<th style="' + th + 'text-align:center;">' + (it ? 'Protetta d’ufficio' : 'Protected by default') + '</th>' +
+      '<th style="' + th + 'text-align:center;">' + (it ? 'Anche nel carosello' : 'In the carousel too') + '</th>' +   // v7.113
       '<th style="' + th + '">' + (it ? 'Eccezioni' : 'Exceptions') + '</th></tr>' +
     righe.map(r =>
       '<tr><td style="' + td + 'color:var(--info);font-weight:600;">' + esc(r.nome)
         + (r.tipo ? ' <span style="font-size:0.72rem;font-weight:400;color:var(--text);opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span>' : '') + '</td>' +
       '<td style="' + td + 'text-align:center;"><input type="checkbox" id="' + idCasella(r.k) + '" data-chiave="' + esc(r.k) + '"' + (_PROTEZIONE_CFG[r.k] ? ' checked' : '') + '></td>' +
+      // v7.113 - la scritta anche sulle foto del carosello; mai salvata = accesa (era il comportamento di prima)
+      '<td style="' + td + 'text-align:center;"><input type="checkbox" id="' + idCasella('car:' + r.k) + '" data-chiave="car:' + esc(r.k) + '"' + (_PROTEZIONE_CFG['car:' + r.k] !== false ? ' checked' : '') + '></td>' +
       '<td style="' + td + '">' + (ecc[r.k] ? ecc[r.k] + (it ? (ecc[r.k] === 1 ? ' articolo' : ' articoli') : ' items') : '—') + '</td></tr>').join('') +
     '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
@@ -59996,8 +60016,12 @@ function buildLinkedFiguresTabsHTML(baseId) {
         || (parseInt(a.number, 10) || 0) - (parseInt(b.number, 10) || 0));
     }
   }
+  // 🆕 v7.113 (Franco: «nella scheda di una fpa, aggiungere un tab che mostra la figurina con retro (base) associata»)
+  //    - la fcr da cui la figurina per album prende fronte e personaggio (`baseFigurineId`)
+  const _fcrDellaFpa = (_self && _self.section === 'attaccare' && _self.baseFigurineId)
+    ? allFigs.filter(x => x.id === _self.baseFigurineId) : [];
   const _vuoto = '<div id="linked-fig-tabs" data-base="' + esc(baseId) + '"></div>';
-  if (!linked.length && !_usano.items.length && !_albumDelCartoncino.length && !_stessoPers.length) return _vuoto;
+  if (!linked.length && !_usano.items.length && !_albumDelCartoncino.length && !_stessoPers.length && !_fcrDellaFpa.length) return _vuoto;
 
   // 🔴 v6.376 (Franco, baco) — L'OMAGGIO NON AVEVA IL SUO TAB, E LA CAUSA E' L'ELENCO SCRITTO A MANO.
   // *"Nella form di dettaglio del retro manca il tab relativo ai retro omaggio che usano quel retro
@@ -60035,6 +60059,8 @@ function buildLinkedFiguresTabsHTML(baseId) {
   };
 
   const groups = [
+    // v7.113 - il primo: è la domanda che si fa aprendo una figurina per album
+    { key: 'fcrDellaFpa', label: currentLang === 'it' ? 'Figurina con retro associata' : 'Linked sticker with back', icon: '🎴', items: _fcrDellaFpa },
     { key: 'usaRetro', label: currentLang === 'it' ? 'Figurine con questo retro' : 'Figurines with this back', icon: '🎴', items: _usano.items, ereditati: _usano.ereditati },
     // 🆕 v7.053 (Franco: «N -> tab») - il conto sta nel titolo del tab, come per gli altri
     { key: 'usaCartoncino', label: currentLang === 'it' ? 'Album con questo cartoncino' : 'Albums with this card', icon: '📒', items: _albumDelCartoncino },
@@ -60146,7 +60172,7 @@ function buildLinkedFiguresTabsHTML(baseId) {
         // Il "(dalla base)" non e' un dettaglio estetico: dice che quella riga viene da un dato che
         // sul record NON c'e', e che quindi cambia da sola se si cambia il retro della base.
         if (g.ereditati && g.ereditati.has(item.id)) label += currentLang === 'it' ? ' (dalla base)' : ' (from base)';
-      } else if (g.key === 'stessoPersonaggio') {
+      } else if (g.key === 'stessoPersonaggio' || g.key === 'fcrDellaFpa') {   // v7.113: la stessa riga per la fcr della fpa
         // 🆕 v7.090 - il nome completo, e sotto serie e tipologia: lo stesso personaggio sta in serie e tipologie
         //    diverse, ed è quello che distingue le righe
         label = (item.fullName && item.fullName.trim()) ? item.fullName : computeFullName(item, allFigs);
