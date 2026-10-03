@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.108 - Modificato index.html (e app.js per la versione). 🐛 Le due linguette a sinistra vibravano e si potevano
+//          premere solo sul bordo (Franco): la larghezza animata le stringeva sotto il mouse; ora la scritta lunga
+//          arriva subito intera e si accende con la sola dissolvenza.
 // v7.107 - Modificati index.html e js/app.js. La linguetta del questionario (Franco): «📝 Riprendi il
 //          Questionario» (al passaggio «Riprendi il Questionario Sgorbions»), e solo a chi l'ha già fatto almeno
 //          una volta (`body.wz-ripresa`, acceso da `_wzNomePulsanti`); senza, la linguetta Inventario sale.
@@ -30824,7 +30827,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.107';
+const JS_VERSION = 'v7.108';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
