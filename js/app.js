@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.092 - Modificato js/app.js (e index per la versione). 🐛 Sul telefono, nella finestra di modifica, il
+//          pulsante «Collega» del personaggio non c'era: `.btn-admin` è nascosto sotto gli 860px; ora porta
+//          `.admin-anche-telefono` (Franco: «da mobile la modifica di un personaggio non mi sembra funzionare»).
+//          E al «Salva», chi resta senza articoli (e senza alter ego) per un collegamento tolto: «Lo elimino?».
 // v7.091 - Modificato js/app.js (e index per la versione). Il collegamento al personaggio passa dalla scheda in
 //          lettura alla finestra di modifica (Franco): riga «Personaggio» con ✕ e casella + Collega, e si
 //          scrive solo con «Salva» (`_persMod`, `_disegnaPersMod`, `_persAggiungi`, `_persTogli`, `_salvaPersMod`);
@@ -30778,7 +30782,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.091';
+const JS_VERSION = 'v7.092';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -43002,7 +43006,10 @@ function _disegnaPersMod() {
     + '<span style="display:inline-flex;gap:0.4rem;align-items:center;flex-wrap:wrap;margin-left:' + (m.pids.length || ereditati.length ? '0.8rem' : '0') + ';">'
     + '<input class="form-input" id="fe-personaggio-nuovo" list="dl-personaggi-modifica" placeholder="' + (it ? 'nome del personaggio' : 'character name') + '" style="max-width:240px;padding:0.2rem 0.5rem;font-size:0.82rem;" onkeydown="if(event.key===\'Enter\'){event.preventDefault();_persAggiungi();}">'
     + '<datalist id="dl-personaggi-modifica">' + _personaggiDati.elenco.map(p => '<option value="' + esc(p.nome) + '"></option>').join('') + '</datalist>'
-    + '<button type="button" class="btn-primary btn-admin" style="padding:0.2rem 0.8rem;font-size:0.8rem;" onclick="_persAggiungi()">' + (it ? 'Collega' : 'Link') + '</button></span>'
+    // 🐛 v7.092 (Franco: «da mobile la modifica di un personaggio dalla scheda di un articolo non mi sembra
+    //    funzionare») - `.btn-admin` sotto gli 860px è spento dal foglio (gli strumenti admin del telefono, v5.8xx):
+    //    «Collega» non c'era. `.admin-anche-telefono` è l'eccezione già scritta per «Modifica» e i Salva.
+    + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" style="padding:0.2rem 0.8rem;font-size:0.8rem;" onclick="_persAggiungi()">' + (it ? 'Collega' : 'Link') + '</button></span>'
     + (m.toccato ? '<div style="font-size:0.72rem;color:var(--warn);margin-top:0.3rem;">' + (it ? 'Si salva con «Salva».' : 'Saved with «Save».') + '</div>' : '');
 }
 function _persAggiungi() {
@@ -43051,6 +43058,22 @@ async function _salvaPersMod(f) {
     console.error('_salvaPersMod', e);
     toast((it ? '⚠️ Personaggio NON salvato: ' : '⚠️ Character NOT saved: ') + (e?.message || e), 'error');
     return false;
+  }
+  // 🆕 v7.092 (Franco: «la tua proposta di chiedere conferma circa la cancellazione di un personaggio quando
+  //    questo si trova a non avere più articoli perché sull'articolo si è cambiata la relazione, a me sta bene») -
+  //    chi è stato tolto da QUESTO salvataggio e adesso non ha più nessun articolo (suoi, senza contare gli alter
+  //    ego) né legami di alter ego, si propone di eliminarlo, uno per volta. «No» lo lascia com'è.
+  const tolti = m.orig.filter(p => !m.pids.includes(p));
+  for (const pid of tolti) {
+    const D = _personaggiDati, p = D && D.perId.get(pid);
+    if (!p) continue;
+    const legato = (D.alterEgoDi.get(pid) || []).length || D.principaleDi.has(pid);
+    if (legato || articoliDelPersonaggio(pid, _indiciPersonaggi(), true).length) continue;
+    if (!confirm(it ? '«' + p.nome + '» resta senza articoli.\n\nLo elimino?' : '«' + p.nome + '» has no items left.\n\nDelete it?')) continue;
+    try {
+      await _scriviPacchetto(d => { d.personaggi = d.personaggi.filter(x => x.i !== pid); d.associazioni = d.associazioni.filter(a => a.p !== pid); });
+      toast((it ? 'Eliminato: ' : 'Deleted: ') + p.nome, 'success');
+    } catch (e) { toast((it ? '⚠️ NON eliminato: ' : '⚠️ NOT deleted: ') + (e?.message || e), 'error'); }
   }
   _persMod = null;
   return true;
