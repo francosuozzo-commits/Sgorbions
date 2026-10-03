@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.111 - Modificato js/app.js (e index per la versione). Console «🔒 Foto protette» (Franco): una riga per ogni
+//          tipo senza serie (chiave `tipo:<id>`) e niente riga «Altri articoli», che i tipi coprono.
 // v7.110 - Modificati index.html e js/app.js. La linguetta «❤️ Ciò che cerco» (Franco): in tutte le pagine, sul
 //          desktop, a chi ha fatto l'accesso e non è admin; al passaggio «Le figurine che stai cercando». Le tre
 //          linguette stanno ora in una colonna (`#linguette`) e si impilano da sole. In console le tabelle dei
@@ -30833,7 +30835,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.110';
+const JS_VERSION = 'v7.111';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -39844,7 +39846,11 @@ function _impostaProtezione(d) {
   try { if (currentSeriesId && currentSection && document.getElementById('items-grid')) renderItems(); } catch (e) { console.error('renderItems', e); }
   try { if (document.getElementById('page-catalog')?.classList.contains('active')) renderCatalog(); } catch (e) { console.error('renderCatalog', e); }
 }
-const _protettaDUfficio = sez => !!_PROTEZIONE_CFG[sez || 'figurines'];
+// 🔄 v7.111 (Franco: «perché nella tabella non ci sono le tda senza serie? devono esserci; Altri articoli non deve
+//    esserci, viene coperto da esse») - un articolo di un tipo senza serie segue la riga del SUO TIPO (chiave
+//    `tipo:<id>`), non quella della tipologia; gli Altri articoli senza tipo non hanno riga, quindi d'ufficio no.
+const _chiaveProtezione = (sez, tipo) => tipo ? 'tipo:' + tipo : (sez || 'figurines');
+const _protettaDUfficio = (sez, tipo) => !!_PROTEZIONE_CFG[_chiaveProtezione(sez, tipo)];
 // 🔴 L'eccezione «no» si scrive 'no' e non `false`: la v7.103 scriveva `false` su OGNI articolo salvato con la spunta
 //    vuota, quindi `false` non vuol dire «escluso apposta». `true` = protetto a mano, 'no' = escluso a mano, tutto
 //    il resto (null, false, assente) = come la tipologia.
@@ -39852,7 +39858,7 @@ function _eProtetto(f) {
   if (!f) return false;
   if (f.fotoProtetta === true) return true;
   if (f.fotoProtetta === 'no') return false;
-  return _protettaDUfficio(f.section);
+  return _protettaDUfficio(f.section, f.tipoProdotto);
 }
 function renderAdminProtezioneTDA() {
   const box = document.getElementById('admin-protezione-tda');
@@ -39862,7 +39868,11 @@ function renderAdminProtezioneTDA() {
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
   // quanti articoli fanno eccezione, per tipologia: si vedono accanto alla spunta
   const ecc = {};
-  getData('figurines', []).forEach(f => { if ((f.fotoProtetta === true || f.fotoProtetta === 'no') && _eProtetto(f) !== _protettaDUfficio(f.section)) { const s = f.section || 'figurines'; ecc[s] = (ecc[s] || 0) + 1; } });
+  getData('figurines', []).forEach(f => { if ((f.fotoProtetta === true || f.fotoProtetta === 'no') && _eProtetto(f) !== _protettaDUfficio(f.section, f.tipoProdotto)) { const k = _chiaveProtezione(f.section, f.tipoProdotto); ecc[k] = (ecc[k] || 0) + 1; } });
+  // v7.111: le righe sono le tipologie (senza «Altri articoli») e poi i tipi senza serie
+  const righe = PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez] && sez !== 'extras').map(sez => ({ k: sez, nome: getSectionLabel(sez) }))
+    .concat(_tipiProdotto().map(tp => ({ k: 'tipo:' + tp.id, nome: tp.nome || tp.id, tipo: true })));
+  const idCasella = k => 'prot-' + k.replace(/[^a-zA-Z0-9_-]/g, '_');
   box.innerHTML =
     '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🔒 ' + (it ? 'Foto protette' : 'Protected photos') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
@@ -39876,10 +39886,11 @@ function renderAdminProtezioneTDA() {
     '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
       '<th style="' + th + 'text-align:center;">' + (it ? 'Protetta d’ufficio' : 'Protected by default') + '</th>' +
       '<th style="' + th + '">' + (it ? 'Eccezioni' : 'Exceptions') + '</th></tr>' +
-    PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).map(sez =>
-      '<tr><td style="' + td + 'color:var(--info);font-weight:600;">' + esc(getSectionLabel(sez)) + '</td>' +
-      '<td style="' + td + 'text-align:center;"><input type="checkbox" id="prot-' + sez + '"' + (_protettaDUfficio(sez) ? ' checked' : '') + '></td>' +
-      '<td style="' + td + '">' + (ecc[sez] ? ecc[sez] + (it ? (ecc[sez] === 1 ? ' articolo' : ' articoli') : ' items') : '—') + '</td></tr>').join('') +
+    righe.map(r =>
+      '<tr><td style="' + td + 'color:var(--info);font-weight:600;">' + esc(r.nome)
+        + (r.tipo ? ' <span style="font-size:0.72rem;font-weight:400;color:var(--text);opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span>' : '') + '</td>' +
+      '<td style="' + td + 'text-align:center;"><input type="checkbox" id="' + idCasella(r.k) + '" data-chiave="' + esc(r.k) + '"' + (_PROTEZIONE_CFG[r.k] ? ' checked' : '') + '></td>' +
+      '<td style="' + td + '">' + (ecc[r.k] ? ecc[r.k] + (it ? (ecc[r.k] === 1 ? ' articolo' : ' articoli') : ' items') : '—') + '</td></tr>').join('') +
     '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaProtezioneTDA()">' + (it ? 'Salva le foto protette' : 'Save protected photos') + '</button>' +
@@ -39889,7 +39900,8 @@ async function salvaProtezioneTDA() {
   if (!currentUser?.isAdmin) return;
   const it = currentLang === 'it';
   const voci = {};
-  PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).forEach(sez => { const el = document.getElementById('prot-' + sez); if (el) voci[sez] = !!el.checked; });
+  // v7.111: ogni casella porta la sua chiave (`data-chiave`: la tipologia o `tipo:<id>`)
+  document.querySelectorAll('#admin-protezione-tda input[data-chiave]').forEach(el => { voci[el.dataset.chiave] = !!el.checked; });
   try {
     await fsSave('settings', { id: 'protezione', voci });
     _impostaProtezione({ voci });
@@ -61356,8 +61368,9 @@ function switchToEditMode(figId) {
       // 🔄 v7.104 - la spunta mostra lo stato vero (`_eProtetto`): quello della tipologia, se l'articolo non fa eccezione
       + '<input type="checkbox" id="fe-foto-protetta"' + (_eProtetto(f) ? ' checked' : '') + ' style="width:16px;height:16px;cursor:pointer;">'
       + (currentLang === 'it' ? 'chi visita il sito vede le foto con la scritta «figurinesgorbions.it»' : 'visitors see the photos with «figurinesgorbions.it» written on them') + '</label>'
-      + (_protettaDUfficio(f.section) ? '<div style="font-size:0.72rem;color:var(--text);opacity:0.75;margin-top:2px;">'
-          + (currentLang === 'it' ? 'D’ufficio per le ' + esc(getSectionLabel(f.section || 'figurines')) + ' (console → Tipo di articolo → Foto protette).' : 'Default for this item type.') + '</div>' : '')
+      // v7.111: la nota nomina il tipo senza serie, quando è lui a decidere
+      + (_protettaDUfficio(f.section, f.tipoProdotto) ? '<div style="font-size:0.72rem;color:var(--text);opacity:0.75;margin-top:2px;">'
+          + (currentLang === 'it' ? 'D’ufficio per ' + (f.tipoProdotto ? '«' + esc(((_tipiProdotto().find(t => t.id === f.tipoProdotto)) || {}).nome || f.tipoProdotto) + '»' : 'le ' + esc(getSectionLabel(f.section || 'figurines'))) + ' (console → Tipo di articolo → Foto protette).' : 'Default for this item type.') + '</div>' : '')
       + '</span></div>';
     // 🗑️ v7.093 - qui stava la riga del personaggio (v7.091): è salita dopo i nomi (vedi `_rigaPersonaggiEditHTML`)
     // v6.106 (Franco) - via il testo di aiuto dentro il campo
@@ -64258,8 +64271,9 @@ async function saveFigFromDetail(figId, opzioni) {
       disponibilita: (document.getElementById('fe-disponibilita')?.value || '').trim() || null,
       // 🆕 v7.103 - vedi `_fotoProtette`. 🔄 v7.104: si scrive solo l'ECCEZIONE alla tipologia; uguale = null
       fotoProtetta: (() => { const el = document.getElementById('fe-foto-protetta'); if (!el) return null;
-        const sez = ((typeof _recordInModifica === 'function' && _recordInModifica(figId)) || _bozzaCorrente || {}).section || 'figurines';
-        return el.checked === _protettaDUfficio(sez) ? null : (el.checked ? true : 'no'); })(),   // 'no': vedi `_eProtetto`
+        const rec = (typeof _recordInModifica === 'function' && _recordInModifica(figId)) || _bozzaCorrente || {};
+        // v7.111: anche il tipo senza serie, che ha la sua riga in console
+        return el.checked === _protettaDUfficio(rec.section || 'figurines', rec.tipoProdotto) ? null : (el.checked ? true : 'no'); })(),   // 'no': vedi `_eProtetto`
       forSale: document.getElementById('fe-for-sale')?.checked || false,
       price: document.getElementById('fe-for-sale')?.checked ? (parseFloat(document.getElementById('fe-price').value) || 0) : null,
       quantity: document.getElementById('fe-for-sale')?.checked ? (parseInt(document.getElementById('fe-quantity').value) || 1) : null,
