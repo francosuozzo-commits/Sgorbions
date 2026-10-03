@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.088">
+<link rel="stylesheet" href="css/style.css?v=7.089">
 
 
 <style>
@@ -785,6 +785,67 @@ body:not(.wz-visibile) #inv-linguetta { top: 80px; }
   font: 700 clamp(14px, 3vw, 24px)/1 sans-serif; color: #fff; background: #16a34a; border-radius: 999px; }
 .wz-punto:focus-visible { outline: 3px solid #ffd84d; outline-offset: -3px; }
 @media (prefers-reduced-motion: reduce) { .wz-album-foglio { transition: none; } }
+/* 🆕 v7.089 (Franco: «prova a dividere in 2 lo schermo; a sx la foto, a dx le 4 frasi») - nella schermata della
+   serie, sul desktop, due colonne uguali centrate in verticale; sul telefono resta tutto in colonna. */
+@media (min-width: 861px) {
+  /* 🔄 v7.089 (Franco: «mettila tutta a sx, collimando col bordo sx della pagina; e rimetti le scritte in centro
+     allo schermo») - tre colonne `1fr auto 1fr`: la foto nella prima, attaccata a sinistra; le frasi nella
+     seconda, che sta esattamente al centro; la terza è vuota e fa da contrappeso. Così non si sovrappongono. */
+  .wz-due { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.5rem; align-items: center; margin: 0.6rem 0 1.2rem; }
+  .wz-due-sx { justify-self: start; }
+  /* 🔄 v7.089 (Franco: «riduci la dimensione della foto dell'album e mettila più a sx») - 240px invece di 340,
+     e attaccata al bordo sinistro della colonna invece che centrata */
+  .wz-due .wz-grande-foto { margin: 0; text-align: left; }
+  /* `max-width: 100%` qui non va: la colonna è larga quanto il suo contenuto, e la foto si stringeva a zero */
+  .wz-due .wz-grande-foto img { max-height: 240px; max-width: 30vw; }
+  .wz-due-dx > :first-child { margin-top: 0; }
+}
+/* 🆕 v7.089 (Franco) - «Come vuoi selezionare…?»: nella carta dell'album la foto delle pagine, in quella della
+   griglia quattro figurine in 2×2, alte quanto la foto dell'altra carta. */
+.wz-carta-foto img { display: block; width: 100%; height: 150px; object-fit: contain; margin: 0 auto 0.5rem; }
+.wz-griglia4 { display: grid; grid-template-columns: repeat(2, auto); justify-content: center; gap: 4px; margin: 0 auto 0.5rem; }
+.wz-griglia4 img { display: block; height: 73px; width: auto; max-width: 100%; object-fit: contain; border-radius: 4px; }
+@media (max-width: 860px) { .wz-carta-foto img { height: 110px; } .wz-griglia4 img { height: 53px; } }
+/* 🔄 v7.089 (Franco: «nella pagina "Il questionario Sgorbions", riduci un minimo la grandezza delle foto degli
+   album») - sul desktop le serie della prima schermata stanno nell'85% della larghezza, al centro: le carte e
+   le foto si stringono di un settimo, e restano su due righe uguali. */
+@media (min-width: 861px) { .wz-mosaico.wz-mosaico-intro { max-width: 85%; margin-left: auto; margin-right: auto; } }
+/* 🆕 v7.089 (Franco) - la copia di «Torna indietro» / «Prosegui» sotto la barra di progresso: stessa fila del piede,
+   senza il suo spazio sotto (quello serve solo in fondo) e un poco staccata dalla barra. */
+.wz-piede.wz-piede-alto { margin: 0.7rem auto 0.4rem; padding: 0; max-width: none; }
+/* 🆕 v7.089 (Franco) - i tre tasti sotto le due foto della scheda in modifica, su una riga larga quanto le foto.
+   Si dividono lo spazio in proporzione alle scritte: «Scambia» più stretto, gli altri due più larghi
+   (2 : 1 : 2.4). Scritta più piccola perché ci stia; se non ci sta, i puntini. Misurato: nell'album a 1920 le
+   foto vanno da 1030 a 1492 e la riga pure, nessuna scritta tagliata. */
+/* 🔴 `width: 0; min-width: 100%` e non `width: 100%` (Franco, con una foto: «si vede come il tasto fuoriesce dallo
+   spazio che ti avevo indicato»): dove la colonna delle foto è larga quanto il suo contenuto, la riga dei tasti
+   con le sue scritte la allargava oltre le due foto. Così la riga non chiede spazio suo: prende quello che c'è. */
+/* E le due righe stanno in `.fe-due-foto`, una colonna senza larghezza sua: dove il genitore è un blocco è larga
+   quanto lui (come prima), dove il genitore la stringe al contenuto è larga quanto le due foto - e i tasti, che
+   non chiedono spazio, la seguono. */
+.fe-due-foto { display: flex; flex-direction: column; }
+.fe-tre-tasti { display: flex; gap: 0.3rem; margin-top: 0.4rem; width: 0; min-width: 100%; box-sizing: border-box; }
+.fe-tre-tasti > label { flex: 2 1 0; min-width: 0; display: flex; cursor: pointer; margin: 0; }
+.fe-tre-tasti > label > .btn-foto { flex: 1; min-width: 0; }
+.fe-tre-tasti > button:nth-of-type(1) { flex: 1 1 0; }
+.fe-tre-tasti > button:nth-of-type(2) { flex: 2.4 1 0; }
+.fe-tre-tasti .btn-foto { min-width: 0; font-size: 0.72rem; padding: 6px 4px; overflow: hidden; text-overflow: ellipsis; }
+/* 🆕 v7.089 (Franco) - il riepilogo dell'uscita dal questionario: per ogni serie la copertina piccola col nome e
+   una tabella (tipologia, nella tua lista, aggiunti col questionario), i numeri allineati a destra. */
+.wz-uscita-serie { max-width: 760px; margin: 1.4rem auto 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem 1rem; }
+.wz-uscita-testa { display: flex; align-items: center; gap: 0.8rem; font-family: var(--font-ui); font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem; }
+.wz-uscita-testa img { width: 52px; height: 52px; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
+/* colonne fisse (metà e due quarti): così le tabelle delle serie una sotto l'altra hanno i numeri in colonna */
+.wz-uscita-tab { width: 100%; border-collapse: collapse; font-size: 0.95rem; table-layout: fixed; }
+.wz-uscita-tab th:first-child { width: 50%; }
+.wz-uscita-tab .wz-uscita-zero { color: var(--muted); font-weight: 400; }
+.wz-uscita-tab th { text-align: right; font-weight: 600; font-size: 0.8rem; color: var(--muted); padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border); }
+.wz-uscita-tab td { text-align: right; padding: 0.35rem 0.5rem; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); }
+.wz-uscita-tab th:first-child, .wz-uscita-tab td:first-child { text-align: left; }
+.wz-uscita-tab tr:last-child td { border-bottom: none; }
+.wz-uscita-nuovi { color: #4ade80; font-weight: 700; }
+.wz-uscita-totale td { font-weight: 800; border-top: 2px solid var(--border2); }
+@media (max-width: 860px) { .wz-uscita-serie { padding: 0.6rem 0.6rem; } .wz-uscita-tab { font-size: 0.85rem; } .wz-uscita-tab th { font-size: 0.72rem; } }
 /* 🆕 v7.055 (Franco) - «Esci dal questionario» in cima a ogni schermata, piccolo e a destra */
 .wz-esci-alto { text-align: right; margin: 0 0 0.3rem; }
 .wz-esci-alto .wz-esci { font-size: 0.8rem; padding: 0.35rem 0.8rem; }   /* v7.058: era .btn-secondary, ora rosso */
@@ -813,6 +874,8 @@ body:not(.wz-visibile) #inv-linguetta { top: 80px; }
 .wz-conferma { background: #16a34a !important; color: #ffffff; box-shadow: 0 6px 22px rgba(22,163,74,0.35); }
 .wz-conferma:hover { background: #15803d !important; box-shadow: 0 8px 30px rgba(22,163,74,0.45); }
 @media (max-width: 860px) { .wz-salta-foto { display: block; text-align: center; margin: 0.8rem 0 0.4rem; } }
+/* 🔄 v7.089 (Franco) - ora sta SOPRA la foto: il margine grande va sotto, verso la foto */
+@media (max-width: 860px) { .wz-salta-foto { margin: 0.2rem 0 0.7rem; } }
 
 /* 🔴 v6.932 (Franco: «anche "ricerca in tutto il sito"») — IL SEGNAPOSTO DELLA CASELLA DI RICERCA.
    📏 MISURATO: non era una scelta del sito. Nessun campo del sito ha una regola `::placeholder`,
@@ -1863,7 +1926,9 @@ button.back-btn { color:#ffffff; }
              pezzi cercando delle stringhe letterali nell'index (fra cui quella che dichiara la
              versione attesa, in fondo). Nominarle qui sposta il taglio e la preview esce
              DOPPIA - successo scrivendo questa release, e lo script se n'e' accorto. -->
-        <div style="display:flex;align-items:center;gap:0.5rem;">
+        <!-- 🔄 v7.089 (Franco: «spezza su 3 righe; riga 1 solo la versione del sito») - in colonna: la versione,
+             sotto JS e CSS, e sotto ancora «Online dal» (che sta già fuori da questo div). -->
+        <div style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.25;">
           <!-- 🎨 v6.932 (Franco: «anche la versione e il nome utente») - ERANO BIANCHI SMORZATI DALL'ALFA
                (0,5 e 0,4), non grigi: a schermo la differenza non si vede, e il risultato era lo
                stesso - una scritta che si legge a fatica. Adesso portano `--text` pieno. -->
@@ -1984,7 +2049,9 @@ button.back-btn { color:#ffffff; }
            segnalare. Cliccandolo si va lì. Lo accende aggiornaPallinoErrori(), che chiede il conto
            alla stessa funzione che disegna quella pagina — così non possono dire cose diverse. -->
       <span id="nav-errori-dot" onclick="showPage('admin');" style="display:none;width:9px;height:9px;border-radius:50%;background:var(--danger);cursor:pointer;flex-shrink:0;"></span>
-      <span id="nav-owned-counter" style="font-family:var(--font-ui);font-size:0.85rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:2px 10px;border-radius:20px;display:none;"></span>
+      <!-- 🔄 v7.089 (Franco) - non più «Figurine nella tua lista N / M» ma «🏆 3° · 49.432 punti»: lo scrive
+           updateOwnedCounter, una riga sola (`white-space:nowrap`), e porta alla Classifica -->
+      <span id="nav-owned-counter" style="white-space:nowrap;font-family:var(--font-ui);font-size:0.85rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:2px 10px;border-radius:20px;display:none;"></span>
       <div class="avatar-btn" id="nav-avatar" onclick="showPage('profile')" style="overflow:hidden;padding:0;"></div>
       <button class="btn-logout" onclick="logout()" data-i18n="nav.logout">Logout</button>
     </div>
@@ -2402,9 +2469,9 @@ button.back-btn { color:#ffffff; }
           <h1 class="titolo-pagina" style="font-family:var(--font-display);font-size:2.2rem;" data-i18n="catalog.title">The Inventory</h1>
           <!-- v6.972 (Franco: «la frase "Tutti i personaggi Sgorbions, con i loro articoli" va in bianco») - bianca in tutti e tre i tagli: è lo stesso elemento -->
           <p id="catalog-sub" style="color:var(--text);font-size:0.9rem;" data-i18n="catalog.sub">All Sgorbions series published</p>
-          <!-- 🆕 v7.014 - il percorso guidato anche dall'Inventario; lo accende `renderCatalog` solo a chi
-               ha fatto l'accesso -->
-          <div id="wz-pulsante-inv" class="solo-wz" style="display:none;margin-top:0.6rem;"><button type="button" class="btn-primary wz-pulsante" onclick="apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
+          <!-- 🗑️ v7.089 (Franco: «il bottone "Crea la tua lista col Questionario Sgorbions" che c'è nella pagina
+               Inventario, togliamolo») - via `#wz-pulsante-inv` (era della v7.014). `renderCatalog` lo cerca
+               ancora e, non trovandolo, non fa niente. -->
         </div>
         <div id="admin-add-series-btn" style="display:none;justify-self:end;">
           <button class="btn-primary btn-admin" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
@@ -6032,7 +6099,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.088"></script>
+<script src="js/app.js?v=7.089"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6056,7 +6123,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.088'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.089'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
