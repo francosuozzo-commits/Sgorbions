@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.106">
+<link rel="stylesheet" href="css/style.css?v=7.107">
 
 
 <style>
@@ -705,6 +705,10 @@
   font-size: 0.9rem; white-space: nowrap; box-shadow: 3px 3px 12px rgba(0,0,0,0.45); }
 body:has(#page-home.active) #inv-linguetta { display: flex; }
 body:not(.wz-visibile) #inv-linguetta { top: 80px; }
+/* 🆕 v7.107 (Franco) - la linguetta del questionario solo a chi l'ha già fatto («Riprendi»); dove non c'è, quella
+   dell'Inventario sale al suo posto */
+body:not(.wz-ripresa) #wz-linguetta { display: none !important; }
+body:not(.wz-ripresa) #inv-linguetta { top: 80px; }
 #inv-linguetta .wz-ling-lunga { display: inline-block; max-width: 0; overflow: hidden; opacity: 0; transition: max-width 0.3s ease, opacity 0.2s ease; }
 #inv-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga { position: absolute; }
 #inv-linguetta:hover .wz-ling-corta, #inv-linguetta:focus-visible .wz-ling-corta { display: none; }
@@ -1900,9 +1904,12 @@ button.back-btn { color:#ffffff; }
      📌 Fissa sul bordo SINISTRO, in alto sotto la barra, blu (Franco: «la volevo sul lato sx; essendo una
      funzionalità utente la volevo blu; in alto, non al centro»). `solo-wz` come gli altri pulsanti del questionario; solo desktop, perché il passaggio del
      mouse sul telefono non esiste. Sta sotto la barra e sotto le finestre (z-index 900). -->
-<button type="button" id="wz-linguetta" class="solo-wz" onclick="apriWizardLista()" aria-label="Crea la tua lista Sgorbions col Questionario">
-  <span class="wz-ling-corta">📝 <span data-i18n="nav.questionarioBreve">Questionario</span></span>
-  <span class="wz-ling-lunga" data-i18n="wz.linguetta">Crea la tua lista Sgorbions col Questionario</span>
+<!-- 🔄 v7.107 (Franco: «chiamala "Riprendi il Questionario"; e mostrala solo quando lo mostreresti come "Riprendi"») -
+     il nome nuovo (chiave sua, `wz.lingCorta`: «Questionario» resta la voce della barra) e, al passaggio del mouse,
+     «Riprendi il Questionario Sgorbions»; c'è solo con `body.wz-ripresa` (vedi `_wzNomePulsanti`). -->
+<button type="button" id="wz-linguetta" class="solo-wz" onclick="apriWizardLista()" aria-label="Riprendi il Questionario Sgorbions">
+  <span class="wz-ling-corta">📝 <span data-i18n="wz.lingCorta">Riprendi il Questionario</span></span>
+  <span class="wz-ling-lunga" data-i18n="wz.linguetta">Riprendi il Questionario Sgorbions</span>
 </button>
 <!-- 🆕 v7.088 (Franco: «mettiamo un'altra linguetta sulla sinistra, nella home page; etichetta "Inventario"; quando
      ci passi sopra, la scritta diventa "Esplora l'Inventario Sgorbions"») - LA LINGUETTA DELL'INVENTARIO. Uguale a
@@ -6139,7 +6146,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.106"></script>
+<script src="js/app.js?v=7.107"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6163,7 +6170,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.106'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.107'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
