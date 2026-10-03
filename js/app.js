@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.106 - Modificato index.html (e app.js per la versione). Profilo (Franco): via il pulsante «Crea la tua lista
+//          col Questionario Sgorbions» / «Riprendi il questionario» che stava sopra la tua lista.
 // v7.105 - Modificato index.html (e app.js per la versione). Ricerca globale (Franco): via il suggerimento che
 //          compariva sotto la casella al passaggio del mouse (`.nav-search-hint`); resta quello dentro la casella.
 // v7.104 - Modificati index.html e js/app.js. Console → Tipo di articolo → «🔒 Foto protette» (Franco): le
@@ -30819,7 +30821,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.105';
+const JS_VERSION = 'v7.106';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
