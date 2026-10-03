@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.101 - Modificati index.html e js/app.js. LE SERIE GEMELLE (Franco: Kakkones e Sgorbions 2018 hanno gli
+//          stessi articoli): nella scheda della serie il campo «Serie gemella» (`serieGemellaId`, scritto su tutte e
+//          due da `_scriviGemellaSullAltra`) e il tasto «Allinea i personaggi» (`allineaPersonaggiGemella`: dove un
+//          lato è vuoto prende l'altro, dove sono diversi vince la serie aperta). Al «Salva» del personaggio di un
+//          articolo lo stesso collegamento va sul gemello (stessa tipologia, numero e nome), con un messaggio.
 // v7.100 - Modificato js/app.js (e index per la versione). Tab «Articoli dello stesso personaggio» (Franco): le
 //          figurine per album solo delle serie con «Figurine per album diverse da figurine con retro» (`hasSizes`).
 // v7.099 - Modificati index.html e js/app.js. Questionario (Franco, proposta C fra tre): i pulsanti secondari
@@ -30803,7 +30808,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.100';
+const JS_VERSION = 'v7.101';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -37462,6 +37467,7 @@ function _ripristinaFlagSerie(s) {
   spunta('series-contenitore-input',               s && s.serieContenitore); // v6.204
   spunta('series-unico-retro-input',              s && s.unicoRetro); // v6.814
   spunta('series-personaggio-card-input',         s && s.personaggioInCard); // v6.966
+  try { _riempiSerieGemella(s); } catch (e) { console.error('_riempiSerieGemella', e); }   // v7.101
   // 🔴 v6.584 - IL RIPRISTINO DEL FLAG NUOVO, e vale l'avvertimento della v6.219: senza
   // questa riga la casella si aprirebbe sempre spenta e `saveSeries` scriverebbe `false` —
   // cioe' ogni salvataggio rimetterebbe in vista una serie nascosta. Dodici flag, dodici
@@ -38156,6 +38162,8 @@ async function saveSeries() {
   const unicoRetro = document.getElementById('series-unico-retro-input')?.checked || false; // v6.814
   // 🆕 v6.966 (Franco) - la riga del personaggio sulle card di questa serie: vedi `_personaggioInCard`.
   const personaggioInCard = document.getElementById('series-personaggio-card-input')?.checked || false;
+  // 🆕 v7.101 - la serie gemella (vuoto = nessuna); dopo il salvataggio `_scriviGemellaSullAltra` la scrive anche di là
+  const serieGemellaId = document.getElementById('series-gemella-input')?.value || null;
   // 🔄 v6.668 - un campo solo al posto delle due spunte. Il ripiego a «pubblicata» copre il
   //    caso in cui il selettore non fosse nel DOM: prima, due `|| false` dicevano «visibile e
   //    senza timbro», che e' la stessa cosa detta in due pezzi.
@@ -38350,7 +38358,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -38372,10 +38380,12 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
+    // 🆕 v7.101 - la gemella, nei due sensi: la si scrive anche sull'altra serie (e si toglie a chi la aveva)
+    await _scriviGemellaSullAltra(editId || (_cache.series[_cache.series.length - 1] || {}).id, serieGemellaId);
   } catch(e) {
     console.error('saveSeries', e);
     _fineAttesa();   // v6.190
@@ -43064,6 +43074,84 @@ function _persTogli(pid) {
 }
 // chiamata da `saveFigFromDetail` DOPO che l'articolo è salvato: `f` è il record appena scritto (in creazione ha
 // già il suo id vero). Torna false se la scrittura dei personaggi non è riuscita: l'articolo resta salvato.
+// 🆕 v7.101 (Franco) - LE SERIE GEMELLE: due serie con gli stessi articoli (stessa tipologia, numero e nome), come
+//    Kakkones e Sgorbions 2018. Il campo `serieGemellaId` sta su tutte e due (lo scrive `saveSeries`), ma si legge
+//    anche da un lato solo, così una serie salvata prima della v7.101 non perde il legame.
+function _serieGemellaDi(sid) {
+  if (!sid) return null;
+  const tutte = getData('series', []), s = tutte.find(x => x.id === sid);
+  const g = (s && s.serieGemellaId && tutte.find(x => x.id === s.serieGemellaId))
+    || tutte.find(x => x.serieGemellaId === sid && x.id !== sid);
+  return g || null;
+}
+const _chiaveGemello = f => (f.section || 'figurines') + '|' + (f.number ?? '') + '|' + String(f.name || '').toUpperCase().trim();
+// l'articolo gemello: nella serie gemella, base, stessa tipologia, numero e nome
+function _gemelloDi(f) {
+  if (!f || !_eBase(f)) return null;
+  const g = _serieGemellaDi(f.seriesId);
+  if (!g) return null;
+  const k = _chiaveGemello(f);
+  return getData('figurines', []).find(x => x.seriesId === g.id && _eBase(x) && _chiaveGemello(x) === k) || null;
+}
+function _riempiSerieGemella(s) {
+  const sel = document.getElementById('series-gemella-input');
+  if (!sel) return;
+  const it = currentLang === 'it', g = s ? _serieGemellaDi(s.id) : null;
+  sel.innerHTML = '<option value="">' + (it ? '— nessuna —' : '— none —') + '</option>'
+    + _serieOrdinate(getData('series', [])).filter(x => !s || x.id !== s.id).map(x => '<option value="' + esc(x.id) + '"' + (g && g.id === x.id ? ' selected' : '') + '>' + esc(x.name) + '</option>').join('');
+  const btn = document.getElementById('series-gemella-allinea-btn');
+  if (btn) btn.style.display = s && g ? '' : 'none';   // si allinea una serie salvata con la sua gemella salvata
+}
+// dopo `saveSeries`: la gemella scritta anche sull'altra serie, e tolta a chi puntava qui e non è più la gemella
+async function _scriviGemellaSullAltra(sid, gid) {
+  if (!sid) return;
+  const tutte = getData('series', []);
+  for (const x of tutte) {
+    const deve = x.id === gid ? sid : (x.serieGemellaId === sid ? null : undefined);
+    if (deve === undefined || x.id === sid || (x.serieGemellaId || null) === deve) continue;
+    x.serieGemellaId = deve;
+    await fsSave('series', _serieSenzaItems(x));
+  }
+}
+// «Allinea i personaggi» (scheda della serie): per ogni coppia di gemelli, dove un lato non ha personaggi prende
+// quelli dell'altro; dove li hanno tutti e due e sono diversi vince QUESTA serie (Franco, il 3 ottobre, aprendo
+// Kakkones: «per le differenze vince la Kakkones, che ho appena rivisto»). Anteprima nella conferma, una scrittura.
+async function allineaPersonaggiGemella() {
+  const it = currentLang === 'it';
+  const sid = document.getElementById('edit-series-id')?.value, s = getData('series', []).find(x => x.id === sid), g = _serieGemellaDi(sid);
+  if (!s || !g) { toast(it ? 'Prima scegli e salva la serie gemella' : 'Choose and save the twin series first', 'error'); return; }
+  await caricaPersonaggi();
+  const ix = _indiciPersonaggi(), D = _personaggiDati;
+  const dir = a => [...(D.dirPerArt.get(_rigaDelPersonaggio(a, ix).id) || [])].sort();
+  const mieGem = new Map(ix.figs.filter(x => x.seriesId === g.id && _eBase(x)).map(x => [_chiaveGemello(x), x]));
+  const scritture = [];   // [riga, pids]
+  let daGem = 0, versoGem = 0, conflitti = 0;
+  const nomeP = p => (D.perId.get(p) || {}).nome || p, elencoDiversi = [];
+  ix.figs.filter(x => x.seriesId === s.id && _eBase(x)).forEach(a => {
+    const b = mieGem.get(_chiaveGemello(a)); if (!b) return;
+    const pa = dir(a), pb = dir(b);
+    if (pa.join() === pb.join()) return;
+    if (!pa.length) { scritture.push([_rigaDelPersonaggio(a, ix), pb]); daGem++; }
+    else {
+      scritture.push([_rigaDelPersonaggio(b, ix), pa]); versoGem++;
+      // i diversi si elencano nella conferma: lì il personaggio di là si perde, e va visto prima
+      if (pb.length) { conflitti++; elencoDiversi.push('n.' + (a.number ?? '—') + ' ' + a.name + ': ' + pa.map(nomeP).join(', ') + ' (al posto di ' + pb.map(nomeP).join(', ') + ')'); }
+    }
+  });
+  if (!scritture.length) { toast(it ? 'Già allineate: niente da fare' : 'Already aligned: nothing to do', 'success'); return; }
+  if (!confirm(it
+    ? 'Allineo i personaggi di ' + s.name + ' e ' + g.name + '?\n\n· ' + daGem + ' articoli di ' + s.name + ' prendono il personaggio da ' + g.name
+      + '\n· ' + versoGem + ' articoli di ' + g.name + ' prendono il personaggio da ' + s.name + (conflitti ? ' (di cui ' + conflitti + ' diversi: vince ' + s.name + ')' : '')
+      + (elencoDiversi.length ? '\n\nI diversi:\n' + elencoDiversi.join('\n') : '')
+    : 'Align the characters of ' + s.name + ' and ' + g.name + '?\n\n· ' + daGem + ' from ' + g.name + '\n· ' + versoGem + ' to ' + g.name + (conflitti ? ' (' + conflitti + ' different: ' + s.name + ' wins)' : ''))) return;
+  try {
+    await _scriviPacchetto(d => scritture.forEach(([riga, pids]) => {
+      d.associazioni = d.associazioni.filter(x => x.a !== riga.id);
+      pids.forEach(p => d.associazioni.push({ a: riga.id, p }));
+    }));
+  } catch (e) { toast((it ? '⚠️ NON allineato: ' : '⚠️ NOT aligned: ') + (e?.message || e), 'error'); return; }
+  toast(it ? '✅ Allineati ' + scritture.length + ' articoli fra ' + s.name + ' e ' + g.name : '✅ Aligned ' + scritture.length + ' items', 'success');
+}
 async function _salvaPersMod(f) {
   // 🐛 v7.093 (Franco, dal telefono: «se scrivo il nome di un personaggio e seleziono dai suggerimenti, mi trovo il
   //    nome nel campo, ma quando schiaccio Salva, a dispetto del fatto che dice "articolo salvato", non ha salvato
@@ -43074,12 +43162,21 @@ async function _salvaPersMod(f) {
   const m = _persMod;
   if (!m || !m.toccato || !f || !f.id) return true;
   const it = currentLang === 'it';
+  // 🆕 v7.101 - il GEMELLO nella serie gemella (Kakkones ↔ Sgorbions 2018): gli stessi personaggi, nella stessa
+  //    scrittura. Si guarda la riga del personaggio, cioè l'articolo base su cui il collegamento sta davvero.
+  let gemello = null;
+  try {
+    const ixG = _indiciPersonaggi(), r0 = _rigaDelPersonaggio(f, ixG), gm = _gemelloDi(r0);
+    gemello = gm ? _rigaDelPersonaggio(gm, ixG) : null;
+  } catch (e) { console.error('_gemelloDi', e); }
   try {
     const riga = _rigaDelPersonaggio(f, _indiciPersonaggi());
     await _scriviPacchetto(d => {
       m.nuovi.filter(n => m.pids.includes(n.i)).forEach(n => { if (!d.personaggi.some(p => p.i === n.i)) d.personaggi.push({ i: n.i, n: n.n }); });
-      d.associazioni = d.associazioni.filter(a => a.a !== riga.id);
-      m.pids.forEach(p => d.associazioni.push({ a: riga.id, p }));
+      [riga].concat(gemello ? [gemello] : []).forEach(r => {
+        d.associazioni = d.associazioni.filter(a => a.a !== r.id);
+        m.pids.forEach(p => d.associazioni.push({ a: r.id, p }));
+      });
     });
   } catch (e) {
     console.error('_salvaPersMod', e);
@@ -43092,6 +43189,14 @@ async function _salvaPersMod(f) {
     toast(nomi.length
       ? (it ? 'Collegato: ' : 'Linked: ') + nomi.join(', ')
       : (it ? 'Nessun personaggio collegato' : 'No character linked'), 'success');
+    // 🆕 v7.101 (Franco: «voglio un messaggio che dice che la relazione col personaggio è stata propagata alla
+    //    figurina cugina dell'altra serie») - il secondo messaggio, che nomina la serie e l'articolo
+    if (gemello) {
+      const sg = (getData('series', []).find(x => x.id === gemello.seriesId) || {}).name || '';
+      const cosa = getSectionLabelSingular(gemello.section || 'figurines') + (gemello.number != null && gemello.number !== '' ? ' n.' + gemello.number : '');
+      toast(it ? '🔗 Propagato anche alla gemella di ' + sg + ': ' + cosa + ' «' + gemello.name + '»'
+               : '🔗 Also applied to its twin in ' + sg + ': ' + cosa + ' «' + gemello.name + '»', 'success', null, 6000);
+    }
   }
   // 🆕 v7.092 (Franco: «la tua proposta di chiedere conferma circa la cancellazione di un personaggio quando
   //    questo si trova a non avere più articoli perché sull'articolo si è cambiata la relazione, a me sta bene») -
