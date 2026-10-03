@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.109">
+<link rel="stylesheet" href="css/style.css?v=7.110">
 
 
 <style>
@@ -719,6 +719,21 @@ body:not(.wz-ripresa) #inv-linguetta { top: 80px; }
 #inv-linguetta:hover .wz-ling-corta, #inv-linguetta:focus-visible .wz-ling-corta { display: none; }
 #inv-linguetta:hover .wz-ling-lunga, #inv-linguetta:focus-visible .wz-ling-lunga { max-width: 26rem; opacity: 1; }
 @media (max-width: 860px) { #inv-linguetta { display: none !important; } }
+/* 🆕 v7.110 (Franco: «metti anche una linguetta "Ciò che cerco", sulla sinistra»; «in tutte le pagine»; al passaggio
+   «Le figurine che stai cercando») - LE LINGUETTE IN UNA COLONNA. Erano due, ognuna `fixed` col suo `top` calcolato
+   sull'altra; con tre, e ognuna visibile in casi diversi, i conti si moltiplicavano. Ora stanno in `#linguette`, che
+   è fissa sotto la barra e le mette una sotto l'altra: chi non si vede non occupa posto, e le altre salgono. Le
+   regole di `top` qui sopra non valgono più (le copre `position: static`), restano perché dicono la storia. */
+#linguette { position: fixed; left: 0; top: 80px; z-index: 900; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; pointer-events: none; }
+#linguette > button { position: static !important; top: auto !important; pointer-events: auto; }
+#cc-linguetta { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.8rem 0.6rem 0.9rem; border: none; cursor: pointer;
+  border-radius: 0 12px 12px 0; background: var(--action); color: #fff; font-family: var(--font-ui); font-weight: 700;
+  font-size: 0.9rem; white-space: nowrap; box-shadow: 3px 3px 12px rgba(0,0,0,0.45); }
+#cc-linguetta .wz-ling-lunga { display: inline-block; max-width: 0; overflow: hidden; opacity: 0; transition: opacity 0.2s ease; }
+#cc-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga { position: absolute; }
+#cc-linguetta:hover .wz-ling-corta, #cc-linguetta:focus-visible .wz-ling-corta { display: none; }
+#cc-linguetta:hover .wz-ling-lunga, #cc-linguetta:focus-visible .wz-ling-lunga { max-width: 26rem; opacity: 1; }
+@media (max-width: 860px) { #cc-linguetta { display: none !important; } }
 /* 🆕 v7.087 (Franco, solo desktop: «lascia più spazio tra il titolo "Il questionario Sgorbions" e la riga "Col
    Questionario Sgorbions costruisci…"; il font per le frasi testuali del questionario aumentiamolo un minimo») */
 /* 🆕 v7.087 (Franco) - «Salta serie» sulla riga del nome della serie, a destra, solo sul desktop; lì quello del
@@ -1912,6 +1927,8 @@ button.back-btn { color:#ffffff; }
 <!-- 🔄 v7.107 (Franco: «chiamala "Riprendi il Questionario"; e mostrala solo quando lo mostreresti come "Riprendi"») -
      il nome nuovo (chiave sua, `wz.lingCorta`: «Questionario» resta la voce della barra) e, al passaggio del mouse,
      «Riprendi il Questionario Sgorbions»; c'è solo con `body.wz-ripresa` (vedi `_wzNomePulsanti`). -->
+<!-- 🆕 v7.110 - le linguette in una colonna (`#linguette`, regola nell'index): si impilano da sole -->
+<div id="linguette">
 <button type="button" id="wz-linguetta" class="solo-wz" onclick="apriWizardLista()" aria-label="Riprendi il Questionario Sgorbions">
   <span class="wz-ling-corta">📝 <span data-i18n="wz.lingCorta">Riprendi il Questionario</span></span>
   <span class="wz-ling-lunga" data-i18n="wz.linguetta">Riprendi il Questionario Sgorbions</span>
@@ -1925,6 +1942,13 @@ button.back-btn { color:#ffffff; }
   <span class="wz-ling-corta">🗂️ <span data-i18n="nav.catalog">Inventario</span></span>
   <span class="wz-ling-lunga" data-i18n="inv.linguetta">Esplora l'Inventario Sgorbions</span>
 </button>
+<!-- 🆕 v7.110 (Franco) - LA LINGUETTA DI «CIÒ CHE CERCO»: in tutte le pagine, solo sul desktop, a chi ha fatto
+     l'accesso e non è admin (come la voce della barra dalla v7.089: la accende `updateNavUser`). -->
+<button type="button" id="cc-linguetta" onclick="showPage('wishlist')" aria-label="Le figurine che stai cercando" style="display:none;">
+  <span class="wz-ling-corta">❤️ <span data-i18n="nav.wishlist">Ciò che cerco</span></span>
+  <span class="wz-ling-lunga" data-i18n="cc.linguetta">Le figurine che stai cercando</span>
+</button>
+</div>
 
 <!-- NAVBAR -->
 <nav id="navbar">
@@ -6151,7 +6175,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.109"></script>
+<script src="js/app.js?v=7.110"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6175,7 +6199,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.109'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.110'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
