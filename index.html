@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.117">
+<link rel="stylesheet" href="css/style.css?v=7.118">
 
 
 <style>
@@ -734,6 +734,20 @@ body:not(.wz-ripresa) #inv-linguetta { top: 80px; }
 #cc-linguetta:hover .wz-ling-corta, #cc-linguetta:focus-visible .wz-ling-corta { display: none; }
 #cc-linguetta:hover .wz-ling-lunga, #cc-linguetta:focus-visible .wz-ling-lunga { max-width: 26rem; opacity: 1; }
 @media (max-width: 860px) { #cc-linguetta { display: none !important; } }
+/* 🆕 v7.118 (Franco: «metti una linguetta admin (arancio) a dx, per la funzione di Impersonifica») - LA LINGUETTA A
+   DESTRA, solo per l'admin e solo sul desktop: «🎭 Impersona» apre una finestrella con gli utenti; impersonando
+   diventa «🎭 Torna admin». Arancio dei comandi admin (`--action-admin`); speculare a quelle di sinistra. La accende
+   `_aggiornaLinguettaImpersona`, chiamata da `updateNavUser`. */
+#imp-linguetta { display: none; position: fixed; right: 0; top: 80px; z-index: 900; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 0.9rem 0.6rem 0.8rem; border: none; cursor: pointer; border-radius: 12px 0 0 12px;
+  background: var(--action-admin); color: #fff; font-family: var(--font-ui); font-weight: 700; font-size: 0.9rem;
+  white-space: nowrap; box-shadow: -3px 3px 12px rgba(0,0,0,0.45); }
+#imp-linguetta:hover { background: var(--action-admin-hover); }
+#imp-pannello { position: fixed; right: 0; top: 130px; z-index: 901; background: var(--card); border: 1px solid var(--action-admin);
+  border-right: none; border-radius: 12px 0 0 12px; padding: 0.8rem 0.9rem; box-shadow: -4px 6px 18px rgba(0,0,0,0.5);
+  display: flex; flex-direction: column; gap: 0.5rem; min-width: 240px; }
+#imp-pannello select { min-width: 0; }
+@media (max-width: 860px) { #imp-linguetta, #imp-pannello { display: none !important; } }
 /* 🆕 v7.087 (Franco, solo desktop: «lascia più spazio tra il titolo "Il questionario Sgorbions" e la riga "Col
    Questionario Sgorbions costruisci…"; il font per le frasi testuali del questionario aumentiamolo un minimo») */
 /* 🆕 v7.087 (Franco) - «Salta serie» sulla riga del nome della serie, a destra, solo sul desktop; lì quello del
@@ -1948,6 +1962,13 @@ button.back-btn { color:#ffffff; }
   <span class="wz-ling-corta">❤️ <span data-i18n="nav.wishlist">Ciò che cerco</span></span>
   <span class="wz-ling-lunga" data-i18n="cc.linguetta">Le figurine che stai cercando</span>
 </button>
+</div>
+<!-- 🆕 v7.118 - la linguetta arancio a destra per impersonare un utente (solo admin, solo desktop). -->
+<button type="button" id="imp-linguetta" onclick="_cliccaLinguettaImpersona()">🎭 Impersona</button>
+<div id="imp-pannello" style="display:none;">
+  <div style="font-weight:700;color:var(--action-admin);">🎭 Impersona un utente</div>
+  <select id="imp-pannello-select" class="form-select"></select>
+  <button type="button" class="btn btn-admin" onclick="_impersonaDalPannello()">Impersona</button>
 </div>
 
 <!-- NAVBAR -->
@@ -6176,7 +6197,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.117"></script>
+<script src="js/app.js?v=7.118"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6200,7 +6221,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.117'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.118'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
