@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.090 - Modificato js/app.js (e index per la versione). 🐛 Scheda in modifica con due foto (Franco): dopo
+//          aver caricato le foto i due riquadri si stringevano e i tre tasti sotto uscivano dal loro spazio:
+//          `_ridisegnaSlotFoto` non passava `stretto` a `_slotFotoEdit`. Ora sì. Scheda di un articolo (Franco):
+//          il tab «🧑‍🎤 Varianti dello stesso personaggio», gli articoli della pagina del suo personaggio meno lui,
+//          nell'ordine dell'Inventario; il blocco dei tab ha l'id `linked-fig-tabs` e si ridisegna quando i
+//          personaggi finiscono di caricarsi. E «⇄ Scambia» a cavallo delle due foto (`.fe-scambia`), con sotto
+//          due soli tasti, larghi ognuno quanto la foto sopra.
 // v7.089 - Modificato index.html e js/app.js. Navbar, desktop (Franco): via il box «Figurine nella tua lista
 //          N / M» («troppo lungo»); al suo posto «🏆 3° · 49.432 punti» (in inglese «3rd», niente °), il proprio
 //          punteggio e la posizione in Classifica, e cliccandolo si apre la Classifica (`#nav-owned-counter`,
@@ -30765,7 +30772,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.089';
+const JS_VERSION = 'v7.090';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -59503,7 +59510,31 @@ function buildLinkedFiguresTabsHTML(baseId) {
   // 🆕 v7.053 - gli album che usano questo cartoncino. Si chiede al dato, non al tipo: il tab c'è
   //    dove qualcuno punta davvero qui.
   const _albumDelCartoncino = allFigs.filter(x => x.cartoncinoId === baseId);
-  if (!linked.length && !_usano.items.length && !_albumDelCartoncino.length) return '';
+  // 🆕 v7.090 (Franco: «vorrei un tab chiamato "Varianti dello stesso personaggio" che mostri tutti gli articoli
+  //    collegati allo stesso personaggio a cui è collegato questo articolo») - gli stessi articoli della pagina del
+  //    personaggio (`articoliDelPersonaggio`: alter ego compresi, invisibili solo all'admin), di tutti i suoi
+  //    personaggi, meno questo. I personaggi arrivano dopo la scheda: se non ci sono ancora si caricano, e il
+  //    blocco dei tab si ridisegna da solo (`#linked-fig-tabs`).
+  let _stessoPers = [];
+  if (_self) {
+    if (!_personaggiDati) {
+      caricaPersonaggi().then(() => {
+        const el = document.getElementById('linked-fig-tabs');
+        if (el && el.dataset.base === baseId && _personaggiDati) el.outerHTML = buildLinkedFiguresTabsHTML(baseId);
+      }).catch(() => {});
+    } else {
+      const ix = _indiciPersonaggi(), visti = new Map();
+      personaggiDiArticolo(_self, ix).forEach(pid => articoliDelPersonaggio(pid, ix).forEach(a => { if (a.id !== baseId) visti.set(a.id, a); }));
+      // nell'ordine dell'Inventario: serie, poi tipologia, poi numero
+      // `_serieOrdinate` e non l'ordine di `getData`, che per chi non è admin non è quello dell'Inventario (v6.947)
+      const ordSerie = new Map(_serieOrdinate(getData('series', [])).map((s, i) => [s.id, i]));
+      _stessoPers = [...visti.values()].sort((a, b) => (ordSerie.get(a.seriesId) ?? 1e9) - (ordSerie.get(b.seriesId) ?? 1e9)
+        || String(a.section || 'figurines').localeCompare(String(b.section || 'figurines'))
+        || (parseInt(a.number, 10) || 0) - (parseInt(b.number, 10) || 0));
+    }
+  }
+  const _vuoto = '<div id="linked-fig-tabs" data-base="' + esc(baseId) + '"></div>';
+  if (!linked.length && !_usano.items.length && !_albumDelCartoncino.length && !_stessoPers.length) return _vuoto;
 
   // 🔴 v6.376 (Franco, baco) — L'OMAGGIO NON AVEVA IL SUO TAB, E LA CAUSA E' L'ELENCO SCRITTO A MANO.
   // *"Nella form di dettaglio del retro manca il tab relativo ai retro omaggio che usano quel retro
@@ -59568,9 +59599,11 @@ function buildLinkedFiguresTabsHTML(baseId) {
       icon: v.iconaTab || '🏷️',
       items: linked.filter(x => x[v.campo])
     })),
+    // 🆕 v7.090 (Franco) - in fondo, dopo le versioni: è l'unico tab che guarda fuori dall'articolo
+    { key: 'stessoPersonaggio', label: currentLang === 'it' ? 'Varianti dello stesso personaggio' : 'Variants of the same character', icon: '🧑‍🎤', items: _stessoPers },
     ].filter(g => g.items.length > 0);
 
-  if (!groups.length) return '';
+  if (!groups.length) return _vuoto;
 
   const firstKey = groups[0].key;
   // 🆕 v6.568 (Franco, con lo screenshot di un retro: *"se i tab sono due si possono mettere
@@ -59588,7 +59621,8 @@ function buildLinkedFiguresTabsHTML(baseId) {
   // domanda sola — *"cosa accade se sono 3?"*.
   // ✅ Adesso non si conta niente: ogni bottone DICHIARA quanto spazio gli serve (sotto,
   // flex:1 1 220px) e il wrap decide dove spezzare. Le righe restano piene comunque siano.
-  let html = '<div style="margin-top:1.2rem;">';
+  // v7.090: con l'id, così il caricamento dei personaggi lo può ridisegnare
+  let html = '<div id="linked-fig-tabs" data-base="' + esc(baseId) + '" style="margin-top:1.2rem;">';
   // 🔄 v6.571 (Franco: *"cosa accade se ce ne sono 3?"*) — A COLONNE, NON A RIGHE.
   // 🔴 Misurato sul sito a 1440px: la barra e' larga 468px, quindi con flex ce ne stavano
   // due per riga e il TERZO, solo sulla sua, si allargava a tutti i 468 (misure vere:
@@ -59648,6 +59682,13 @@ function buildLinkedFiguresTabsHTML(baseId) {
         // Il "(dalla base)" non e' un dettaglio estetico: dice che quella riga viene da un dato che
         // sul record NON c'e', e che quindi cambia da sola se si cambia il retro della base.
         if (g.ereditati && g.ereditati.has(item.id)) label += currentLang === 'it' ? ' (dalla base)' : ' (from base)';
+      } else if (g.key === 'stessoPersonaggio') {
+        // 🆕 v7.090 - il nome completo, e sotto serie e tipologia: lo stesso personaggio sta in serie e tipologie
+        //    diverse, ed è quello che distingue le righe
+        label = (item.fullName && item.fullName.trim()) ? item.fullName : computeFullName(item, allFigs);
+        const _s = getData('series', []).find(x => x.id === item.seriesId);
+        const _sotto = [_s ? _nomeSerieCard(_s, true) : '', _wzEtichetta(item.section || 'figurines')].filter(Boolean).join(' · ');
+        if (_sotto) labelExtra = `<div style="font-size:0.78rem;color:var(--info);margin-top:1px;">${esc(_sotto)}</div>`;
       } else if (g.key === 'usaCartoncino') {
         // 🆕 v7.053 - il nome completo dell'album, e sotto la sua serie: gli album di serie diverse
         //    possono chiamarsi uguale («W gli Sgorbions» sta in tre serie)
@@ -60295,7 +60336,13 @@ function switchToEditMode(figId) {
     //    la v6.599 sa gia' ridisegnare da solo.
     // 🆕 v7.089 - `.fe-due-foto` tiene insieme la riga delle due foto e quella dei tre tasti, così i tasti si
     //    misurano sulle foto e non sulla colonna (vedi la regola nell'index).
-    const _fotoHTML = (_dueFacce ? '<div class="fe-due-foto"><div style="display:flex;gap:0.3rem;align-items:flex-start;">' : '')
+    // 🔄 v7.090 (Franco: «il tasto "Scambia" mettilo sovrapposto ai due box dove sono le foto, metà nel box di sx e
+    //    metà in quello di dx; i due bottoni nuovi li puoi fare larghi come gli altri») - «⇄ Scambia» sta qui, primo
+    //    figlio di `.fe-due-foto`, e il foglio lo posa a cavallo dei due riquadri (`.fe-scambia`). Fuori dai riquadri,
+    //    così il ridisegno di uno dei due non lo tocca.
+    const _fotoHTML = (_dueFacce ? '<div class="fe-due-foto">'
+        + '<button type="button" class="btn-foto fe-scambia" onclick="scambiaFronteRetro()" title="' + (currentLang === 'it' ? 'Scambia fronte e retro' : 'Swap front and back') + '">⇄ ' + (currentLang === 'it' ? 'Scambia' : 'Swap') + '</button>'
+        + '<div style="display:flex;gap:0.3rem;align-items:flex-start;">' : '')
       + _slotFotoEdit('fronte', f.img, f, _dueFacce)
       + (_dueFacce ? _slotFotoEdit('retro', f.imgRetro, f, _dueFacce) + '</div>' : '')
       // 🆕 v7.087 (Franco: «posizionalo centrato, che cade a metà sotto la prima foto e a metà sotto l'altra»)
@@ -60310,7 +60357,6 @@ function switchToEditMode(figId) {
       + (_dueFacce ? '<div class="fe-tre-tasti">'
           + '<label><span class="btn-foto">\u{1F4F7} ' + (currentLang === 'it' ? 'Carica entrambe le foto' : 'Upload both photos') + '</span>'
           + '<input type="file" accept="image/*" multiple style="display:none;" onchange="handleEntrambeFoto(event)"></label>'
-          + '<button type="button" class="btn-foto" onclick="scambiaFronteRetro()">⇄ ' + (currentLang === 'it' ? 'Scambia' : 'Swap') + '</button>'
           // v7.089: spento se manca una delle due foto (poi lo tiene aggiornato `_aggiornaBgEntrambe`)
           + '<button type="button" id="fe-bg-entrambe" class="btn-foto" onclick="removeBgEntrambe()"' + (f.img && f.imgRetro ? '' : ' disabled title="' + (currentLang === 'it' ? 'Servono tutte e due le foto, fronte e retro' : 'Both photos are needed, front and back') + '"') + '>✨ '
           + (currentLang === 'it' ? 'Rimuovi sfondo da entrambe' : 'Remove background from both') + '</button></div></div>' : '')
@@ -61151,7 +61197,15 @@ function _ridisegnaSlotFoto(slot) {
   const pend = _datiSlot(slot);
   const url = (pend === '__remove__') ? ''
             : (pend || (slot === 'retro' ? _figSlotF.imgRetro : _figSlotF.img));
-  cont.outerHTML = _slotFotoEdit(slot, url, _figSlotF);
+  // 🐛 v7.090 (Franco: «prima di premere "Carica entrambe le foto" i 3 bottoni sono ben posizionati; dopo, quando le
+  //    foto sono già caricate, la dimensione dei 2 quadranti sopra è cambiata») - IL RIDISEGNO PERDEVA `stretto`.
+  //    Il primo disegno passa a `_slotFotoEdit` il quarto argomento (le due facce affiancate: ognuna `flex:1`,
+  //    metà riga); questa chiamata no, quindi il riquadro ridisegnato tornava largo quanto la sua foto e la riga
+  //    delle due foto si stringeva sotto quella dei tasti. Ora si rifà la stessa domanda del primo disegno.
+  //    Nel `try`: prova-v6599 esegue questa funzione in un banco senza `_schedaDueFoto`.
+  let stretto = false;
+  try { stretto = _schedaDueFoto(_figSlotF) && _secondaFacciaSulRecord(_figSlotF.section); } catch (e) {}
+  cont.outerHTML = _slotFotoEdit(slot, url, _figSlotF, stretto);
   // v7.089: una foto entrata o uscita cambia se «Rimuovi sfondo da entrambe» si può premere. Nel `try` perché
   //    il tasto è un di più: se qualcosa va storto lì, il riquadro è già ridisegnato (e prova-v6599 esegue questa
   //    funzione in un banco che `_aggiornaBgEntrambe` non lo ha).
