@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.118 - Modificato js/app.js e index.html. Linguetta admin arancio a destra (solo desktop): «🎭 Impersona» apre una
+// v7.119 - Modificato js/app.js (e index per la versione). Ricerca di sezione: il rettangolo «Tutte» torna nel
+//          riquadro delle versioni per chi non è admin (parte dalle sole basi); ripremuto, torna alle basi.
+// v7.118 -Modificato js/app.js e index.html. Linguetta admin arancio a destra (solo desktop): «🎭 Impersona» apre una
 //          finestrella con gli utenti; impersonando diventa «🎭 Torna admin». Caroselli: in console una colonna per
 //          versione, per ogni tipologia (`ver:<sezione>:<versione>` in `settings/caroselli`); le versioni accese
 //          entrano nei caroselli se hanno una foto loro (`_inCaroselloPerVersione`).
@@ -30855,7 +30857,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.118';
+const JS_VERSION = 'v7.119';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -52973,7 +52975,11 @@ header += `</div>`;
       // FILTRA. La v6.511 la metteva ovunque, e il suo stesso commento spiegava perché nei
       // riquadri delle versioni sarebbe stata un no-op. L'ho scritto e l'ho messa lo
       // stesso, in nome di un «in tutte le sezioni» che voleva dire «non solo in una».
-      _chipTutte = (pairs.length < 2 || !C.tutte || C.partizione) ? '' :
+      // 🔄 v7.119 (Franco: «una volta non avevamo il pulsante "Tutto", che mostra tutte le versioni degli articoli?
+      //    [...] parlo di un utente normale») - LA v6.512 AVEVA RAGIONE SOLO PER L'ADMIN: lui parte da tutto, e
+      //    lì «Tutte» non filtra niente. L'utente parte dalle sole basi (`_semeVersione`), e senza questo comando
+      //    per vederle tutte doveva premere il «+» su ogni pillola. Ripremuto, torna alle basi (`_tuttiRaggrFiltro`).
+      _chipTutte = (pairs.length < 2 || !C.tutte || (C.partizione && currentUser?.isAdmin)) ? '' :
         `<span style="display:inline-flex;align-items:center;flex-shrink:0;white-space:nowrap;`
         + `background:${_tutteAccese ? 'var(--accent)' : 'var(--card2)'};border:1px solid var(--accent);`
         // 🎨 v6.512 (Franco: *"che sia maggiormente visibile; invece di farla a forma di
@@ -53828,7 +53834,8 @@ function _tuttiRaggrFiltro(chiave) {
   const s = _raggr(chiave);
   if (!s.vals.length) return;
   const tutteAccese = s.vals.every(v => s.filtro.has(v)) && s.filtro.size === s.vals.length;
-  if (tutteAccese) s.filtro = new Set();
+  // v7.119: per le versioni si torna al seme (le basi per l'utente, niente per l'admin), non al vuoto = tutto
+  if (tutteAccese) s.filtro = (chiave === 'versione') ? _semeVersione() : new Set();
   else { s.filtro = new Set(s.vals); _soloQuestoRaggr(chiave); }
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (_tuttiRaggrFiltro)', e); }
