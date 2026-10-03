@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.114 - Modificato css/style.css (e index, app.js per la versione). TODO 1 di Franco: «+ Aggiungi personaggio»
+//          alto come «+ Aggiungi Serie» e «+ Aggiungi tipologia di articolo» (entra nella regola comune).
 // v7.113 - Modificato js/app.js (e index per la versione). Franco: in console «Foto protette» la colonna «Anche nel
 //          carosello» (`car:<chiave>`, `_urlCarosello` in `_caroselloCard`); nella scheda di una figurina per album
 //          il tab «Figurina con retro associata», primo dei tab.
@@ -30841,7 +30843,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.113';
+const JS_VERSION = 'v7.114';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
