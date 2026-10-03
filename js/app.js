@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.097 - Modificato js/app.js (e index per la versione). Questionario (Franco): «Come vuoi indicare le figurine
+//          che hai?» / «…che ti mancano?» (era «selezionare»).
 // v7.096 - Modificati index.html e js/app.js. Questionario, riepilogo della serie (Franco): la miniatura delle
 //          Figurine con retro è una griglia 2×2, due fronti e due retro della serie (`_wzCoppia`, `.wz-popup-quattro`).
 // v7.095 - Modificato js/app.js (e index per la versione). Questionario (Franco): «I quadranti grigi si attivano
@@ -30793,7 +30795,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.096';
+const JS_VERSION = 'v7.097';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -50194,8 +50196,10 @@ function _wzDisegna(tieni) {
         const carta = (v, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (prop === v ? ' on' : '') + '" onclick="_wzVista(\'' + p + '\',\'' + v + '\')">'
           + figura(v) + '<div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
         corpo += intest + '<div class="wz-domanda">' + (c.verso === 'ho'
-            ? (it ? 'Come vuoi selezionare le figurine che hai?' : 'How do you want to select the stickers you have?')
-            : (it ? 'Come vuoi selezionare le figurine che ti mancano?' : 'How do you want to select the stickers you are missing?')) + '</div>'
+            // 🔄 v7.097 (Franco: «"Come vuoi selezionare le figurine che hai?" diventa "Come vuoi indicare…"») - e così
+            //    anche la gemella «…che ti mancano?», che è la stessa domanda dall'altro verso
+            ? (it ? 'Come vuoi indicare le figurine che hai?' : 'How do you want to mark the stickers you have?')
+            : (it ? 'Come vuoi indicare le figurine che ti mancano?' : 'How do you want to mark the stickers you are missing?')) + '</div>'
           + '<div class="wz-scelte">'
           // 🔄 v7.067 (Franco: «il titolo diventa "Cliccando direttamente sulle pagine"; niente sottotitolo»)
           + carta('album', '📖', it ? 'Cliccando direttamente sulle pagine' : 'Clicking directly on the pages', '')
