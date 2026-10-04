@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.120 - Modificato js/app.js (e index per la versione). Console → Tipo di articolo → Caroselli: una riga per
+//          ogni tipo senza serie (`tipo:<id>` in `settings/caroselli`) e via la riga «Altri articoli»; i caroselli
+//          chiedono all'articolo (`_articoloInCarosello`), anche dentro il box di un tipo senza serie.
 // v7.119 - Modificato js/app.js (e index per la versione). Ricerca di sezione: il rettangolo «Tutte» torna nel
 //          riquadro delle versioni per chi non è admin (parte dalle sole basi); ripremuto, torna alle basi.
 // v7.118 -Modificato js/app.js e index.html. Linguetta admin arancio a destra (solo desktop): «🎭 Impersona» apre una
@@ -30857,7 +30860,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.119';
+const JS_VERSION = 'v7.120';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31021,10 +31024,16 @@ function _urlCarosello(f, url, opts) {
   _fpSenzaScritta = senza;
   try { return cloudinaryUrl(url, opts); } finally { _fpSenzaScritta = false; }
 }
+// 🔄 v7.120 (Franco: «io come admin vorrei vedere le macchie sulle figurine; però vorrei poterle non vedere
+//    all'occorrenza; mettimi una linguetta admin arancio sulla dx, chiamala "Togli macchie"») - L'ADMIN ORA LE VEDE,
+//    come i visitatori, e le spegne con la linguetta `#mac-linguetta`. La scelta resta in questo browser
+//    (`localStorage`): è una comodità di chi guarda, non un dato del sito.
+let _adminSenzaMacchie = false;
+try { _adminSenzaMacchie = localStorage.getItem('sgorb.senzaMacchie') === '1'; } catch (e) {}
 function _filigrana(url, opts) {
   try {
     if (_fpSenzaScritta) return '';
-    if (typeof currentUser !== 'undefined' && currentUser && currentUser.isAdmin) return '';
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.isAdmin && _adminSenzaMacchie) return '';
     if (!_fotoProtette().has(url)) return '';
     // senza `w_` la foto arriva grande (l'originale): la scritta si fa come per una foto da 1000
     const w = parseInt((String(opts).match(/(?:^|,)w_(\d+)/) || [])[1], 10) || 1000;
@@ -33928,6 +33937,33 @@ function _inCaroselloPerVersione(f) {
   if (!f.img) return false;
   return _CAROSELLI_CFG['ver:' + (f.section || 'figurines') + ':' + _rtVersione(f)] === true;
 }
+// 🆕 v7.120 (Franco: «come mai nella tabella di cfg dei caroselli non ci sono le tda senza serie? la serie di
+//    appartenenza non è un driver sempre fondamentale; aggiungili e togli la tda Altri articoli») - LA DOMANDA SUL
+//    SINGOLO ARTICOLO. Un articolo di un tipo senza serie segue la riga del SUO TIPO (chiave `tipo:<id>` nello stesso
+//    `settings/caroselli`; mai salvata = fuori); gli Altri articoli senza tipo non hanno più una riga, quindi fuori.
+//    Tutto il resto come prima, dalla tipologia. È la stessa regola delle Foto protette (v7.111).
+function _articoloInCarosello(f) {
+  const tipo = f && f.tipoProdotto;
+  if (tipo) return _CAROSELLI_CFG['tipo:' + tipo] === true;
+  if ((f && f.section) === 'extras') return false;
+  return _vaInCarosello(f && f.section);
+}
+// 🆕 v7.120 (Franco: «nel carosello della home non vorrei le fpa, perché ci sono già le fcr, che frontalmente sono
+//    identiche; a meno che nella serie ci sia il flag "Figurine per album diverse da figurine con retro"») - UNA
+//    FIGURINA PER ALBUM È UN DOPPIONE quando la sua serie non ha `hasSizes`: la sua faccia è già nel carosello come
+//    figurina con retro. Vale nei caroselli che mescolano le tipologie, home e pagina della serie; non in quello della
+//    tipologia né dentro la sezione, dove le fpa sono l'unica cosa che si guarda. Stessa regola della v7.100.
+// 🔄 v7.120 (Franco: «solo in due casi: la serie ha il flag; la serie non ha fcr») - senza figurine con retro nella
+//    serie la faccia della fpa non c'è da nessun'altra parte, quindi non è un doppione. `conFcr` = le serie che ne
+//    hanno almeno una (`_serieConFcr`).
+function _serieConFcr(figs) {
+  const set = new Set();
+  (figs || []).forEach(x => { if ((x.section || 'figurines') === 'figurines') set.add(x.seriesId); });
+  return set;
+}
+function _fpaDoppione(f, serie, conFcr) {
+  return (f && f.section) === 'attaccare' && !(serie && serie.hasSizes) && !!conFcr && conFcr.has(f.seriesId);
+}
 
 // 🆕 v6.982 - la chiama `_caricaLegendeDefinizioni`, che legge gia' tutto `settings`: nessuna
 //    lettura in piu'. Se la console dice qualcosa di diverso da prima, i caroselli della pagina
@@ -34091,7 +34127,9 @@ function renderCarosello() {
   // 🐛 v7.084 (Franco: «baco: nel carosello della home ci devono essere solo elementi base») - `_eBase`,
   //    come negli altri tre caroselli. Il commento qui sopra (v6.463) raccontava che la home non lo
   //    filtrava: era vero, e adesso è deciso il contrario.
-  const disponibili = _figs.filter(f => _vaInCarosello(f.section)
+  const conFcr = _serieConFcr(_figs);   // v7.120
+  const disponibili = _figs.filter(f => _articoloInCarosello(f)
+    && !_fpaDoppione(f, _serie.get(f.seriesId), conFcr)
     && _inCaroselloPerVersione(f)
     && _serieInVetrina(_serie.get(f.seriesId))
     && _fotoFigurina(f, _figs));
@@ -34137,8 +34175,10 @@ function renderCaroselloSerie() {
   //    della serie Spille adesso compare il carosello delle spille.
   // ⚠️ `_eBase` RESTA, e non e' un elenco a mano: e' una regola sul singolo articolo. Senza,
   //    il carosello della serie 1 si riempirebbe di change ed errori di stampa.
+  const serieQui = getData('series', []).find(x => x.id === currentSeriesId);   // v7.120: per `_fpaDoppione`
+  const conFcr = _serieConFcr(_figs.filter(f => f.seriesId === currentSeriesId));
   const base = _figs
-    .filter(f => f.seriesId === currentSeriesId && _vaInCarosello(f.section)
+    .filter(f => f.seriesId === currentSeriesId && _articoloInCarosello(f) && !_fpaDoppione(f, serieQui, conFcr)
       && _inCaroselloPerVersione(f) && _fotoFigurina(f, _figs))
     .sort((a, b) => (a.number || 0) - (b.number || 0));
   // 🐛 v6.985 (Franco: «nella pagina della serie 1 il carosello mostra solo retro») - le tipologie
@@ -34200,12 +34240,15 @@ function renderCaroselloSezione() {
   if (!sez || !box) return;
   _caroselloSpegni('sezione');
   const spento = () => { sez.style.display = 'none'; box.innerHTML = ''; };
-  if (!currentSeriesId || !currentSection || _tipoProdottoCorrente || !_vaInCarosello(currentSection)) { spento(); return; }
-  const serieAperta = currentSeriesId, sezAperta = currentSection;
+  // 🔄 v7.120 - dentro il box di un tipo senza serie decide la riga del tipo (`_articoloInCarosello`): prima qui non
+  //    c'era mai, perché la console quei tipi non li conosceva
+  if (!currentSeriesId || !currentSection || !_articoloInCarosello({ section: currentSection, tipoProdotto: _tipoProdottoCorrente })) { spento(); return; }
+  const serieAperta = currentSeriesId, sezAperta = currentSection, tipoAperto = _tipoProdottoCorrente || '';
   const gruppo = (typeof _sottoserieAttiva === 'string' && _sottoserieAttiva) ? _sottoserieAttiva : '';
   const _figs = getData('figurines', []);
   const base = _figs
     .filter(f => f.seriesId === serieAperta && (f.section || 'figurines') === sezAperta
+      && (!tipoAperto || (f.tipoProdotto || '') === tipoAperto)
       && (!gruppo || String(f.subseries || '').trim() === gruppo)
       && _inCaroselloPerVersione(f) && _fotoFigurina(f, _figs))
     .sort((a, b) => (a.number || 0) - (b.number || 0));
@@ -34481,13 +34524,15 @@ function renderCaroselloProdotto() {
   if (!sez || !box) return;
   _caroselloSpegni('prodotto');
   // 🆕 v6.982 - la stessa domanda degli altri due caroselli (Franco: «tutti e tre»).
-  if (!_vaInCarosello(_prodottoCorrente)) { sez.style.display = 'none'; box.innerHTML = ''; return; }
+  // 🔄 v7.120 - la domanda si fa articolo per articolo (`_articoloInCarosello`, nel filtro qui sotto): negli Altri
+  //    articoli ogni tipo senza serie ha la sua riga
+  if (!_articoloInCarosello({ section: _prodottoCorrente }) && _prodottoCorrente !== 'extras') { sez.style.display = 'none'; box.innerHTML = ''; return; }
   // 🆕 v6.463 - LA FILA CHE HA FATTO NASCERE QUESTA RELEASE. E' questa: la sezione «Figurine da
   // attaccare» contava 672 figurine e ne mostrava zero, perche' il filtro chiedeva `f.img` e una da
   // attaccare quel campo non ce l'ha per costruzione.
   const _figs = getData('figurines', []);
   const base = _figs
-    .filter(f => (f.section || 'figurines') === _prodottoCorrente
+    .filter(f => (f.section || 'figurines') === _prodottoCorrente && _articoloInCarosello(f)
       && _inCaroselloPerVersione(f) && _fotoFigurina(f, _figs));
   if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   const serie = getData('series', []);
@@ -39726,7 +39771,7 @@ function renderAdminCaroselliTDA() {
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Accesa, gli articoli base con foto di quella tipologia girano nei <strong>tre caroselli</strong>: ' +
-          'la home, la pagina della serie e la pagina della tipologia. Spenta, in nessuno dei tre. ' +
+          'la home, la pagina della serie e la pagina della tipologia.<br>Spenta, in nessuno dei tre.<br>' +
           'Le colonne delle versioni aggiungono anche quelle versioni, se hanno una foto loro.'
         : 'Checked: the base items with a photo of that type scroll in the <strong>three carousels</strong> ' +
           '(home, series page, item type page). Unchecked: in none of them. ' +
@@ -39740,7 +39785,8 @@ function renderAdminCaroselliTDA() {
       '<th style="' + th + 'text-align:center;">' + (it ? 'Carosello' : 'Carousel') + '</th>' +
       _versioniCaroselli().map(v => '<th style="' + th + 'text-align:center;">' + esc(_RAGGR_VERSIONE.etichettaDi(v.chiave)) + '</th>').join('') +
     '</tr>' +
-    PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).map(sez =>
+    // 🔄 v7.120 (Franco) - senza «Altri articoli», coperto dai tipi senza serie, che hanno una riga ciascuno
+    PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez] && sez !== 'extras').map(sez =>
       '<tr><td style="' + td + '">' + esc(getSectionLabel(sez)) + '</td>' +
       '<td style="' + td + 'text-align:center;"><input type="checkbox" id="car-' + sez + '"' +
         (_vaInCarosello(sez) ? ' checked' : '') + '></td>' +
@@ -39748,7 +39794,24 @@ function renderAdminCaroselliTDA() {
         ? '<input type="checkbox" id="car-' + sez + '-' + v.chiave + '"' + (_CAROSELLI_CFG['ver:' + sez + ':' + v.chiave] === true ? ' checked' : '') + '>'
         : '—') + '</td>').join('') +
       '</tr>').join('') +
+    _tipiProdotto().map(tp =>
+      '<tr><td style="' + td + '">' + esc(tp.nome || tp.id) +
+        ' <span style="font-size:0.72rem;opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span></td>' +
+      '<td style="' + td + 'text-align:center;"><input type="checkbox" data-car-tipo="' + esc(tp.id) + '"' +
+        (_CAROSELLI_CFG['tipo:' + tp.id] === true ? ' checked' : '') + '></td>' +
+      _versioniCaroselli().map(() => '<td style="' + td + 'text-align:center;">—</td>').join('') +
+      '</tr>').join('') +
     '</table></div>' +
+    // 🆕 v7.120 (Franco: «scrivi questa cosa come nota, nella tabella della cfg dei caroselli») - la regola di `_fpaDoppione`
+    '<p style="font-size:0.82rem;color:var(--text);margin:0.9rem 0 0;line-height:1.5;"><strong style="color:var(--info);">NOTA:</strong> ' +
+      (it
+        ? 'le <strong>Figurine per album</strong> compaiono nei caroselli della home e della pagina della serie solo se la serie ' +
+          'ha la spunta «Figurine per album diverse da figurine con retro», oppure se la serie non ha figurine con retro: ' +
+          'altrimenti sarebbero doppioni delle figurine con retro, che di fronte sono identiche.<br>' +
+          'Nelle loro pagine dedicate (la tipologia dall’Inventario e la sezione dentro la serie) compaiono sempre.'
+        : '<strong>Album stickers</strong> appear in the home and series page carousels only if the series has «Album stickers differ ' +
+          'from the ones with backs», or has no stickers with backs. On their own pages they always appear.') +
+    '</p>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaCaroselliTDA()">' + (it ? 'Salva i caroselli' : 'Save carousels') + '</button>' +
     '</div>';
@@ -39768,6 +39831,8 @@ async function salvaCaroselliTDA() {
       if (c) voci['ver:' + sez + ':' + v.chiave] = !!c.checked;
     });
   });
+  // v7.120: i tipi senza serie, chiave `tipo:<id>`
+  document.querySelectorAll('#admin-caroselli-tda input[data-car-tipo]').forEach(el => { voci['tipo:' + el.dataset.carTipo] = !!el.checked; });
   try {
     await fsSave('settings', { id: 'caroselli', voci });
     _impostaCaroselli({ voci });
@@ -56033,6 +56098,28 @@ function _aggiornaLinguettaImpersona() {
   ling.textContent = imp ? (currentLang === 'it' ? '🎭 Torna admin' : '🎭 Back to admin') : (currentLang === 'it' ? '🎭 Impersona' : '🎭 Impersonate');
   const pan = document.getElementById('imp-pannello');
   if (pan && (imp || !admin)) pan.style.display = 'none';
+  // v7.120 - la linguetta delle macchie, solo per l'admin (impersonando le macchie si vedono comunque)
+  const mac = document.getElementById('mac-linguetta');
+  if (mac) {
+    mac.style.display = admin ? 'flex' : 'none';
+    mac.textContent = _adminSenzaMacchie ? (currentLang === 'it' ? '💧 Metti macchie' : '💧 Show watermarks') : (currentLang === 'it' ? '💧 Togli macchie' : '💧 Hide watermarks');
+  }
+}
+// 🆕 v7.120 - accende e spegne le macchie per l'admin, e ridisegna quello che è a schermo (stesso giro di
+//    `_impostaProtezione`). Una scheda già aperta si aggiorna alla prossima apertura.
+function _cliccaLinguettaMacchie() {
+  if (!currentUser || !currentUser.isAdmin) return;
+  _adminSenzaMacchie = !_adminSenzaMacchie;
+  try { localStorage.setItem('sgorb.senzaMacchie', _adminSenzaMacchie ? '1' : '0'); } catch (e) {}
+  _aggiornaLinguettaImpersona();
+  const inVista = id => { const el = document.getElementById(id); return !!(el && el.parentElement && el.parentElement.getClientRects().length); };
+  try { if (inVista('home-carosello-sez')) renderCarosello(); } catch (e) { console.error('renderCarosello', e); }
+  try { if (inVista('serie-carosello-sez')) renderCaroselloSerie(); } catch (e) { console.error('renderCaroselloSerie', e); }
+  try { if (inVista('prodotto-carosello-sez')) renderCaroselloProdotto(); } catch (e) { console.error('renderCaroselloProdotto', e); }
+  try { if (inVista('sezione-carosello-sez')) renderCaroselloSezione(); } catch (e) { console.error('renderCaroselloSezione', e); }
+  try { if (currentSeriesId && currentSection && document.getElementById('items-grid')) renderItems(); } catch (e) { console.error('renderItems', e); }
+  try { if (document.getElementById('page-catalog')?.classList.contains('active')) renderCatalog(); } catch (e) { console.error('renderCatalog', e); }
+  toast(_adminSenzaMacchie ? '💧 Macchie tolte, solo per te' : '💧 Macchie visibili', 'success');
 }
 function _cliccaLinguettaImpersona() {
   if (typeof isImpersonating === 'function' && isImpersonating()) { stopImpersonation(); return; }
