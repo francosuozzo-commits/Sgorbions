@@ -1,7 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.125 - Modificato js/app.js (e index per la versione). Caroselli, card dei retro: la sottocategoria solo se qualcuno
+// v7.126 - Modificati js/app.js e index.html. Pagina di una tipologia dentro una serie, da 1440px: la foto grande parte
+//          all'altezza del titolo e si sposta a sinistra fino al bordo di «← Inventario» (`_copertinaSezioneASinistra`);
+//          il titolo si centra fra la foto e la copertina piccola.
+// v7.125 -Modificato js/app.js (e index per la versione). Caroselli, card dei retro: la sottocategoria solo se qualcuno
 //          nella fila ce l'ha, e la categoria su una riga sola se nessuna della fila va a capo (`_caroselloRetroOpz`).
 // v7.124 -Modificato js/app.js (e index per la versione). Caroselli: la riga della sottoserie c'è solo se almeno una
 //          card della fila ha una sottoserie (`_caroselloConSottoserie`); altrimenti sparisce, come la riga della serie.
@@ -30872,7 +30875,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.125';
+const JS_VERSION = 'v7.126';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -48289,10 +48292,12 @@ function renderSeriesMeta(s) {
     const riga1 = `<span${stile ? ` style="${stile}"` : ''}>${icona}${_testo}</span>`;
     let riga2 = '';
     if (currentUser && (complete || n > 0)) {  // v5.885: se ne possiedi 0, niente riga ("0 nella tua lista" era brutto)
+      // 🔄 v7.126 (Franco: «"le hai tutte" va tra () come le altre numeriche») - ribalta la nota qui sotto: anche
+      //    l'esclamazione tra parentesi, come «(N nella tua lista)»
       const testo = complete
-        ? (it
+        ? '(' + (it
             ? (quanti === 1 ? "Ce l'hai!" : (femminile ? 'Le hai tutte !' : 'Li hai tutti !'))
-            : (quanti === 1 ? 'You have it !' : 'You have them all !')) + '\u{1F389}'
+            : (quanti === 1 ? 'You have it !' : 'You have them all !')) + '\u{1F389})'
         // 🔄 v6.479 (Franco) — fra parentesi anche qui: e' la stessa frase dei box
         // della pagina serie, e finche' i due posti la scrivevano diversa uno dei due
         // era sbagliato senza che si potesse dire quale.
@@ -48805,7 +48810,8 @@ function _disegnaNavSerie() {
     b.title = (verso === 'prec' ? (it ? 'Serie precedente: ' : 'Previous series: ') : (it ? 'Serie successiva: ' : 'Next series: ')) + (s.name || '');
     b.innerHTML = (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_96,h_96,c_fit,q_auto,f_auto') + '" alt="">' : '<span class="serie-nav-vuota">🎴</span>')
       // v7.042 (Franco) - la scritta su due righe; sul telefono il foglio la spegne
-      + '<span class="serie-nav-scritta">' + (verso === 'prec' ? (it ? 'serie<br>precedente' : 'previous<br>series') : (it ? 'prossima<br>serie' : 'next<br>series')) + '</span>'
+      // 🔄 v7.126 (Franco: «quell'etichetta scrivila pure su una riga sola») - via il <br>, e `nowrap` nel foglio
+      + '<span class="serie-nav-scritta">' + (verso === 'prec' ? (it ? 'serie precedente' : 'previous series') : (it ? 'prossima serie' : 'next series')) + '</span>'
       // 🔄 v7.043 (Franco: «la freccia sotto alla scritta; una freccia a forma di freccia, non di triangolo»)
       + '<span class="serie-nav-freccia">' + (verso === 'prec' ? '←' : '→') + '</span>';
     b.onclick = () => { openSeriesDetail(s.id); try { window.scrollTo(0, 0); } catch (e) {} };
@@ -48817,13 +48823,204 @@ function _disegnaNavSerie() {
   //    `flex-basis:100%` va a capo: la freccia, messa in coda, andava a capo con lui. Ora sta subito dopo l'anno.
   const anno = document.getElementById('detail-year');
   if (succ) nome.parentElement.insertBefore(bott(succ, 'succ'), anno && anno.parentElement === nome.parentElement ? anno.nextSibling : null);
+  try { _disegnaNavSezione(); } catch (e) { console.error('frecce delle sezioni', e); }   // v7.126
   setTimeout(_opzioniSottoLaCopertina, 0);
+}
+// 🆕 v7.126 (Franco: «prova a mettere altri 2 bottoni, esattamente sotto a "Prossima serie/Serie precedente", per
+//    spostarsi alla sezione successiva e precedente; chiamali "Prossima sezione" e "Sezione precedente"; non so se vuoi
+//    provare a mettere la miniatura della foto della sezione») - LE FRECCE DELLE SEZIONI, solo dentro una sezione.
+//    L'ordine è quello delle card nella pagina della serie, sottoserie comprese (le card nascoste non contano); niente
+//    giro. Ogni freccia ha la miniatura della foto di quella card. Sotto la freccia della serie: le due stanno in una
+//    colonna (`.serie-nav-col`); se la serie non ha una freccia da quel lato, la colonna ha solo quella della sezione.
+// 📌 Si ridisegna a ogni ingresso e uscita da una sezione (`_vestiTestataPerSezione`) e dopo le frecce delle serie.
+function _disegnaNavSezione() {
+  const dett = document.getElementById('series-detail');
+  if (!dett) return;
+  dett.querySelectorAll('.sez-nav-btn, .serie-nav-posto').forEach(b => b.remove());   // v7.126: anche i posti vuoti
+  dett.querySelectorAll('.serie-nav-col').forEach(c => { while (c.firstChild) c.parentNode.insertBefore(c.firstChild, c); c.remove(); });
+  if (!currentSeriesId || !currentSection || _tipoProdottoCorrente) return;
+  const nome = document.getElementById('detail-name');
+  if (!nome || !nome.parentElement) return;
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  const voci = [...document.querySelectorAll('#section-selector [onclick^="openSeriesSection("], #section-selector [onclick^="openSeriesSottoserie("]')]
+    .filter(c => c.style.display !== 'none')
+    .map(c => {
+      const oc = c.getAttribute('onclick') || '';
+      let sez = '', sub = '';
+      if (oc.startsWith('openSeriesSottoserie(')) { sez = c.getAttribute('data-sezione') || ''; sub = c.getAttribute('data-sottoserie') || ''; }
+      else sez = (oc.match(/openSeriesSection\('([^']+)'/) || [])[1] || '';
+      if (!sez) return null;
+      const img = (sub ? _fotoSottoserie(s, sub) : _fotoSezioneSerie(sez)) || '';
+      return { sez, sub, img, nome: sub || getSectionLabel(sez) };
+    }).filter(Boolean);
+  const qui = voci.findIndex(v => v.sez === currentSection && v.sub === ((typeof _sottoserieAttiva === 'string' && _sottoserieAttiva) || ''));
+  if (qui < 0) return;
+  const prec = voci[qui - 1] || null, succ = voci[qui + 1] || null;
+  const it = currentLang === 'it';
+  const bott = (v, verso) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'serie-nav-btn sez-nav-btn sez-nav-' + verso;
+    b.title = (verso === 'prec' ? (it ? 'Sezione precedente: ' : 'Previous section: ') : (it ? 'Sezione successiva: ' : 'Next section: ')) + v.nome;
+    b.innerHTML = (v.img ? '<img src="' + esc(cloudinaryUrl(v.img, 'w_96,h_96,c_fit,q_auto,f_auto')) + '" alt="">' : '<span class="serie-nav-vuota">🗂️</span>')
+      + '<span class="serie-nav-scritta">' + (verso === 'prec' ? (it ? 'sezione precedente' : 'previous section') : (it ? 'prossima sezione' : 'next section')) + '</span>'
+      + '<span class="serie-nav-freccia">' + (verso === 'prec' ? '←' : '→') + '</span>';
+    b.onclick = () => { openSeriesSection(v.sez, v.sub || undefined); try { window.scrollTo(0, 0); } catch (e) {} };
+    return b;
+  };
+  // 🔄 v7.126 (Franco: «lo spazio riservato ai 4 pulsantoni deve essere loro riservato: se non c'è "Serie precedente"
+  //    perché siamo alla prima serie, non far salire "Sezione precedente"; stessa cosa in ultima pagina») - QUATTRO POSTI
+  //    FISSI. Dove una freccia manca (prima o ultima serie, prima o ultima sezione) resta il suo posto, invisibile e della
+  //    stessa misura: un pulsante finto, nascosto e non cliccabile (`.serie-nav-posto`).
+  const posto = (classe, scritta, verso) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.tabIndex = -1; b.setAttribute('aria-hidden', 'true');
+    b.className = 'serie-nav-btn serie-nav-posto ' + classe;
+    b.innerHTML = '<span class="serie-nav-vuota"></span><span class="serie-nav-scritta">' + scritta + '</span><span class="serie-nav-freccia">' + (verso === 'prec' ? '←' : '→') + '</span>';
+    return b;
+  };
+  // la colonna: la freccia della serie e sotto quella della sezione, nel posto della freccia della serie
+  const colonna = (verso, v) => {
+    const col = document.createElement('div');
+    col.className = 'serie-nav-col serie-nav-col-' + verso;
+    const sb = nome.parentElement.querySelector(':scope > .serie-nav-' + verso + ':not(.sez-nav-btn)');
+    const anno = document.getElementById('detail-year');
+    if (sb) nome.parentElement.insertBefore(col, sb);
+    else if (verso === 'prec') nome.parentElement.insertBefore(col, nome);
+    else nome.parentElement.insertBefore(col, anno && anno.parentElement === nome.parentElement ? anno.nextSibling : null);
+    col.appendChild(sb || posto('serie-nav-' + verso, verso === 'prec' ? (it ? 'serie precedente' : 'previous series') : (it ? 'prossima serie' : 'next series'), verso));
+    col.appendChild(v ? bott(v, verso) : posto('sez-nav-btn sez-nav-' + verso, verso === 'prec' ? (it ? 'sezione precedente' : 'previous section') : (it ? 'prossima sezione' : 'next section'), verso));
+  };
+  colonna('prec', prec);
+  colonna('succ', succ);
 }
 // 🐛 v7.115 (Franco: «il tasto Opzioni, admin visibile, si sovrappone alla foto della serie nella pagina della serie;
 //    abbassiamolo mettendolo sotto alla serie») - nelle pagine di sezione e di sottoserie in alto a destra c'è la
 //    copertina piccola della serie (`#detail-cover-serie`), e sotto i ~1600px cade sopra «Opzioni». Quando le due si
 //    toccano in orizzontale, «Opzioni» scende sotto la copertina; altrimenti resta dov'è. Si rimisura col resize.
+// 🆕 v7.126 (Franco: «la foto della tda più a sx») - nelle pagine di sezione, da 1440px, la foto grande si sposta a
+//    sinistra (prima fino al bordo destro di «← Inventario», poi, coi tasti scesi sotto, a muro) e i due tasti di
+//    ritorno si mettono sotto di lei. Misurato a ogni disegno e a ogni ridimensionamento, come «Opzioni».
+function _copertinaSezioneASinistra() {
+  const area = document.querySelector('#series-detail .series-title-area'), riga = area && area.querySelector('.cover-riga');
+  if (!riga) return;
+  riga.style.marginLeft = ''; riga.style.position = ''; riga.style.left = ''; area.style.marginBottom = '';
+  const meta = document.getElementById('detail-meta');
+  if (meta) { meta.style.marginLeft = ''; meta.style.marginRight = ''; meta.style.marginTop = ''; }
+  const st0 = document.getElementById('specchietti-top');
+  if (st0) st0.style.justifyContent = '';
+  const subT = document.getElementById('detail-subname');
+  if (subT) ['position', 'left', 'top', 'width', 'textAlign', 'margin'].forEach(p => { subT.style[p] = ''; });
+  // v7.126 (prova di Franco) - la colonna delle numeriche sotto la foto: si rifà ogni volta da capo
+  const colNum0 = document.getElementById('num-sotto-foto');
+  if (colNum0) colNum0.remove();
+  if (meta) meta.classList.remove('num-in-colonna');
+  const inv = [...document.querySelectorAll('#series-detail .series-hero-inner > .back-btn')].find(b => b.getClientRects().length);
+  if (inv) inv.style.top = '';
+  const sez0 = document.querySelector('#series-detail #items-section .back-btn');
+  if (sez0) sez0.style.top = '';   // si riparte dalla regola dell'index (-48px), poi si decide
+  if (!area.classList.contains('con-sottoserie') || window.innerWidth < 1440) return;
+  const cont = document.getElementById('series-detail');
+  if (!inv || !cont) return;
+  // 🔄 v7.126 (Franco: «visto che i 2 back button li hai spostati sotto, metti la foto della sezione tutto a sinistra;
+  //    completamente a muro») - la foto al bordo sinistro della pagina (prima: al bordo destro di «Inventario»). Il
+  //    margine negativo stringe la colonna (e il titolo guadagna spazio) ma non oltre la larghezza della foto: il resto
+  //    lo fa `left` (📏 a 1920 il solo margine la lasciava a 119px).
+  // (Franco, dopo: «la foto della sezione un filo meno attaccata alla parete sx») - 12px dal bordo
+  const r0 = riga.getBoundingClientRect(), d = cont.getBoundingClientRect().left + 12 - r0.left;
+  if (d < 0) {
+    const m = Math.max(d, -r0.width);
+    riga.style.marginLeft = Math.round(m) + 'px';
+    if (d < m) { riga.style.position = 'relative'; riga.style.left = Math.round(d - m) + 'px'; }
+  }
+  // 🆕 v7.126 (Franco: «ora che abbiamo i due bottoni per passare alla sezione prima e dopo, il titolo della sezione
+  //    dovrebbe essere scritto in centro, su quella stessa riga») - il sottotitolo (`#detail-subname`) esce dalla riga
+  //    sotto ed è messo a mano: centrato fra le due colonne delle frecce, all'altezza delle frecce delle sezioni.
+  //    Fuori dal flusso, la riga del titolo perde la sua altezza e la testata si accorcia. Si sposta per differenza,
+  //    come i tasti di ritorno, così non serve sapere qual è il suo contenitore posizionato.
+  const colP = document.querySelector('#series-detail .serie-nav-col-prec'), colS = document.querySelector('#series-detail .serie-nav-col-succ');
+  if (subT && subT.getClientRects().length && colP && colS && colP.children[1] && colS.children[1]) {
+    const pR = colP.getBoundingClientRect(), sR = colS.getBoundingClientRect(), riga2 = colP.children[1].getBoundingClientRect();
+    const larg = sR.left - pR.right - 32;
+    if (larg > 120) {
+      subT.style.position = 'absolute'; subT.style.margin = '0'; subT.style.width = Math.round(larg) + 'px'; subT.style.textAlign = 'center';
+      const cs = getComputedStyle(subT), r = subT.getBoundingClientRect();
+      subT.style.left = Math.round((parseFloat(cs.left) || 0) + (pR.right + 16) - r.left) + 'px';
+      subT.style.top = Math.round((parseFloat(cs.top) || 0) + (riga2.top + (riga2.height - r.height) / 2) - r.top) + 'px';
+    }
+  }
+  // 🧪 v7.126 (Franco: «facciamo una prova, stai pronto a tornare indietro: le numeriche della parte alta mettile sotto
+  //    alla foto, in verticale, un contatore per riga») - UNA COPIA delle voci (`.num-voce`, con le loro scritte «Le hai
+  //    tutte !🎉» e «(N nella tua lista)») in una colonna sotto la foto, e gli originali nascosti (`.num-in-colonna`).
+  //    Copia e non spostamento: la testata ridisegna #detail-meta spesso, e così il suo disegno resta com'era. Per
+  //    tornare indietro basta togliere questo blocco (e la riga `colNum` nei due calcoli qui sotto).
+  let colNum = null;
+  const fotoR = riga.getClientRects().length ? riga.getBoundingClientRect() : null;
+  if (meta && fotoR && fotoR.height) {
+    const voci = [...meta.querySelectorAll(':scope > .num-voce')];
+    if (voci.length) {
+      colNum = document.createElement('div');
+      colNum.id = 'num-sotto-foto';
+      voci.forEach(v => colNum.appendChild(v.cloneNode(true)));
+      inv.parentElement.appendChild(colNum);
+      meta.classList.add('num-in-colonna');
+      const cs = getComputedStyle(colNum), r = colNum.getBoundingClientRect();
+      // (Franco: «spostala un po' più a dx: che inizi dove iniziano i tasti Inventario e Sezioni»)
+      colNum.style.left = Math.round((parseFloat(cs.left) || 0) + inv.getBoundingClientRect().left - r.left) + 'px';
+      colNum.style.top = Math.round((parseFloat(cs.top) || 0) + fotoR.bottom + 12 - r.top) + 'px';
+    }
+  }
+  // 🆕 v7.126 (Franco: «sfrutta tutto lo spazio in orizzontale per questi filtri: ora che abbiamo spostato la foto c'è
+  //    più spazio; dove oggi ne affianchi 2 magari riusciamo a metterne 3») - LE NUMERICHE (#detail-meta) SI ALLARGANO:
+  //    a sinistra fino a 16px dopo i tasti di ritorno (che stanno su quella colonna), a destra fino a 32px dal bordo.
+  //    Margini negativi su un elemento della griglia: si allarga oltre la sua area senza spostare le altre.
+  //    🧪 Con la colonna delle numeriche sotto la foto, a sinistra si parte 16px dopo di lei se è più larga dei tasti.
+  if (meta && meta.getClientRects().length) {
+    const mR = meta.getBoundingClientRect(), cRR = cont.getBoundingClientRect();
+    const bordoSx = Math.max(inv.getBoundingClientRect().right, colNum ? colNum.getBoundingClientRect().right : 0);
+    // 🔄 (Franco: «i box rettangolari devono essere, nel complesso, centrati rispetto alla schermata, orizzontalmente») -
+    //    lo spazio delle numeriche è SIMMETRICO rispetto alla pagina (tanto vuoto a destra quanto a sinistra) e le file
+    //    dei riquadri si centrano dentro di lui: così il loro insieme sta al centro dello schermo
+    const L = bordoSx + 16, R = cRR.right - (L - cRR.left);
+    const sx = L - mR.left, dx = mR.right - R;
+    meta.style.marginLeft = Math.round(sx) + 'px';
+    meta.style.marginRight = Math.round(dx) + 'px';
+    const st = document.getElementById('specchietti-top');
+    if (st) st.style.justifyContent = 'center';
+    // (Franco: «non mi metterei così attaccato ai 4 pulsanti che cambiano pagina; lasciamo un po' di spazio») - le
+    //    numeriche cominciano almeno 28px sotto le frecce
+    if (colP && colS) {
+      const sotto = Math.max(colP.getBoundingClientRect().bottom, colS.getBoundingClientRect().bottom) + 28 - meta.getBoundingClientRect().top;
+      if (sotto > 0) meta.style.marginTop = Math.round(sotto) + 'px';
+    }
+  }
+  // 🆕 v7.126 (Franco: «prova a mettere il back button Inventario più in basso, sopra a "Sezioni"») - «← Inventario»
+  //    scende sopra «← Sezioni», 8px più su, ma mai sopra la foto (a muro, sulla sua stessa colonna): almeno 8px sotto
+  //    di lei. Si misura tutto, perché l'altezza della testata cambia da serie a serie.
+  // 📌 Si sposta per DIFFERENZA (`_spostaA`): il `top` di un tasto è nel riferimento del suo contenitore posizionato,
+  //    e così non serve sapere quale sia.
+  const sez = document.querySelector('#series-detail #items-section .back-btn');
+  if (!sez || !sez.getClientRects().length) return;
+  const _spostaA = (el, y) => { el.style.top = Math.round((parseFloat(getComputedStyle(el).top) || 0) + y - el.getBoundingClientRect().top) + 'px'; };
+  const foto = riga.getClientRects().length ? riga.getBoundingClientRect() : null;
+  let y = sez.getBoundingClientRect().top - inv.getBoundingClientRect().height - 8;
+  if (foto && foto.height) y = Math.max(y, foto.bottom + 8);
+  if (colNum) y = Math.max(y, colNum.getBoundingClientRect().bottom + 12);   // 🧪 e sotto la colonna delle numeriche
+  // 🔴 a testata chiusa «Sezioni» sta quasi in cima (📏 102px) e sopra non c'è posto: «Inventario» resta dov'è
+  if (y > inv.getBoundingClientRect().top) _spostaA(inv, y);
+  // e se adesso «Inventario» tocca «Sezioni», scende «Sezioni», 8px sotto di lui
+  // 🔴 scende TUTTA LA SEZIONE, allungando la testata, non «Sezioni» da solo: da solo finiva sopra il carosello che
+  //    gli sta sotto (📏 con le numeriche in colonna sotto la foto la testata si accorcia e la pila a sinistra no).
+  //    A testata chiusa la griglia è nascosta e un margine non sposterebbe niente: lì scende «Sezioni», come prima.
+  const giu = inv.getBoundingClientRect().bottom + 8;
+  const manca = giu - sez.getBoundingClientRect().top;
+  if (manca > 0) {
+    if (area.getClientRects().length) area.style.marginBottom = Math.round((parseFloat(getComputedStyle(area).marginBottom) || 0) + manca) + 'px';
+    else _spostaA(sez, giu);
+  }
+}
 function _opzioniSottoLaCopertina() {
+  try { _copertinaSezioneASinistra(); } catch (e) { console.error('_copertinaSezioneASinistra', e); }   // v7.126
   const menu = document.getElementById('detail-admin-menu'), mini = document.getElementById('detail-cover-serie');
   if (!menu) return;
   // 🔄 v7.117 (Franco: «il tasto Opzioni deve andare sotto alla foto della serie; a causa di dove lo hai messo ora il
@@ -49754,6 +49951,8 @@ function _vestiTestataPerSezione(s) {
     }
     sub.style.display = '';
   }
+  // v7.126 - le frecce delle sezioni: ci sono dentro una sezione e spariscono uscendone
+  try { _disegnaNavSezione(); } catch (e) { console.error('frecce delle sezioni', e); }
   // v7.115 - la copertina piccola adesso c'è (o non c'è più): «Opzioni» si rimette al suo posto, anche quando la
   //    copertina avrà preso la sua altezza (la decide la misura della riga del titolo, un attimo dopo)
   //    (`typeof`: prova-v6719 esegue questa funzione in un banco che non ha il resto del sito)
@@ -49769,6 +49968,9 @@ function _mostraTestataSerie() {
   try { renderSpecchiettiTop(); } catch(e) { console.error('_mostraTestataSerie/tipi', e); }
   // per ultimo: spegne cio' che gli altri hanno appena acceso, se la testata e' chiusa
   try { _applicaChiusuraTestata(); } catch(e) { console.error('_mostraTestataSerie/chiusura', e); }
+  // 🆕 v7.126 - la testata ha cambiato altezza (aperta, chiusa, sezione, serie): i due tasti di ritorno si rimisurano
+  //    (📏 senza, a testata chiusa «Inventario» restava 130px sotto «Sezioni», e tornando alla serie restava giù)
+  if (typeof _copertinaSezioneASinistra === 'function') setTimeout(() => { try { _copertinaSezioneASinistra(); } catch (e) {} }, 0);
 }
 // 🆕 v6.770 - TORNA ALL'INVENTARIO, TAGLIO «TIPOLOGIE DI ARTICOLI».
 // 🔴 Queste quattro righe stavano solo dentro `closeItemsSection`, e dalla v6.770 servono anche a
@@ -49813,6 +50015,11 @@ function closeItemsSection() {
     _vestiTestataPerSezione(getData('series', []).find(x => x.id === currentSeriesId));
   } catch (e) { console.error('_vestiTestataPerSottoserie (indietro)', e); }
   _mostraTestataSerie(); // DOPO currentSection = null, cosi' descrizione e specchietti si regolano da soli
+  // 🆕 v7.126 - fuori dalla sezione le sue frecce se ne vanno (📏 senza, tornando alla serie restavano)
+  try { _disegnaNavSezione(); } catch (e) { console.error('frecce delle sezioni (indietro)', e); }
+  // 🐛 v7.126 - e «Sfoglia l'album» torna (📏 trovato misurando: uscendo da Retro o Bustine restava nascosto e girato a
+  //    destra, perché `_mostraSfogliaAlbum` si chiamava solo aprendo la serie)
+  try { _mostraSfogliaAlbum(); } catch (e) { console.error('_mostraSfogliaAlbum (indietro)', e); }
   updateSectionCounts();
   try { renderSeriesMeta(getData('series', []).find(x => x.id === currentSeriesId)); } catch(e) {} // v5.881: hub -> una riga per categoria (non i numeri della sezione appena lasciata)
 }
@@ -53576,6 +53783,18 @@ function renderSpecchiettiTop() {
                                         mob ? `_toggleSpecTopRaggr('${v.chiave}')` : null, col, parti);
                }).join('');
   el.innerHTML = html;
+  // 🆕 v7.126 (Franco: «le sezioni con le numeriche - Retro base per categoria, Versioni omaggio per tipo, Errori di
+  //    stampa per tipo - mettile dentro a un box collassabile che presenta il titolo nel suo bordo, come facciamo per i
+  //    filtri sottostanti; vedi tu se usare la stessa grafica») - LA STESSA DEI FILTRI (`_bmApplica`, v7.000-7.003):
+  //    chiuso è una barra «Apri ▼ titolo», aperto ha il titolo sul bordo. Il titolo del riquadro (il primo figlio)
+  //    diventa l'etichetta che la barra legge. Partono chiusi come i filtri; lo stato resta per la sessione, uno per
+  //    riquadro (chiave dal titolo). Solo sul desktop: sul telefono questi riquadri si chiudono già col triangolino.
+  if (!mob) [...el.children].forEach(p => {
+    const t = p.firstElementChild;
+    if (!t) return;
+    t.classList.add('bm-etichetta');
+    _bmApplica(p, 'num:' + t.textContent.replace(/\(.*$/, '').trim());
+  });
   el.style.flexDirection = mob ? 'column' : 'row';
   el.style.display = html ? 'flex' : 'none';
 }
@@ -53716,6 +53935,8 @@ function _dueColonneSeCiStanno(box) {
 function _bmApri(chiave) {
   _bmAperti[chiave] = !_bmAperti[chiave];
   document.querySelectorAll('[data-bm-chiave="' + chiave + '"]').forEach(b => _bmApplica(b, chiave));
+  // v7.126 - un riquadro della testata che si apre o si chiude cambia la sua altezza: i tasti di ritorno si rimisurano
+  if (typeof _copertinaSezioneASinistra === 'function') { try { _copertinaSezioneASinistra(); } catch (e) {} }
 }
 
 function renderRaggrSummaries() {
