@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.125">
+<link rel="stylesheet" href="css/style.css?v=7.126">
 
 
 <style>
@@ -1108,7 +1108,29 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
   /* 🔄 v7.122 (Franco: «il tasto di ritorno "Sezioni" va alzato un po'») - stava a 466-499px (a 1536), a cavallo della
      cima della sezione (482); 40px sopra la cima lo portano a 442-475, staccato dalla linea e dal carosello. A sinistra
      di «Nascondi dettagli serie», che parte a 170px già a 1440: non si toccano. */
-  #series-detail #items-section .back-btn { top:-40px; }
+  #series-detail #items-section .back-btn { top:-48px; }   /* v7.126: -40 → -48 (Franco: «tira "Sezioni" su un minimo») */
+  /* 🔄 v7.126 (Franco, nella pagina di una tipologia dentro una serie: «la foto della tda inizia più sotto del titolo:
+     mettiamola in modo che il suo tetto sia il tetto del titolo; e più a sx, ma non oltre la fine del pulsante
+     Inventario») - LA FOTO GRANDE DELLA SEZIONE (`.con-sottoserie`) PRENDE LE DUE RIGHE DELLA GRIGLIA: comincia
+     in cima, all'altezza del titolo (80px), invece che sotto la riga del titolo (216). Lo spostamento a sinistra lo
+     fa `_copertinaSezioneASinistra`, misurando il bordo destro di «← Inventario». */
+  #series-detail .series-title-area.con-sottoserie > .cover-riga { grid-row: 1 / span 2; }
+  /* 🔴 E IL TITOLO SI CENTRA ACCANTO ALLA FOTO, non più su tutta la larghezza: con la foto in cima, a 1440-1536 il nome
+     della serie con le sue frecce le finiva sopra (📏 misurato su tutte le 47 pagine di sezione: fino a 186px di
+     sovrapposizione). Nella seconda colonna il titolo sta fra la foto e la copertina piccola. */
+  #series-detail .series-title-area.con-sottoserie .series-info > div:first-child { grid-column: 2 / 3; }
+  /* 🔴 i due tasti di ritorno si spostano col calcolo (`_copertinaSezioneASinistra`): la `transition: all` di
+     `.back-btn` animava anche `top`, e il calcolo li misurava a metà corsa (📏 Inventario finiva sotto Sezioni).
+     Restano animati solo bordo e colore, cioè il passaggio del mouse. */
+  #series-detail .back-btn { transition: border-color 0.2s, color 0.2s; }
+  /* 🔄 «Sfoglia l'album» sotto la foto e non più accanto (v6.869): accanto, nella pagina degli Album, stringeva la
+     colonna del titolo e la freccia «prossima serie» andava a capo (📏 misurato su Serie 2 → Album, a 1536).
+     `column-reverse` perché nel codice il pulsante viene prima della foto. */
+  #series-detail .series-title-area.con-sottoserie > .cover-riga { flex-direction: column-reverse; align-items: flex-start; gap: 0.6rem; }
+  /* 🧪 la prova di Franco: le numeriche in colonna sotto la foto (`_copertinaSezioneASinistra`), gli originali nascosti */
+  #num-sotto-foto { position: absolute; display: flex; flex-direction: column; gap: 0.3rem; z-index: 1; }
+  #num-sotto-foto .num-voce { white-space: nowrap; flex-direction: row !important; gap: 0.35rem !important; align-items: baseline; }   /* «(Le hai tutte !🎉)» accanto al numero */
+  #detail-meta.num-in-colonna > .num-voce { display: none !important; }
 }
 
 /* v6.103 (Franco) — I DUE "TORNA INDIETRO" IN BIANCO: "Inventario" (torna dalla scheda serie) e
@@ -6236,7 +6258,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.125"></script>
+<script src="js/app.js?v=7.126"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6260,7 +6282,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.125'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.126'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
