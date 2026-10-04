@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.119">
+<link rel="stylesheet" href="css/style.css?v=7.120">
 
 
 <style>
@@ -748,6 +748,19 @@ body:not(.wz-ripresa) #inv-linguetta { top: 80px; }
   display: flex; flex-direction: column; gap: 0.5rem; min-width: 240px; }
 #imp-pannello select { min-width: 0; }
 @media (max-width: 860px) { #imp-linguetta, #imp-pannello { display: none !important; } }
+/* 🔄 v7.120 (Franco: «a volte le linguette blu vanno sopra ai tasti per tornare indietro durante la navigazione;
+   proviamo a metterle sulla dx») - LA COLONNA BLU PASSA AL BORDO DESTRO, speculare: angoli tondi a sinistra, ombra
+   verso sinistra, si allungano verso sinistra. Dove c'è quella arancio dell'admin (stesso bordo, stessa altezza), la
+   colonna scende sotto di lei. Le regole di sinistra qui sopra restano perché dicono la storia. */
+#linguette { left: auto; right: 0; align-items: flex-end; }
+#linguette > button { border-radius: 12px 0 0 12px !important; padding: 0.6rem 0.9rem 0.6rem 0.8rem !important; box-shadow: -3px 3px 12px rgba(0,0,0,0.45) !important; }
+body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
+/* 🆕 v7.120 (Franco: «una linguetta admin arancio sulla dx, chiamala "Togli macchie"») - in cima alla colonna, quindi
+   subito sotto «Impersona»; la accende `_aggiornaLinguettaImpersona` solo per l'admin. */
+#mac-linguetta { display: none; align-items: center; gap: 0.5rem; border: none; cursor: pointer;
+  background: var(--action-admin); color: #fff; font-family: var(--font-ui); font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+#mac-linguetta:hover { background: var(--action-admin-hover); }
+@media (max-width: 860px) { #mac-linguetta { display: none !important; } }
 /* 🆕 v7.087 (Franco, solo desktop: «lascia più spazio tra il titolo "Il questionario Sgorbions" e la riga "Col
    Questionario Sgorbions costruisci…"; il font per le frasi testuali del questionario aumentiamolo un minimo») */
 /* 🆕 v7.087 (Franco) - «Salta serie» sulla riga del nome della serie, a destra, solo sul desktop; lì quello del
@@ -1943,6 +1956,8 @@ button.back-btn { color:#ffffff; }
      «Riprendi il Questionario Sgorbions»; c'è solo con `body.wz-ripresa` (vedi `_wzNomePulsanti`). -->
 <!-- 🆕 v7.110 - le linguette in una colonna (`#linguette`, regola nell'index): si impilano da sole -->
 <div id="linguette">
+<!-- 🆕 v7.120 (Franco) - «Togli macchie»: solo admin, arancio, prima della colonna blu (sotto «Impersona») -->
+<button type="button" id="mac-linguetta" onclick="_cliccaLinguettaMacchie()">💧 Togli macchie</button>
 <button type="button" id="wz-linguetta" class="solo-wz" onclick="apriWizardLista()" aria-label="Riprendi il Questionario Sgorbions">
   <span class="wz-ling-corta">📝 <span data-i18n="wz.lingCorta">Riprendi il Questionario</span></span>
   <span class="wz-ling-lunga" data-i18n="wz.linguetta">Riprendi il Questionario Sgorbions</span>
@@ -6197,7 +6212,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.119"></script>
+<script src="js/app.js?v=7.120"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6221,7 +6236,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.119'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.120'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
