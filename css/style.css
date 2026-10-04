@@ -2729,6 +2729,25 @@ footer {
 /* v7.042 (Franco: «un po' più a dx e sx, rispettivamente»; «le due parole su due righe e centrate»;
    «su mobile niente scritte») */
 .serie-nav-btn .serie-nav-scritta { font-size: 0.62rem; line-height: 1.15; text-align: center; margin-top: 1px; }
+/* 🔄 v7.126 (Franco: «la miniatura nel bottone "Prossima serie" e "Serie precedente" è sin troppo piccola; aumentiamo un
+   po'»; «l'etichetta scrivila su una riga sola») - sul desktop la miniatura da 30 a 44px, e la scritta su una riga.
+   Sul telefono restano 24px e niente scritta (regole qui sopra e sotto). */
+@media (min-width: 861px) {
+  .serie-nav-btn img, .serie-nav-btn .serie-nav-vuota { width: 44px; height: 44px; }
+  .serie-nav-btn .serie-nav-scritta { white-space: nowrap; }
+  /* (Franco, dopo: «"prossima serie" e "prossima sezione" sono troppo in piccolo; proviamo col maiuscolo, tutte e 4») */
+  .serie-nav-btn .serie-nav-scritta { text-transform: uppercase; }
+}
+/* 🆕 v7.126 (Franco: «altri 2 bottoni esattamente sotto a "Prossima serie/Serie precedente", per la sezione successiva e
+   precedente») - la freccia della serie e quella della sezione in una colonna (`_disegnaNavSezione`), larghe uguali.
+   Il margine verso il titolo passa dalla freccia alla colonna. Sul telefono le frecce delle sezioni non ci sono: lì la
+   testata è una griglia a tre colonne (v7.044) e la colonna si scioglie. */
+.serie-nav-col { display: inline-flex; flex-direction: column; align-items: stretch; gap: 6px; align-self: center; flex-shrink: 0; }
+.serie-nav-col > .serie-nav-btn { margin: 0 !important; align-self: stretch; }
+/* il posto di una freccia che non c'è: occupa la sua misura e non si vede né si clicca */
+.serie-nav-posto { visibility: hidden; pointer-events: none; }
+@media (min-width: 861px) { .serie-nav-col-prec { margin-right: 1.5rem; } .serie-nav-col-succ { margin-left: 1.5rem; } }
+@media (max-width: 860px) { .serie-nav-col { display: contents; } .sez-nav-btn { display: none !important; } }
 @media (min-width: 861px) { .serie-nav-btn.serie-nav-prec { margin-right: 1.5rem; } .serie-nav-btn.serie-nav-succ { margin-left: 1.5rem; } }
 @media (max-width: 860px) { .serie-nav-btn .serie-nav-scritta { display: none; } }
 
