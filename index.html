@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.121">
+<link rel="stylesheet" href="css/style.css?v=7.122">
 
 
 <style>
@@ -1105,6 +1105,10 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
   #prodotto-detail .series-hero-inner > .back-btn { top:1rem; left:2rem; }
   /* niente `top`: posizione statica, cioe' centrato accanto al nome della sezione */
   #series-detail #items-section .back-btn { left:calc(2rem - (100vw - 1100px)/2); }
+  /* 🔄 v7.122 (Franco: «il tasto di ritorno "Sezioni" va alzato un po'») - stava a 466-499px (a 1536), a cavallo della
+     cima della sezione (482); 40px sopra la cima lo portano a 442-475, staccato dalla linea e dal carosello. A sinistra
+     di «Nascondi dettagli serie», che parte a 170px già a 1440: non si toccano. */
+  #series-detail #items-section .back-btn { top:-40px; }
 }
 
 /* v6.103 (Franco) — I DUE "TORNA INDIETRO" IN BIANCO: "Inventario" (torna dalla scheda serie) e
@@ -4015,7 +4019,7 @@ di tutte le serie</button>
         <!-- 🆕 v7.121 (Franco: «la sezione "Foto protette" della sezione Tda spostiamola fuori: tab dedicato, di nome
              "Protezione foto"») - le tabelle le disegna `renderAdminProtezioneTDA`: tipologie e, sotto, versioni. -->
         <div id="admin-protezione" class="admin-section">
-          <div style="max-width:1300px;"><div id="admin-protezione-tda"></div></div>   <!-- 1300: i cinque esempi degli stili in una fila -->
+          <div><div id="admin-protezione-tda"></div></div>   <!-- v7.122: senza tetto, gli esempi degli stili (320px) occupano la larghezza del pannello -->
 
         </div>
         <div id="admin-griglie" class="admin-section">
@@ -6223,7 +6227,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.121"></script>
+<script src="js/app.js?v=7.122"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6247,7 +6251,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.121'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.122'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
