@@ -1,7 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.122 - Modificato js/app.js (e index per la versione). Il banner «Stai impersonando», sul desktop, nella barra in
+// v7.123 - Modificati js/app.js e index.html. Scheda della serie: «Retro in comune con» (`retroCondivisiId`, sui due
+//          lati) e «Allinea le foto dei retro»; la foto di un retro si propaga al retro con lo stesso nome dell'altra
+//          serie (`_propagaFotoRetroCondiviso`, da `_saveFigurineItem`). Per Mega 1 e Mega 2.
+// v7.122 -Modificato js/app.js (e index per la versione). Il banner «Stai impersonando», sul desktop, nella barra in
 //          alto a sinistra sopra la versione, su due righe (nome / «Torna admin»): non copre più la linguetta.
 // v7.121 -Modificati css/style.css (e index e app.js per la versione). Pagina del profilo / admin console: via il
 //          vuoto in cima (riquadro del profilo da 192 a 80px a 1536) e «Torna a Home» al bordo sinistro come «←
@@ -30865,7 +30868,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.122';
+const JS_VERSION = 'v7.123';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32055,6 +32058,10 @@ async function _saveFigurineItem(item) {
   _cache.figurines = _cache.figurines || [];
   const flatIdx = _cache.figurines.findIndex(x => x.id === item.id);
   if (flatIdx >= 0) _cache.figurines[flatIdx] = item; else _cache.figurines.push(item);
+
+  // 🆕 v7.123 - la foto di un retro va anche sul retro in comune dell'altra serie (`_propagaFotoRetroCondiviso`). Un
+  //    errore lì non deve far credere fallito il salvataggio di questo articolo, che è riuscito.
+  try { await _propagaFotoRetroCondiviso(item, _primaItem); } catch (e) { console.error('_propagaFotoRetroCondiviso', e); }
 
   return item;
 }
@@ -37653,6 +37660,7 @@ function _ripristinaFlagSerie(s) {
   spunta('series-unico-retro-input',              s && s.unicoRetro); // v6.814
   spunta('series-personaggio-card-input',         s && s.personaggioInCard); // v6.966
   try { _riempiSerieGemella(s); } catch (e) { console.error('_riempiSerieGemella', e); }   // v7.101
+  try { _riempiRetroCondivisi(s); } catch (e) { console.error('_riempiRetroCondivisi', e); }   // v7.123
   // 🔴 v6.584 - IL RIPRISTINO DEL FLAG NUOVO, e vale l'avvertimento della v6.219: senza
   // questa riga la casella si aprirebbe sempre spenta e `saveSeries` scriverebbe `false` —
   // cioe' ogni salvataggio rimetterebbe in vista una serie nascosta. Dodici flag, dodici
@@ -38349,6 +38357,8 @@ async function saveSeries() {
   const personaggioInCard = document.getElementById('series-personaggio-card-input')?.checked || false;
   // 🆕 v7.101 - la serie gemella (vuoto = nessuna); dopo il salvataggio `_scriviGemellaSullAltra` la scrive anche di là
   const serieGemellaId = document.getElementById('series-gemella-input')?.value || null;
+  // 🆕 v7.123 - la serie con cui condivide i retro (vuoto = nessuna); scritta anche di là da `_scriviRetroCondivisiSullAltra`
+  const retroCondivisiId = document.getElementById('series-retro-condivisi-input')?.value || null;
   // 🔄 v6.668 - un campo solo al posto delle due spunte. Il ripiego a «pubblicata» copre il
   //    caso in cui il selettore non fosse nel DOM: prima, due `|| false` dicevano «visibile e
   //    senza timbro», che e' la stessa cosa detta in due pezzi.
@@ -38543,7 +38553,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -38565,12 +38575,14 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
     // 🆕 v7.101 - la gemella, nei due sensi: la si scrive anche sull'altra serie (e si toglie a chi la aveva)
     await _scriviGemellaSullAltra(editId || (_cache.series[_cache.series.length - 1] || {}).id, serieGemellaId);
+    // 🆕 v7.123 - e i retro in comune, allo stesso modo
+    await _scriviRetroCondivisiSullAltra(editId || (_cache.series[_cache.series.length - 1] || {}).id, retroCondivisiId);
   } catch(e) {
     console.error('saveSeries', e);
     _fineAttesa();   // v6.190
@@ -43525,6 +43537,81 @@ async function allineaPersonaggiGemella() {
   } catch (e) { toast((it ? '⚠️ NON allineato: ' : '⚠️ NOT aligned: ') + (e?.message || e), 'error'); return; }
   toast(it ? '✅ Allineati ' + scritture.length + ' articoli fra ' + s.name + ' e ' + g.name : '✅ Aligned ' + scritture.length + ' items', 'success');
 }
+// 🆕 v7.123 (Franco: «Mega 1 e Mega 2 non sono gemelle: condividono solo lo stesso set di 37 retro»; «evitare di censire
+//    37 foto di retro due volte») - I RETRO IN COMUNE. Campo `retroCondivisiId`, scritto su tutte e due le serie e letto
+//    anche da un lato solo, come la gemella; ma vale SOLO per i retro, e solo per la foto. Il retro corrispondente è il
+//    retro base dell'altra serie con lo stesso nome (oggi le Mega hanno gli stessi 37 nomi).
+function _serieRetroCondivisiDi(sid) {
+  if (!sid) return null;
+  const tutte = getData('series', []), s = tutte.find(x => x.id === sid);
+  return (s && s.retroCondivisiId && tutte.find(x => x.id === s.retroCondivisiId))
+    || tutte.find(x => x.retroCondivisiId === sid && x.id !== sid) || null;
+}
+const _chiaveRetroCondiviso = f => String(f.name || '').toUpperCase().trim();
+function _retroCondivisoDi(f) {
+  if (!f || f.section !== 'retros' || !_eBase(f)) return null;
+  const altra = _serieRetroCondivisiDi(f.seriesId);
+  if (!altra) return null;
+  const k = _chiaveRetroCondiviso(f);
+  const trovati = getData('figurines', []).filter(x => x.seriesId === altra.id && x.section === 'retros' && _eBase(x) && _chiaveRetroCondiviso(x) === k);
+  return trovati.length === 1 ? trovati[0] : null;   // due omonimi di là: non si indovina quale
+}
+function _riempiRetroCondivisi(s) {
+  const sel = document.getElementById('series-retro-condivisi-input');
+  if (!sel) return;
+  const it = currentLang === 'it', c = s ? _serieRetroCondivisiDi(s.id) : null;
+  sel.innerHTML = '<option value="">' + (it ? '— nessuna —' : '— none —') + '</option>'
+    + _serieOrdinate(getData('series', [])).filter(x => !s || x.id !== s.id).map(x => '<option value="' + esc(x.id) + '"' + (c && c.id === x.id ? ' selected' : '') + '>' + esc(x.name) + '</option>').join('');
+  const btn = document.getElementById('series-retro-condivisi-allinea-btn');
+  if (btn) btn.style.display = s && c ? '' : 'none';
+}
+async function _scriviRetroCondivisiSullAltra(sid, cid) {
+  if (!sid) return;
+  for (const x of getData('series', [])) {
+    const deve = x.id === cid ? sid : (x.retroCondivisiId === sid ? null : undefined);
+    if (deve === undefined || x.id === sid || (x.retroCondivisiId || null) === deve) continue;
+    x.retroCondivisiId = deve;
+    await fsSave('series', _serieSenzaItems(x));
+  }
+}
+// La chiama `_saveFigurineItem` dopo OGNI scrittura di un articolo: è il punto da cui passano tutte (scheda, carica
+// foto, rimuovi sfondo, tabella). Se è cambiata la foto di un retro con un corrispondente, la stessa va di là. Il
+// corrispondente, salvato, richiama questa funzione: trova la foto già uguale e si ferma.
+async function _propagaFotoRetroCondiviso(item, prima) {
+  if (!item || item.section !== 'retros' || !('img' in item)) return;
+  if (prima && (prima.img || null) === (item.img || null)) return;
+  const altro = _retroCondivisoDi(item);
+  if (!altro || (altro.img || null) === (item.img || null)) return;
+  await _saveFigurineItem({ ...altro, img: item.img || null });
+  const s = getData('series', []).find(x => x.id === altro.seriesId);
+  toast(currentLang === 'it' ? '🔗 Propagato anche al retro della ' + ((s && s.name) || 'serie') : '🔗 Copied to the shared back too', 'success', 'alto');
+}
+// «Allinea le foto dei retro» (scheda della serie): per ogni coppia di retro corrispondenti, dove un lato ha la foto e
+// l'altro no, la foto passa di là. Se le hanno tutte e due diverse non si tocca niente: si elencano nella conferma.
+async function allineaFotoRetroCondivisi() {
+  const it = currentLang === 'it';
+  const sid = document.getElementById('edit-series-id')?.value, s = getData('series', []).find(x => x.id === sid), c = _serieRetroCondivisiDi(sid);
+  if (!s || !c) { toast(it ? 'Prima scegli e salva la serie con i retro in comune' : 'Choose and save the series first', 'error'); return; }
+  const scritture = [], diversi = [];
+  getData('figurines', []).filter(x => x.seriesId === s.id && x.section === 'retros' && _eBase(x)).forEach(a => {
+    const b = _retroCondivisoDi(a); if (!b) return;
+    if (a.img && !b.img) scritture.push({ ...b, img: a.img });
+    else if (!a.img && b.img) scritture.push({ ...a, img: b.img });
+    else if (a.img && b.img && a.img !== b.img) diversi.push(a.name);
+  });
+  if (!scritture.length) { toast(it ? 'Già allineate: niente da copiare' + (diversi.length ? ' (' + diversi.length + ' con foto diverse)' : '') : 'Already aligned', 'success'); return; }
+  if (!confirm(it
+    ? 'Copio ' + scritture.length + ' foto di retro fra ' + s.name + ' e ' + c.name + ', dove un lato non l’ha?'
+      + (diversi.length ? '\n\nNon tocco questi ' + diversi.length + ', che hanno due foto diverse:\n' + diversi.join('\n') : '')
+    : 'Copy ' + scritture.length + ' back photos between ' + s.name + ' and ' + c.name + '?')) return;
+  let fatti = 0;
+  for (const r of scritture) {
+    try { await _saveFigurineItem(r); fatti++; }
+    catch (e) { console.error('allineaFotoRetroCondivisi', r.id, e); }
+  }
+  toast(fatti === scritture.length ? (it ? '✅ Copiate ' + fatti + ' foto di retro' : '✅ Copied ' + fatti + ' photos')
+    : (it ? '⚠️ Copiate ' + fatti + ' foto su ' + scritture.length + ': riprova' : '⚠️ Copied ' + fatti + ' of ' + scritture.length), fatti === scritture.length ? 'success' : 'error');
+}
 async function _salvaPersMod(f) {
   // 🐛 v7.093 (Franco, dal telefono: «se scrivo il nome di un personaggio e seleziono dai suggerimenti, mi trovo il
   //    nome nel campo, ma quando schiaccio Salva, a dispetto del fatto che dice "articolo salvato", non ha salvato
@@ -44900,16 +44987,24 @@ function _perRicerca(s) {
 // tendina dei collegamenti ne' il selettore del paese: li' si sta scegliendo da un elenco corto e
 // gia' visibile, e restringere il modo di filtrare toglierebbe piu' di quanto dia. Se un giorno
 // dovessero allinearsi, e' questa la funzione da chiamare.
+// 🐛 v7.123 (Franco: «se ho un nome che è "premio dell'egoismo", cercando "egoismo" non trovo nulla; devo cercare
+//    "dell'egoismo"; quantomeno assurdo») - L'APOSTROFO È ANCHE UN INIZIO DI PAROLA. `_perRicerca` lo toglie, quindi
+//    «dell'egoismo» diventava la parola unica «dellegoismo», e «egoismo» non ne era l'inizio. Ora il testo si guarda
+//    in due modi: senza apostrofi (così «dell'egoismo» e «dellegoismo» trovano come prima) e con l'apostrofo come
+//    spazio (così «egoismo» trova). I trattini restano come sono: «rosso» continua a NON trovare «G-ROSSO» (v6.264).
 function _matchRicerca(testo, qn) {
   if (!qn) return true;
+  const inizio = t => {
+    let i = t.indexOf(qn);
+    while (i >= 0) {
+      if (i === 0 || t.charAt(i - 1) === ' ') return true;   // inizio stringa o inizio parola
+      i = t.indexOf(qn, i + 1);
+    }
+    return false;
+  };
   const t = _perRicerca(testo);
   if (!t) return false;
-  let i = t.indexOf(qn);
-  while (i >= 0) {
-    if (i === 0 || t.charAt(i - 1) === ' ') return true;   // inizio stringa o inizio parola
-    i = t.indexOf(qn, i + 1);
-  }
-  return false;
+  return inizio(t) || inizio(_perRicerca(String(testo == null ? '' : testo).replace(/[’‘‛`´']/g, ' ')));
 }
 
 // v6.096 (Franco) - LE DUE RICERCHE GUARDANO LO STESSO INSIEME DI CAMPI, e ora lo guardano
