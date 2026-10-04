@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.121 - Modificati css/style.css (e index e app.js per la versione). Pagina del profilo / admin console: via il
+//          vuoto in cima (riquadro del profilo da 192 a 80px a 1536) e «Torna a Home» al bordo sinistro come «←
+//          Inventario» (da 1400px; sotto resta sopra il riquadro, comunque a 80px).
 // v7.120 - Modificato js/app.js (e index per la versione). Console → Tipo di articolo → Caroselli: una riga per
 //          ogni tipo senza serie (`tipo:<id>` in `settings/caroselli`) e via la riga «Altri articoli»; i caroselli
 //          chiedono all'articolo (`_articoloInCarosello`), anche dentro il box di un tipo senza serie.
@@ -29468,7 +29471,7 @@ function renderEbayAccountScelta(f, s, pref = 'fig') {
     gruppo.dataset.vuoto = '1';
     box.innerHTML = conti.length
       ? `<div style="font-size:0.82rem;color:var(--text);">${attr(conti[0].etichetta)}</div>`
-      : `<div style="font-size:0.82rem;color:var(--text);font-style:italic;">${it ? 'Nessun account configurato — vedi Impostazioni → Impostazioni Ebay' : 'No account configured'}</div>`;
+      : `<div style="font-size:0.82rem;color:var(--text);font-style:italic;">${it ? 'Nessun account configurato — vedi la admin console, tab Ebay' : 'No account configured'}</div>`;
     return;
   }
   gruppo.dataset.vuoto = '';
@@ -30860,7 +30863,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.120';
+const JS_VERSION = 'v7.121';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31018,12 +31021,40 @@ function _fotoProtetteRifai() { _fpCache = { figs: null, n: -1, set: new Set() }
 //    «Anche nel carosello» (`car:<chiave>`; se non è mai stata salvata, sì: come prima). `_fpSenzaScritta` dice a
 //    `_filigrana` di saltare, per la sola chiamata di `cloudinaryUrl` fatta da qui.
 let _fpSenzaScritta = false;
+let _fpInCarosello = false;   // v7.121: nei caroselli la macchia ha lo stile suo (`stileCar`)
 function _urlCarosello(f, url, opts) {
   let senza = false;
   try { senza = _PROTEZIONE_CFG['car:' + _chiaveProtezione(f.section, f.tipoProdotto)] === false; } catch (e) {}
   _fpSenzaScritta = senza;
-  try { return cloudinaryUrl(url, opts); } finally { _fpSenzaScritta = false; }
+  _fpInCarosello = true;
+  try { return cloudinaryUrl(url, opts); } finally { _fpSenzaScritta = false; _fpInCarosello = false; }
 }
+// 🆕 v7.121 (Franco: «possiamo operare la macchia anche nel carosello? magari lì un pochino meno forte; mi avevi
+//    proposto differenti alternative, rioffrimele in cfg; sarebbe carino vedere lì proprio gli effetti») - GLI STILI
+//    DELLA MACCHIA, quelli proposti per la v7.103 (A-D, Franco scelse la B) più la E, la B più leggera. Due scelte in
+//    console → Protezione foto: `stile` per le foto, `stileCar` per i caroselli (mai salvate: B e E).
+// 📌 La grandezza segue la foto (`w`), come prima: 34px su una foto da 600.
+const STILI_MACCHIA = [
+  { k: 'A', it: 'Ripetuta, chiara', en: 'Tiled, light' },
+  { k: 'B', it: 'Ripetuta, col bordo', en: 'Tiled, outlined' },
+  { k: 'C', it: 'Una sola, grande', en: 'Single, large' },
+  { k: 'D', it: 'Ripetuta, leggera', en: 'Tiled, faint' },
+  { k: 'E', it: 'Col bordo, leggera', en: 'Outlined, faint' },
+];
+function _trasfMacchia(stile, w) {
+  const px = Math.max(12, Math.round(w * 0.057));
+  const bordo = Math.max(1, Math.round(px / 11));
+  const testo = ':figurinesgorbions.it,co_white,';
+  if (stile === 'A') return 'l_text:Arial_' + px + '_bold' + testo + 'o_45,a_-30,fl_tiled/';
+  if (stile === 'C') { const g = Math.max(14, Math.round(w * 0.11)); return 'l_text:Arial_' + g + '_bold_stroke' + testo + 'bo_' + Math.max(1, Math.round(g / 11)) + 'px_solid_black,o_55,a_-30/'; }
+  if (stile === 'D') return 'l_text:Arial_' + px + '_bold' + testo + 'o_22,a_-30,fl_tiled/';
+  if (stile === 'E') return 'l_text:Arial_' + px + '_bold_stroke' + testo + 'bo_' + bordo + 'px_solid_black,o_25,a_-30,fl_tiled/';
+  return 'l_text:Arial_' + px + '_bold_stroke' + testo + 'bo_' + bordo + 'px_solid_black,o_45,a_-30,fl_tiled/';   // B
+}
+const _stileMacchia = carosello => {
+  const v = _PROTEZIONE_CFG[carosello ? 'stileCar' : 'stile'];
+  return STILI_MACCHIA.some(s => s.k === v) ? v : (carosello ? 'E' : 'B');
+};
 // 🔄 v7.120 (Franco: «io come admin vorrei vedere le macchie sulle figurine; però vorrei poterle non vedere
 //    all'occorrenza; mettimi una linguetta admin arancio sulla dx, chiamala "Togli macchie"») - L'ADMIN ORA LE VEDE,
 //    come i visitatori, e le spegne con la linguetta `#mac-linguetta`. La scelta resta in questo browser
@@ -31037,9 +31068,8 @@ function _filigrana(url, opts) {
     if (!_fotoProtette().has(url)) return '';
     // senza `w_` la foto arriva grande (l'originale): la scritta si fa come per una foto da 1000
     const w = parseInt((String(opts).match(/(?:^|,)w_(\d+)/) || [])[1], 10) || 1000;
-    const px = Math.max(12, Math.round(w * 0.057));   // 34px su una foto da 600, come nell'esempio scelto
-    const bordo = Math.max(1, Math.round(px / 11));
-    return 'l_text:Arial_' + px + '_bold_stroke:figurinesgorbions.it,co_white,bo_' + bordo + 'px_solid_black,o_45,a_-30,fl_tiled/';
+    // 🔄 v7.121 - lo stile scelto in console, uno per le foto e uno per i caroselli (`_trasfMacchia`)
+    return _trasfMacchia(_stileMacchia(_fpInCarosello), w);
   } catch (e) { return ''; }
 }
 
@@ -39981,6 +40011,12 @@ function _impostaProtezione(d) {
 //    `tipo:<id>`), non quella della tipologia; gli Altri articoli senza tipo non hanno riga, quindi d'ufficio no.
 const _chiaveProtezione = (sez, tipo) => tipo ? 'tipo:' + tipo : (sez || 'figurines');
 const _protettaDUfficio = (sez, tipo) => !!_PROTEZIONE_CFG[_chiaveProtezione(sez, tipo)];
+// 🆕 v7.121 (Franco: «deve essere possibile macchiare anche per versione, indipendentemente dalla tda; es. le fcr non
+//    sono macchiate ma lo sono tutte le Change o le versioni omaggio») - LA SECONDA DOMANDA, sull'articolo intero: è
+//    protetto d'ufficio se lo è la sua tipologia (o il suo tipo senza serie) OPPURE la sua versione (chiave
+//    `ver:<versione>` nello stesso `settings/protezione`). La base non ha una riga sua: decide la tipologia.
+const _protettoDUfficioArt = f => _protettaDUfficio(f.section, f.tipoProdotto)
+  || (!_eBase(f) && !!_PROTEZIONE_CFG['ver:' + _rtVersione(f)]);
 // 🔴 L'eccezione «no» si scrive 'no' e non `false`: la v7.103 scriveva `false` su OGNI articolo salvato con la spunta
 //    vuota, quindi `false` non vuol dire «escluso apposta». `true` = protetto a mano, 'no' = escluso a mano, tutto
 //    il resto (null, false, assente) = come la tipologia.
@@ -39988,7 +40024,7 @@ function _eProtetto(f) {
   if (!f) return false;
   if (f.fotoProtetta === true) return true;
   if (f.fotoProtetta === 'no') return false;
-  return _protettaDUfficio(f.section, f.tipoProdotto);
+  return _protettoDUfficioArt(f);   // v7.121: anche la versione
 }
 function renderAdminProtezioneTDA() {
   const box = document.getElementById('admin-protezione-tda');
@@ -39998,13 +40034,14 @@ function renderAdminProtezioneTDA() {
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
   // quanti articoli fanno eccezione, per tipologia: si vedono accanto alla spunta
   const ecc = {};
-  getData('figurines', []).forEach(f => { if ((f.fotoProtetta === true || f.fotoProtetta === 'no') && _eProtetto(f) !== _protettaDUfficio(f.section, f.tipoProdotto)) { const k = _chiaveProtezione(f.section, f.tipoProdotto); ecc[k] = (ecc[k] || 0) + 1; } });
+  getData('figurines', []).forEach(f => { if ((f.fotoProtetta === true || f.fotoProtetta === 'no') && _eProtetto(f) !== _protettoDUfficioArt(f)) { const k = _chiaveProtezione(f.section, f.tipoProdotto); ecc[k] = (ecc[k] || 0) + 1; } });   // v7.121: col confronto sull'articolo intero
   // v7.111: le righe sono le tipologie (senza «Altri articoli») e poi i tipi senza serie
   const righe = PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez] && sez !== 'extras').map(sez => ({ k: sez, nome: getSectionLabel(sez) }))
     .concat(_tipiProdotto().map(tp => ({ k: 'tipo:' + tp.id, nome: tp.nome || tp.id, tipo: true })));
   const idCasella = k => 'prot-' + k.replace(/[^a-zA-Z0-9_-]/g, '_');
   box.innerHTML =
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🔒 ' + (it ? 'Foto protette' : 'Protected photos') + '</h4>' +
+    // 🔄 v7.121 - tab suo, col nome scelto da Franco
+    '<h4 style="font-family:var(--font-ui);margin:0 0 0.5rem;">🔒 ' + (it ? 'Protezione foto' : 'Photo protection') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Accesa: gli articoli di quella tipologia hanno <strong>«Foto protetta» d’ufficio</strong>, e chi visita il sito vede le loro foto con la scritta «figurinesgorbions.it». ' +
@@ -40026,14 +40063,58 @@ function renderAdminProtezioneTDA() {
       '<td style="' + td + 'text-align:center;"><input type="checkbox" id="' + idCasella('car:' + r.k) + '" data-chiave="car:' + esc(r.k) + '"' + (_PROTEZIONE_CFG['car:' + r.k] !== false ? ' checked' : '') + '></td>' +
       '<td style="' + td + '">' + (ecc[r.k] ? ecc[r.k] + (it ? (ecc[r.k] === 1 ? ' articolo' : ' articoli') : ' items') : '—') + '</td></tr>').join('') +
     '</table></div>' +
+    // 🆕 v7.121 (Franco: «macchiare anche per versione, indipendentemente dalla tda») - una riga per versione, chiave
+    //    `ver:<versione>` (vedi `_protettoDUfficioArt`); un Salva solo per le due tabelle, che scrivono lo stesso documento
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🧬 ' + (it ? 'Per versione' : 'By version') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it
+        ? 'Accesa: tutti gli articoli di quella versione hanno <strong>«Foto protetta» d’ufficio</strong>, in qualunque tipologia, anche dove la tipologia qui sopra è spenta. ' +
+          'Gli articoli base seguono solo la tipologia.<br>Nei caroselli la scritta segue la colonna «Anche nel carosello» della tipologia.'
+        : 'Checked: every item of that version is protected by default, in any item type. Base items follow the item type only.') +
+    '</p>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Versione' : 'Version') + '</th>' +
+      '<th style="' + th + 'text-align:center;">' + (it ? 'Protetta d’ufficio' : 'Protected by default') + '</th></tr>' +
+    _VERSIONI_VIVE.map(v =>
+      '<tr><td style="' + td + 'color:var(--info);font-weight:600;">' + esc(_RAGGR_VERSIONE.etichettaDi(v.chiave)) + '</td>' +
+      '<td style="' + td + 'text-align:center;"><input type="checkbox" id="' + idCasella('ver:' + v.chiave) + '" data-chiave="ver:' + esc(v.chiave) + '"' + (_PROTEZIONE_CFG['ver:' + v.chiave] ? ' checked' : '') + '></td></tr>').join('') +
+    '</table></div>' +
+    // 🆕 v7.121 (Franco: «rioffrimi le alternative in cfg; sarebbe carino vedere lì proprio gli effetti») - GLI STILI, con
+    //    la foto vera di un articolo macchiata in ciascuno: Cloudinary la disegna come la vedrà chi visita il sito
+    _stiliMacchiaHTML(it) +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
-      '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaProtezioneTDA()">' + (it ? 'Salva le foto protette' : 'Save protected photos') + '</button>' +
+      '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaProtezioneTDA()">' + (it ? 'Salva la protezione foto' : 'Save photo protection') + '</button>' +
     '</div>';
+}
+// 🆕 v7.121 - le due file di esempi (foto e caroselli). La foto è quella di un articolo protetto, se ce n'è uno, se no
+//    della prima figurina con retro con la foto: serve solo a far vedere l'effetto.
+function _stiliMacchiaHTML(it) {
+  const figs = getData('figurines', []);
+  const conFoto = f => f.img && /cloudinary\.com/.test(f.img);
+  const es = figs.find(f => conFoto(f) && _eProtetto(f)) || figs.find(f => conFoto(f) && (f.section || 'figurines') === 'figurines' && _eBase(f));
+  const fila = (nome, carosello) => '<div style="display:flex;flex-wrap:wrap;gap:0.7rem;margin-bottom:1rem;">' +
+    STILI_MACCHIA.map(s => {
+      // la misura delle schede del sito (400), mostrata a 220: la scritta ha la grandezza che avrà davvero
+      const url = es ? es.img.replace('/upload/', '/upload/w_400,h_400,c_fit,q_auto,f_auto/' + _trasfMacchia(s.k, 400)) : '';
+      return '<label style="display:flex;flex-direction:column;align-items:center;gap:0.35rem;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.5rem;width:240px;">' +
+        (url ? '<img src="' + esc(url) + '" alt="" loading="lazy" style="width:220px;height:220px;object-fit:contain;background:#000;border-radius:6px;">' : '') +
+        '<span style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--text);text-align:center;">' +
+          '<input type="radio" name="' + nome + '" value="' + s.k + '"' + (_stileMacchia(carosello) === s.k ? ' checked' : '') + '>' +
+          '<strong style="color:var(--warn);">' + s.k + '</strong> ' + esc(it ? s.it : s.en) + '</span></label>';
+    }).join('') + '</div>';
+  return '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🎨 ' + (it ? 'Stile della macchia' : 'Watermark style') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it ? 'Uno stile per le foto e uno per i caroselli. Gli esempi sono veri: è come Cloudinary darà la foto a chi visita il sito.'
+          : 'One style for photos and one for carousels. The examples are real.') + '</p>' +
+    '<div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:0.4rem;">' + (it ? 'Nelle foto' : 'In photos') + '</div>' + fila('prot-stile', false) +
+    '<div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:0.4rem;">' + (it ? 'Nei caroselli' : 'In carousels') + '</div>' + fila('prot-stileCar', true);
 }
 async function salvaProtezioneTDA() {
   if (!currentUser?.isAdmin) return;
   const it = currentLang === 'it';
   const voci = {};
+  // v7.121: i due stili della macchia
+  ['stile', 'stileCar'].forEach(k => { const r = document.querySelector('#admin-protezione-tda input[name="prot-' + k + '"]:checked'); if (r) voci[k] = r.value; });
   // v7.111: ogni casella porta la sua chiave (`data-chiave`: la tipologia o `tipo:<id>`)
   document.querySelectorAll('#admin-protezione-tda input[data-chiave]').forEach(el => { voci[el.dataset.chiave] = !!el.checked; });
   try {
@@ -56057,6 +56138,10 @@ function _riempiTendinaImpersona() {
   // `display` che si scrive qui sotto NON puo' riaccenderlo: un `!important` di foglio di stile
   // vince su una dichiarazione inline che non ce l'ha. Se un giorno il blocco «non si vede e non
   // si capisce perche'», la risposta e' li', non qui.
+  // 🆕 v7.121 (Franco: «il tasto "Esci" toglilo all'admin»; scelto: quello del riquadro del profilo) - resta quello
+  //    della barra. Impersonando torna, come nel profilo dell'utente.
+  const esci = document.getElementById('profile-logout-wrap');
+  if (esci) esci.style.display = currentUser?.isAdmin ? 'none' : '';
   if (!currentUser?.isAdmin) { wrap.style.display = 'none'; return; }
   const sel = document.getElementById('profile-impersona-select');
   if (!sel) return;
@@ -56333,7 +56418,7 @@ function adminTab(tab) {
   const tabEl = document.getElementById('admin-' + tab);
   if (tabEl) { tabEl.classList.add('active'); }
   if (tab === 'series') renderAdminSeries();
-  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminCaroselliTDA(); renderAdminOrdinamentiTDA(); renderAdminProtezioneTDA();   // v6.982, v7.082, v7.104
+  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminCaroselliTDA(); renderAdminOrdinamentiTDA();   // v6.982, v7.082
     renderCampiMassiviConfig(); _aggiornaCampiMassiviDaConfigurazione().then(renderCampiMassiviConfig); }   // v6.842: qui, non in Impostazioni   // v6.221, v6.233, v6.234
   if (tab === 'figurines') renderAdminFigs();
   if (tab === 'contacts') { renderAdminContacts(); updateMsgBadge(); }
@@ -56347,7 +56432,11 @@ function adminTab(tab) {
   if (tab === 'errori') renderAdminErrori();
   if (tab === 'figurine') renderAdminFigurineInvisibili(); // v6.080
   if (tab === 'email') { renderEmailLog(); refreshEmailCountWidgets(); }
-  if (tab === 'settings') { loadImpostazioniGeneraliFields(); loadReplyToField(); loadEbaySettingsFields(); renderGriglieVisualizzazione(); }   // v6.173, v6.197   // v6.173, v6.197
+  if (tab === 'settings') { loadImpostazioniGeneraliFields(); loadReplyToField(); }   // v6.173
+  // 🆕 v7.121 (Franco) - Ebay e Griglie escono da Impostazioni, con un tab ciascuno
+  if (tab === 'ebay') loadEbaySettingsFields();
+  if (tab === 'griglie') renderGriglieVisualizzazione();   // v6.197
+  if (tab === 'protezione') renderAdminProtezioneTDA();   // v7.104, tab suo dalla v7.121
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
@@ -61677,7 +61766,10 @@ function switchToEditMode(figId) {
       + (currentLang === 'it' ? 'chi visita il sito vede le foto con la scritta «figurinesgorbions.it»' : 'visitors see the photos with «figurinesgorbions.it» written on them') + '</label>'
       // v7.111: la nota nomina il tipo senza serie, quando è lui a decidere
       + (_protettaDUfficio(f.section, f.tipoProdotto) ? '<div style="font-size:0.72rem;color:var(--text);opacity:0.75;margin-top:2px;">'
-          + (currentLang === 'it' ? 'D’ufficio per ' + (f.tipoProdotto ? '«' + esc(((_tipiProdotto().find(t => t.id === f.tipoProdotto)) || {}).nome || f.tipoProdotto) + '»' : 'le ' + esc(getSectionLabel(f.section || 'figurines'))) + ' (console → Tipo di articolo → Foto protette).' : 'Default for this item type.') + '</div>' : '')
+          + (currentLang === 'it' ? 'D’ufficio per ' + (f.tipoProdotto ? '«' + esc(((_tipiProdotto().find(t => t.id === f.tipoProdotto)) || {}).nome || f.tipoProdotto) + '»' : 'le ' + esc(getSectionLabel(f.section || 'figurines'))) + ' (console → Protezione foto).' : 'Default for this item type.') + '</div>'
+        // 🆕 v7.121 - o per la sua versione
+        : _protettoDUfficioArt(f) ? '<div style="font-size:0.72rem;color:var(--text);opacity:0.75;margin-top:2px;">'
+          + (currentLang === 'it' ? 'D’ufficio per la versione «' + esc(_RAGGR_VERSIONE.etichettaDi(_rtVersione(f))) + '» (console → Protezione foto).' : 'Default for this version.') + '</div>' : '')
       + '</span></div>';
     // 🗑️ v7.093 - qui stava la riga del personaggio (v7.091): è salita dopo i nomi (vedi `_rigaPersonaggiEditHTML`)
     // v6.106 (Franco) - via il testo di aiuto dentro il campo
@@ -64580,7 +64672,8 @@ async function saveFigFromDetail(figId, opzioni) {
       fotoProtetta: (() => { const el = document.getElementById('fe-foto-protetta'); if (!el) return null;
         const rec = (typeof _recordInModifica === 'function' && _recordInModifica(figId)) || _bozzaCorrente || {};
         // v7.111: anche il tipo senza serie, che ha la sua riga in console
-        return el.checked === _protettaDUfficio(rec.section || 'figurines', rec.tipoProdotto) ? null : (el.checked ? true : 'no'); })(),   // 'no': vedi `_eProtetto`
+        // v7.121: e la versione, quella scritta ADESSO nella scheda (`_vScheda`), non quella di prima
+        return el.checked === _protettoDUfficioArt({ ...rec, ..._vScheda, section: rec.section || 'figurines' }) ? null : (el.checked ? true : 'no'); })(),   // 'no': vedi `_eProtetto`
       forSale: document.getElementById('fe-for-sale')?.checked || false,
       price: document.getElementById('fe-for-sale')?.checked ? (parseFloat(document.getElementById('fe-price').value) || 0) : null,
       quantity: document.getElementById('fe-for-sale')?.checked ? (parseInt(document.getElementById('fe-quantity').value) || 1) : null,
