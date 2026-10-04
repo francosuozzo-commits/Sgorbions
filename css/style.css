@@ -2757,6 +2757,17 @@ footer {
   #page-catalog > .section:first-of-type { padding-top: 0 !important; }
   #series-detail .series-hero, #prodotto-detail .series-hero { padding-top: 0.5rem; }
 }
+/* 🆕 v7.121 (Franco: «nella admin console, il riquadro con la parte del mio profilo può stare molto più in alto»; «la
+   freccia "Torna a Home" mettila più a sx, come le altre frecce di ritorno del sito») - LA PAGINA DEL PROFILO perde i
+   56px di `.page` e metà del padding della sezione: «Torna a Home» passa da 160 a 80px, come «← Inventario» (misurato
+   80px, a 2rem dal bordo). Dove c'è posto accanto al riquadro (da 1400px) la freccia esce dalla colonna e va al
+   bordo sinistro, alla stessa altezza delle altre, e il riquadro sale fino a lei.
+   ⚠️ Sta DOPO il blocco del telefono qui sopra: prova-v7025 e v7038 lo ritagliano fino alla prima `}` a capo. */
+#page-profile { padding-top: 0; }
+#page-profile > .section:first-child { padding-top: 1rem; }
+@media (min-width: 1400px) {
+  #profile-back-btn { position: absolute; top: 1rem; left: 2rem; margin: 0 !important; }
+}
 
 /* 🆕 v7.010 - `.solo-telefono`: si vede sotto gli 860px e basta (Franco: «nella versione mobile, nella
    home page… metterei una frase»). */
