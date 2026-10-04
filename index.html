@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.120">
+<link rel="stylesheet" href="css/style.css?v=7.121">
 
 
 <style>
@@ -3661,31 +3661,30 @@ di tutte le serie</button>
       <div id="admin-panel" style="display:none;max-width:1500px;width:94vw;margin-left:50%;transform:translateX(-50%);">
         <h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:1.5rem;">⚙️ <span data-i18n="admin.title">Admin Panel</span></h2>
         <div class="admin-tabs">
-          <button class="admin-tab active" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
-          <button class="admin-tab" onclick="adminTab('series')" data-i18n="admin.series">Series</button>
-          <!-- v6.221 — "accanto a Serie", come chiesto: le due cose che descrivono la struttura
-               del catalogo stanno vicine. -->
-          <button class="admin-tab" onclick="adminTab('tipoarticolo')">🧩 Tipo di articolo</button>
+          <!-- 🔄 v7.121 (Franco: «i tab della admin console ordinali alfabeticamente») - in ordine di nome italiano, senza
+               contare le icone. Si apre ancora su «Utenti», che ora è l'ultimo.
+               📌 Le ragioni di vicinanza scritte qui prima (v6.221 «accanto a Serie»; v6.633 Google Search Console
+               fuori da «Funzioni») valgono per il CONTENUTO dei tab, non più per il loro ordine. -->
+          <button class="admin-tab" onclick="adminTab('email')" data-i18n="admin.email.tab">✉️ Comunicazioni</button>
+          <button class="admin-tab" onclick="adminTab('foto')" data-i18n="admin.foto">📥 Data import</button>
+          <button class="admin-tab" onclick="adminTab('ebay')">🏷️ Ebay</button>
+          <button class="admin-tab" onclick="adminTab('errori')" data-i18n="admin.errori">⚠️ Errori</button>
+          <button class="admin-tab" onclick="adminTab('eventi')" data-i18n="admin.eventi"><span style="filter:hue-rotate(200deg);">🔔</span> Eventi</button>
           <!-- v6.080 (Franco) — sezione Figurine: l'elenco degli oggetti resi invisibili. Servono
                tenuti d'occhio: sono l'unica cosa nel sito che esiste ma non si vede, e senza un
                posto dove guardarli si dimenticano. -->
           <button class="admin-tab" onclick="adminTab('figurine')">🫥 Figurine</button>
-          <button class="admin-tab" onclick="adminTab('foto')" data-i18n="admin.foto">📥 Data import</button>
-          <button class="admin-tab" onclick="adminTab('errori')" data-i18n="admin.errori">⚠️ Errori</button>
-          <button class="admin-tab" onclick="adminTab('segnalazioni')" data-i18n="admin.segnalazioni">🔔 Segnalazioni</button>
-          <button class="admin-tab" onclick="adminTab('eventi')" data-i18n="admin.eventi"><span style="filter:hue-rotate(200deg);">🔔</span> Eventi</button>
-          <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
-          <button class="admin-tab" onclick="adminTab('email')" data-i18n="admin.email.tab">✉️ Comunicazioni</button>
-          <button class="admin-tab" onclick="adminTab('settings')" data-i18n="admin.settings.tab">⚙️ Impostazioni</button>
           <button class="admin-tab" onclick="adminTab('funzioni')" data-i18n="admin.funzioni">Funzioni</button>
-          <!-- 🆕 v6.633 (Franco: *"perche non mi rendi autonomo?"* e *"una sezione nuova
-               della Admin console"*) — le pagine per Google si generano da qui.
-               ⚠️ NON dentro «Funzioni»: quella scheda raccoglie le procedure che SCRIVONO su
-               molti record, e la sua regola («prima l'anteprima, poi la conferma, poi la
-               scrittura») nasce per proteggere i dati. Questa legge e scarica: metterla lì
-               avrebbe messo accanto a tre procedure pericolose una cosa che non lo è. -->
           <button class="admin-tab" onclick="adminTab('gsc')">🔍 Google Search Console</button>
-        <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
+          <button class="admin-tab" onclick="adminTab('griglie')">&#128208; Griglie</button>
+          <button class="admin-tab" onclick="adminTab('settings')" data-i18n="admin.settings.tab">⚙️ Impostazioni</button>
+          <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
+          <button class="admin-tab" onclick="adminTab('protezione')">🔒 Protezione foto</button>
+          <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
+          <button class="admin-tab" onclick="adminTab('segnalazioni')" data-i18n="admin.segnalazioni">🔔 Segnalazioni</button>
+          <button class="admin-tab" onclick="adminTab('series')" data-i18n="admin.series">Series</button>
+          <button class="admin-tab" onclick="adminTab('tipoarticolo')">🧩 Tipo di articolo</button>
+          <button class="admin-tab active" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
         </div>
         <!-- 🆕 v6.221 (Franco: "devi creare la tabella del tipo di articolo") — LA SEZIONE
              "TIPO DI ARTICOLO", il punto 7 delle decisioni e il passo 1 della scaletta.
@@ -3717,8 +3716,7 @@ di tutte le serie</button>
             <button class="admin-subtab" onclick="tdaSubTab('caroselli')">🎠 Caroselli</button>
             <!-- 🆕 v7.082 (Franco: «rendere anche questo aspetto configurabile da me») -->
             <button class="admin-subtab" onclick="tdaSubTab('ordinamenti')">↕️ Ordinamento delle griglie</button>
-            <!-- 🆕 v7.104 (Franco: «la protezione attiva d'ufficio per certe tipologie: una mappa in console») -->
-            <button class="admin-subtab" onclick="tdaSubTab('protezione')">🔒 Foto protette</button>
+            <!-- 🔄 v7.121 - qui c'era «🔒 Foto protette» (v7.104): ora è il tab «🔒 Protezione foto» della console -->
           </div>
           <div class="tda-sub" id="tda-sub-tipi">
           <div id="admin-tipo-articolo-tabella"></div>
@@ -3748,10 +3746,6 @@ di tutte le serie</button>
           <!-- 🆕 v7.082 — le chiavi d'ordinamento della griglia per tipologia (`renderAdminOrdinamentiTDA`). -->
           <div class="tda-sub" id="tda-sub-ordinamenti" style="display:none;">
           <div id="admin-ordinamenti-tda"></div>
-          </div>
-          <!-- 🆕 v7.104 — le tipologie con «Foto protetta» d'ufficio (`renderAdminProtezioneTDA`). -->
-          <div class="tda-sub" id="tda-sub-protezione" style="display:none;">
-          <div id="admin-protezione-tda"></div>
           </div>
           <!-- 🆕 v6.234 — da chi può nascere ogni versione. SOLA LETTURA: descrive com'è
                fatto il modello, non cosa contiene questa collezione. È il descrittore
@@ -4015,24 +4009,17 @@ di tutte le serie</button>
             <div id="admin-email-log"></div>
           </div>
         </div>
-        <div id="admin-settings" class="admin-section">
+        <!-- 🆕 v7.121 (Franco: «nel pannello admin abbiamo delle voci che stanno sotto a "Impostazioni" ma non hanno più
+             dignità di altre a stare lì; facciamo uscire Ebay, con un tab dedicato; anche Griglie») - TRE SEZIONI DOVE
+             CE N'ERA UNA: Griglie, Impostazioni (generali + email) ed Ebay. I riquadri sono gli stessi, spostati. -->
+        <!-- 🆕 v7.121 (Franco: «la sezione "Foto protette" della sezione Tda spostiamola fuori: tab dedicato, di nome
+             "Protezione foto"») - le tabelle le disegna `renderAdminProtezioneTDA`: tipologie e, sotto, versioni. -->
+        <div id="admin-protezione" class="admin-section">
+          <div style="max-width:1300px;"><div id="admin-protezione-tda"></div></div>   <!-- 1300: i cinque esempi degli stili in una fila -->
+
+        </div>
+        <div id="admin-griglie" class="admin-section">
           <div style="max-width:950px;">
-            <!-- v6.173 (Franco) - IMPOSTAZIONI GENERALI SITO, primo riquadro: il generale prima del
-                 particolare. Ci arriva il tetto di attesa del caricamento, che fino alla v6.172 era
-                 un 4000 nudo dentro app.js — senza nome, senza un posto dove cambiarlo e senza
-                 traccia di rispetto a cosa fosse tarato. -->
-            <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
-              <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;" data-i18n="admin.generali.title">🌐 Impostazioni generali sito</h4>
-              <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label" data-i18n="admin.generali.timeoutLabel">Attesa massima per il caricamento dei dati (secondi)</label>
-                <div style="display:flex;gap:0.5rem;align-items:flex-start;">
-                  <input class="form-input" type="number" id="impostazioni-timeout-input" min="3" max="120" step="1" placeholder="20" style="width:110px;">
-                  <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveImpostazioniGenerali()" data-i18n="admin.save">Salva</button>
-                </div>
-                <div class="form-hint" data-i18n="admin.generali.timeoutHint">Oltre questo tempo il sito smette di aspettare i dati e mostra il pannello di guasto. Da 3 a 120 secondi. Con una connessione lenta un valore basso fa comparire «SITO MOMENTANEAMENTE NON DISPONIBILE» anche quando i dati stavano arrivando.</div>
-                <div id="impostazioni-generali-feedback" style="display:none;margin-top:0.6rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;"></div>
-              </div>
-            </div>
             <!-- v6.197 (Franco) — GRIGLIE DI VISUALIZZAZIONE. La tabella la genera
                  `renderGriglieVisualizzazione()` da `COLONNE_DEFAULT`: qui non c'e' nessun campo
                  scritto a mano, cosi' una sezione nuova compare da se' come e' successo con la
@@ -4057,6 +4044,26 @@ di tutte le serie</button>
                    singola casella (il 💾 nella tabella qui sopra) e vale solo per quella. -->
               <div id="griglie-feedback" style="display:none;margin-top:0.6rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;"></div>
             </div>
+          </div>
+        </div>
+        <div id="admin-settings" class="admin-section">
+          <div style="max-width:950px;">
+            <!-- v6.173 (Franco) - IMPOSTAZIONI GENERALI SITO, primo riquadro: il generale prima del
+                 particolare. Ci arriva il tetto di attesa del caricamento, che fino alla v6.172 era
+                 un 4000 nudo dentro app.js — senza nome, senza un posto dove cambiarlo e senza
+                 traccia di rispetto a cosa fosse tarato. -->
+            <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+              <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;" data-i18n="admin.generali.title">🌐 Impostazioni generali sito</h4>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" data-i18n="admin.generali.timeoutLabel">Attesa massima per il caricamento dei dati (secondi)</label>
+                <div style="display:flex;gap:0.5rem;align-items:flex-start;">
+                  <input class="form-input" type="number" id="impostazioni-timeout-input" min="3" max="120" step="1" placeholder="20" style="width:110px;">
+                  <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveImpostazioniGenerali()" data-i18n="admin.save">Salva</button>
+                </div>
+                <div class="form-hint" data-i18n="admin.generali.timeoutHint">Oltre questo tempo il sito smette di aspettare i dati e mostra il pannello di guasto. Da 3 a 120 secondi. Con una connessione lenta un valore basso fa comparire «SITO MOMENTANEAMENTE NON DISPONIBILE» anche quando i dati stavano arrivando.</div>
+                <div id="impostazioni-generali-feedback" style="display:none;margin-top:0.6rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;"></div>
+              </div>
+            </div>
             <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
               <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;" data-i18n="newsletter.settingsTitle">⚙️ Impostazioni Email</h4>
 
@@ -4079,6 +4086,10 @@ di tutte le serie</button>
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+        <div id="admin-ebay" class="admin-section">
+          <div style="max-width:950px;">
             <div style="background:var(--card2);border-radius:12px;padding:1.25rem;">
               <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">🏷️ Impostazioni Ebay</h4>
               <!-- v5.981 — Riscritto per le API. Prima questi campi descrivevano la spedizione
@@ -6212,7 +6223,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.120"></script>
+<script src="js/app.js?v=7.121"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6236,7 +6247,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.120'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.121'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
