@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.121 - Modificati css/style.css (e index e app.js per la versione). Pagina del profilo / admin console: via il
+// v7.122 - Modificato js/app.js (e index per la versione). Il banner «Stai impersonando», sul desktop, nella barra in
+//          alto a sinistra sopra la versione, su due righe (nome / «Torna admin»): non copre più la linguetta.
+// v7.121 -Modificati css/style.css (e index e app.js per la versione). Pagina del profilo / admin console: via il
 //          vuoto in cima (riquadro del profilo da 192 a 80px a 1536) e «Torna a Home» al bordo sinistro come «←
 //          Inventario» (da 1400px; sotto resta sopra il riquadro, comunque a 80px).
 // v7.120 - Modificato js/app.js (e index per la versione). Console → Tipo di articolo → Caroselli: una riga per
@@ -30863,7 +30865,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.121';
+const JS_VERSION = 'v7.122';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40092,12 +40094,14 @@ function _stiliMacchiaHTML(it) {
   const figs = getData('figurines', []);
   const conFoto = f => f.img && /cloudinary\.com/.test(f.img);
   const es = figs.find(f => conFoto(f) && _eProtetto(f)) || figs.find(f => conFoto(f) && (f.section || 'figurines') === 'figurines' && _eBase(f));
-  const fila = (nome, carosello) => '<div style="display:flex;flex-wrap:wrap;gap:0.7rem;margin-bottom:1rem;">' +
+  // v7.122: cinque colonne uguali larghe quanto il pannello (a 1536 sono foto da ~265px, prima 220), sempre in una fila
+  const fila = (nome, carosello) => '<div style="display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:0.7rem;margin-bottom:1rem;">' +
     STILI_MACCHIA.map(s => {
       // la misura delle schede del sito (400), mostrata a 220: la scritta ha la grandezza che avrà davvero
       const url = es ? es.img.replace('/upload/', '/upload/w_400,h_400,c_fit,q_auto,f_auto/' + _trasfMacchia(s.k, 400)) : '';
-      return '<label style="display:flex;flex-direction:column;align-items:center;gap:0.35rem;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.5rem;width:240px;">' +
-        (url ? '<img src="' + esc(url) + '" alt="" loading="lazy" style="width:220px;height:220px;object-fit:contain;background:#000;border-radius:6px;">' : '') +
+      // 🔄 v7.122 (Franco: «le anteprime sono piccole; potresti aumentarle un po'?») - la foto riempie la colonna
+      return '<label style="display:flex;flex-direction:column;align-items:center;gap:0.35rem;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.5rem;min-width:0;">' +
+        (url ? '<img src="' + esc(url) + '" alt="" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:contain;background:#000;border-radius:6px;">' : '') +
         '<span style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--text);text-align:center;">' +
           '<input type="radio" name="' + nome + '" value="' + s.k + '"' + (_stileMacchia(carosello) === s.k ? ' checked' : '') + '>' +
           '<strong style="color:var(--warn);">' + s.k + '</strong> ' + esc(it ? s.it : s.en) + '</span></label>';
@@ -57535,18 +57539,23 @@ function _showImpersonateBanner() {
   // 🎭 la introduce da solo. Cosi' il banner sta in poco spazio senza che il comando si stringa -
   // era il modo sbagliato di guadagnare larghezza, e la v6.347 aveva sbagliato proprio quello.
   const _mob = _isMobileViewport();
-  banner.style.cssText = 'position:fixed;top:64px;right:0.5rem;left:auto;z-index:99999;background:var(--warn);color:#0e0a1a;padding:0.35rem 0.6rem;display:flex;align-items:center;gap:0.5rem;font-family:var(--font-ui);font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);border-radius:8px;'
-    + (_mob ? 'font-size:0.74rem;max-width:58vw;' : 'font-size:0.82rem;right:1rem;max-width:33vw;');
+  // 🔄 v7.122 (Franco: «la finestra che dice che sto impersonando si sovrappone alla linguetta usata per impersonare;
+  //    potresti metterla sopra la versione del sito? quella zona non mi serve, quando impersono») - SUL DESKTOP IL BANNER
+  //    VA NELLA BARRA, IN ALTO A SINISTRA, sopra la versione: lo spazio prima di «Home» (misurato: 0-165px, alto 64).
+  //    Su due righe, il nome e sotto «Torna admin», largo al massimo 155px. Sul telefono resta dov'era.
+  banner.style.cssText = 'position:fixed;z-index:99999;background:var(--warn);color:#0e0a1a;display:flex;font-family:var(--font-ui);font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);border-radius:8px;'
+    + (_mob ? 'top:64px;right:0.5rem;left:auto;padding:0.35rem 0.6rem;align-items:center;gap:0.5rem;font-size:0.74rem;max-width:58vw;'
+            : 'top:5px;left:8px;right:auto;padding:4px 6px;flex-direction:column;align-items:stretch;gap:3px;font-size:0.74rem;max-width:155px;');
   // Il nome non deve poter allargare il banner oltre la sua misura: se e' lungo si taglia con i
   // puntini, e resta leggibile quanto basta per sapere chi sei.
   const _chi = '<strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">' + esc(currentUser.username || '') + '</strong>';
-  const _testo = _mob
-    ? '<span style="display:flex;align-items:center;gap:0.3rem;min-width:0;">🎭 ' + _chi + '</span>'
-    : '<span style="display:flex;align-items:center;gap:0.3rem;min-width:0;">🎭 ' + (currentLang === 'it' ? 'Stai impersonando' : 'Impersonating') + ': ' + _chi + ' — WRITE MODE</span>';
+  // v7.122: anche sul desktop il solo nome (nel posto nuovo «Stai impersonando … WRITE MODE» non ci sta); la frase intera
+  //    resta al passaggio del mouse
+  const _testo = '<span style="display:flex;align-items:center;gap:0.3rem;min-width:0;"' + (_mob ? '' : ' title="' + (currentLang === 'it' ? 'Stai impersonando' : 'Impersonating') + ': ' + esc(currentUser.username || '') + ' — WRITE MODE"') + '>🎭 ' + _chi + '</span>';
   // ⚠️ Il pulsante NON si rimpicciolisce con il resto: e' l'unica strada per tornare admin, quindi
   // `flex-shrink:0` e un'area di tocco che resta premibile anche a 320px di schermo.
   banner.innerHTML = _testo
-    + '<button onclick="stopImpersonation()" style="background:#0e0a1a;color:var(--warn);border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-weight:700;flex-shrink:0;white-space:nowrap;font-size:inherit;">'
+    + '<button onclick="stopImpersonation()" style="background:#0e0a1a;color:var(--warn);border:none;border-radius:6px;padding:' + (_mob ? '5px 12px' : '3px 8px') + ';cursor:pointer;font-weight:700;flex-shrink:0;white-space:nowrap;font-size:inherit;">'
     + (_mob ? '✕ admin' : (currentLang === 'it' ? '✕ Torna admin' : '✕ Back to admin')) + '</button>';
   banner.style.display = 'flex';
 }
@@ -58890,10 +58899,15 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     // flag «Abilita modifica», Clona il flag «da-incollare diverse».
     const _puoModificare = !_daAttaccareModificaVietata(f);
     const _puoClonare    = !_daAttaccareCreazioneVietata(f);
-    bottomButtons = (_puoModificare || _puoClonare) ? `<div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+    // 🔄 v7.122 (Franco: «devi darmi la possibilità di cancellare le fpa anche se teoricamente si cancellano con la
+    //    cancellazione di una fcr; perché quando è orfana di fcr questo non è possibile») - ELIMINA ESCE DALLA SPUNTA
+    //    «Abilita modifica»: sempre, per l'admin. Caso vero: la fpa Mega 2 «SONO UN ROCKETTARO» puntava a una fcr
+    //    cancellata, la funzione 5 le ha creato la sostituta, e la vecchia non si poteva togliere. La conferma resta.
+    const _puoEliminare  = true;
+    bottomButtons = (_puoModificare || _puoClonare || _puoEliminare) ? `<div style="display:flex;gap:0.5rem;justify-content:flex-end;">
       ${_puoModificare ? `<button class="tbl-btn tbl-btn-edit admin-anche-telefono" style="font-size:0.92rem;padding:6px 14px;" onclick="switchToEditMode('${f.id}')">&#9998; ${(currentLang === 'it') ? 'Modifica' : 'Edit'}</button>` : ''}
       ${_puoClonare ? `<button class="tbl-btn tbl-btn-edit" style="font-size:0.92rem;padding:6px 14px;" onclick="cloneFigurine('${f.id}')">&#10697; ${(currentLang === 'it') ? 'Clona' : 'Clone'}</button>` : ''}
-      ${_puoModificare ? `<button class="tbl-btn tbl-btn-del" style="font-size:0.92rem;padding:6px 14px;" onclick="deleteItemFromDetail('${f.id}')">🗑️ ${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button>` : ''}
+      ${_puoEliminare ? `<button class="tbl-btn tbl-btn-del" style="font-size:0.92rem;padding:6px 14px;" onclick="deleteItemFromDetail('${f.id}')">🗑️ ${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button>` : ''}
     </div>` : '';
   } else if (currentUser) {
     bottomButtons = `<div style="margin-top:1rem;text-align:right;">
