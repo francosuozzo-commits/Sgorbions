@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.124 - Modificato js/app.js (e index per la versione). Caroselli: la riga della sottoserie c'è solo se almeno una
+// v7.125 - Modificato js/app.js (e index per la versione). Caroselli, card dei retro: la sottocategoria solo se qualcuno
+//          nella fila ce l'ha, e la categoria su una riga sola se nessuna della fila va a capo (`_caroselloRetroOpz`).
+// v7.124 -Modificato js/app.js (e index per la versione). Caroselli: la riga della sottoserie c'è solo se almeno una
 //          card della fila ha una sottoserie (`_caroselloConSottoserie`); altrimenti sparisce, come la riga della serie.
 // v7.123 -Modificati js/app.js e index.html. Scheda della serie: «Retro in comune con» (`retroCondivisiId`, sui due
 //          lati) e «Allinea le foto dei retro»; la foto di un retro si propaga al retro con lo stesso nome dell'altra
@@ -30870,7 +30872,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.124';
+const JS_VERSION = 'v7.125';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33750,7 +33752,10 @@ function _stellaRarita(n) {
   return '&#11088; ' + (currentLang === 'it' ? 'rarità ' : 'rarity ') + esc(String(n));
 }
 
-function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero) {
+function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, retroOpz) {
+  // v7.125 - `retroOpz` (`_caroselloRetroOpz`): false = quella riga non serve a nessuno nella fila; assente = come prima
+  const _senzaSottocat = !!retroOpz && retroOpz.sottocat === false;
+  const _catCorta = !!retroOpz && retroOpz.catLunga === false;
   const serie = esc(nomeSerie.get(f.seriesId) || '');
   // v6.081 (Franco) - LA SERIE SI MOSTRA SOLO SE DISTINGUE. Nel carosello della scheda serie tutte
   // le card vengono per forza dalla stessa serie (il filtro e' f.seriesId === currentSeriesId),
@@ -33871,7 +33876,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero) {
         { t: esc(f.category || ''),    col: COL_CATEGORIA,   dim: '0.64rem', alt: 'auto' },
         // v6.281 (Franco) - l'arancione delle card. Qui la categoria era gia' 'auto', quindi andava
         // a capo da se': il troncamento che si vedeva era quello del ramo non-telefono.
-        { t: esc(f.subcategory || ''), col: COL_SOTTOCAT,    dim: '0.64rem', alt: '1.2em' },
+        ...(_senzaSottocat ? [] : [{ t: esc(f.subcategory || ''), col: COL_SOTTOCAT, dim: '0.64rem', alt: '1.2em' }]),   // v7.125
         // 🔄 v6.722 - anche qui la stella e' la coda del nome, non una riga sua: una riga in
         //    meno su telefono e' proprio cio' che la v6.080 cercava.
         // 🆕 v6.991 - e anche qui il «Nome carosello mobile», se c'e', vince sull'etichetta
@@ -33902,8 +33907,9 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero) {
       // v6.281 (Franco) - la categoria su DUE righe invece di una troncata: e' l'altezza a decidere
       // se una riga va a capo (vedi `_caroselloCard`), quindi si cambia quella. Fissa e non 'auto',
       // altrimenti una categoria lunga alzerebbe la sua card e sfalserebbe la fila.
-      { t: esc(f.category || ''),    col: COL_CATEGORIA,    dim: '0.68rem', alt: '2.5em' },
-      { t: esc(f.subcategory || ''), col: COL_SOTTOCAT,     dim: '0.68rem', alt: '1.2em' },
+      // v7.125 - una riga sola se nessuna categoria della fila va a capo; la sottocategoria solo se qualcuno ce l'ha
+      { t: esc(f.category || ''),    col: COL_CATEGORIA,    dim: '0.68rem', alt: _catCorta ? '1.2em' : '2.5em' },
+      ...(_senzaSottocat ? [] : [{ t: esc(f.subcategory || ''), col: COL_SOTTOCAT, dim: '0.68rem', alt: '1.2em' }]),
       { t: esc(f.name || ''), col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em',
         coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }   // v6.722
     ];
@@ -34068,6 +34074,25 @@ function _caroselloConSottoserie(elenco, serie) {
   if (serie) return !!serie.hasSubseries;
   return (elenco || []).some(f => String(f.subseries || '').trim());
 }
+// 🆕 v7.125 (Franco, nella sezione retro della Mega 1: «dopo la categoria e prima del nome c'è una riga vuota, come
+//    mai?»; «procedi con entrambe») - LE DUE RIGHE DEI RETRO CHE RESTAVANO VUOTE. (1) La SOTTOCATEGORIA c'è solo se
+//    almeno un retro della fila ce l'ha (qui la serie non ha una spunta: si guardano le card). (2) La CATEGORIA ha posto
+//    per due righe (v6.281, «SGORBIONS HORRIBLE HOROSCOPES») solo se almeno una categoria della fila non ci sta su una:
+//    si MISURA il testo col carattere della card (canvas) contro la larghezza della foto (`px`, 185 o 139). Le categorie
+//    diverse sono poche, il conto è istantaneo. Se la misura non riesce, due righe: il comportamento di prima.
+function _caroselloRetroOpz(elenco, px) {
+  const retro = (elenco || []).filter(f => (f.section || '') === 'retros');
+  const sottocat = retro.some(f => String(f.subcategory || '').trim());
+  let catLunga = true;
+  try {
+    const cat = [...new Set(retro.map(f => String(f.category || '').trim()).filter(Boolean))];
+    const c = _caroselloRetroOpz._ctx || (_caroselloRetroOpz._ctx = document.createElement('canvas').getContext('2d'));
+    // grassetto e 0,68rem: la riga della categoria; il grassetto sovrastima un poco, cioè sbaglia verso le due righe
+    c.font = '700 ' + (0.68 * parseFloat(getComputedStyle(document.documentElement).fontSize || '16')) + 'px ' + getComputedStyle(document.body).fontFamily;
+    catLunga = cat.some(t => c.measureText(t).width > px);
+  } catch (e) { catLunga = true; }
+  return { sottocat, catLunga };
+}
 // 🆕 v7.124 (Franco: «sì, vorrei che usassi la stessa regola» per la riga del NUMERO)
 function _caroselloConNumero(elenco, serie) {
   if (serie) return !serie.noNumbers;
@@ -34089,7 +34114,7 @@ function _caroselloConNumero(elenco, serie) {
 // `if (f.img) return f.img` viene prima di tutto) - ma restano un punto aperto sui DATI.
 // ⚠️ E IL PARAMETRO `figs` NON E' UNA COMODITA': senza, `_fotoFigurina` rifarebbe `getData` per
 // ogni card della fila. Si legge l'elenco una volta e si passa, come fa gia' la griglia.
-function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs, conSottoserie, conNumero) {
+function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs, conSottoserie, conNumero, retroOpz) {
   const etichetta = ((f.section || '') === 'retros')
     ? _retroNomeCompleto(f)
     : (f.number ? f.number + ' ' : '') + (f.name || '');
@@ -34104,7 +34129,7 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs,
   // 🔴 La coda NON si stringe (`flex:0 0 auto`) e il testo si', o un nome lungo mangerebbe la
   //    stella invece di andare a capo: la cosa da troncare e' il nome, che continua nel titolo
   //    del passaggio del mouse, non il punteggio, che sparirebbe e basta.
-  const righe = _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero).map((r, i) => {   // v7.124: conSottoserie, conNumero
+  const righe = _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, retroOpz).map((r, i) => {   // v7.124-125
     const base = 'font-size:' + r.dim + ';color:' + r.col + ';line-height:1.25;' +
       (r.alt === 'auto' ? '' : 'height:' + r.alt + ';overflow:hidden;') +
       (i === 0 ? 'margin-top:0.4rem;' : '') +
@@ -34208,7 +34233,7 @@ function renderCarosello() {
   const nomeSerie = new Map([..._serie].map(([id, x]) => [id, _nomeSerieCard(x, true)])); // v6.080, v6.493: sempre il nome BREVE
   const inFila = mazzo.slice(0, CAROSELLO_MAX); // v6.081 - la serie si guarda sulle card che finiscono davvero in fila
   const mostraSerie = _caroselloMostraSerie(inFila);
-  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(inFila, CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs, _caroselloConSottoserie(inFila), _caroselloConNumero(inFila))).join('');
+  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(inFila, CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs, _caroselloConSottoserie(inFila), _caroselloConNumero(inFila), _caroselloRetroOpz(inFila, CAROSELLO_ALTEZZA))).join('');
   sez.style.display = '';
   const prec = document.getElementById('carosello-prec');
   const succ = document.getElementById('carosello-succ');
@@ -34256,7 +34281,7 @@ function renderCaroselloSerie() {
   const mostraSerie = _caroselloMostraSerie(base);
   // v6.528 - al 75% come quello dei tipi di articolo. La home no: non e' stata chiesta.
   // v7.124 - una serie sola: decidono le sue spunte
-  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(base, serieQui), _caroselloConNumero(base, serieQui))).join('');
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(base, serieQui), _caroselloConNumero(base, serieQui), _caroselloRetroOpz(base, CAROSELLO_ALTEZZA_RIDOTTA))).join('');
   sez.style.display = '';
   const prec = document.getElementById('serie-carosello-prec');
   const succ = document.getElementById('serie-carosello-succ');
@@ -34322,7 +34347,7 @@ function renderCaroselloSezione() {
   const mostraSerie = _caroselloMostraSerie(base);   // una serie sola: la riga della serie non c'e'
   // v7.124 - una serie sola: decidono le sue spunte
   const serieSez = getData('series', []).find(x => x.id === serieAperta);
-  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(base, serieSez), _caroselloConNumero(base, serieSez))).join('');
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(base, serieSez), _caroselloConNumero(base, serieSez), _caroselloRetroOpz(base, CAROSELLO_ALTEZZA_RIDOTTA))).join('');
   box.scrollLeft = 0;
   sez.style.display = '';
   const prec = document.getElementById('sezione-carosello-prec');
@@ -34628,7 +34653,7 @@ function renderCaroselloProdotto() {
   }
   const mostraSerie = _caroselloMostraSerie(mazzo); // v6.081 - qui le serie sono di solito piu' d'una, ma non per forza
   // v6.527 - qui, e solo qui, la foto e' al 75%: e' la pagina che Franco ha segnalato.
-  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(mazzo, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(mazzo), _caroselloConNumero(mazzo))).join('');
+  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(mazzo, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(mazzo), _caroselloConNumero(mazzo), _caroselloRetroOpz(mazzo, CAROSELLO_ALTEZZA_RIDOTTA))).join('');
   sez.style.display = '';
   const prec = document.getElementById('prodotto-carosello-prec');
   const succ = document.getElementById('prodotto-carosello-succ');
