@@ -831,6 +831,10 @@ body {
      qui sopra) è più largo della testata: metà della sua larghezza meno metà di quella della testata. */
   #series-detail div:has(> #detail-name) { flex: 1; justify-content: center; text-align: center; }
   #series-detail #detail-admin-menu { right: calc(min(550px, 50vw - 2rem) - min(900px, 50vw - 2rem)); }
+  /* 🔄 v7.120 (Franco: «il pulsante Opzioni admin va sopra alla linguetta arancione Impersona; allontanalo dal lato
+     destro dello schermo, spostalo verso sinistra») - il bordo destro di «Opzioni» resta quello del carosello, ma
+     mai oltre 170px dal bordo dello schermo: lì sotto c'è la colonna delle linguette (arancio e blu, v7.118-120). */
+  #series-detail #detail-admin-menu { right: calc(min(550px, 50vw - 2rem) + 50vw - min(50vw + min(900px, 50vw - 2rem), 100vw - 170px)); }
 }
 
 /* 🔄 v6.457 (Franco: *"non ci siamo. devono avere tutti le classiche caratteristiche di tasto admin
