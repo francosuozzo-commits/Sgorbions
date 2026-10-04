@@ -1,7 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.123 - Modificati js/app.js e index.html. Scheda della serie: «Retro in comune con» (`retroCondivisiId`, sui due
+// v7.124 - Modificato js/app.js (e index per la versione). Caroselli: la riga della sottoserie c'è solo se almeno una
+//          card della fila ha una sottoserie (`_caroselloConSottoserie`); altrimenti sparisce, come la riga della serie.
+// v7.123 -Modificati js/app.js e index.html. Scheda della serie: «Retro in comune con» (`retroCondivisiId`, sui due
 //          lati) e «Allinea le foto dei retro»; la foto di un retro si propaga al retro con lo stesso nome dell'altra
 //          serie (`_propagaFotoRetroCondiviso`, da `_saveFigurineItem`). Per Mega 1 e Mega 2.
 // v7.122 -Modificato js/app.js (e index per la versione). Il banner «Stai impersonando», sul desktop, nella barra in
@@ -30868,7 +30870,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.123';
+const JS_VERSION = 'v7.124';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33748,7 +33750,7 @@ function _stellaRarita(n) {
   return '&#11088; ' + (currentLang === 'it' ? 'rarità ' : 'rarity ') + esc(String(n));
 }
 
-function _caroselloRighe(f, nomeSerie, mostraSerie) {
+function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero) {
   const serie = esc(nomeSerie.get(f.seriesId) || '');
   // v6.081 (Franco) - LA SERIE SI MOSTRA SOLO SE DISTINGUE. Nel carosello della scheda serie tutte
   // le card vengono per forza dalla stessa serie (il filtro e' f.seriesId === currentSeriesId),
@@ -33807,6 +33809,9 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
   //    giorno che cambia, cambia in tutti e due i posti. E NON si scappa - e' una costante - mentre
   //    il nome del gruppo si', che arriva dai dati e ha gia' apostrofi e virgole.
   const rigaSottoserie = dim => {
+    // 🔄 v7.124 - se nessuna card della fila ha una sottoserie, la riga non c'è (`_caroselloConSottoserie`); se il
+    //    parametro non arriva vale la regola di prima, la riga sempre
+    if (conSottoserie === false) return [];
     const g = String(f.subseries || '').trim();
     return [{ t: g ? _parolaSottoserie() + ' ' + esc(g) : '',
               col: COL_CATEGORIA, dim, alt: '1.2em' }];
@@ -33909,8 +33914,9 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
   return [
     ...rigaSerie('0.66rem'),
     ...rigaSottoserie('0.66rem'),
-    // v6.277 (Franco) - numero e nome in azzurro, come sulle card.
-    { t: f.number ? esc(String(f.number)) : '', col: COL_IDENTITA,    dim: '0.7rem',  alt: '1.2em' }, // v6.080 - senza cancelletto
+    // v6.277 (Franco) - numero e nome in azzurro, come sulle card. v6.080 - senza cancelletto.
+    // 🔄 v7.124 - e solo dove qualcuno il numero ce l'ha (`_caroselloConNumero`), come la sottoserie
+    ...(conNumero === false ? [] : [{ t: f.number ? esc(String(f.number)) : '', col: COL_IDENTITA, dim: '0.7rem', alt: '1.2em' }]),
     { t: esc(f.name || ''), col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em',
       coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }
   ];
@@ -34048,6 +34054,25 @@ function _comparatoreOrdineTDA(sez) {
 function _caroselloMostraSerie(elenco) {
   return new Set((elenco || []).map(f => f.seriesId)).size > 1;
 }
+// 🆕 v7.124 (Franco: «questa regola va rivista; quando la serie non ha sottoserie non ha senso lasciare la riga
+//    vuota») - LA RIGA DELLA SOTTOSERIE C'È SOLO SE SERVE A QUALCUNO: resta (vuota dove manca) se almeno una card
+//    della fila ha una sottoserie, così le card restano allineate; se non ce l'ha nessuna sparisce per tutte, come la
+//    riga della serie. Si guarda la FILA e non la serie: nella home le card vengono da serie diverse.
+// 🔄 (Franco: «usa regole veloci da determinare: in un carosello polimorfico, che tiene più serie, va bene vedere i
+//    dati; in un carosello monoserie no») - CON LA SERIE IN MANO DECIDONO LE SUE SPUNTE: «Ha sottoserie»
+//    (`hasSubseries`) e «Senza numeri» (`noNumbers`). Senza (home, pagina della tipologia) si guarda la fila.
+//    📏 Misurato prima di scriverlo: le spunte dicono il vero su tutte le serie per le sottoserie; per i numeri le
+//    Holidays hanno «Senza numeri» e due articoli col numero (ordinamenti), e tre serie senza numeri hanno la spunta
+//    spenta (lì la riga resta vuota, come prima).
+function _caroselloConSottoserie(elenco, serie) {
+  if (serie) return !!serie.hasSubseries;
+  return (elenco || []).some(f => String(f.subseries || '').trim());
+}
+// 🆕 v7.124 (Franco: «sì, vorrei che usassi la stessa regola» per la riga del NUMERO)
+function _caroselloConNumero(elenco, serie) {
+  if (serie) return !serie.noNumbers;
+  return (elenco || []).some(f => f.number);
+}
 
 // 🆕 v6.463 (Franco) - IL CAROSELLO CHIEDE LA FOTO A `_fotoFigurina`, COME FANNO GIA' TUTTI GLI
 // ALTRI. Franco: *"il carosello deve mostrare le figurine da attaccare, usando la foto della loro
@@ -34064,7 +34089,7 @@ function _caroselloMostraSerie(elenco) {
 // `if (f.img) return f.img` viene prima di tutto) - ma restano un punto aperto sui DATI.
 // ⚠️ E IL PARAMETRO `figs` NON E' UNA COMODITA': senza, `_fotoFigurina` rifarebbe `getData` per
 // ogni card della fila. Si legge l'elenco una volta e si passa, come fa gia' la griglia.
-function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs) {
+function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs, conSottoserie, conNumero) {
   const etichetta = ((f.section || '') === 'retros')
     ? _retroNomeCompleto(f)
     : (f.number ? f.number + ' ' : '') + (f.name || '');
@@ -34079,7 +34104,7 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs)
   // 🔴 La coda NON si stringe (`flex:0 0 auto`) e il testo si', o un nome lungo mangerebbe la
   //    stella invece di andare a capo: la cosa da troncare e' il nome, che continua nel titolo
   //    del passaggio del mouse, non il punteggio, che sparirebbe e basta.
-  const righe = _caroselloRighe(f, nomeSerie, mostraSerie).map((r, i) => {
+  const righe = _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero).map((r, i) => {   // v7.124: conSottoserie, conNumero
     const base = 'font-size:' + r.dim + ';color:' + r.col + ';line-height:1.25;' +
       (r.alt === 'auto' ? '' : 'height:' + r.alt + ';overflow:hidden;') +
       (i === 0 ? 'margin-top:0.4rem;' : '') +
@@ -34183,7 +34208,7 @@ function renderCarosello() {
   const nomeSerie = new Map([..._serie].map(([id, x]) => [id, _nomeSerieCard(x, true)])); // v6.080, v6.493: sempre il nome BREVE
   const inFila = mazzo.slice(0, CAROSELLO_MAX); // v6.081 - la serie si guarda sulle card che finiscono davvero in fila
   const mostraSerie = _caroselloMostraSerie(inFila);
-  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(inFila, CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs)).join('');
+  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(inFila, CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs, _caroselloConSottoserie(inFila), _caroselloConNumero(inFila))).join('');
   sez.style.display = '';
   const prec = document.getElementById('carosello-prec');
   const succ = document.getElementById('carosello-succ');
@@ -34230,7 +34255,8 @@ function renderCaroselloSerie() {
   // riga della serie ricomparirebbe da sola.
   const mostraSerie = _caroselloMostraSerie(base);
   // v6.528 - al 75% come quello dei tipi di articolo. La home no: non e' stata chiesta.
-  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs)).join('');
+  // v7.124 - una serie sola: decidono le sue spunte
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(base, serieQui), _caroselloConNumero(base, serieQui))).join('');
   sez.style.display = '';
   const prec = document.getElementById('serie-carosello-prec');
   const succ = document.getElementById('serie-carosello-succ');
@@ -34294,7 +34320,9 @@ function renderCaroselloSezione() {
   if (base.length < 2) { spento(); return; }
   const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x, true)]));
   const mostraSerie = _caroselloMostraSerie(base);   // una serie sola: la riga della serie non c'e'
-  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs)).join('');
+  // v7.124 - una serie sola: decidono le sue spunte
+  const serieSez = getData('series', []).find(x => x.id === serieAperta);
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(base, serieSez), _caroselloConNumero(base, serieSez))).join('');
   box.scrollLeft = 0;
   sez.style.display = '';
   const prec = document.getElementById('sezione-carosello-prec');
@@ -34600,7 +34628,7 @@ function renderCaroselloProdotto() {
   }
   const mostraSerie = _caroselloMostraSerie(mazzo); // v6.081 - qui le serie sono di solito piu' d'una, ma non per forza
   // v6.527 - qui, e solo qui, la foto e' al 75%: e' la pagina che Franco ha segnalato.
-  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(mazzo, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs)).join('');
+  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(mazzo, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(mazzo), _caroselloConNumero(mazzo))).join('');
   sez.style.display = '';
   const prec = document.getElementById('prodotto-carosello-prec');
   const succ = document.getElementById('prodotto-carosello-succ');
