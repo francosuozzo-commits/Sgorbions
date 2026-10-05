@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.127 - Modificato js/app.js (e index per la versione). Protezione foto: stili della macchia F e G (scritta scura col
+//          bordo bianco, per le foto col fondo bianco) e uno stile per tipologia, nelle foto e nel carosello
+//          (`stile:<chiave>`, `stileCar:<chiave>`; vuoto = come le altre); esempi su una figurina e su un retro.
 // v7.126 - Modificati js/app.js e index.html. Pagina di una tipologia dentro una serie, da 1440px: la foto grande parte
 //          all'altezza del titolo e si sposta a sinistra fino al bordo di «← Inventario» (`_copertinaSezioneASinistra`);
 //          il titolo si centra fra la foto e la copertina piccola.
@@ -30875,7 +30878,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.126';
+const JS_VERSION = 'v7.127';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31017,17 +31020,23 @@ function cloudinaryUrl(url, opts = 'w_300,h_300,c_fit,q_auto,f_auto') {
 //    questionario. La grandezza della scritta segue quella della foto (`w_`), così su una miniatura non è enorme.
 //    ⚠️ Chi conosce l'indirizzo dell'originale lo trova pulito finché in Cloudinary non si accendono le «strict
 //    transformations»: è un'impostazione del pannello, la accende Franco.
-let _fpCache = { figs: null, n: -1, set: new Set() };
+// 🔄 v7.127 - una Map foto → riga della console (tipologia o `tipo:<id>`), non più un Set: lo stile della macchia può
+//    cambiare da una tipologia all'altra (`_stileMacchia`). `.has` resta quello di prima.
+let _fpCache = { figs: null, n: -1, set: new Map() };
 function _fotoProtette() {
   const figs = (typeof _cache !== 'undefined' && _cache && Array.isArray(_cache.figurines)) ? _cache.figurines : [];
   if (_fpCache.figs === figs && _fpCache.n === figs.length) return _fpCache.set;
-  const set = new Set();
+  const set = new Map();
   // v7.104: `_eProtetto` - la spunta dell'articolo, o quella della sua tipologia in console
-  figs.forEach(f => { if (_eProtetto(f)) [f.img, f.imgRetro, f.ebayImg].forEach(u => { if (u) set.add(u); }); });
+  figs.forEach(f => {
+    if (!_eProtetto(f)) return;
+    const k = _chiaveProtezione(f.section, f.tipoProdotto);
+    [f.img, f.imgRetro, f.ebayImg].forEach(u => { if (u && !set.has(u)) set.set(u, k); });
+  });
   _fpCache = { figs, n: figs.length, set };
   return set;
 }
-function _fotoProtetteRifai() { _fpCache = { figs: null, n: -1, set: new Set() }; }
+function _fotoProtetteRifai() { _fpCache = { figs: null, n: -1, set: new Map() }; }
 // 🆕 v7.113 (Franco: «per ogni tda vorrei poter decidere se macchiare anche il carosello oppure no») - nei caroselli
 //    la foto protetta ha la scritta solo se la sua riga in console (tipologia o tipo senza serie) ha accesa anche
 //    «Anche nel carosello» (`car:<chiave>`; se non è mai stata salvata, sì: come prima). `_fpSenzaScritta` dice a
@@ -31047,15 +31056,22 @@ function _urlCarosello(f, url, opts) {
 //    console → Protezione foto: `stile` per le foto, `stileCar` per i caroselli (mai salvate: B e E).
 // 📌 La grandezza segue la foto (`w`), come prima: 34px su una foto da 600.
 const STILI_MACCHIA = [
-  { k: 'A', it: 'Ripetuta, chiara', en: 'Tiled, light' },
-  { k: 'B', it: 'Ripetuta, col bordo', en: 'Tiled, outlined' },
-  { k: 'C', it: 'Una sola, grande', en: 'Single, large' },
-  { k: 'D', it: 'Ripetuta, leggera', en: 'Tiled, faint' },
-  { k: 'E', it: 'Col bordo, leggera', en: 'Outlined, faint' },
+  // 🔄 v7.127 (Franco: «per ognuna vorrei che ci sia scritto se è ripetuta, se è leggera o no, e se è col bordo o no») -
+  //    ogni nome dice tutte e quattro le cose, sempre nello stesso ordine: colore, bordo, ripetuta, leggera
+  { k: 'A', it: 'Bianca, senza bordo, ripetuta, normale', en: 'White, no outline, tiled, normal' },
+  { k: 'B', it: 'Bianca, col bordo nero, ripetuta, normale', en: 'White, black outline, tiled, normal' },
+  { k: 'C', it: 'Bianca, col bordo nero, una sola grande, normale', en: 'White, black outline, single large, normal' },
+  { k: 'D', it: 'Bianca, senza bordo, ripetuta, leggera', en: 'White, no outline, tiled, faint' },
+  { k: 'E', it: 'Bianca, col bordo nero, ripetuta, leggera', en: 'White, black outline, tiled, faint' },
+  // 🆕 v7.127 (Franco: «quando lo sfondo è bianco la scritta non si vede; tipicamente sui retro») - la B rovesciata:
+  //    scritta nera col bordo bianco, e la sua versione leggera
+  { k: 'F', it: 'Nera, col bordo bianco, ripetuta, normale', en: 'Black, white outline, tiled, normal' },
+  { k: 'G', it: 'Nera, col bordo bianco, ripetuta, leggera', en: 'Black, white outline, tiled, faint' },
 ];
 function _trasfMacchia(stile, w) {
   const px = Math.max(12, Math.round(w * 0.057));
   const bordo = Math.max(1, Math.round(px / 11));
+  if (stile === 'F' || stile === 'G') return 'l_text:Arial_' + px + '_bold_stroke:figurinesgorbions.it,co_black,bo_' + bordo + 'px_solid_white,' + (stile === 'F' ? 'o_55' : 'o_30') + ',a_-30,fl_tiled/';
   const testo = ':figurinesgorbions.it,co_white,';
   if (stile === 'A') return 'l_text:Arial_' + px + '_bold' + testo + 'o_45,a_-30,fl_tiled/';
   if (stile === 'C') { const g = Math.max(14, Math.round(w * 0.11)); return 'l_text:Arial_' + g + '_bold_stroke' + testo + 'bo_' + Math.max(1, Math.round(g / 11)) + 'px_solid_black,o_55,a_-30/'; }
@@ -31063,9 +31079,15 @@ function _trasfMacchia(stile, w) {
   if (stile === 'E') return 'l_text:Arial_' + px + '_bold_stroke' + testo + 'bo_' + bordo + 'px_solid_black,o_25,a_-30,fl_tiled/';
   return 'l_text:Arial_' + px + '_bold_stroke' + testo + 'bo_' + bordo + 'px_solid_black,o_45,a_-30,fl_tiled/';   // B
 }
-const _stileMacchia = carosello => {
-  const v = _PROTEZIONE_CFG[carosello ? 'stileCar' : 'stile'];
-  return STILI_MACCHIA.some(s => s.k === v) ? v : (carosello ? 'E' : 'B');
+// 🔄 v7.127 - prima lo stile della riga della foto (`stile:<chiave>` / `stileCar:<chiave>`), se c'è; vuoto = come le
+//    altre, cioè le due scelte generali
+const _stileMacchia = (carosello, chiave) => {
+  const nome = carosello ? 'stileCar' : 'stile';
+  const valido = v => STILI_MACCHIA.some(s => s.k === v);
+  const proprio = chiave ? _PROTEZIONE_CFG[nome + ':' + chiave] : '';
+  if (valido(proprio)) return proprio;
+  const v = _PROTEZIONE_CFG[nome];
+  return valido(v) ? v : (carosello ? 'E' : 'B');
 };
 // 🔄 v7.120 (Franco: «io come admin vorrei vedere le macchie sulle figurine; però vorrei poterle non vedere
 //    all'occorrenza; mettimi una linguetta admin arancio sulla dx, chiamala "Togli macchie"») - L'ADMIN ORA LE VEDE,
@@ -31077,11 +31099,13 @@ function _filigrana(url, opts) {
   try {
     if (_fpSenzaScritta) return '';
     if (typeof currentUser !== 'undefined' && currentUser && currentUser.isAdmin && _adminSenzaMacchie) return '';
-    if (!_fotoProtette().has(url)) return '';
+    const prot = _fotoProtette();
+    if (!prot.has(url)) return '';
     // senza `w_` la foto arriva grande (l'originale): la scritta si fa come per una foto da 1000
     const w = parseInt((String(opts).match(/(?:^|,)w_(\d+)/) || [])[1], 10) || 1000;
     // 🔄 v7.121 - lo stile scelto in console, uno per le foto e uno per i caroselli (`_trasfMacchia`)
-    return _trasfMacchia(_stileMacchia(_fpInCarosello), w);
+    // 🔄 v7.127 - e quello della tipologia della foto, se ne ha uno suo
+    return _trasfMacchia(_stileMacchia(_fpInCarosello, prot.get(url)), w);
   } catch (e) { return ''; }
 }
 
@@ -40109,6 +40133,15 @@ function renderAdminProtezioneTDA() {
   const righe = PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez] && sez !== 'extras').map(sez => ({ k: sez, nome: getSectionLabel(sez) }))
     .concat(_tipiProdotto().map(tp => ({ k: 'tipo:' + tp.id, nome: tp.nome || tp.id, tipo: true })));
   const idCasella = k => 'prot-' + k.replace(/[^a-zA-Z0-9_-]/g, '_');
+  // 🆕 v7.127 (Franco: «quando lo sfondo è bianco la scritta non si vede; tipicamente sui retro») - lo stile per
+  //    tipologia, nelle foto e nel carosello; «come le altre» = le due scelte generali sotto gli esempi
+  const tendinaStile = (nome, k) => {
+    const v = _PROTEZIONE_CFG[nome + ':' + k] || '';
+    return '<select data-stile="' + esc(nome + ':' + k) + '" style="font-size:0.8rem;padding:2px 4px;">' +
+      '<option value=""' + (v ? '' : ' selected') + '>' + (it ? 'come le altre' : 'like the others') + '</option>' +
+      STILI_MACCHIA.map(s => '<option value="' + s.k + '"' + (v === s.k ? ' selected' : '') + '>' + s.k + ' · ' + esc(it ? s.it : s.en) + '</option>').join('') +
+      '</select>';
+  };
   box.innerHTML =
     // 🔄 v7.121 - tab suo, col nome scelto da Franco
     '<h4 style="font-family:var(--font-ui);margin:0 0 0.5rem;">🔒 ' + (it ? 'Protezione foto' : 'Photo protection') + '</h4>' +
@@ -40116,7 +40149,8 @@ function renderAdminProtezioneTDA() {
       (it
         ? 'Accesa: gli articoli di quella tipologia hanno <strong>«Foto protetta» d’ufficio</strong>, e chi visita il sito vede le loro foto con la scritta «figurinesgorbions.it». ' +
           'Spenta: nessuno, salvo gli articoli su cui la spunta è accesa a mano. Un articolo può sempre fare eccezione dalla sua finestra di modifica.<br>' +
-          '<strong>Anche nel carosello</strong>: accesa, le foto protette hanno la scritta anche nei caroselli; spenta, nei caroselli si vedono pulite.'
+          '<strong>Anche nel carosello</strong>: accesa, le foto protette hanno la scritta anche nei caroselli; spenta, nei caroselli si vedono pulite.<br>' +
+          '<strong>Stile</strong> e <strong>Stile nel carosello</strong>: la macchia di quella tipologia; «come le altre» usa le due scelte generali in fondo alla pagina.'
         : 'Checked: the items of that type are protected by default. Unchecked: none, except those ticked by hand. Each item can still be an exception.') +
     '</p>' +
     // v7.110: larga quanto il contenuto, come i Caroselli (Franco: la spunta lontana dalla voce)
@@ -40124,6 +40158,8 @@ function renderAdminProtezioneTDA() {
     '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
       '<th style="' + th + 'text-align:center;">' + (it ? 'Protetta d’ufficio' : 'Protected by default') + '</th>' +
       '<th style="' + th + 'text-align:center;">' + (it ? 'Anche nel carosello' : 'In the carousel too') + '</th>' +   // v7.113
+      '<th style="' + th + '">' + (it ? 'Stile' : 'Style') + '</th>' +   // v7.127
+      '<th style="' + th + '">' + (it ? 'Stile nel carosello' : 'Carousel style') + '</th>' +
       '<th style="' + th + '">' + (it ? 'Eccezioni' : 'Exceptions') + '</th></tr>' +
     righe.map(r =>
       '<tr><td style="' + td + 'color:var(--info);font-weight:600;">' + esc(r.nome)
@@ -40131,6 +40167,8 @@ function renderAdminProtezioneTDA() {
       '<td style="' + td + 'text-align:center;"><input type="checkbox" id="' + idCasella(r.k) + '" data-chiave="' + esc(r.k) + '"' + (_PROTEZIONE_CFG[r.k] ? ' checked' : '') + '></td>' +
       // v7.113 - la scritta anche sulle foto del carosello; mai salvata = accesa (era il comportamento di prima)
       '<td style="' + td + 'text-align:center;"><input type="checkbox" id="' + idCasella('car:' + r.k) + '" data-chiave="car:' + esc(r.k) + '"' + (_PROTEZIONE_CFG['car:' + r.k] !== false ? ' checked' : '') + '></td>' +
+      '<td style="' + td + '">' + tendinaStile('stile', r.k) + '</td>' +
+      '<td style="' + td + '">' + tendinaStile('stileCar', r.k) + '</td>' +
       '<td style="' + td + '">' + (ecc[r.k] ? ecc[r.k] + (it ? (ecc[r.k] === 1 ? ' articolo' : ' articoli') : ' items') : '—') + '</td></tr>').join('') +
     '</table></div>' +
     // 🆕 v7.121 (Franco: «macchiare anche per versione, indipendentemente dalla tda») - una riga per versione, chiave
@@ -40161,22 +40199,26 @@ function renderAdminProtezioneTDA() {
 function _stiliMacchiaHTML(it) {
   const figs = getData('figurines', []);
   const conFoto = f => f.img && /cloudinary\.com/.test(f.img);
-  const es = figs.find(f => conFoto(f) && _eProtetto(f)) || figs.find(f => conFoto(f) && (f.section || 'figurines') === 'figurines' && _eBase(f));
-  // v7.122: cinque colonne uguali larghe quanto il pannello (a 1536 sono foto da ~265px, prima 220), sempre in una fila
-  const fila = (nome, carosello) => '<div style="display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:0.7rem;margin-bottom:1rem;">' +
+  const es = figs.find(f => conFoto(f) && (f.section || 'figurines') === 'figurines' && _eProtetto(f)) || figs.find(f => conFoto(f) && (f.section || 'figurines') === 'figurines' && _eBase(f));
+  // 🆕 v7.127 - e accanto un retro (i retro hanno spesso il fondo bianco: lì si vede la differenza fra chiare e scure)
+  const esR = figs.find(f => conFoto(f) && f.section === 'retros' && _eProtetto(f)) || figs.find(f => conFoto(f) && f.section === 'retros');
+  // 🔄 v7.127 - sette stili, e in ognuno due foto: due per fila, sempre (Franco: «un po' più grandi», poi «ancora più
+  //    grandi: fai 2 per riga»)
+  const fila = (nome, carosello) => '<div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:0.7rem;margin-bottom:1rem;">' +
     STILI_MACCHIA.map(s => {
-      // la misura delle schede del sito (400), mostrata a 220: la scritta ha la grandezza che avrà davvero
-      const url = es ? es.img.replace('/upload/', '/upload/w_400,h_400,c_fit,q_auto,f_auto/' + _trasfMacchia(s.k, 400)) : '';
+      // la misura delle schede del sito (400): la scritta ha la grandezza che avrà davvero
+      const url = f => f ? f.img.replace('/upload/', '/upload/w_400,h_400,c_fit,q_auto,f_auto/' + _trasfMacchia(s.k, 400)) : '';
+      const foto = f => f ? '<img src="' + esc(url(f)) + '" alt="" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:contain;background:#000;border-radius:6px;min-width:0;">' : '';
       // 🔄 v7.122 (Franco: «le anteprime sono piccole; potresti aumentarle un po'?») - la foto riempie la colonna
       return '<label style="display:flex;flex-direction:column;align-items:center;gap:0.35rem;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.5rem;min-width:0;">' +
-        (url ? '<img src="' + esc(url) + '" alt="" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:contain;background:#000;border-radius:6px;">' : '') +
+        '<span style="display:grid;grid-template-columns:repeat(' + ((es ? 1 : 0) + (esR ? 1 : 0) || 1) + ', minmax(0, 1fr));gap:0.4rem;width:100%;">' + foto(es) + foto(esR) + '</span>' +
         '<span style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--text);text-align:center;">' +
           '<input type="radio" name="' + nome + '" value="' + s.k + '"' + (_stileMacchia(carosello) === s.k ? ' checked' : '') + '>' +
           '<strong style="color:var(--warn);">' + s.k + '</strong> ' + esc(it ? s.it : s.en) + '</span></label>';
     }).join('') + '</div>';
   return '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🎨 ' + (it ? 'Stile della macchia' : 'Watermark style') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
-      (it ? 'Uno stile per le foto e uno per i caroselli. Gli esempi sono veri: è come Cloudinary darà la foto a chi visita il sito.'
+      (it ? 'Uno stile per le foto e uno per i caroselli: valgono per le tipologie che nella tabella dicono «come le altre». Gli esempi sono veri, una figurina e un retro: è come Cloudinary darà la foto a chi visita il sito.'
           : 'One style for photos and one for carousels. The examples are real.') + '</p>' +
     '<div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:0.4rem;">' + (it ? 'Nelle foto' : 'In photos') + '</div>' + fila('prot-stile', false) +
     '<div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:0.4rem;">' + (it ? 'Nei caroselli' : 'In carousels') + '</div>' + fila('prot-stileCar', true);
@@ -40187,6 +40229,8 @@ async function salvaProtezioneTDA() {
   const voci = {};
   // v7.121: i due stili della macchia
   ['stile', 'stileCar'].forEach(k => { const r = document.querySelector('#admin-protezione-tda input[name="prot-' + k + '"]:checked'); if (r) voci[k] = r.value; });
+  // v7.127: lo stile per tipologia, solo dove non è «come le altre»
+  document.querySelectorAll('#admin-protezione-tda select[data-stile]').forEach(el => { if (el.value) voci[el.dataset.stile] = el.value; });
   // v7.111: ogni casella porta la sua chiave (`data-chiave`: la tipologia o `tipo:<id>`)
   document.querySelectorAll('#admin-protezione-tda input[data-chiave]').forEach(el => { voci[el.dataset.chiave] = !!el.checked; });
   try {
