@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.128 - Modificato js/app.js (e index per la versione). Protezione foto: un articolo protetto per la sua versione ha
+//          la macchia anche nei caroselli, anche se la sua tipologia ha «Anche nel carosello» spento (`_urlCarosello`);
+//          «come le altre» nella tendina dello stile ora cancella lo stile salvato prima (si scrive vuoto: c'è il merge).
 // v7.127 - Modificato js/app.js (e index per la versione). Protezione foto: stili della macchia F e G (scritta scura col
 //          bordo bianco, per le foto col fondo bianco) e uno stile per tipologia, nelle foto e nel carosello
 //          (`stile:<chiave>`, `stileCar:<chiave>`; vuoto = come le altre); esempi su una figurina e su un retro.
@@ -30878,7 +30881,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.127';
+const JS_VERSION = 'v7.128';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31043,9 +31046,14 @@ function _fotoProtetteRifai() { _fpCache = { figs: null, n: -1, set: new Map() }
 //    `_filigrana` di saltare, per la sola chiamata di `cloudinaryUrl` fatta da qui.
 let _fpSenzaScritta = false;
 let _fpInCarosello = false;   // v7.121: nei caroselli la macchia ha lo stile suo (`stileCar`)
+// 🔄 v7.128 (Franco: «la tipologia di versione vince sulla tipologia di articolo»; i retro Change nei caroselli uscivano
+//    puliti) - un articolo protetto per la sua VERSIONE ha la scritta anche se la riga della tipologia dice di no
 function _urlCarosello(f, url, opts) {
   let senza = false;
-  try { senza = _PROTEZIONE_CFG['car:' + _chiaveProtezione(f.section, f.tipoProdotto)] === false; } catch (e) {}
+  try {
+    const perVersione = !_eBase(f) && !!_PROTEZIONE_CFG['ver:' + _rtVersione(f)];
+    senza = !perVersione && _PROTEZIONE_CFG['car:' + _chiaveProtezione(f.section, f.tipoProdotto)] === false;
+  } catch (e) {}
   _fpSenzaScritta = senza;
   _fpInCarosello = true;
   try { return cloudinaryUrl(url, opts); } finally { _fpSenzaScritta = false; _fpInCarosello = false; }
@@ -40177,7 +40185,7 @@ function renderAdminProtezioneTDA() {
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Accesa: tutti gli articoli di quella versione hanno <strong>«Foto protetta» d’ufficio</strong>, in qualunque tipologia, anche dove la tipologia qui sopra è spenta. ' +
-          'Gli articoli base seguono solo la tipologia.<br>Nei caroselli la scritta segue la colonna «Anche nel carosello» della tipologia.'
+          'Gli articoli base seguono solo la tipologia.<br>Nei caroselli la versione vince: la scritta c’è anche dove la tipologia ha «Anche nel carosello» spento.'
         : 'Checked: every item of that version is protected by default, in any item type. Base items follow the item type only.') +
     '</p>' +
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
@@ -40229,8 +40237,10 @@ async function salvaProtezioneTDA() {
   const voci = {};
   // v7.121: i due stili della macchia
   ['stile', 'stileCar'].forEach(k => { const r = document.querySelector('#admin-protezione-tda input[name="prot-' + k + '"]:checked'); if (r) voci[k] = r.value; });
-  // v7.127: lo stile per tipologia, solo dove non è «come le altre»
-  document.querySelectorAll('#admin-protezione-tda select[data-stile]').forEach(el => { if (el.value) voci[el.dataset.stile] = el.value; });
+  // v7.127: lo stile per tipologia
+  // 🔄 v7.128 - anche «come le altre», scritto vuoto: il salvataggio fa il merge, e una chiave tolta da `voci` restava
+  //    sul server con lo stile di prima
+  document.querySelectorAll('#admin-protezione-tda select[data-stile]').forEach(el => { voci[el.dataset.stile] = el.value; });
   // v7.111: ogni casella porta la sua chiave (`data-chiave`: la tipologia o `tipo:<id>`)
   document.querySelectorAll('#admin-protezione-tda input[data-chiave]').forEach(el => { voci[el.dataset.chiave] = !!el.checked; });
   try {
