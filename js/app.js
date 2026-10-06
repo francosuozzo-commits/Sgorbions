@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.131 - Modificato js/app.js (e index). Sul telefono: sotto il logo «L'Inventario della leggendaria serie anni
+//          '90.» (`hero.descShort`, via «non ufficiale»); il titolo del carosello della home «Gli articoli Sgorbions»
+//          (`home.figurineShort`, scambiato da `_aggiornaFraseHome`); nelle card della griglia di figurine
+//          con retro e retro niente riga del sottonome; «Fatto con 💚 per collezionisti.» di seguito alla frase prima
+//          (index). Sul desktop «Nascondi dettagli serie» al centro (index), e «Numeriche della serie» in azzurro serie
+//          in cima alla colonna delle numeriche sotto la foto (`_copertinaSezioneASinistra`, la prova resta).
+//          🐛 La famiglia delle versioni: l'import (`baseCommon`) e il Salva di una versione dalla scheda non la
+//          copiavano dalla base, e 210 omaggi l'avevano vuota. I dati già scritti li sistema Funzioni → «Allinea
+//          item figlio correlati» (che ora lo dice nel suo testo). AC, tab Serie: la matita di modifica subito
+//          dopo la colonna delle frecce (era l'ultima). 🆕 LA TIPOLOGIA «OLOGRAFICHE» («Holographic»), dodicesima del
+//          descrittore: numero d'inventario come le carte, solo l'errore di stampa, card nell'hub (index). Così
+//          compare in «Tipologie di articoli della serie» e in tutto ciò che legge `ARTICOLI`.
 // v7.130 - Modificato js/app.js (e index). Questionario, prima schermata: «Serie coinvolte nel questionario.» (era «Ecco
 //          le serie…»), a sinistra e larga quanto il mosaico delle copertine, così parte dal bordo della prima; e
 //          «Inizia il questionario !» sale sopra la frase e le copertine, al centro, e diventa «Riprendi il
@@ -30913,7 +30925,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.130';
+const JS_VERSION = 'v7.131';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32701,9 +32713,9 @@ const i18n = {
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
 'hero.challenge':'Challenge other collectors','hero.challengeDesc':'Who has the list with the highest rarity score? You can also appear anonymously.',
-'hero.desc':'The unofficial Inventory of the legendary \'90s series.','hero.descShort':'The unofficial Inventory of the legendary \'90s series.',
+'hero.desc':'The unofficial Inventory of the legendary \'90s series.','hero.descShort':'The Inventory of the legendary \'90s series.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
-'hero.cta1':'Explore the Sgorbions Inventory !','home.figurine':'The Sgorbions items listed on the site','hero.cta2':'Start collecting Sgorbions !',
+'hero.cta1':'Explore the Sgorbions Inventory !','home.figurine':'The Sgorbions items listed on the site','home.figurineShort':'The Sgorbions items','hero.cta2':'Start collecting Sgorbions !',
 'hero.stat1':'Series','hero.stat3':'Collectors','hero.statLangs':'Site languages',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
 'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
@@ -32808,8 +32820,8 @@ const i18n = {
 
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','rc.title':'Ricarica il sito saltando la cache del browser','nav.mialista':'La mia lista Sgorbions',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
-    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri collezionisti','hero.challengeDesc':'Chi ha la lista con maggior punteggio rarità? Puoi anche apparire come anonimo.','hero.desc':'L\'Inventario non ufficiale della leggendaria serie anni \'90.','hero.descShort':'L\'Inventario non ufficiale della leggendaria serie anni \'90.',
-    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Gli articoli Sgorbions censiti nel sito','hero.cta2':'Inizia a collezionare gli Sgorbions !',
+    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri collezionisti','hero.challengeDesc':'Chi ha la lista con maggior punteggio rarità? Puoi anche apparire come anonimo.','hero.desc':'L\'Inventario non ufficiale della leggendaria serie anni \'90.','hero.descShort':'L\'Inventario della leggendaria serie anni \'90.',
+    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Gli articoli Sgorbions censiti nel sito','home.figurineShort':'Gli articoli Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions !',
     'hero.stat1':'Serie','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
@@ -33582,7 +33594,14 @@ function showAdminTab(tab) {
 // l'attributo — e succederebbe al primo cambio di lingua, cioe' lontano da qui.
 // Si riaggancia al `resize` insieme al logo: ruotare il telefono o cambiare preset nel banco prova
 // deve aggiornarla, se no resta giusta solo per la larghezza che c'era al caricamento (v6.012).
+// 🆕 v7.131 (Franco: «nella versione mobile la frase "Gli articoli Sgorbions censiti nel sito" diventa "Gli articoli
+//    Sgorbions del sito"») - il titolo del carosello della home fa la stessa strada, con la sua chiave corta.
 function _aggiornaFraseHome() {
+  const tit = document.querySelector('.carosello-titolo[data-i18n^="home.figurine"]');
+  if (tit) {
+    const chiaveTit = _isMobileViewport() ? 'home.figurineShort' : 'home.figurine';
+    if (tit.getAttribute('data-i18n') !== chiaveTit) { tit.setAttribute('data-i18n', chiaveTit); tit.textContent = t(chiaveTit); }
+  }
   const p = document.getElementById('hero-desc-main');
   if (!p) return;
   const chiave = _isMobileViewport() ? 'hero.descShort' : 'hero.desc';
@@ -39297,6 +39316,24 @@ const ARTICOLI = {
     nomeCompleto: 'codice',
     nomeCompletoDove: 'computeFullName'
   },
+  // 🆕 v7.131 - LE OLOGRAFICHE (Franco: «dobbiamo aggiungere una nuova Tipologia di Articolo: Olografiche»; «quello che
+  //    occorre fare è collegarla alle serie»). L'aveva creata dalla console, ma quelli sono tipi SENZA serie (vivono in
+  //    «Extra serie», `settings/tipi_prodotto`): per stare nelle serie serve il descrittore, come Spille e Tatuaggi.
+  // 📌 Sue risposte: il numero IDENTIFICA il soggetto (`numero: 'inventario'`, come le carte, da cui il resto è copiato);
+  //    in inglese «Holographic»; l'icona è l'arcobaleno.
+  olografiche: {
+    riquadro: 1,
+    it: 'Olografiche',   en: 'Holographic',
+    itSing: 'olografica', enSing: 'holographic',
+    genere: 'f',
+    icona: '&#127752;',
+    colonne: { d: 7, m: 4 },
+    numero: 'inventario',
+    ordina: 'campo',
+    ordinaDove: 'number',
+    nomeCompleto: 'codice',
+    nomeCompletoDove: 'computeFullName'
+  },
   retros: {
     // 📌 1.6 e' il valore che il codice applicava gia': era l'unico ramo
     //    dichiarato dell'`if` che questa release ha tolto.
@@ -40529,6 +40566,7 @@ const VERSIONI_PER_TDA = {
   trasferelli: ['printError'],
   carte:       ['printError'],
   tatuaggi:    ['printError'],
+  olografiche: ['printError'],   // v7.131: risposta di Franco, solo l'errore di stampa
   attaccare:   [],
   cartoncini:  [],
   // ⚠️ `extras` e' la dodicesima del descrittore e NON e' legata alle serie: Franco conta
@@ -49071,6 +49109,11 @@ function _copertinaSezioneASinistra() {
     if (voci.length) {
       colNum = document.createElement('div');
       colNum.id = 'num-sotto-foto';
+      // 🆕 v7.131 (Franco: «vanno bene, ma prima metti questa frase: "Numeriche della serie", in color azzurro serie»)
+      const titNum = document.createElement('div');
+      titNum.className = 'num-sotto-titolo';
+      titNum.textContent = currentLang === 'it' ? 'Numeriche della serie' : 'Series figures';
+      colNum.appendChild(titNum);
       voci.forEach(v => colNum.appendChild(v.cloneNode(true)));
       inv.parentElement.appendChild(colNum);
       meta.classList.add('num-in-colonna');
@@ -55737,7 +55780,10 @@ function renderItems() {
   // 🧪 v6.273 - fra parentesi e senza etichetta: non era fra le tre. Le parentesi stanno
   //    qui e NON dentro `_rigaCard`, perche' col sottonome vuoto la riga deve restare vuota
   //    davvero - un paio di parentesi sole sarebbero una riga piena di niente.
-  const _sottonomeRigaHTML = !_haSottonome(f.section || currentSection) ? '' : _rigaCard(
+  // 🆕 v7.131 (Franco: «nella versione mobile, nelle card della griglia, non indicare il sottonome, per figurine con
+  //    retro e retro») - sul telefono la riga non c'è proprio, piena o vuota, su quelle due tipologie.
+  const _sottonomeSpentoMobile = _isMobileViewport() && ['figurines', 'retros'].includes(f.section || currentSection);
+  const _sottonomeRigaHTML = (!_haSottonome(f.section || currentSection) || _sottonomeSpentoMobile) ? '' : _rigaCard(
         (f.subname || '').trim() ? '(' + esc((f.subname || '').trim()) + ')' : '',
         'font-size:0.82rem;color:var(--info);margin-top:1px;', 'subname');
   // 🆕 v6.966 (Franco: «in una griglia non abbiamo mai oggetti misti, quindi quando ha senso
@@ -57192,7 +57238,10 @@ function renderAdminSeries() {
   const _L = currentLang === 'it';
   const COLONNE_SERIE = [
     { key:'order',    lab: _L?'Ordine':'Order' },
-    { key:'nome',     lab: _L?'Nome':'Name', stile:'text-align:left;', val:r => r.s.name || '' },
+    // 🔄 v7.131 (Franco: «il bottone di modifica serie mettilo dopo le due colonne con le frecce; spostalo da dove
+    //    sta») - la colonna Azioni, che era l'ultima, viene subito dopo Ordine. La cella si sposta insieme, qui sotto.
+    { key:'azioni',   lab: _L?'Azioni':'Actions' },
+    { key:'nome',    lab: _L?'Nome':'Name', stile:'text-align:left;', val:r => r.s.name || '' },
     { key:'anno',     lab: _L?'Anno':'Year', val:r => r.s.year || 0 },
     // 🆕 v6.669 (Franco: *"mostrami lo stato della serie nella VT delle serie della admin
     //    console"*). 📌 `val` torna la POSIZIONE nella scala, non la parola: ordinando per
@@ -57218,8 +57267,7 @@ function renderAdminSeries() {
     { key:'omaggiofig',   lab: _L?'FIGURINE<br>OMAGGIO':'FREE<br>STICKERS', val:r => r.c.omaggiFigurine },
     { key:'omaggioretro', lab: _L?'RETRO<br>OMAGGIO':'FREE<br>BACKS', val:r => r.c.omaggiRetro },
     { key:'colfig',   lab: _L?'COLONNE<br>FIG D/M':'COLUMNS<br>FIG D/M', val:r => _colonneDefault('figurines').d },
-    { key:'colretro', lab: _L?'COLONNE<br>RETRO D/M':'COLUMNS<br>BACK D/M', val:r => _tipologiaAmmessa('retros', r.s.id) ? 0 : -1 },   // v6.789
-    { key:'azioni',   lab: _L?'Azioni':'Actions' }
+    { key:'colretro', lab: _L?'COLONNE<br>RETRO D/M':'COLUMNS<br>BACK D/M', val:r => _tipologiaAmmessa('retros', r.s.id) ? 0 : -1 }   // v6.789
   ];
   // I conteggi si calcolano UNA VOLTA per riga, qui: servono sia per disegnare sia per ordinare, e
   // farli due volte sarebbe la stessa lettura di ~3300 oggetti ripetuta (lezione v5.978).
@@ -57285,6 +57333,23 @@ function renderAdminSeries() {
             const _num = '<span style="color:var(--text);font-size:0.78rem;margin-right:4px;">' + (idx + 1) + '</span>';
             return _num + _btn('Up', '▲', _su) + _btn('Down', '▼', _giu);
           })()}
+        </td>
+        <td>
+        <!-- v6.225 (Franco) - IL TASTO PICCOLO, quello della vista tabellare delle figurine.
+             La stringa di stile e' COPIATA da li' carattere per carattere (font-size 1.05rem,
+             font-weight bold, line-height 1, padding 3px 8px) e il testo diventa la matita
+             &#9998;, come quella: due stringhe uguali si confrontano a occhio, due simili no
+             (niente apici inversi in questo commento: sta dentro un template literal, e li' un
+             backtick lo chiude - la stessa nota che il commento della v6.166 tre righe piu' su
+             portava gia' scritta, e che ho preso lo stesso al primo controllo di sintassi. Due volte.)
+             (lezione v6.164). Il "title" porta la parola che il pulsante non scrive piu'.
+             🔄 v7.131 (Franco) - la cella era l'ultima della riga: ora viene subito dopo le frecce. -->
+        <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="openAddSeriesModal('${s.id}')">&#9998;</button>
+        <!-- v6.171 (Franco) - QUI STAVA IL CESTINO, ed e' andato nella scheda della serie.
+             Cancellare una serie e' un'operazione rarissima, e teneva un comando distruttivo in
+             ogni riga di una tabella che si usa per leggere.
+             Nella scheda e' GRIGIATO quando la serie ha prodotti, invece che assente come era qui:
+             un pulsante che non viene disegnato non dice perche' non si puo' fare. -->
         </td>
         <!-- 🔄 v6.669 - IL SEGNO ESCE DALLA CELLA DEL NOME E VA IN UNA COLONNA SUA, e con
              questo si ribalta una decisione scritta. La v6.584 diceva: «sta QUI e non in una
@@ -57387,22 +57452,7 @@ function renderAdminSeries() {
              resta VUOTA: scriverci 5/4 direbbe un numero per una griglia che non si aprira' mai, e
              chi legge la tabella si chiederebbe dove la trova. -->
         <td style="text-align:center;white-space:nowrap;">${!_tipologiaAmmessa('retros', s.id) ? '' : ((((s.colonne||{}).retros||{}).d || COLONNE_DEFAULT.retros.d) + '/' + (((s.colonne||{}).retros||{}).m || COLONNE_DEFAULT.retros.m))}</td>
-        <td>
-        <!-- v6.225 (Franco) - IL TASTO PICCOLO, quello della vista tabellare delle figurine.
-             La stringa di stile e' COPIATA da li' carattere per carattere (font-size 1.05rem,
-             font-weight bold, line-height 1, padding 3px 8px) e il testo diventa la matita
-             &#9998;, come quella: due stringhe uguali si confrontano a occhio, due simili no
-             (niente apici inversi in questo commento: sta dentro un template literal, e li' un
-             backtick lo chiude - la stessa nota che il commento della v6.166 tre righe piu' su
-             portava gia' scritta, e che ho preso lo stesso al primo controllo di sintassi. Due volte.)
-             (lezione v6.164). Il "title" porta la parola che il pulsante non scrive piu'. -->
-        <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="openAddSeriesModal('${s.id}')">&#9998;</button>
-        <!-- v6.171 (Franco) - QUI STAVA IL CESTINO, ed e' andato nella scheda della serie.
-             Cancellare una serie e' un'operazione rarissima, e teneva un comando distruttivo in
-             ogni riga di una tabella che si usa per leggere.
-             Nella scheda e' GRIGIATO quando la serie ha prodotti, invece che assente come era qui:
-             un pulsante che non viene disegnato non dice perche' non si puo' fare. -->
-      </td></tr>`;
+        <!-- v7.131 - QUI STAVA LA CELLA DELLA MATITA: ora e' la seconda della riga, dopo le frecce. --></tr>`;
     }).join('')}</tbody></table>`;
 }
 
@@ -65113,6 +65163,7 @@ async function saveFigFromDetail(figId, opzioni) {
     let _catEff     = document.getElementById('fe-category')?.value.trim() || '';
     let _subcatEff  = document.getElementById('fe-subcategory')?.value.trim() || '';
     let _subnameEff = document.getElementById('fe-subname')?.value.trim() || '';
+    let _famigliaEff = null;   // v7.131: null = non comandata dalla base, vale la tendina (o il record)
     // v6.038 (Franco) - PER UN CHANGE O UN ERRORE DI STAMPA DI RETRO COMANDANO I CAMPI DELLA BASE:
     // Nome, Sottonome, Categoria e Sottocategoria. Il Nome lo faceva gia' dalla v5.774; gli altri tre
     // restavano quelli digitati, e potevano allontanarsi dalla base senza che niente lo segnalasse.
@@ -65130,8 +65181,11 @@ async function saveFigFromDetail(figId, opzioni) {
         // tre punti che dovevano dire la stessa cosa e la dicevano in tre modi (§12.1,
         // aggiornamento del 3 agosto). Nessun cambiamento di comportamento - i due elenchi
         // coincidevano - ma da qui in poi un campo aggiunto entra in UN posto e vale ovunque.
+        // 🐛 v7.131 - e la FAMIGLIA, che `_campiEreditatiDaBase` elenca dalla v6.843 ma qui non aveva chi la scrivesse:
+        //    creando una versione dalla scheda restava vuota finché non si risalvava la base
         const _scriviCampo = { name: v => { name = v; }, subname: v => { _subnameEff = v; },
-                               category: v => { _catEff = v; }, subcategory: v => { _subcatEff = v; } };
+                               category: v => { _catEff = v; }, subcategory: v => { _subcatEff = v; },
+                               famiglia: v => { _famigliaEff = v; } };
         _campiEreditatiDaBase(existingForCheck?.section).forEach(k => {
           if (_scriviCampo[k]) _scriviCampo[k](_bR[k] || '');
         });
@@ -65310,9 +65364,9 @@ async function saveFigFromDetail(figId, opzioni) {
       // (che `_sanificaPerFirestore` toglierebbe, ma dicendolo in console a ogni salvataggio).
       // 🔄 v6.837 - senza tendina (tipologia senza famiglia, serie senza famiglie) il valore del record
       //    resta com'e': leggere '' da un campo che non c'e' lo cancellerebbe.
-      famiglia: document.getElementById('fe-famiglia')
+      famiglia: _famigliaEff !== null ? _famigliaEff : (document.getElementById('fe-famiglia')
         ? (document.getElementById('fe-famiglia').value || '').trim()
-        : (existingForCheck?.famiglia || ''),
+        : (existingForCheck?.famiglia || '')),
       commentoAlbum: document.getElementById('fe-commento-album')?.value.trim() || '',
       // 🆕 v6.969 - «Foto dall'album». Solo se la tendina c'e' (album): altrove la chiave non si
       //    scrive, cosi' un salvataggio da un'altra tipologia non tocca niente.
@@ -68230,6 +68284,9 @@ async function startImportFig(anteprima) {
 
     const baseCommon = {
       seriesId, section: 'figurines', number: baseFig.number, name: baseFig.name,
+      // 🐛 v7.131 (Franco: «vedo che ci sono molte fcr sg1 senza famiglia… è un baco») - la famiglia è comandata
+      //    dalla base (v6.843), ma l'import delle versioni non la copiava: 210 omaggi senza, e la card non la scriveva
+      famiglia: baseFig.famiglia || '',
       desc: '', score: 0, subseries: '', size: '', category: '', subcategory: '',
       isVariation: false, isUnofficialVariation: false, isChange: false, isPrintError: false,
       isFreeVersion: false,
@@ -70447,16 +70504,19 @@ function renderAdminFunzioni() {
           // una cosa sola, letta a colpo d'occhio) e le due avvertenze si raccolgono sotto un unico
           // "NOTE:" invece di stare una in mezzo ai campi e una in fondo.
           (it
-            ? 'Riporta i campi comandati dalla base sui suoi articoli collegati — <b>Change</b>, <b>Errori di stampa</b> e <b>Variazioni</b> (ufficiali e non).<br><br>' +
+            // 🔄 v7.131 - gli omaggi e la Famiglia, che la funzione allinea già (`_campiEreditatiDaBase`) e il testo non diceva
+            ? 'Riporta i campi comandati dalla base sui suoi articoli collegati — <b>Change</b>, <b>Errori di stampa</b>, <b>Omaggi</b> e <b>Variazioni</b> (ufficiali e non).<br><br>' +
               '<b>Campi allineati:</b><br>' +
-              'Figurine: Nome.<br>' +
+              'Figurine con retro: Nome, Famiglia.<br>' +
+              'Figurine per album: Nome, Numero, Famiglia, Sottoserie.<br>' +
               'Retro: Nome, Sottonome, Categoria, Sottocategoria;<br><br>' +
               '<b>NOTE:</b><br>' +
               'Il <b>Nome completo</b> del figlio viene ricalcolato di conseguenza.<br>' +
               'Propone una anteprima della modifica e chiede conferma.'
-            : 'Restores the fields governed by the base on its linked items — <b>Changes</b>, <b>Print errors</b> and <b>Variations</b> (official and not).<br><br>' +
+            : 'Restores the fields governed by the base on its linked items — <b>Changes</b>, <b>Print errors</b>, <b>Free versions</b> and <b>Variations</b> (official and not).<br><br>' +
               '<b>Aligned fields:</b><br>' +
-              'Stickers: Name.<br>' +
+              'Stickers with back: Name, Family.<br>' +
+              'Album stickers: Name, Number, Family, Subseries.<br>' +
               'Retros: Name, Subname, Category, Subcategory;<br><br>' +
               '<b>NOTES:</b><br>' +
               'The child’s <b>full name</b> is recomputed accordingly.<br>' +
