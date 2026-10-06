@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.129 - Modificato js/app.js (e index per la versione). Protezione foto: dopo il «Salva» un avviso che resta finché
+//          non si preme OK, al posto del toast (`_finestraConferma` con `soloOk`: senza Annulla). E la macchia anche
+//          sulle pagine degli album protetti (Sfoglia album): `_fotoProtette` aggiunge i loro `url`; la pulizia dello
+//          sfondo scarica l'originale senza scritta (`_urlSenzaScritta`). Questionario, prima schermata: una coppa dopo
+//          «… Classifica !» e senza la riga vuota fra le due frasi; ogni schermata parte all'altezza di «Esci» (index);
+//          il secondo «Esci» scorre in fondo; «Torna indietro» grande come «Prosegui» (`wz-passo`); tre frasi di Franco
+//          («riparte da dove lo hai lasciato tu», «Quelli già accesi…», «Quelli grigi e bloccati…»).
 // v7.128 - Modificato js/app.js (e index per la versione). Protezione foto: un articolo protetto per la sua versione ha
 //          la macchia anche nei caroselli, anche se la sua tipologia ha «Anche nel carosello» spento (`_urlCarosello`);
 //          «come le altre» nella tendina dello stile ora cancella lo stile salvato prima (si scrive vuoto: c'è il merge).
@@ -29109,10 +29116,12 @@ function _finestraConferma(opz) {
     // e preme Invio d'istinto deve NON far partire una riscrittura di tutte le serie.
     piede.appendChild(bNo); piede.appendChild(bSi);
     box.appendChild(piede);
+    // 🆕 v7.129 - `soloOk`: un avviso e basta, che resta finché non si preme OK (niente da annullare)
+    if (o.soloOk) bNo.style.display = 'none';
 
     ov.appendChild(box);
     document.body.appendChild(ov);
-    try { bNo.focus(); } catch(e) {}
+    try { if (o.soloOk) bSi.focus(); else bNo.focus(); } catch(e) {}
 
     const chiudi = esito => {
       if (chiuso) return;                       // il doppio clic risolverebbe due volte
@@ -30881,7 +30890,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.128';
+const JS_VERSION = 'v7.129';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31035,6 +31044,10 @@ function _fotoProtette() {
     if (!_eProtetto(f)) return;
     const k = _chiaveProtezione(f.section, f.tipoProdotto);
     [f.img, f.imgRetro, f.ebayImg].forEach(u => { if (u && !set.has(u)) set.set(u, k); });
+    // 🆕 v7.129 (Franco: «possiamo applicare le macchie anche alle foto degli album, dove abbiamo la funzione Sfoglia
+    //    album?») - e le pagine dell'album, anche quelle prese da un altro album (`_pagineDaMostrare`). Solo `url`: da
+    //    `orig` parte la pulizia dello sfondo, che scarica senza scritta (`_urlSenzaScritta`)
+    if (f.section === 'albums') _pagineDaMostrare(f).forEach(p => { if (p.url && !set.has(p.url)) set.set(p.url, k); });
   });
   _fpCache = { figs, n: figs.length, set };
   return set;
@@ -31057,6 +31070,12 @@ function _urlCarosello(f, url, opts) {
   _fpSenzaScritta = senza;
   _fpInCarosello = true;
   try { return cloudinaryUrl(url, opts); } finally { _fpSenzaScritta = false; _fpInCarosello = false; }
+}
+// 🆕 v7.129 - la foto senza scritta, per chi la scarica per lavorarla e ricaricarla (la pulizia dello sfondo delle
+//    pagine): con la scritta, la macchia finirebbe dentro il file nuovo
+function _urlSenzaScritta(url, opts) {
+  _fpSenzaScritta = true;
+  try { return cloudinaryUrl(url, opts); } finally { _fpSenzaScritta = false; }
 }
 // 🆕 v7.121 (Franco: «possiamo operare la macchia anche nel carosello? magari lì un pochino meno forte; mi avevi
 //    proposto differenti alternative, rioffrimele in cfg; sarebbe carino vedere lì proprio gli effetti») - GLI STILI
@@ -40247,7 +40266,10 @@ async function salvaProtezioneTDA() {
     await fsSave('settings', { id: 'protezione', voci });
     _impostaProtezione({ voci });
     renderAdminProtezioneTDA();
-    toast(it ? '✅ Foto protette salvate. Valgono da subito.' : '✅ Protected photos saved.', 'success');
+    // 🔄 v7.129 (Franco: «quando premo salva vorrei un messaggio di conferma», «un avviso che resta finché premo OK»)
+    //    - il toast passava inosservato, soprattutto dal telefono
+    _finestraConferma({ titolo: it ? '✅ Protezione foto salvata' : '✅ Photo protection saved',
+      testo: it ? 'Le modifiche valgono da subito, per tutti.' : 'The changes apply right away, for everyone.', ok: 'OK', soloOk: true });
   } catch (e) {
     console.error('salvaProtezioneTDA', e);
     toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
@@ -50973,7 +50995,9 @@ function _wzDisegna(tieni) {
   // 🔄 v7.050 (Franco: «il tasto Esci chiamalo Esci dal questionario, e chiedi conferma per uscire»)
   // 🔄 v7.088 (Franco: «devono essere 2 anche lì e nella stessa posizione delle altre pagine») - la prima schermata
   //    non ha più il suo pulsante nel piede: prende i due di tutte le altre (`_wzBtnEsci`, in fondo a questa funzione).
-  const indietro = '<button type="button" class="btn-secondary" onclick="_wzIndietro()">← ' + (it ? '<span class="wz-solo-desktop">Torna</span><span class="wz-solo-tel">Vai</span> indietro' : 'Go back') + '</button>';
+  // 🔄 v7.129 (Franco: «"Torna indietro" è più largo e più alto di "Prosegui"; devono avere le stesse dimensioni») -
+  //    `wz-passo`: le misure di `.wz-grande` (vedi l'index)
+  const indietro = '<button type="button" class="btn-secondary wz-passo" onclick="_wzIndietro()">← ' + (it ? '<span class="wz-solo-desktop">Torna</span><span class="wz-solo-tel">Vai</span> indietro' : 'Go back') + '</button>';
   // 🔄 v7.052 (Franco: «Cambia "Avanti" con "Prosegui"»)
   const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Prosegui →' : 'Next →') + '</button>';
   const giaTua = '<div class="wz-proposta">' + (it ? 'la tua risposta' : 'your answer') + '</div>';
@@ -50981,18 +51005,20 @@ function _wzDisegna(tieni) {
   if (w.passo === 'intro') {
     corpo = '<div class="wz-titolo wz-titolo-intro">' + (it ? 'Il Questionario Sgorbions' : 'The Sgorbions questionnaire') + '</div>'
       + '<p class="wz-testo">' + (it
-        ? '<span class="wz-riga-sola">Col <strong style="color:#ffd84d;">Questionario Sgorbions</strong> costruisci in pochi minuti una tua lista degli articoli della collezione.</span><br><br>'   // v7.025: la riga vuota voluta da Franco; v7.056: la frase riscritta da Franco
-        + 'Completalo e scala la vetta della <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Classifica</a> !'
-        : 'With the <strong style="color:#ffd84d;">Sgorbions Questionnaire</strong> you build, in a few minutes, your own list of the items of the collection.<br><br>'
-        + 'Complete it and climb to the top of the <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Leaderboard</a> !') + '</p>'
+        ? '<span class="wz-riga-sola">Col <strong style="color:#ffd84d;">Questionario Sgorbions</strong> costruisci in pochi minuti una tua lista degli articoli della collezione.</span><br>'   // v7.025: la riga vuota voluta da Franco; v7.056: la frase riscritta da Franco; v7.129: via la riga vuota (Franco: «togli spazio tra le prime due frasi»)
+        // v7.129 (Franco: «affiancale una coppa»)
+        + 'Completalo e scala la vetta della <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Classifica</a> ! 🏆'
+        : 'With the <strong style="color:#ffd84d;">Sgorbions Questionnaire</strong> you build, in a few minutes, your own list of the items of the collection.<br>'
+        + 'Complete it and climb to the top of the <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Leaderboard</a> ! 🏆') + '</p>'
       + '<p class="wz-testo wz-prima-serie">' + (it ? 'Ecco le serie coinvolte nel questionario.' : 'Here are the series included in the questionnaire.') + '</p>'   // v7.026 (Franco)
       // 🔄 v7.050 (Franco: «il numero di serie diviso 2, su ogni riga») - le colonne le dice `--wz-col`
       + '<div class="wz-mosaico wz-mosaico-intro" style="--wz-col:' + Math.max(1, Math.ceil(w.serie.length / 2)) + ';">' + w.serie.map(s => '<div class="wz-mosaico-voce">' + _wzImg(s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(s)) + '</div></div>').join('') + '</div>'
       // 🆕 v7.050 - «Inizia il questionario !» qui, grande e al centro (era nell'angolo, in basso a destra)
       + '<div class="wz-inizia"><button type="button" class="btn-primary wz-grande" onclick="_wzAlLivello()">' + (it ? 'Inizia il questionario !' : 'Start the questionnaire !') + '</button></div>'
       + '<p class="wz-nota wz-nota-intro">' + (it
-        ? '📌 Puoi rifare il questionario quante volte vuoi.<br>Ogni volta riparte dalla prima serie.<br>Se vuoi, puoi anche resettarlo e cominciare da capo.'
-        : '📌 You can take the questionnaire as many times as you like.<br>Each time it starts again from the first series.<br>If you like, you can also reset it and start over.') + '</p>';
+        // v7.129 (Franco): «Ogni volta riparte da dove lo hai lasciato tu.» - nel senso che ti propone già quello che hai
+        ? '📌 Puoi rifare il questionario quante volte vuoi.<br>Ogni volta riparte da dove lo hai lasciato tu.<br>Se vuoi, puoi anche resettarlo e cominciare da capo.'
+        : '📌 You can take the questionnaire as many times as you like.<br>Each time it picks up from where you left it.<br>If you like, you can also reset it and start over.') + '</p>';
     const nMie = getOwned().length;
     if (nMie || _wzFatto) corpo += '<div style="text-align:center;margin-top:3rem;"><button type="button" class="btn-secondary wz-azzera" onclick="_wzAzzera(\'azzera1\')">🗑️ '
       + (it ? 'Azzera la mia lista e ricomincia il questionario' : 'Reset my list and restart the questionnaire') + '</button></div>';
@@ -51092,15 +51118,17 @@ function _wzDisegna(tieni) {
         + '<div class="wz-domanda wz-rosa">' + (it ? 'Cosa hai di questa serie?' : 'What do you have from this series?') + '</div>'
         // 🔄 v7.089 (Franco, telefono e desktop) - la frase nuova; l'inglese è mio
         + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che raffigura gli articoli per la tua lista.' : 'Click on the tiles showing the items for your list.') + '</p>'
+        // 🔄 v7.129 (Franco) - «Quelli già accesi…», non più «I quadranti già accesi…»
         + (gia ? '<p class="wz-testo">' + (it
-            ? 'I quadranti già accesi si riferiscono ad articoli già nella tua lista.'
-            : 'The tiles already selected are those for which you have items in your list.') + '</p>' : '')
+            ? 'Quelli già accesi si riferiscono ad articoli già nella tua lista.'
+            : 'The ones already selected are those for which you have items in your list.') + '</p>' : '')
         // 🆕 v7.052 (Franco) - la frase sui grigi, quando la serie può averne (fpa e album): c'è anche ad album
         //    acceso, così la schermata non cambia sotto il dito. L'inglese è mio.
         + (w.sezSerie.includes('attaccare') && w.sezSerie.includes('albums') ? '<p class="wz-testo">' + (it
             // v7.057: la frase di Franco; 🔄 v7.095 (Franco): via «all'occorrenza»
-            ? 'I quadranti grigi si attivano da soli.'
-            : 'The grey tiles become active by themselves.') + '</p>' : '')
+            // v7.129 (Franco) - «Quelli grigi e bloccati…», non più «I quadranti grigi…»
+            ? 'Quelli grigi e bloccati si attivano da soli.'
+            : 'The grey, locked ones become active by themselves.') + '</p>' : '')
         + '</div></div>'   // v7.089: fine di `wz-due`
         + '<div class="wz-scelte wz-scelte-tda">' + w.sezSerie.map(z => {   // v7.080: classe per lo spazio foto-titolo
             const grigia = z === 'attaccare' && !_wzFpaLibera();
@@ -63764,7 +63792,7 @@ async function pagineSfondoUna(i) {
     // 🔴 DALL'ORIGINALE, sempre. E' il caso che Franco ha descritto: *«a volte la procedura di
     //    pulizia rovina le foto e magari ne rovina solo una su N, cosi' sistemo a mano solo
     //    quella»*. Aprire la copia rovinata non servirebbe a niente.
-    const blob = await (await fetch(cloudinaryUrl(pag[i].orig, 'q_auto,f_auto'))).blob();
+    const blob = await (await fetch(_urlSenzaScritta(pag[i].orig, 'q_auto,f_auto'))).blob();
     const scelto = await _scegliFoto(blob, (currentLang === 'it' ? 'Pagina ' : 'Page ') + (i + 1));
     if (!scelto) return;
     const url = await uploadToCloudinary(scelto);
@@ -63798,7 +63826,7 @@ async function pagineSfondoTutte() {
     try {
       // ⚠️ Si riparte dall'ORIGINALE anche qui: rilanciando la pulizia su una passata gia'
       //    fatta si pulirebbe una foto gia' pulita, e il risultato peggiora a ogni giro.
-      const blob = await (await fetch(cloudinaryUrl(pag[i].orig, 'q_auto,f_auto'))).blob();
+      const blob = await (await fetch(_urlSenzaScritta(pag[i].orig, 'q_auto,f_auto'))).blob();
       const fuori = await _togliSfondoDaBlob(blob, (pct, fase) => {
         if (!btn) return;
         btn.textContent = fase === 'libreria'
