@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.130">
+<link rel="stylesheet" href="css/style.css?v=7.131">
 
 
 <style>
@@ -1236,6 +1236,8 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
   #num-sotto-foto { position: absolute; display: flex; flex-direction: column; gap: 0.3rem; z-index: 1; }
   #num-sotto-foto .num-voce { white-space: nowrap; flex-direction: row !important; gap: 0.35rem !important; align-items: baseline; }   /* «(Le hai tutte !🎉)» accanto al numero */
   #detail-meta.num-in-colonna > .num-voce { display: none !important; }
+  /* 🆕 v7.131 (Franco) - «Numeriche della serie» in cima alla colonna, nell'azzurro del titolo di una serie (`--info`) */
+  #num-sotto-foto .num-sotto-titolo { color: var(--info); font-weight: 700; font-size: 0.95rem; white-space: nowrap; }
 }
 
 /* v6.103 (Franco) — I DUE "TORNA INDIETRO" IN BIANCO: "Inventario" (torna dalla scheda serie) e
@@ -1309,6 +1311,11 @@ button.back-btn { color:#ffffff; }
    stile vince su una dichiarazione inline che `!important` non ce l'ha, quindi su desktop il blocco
    resta spento qualunque cosa scriva il JS — e su telefono decide il JS, come prima. */
 @media (min-width:861px) { #profile-impersona { display:none !important; } }
+
+/* 🆕 v7.131 (Franco: «nella versione desktop, la funzione "Nascondi dettagli serie", mettila al centro dello schermo;
+   sulla stessa riga») - resta dov'è in altezza, si centra nella testata (larga 1100px e centrata, quindi nello schermo).
+   Il `display` inline `none` di `_applicaChiusuraTestata` vince ancora: qui si decide solo quando è acceso. */
+@media (min-width:861px) { #series-hero-toggle { display:block; width:fit-content; margin-left:auto; margin-right:auto; } }
 
 /* v5.954 → v5.955 — TELEFONO: la versione sotto la fascia "SITO WEB IN COSTRUZIONE" (Franco).
    Vive dentro il contenitore sticky del banner (vedi il commento nel markup): e' l'unico posto
@@ -1949,6 +1956,14 @@ button.back-btn { color:#ffffff; }
   gap:.2rem .7rem;margin:0 0 .7rem;}
 .hero-due-righe .hero-desc{margin:0;}
 .hero-due-righe .hero-desc + .hero-desc::before{content:'\00B7';margin-right:.7rem;color:var(--muted);}
+/* 🆕 v7.131 (Franco: «su mobile, scrivi la frase "Fatto con 💚 per collezionisti." senza andare a capo dalla frase
+   prima») - sul telefono le due frasi sono testo che scorre: la seconda comincia subito dopo la prima, e va a capo solo
+   dove finisce la riga. Con il flex, invece, una frase che non ci sta intera scende tutta sotto. */
+@media (max-width:860px){
+  .hero-due-righe{display:block;text-align:center;}
+  .hero-due-righe .hero-desc{display:inline;}
+  .hero-due-righe .hero-desc + .hero-desc::before{margin:0 .4rem;}
+}
 /* 🆕 v6.947 — I DUE INVITI AI LATI DEL LOGO, uno a specchio dell'altro.
    ⚠️ `flex-wrap` non è decorativo: sotto una certa larghezza i tre pezzi non ci stanno in riga e
    devono impilarsi, o il logo si riduce a un francobollo. */
@@ -3102,6 +3117,16 @@ di tutte le serie</button>
         <div style="padding:1.25rem 1.5rem;">
           <div class="section-choice-title">Carte d'identità</div>
           <div class="section-choice-count" id="count-cartoncini" data-i18n-loading="catalog.loading">caricamento...</div>
+        </div>
+      </div>
+      <!-- 🆕 v7.131 (Franco) - la card delle Olografiche, come quelle dei Tatuaggi qui sopra: il titolo lo
+           riscrive il descrittore, il posto lo decide `_riordinaBoxSezioni`. -->
+      <div class="section-choice-card" onclick="openSeriesSection('olografiche')" style="padding:0;overflow:hidden;">
+        <div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;background-size:60%;background-repeat:no-repeat;background-position:center;">
+        </div>
+        <div style="padding:1.25rem 1.5rem;">
+          <div class="section-choice-title">Olografiche</div>
+          <div class="section-choice-count" id="count-olografiche" data-i18n-loading="catalog.loading">caricamento...</div>
         </div>
       </div>
       
@@ -6363,7 +6388,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.130"></script>
+<script src="js/app.js?v=7.131"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6387,7 +6412,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.130'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.131'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
