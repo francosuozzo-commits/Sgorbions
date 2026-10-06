@@ -1,6 +1,27 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.132 - Modificato js/app.js (e index, solo il numero). Nella scheda in MODIFICA di un articolo già salvato il tasto
+//          «Clona», nella barra in alto prima dei Salva (Franco: «si fa prima a creare tanti articoli mediante
+//          clonazione»). Chiama la stessa `cloneFigurine` della card, quindi copia l'articolo come è salvato.
+//          🆕 Le Olografiche hanno TRE FOTO (Franco: «la parte frontale se ruotata cambia aspetto a seconda della
+//          luce»): il «Fronte ruotato», campo `imgRuotato`, dichiarato dal descrittore (`fotoRuotata`). Terzo slot
+//          della scheda in modifica fra fronte e retro, terza colonna in lettura, salvataggio, macchia, clone; e sul
+//          desktop, col mouse sopra la card, il fronte diventa il fronte ruotato. Questionario: carte e miniature
+//          accese con un verde più intenso e un anello (index). Nel popup di «Prosegui» la riga «(Con questo
+//          questionario ne hai …)» accorda col numero («aggiunta 1») e non dice mai lo zero (Franco). «Quali album
+//          hai?» e le pagine delle figurine per album senza la miniatura della sezione accanto al titolo. Nella
+//          schermata a quattro carte (figurine per album) foto e frasi centrate, domanda gialla, e sotto «Tutte»
+//          «Album completo»; sul desktop sotto «Poche» «Indica quali sono nella tua lista» e sotto «Molte» «Indica quali
+//          mancano dalla tua lista» (sul telefono restano le frasi di prima, Franco). 🆕 SE LA LISTA HA GIÀ QUALCOSA DI
+//          UNA SCHERMATA, LA PRIMA DOMANDA È «Ci risulta che nella tua lista ci sono N … Confermi?» (Franco): sì → si
+//          sceglie partendo dalla lista (più della metà: le mancanti; se no: quelle che ci sono); no → «ripartiamo da
+//          zero» e le carte di sempre, senza nessuna accesa (`_wzConfermaGia`, `azzera`). Figurine con retro: niente
+//          miniatura, immagine e frasi al centro, domanda gialla. Album da sfogliare, desktop: «Seleziona tutte» /
+//          «Deseleziona tutte» in cima alla colonna di sinistra, bassi, su due righe, appoggiati al bordo alto
+//          dell'album, e la loro riga sopra l'album non c'è più; lo zoom di fronte, in cima alla colonna di destra,
+//          giallo. 🧪 Prova: il titolo della pagina dell'album fra «Torna indietro» e «Prosegui» in alto (desktop).
+//          «Torna indietro» / «Prosegui» un po' più piccoli sul desktop (index).
 // v7.131 - Modificato js/app.js (e index). Sul telefono: sotto il logo «L'Inventario della leggendaria serie anni
 //          '90.» (`hero.descShort`, via «non ufficiale»); il titolo del carosello della home «Gli articoli Sgorbions»
 //          (`home.figurineShort`, scambiato da `_aggiornaFraseHome`); nelle card della griglia di figurine
@@ -30925,7 +30946,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.131';
+const JS_VERSION = 'v7.132';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31078,7 +31099,7 @@ function _fotoProtette() {
   figs.forEach(f => {
     if (!_eProtetto(f)) return;
     const k = _chiaveProtezione(f.section, f.tipoProdotto);
-    [f.img, f.imgRetro, f.ebayImg].forEach(u => { if (u && !set.has(u)) set.set(u, k); });
+    [f.img, f.imgRetro, f.imgRuotato, f.ebayImg].forEach(u => { if (u && !set.has(u)) set.set(u, k); });   // v7.132: e il fronte ruotato
     // 🆕 v7.129 (Franco: «possiamo applicare le macchie anche alle foto degli album, dove abbiamo la funzione Sfoglia
     //    album?») - e le pagine dell'album, anche quelle prese da un altro album (`_pagineDaMostrare`). Solo `url`: da
     //    `orig` parte la pulizia dello sfondo, che scarica senza scritta (`_urlSenzaScritta`)
@@ -39321,7 +39342,10 @@ const ARTICOLI = {
   //    «Extra serie», `settings/tipi_prodotto`): per stare nelle serie serve il descrittore, come Spille e Tatuaggi.
   // 📌 Sue risposte: il numero IDENTIFICA il soggetto (`numero: 'inventario'`, come le carte, da cui il resto è copiato);
   //    in inglese «Holographic»; l'icona è l'arcobaleno.
+  // 🆕 v7.132 (Franco: «le olo hanno 3 foto perché la parte frontale se ruotata cambia aspetto a seconda della luce che
+  //    riflette») - LA TERZA FOTO, «Fronte ruotato», sul record in `imgRuotato`. Chi la legge chiede `_haFotoRuotata`.
   olografiche: {
+    fotoRuotata: true,   // v7.132
     riquadro: 1,
     it: 'Olografiche',   en: 'Holographic',
     itSing: 'olografica', enSing: 'holographic',
@@ -39481,6 +39505,7 @@ const _ETICHETTE_DESCRITTORE = {
   //    controllo poteva dirlo - il ripiego `|| k` non e' un errore, e' un ripiego.
   genere: 'Genere', carosello: 'Carosello',
   sottoserieInGriglia: 'Sottoserie nella griglia',   // v6.964
+  fotoRuotata: 'Fronte ruotato',                     // v7.132
   numero: 'Numero', ordina: 'Ordinamento',
   ordinaDove: 'Ordina dove', nomeCompleto: 'Nome completo', nomeCompletoDove: 'Nome completo dove'
 };
@@ -50554,6 +50579,7 @@ function cloneFigurine(itemId) {
   // v5.792 - il clone NON copia i campi del singolo PEZZO FISICO: foto, foto Ebay e retro. Il nuovo
   // oggetto avra' la sua foto e il suo retro. (Franco: "possibile che cloni anche il retro?")
   b.img = null; b.imgRetro = null; b.ebayImg = null; b.retroId = null;
+  b.imgRuotato = null;   // v7.132: anche il fronte ruotato è del pezzo fisico
   // v6.105 - e non copia nemmeno l'ESITO della pubblicazione. Non era un caso da gestire prima,
   // perche' la finestra ripopolava i campi uno per uno e questi non li toccava; con lo spread ci
   // finirebbero dentro tutti. `ebay` contiene `listingId` e `offerId` di annunci VERI: un oggetto
@@ -50728,9 +50754,12 @@ function _wzImg(url, w, h, cls) {
 function _wzProposta(sid, z) {
   const tutti = _wzArticoli(sid, z).map(f => f.id), mie = new Set(getOwned());
   const n = tutti.filter(id => mie.has(id)).length;
+  // 🆕 v7.132 - `nGia`: quanti di questa schermata sono già nella lista; con più di zero la prima domanda è «Confermi?»
+  //    (`conf`: null = da chiedere, 'si', 'no'; `pConf` la carta accesa). Vedi `_wzConfermaGia`.
   return { modo: null, verso: null, sel: new Set(), selVerso: null,
     pModo: n === 0 ? 'nessuna' : n === tutti.length ? 'tutte' : 'alcune',
-    pVerso: n <= tutti.length - n ? 'ho' : 'manca' };
+    pVerso: n <= tutti.length - n ? 'ho' : 'manca',
+    nGia: n, conf: null, pConf: 'si', azzera: false };
 }
 // 🆕 v7.052 (Franco: «al momento nascondi il questionario; sino a che non è finito mostralo solo admin oppure
 //    sotto impersonificazione») - CHI LO VEDE. Tutto ciò che lo apre porta la classe `solo-wz`, che il foglio
@@ -50799,7 +50828,9 @@ function _wzScegliLivello(l) { _wz.livello = l; _wzDisegna(true); }
 function _wzConfermaLivello() { if (!_wz.livello) return; _wzSalvaLivello(_wz.livello); _wzIniziaSerie(0); }
 function _wzAvanti() { const w = _wz; w.k = Math.min(w.k + 1, w.passi.length - 1); w.passo = w.passi[w.k]; _wzDisegna(); }
 // ⚠️ Tornando indietro la risposta data diventa la proposta: la si ritrova accesa, non si perde.
-function _wzRiapri(c) { if (c.modo) c.pModo = c.modo; if (c.verso) c.pVerso = c.verso; if (c.vista) c.pVista = c.vista; c.modo = null; c.verso = null; c.vista = null; }
+// v7.132: e chi aveva confermato il numero ritrova la domanda «Confermi?». ⚠️ Una riga sola: prova-v7059 e v7065 la
+//    prendono così (`unaRiga`).
+function _wzRiapri(c) { if (c.modo) c.pModo = c.modo; if (c.verso) c.pVerso = c.verso; if (c.vista) c.pVista = c.vista; c.modo = null; c.verso = null; c.vista = null; if (c.conf === 'si') { c.conf = null; c.pConf = 'si'; } }
 function _wzIndietro() {
   const w = _wz;
   const p = w.passi[w.k];
@@ -50807,6 +50838,9 @@ function _wzIndietro() {
     const c = w.scelte[p];
     // v7.065: dall'album o dalla griglia si torna alla domanda «Come vuoi selezionare…?»
     if (c.vista && c.verso && _wzMappa(w.serie[w.i].id, p)) { c.pVista = c.vista; c.vista = null; _wzDisegna(); return; }
+    // 🆕 v7.132 - dopo «Sì, confermo» si torna alla domanda «Confermi?»; dopo «No» (carte senza risposta) anche
+    if (c.conf === 'si' && c.verso) { _wzRiapri(c); _wzDisegna(); return; }
+    if (c.conf === 'no' && !c.modo) { c.conf = null; c.azzera = false; c.pConf = 'no'; _wzDisegna(); return; }
     if (c.verso && _wzQuattro(p)) { _wzRiapri(c); _wzDisegna(); return; }   // v7.059: la scelta del verso è nella prima schermata
     if (c.verso) { c.pVerso = c.verso; c.verso = null; _wzDisegna(); return; }
     if (c.modo) { c.pModo = c.modo; c.modo = null; _wzDisegna(); return; }
@@ -50893,12 +50927,35 @@ function _wzModo4(sez, scelta) {
   if (scelta === 'poche' || scelta === 'molte') { _wz.scelte[sez].modo = 'alcune'; _wzVerso(sez, scelta === 'poche' ? 'ho' : 'manca'); }
   else _wzModo(sez, scelta);
 }
+// 🆕 v7.132 (Franco: «se sappiamo già quante figurine ci sono nella lista per una data tipologia … non va fatta la
+//    domanda "Tutte-Nessuna-Poche-Molte"; piuttosto va confermato il numero attuale … "Ci risulta che nella tua lista ci
+//    sono N [articoli]. Confermi?" Se sì, quello è il numero, e se il numero è maggiore della metà deve indicare cosa
+//    manca; se è minore deve indicare cosa c'è. Se non conferma, gli diciamo che resettiamo e parte da zero, per quella
+//    tipologia; solo in quel caso diamo le 4 opzioni; ovviamente le 4 opzioni le diamo anche quando sono zero») -
+//    toccare una carta la accende (`pConf`), «Prosegui» chiama questa.
+//    · sì → la risposta è «una parte», col verso deciso dal numero, e si passa a scegliere (album o griglia) partendo
+//      dalla lista com'è: più della metà → si toccano le mancanti, se no quelle che ci sono;
+//    · no → `azzera`: le carte di sempre, senza nessuna accesa, e da lì la lista di questa tipologia vale vuota.
+function _wzProponiGia(sez, v) { _wz.scelte[sez].pConf = v; _wzDisegna(true); }
+function _wzConfermaGia(sez) {
+  const w = _wz, c = w.scelte[sez];
+  if (c.pConf === 'no') { c.conf = 'no'; c.azzera = true; c.pModo = null; c.pVerso = null; c.selVerso = null; _wzDisegna(); return; }
+  const tot = _wzArticoli(w.serie[w.i].id, sez).length;
+  // una selezione nata dalla lista azzerata non vale più: si rifà dalla lista vera
+  if (c.selDaAzzera) { c.selVerso = null; c.selDaAzzera = false; }
+  c.conf = 'si'; c.azzera = false; c.modo = 'alcune';
+  _wzVerso(sez, c.nGia > tot / 2 ? 'manca' : 'ho');
+}
 function _wzVerso(sez, verso) {
+  // v7.132: dopo «No, ricomincio da zero» la carta del verso non è accesa: «Prosegui» senza risposta non va avanti
+  if (verso !== 'ho' && verso !== 'manca') { toast(currentLang === 'it' ? 'Scegli una risposta' : 'Choose an answer', 'error'); return; }
   const w = _wz, c = w.scelte[sez];
   if (c.selVerso !== verso) {
-    const tutti = _wzArticoli(w.serie[w.i].id, sez).map(f => f.id), mie = new Set(getOwned());
+    // v7.132: dopo «No, ricomincio da zero» la lista di questa tipologia vale vuota
+    const tutti = _wzArticoli(w.serie[w.i].id, sez).map(f => f.id), mie = c.azzera ? new Set() : new Set(getOwned());
     c.sel = new Set(tutti.filter(id => verso === 'ho' ? mie.has(id) : !mie.has(id)));
     c.selVerso = verso;
+    c.selDaAzzera = !!c.azzera;   // v7.132
   }
   c.verso = verso;
   _wzDisegna();
@@ -50984,6 +51041,8 @@ function _wzProsegui(p) {
 }
 // «Prosegui» delle carte Tutte / Una parte / Nessuna (e delle quattro delle figurine per album)
 function _wzModoConferma(p, modo, quattro) {
+  // v7.132: dopo «No, ricomincio da zero» nessuna carta è accesa, e «Prosegui» senza risposta non va avanti
+  if (!modo || modo === 'null' || modo === 'undefined') { toast(currentLang === 'it' ? 'Scegli una risposta' : 'Choose an answer', 'error'); return; }
   const vai = () => quattro ? _wzModo4(p, modo) : _wzModo(p, modo);
   if (modo !== 'tutte' && modo !== 'nessuna') return vai();
   _wzChiediConferma(p, modo === 'tutte' ? _wzArticoli(_wz.serie[_wz.i].id, p).map(f => f.id) : [], vai);
@@ -51163,6 +51222,7 @@ function _wzDisegna(tieni) {
   const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Prosegui →' : 'Next →') + '</button>';
   const giaTua = '<div class="wz-proposta">' + (it ? 'la tua risposta' : 'your answer') + '</div>';
   let corpo = '', piede = '';
+  let titoloAlto = '';   // 🧪 v7.132: il titolo da mettere fra i due tasti della riga in alto (album da sfogliare)
   if (w.passo === 'intro') {
     corpo = '<div class="wz-titolo wz-titolo-intro">' + (it ? 'Il Questionario Sgorbions' : 'The Sgorbions questionnaire') + '</div>'
       + '<p class="wz-testo">' + (it
@@ -51334,7 +51394,9 @@ function _wzDisegna(tieni) {
       }
     } else if (p === 'albums') {
       const alb = _wzArticoli(s.id, 'albums'), figs = getData('figurines', []);
-      corpo += '<div class="wz-domanda">' + _wzImg(_wzFotoSez('albums', s.id), 120, 120, 'wz-icona-sez') + (it ? 'Quali album hai?' : 'Which albums do you have?') + '</div>'
+      // 🔄 v7.132 (Franco: «nella pagina Quali album hai? la miniatura dell'album non serve perché c'è sempre almeno un
+      //    album da mostrare») - via la foto della sezione accanto alla domanda: le foto degli album stanno subito sotto
+      corpo += '<div class="wz-domanda">' + (it ? 'Quali album hai?' : 'Which albums do you have?') + '</div>'
         // v7.058: la frase di Franco. 🔄 v7.087 (Franco: «le tre frasi, mettile ognuna su una riga dedicata»), e il
         //    `</p>` torna: stava dopo un commento a metà riga, quindi non veniva mai scritto.
         + '<p class="wz-testo">' + (it ? 'Tocca quelli che hai.<br>Se non ne hai, vai avanti.<br>Se non sai quale selezionare, scegli il primo.' : 'Tap the ones you have.<br>If you have none, go on.<br>If you do not know which one to select, choose the first one.') + '</p>'
@@ -51345,7 +51407,13 @@ function _wzDisegna(tieni) {
         + avanti("_wzProsegui('albums')");   // v7.130: prima il popup di conferma
     } else if (w.scelte[p] && _wzAScelta(p)) {
       const c = w.scelte[p], tutti = _wzArticoli(s.id, p), nome = esc(_wzNome(p)), ver = String(p).includes('|');
-      const intest = '<div class="wz-domanda">' + _wzImg(_wzFotoSez(p, s.id), 120, 120, 'wz-icona-sez') + nome + '</div>';
+      // 🔄 v7.132 (Franco: «anche nella pagina Figurine per Album, niente miniatura») - come in «Quali album hai?»:
+      //    sulle figurine per album niente foto della sezione accanto al titolo; le altre tipologie la tengono
+      // 🔄 v7.132 (Franco: «anche nella pagina delle figurine con retro, leva la miniatura, metti immagine e domanda al
+      //    centro e fai domanda in giallo») - e le figurine con retro: senza miniatura, e `_alCentro` qui sotto
+      const _senzaMini = ['attaccare', 'figurines'].includes(String(p).split('|')[0]);
+      const _alCentro = String(p).split('|')[0] === 'figurines';
+      const intest = '<div class="wz-domanda">' + (_senzaMini ? '' : _wzImg(_wzFotoSez(p, s.id), 120, 120, 'wz-icona-sez')) + nome + '</div>';
       // 🆕 v7.130 (Franco: «in ogni pagina nella quale chiediamo quanti articoli lo user ha, indicherei il numero di
       //    articoli che il sito già sa che l'utente ha»; la frase è sua) - sotto la domanda «quante ne hai?», con lo
       //    stesso conto della proposta (`_wzProposta`); «1 figurina» / «12 figurine» lo accorda `_wzPerTipo`. Con
@@ -51353,10 +51421,27 @@ function _wzDisegna(tieni) {
       const giaMie = (m => tutti.filter(f => m.has(f.id)).map(f => f.id))(new Set(getOwned()));
       // 🔄 v7.130 (Franco: «"… ci sono già 160 figurine con retro." diventa "… ce ne sono già N."») - solo il numero:
       //    la tipologia la dice già la domanda sopra
-      const giaFrase = cls => giaMie.length ? '<p class="wz-testo ' + cls + '">' + (it
+      // v7.132: dopo «No, ricomincio da zero» non si dice più quante ce ne sono, e una riga dice che si riparte da zero
+      const azzerata = c.azzera ? '<p class="wz-testo wz-sopra-carte wz-centro">' + (it ? 'Va bene: per questa tipologia ripartiamo da zero.' : 'All right: for this type we start from zero.') + '</p>' : '';
+      const giaFrase = cls => (giaMie.length && !c.azzera) ? '<p class="wz-testo ' + cls + '">' + (it
           ? 'Stando alle informazioni che hai già inserito, nella tua lista ce ne sono già <b>' + nfmtWz(giaMie.length) + '</b>.'
           : 'Based on the information you have already entered, your list already has <b>' + nfmtWz(giaMie.length) + '</b> of them.') + '</p>' : '';
-      if (!c.modo && _wzQuattro(p)) {
+      if (!c.modo && c.nGia > 0 && !c.conf) {
+        // 🆕 v7.132 (Franco) - LA LISTA HA GIÀ QUALCOSA DI QUESTA SCHERMATA: prima si conferma il numero (`_wzConfermaGia`).
+        //    La frase è sua; «c'è 1» al singolare (scelta mia, come le altre frasi accordate del questionario).
+        const n = c.nGia;
+        const cartaG = (v, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (c.pConf === v ? ' on' : '') + '" onclick="_wzProponiGia(\'' + p + '\',\'' + v + '\')">'
+          + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
+        corpo += intest + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div></div></div>'
+          + '<p class="wz-testo wz-sopra-carte wz-centro wz-quante">' + (it
+              ? (n === 1 ? 'Ci risulta che nella tua lista c\'è <b>1</b> ' : 'Ci risulta che nella tua lista ci sono <b>' + nfmtWz(n) + '</b> ') + esc(_wzNomeQuanti(p, n)) + '. Confermi?'
+              : 'We see that your list has <b>' + nfmtWz(n) + '</b> ' + esc(_wzNomeQuanti(p, n)) + '. Do you confirm?') + '</p>'
+          + '<div class="wz-scelte">'
+          + cartaG('si', '👍', it ? 'Sì' : 'Yes', it ? 'Il numero è giusto' : 'The number is right')
+          + cartaG('no', '🔄', 'No', it ? 'Ricomincio da zero' : 'Start from zero')
+          + '</div>';
+        piede = indietro + avanti("_wzConfermaGia('" + p + "')");
+      } else if (!c.modo && _wzQuattro(p)) {
         // 🆕 v7.059 - le quattro carte delle Figurine album (vedi `_wzModo4`)
         const prop = _wzScelta4(c);
         const carta4 = (sc, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (prop === sc ? ' on' : '') + '" onclick="' + (sc === 'tutte' || sc === 'nessuna' ? '_wzProponi' : '_wzModo4') + '(\'' + p + '\',\'' + sc + '\')">'
@@ -51365,15 +51450,25 @@ function _wzDisegna(tieni) {
         // 🔄 v7.102 (Franco: «proviamo» la schermata divisa in due anche qui) - foto a sinistra, frase al centro (`.wz-due`)
         // 🔄 v7.130 (Franco: «tutte le domande come questa devono andare sotto alla foto») - come la schermata a tre carte:
         //    la domanda fra la foto e le carte, a sinistra (`.wz-sopra-carte`)
-        corpo += intest + '<div class="wz-due"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div></div></div>'
-          + '<p class="wz-testo wz-sopra-carte">' + (it
+        // 🔄 v7.132 (Franco: «nella pagina Figurine per album, centra anche la foto e le due frasi»; «la domanda "Delle 160
+        //    figurine per album di questa serie, quante ne hai?" va gialla come le altre domande») - `wz-centro` sulla
+        //    foto e sulle due frasi (regole nell'index), `wz-quante` gialla sulla domanda
+        corpo += intest + azzerata + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div></div></div>'
+          + '<p class="wz-testo wz-sopra-carte wz-centro wz-quante">' + (it
               ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
-              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>' + giaFrase('wz-sopra-carte wz-gia-mie')
+              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>' + giaFrase('wz-sopra-carte wz-centro wz-gia-mie')
           + '<div class="wz-scelte">'
-          + carta4('tutte', '🏆', it ? 'Tutte' : 'All', ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
+          // 🔄 v7.132 (Franco: «il sottotitolo di "Tutte" diventa "Album completo"») - era «il set base completo»
+          + carta4('tutte', '🏆', it ? 'Tutte' : 'All', it ? 'Album completo' : 'Complete album')
           + carta4('nessuna', '😢', it ? 'Nessuna' : 'None', '')
-          + carta4('poche', '🤏', it ? 'Poche' : 'A few', it ? 'Indica quali ci sono' : 'Tell us which you have')
-          + carta4('molte', '📚', it ? 'Molte' : 'Many', it ? 'Indica quali mancano' : 'Tell us which are missing')
+          // 🔄 v7.132 (Franco: «il sottotitolo di "Poche" diventa "Indica quali sono nella tua lista"», «di "Molte" diventa
+          //    "Indica quali mancano dalla tua lista"», «queste 2 frasi, per mobile non cambiarle») - le nuove sul desktop
+          + carta4('poche', '🤏', it ? 'Poche' : 'A few', _isMobileViewport()
+              ? (it ? 'Indica quali ci sono' : 'Tell us which you have')
+              : (it ? 'Indica quali sono nella tua lista' : 'Tell us which are in your list'))
+          + carta4('molte', '📚', it ? 'Molte' : 'Many', _isMobileViewport()
+              ? (it ? 'Indica quali mancano' : 'Tell us which are missing')
+              : (it ? 'Indica quali mancano dalla tua lista' : 'Tell us which are missing from your list'))
           + '</div>';
         piede = indietro + avanti("_wzModoConferma('" + p + "','" + prop + "',true)");   // v7.130: Tutte / Nessuna col popup
       } else if (!c.modo) {
@@ -51384,10 +51479,11 @@ function _wzDisegna(tieni) {
         // 🔄 v7.102 - divisa in due anche questa, come quella delle quattro carte qui sopra
         // 🔄 v7.130 (Franco: «la domanda mettila tra la foto e i tre box, ma allineata a sx rispetto ai 3 box») - la
         //    frase esce dalla colonna di destra: sotto la foto, sopra le carte, a sinistra (`.wz-sopra-carte`)
-        corpo += intest + '<div class="wz-due"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div></div></div>'
-          + '<p class="wz-testo wz-sopra-carte">' + (it
+        // v7.132: sulle figurine con retro immagine e frasi al centro, domanda gialla (come le figurine per album)
+        corpo += intest + azzerata + '<div class="wz-due' + (_alCentro ? ' wz-centro' : '') + '"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div></div></div>'
+          + '<p class="wz-testo wz-sopra-carte' + (_alCentro ? ' wz-centro wz-quante' : '') + '">' + (it
               ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
-              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>' + giaFrase('wz-sopra-carte wz-gia-mie')
+              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>' + giaFrase('wz-sopra-carte' + (_alCentro ? ' wz-centro' : '') + ' wz-gia-mie')
           + '<div class="wz-scelte">'
           + carta('tutte', '🏆', it ? 'Tutte' : 'All', ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
           // v7.130 (Franco: «"Alcune" può sembrare che voglia dire "poche"») - «Una parte»; la chiave resta `alcune`
@@ -51458,8 +51554,21 @@ function _wzDisegna(tieni) {
         //    di una pagina e quello del capo (`_wzPagina` con un salto grande: si ferma alla prima o all'ultima)
         const bPag = (d, testo, freccia, spento) => '<button type="button" class="btn-secondary" onclick="_wzPagina(\'' + p + '\',' + d + ')"' + (spento ? ' disabled' : '') + '>' + testo + '<span class="wz-freccia">' + freccia + '</span></button>';
         const ultima = pg === m.pagine.length - 1;
-        const pagPrec = cls => '<span class="' + cls + '">' + bPag(-1, it ? 'Pagina precedente' : 'Previous page', '←', pg === 0) + bPag(-9999, it ? 'Prima pagina' : 'First page', '⇤', pg === 0) + '</span>';
-        const pagSucc = cls => '<span class="' + cls + '">' + bPag(1, it ? 'Pagina successiva' : 'Next page', '→', ultima) + bPag(9999, it ? 'Ultima pagina' : 'Last page', '⇥', ultima) + '</span>';
+        // 🔄 v7.132 (Franco: «la finestra con le pagine dell'album deve essere al centro dello schermo; altrimenti lo user
+        //    ad ogni cambio pagina deve scrollare… mettiamo i due pulsanti blu "seleziona/deseleziona tutte" a sx; ma
+        //    facciamoli meno alti, larghi quanto i due pulsanti rosa sotto ma altezza il minimo indispensabile») - sul
+        //    desktop i due comandi salgono nella colonna di sinistra, sopra «Pagina precedente» / «Prima pagina»
+        //    (`prima`), e la loro riga sopra l'album si spegne (`.wz-comandi-sopra`): l'album sale e resta in vista.
+        // 🔄 v7.132 (Franco: «anche "seleziona tutte" su due righe») - nella colonna i due vanno a capo nello stesso punto,
+        //    scritto (`<br>`): «Deseleziona tutte» ci andava da solo, «Seleziona tutte» no, e i due erano alti diversi
+        const cmdTutte = cls => { const a = cls === 'wz-comandi-lato' ? '<br>' : ' ';
+          return '<div class="wz-comandi ' + cls + '"><button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'tutte' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Seleziona' + a + 'tutte' : 'Select' + a + 'all') + '</button>'
+          + '<button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'nessuna' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Deseleziona' + a + 'tutte' : 'Deselect' + a + 'all') + '</button></div>'; };
+        const pagPrec = (cls, prima) => '<span class="' + cls + '">' + (prima || '') + bPag(-1, it ? 'Pagina precedente' : 'Previous page', '←', pg === 0) + bPag(-9999, it ? 'Prima pagina' : 'First page', '⇤', pg === 0) + '</span>';
+        // 🔄 v7.132 (Franco: «per alzare ancora la finestra, sposta a dx del box album i due tasti "Mostra solo pagina
+        //    sinistra" e destra, contrapposti ai due tasti blu») - sul desktop lo zoom sta in cima alla colonna di destra
+        //    (`prima` di pagSucc), alla stessa altezza dei blu a sinistra; nella riga sopra l'album resta per il telefono
+        const pagSucc = (cls, prima) => '<span class="' + cls + '">' + (prima || '') + bPag(1, it ? 'Pagina successiva' : 'Next page', '→', ultima) + bPag(9999, it ? 'Ultima pagina' : 'Last page', '⇥', ultima) + '</span>';
         const nav = (giu) => '<div class="wz-album-nav">'
           + pagPrec('wz-pag-nav wz-pag-sx')
           // 🔄 v7.130 (Franco: «"pagina 1 di N" è fuorviante, lo user potrebbe pensare al numero di pagina dell'album;
@@ -51473,16 +51582,19 @@ function _wzDisegna(tieni) {
               ? bv('sx', it ? 'Mostra solo pagina sinistra' : 'Show left page only') + bv('dx', it ? 'Mostra solo pagina destra' : 'Show right page only')
               : bv('tutte', it ? 'Mostra 2 pagine' : 'Show 2 pages')) + '</span>')
           + '</div>';
-        corpo += intest + '<p class="wz-testo">' + (c.verso === 'ho'
+        // 🧪 v7.132 (Franco: «PROVA a tirare su tutto partendo dal fatto che il titolo della pagina lo metti in alto, sulla
+        //    linea dei due tasti "Torna indietro" e "Prosegui"») - sul desktop il titolo va fra i due tasti in alto
+        //    (`titoloAlto`, lo mette chi scrive la copia del piede); qui resta per il telefono (`.wz-tit-basso`)
+        titoloAlto = intest;
+        corpo += '<div class="wz-tit-basso">' + intest + '</div>' + '<p class="wz-testo">' + (c.verso === 'ho'
             ? (it ? 'Sfoglia l\'album e tocca le figurine che <b>hai</b>.' : 'Leaf through the album and tap the stickers you <b>have</b>.')
             : (it ? 'Sfoglia l\'album e tocca le figurine che <b>ti mancano</b>: le altre entreranno nella tua lista.' : 'Leaf through the album and tap the stickers you are <b>missing</b>.')) + '</p>'
           // 🔄 v7.130 (Franco: «"Tocca tutte" diventa "Seleziona tutte", "Nessuna" diventa "Deseleziona tutte"; questi 2
           //    bottoni sono azione, quindi vanno in blu») - `.btn-primary`; premuti restano verdi (`.wz-cmd-on`, v7.072)
-          + '<div class="wz-comandi"><button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'tutte' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Seleziona tutte' : 'Select all') + '</button>'
-          + '<button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'nessuna' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Deseleziona tutte' : 'Deselect all') + '</button></div>'
+          + cmdTutte('wz-comandi-sopra')   // v7.132: sul telefono qui; sul desktop nella colonna di sinistra
           // v7.130: i tasti ai lati dell'album; e le due righe (sopra e sotto) stanno nella stessa griglia, nella colonna
           //    dell'album, così «Schermata N di M» parte dal suo bordo sinistro (Franco)
-          + '<div class="wz-album-riga">' + nav(false) + pagPrec('wz-pag-lato wz-lato-sx')
+          + '<div class="wz-album-riga">' + nav(false) + pagPrec('wz-pag-lato wz-lato-sx', cmdTutte('wz-comandi-lato'))
           + '<div id="wz-album" class="wz-album' + (meta === 'sx' ? ' meta' : meta === 'dx' ? ' meta dx' : '') + '"><div class="wz-album-foglio">'
           + '<img src="' + cloudinaryUrl(P.url, 'w_1600,c_limit,q_auto,f_auto') + '" alt="">'
           + P.r.map(([id, x, y, wd, h]) => {
@@ -51490,7 +51602,9 @@ function _wzDisegna(tieni) {
               return '<button type="button" class="wz-punto' + (c.sel.has(id) ? ' on' : '') + '" style="left:' + x + '%;top:' + y + '%;width:' + wd + '%;height:' + h + '%"'
                 + ' aria-label="' + esc((f.number ? f.number + ' ' : '') + (f.name || '')) + '" onclick="_wzTocca(\'' + p + '\',\'' + id + '\',this)"></button>';
             }).join('')
-          + '</div></div>' + pagSucc('wz-pag-lato wz-lato-dx') + nav(true) + '</div>'   // v7.130: fine di `.wz-album-riga`
+          + '</div></div>' + pagSucc('wz-pag-lato wz-lato-dx', '<span class="wz-meta-lato">' + (meta === 'tutte'
+              ? bv('sx', it ? 'Mostra solo pagina sinistra' : 'Show left page only') + bv('dx', it ? 'Mostra solo pagina destra' : 'Show right page only')
+              : bv('tutte', it ? 'Mostra 2 pagine' : 'Show 2 pages')) + '</span>') + nav(true) + '</div>'   // v7.130: fine di `.wz-album-riga`
           // le figurine della tipologia che nelle pagine non ci sono (es. una versione «White» delle Holidays)
           + (m.fuori.length ? '<p class="wz-testo">' + (it ? 'Queste non sono sulle pagine dell\'album: toccale qui.' : 'These are not on the album pages: tap them here.') + '</p>'
             + '<div class="wz-griglia">' + m.fuori.map(id => perId.get(id)).filter(Boolean).map(f =>
@@ -51555,7 +51669,9 @@ function _wzDisegna(tieni) {
     const testa = _wzTesta(s);
     const copia = piede.replace(/<span class="wz-conto-testo">[\s\S]*?<\/span><\/span>/, '').replace(/<button[^>]*wz-centro[\s\S]*?<\/button>/, '')
       .replace('id="wz-salva" class="', 'class="wz-salva-copia ');
-    if (copia && corpo.startsWith(testa)) corpo = testa + '<div class="wz-piede wz-piede-alto">' + copia + '</div>' + corpo.slice(testa.length);
+    // 🧪 v7.132 - e dove c'è `titoloAlto` (album da sfogliare), il titolo fra i due tasti: sul desktop sta lì (index)
+    const copiaT = (titoloAlto && copia.startsWith(indietro)) ? indietro + '<div class="wz-tit-alto">' + titoloAlto + '</div>' + copia.slice(indietro.length) : copia;
+    if (copia && corpo.startsWith(testa)) corpo = testa + '<div class="wz-piede wz-piede-alto">' + copiaT + '</div>' + corpo.slice(testa.length);
   }
   // 🆕 v7.055 (Franco: «deve essere sempre possibile uscire dal questionario, non solo la prima pagina») - in cima a
   //    ogni schermata che non ne ha già una via (la prima ha il suo pulsante, la finale «Chiudi», le conferme le loro).
@@ -51569,11 +51685,17 @@ function _wzDisegna(tieni) {
   if (w.conferma) {
     const q = w.conferma, n = q.ids.length, { agg, tolte } = _wzAggTolte(q.chiave, q.ids);
     const fem = (_art(String(q.chiave).split('|')[0]) || {}).genere === 'f';   // «aggiunte / tolte», ma «aggiunti / tolti» per gli album
+    // 🔄 v7.132 (Franco: «se è uno, allora la frase va al singolare; lo zero non si dice mai») - il participio segue il
+    //    numero («ne hai aggiunta 1», «aggiunto 1» per gli album), e una parte a zero non si scrive: con una sola parte
+    //    resta quella («ne hai tolte 3»), con tutte e due a zero la riga non c'è.
+    const _part = (rad, k) => rad + (k === 1 ? (fem ? 'a' : 'o') : (fem ? 'e' : 'i'));
+    const _pezzi = it
+      ? [agg ? _part('aggiunt', agg) + ' <b>' + nfmtWz(agg) + '</b>' : '', tolte ? _part('tolt', tolte) + ' <b>' + nfmtWz(tolte) + '</b>' : '']
+      : [agg ? 'added <b>' + nfmtWz(agg) + '</b>' : '', tolte ? 'removed <b>' + nfmtWz(tolte) + '</b>' : ''];
+    const _conto = _pezzi.filter(Boolean).join(it ? ' e ' : ' and ');
     corpo += '<div class="wz-popup-sfondo"><div class="wz-popup">'
       + '<p class="wz-testo">' + (it ? 'La tua lista così avrà <b>' : 'Your list will then have <b>') + nfmtWz(n) + '</b> ' + esc(_wzNomeQuanti(q.chiave, n)) + '.</p>'
-      + '<p class="wz-testo wz-conferma-conto">(' + (it
-          ? 'Con questo questionario ne hai ' + (fem ? 'aggiunte' : 'aggiunti') + ' <b>' + nfmtWz(agg) + '</b> e ' + (fem ? 'tolte' : 'tolti') + ' <b>' + nfmtWz(tolte) + '</b>.'
-          : 'With this questionnaire you added <b>' + nfmtWz(agg) + '</b> and removed <b>' + nfmtWz(tolte) + '</b>.') + ')</p>'
+      + (_conto ? '<p class="wz-testo wz-conferma-conto">(' + (it ? 'Con questo questionario ne hai ' : 'With this questionnaire you ') + _conto + '.)</p>' : '')
       + '<p class="wz-testo wz-confermi">' + (it ? 'Confermi ?' : 'Do you confirm ?') + '</p>'
       + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzModificaPasso()">← ' + (it ? 'Modifica' : 'Change') + '</button>'
       + '<button type="button" class="btn-primary wz-grande wz-conferma" onclick="_wzConfermaPasso()">' + (it ? 'Confermo 👍' : 'Confirm 👍') + '</button></div>'
@@ -56016,7 +56138,7 @@ function renderItems() {
       ? (hasWidePair ? 'cursor:pointer;flex:0 0 350px;' : 'cursor:pointer;flex:0 0 247px;')
       : 'cursor:pointer;';
     const finalAspectRatio = hasWidePair ? '2' : imgAspectRatio;
-    return `<div class="fig-card${_cardNoPhoto ? ' fig-card--noimg' : ''}" onclick="if(!event.target.closest('button'))openFigDetail('${f.id}')" style="${cardSpanStyle}">
+    return `<div class="fig-card${_cardNoPhoto ? ' fig-card--noimg' : ''}"${(_haFotoRuotata(f) && f.imgRuotato && f.img) ? ` data-ruotato="${esc(cloudinaryUrl(f.imgRuotato))}"` : ''} onclick="if(!event.target.closest('button'))openFigDetail('${f.id}')" style="${cardSpanStyle}">
       ${_mobileFigCard ? `<div class="fig-badge-row">${typeBadgeHTML}</div>` : ''}
       <!-- v6.555 - IL LATO SI DICHIARA QUI, UNA VOLTA. La coppia si disegna in cinque
            modi diversi (_retroViewMode): scrivere la cornice dentro ognuno voleva dire
@@ -58887,7 +59009,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     const _g = document.getElementById('fig-detail-griglia');
     if (_g) _g.classList.remove('scheda-una-colonna');
   }
-  _figEditImgData = null; _figEditImgRetroData = null; // reset immagini editing precedenti
+  _figEditImgData = null; _figEditImgRetroData = null; _figEditImgRuotatoData = null; // reset immagini editing precedenti (v7.132: e la terza)
   // v6.104 - si apre un oggetto vero: se una bozza era rimasta in sospeso (creazione annullata) qui
   // finisce. Non e' raggiungibile per altre strade - `_recordInModifica` la restituisce solo con un
   // id vuoto, e l'id vuoto lo produce solo `openNuovoItem` - ma tenere in giro un record a meta'
@@ -59483,13 +59605,18 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
              Con l'altezza fissa il vincolo era lo stesso per tutte e due, quindi le due
              foto uscivano alte uguali e larghe a caso: misurate 62k px2 contro 117k.
              Col quadrato il vincolo e' il LATO, come nella card, e le aree si pareggiano. -->
-        <div class="fig-facce" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+        <div class="fig-facce" style="display:grid;grid-template-columns:${_haFotoRuotata(f) ? '1fr 1fr 1fr' : '1fr 1fr'};gap:0.5rem;">
           <div>
             <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:14px;">${currentLang === 'it' ? 'Fronte' : 'Front'}</div>
             ${_latoErr === 'fronte' ? _corniceErroreStampaHTML(baseHTML, _tipoErr)
               /* v6.979 - il doppio incornicia anche il fronte, col tipo del fronte */
               : _erroreDoppio(f, getData('figurines', [])) ? _corniceErroreStampaHTML(baseHTML, _tipoErroreStampaLato(f, 'fronte', getData('figurines', []))) : baseHTML}
           </div>
+          ${/* 🆕 v7.132 - il «Fronte ruotato» fra fronte e retro, sulle tipologie che lo dichiarano (Olografiche) */ ''}
+          ${!_haFotoRuotata(f) ? '' : `<div>
+            <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:14px;">${currentLang === 'it' ? 'Fronte ruotato' : 'Rotated front'}</div>
+            ${f.imgRuotato ? _fotoInDueTempi(f.imgRuotato, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;aspect-ratio:1;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;') : noPhotoBox(!!f.fotoNonDisponibile)}
+          </div>`}
           <div>
             <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:14px;">${currentLang === 'it' ? 'Retro' : 'Back'}</div>
             ${_latoErr === 'retro' ? _corniceErroreStampaHTML(retroHTML, _tipoErr) : retroHTML}
@@ -61777,7 +61904,7 @@ function _apriSchedaSuBozza(bozza) {
   _cloneSorgenteId = null;   // v6.965 - una bozza nuova non eredita la sorgente di quella di prima
   _bozzaCorrente = bozza;
   _returnToErroriAfterSave = false;   // v6.105 - come in `openFigDetail`, vedi li' il perche'
-  _figEditImgData = null; _figEditImgRetroData = null;
+  _figEditImgData = null; _figEditImgRetroData = null; _figEditImgRuotatoData = null;
   _elencoNav = null;
   _currentDetailFigId = '';
   const modal = document.getElementById('fig-detail-modal');
@@ -61887,6 +62014,8 @@ function switchToEditMode(figId) {
         + '<button type="button" class="btn-foto fe-scambia" onclick="scambiaFronteRetro()" title="' + (currentLang === 'it' ? 'Scambia fronte e retro' : 'Swap front and back') + '">⇄ ' + (currentLang === 'it' ? 'Scambia' : 'Swap') + '</button>'
         + '<div style="display:flex;gap:0.3rem;align-items:flex-start;">' : '')
       + _slotFotoEdit('fronte', f.img, f, _dueFacce)
+      // 🆕 v7.132 - il «Fronte ruotato» fra il fronte e il retro, sulle tipologie che lo dichiarano (Olografiche)
+      + ((_dueFacce && _haFotoRuotata(f)) ? _slotFotoEdit('ruotato', f.imgRuotato, f, _dueFacce) : '')
       + (_dueFacce ? _slotFotoEdit('retro', f.imgRetro, f, _dueFacce) + '</div>' : '')
       // 🆕 v7.087 (Franco: «posizionalo centrato, che cade a metà sotto la prima foto e a metà sotto l'altra»)
       // 🆕 v7.087 (Franco: «un pulsante "Carica entrambe le foto" che seleziona 2 foto, una la usa come fronte ed
@@ -61902,7 +62031,9 @@ function switchToEditMode(figId) {
           + '<input type="file" accept="image/*" multiple style="display:none;" onchange="handleEntrambeFoto(event)"></label>'
           // v7.089: spento se manca una delle due foto (poi lo tiene aggiornato `_aggiornaBgEntrambe`)
           + '<button type="button" id="fe-bg-entrambe" class="btn-foto" onclick="removeBgEntrambe()"' + (f.img && f.imgRetro ? '' : ' disabled title="' + (currentLang === 'it' ? 'Servono tutte e due le foto, fronte e retro' : 'Both photos are needed, front and back') + '"') + '>✨ '
-          + (currentLang === 'it' ? 'Rimuovi sfondo da entrambe' : 'Remove background from both') + '</button></div></div>' : '')
+          // v7.132: con il fronte ruotato le foto sono tre, e il tasto lo dice
+          + (_haFotoRuotata(f) ? (currentLang === 'it' ? 'Rimuovi sfondo da tutte' : 'Remove background from all')
+              : (currentLang === 'it' ? 'Rimuovi sfondo da entrambe' : 'Remove background from both')) + '</button></div></div>' : '')
       // 🔄 v6.857 (Franco: «metti un tab apposito, per le pagine dell'album, nella scheda
       //    dell'album ... tra il tab Generale ed il tab Ebay») - LE PAGINE NON STANNO PIU' QUI.
       //    Erano sotto i riquadri delle facce, in coda a una colonna da 320px: N miniature
@@ -62612,6 +62743,16 @@ function switchToEditMode(figId) {
   // lo stesso id sono un difetto che si manifesta il giorno in cui uno dei due smette di rispondere.
   const barra =
     '<div style="position:sticky;top:0;z-index:5;display:flex;gap:0.5rem;justify-content:flex-end;align-items:center;background:var(--card);padding:0.6rem 0 0.7rem;margin-bottom:0.2rem;border-bottom:1px solid var(--border);">' +
+    // 🆕 v7.132 (Franco: «dalla form di modifica di un articolo, vorrei il tasto clona … si fa prima creare tanti
+    //    articoli mediante clonazione») - la stessa `cloneFigurine` della card, con le sue stesse condizioni: un
+    //    articolo già salvato (una bozza non ha ancora un id da copiare) e `_daAttaccareCreazioneVietata`.
+    // ⚠️ Copia l'articolo COME È SALVATO, non i campi appena cambiati e non salvati: per portarli nella copia, prima
+    //    «Salva e resta». Lo dice il `title`.
+    ((f.id && currentUser?.isAdmin && !_daAttaccareCreazioneVietata(f))
+      ? '<button id="fig-edit-clone-btn" type="button" class="btn-barra-admin pieno" style="margin-right:auto;" onclick="cloneFigurine(\'' + f.id + '\')" title="'
+        + (currentLang === 'it' ? 'Crea una copia di questo articolo, come è salvato' : 'Create a copy of this item, as saved') + '">&#10697; '
+        + (currentLang === 'it' ? 'Clona' : 'Clone') + '</button>'
+      : '') +
     // 🔴 v6.451 - QUI C'ERA «ANNULLA», ED E' STATO TOLTO PERCHE' NON FACEVA NIENTE DI SUO.
     // Franco: *"se fanno la stessa cosa, elimina Annulla"*. Chiamava `closeModal('fig-detail-modal')`,
     // cioe' ESATTAMENTE la stessa riga della ✕ in alto a destra: stessa funzione, stesso argomento,
@@ -62729,12 +62870,43 @@ const _SLOT_FOTO = {
   fronte: { preview: 'fig-edit-img-preview',      btn: 'fig-edit-remove-bg-btn',       campo: 'img',
             it: 'Fronte', en: 'Front' },
   retro:  { preview: 'fig-edit-imgretro-preview', btn: 'fig-edit-remove-bg-retro-btn', campo: 'imgRetro',
-            it: 'Retro',  en: 'Back' }
+            it: 'Retro',  en: 'Back' },
+  // 🆕 v7.132 - il terzo slot, solo dove il descrittore dichiara `fotoRuotata` (le Olografiche)
+  ruotato: { preview: 'fig-edit-imgruotato-preview', btn: 'fig-edit-remove-bg-ruotato-btn', campo: 'imgRuotato',
+            it: 'Fronte ruotato', en: 'Rotated front' }
 };
 let _figEditImgData = null;
 let _figEditImgRetroData = null;
-const _datiSlot   = s => (s === 'retro') ? _figEditImgRetroData : _figEditImgData;
-const _scriviSlot = (s, v) => { if (s === 'retro') _figEditImgRetroData = v; else _figEditImgData = v; };
+let _figEditImgRuotatoData = null;   // v7.132
+const _datiSlot   = s => (s === 'retro') ? _figEditImgRetroData : (s === 'ruotato') ? _figEditImgRuotatoData : _figEditImgData;
+const _scriviSlot = (s, v) => { if (s === 'retro') _figEditImgRetroData = v; else if (s === 'ruotato') _figEditImgRuotatoData = v; else _figEditImgData = v; };
+// 🆕 v7.132 - QUESTO ARTICOLO HA IL FRONTE RUOTATO? Lo dice il descrittore della sua tipologia, una domanda sola per
+//    la scheda (lettura e modifica), il salvataggio, la card e la protezione delle foto.
+function _haFotoRuotata(f) { return !!(f && ARTICOLI[f.section || 'figurines'] && ARTICOLI[f.section || 'figurines'].fotoRuotata); }
+// 🆕 v7.132 (Franco: sì al cambio di foto sulla card) - SUL DESKTOP, COL MOUSE SOPRA, IL FRONTE DIVENTA IL FRONTE RUOTATO.
+//    La card lo dichiara (`data-ruotato`, l'indirizzo già passato da `cloudinaryUrl`, macchia compresa), e qui due
+//    ascoltatori sul documento scambiano la prima foto del riquadro (il fronte, anche nella coppia affiancata) e la
+//    rimettono uscendo. Sul documento e non sulle card: la griglia si ridisegna spesso, e loro restano.
+// 📌 Solo dove il mouse c'è davvero (`hover: hover`) e sopra gli 860px: sul telefono un tocco apre la scheda.
+if (typeof document !== 'undefined' && document.addEventListener) {
+  const _fronteRuotatoAttivo = () => !!(window.matchMedia && window.matchMedia('(hover: hover) and (min-width: 861px)').matches);
+  document.addEventListener('mouseover', e => {
+    const card = e.target && e.target.closest && e.target.closest('.fig-card[data-ruotato]');
+    if (!card || card.dataset.fronte || !_fronteRuotatoAttivo()) return;
+    const img = card.querySelector('.fig-img-placeholder img');
+    if (!img) return;
+    card.dataset.fronte = img.src;
+    img.src = card.dataset.ruotato;
+  });
+  document.addEventListener('mouseout', e => {
+    const card = e.target && e.target.closest && e.target.closest('.fig-card[data-ruotato]');
+    if (!card || !card.dataset.fronte) return;
+    if (e.relatedTarget && card.contains(e.relatedTarget)) return;   // si passa da un pezzo all'altro della stessa card
+    const img = card.querySelector('.fig-img-placeholder img');
+    if (img) img.src = card.dataset.fronte;
+    delete card.dataset.fronte;
+  });
+}
 
 // Il riquadro di uno slot: anteprima, "Cambia foto", "Rimuovi" (solo se una foto c'e') e
 // "Rimuovi sfondo". Identico per i due slot, tranne gli id e l'intestazione.
@@ -62769,8 +62941,9 @@ function _ridisegnaSlotFoto(slot) {
   const cont = document.getElementById('fig-slot-' + slot);
   if (!cont || !_figSlotF) return;
   const pend = _datiSlot(slot);
+  // 🔄 v7.132 - il campo del record si chiede allo slot: con tre slot il «retro o fronte» non bastava più
   const url = (pend === '__remove__') ? ''
-            : (pend || (slot === 'retro' ? _figSlotF.imgRetro : _figSlotF.img));
+            : (pend || _figSlotF[_SLOT_FOTO[slot].campo]);
   // 🐛 v7.090 (Franco: «prima di premere "Carica entrambe le foto" i 3 bottoni sono ben posizionati; dopo, quando le
   //    foto sono già caricate, la dimensione dei 2 quadranti sopra è cambiata») - IL RIDISEGNO PERDEVA `stretto`.
   //    Il primo disegno passa a `_slotFotoEdit` il quarto argomento (le due facce affiancate: ognuna `flex:1`,
@@ -64363,14 +64536,16 @@ async function removeBgEntrambe() {
   const it = currentLang === 'it';
   const b = document.getElementById('fe-bg-entrambe');
   const conFoto = slot => { const p = document.getElementById(_SLOT_FOTO[slot].preview); return !!(p && p.src && p.tagName === 'IMG' && p.src !== window.location.href); };
-  const slots = ['fronte', 'retro'].filter(conFoto);
+  const slots = ['fronte', 'ruotato', 'retro'].filter(conFoto);   // v7.132: anche il fronte ruotato, se c'è
   if (!slots.length) { toast(it ? 'Carica prima una foto' : 'Upload a photo first', 'error'); return; }
   if (b) { b.disabled = true; b.dataset.lavora = '1'; b.textContent = '\u23F3 ' + (it ? 'Una alla volta\u2026' : 'One at a time\u2026'); }
   try { for (const s of slots) await removeBgFromEdit(s); }
   finally {
     // v7.089: alla fine non si riaccende per forza, si rif\u00E0 la domanda \u00ABci sono due foto?\u00BB
     const b2 = document.getElementById('fe-bg-entrambe');
-    if (b2) { delete b2.dataset.lavora; b2.textContent = '\u2728 ' + (it ? 'Rimuovi sfondo da entrambe' : 'Remove background from both'); _aggiornaBgEntrambe(); }
+    // v7.132: l'etichetta torna quella del disegno, \u00abda tutte\u00bb dove c'\u00e8 il fronte ruotato
+    const tre = !!document.getElementById(_SLOT_FOTO.ruotato.preview);
+    if (b2) { delete b2.dataset.lavora; b2.textContent = '\u2728 ' + (tre ? (it ? 'Rimuovi sfondo da tutte' : 'Remove background from all') : (it ? 'Rimuovi sfondo da entrambe' : 'Remove background from both')); _aggiornaBgEntrambe(); }
   }
 }
 
@@ -65581,7 +65756,8 @@ async function saveFigFromDetail(figId, opzioni) {
 
     // Gestione immagini. v6.074 - due slot, un trattamento solo: scrivere due volte lo stesso
     // blocco significa che fra sei mesi uno dei due avra' una correzione che l'altro non ha.
-    for (const slot of ['fronte', 'retro']) {
+    // 🔄 v7.132 - e il terzo: dove non c'è il riquadro il suo valore resta null e il ciclo non lo tocca
+    for (const slot of ['fronte', 'retro', 'ruotato']) {
       const dati = _datiSlot(slot);
       const campo = _SLOT_FOTO[slot].campo;
       if (dati === '__remove__') {
