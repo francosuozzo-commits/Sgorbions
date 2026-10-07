@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.135 - Modificato js/app.js (e index, solo il numero). Sul telefono, se un retro ha un sottonome, si scrive quello
+//          al posto del nome (Franco: «per accorciare le card»): nella card del retro, nella riga del retro sulla card
+//          della figurina (dove la categoria allora si scrive sempre, scelta 1 di Franco, e la riga fra parentesi resta
+//          vuota) e nel carosello (prima il sottonome vinceva solo se più corto). Il desktop non cambia.
 // v7.134 - Modificato js/app.js (e index, solo il numero). Sul telefono, nelle card della griglia, niente etichette
 //          «FAMIGLIA:» e «TIPOLOGIA:»: resta il valore nel suo colore (Franco: «solo le etichette, tanto c'è il
 //          colore che distingue i vari testi»). Il desktop non cambia.
@@ -30956,7 +30960,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.134';
+const JS_VERSION = 'v7.135';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33997,7 +34001,10 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
       // sottonome non cambiano, e restano lunghi quelli che un sottonome non ce l'hanno.
       const _nomeR = (f.name || '').trim();
       const _sottoR = (f.subname || '').trim();
-      const _etichettaR = (_sottoR && _nomeR.length > _sottoR.length) ? _sottoR : _nomeR;
+      // 🔄 v7.135 (Franco: «solo da mobile, se un retro ha un sottonome, usare quello al posto del nome … sia nelle
+      //    card della griglia che del carosello») - il sottonome vince SEMPRE, non più solo quando è più corto. La
+      //    categoria qui ha già la sua riga, quindi «RICERCATO» resta scritto sopra.
+      const _etichettaR = _sottoR || _nomeR;
       return [
         ...rigaSerie('0.62rem'),
         // v6.080 (Franco) - la CATEGORIA va a capo se non ci sta, invece di essere troncata coi
@@ -55994,8 +56001,11 @@ function renderItems() {
     // Per una release (la v6.274) non lo e' stato, ed era il tempo di guardarlo.
     // 📌 `catPrefix` entra nell'azzurro: e' il prefisso del nome, non un campo suo (v6.090).
     const _COL_NOME = COL_IDENTITA;   // v6.277 - il valore si e' spostato, il blocco no
+    // 🆕 v7.135 (Franco: «per accorciare le card, da mobile … se un retro ha un sottonome, usare quello al posto del
+    //    nome; sia nelle card della griglia che del carosello») - sul telefono la card del retro dice il sottonome, se
+    //    c'è. La riga sua del sottonome sul telefono non c'è già (v7.131), quindi non si ripete.
     const figNameInner = isRetroCard
-      ? `<span style="color:${_COL_NOME};">${esc(f.name || '')}</span>` /* v6.037 - riga 1 = il Nome */
+      ? `<span style="color:${_COL_NOME};">${esc((_isMobileViewport() && (f.subname || '').trim()) || f.name || '')}</span>` /* v6.037 - riga 1 = il Nome */
       : (_mobileFigCard
           ? `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>${scoreInlineHTML}` +
             (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${f.name}</div>`)
@@ -56166,7 +56176,12 @@ function renderItems() {
           // non qui: e' gia' stata riscritta una volta (v5.744-v5.746, quando era un flag di serie)
           // e una seconda copia l'avrebbe fatta divergere alla prossima.
           const cat = (r.category || '').trim();
-          const mostraCat = cat && !_retroNameStartsWithCategory(r);
+          // 🆕 v7.135 (Franco: «solo da mobile, se un retro ha un sottonome, usare quello al posto del nome») - sul
+          //    telefono il sottonome prende il posto del nome e la sua riga fra parentesi resta vuota. E la categoria
+          //    si scrive sempre (Franco, scelta 1: «RICERCATO» sopra «POLTRONE»): la si tace quando il nome comincia
+          //    con lei, ma qui il nome non c'è.
+          const _sottoAlPosto = _isMobileViewport() && !!sotto;
+          const mostraCat = cat && (_sottoAlPosto || !_retroNameStartsWithCategory(r));
           // v6.091 (Franco) - qui la CATEGORIA viene PRIMA del nome, al contrario della card Retro.
           // Non e' un'incoerenza lasciata per distrazione, e' la stessa parola con due mestieri:
           // sulla card di un retro la categoria e' un ATTRIBUTO dell'oggetto che stai guardando, e
@@ -56179,7 +56194,7 @@ function renderItems() {
                  return _rigaCard(mostraCat ? esc(cat) : '', 'font-size:0.78rem;color:' + COL_CATEGORIA + ';', 'retro-cat') +
                  // v6.276 (Franco) - in BIANCO, non piu' grigio. Vedi il CHANGELOG: e' il posto
                  // che il bianco ha lasciato libero passando l'identita' all'azzurro.
-                 _rigaCard(esc(_retroNomeCorto(r)), 'font-size:0.78rem;color:var(--text);', 'retro-nome') +
+                 _rigaCard(esc(_sottoAlPosto ? sotto : _retroNomeCorto(r)), 'font-size:0.78rem;color:var(--text);', 'retro-nome') +
                  // 🆕 v6.428 (Franco) - BIANCO E FRA PARENTESI, come nella card del retro.
                  // Franco: *"il Sottonome del retro e' azzurro, che pero' e' anche il
                  // nome-numero della figurina"*. Due cose diverse dello stesso colore nella
@@ -56193,7 +56208,7 @@ function renderItems() {
                  // v6.276, quindi il sottonome diventa bianco. Stessa regola, due esiti.
                  // 📌 Percio' le parentesi non sono una decorazione: sono cio' che distingue il
                  // sottonome dal nome ora che il colore non li distingue piu'.
-                 _rigaCard(sotto ? '(' + esc(sotto) + ')' : '', 'font-size:0.78rem;color:var(--text);', 'retro-sub');
+                 _rigaCard((sotto && !_sottoAlPosto) ? '(' + esc(sotto) + ')' : '', 'font-size:0.78rem;color:var(--text);', 'retro-sub');
         })()
       : '';
     // v6.020 — stessa aggiunta di useFlexForWideMode: le due devono dire la stessa cosa, una
