@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.146 - Modificato js/app.js (e index, solo il numero). Nella scheda in modifica del RETRO il Sottonome sta subito
+//          sotto il Nome, prima di Nomi alternativi e Nome mobile (Franco: «nella form del retro, il sottonome va sotto
+//          al nome»). Le altre tipologie col sottonome non cambiano. 🆕 CATEGORIA MOBILE e SOTTOCATEGORIA MOBILE
+//          (Franco: «con lo stesso funzionamento? se popolato viene usato quello»; «sul form, posizionali sotto al campo
+//          di riferimento»): campi `categoriaMobile` e `sottocategoriaMobile`, solo admin, sotto Categoria e
+//          Sottocategoria; sul telefono, se scritti, vincono su retro, album, extra serie, riga del retro sulla card
+//          della figurina, cartoncino dell'album e carosello. Coi «|», ereditati dalla base (`_testoMobile`). E (css)
+//          sul telefono il badge sulla foto delle card dei retro è più piccolo e in basso a destra (Franco: «il tag
+//          OMAGGIO si sovrappone a gran parte della foto»).
 // v7.145 - Modificato js/app.js (e index, solo il numero). Sul telefono il Nome mobile, se scritto, se no il NOME: il
 //          sottonome non prende più il posto del nome (Franco: «lascia perdere il sottonome; tanto ora lo popolo io col
 //          sottonome, nel caso»). Card del retro, riga del retro sulla card della figurina, carosello. La riga fra
@@ -30991,7 +31000,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.145';
+const JS_VERSION = 'v7.146';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34053,10 +34062,10 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
         // servono", e le card restano comunque alte uguali perche' nella fila si stirano.
         // v6.279 (Franco) - gli stessi colori delle card del retro. La sottocategoria resta grigia:
         // non era fra le due nominate. Vedi il CHANGELOG.
-        { t: esc(f.category || ''),    col: COL_CATEGORIA,   dim: '0.64rem', alt: 'auto', k: 'categoria' },
+        { t: _mobileOppure(f, 'categoriaMobile', f.category),    col: COL_CATEGORIA,   dim: '0.64rem', alt: 'auto', k: 'categoria' },   // v7.146
         // v6.281 (Franco) - l'arancione delle card. Qui la categoria era gia' 'auto', quindi andava
         // a capo da se': il troncamento che si vedeva era quello del ramo non-telefono.
-        ...(_senzaSottocat ? [] : [{ t: esc(f.subcategory || ''), col: COL_SOTTOCAT, dim: '0.64rem', alt: '1.2em', k: 'sottocategoria' }]),   // v7.125
+        ...(_senzaSottocat ? [] : [{ t: _mobileOppure(f, 'sottocategoriaMobile', f.subcategory), col: COL_SOTTOCAT, dim: '0.64rem', alt: '1.2em', k: 'sottocategoria' }]),   // v7.125, v7.146
         // 🔄 v6.722 - anche qui la stella e' la coda del nome, non una riga sua: una riga in
         //    meno su telefono e' proprio cio' che la v6.080 cercava.
         // 🆕 v6.991 - e anche qui il «Nome carosello mobile», se c'e', vince sull'etichetta
@@ -45435,6 +45444,38 @@ function _nomeCaroselloMobile(f) {
 function _nomeCaroselloHTML(s) {
   return esc(String(s || '').trim().split(/\s+/).filter(Boolean).join(' ')).replace(/\s*\|\s*/g, '&shy;');
 }
+// 🆕 v7.146 (Franco: «posso avere anche un campo Sottocategoria mobile, con lo stesso funzionamento? se popolato viene
+//    usato quello; anche categoria mobile») - I GEMELLI DEL NOME MOBILE: `categoriaMobile` e `sottocategoriaMobile`.
+//    Stessa regola: sul telefono, se scritti, prendono il posto di Categoria e Sottocategoria, coi loro «|»; una
+//    versione senza il suo prende quello della base.
+function _testoMobile(f, campo) {
+  let t = String((f && f[campo]) || '').trim();
+  if (!t && f && f.baseFigurineId) {
+    const a = (_cache && _cache.figurines) || [];
+    if (_idxArticoliPerId.arr !== a || !_idxArticoliPerId.map.has(f.baseFigurineId)) {
+      _idxArticoliPerId = { arr: a, map: new Map(a.map(x => [x.id, x])) };
+    }
+    const b = _idxArticoliPerId.map.get(f.baseFigurineId);
+    t = String((b && b[campo]) || '').trim();
+  }
+  return t;
+}
+// La riga della scheda in modifica di un campo mobile: solo admin, come il Nome mobile; su una versione vuota il
+// segnaposto mostra il valore della base.
+function _rigaCampoMobileEdit(f, campo, idInput, it, en) {
+  if (!currentUser?.isAdmin) return '';
+  const base = String(f[campo] || '').trim() ? '' : _testoMobile(f, campo);
+  const ph = base ? (currentLang === 'it' ? 'dalla base: ' : 'from the base: ') + base : '';
+  const tit = currentLang === 'it'
+    ? 'Sulle card del telefono, se scritto, prende il posto del campo sopra. Una barra | dove una parola troppo lunga può andare a capo. Vuoto = il campo sopra.'
+    : 'On phone cards, when filled, replaces the field above. A bar | where a long word may break. Empty = the field above.';
+  return '<div class="detail-row"><span class="detail-label">' + (currentLang === 'it' ? it : en) + '</span><span class="detail-value"><input class="form-input" type="text" id="' + idInput + '" value="' + esc(f[campo] || '') + '" placeholder="' + esc(ph) + '" title="' + esc(tit) + '"></span></div>';
+}
+// Il testo da scrivere sulla card: sul telefono il campo mobile se c'è, se no il valore di sempre. Già in HTML.
+function _mobileOppure(f, campo, valore) {
+  const t = _isMobileViewport() ? _testoMobile(f, campo) : '';
+  return t ? _nomeCaroselloHTML(t) : esc(String(valore || '').trim());
+}
 
 function _campiRicercaFigurina(f) {
   // 🔄 v6.792 - il tipo di change entra DEDOTTO. 🔴 Se restasse `f.changeType` nudo, la
@@ -56003,8 +56044,9 @@ function renderItems() {
   const _extraRigheHTML = !_eProdottoExtraSerie(f) ? '' : (
     // v6.273 - il colore ora sta nei due span di `_campoCard`, non nella riga: qui resta la sola
     // misura del testo. Lasciare anche un `color` avrebbe tinto solo lo spazio fra i due span.
-    _rigaCard(_campoCard((_isMobileViewport() ? '' : 'CATEGORIA: '), esc((f.category || '').trim()), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
-    _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc((f.subcategory || '').trim()), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria') +
+    // v7.146: sul telefono Categoria mobile e Sottocategoria mobile, se scritte (`_mobileOppure`)
+    _rigaCard(_campoCard((_isMobileViewport() ? '' : 'CATEGORIA: '), _mobileOppure(f, 'categoriaMobile', f.category), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
+    _rigaCard(_campoCard('SOTTOCATEGORIA: ', _mobileOppure(f, 'sottocategoriaMobile', f.subcategory), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria') +
     // 🆕 v6.753 (Franco) - L'ANNO, terza riga, e solo dove la serie non ce l'ha da dare.
     // 📌 Il colore e' COL_IDENTITA, l'azzurro di numero, nome e sottonome: l'anno e' un FATTO
     //    dell'oggetto, non una sua classificazione, e il giallo della categoria su questa stessa
@@ -56017,8 +56059,9 @@ function renderItems() {
   // 🆕 v7.082 (Franco) - sugli album CATEGORIA e SOTTOCATEGORIA, con le stesse righe e gli stessi colori.
   //    Vuote, `_allineaRigheRetro` le toglie dove nessuna card della riga di griglia le ha.
   const _catTDARigheHTML = !TDA_CON_CATEGORIA.includes(f.section) ? '' : (
-    _rigaCard(_campoCard((_isMobileViewport() ? '' : 'CATEGORIA: '), esc((f.category || '').trim()), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
-    _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc((f.subcategory || '').trim()), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
+    // v7.146: sul telefono Categoria mobile e Sottocategoria mobile, se scritte
+    _rigaCard(_campoCard((_isMobileViewport() ? '' : 'CATEGORIA: '), _mobileOppure(f, 'categoriaMobile', f.category), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
+    _rigaCard(_campoCard('SOTTOCATEGORIA: ', _mobileOppure(f, 'sottocategoriaMobile', f.subcategory), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
   );
   // 🔄 v6.667 - LA RIGA DEL SOTTONOME ESCE DAL BLOCCO DEI RETRO. Stava dentro
   //    `_retroRigheHTML` insieme a CATEGORIA e SOTTOCATEGORIA, che sono davvero roba da retro;
@@ -56051,10 +56094,11 @@ function renderItems() {
   //    TIPOLOGIA dalla v7.134; sulla card della figurina la categoria del retro un'etichetta non l'ha mai avuta).
   //    «SOTTOCATEGORIA:» e «ANNO:» restano: Franco ha nominato la sola categoria.
   const _retroRigheHTML = !isRetroCard ? '' : (
-        _rigaCard(_campoCard((_isMobileViewport() ? '' : 'CATEGORIA: '), esc(_catNuda), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
+        // v7.146: sul telefono la Categoria mobile, se scritta
+        _rigaCard(_campoCard((_isMobileViewport() ? '' : 'CATEGORIA: '), _mobileOppure(f, 'categoriaMobile', _catNuda), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
         // 🆕 v7.141 (Franco: «da mobile, sulla card dei retro, togli anche "SOTTOCATEGORIA:"») - solo il retro: album ed
         //    extra serie la tengono, non sono stati nominati
-        _rigaCard(_campoCard((_isMobileViewport() ? '' : 'SOTTOCATEGORIA: '), esc(_retroSub), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
+        _rigaCard(_campoCard((_isMobileViewport() ? '' : 'SOTTOCATEGORIA: '), _mobileOppure(f, 'sottocategoriaMobile', _retroSub), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
       );
     // 🧪 v6.274 (Franco) - IL NOME E' AZZURRO, dello stesso colore del sottonome. Tre rami, un
     // colore solo scritto una volta: card Retro, card Figurina su telefono, card Figurina altrove.
@@ -56219,7 +56263,8 @@ function renderItems() {
   //    vuote, `_allineaRigheRetro` le toglie dove nessuna card della riga ha un cartoncino.
   const cartoncinoHTML = f.section !== 'albums' ? '' : (() => {
     const _cart = f.cartoncinoId ? getData('figurines', []).find(x => x.id === f.cartoncinoId) : null;
-    const _campoCart = k => esc(((_cart && _cart[k]) || '').trim());
+    // v7.146: sul telefono Categoria mobile e Sottocategoria mobile del cartoncino, se scritte
+    const _campoCart = k => _cart ? _mobileOppure(_cart, k === 'category' ? 'categoriaMobile' : 'sottocategoriaMobile', _cart[k]) : '';
     return _rigaCard(_campoCart('category'), 'font-size:0.78rem;color:' + COL_CATEGORIA + ';', 'cart-cat')
       + _rigaCard(_campoCart('subcategory'), 'font-size:0.78rem;color:' + COL_SOTTOCAT + ';', 'cart-sub')
       + _rigaCard(_cart ? esc(((_cart.fullName && _cart.fullName.trim()) || _cart.name || '').trim()) : '', 'font-size:0.78rem;color:var(--text);', 'cart-nome');
@@ -56266,7 +56311,8 @@ function renderItems() {
           // 🔄 v6.501 - da `_rigaCard`: la riga e' sempre DICHIARATA e resta vuota dove il
                  // dato non c'e'. Prima spariva, e ogni card che ne aveva una in meno
                  // tirava su tutto quello che stava sotto.
-                 return _rigaCard(mostraCat ? esc(cat) : '', 'font-size:0.78rem;color:' + COL_CATEGORIA + ';', 'retro-cat') +
+                 // v7.146: sul telefono la Categoria mobile del retro, se scritta
+                 return _rigaCard(mostraCat ? _mobileOppure(r, 'categoriaMobile', cat) : '', 'font-size:0.78rem;color:' + COL_CATEGORIA + ';', 'retro-cat') +
                  // v6.276 (Franco) - in BIANCO, non piu' grigio. Vedi il CHANGELOG: e' il posto
                  // che il bianco ha lasciato libero passando l'identita' all'azzurro.
                  // v7.144: sul telefono il «Nome mobile» del retro, se scritto, viene prima di tutto
@@ -62351,6 +62397,8 @@ function switchToEditMode(figId) {
   // I suggerimenti vengono dal MEDESIMO tipo, non da tutti: proporre a un Cartoncino le categorie
   // dei Poster sarebbe un elenco che cresce e non aiuta.
     html += '<div class="detail-row" style="' + _eredStile('category') + '"' + _eredAttr('category') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category"' + (_catSuggerite ? ' list="fe-cat-list"' : '') + ' value="' + esc((f.category||'')) + '"' + _eredRO('category') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    // 🆕 v7.146 (Franco: «anche categoria mobile; sul form, posizionali sotto al campo di riferimento»)
+    html += _rigaCampoMobileEdit(f, 'categoriaMobile', 'fe-categoria-mobile', 'Categoria mobile', 'Mobile category');
   if (_catSuggerite) {
     const _cats = [...new Set((getData('figurines', []) || [])
       .filter(x => _catStessoGruppo(x) && (x.category || '').trim())
@@ -62362,6 +62410,8 @@ function switchToEditMode(figId) {
     html += '<datalist id="fe-subcat-list">' + _subs.map(c => '<option value="' + esc(c) + '"></option>').join('') + '</datalist>';
   }
     if (isRetrosItem || _extraSerie || _conCatTDA) html += '<div class="detail-row" style="' + _eredStile('subcategory') + '"' + _eredAttr('subcategory') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory"' + (_catSuggerite ? ' list="fe-subcat-list"' : '') + ' value="' + esc((f.subcategory||'')) + '"' + _eredRO('subcategory') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    // 🆕 v7.146 (Franco: «posso avere anche un campo Sottocategoria mobile, con lo stesso funzionamento?»)
+    if (isRetrosItem || _extraSerie || _conCatTDA) html += _rigaCampoMobileEdit(f, 'sottocategoriaMobile', 'fe-sottocategoria-mobile', 'Sottocategoria mobile', 'Mobile subcategory');
   }
 
   // 🆕 v6.753 (Franco) - L'ANNO DELL'ARTICOLO, dove la serie non ce l'ha da dare.
@@ -62400,6 +62450,9 @@ function switchToEditMode(figId) {
   // dalla base; derivato al salvataggio).
   // (il flag e' dichiarato piu' in alto, v6.038: lo usano anche Categoria/Sottocategoria/Sottonome)
   html += '<div class="detail-row" id="fe-name-group" style="' + _eredStile('name') + '"' + _eredAttr('name') + '><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + esc((f.name||'')) + '"' + _eredRO('name') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+  // 🆕 v7.146 (Franco: «nella form del retro, il sottonome va sotto al nome») - il posto del Sottonome del retro: qui,
+  //    subito sotto il Nome. La riga si costruisce più giù (dove sta per le altre tipologie) e viene messa qui.
+  html += '<!--fe-sottonome-retro-->';
   // v6.036 (Franco) - il SOTTONOME sta SOTTO IL NOME, di cui e' la seconda parte. Stava fra
   // Sottocategoria e Numero, cioe' in mezzo ai campi della categoria e prima ancora del Nome: la
   // stessa disposizione che la v6.026 aveva gia' corretto nella VISTA della scheda. Vista e
@@ -62432,8 +62485,12 @@ function switchToEditMode(figId) {
   const _rigaPersDopoNomi = currentUser?.isAdmin ? _rigaPersonaggiEditHTML() : '';
   // (il Sottonome, poi `_rigaPersDopoNomi` appena chiuso l'`if`)
   if (_haSottonome(f.section)) {
-    html += '<div class="detail-row" style="' + _eredStile('subname') + '"' + _eredAttr('subname') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"' + _eredRO('subname') + '></span></div>';
+    const _rigaSottonome = '<div class="detail-row" style="' + _eredStile('subname') + '"' + _eredAttr('subname') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"' + _eredRO('subname') + '></span></div>';
+    // v7.146: per il retro sale sotto il Nome; per le altre tipologie resta qui, dopo i nomi per la ricerca e il telefono
+    if (f.section === 'retros') html = html.replace('<!--fe-sottonome-retro-->', _rigaSottonome);
+    else html += _rigaSottonome;
   }
+  html = html.replace('<!--fe-sottonome-retro-->', '');
   html += _rigaPersDopoNomi;
 
   // 🔄 v6.797 (Franco) - L'ORDINAMENTO SCENDE, E SI FERMA PRIMA DELLA RARITÀ. Parole sue:
@@ -65748,6 +65805,13 @@ async function saveFigFromDetail(figId, opzioni) {
       // 🆕 v6.991 - il «Nome carosello mobile», spazi ripuliti; stessa cautela del campo sopra
       ...(document.getElementById('fe-nome-carosello-mobile')
         ? { nomeCaroselloMobile: document.getElementById('fe-nome-carosello-mobile').value.trim().split(/\s+/).filter(Boolean).join(' ').replace(/\s*\|\s*/g, '|') }
+        : {}),
+      // 🆕 v7.146 - Categoria mobile e Sottocategoria mobile, ripulite allo stesso modo; solo se il campo era in pagina
+      ...(document.getElementById('fe-categoria-mobile')
+        ? { categoriaMobile: document.getElementById('fe-categoria-mobile').value.trim().split(/\s+/).filter(Boolean).join(' ').replace(/\s*\|\s*/g, '|') }
+        : {}),
+      ...(document.getElementById('fe-sottocategoria-mobile')
+        ? { sottocategoriaMobile: document.getElementById('fe-sottocategoria-mobile').value.trim().split(/\s+/).filter(Boolean).join(' ').replace(/\s*\|\s*/g, '|') }
         : {}),
       // 🔴 QUI SI SCRIVONO LE CINQUE VERSIONI, E UNA CHE MANCASSE SI CANCELLEREBBE A OGNI
       // SALVATAGGIO. E' il baco della v5.711 e poi della v6.235: una casella che esiste nella form
