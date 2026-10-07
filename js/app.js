@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.143 - Modificato js/app.js (e index, solo il numero). Sul telefono, nelle card, niente spazio nemmeno prima del
+//          «?» («E TU?»), come per il «!» della v7.142 (Franco: «fai anche il ?»).
 // v7.142 - Modificato js/app.js (e index, solo il numero). Sul telefono, nelle card della griglia e dei caroselli, niente
 //          spazio prima del «!» («OFFERTA SPECIALE!»): `_mobileSpazioEsclamativo` sui testi già disegnati, prima
 //          dell'allineamento delle righe (Franco). I dati non cambiano; il «?» resta.
@@ -30979,7 +30981,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.142';
+const JS_VERSION = 'v7.143';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34359,12 +34361,13 @@ function _allineaRigheCarosello(box) {
 //    SUL TELEFONO «OFFERTA SPECIALE !» DIVENTA «OFFERTA SPECIALE!». Si toglie lo spazio (anche quello fisso) davanti al
 //    punto esclamativo nei testi già disegnati delle card, invece che campo per campo: i testi arrivano da una decina di
 //    righe diverse (nome, sottonome, categoria, retro, «Sfoglia l'album !»…) e una regola sola le prende tutte.
-// 📌 I dati non cambiano: è solo come si scrive sul telefono. Il «?» non è stato nominato e resta com'è.
+// 📌 I dati non cambiano: è solo come si scrive sul telefono.
+// 🔄 v7.143 (Franco: «fai anche il ?») - anche davanti al punto interrogativo: «E TU?».
 function _mobileSpazioEsclamativo(root) {
   if (!root || !_isMobileViewport()) return;
   const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let n = w.nextNode(); n; n = w.nextNode()) {
-    if (/[  ]!/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/[  ]+!/g, '!');
+    if (/[  ][!?]/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/[  ]+([!?])/g, '$1');
   }
 }
 function _osservaRigheCarosello(box) {
