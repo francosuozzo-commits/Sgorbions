@@ -2918,3 +2918,14 @@ body:not(.wz-visibile) .solo-wz { display: none !important; }
 @media (min-width: 861px) {
   body:not(.wz-visibile) #home-how-grid { grid-template-columns: repeat(5, 1fr) !important; }
 }
+/* 🆕 v7.146 (Franco: «da mobile, nelle card, il tag OMAGGIO si sovrappone a gran parte della foto; prova a usare un
+   badge più piccolo ed a posizionarlo in basso a destra sulla immagine; ora è in alto al centro») - SUL TELEFONO IL
+   BADGE CHE STA SULLA FOTO (le card dei retro: le figurine lo hanno nella fascia sopra, v5.853) è più piccolo e va in
+   basso a destra. Su una card stretta il badge da 0,7rem con l'imbottitura di 8px era largo quasi quanto la foto, e
+   in alto a destra sembrava in mezzo. */
+@media (max-width: 860px) {
+  #items-grid .fig-img-placeholder > .fig-owned-badge {
+    top: auto; bottom: 3px; right: 3px;
+    font-size: 0.55rem; padding: 1px 4px; line-height: 1.1; border-radius: 6px;
+  }
+}
