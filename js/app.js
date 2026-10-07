@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.141 - Modificato js/app.js (e index, solo il numero). Sul telefono la card del retro non scrive più
+//          «SOTTOCATEGORIA:»: resta il valore in arancione (Franco). Album ed extra serie la tengono.
 // v7.140 - Modificato js/app.js (e index, solo il numero). Sul telefono, nelle card della griglia, niente etichetta
 //          «CATEGORIA:» (retro, album, extra serie): resta il valore in giallo (Franco: «così recuperiamo spazio»).
 //          Sottocategoria e anno tengono l'etichetta. Desktop invariato.
@@ -30974,7 +30976,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.140';
+const JS_VERSION = 'v7.141';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -56019,7 +56021,9 @@ function renderItems() {
   //    «SOTTOCATEGORIA:» e «ANNO:» restano: Franco ha nominato la sola categoria.
   const _retroRigheHTML = !isRetroCard ? '' : (
         _rigaCard(_campoCard((_isMobileViewport() ? '' : 'CATEGORIA: '), esc(_catNuda), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
-        _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc(_retroSub), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
+        // 🆕 v7.141 (Franco: «da mobile, sulla card dei retro, togli anche "SOTTOCATEGORIA:"») - solo il retro: album ed
+        //    extra serie la tengono, non sono stati nominati
+        _rigaCard(_campoCard((_isMobileViewport() ? '' : 'SOTTOCATEGORIA: '), esc(_retroSub), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
       );
     // 🧪 v6.274 (Franco) - IL NOME E' AZZURRO, dello stesso colore del sottonome. Tre rami, un
     // colore solo scritto una volta: card Retro, card Figurina su telefono, card Figurina altrove.
