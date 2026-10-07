@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.136 - Modificato js/app.js (e index, solo il numero). Sulla card della figurina la categoria del retro si scrive
+//          SEMPRE, anche quando il nome del retro comincia con lei (Franco: «tornare a mostrare la categoria»): taciuta
+//          lasciava solo una riga nera, perché la riga resta se un'altra card della riga di griglia la scrive.
+//          Desktop e telefono.
 // v7.135 - Modificato js/app.js (e index, solo il numero). Sul telefono, se un retro ha un sottonome, si scrive quello
 //          al posto del nome (Franco: «per accorciare le card»): nella card del retro, nella riga del retro sulla card
 //          della figurina (dove la categoria allora si scrive sempre, scelta 1 di Franco, e la riga fra parentesi resta
@@ -30960,7 +30964,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.135';
+const JS_VERSION = 'v7.136';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -56181,7 +56185,11 @@ function renderItems() {
           //    si scrive sempre (Franco, scelta 1: «RICERCATO» sopra «POLTRONE»): la si tace quando il nome comincia
           //    con lei, ma qui il nome non c'è.
           const _sottoAlPosto = _isMobileViewport() && !!sotto;
-          const mostraCat = cat && (_sottoAlPosto || !_retroNameStartsWithCategory(r));
+          // 🔄 v7.136 (Franco: «tornare a mostrare la categoria … anche quando essa è compresa nel nome del retro
+          //    stesso») - LA CATEGORIA SI SCRIVE SEMPRE, desktop e telefono. Taciuta non faceva guadagnare spazio:
+          //    la sua riga resta (vuota, nera) appena un'altra card della riga di griglia la scrive (v6.092), quindi
+          //    toglieva l'informazione e lasciava il buco. `_retroNameStartsWithCategory` qui non si chiede più.
+          const mostraCat = !!cat;
           // v6.091 (Franco) - qui la CATEGORIA viene PRIMA del nome, al contrario della card Retro.
           // Non e' un'incoerenza lasciata per distrazione, e' la stessa parola con due mestieri:
           // sulla card di un retro la categoria e' un ATTRIBUTO dell'oggetto che stai guardando, e
