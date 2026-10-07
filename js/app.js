@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.139 - Modificato js/app.js (e index, solo il numero). La famiglia sulla card in fucsia (`COL_FAMIGLIA`, #ff4fa3)
+//          invece del giallo della categoria (Franco: «il fucsia»). Desktop e telefono.
 // v7.138 - Modificato js/app.js (e index, solo il numero). Sul telefono le numeriche della testata (categorie, famiglie,
 //          tipi di omaggio, change, errori) hanno la barra «Apri ▼» del desktop, chiuse all'inizio (Franco: «la maschera
 //          è già troppo alta in apertura di schermata»). Prima si chiudevano col triangolino solo da dieci voci in su.
@@ -30969,7 +30971,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.138';
+const JS_VERSION = 'v7.139';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33503,6 +33505,12 @@ let _retroResultCatVals = [];      // valori categoria reali dei box cliccabili 
 // leva e' spostare la VERSIONE, non il campo (le versioni sono un codice, i campi sono fondale).
 const COL_CATEGORIA = '#ffd84d';    // giallo
 const COL_SOTTOCAT  = '#ffa94d';    // arancione
+// 🆕 v7.139 (Franco: «il colore della famiglia nella card è uguale al colore della categoria, non possiamo usare un
+//    colore diverso?»; «il fucsia») - LA FAMIGLIA HA IL SUO COLORE. Era `COL_CATEGORIA` dalla v6.366 (scelta sua di
+//    allora); dalla v7.136 la categoria del retro sta sempre sulla stessa card, una riga sotto, e i due gialli si
+//    confondevano. Fucsia e non il rosa chiesto prima: il rosa #ff7eb6 è quasi `--type-change` (#ff9ecb), che sulla card
+//    di un change sta due righe più giù.
+const COL_FAMIGLIA  = '#ff4fa3';    // fucsia
 // 🆕 v6.277 - IL COLORE DELL'IDENTITA' DI UN OGGETTO: numero, nome e sottonome. Nato nella prova
 // della v6.273-276 come `_COL_NOME` dentro il disegno della card, dove bastava perche' il posto era
 // uno. Con i caroselli i posti sono due e lontani: due `var(--info)` scritti a mano in punti che
@@ -55948,7 +55956,7 @@ function renderItems() {
     // 🆕 v7.134 (Franco: «su mobile … non scrivere "Famiglia:"»; «solo le etichette, tanto c'è il colore») - sul
     //    telefono il solo valore, in giallo. Come TIPOLOGIA più giù.
     const famigliaHTML = _rigaCard(
-      _campoCard(_isMobileViewport() ? '' : (currentLang === 'it' ? 'FAMIGLIA: ' : 'FAMILY: '), esc(_famigliaCard), COL_CATEGORIA),
+      _campoCard(_isMobileViewport() ? '' : (currentLang === 'it' ? 'FAMIGLIA: ' : 'FAMILY: '), esc(_famigliaCard), COL_FAMIGLIA),   // v7.139
       'font-size:0.82rem;margin-top:1px;', 'famiglia');
     // v6.158 (Franco) - LE RIGHE DI UN PRODOTTO EXTRA SERIE: NOME, CATEGORIA, SOTTOCATEGORIA, una
   // per riga e in quest'ordine. Usa lo stesso `_rigaCard` dei retro, che tiene la riga anche quando
