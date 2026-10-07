@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.144 - Modificato js/app.js (e index, solo il numero). IL «NOME MOBILE» (Franco: «chiamarlo "nome mobile" perché non
+//          era solo per il carosello ma anche per la griglia»; «b, procedi»). Il campo della v6.991 «Nome carosello
+//          mobile» (`nomeCaroselloMobile`, dati invariati) si chiama «Nome mobile» in scheda, modifica e filtri admin
+//          («Con Nome mobile alterato»), e sul telefono vale anche nella GRIGLIA: card dell'articolo (retro e figurine)
+//          e riga del retro sulla card della figurina. Scritto vince, coi suoi «|»; vuoto: per i retro il sottonome
+//          se c'è, se no il nome (scelta b). I caroselli lo usavano già.
 // v7.143 - Modificato js/app.js (e index, solo il numero). Sul telefono, nelle card, niente spazio nemmeno prima del
 //          «?» («E TU?»), come per il «!» della v7.142 (Franco: «fai anche il ?»).
 // v7.142 - Modificato js/app.js (e index, solo il numero). Sul telefono, nelle card della griglia e dei caroselli, niente
@@ -30981,7 +30987,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.143';
+const JS_VERSION = 'v7.144';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34772,7 +34778,7 @@ function renderRicercaTipologia() {
     + bott(x._senzaRaritaFilter, "_rtToggle('_senzaRaritaFilter')", it ? 'Senza rarità' : 'Without rarity')
     + bott(x._senzaPersonaggioFilter, "_rtToggle('_senzaPersonaggioFilter')", it ? 'Senza personaggio' : 'Without character')
     + bott(x._conNomiAlternativiFilter, "_rtToggle('_conNomiAlternativiFilter')", it ? 'Con nomi alternativi' : 'With alternative names')
-    + bott(x._conNomeCaroselloFilter, "_rtToggle('_conNomeCaroselloFilter')", it ? 'Con Nome carosello mobile alterato' : 'With altered mobile carousel name')
+    + bott(x._conNomeCaroselloFilter, "_rtToggle('_conNomeCaroselloFilter')", it ? 'Con Nome mobile alterato' : 'With altered mobile name')   // v7.144
     + bott(x._visibilitaFilter === 'visibili', "_rtVisibilita('visibili')", it ? 'Visibili' : 'Visible')
     + bott(x._visibilitaFilter === 'invisibili', "_rtVisibilita('invisibili')", it ? 'Invisibili' : 'Invisible')
     + '</div>');
@@ -52265,7 +52271,7 @@ function renderItemTypeFilters() {
       // 🆕 v6.987 - «Con nomi alternativi», copiato da «Senza personaggio»
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conNomiAlternativiFilter ? 'on' : ''}" onclick="toggleConNomiAlternativiFilter()" title="${itl ? 'Con nomi alternativi' : 'With alternative names'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con nomi alternativi' : 'With alternative names'}</span></div>`;
       // 🆕 v6.992 - «Con Nome carosello mobile alterato», copiato da quello sopra
-      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conNomeCaroselloFilter ? 'on' : ''}" onclick="toggleConNomeCaroselloFilter()" title="${itl ? 'Con Nome carosello mobile alterato' : 'With altered mobile carousel name'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con Nome carosello mobile alterato' : 'With altered mobile carousel name'}</span></div>`;
+      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conNomeCaroselloFilter ? 'on' : ''}" onclick="toggleConNomeCaroselloFilter()" title="${itl ? 'Con Nome mobile alterato' : 'With altered mobile name'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con Nome mobile alterato' : 'With altered mobile name'}</span></div>`;   // v7.144: «Nome mobile»
       // 🆕 v6.540 - «Invisibili», accanto a «Senza rarità»: stesso interruttore, stessa riga.
       // 🔄 v6.545 - e con lei «Visibili». Sono due facce dello stesso stato: accenderne una
       // spegne l'altra, e non c'e' modo di averle accese insieme.
@@ -56054,11 +56060,15 @@ function renderItems() {
     // 🆕 v7.135 (Franco: «per accorciare le card, da mobile … se un retro ha un sottonome, usare quello al posto del
     //    nome; sia nelle card della griglia che del carosello») - sul telefono la card del retro dice il sottonome, se
     //    c'è. La riga sua del sottonome sul telefono non c'è già (v7.131), quindi non si ripete.
+    // 🆕 v7.144 (Franco: «b, procedi con il Nome mobile») - IL «NOME MOBILE» (era «Nome carosello mobile», v6.991) VALE
+    //    SUL TELEFONO ANCHE NELLA GRIGLIA: scritto, prende il posto del nome, coi suoi punti di taglio. Vuoto: per il
+    //    retro il sottonome se c'è (v7.135), se no il nome — la scelta b di Franco.
+    const _nomeMob = _isMobileViewport() ? _nomeCaroselloMobile(f) : '';
     const figNameInner = isRetroCard
-      ? `<span style="color:${_COL_NOME};">${esc((_isMobileViewport() && (f.subname || '').trim()) || f.name || '')}</span>` /* v6.037 - riga 1 = il Nome */
+      ? `<span style="color:${_COL_NOME};">${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : esc((_isMobileViewport() && (f.subname || '').trim()) || f.name || '')}</span>` /* v6.037 - riga 1 = il Nome */
       : (_mobileFigCard
           ? `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>${scoreInlineHTML}` +
-            (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${f.name}</div>`)
+            (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : f.name}</div>`)
           // 🔧 v6.416 (Franco) - NUMERO E NOME SU DUE RIGHE ANCHE SU DESKTOP.
           // Franco: *"secondo me aiuta anche mettere sempre il numero e il nome delle figurine su
           // due righe separate; a volte il nome e' lungo e la riga unica potrebbe andare a capo"*.
@@ -56231,6 +56241,9 @@ function renderItems() {
           //    si scrive sempre (Franco, scelta 1: «RICERCATO» sopra «POLTRONE»): la si tace quando il nome comincia
           //    con lei, ma qui il nome non c'è.
           const _sottoAlPosto = _isMobileViewport() && !!sotto;
+          // 🆕 v7.144 - il «Nome mobile» del retro (sul telefono). Col sottonome presente la riga fra parentesi resta
+          //    vuota anche quando vince il Nome mobile: è `_sottoAlPosto` a deciderlo, come prima.
+          const _nomeMobR = _isMobileViewport() ? _nomeCaroselloMobile(r) : '';
           // 🔄 v7.136 (Franco: «tornare a mostrare la categoria … anche quando essa è compresa nel nome del retro
           //    stesso») - LA CATEGORIA SI SCRIVE SEMPRE, desktop e telefono. Taciuta non faceva guadagnare spazio:
           //    la sua riga resta (vuota, nera) appena un'altra card della riga di griglia la scrive (v6.092), quindi
@@ -56248,7 +56261,8 @@ function renderItems() {
                  return _rigaCard(mostraCat ? esc(cat) : '', 'font-size:0.78rem;color:' + COL_CATEGORIA + ';', 'retro-cat') +
                  // v6.276 (Franco) - in BIANCO, non piu' grigio. Vedi il CHANGELOG: e' il posto
                  // che il bianco ha lasciato libero passando l'identita' all'azzurro.
-                 _rigaCard(esc(_sottoAlPosto ? sotto : _retroNomeCorto(r)), 'font-size:0.78rem;color:var(--text);', 'retro-nome') +
+                 // v7.144: sul telefono il «Nome mobile» del retro, se scritto, viene prima di tutto
+                 _rigaCard(_nomeMobR ? _nomeCaroselloHTML(_nomeMobR) : esc(_sottoAlPosto ? sotto : _retroNomeCorto(r)), 'font-size:0.78rem;color:var(--text);', 'retro-nome') +
                  // 🆕 v6.428 (Franco) - BIANCO E FRA PARENTESI, come nella card del retro.
                  // Franco: *"il Sottonome del retro e' azzurro, che pero' e' anche il
                  // nome-numero della figurina"*. Due cose diverse dello stesso colore nella
@@ -59425,7 +59439,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   //    resta scritta: e' il punto di taglio, ed e' cio' che l'admin deve poter rileggere.
   if (currentUser?.isAdmin && _nomeCaroselloMobile(f)) {
     const _daBaseC = !String(f.nomeCaroselloMobile || '').trim();
-    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome carosello mobile' : 'Mobile carousel name')}</span><span class="detail-value">${esc(_nomeCaroselloMobile(f))}${_daBaseC ? ' <span style="font-size:0.8rem;">' + (currentLang === 'it' ? '(dalla base)' : '(from the base)') + '</span>' : ''}</span></div>`);
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome mobile' : 'Mobile name')}</span><span class="detail-value">${esc(_nomeCaroselloMobile(f))}${_daBaseC ? ' <span style="font-size:0.8rem;">' + (currentLang === 'it' ? '(dalla base)' : '(from the base)') + '</span>' : ''}</span></div>`);
   }
   if (_haSottonome(f.section) && (f.subname || '').trim()) {
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottonome' : 'Subname')}</span><span class="detail-value">${esc(f.subname.trim())}</span></div>`);
@@ -62398,7 +62412,9 @@ function switchToEditMode(figId) {
     const _phNcm = _ncmBase
       ? (currentLang === 'it' ? 'dalla base: ' : 'from the base: ') + _ncmBase
       : (currentLang === 'it' ? 'es. VIDEOREGI|STRATORE' : 'e.g. VIDEOREGI|STRATORE');
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome carosello mobile':'Mobile carousel name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-carosello-mobile" value="' + esc(f.nomeCaroselloMobile || '') + '" placeholder="' + esc(_phNcm) + '" title="' + esc(currentLang==='it' ? 'Il nome nella card del carosello sul telefono. Una barra | dove una parola troppo lunga può andare a capo (col trattino, solo se serve). Vuoto = il Nome.' : 'The name on the phone carousel card. A bar | where a long word may break.') + '"></span></div>';
+    // 🔄 v7.144 (Franco: «chiamarlo "nome mobile" perché non era solo per il carosello ma anche per la griglia») - il
+    //    campo resta `nomeCaroselloMobile` nei dati; cambiano nome e spiegazione a schermo
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome mobile':'Mobile name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-carosello-mobile" value="' + esc(f.nomeCaroselloMobile || '') + '" placeholder="' + esc(_phNcm) + '" title="' + esc(currentLang==='it' ? 'Il nome sulle card del telefono, nella griglia e nei caroselli: anche più corto del Nome. Una barra | dove una parola troppo lunga può andare a capo (col trattino, solo se serve). Vuoto = il sottonome per i retro che ce l\'hanno, se no il Nome.' : 'The name on phone cards, in grids and carousels: may be shorter than the Name. A bar | where a long word may break. Empty = the subname for retros that have one, else the Name.') + '"></span></div>';
   }
   // 🔄 v7.093 (Franco: «il campo personaggio nella maschera di modifica è tutto in basso: mettilo in alto, subito
   //    dopo la fine dei nomi dell'articolo») - dopo Nome, Nomi alternativi, Nome carosello mobile e Sottonome
