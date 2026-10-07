@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.134 - Modificato js/app.js (e index, solo il numero). Sul telefono, nelle card della griglia, niente etichette
+//          «FAMIGLIA:» e «TIPOLOGIA:»: resta il valore nel suo colore (Franco: «solo le etichette, tanto c'è il
+//          colore che distingue i vari testi»). Il desktop non cambia.
 // v7.133 - Modificato js/app.js (e index, solo il numero). NIENTE SCALINI FRA LE CARD DI UNA RIGA (Franco: «perché non
 //          calcoliamo il numero di righe massimo, per quella riga, e diamo quello spazio per tutte le card di quella
 //          stessa riga?»; «vale sia per desktop che mobile», e anche per i caroselli). Nelle griglie
@@ -30953,7 +30956,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.133';
+const JS_VERSION = 'v7.134';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -55923,8 +55926,10 @@ function renderItems() {
     const _famigliaCard = TDA_CON_FAMIGLIA.includes(f.section) ? (f.famiglia || '').trim() : '';
     // 🔄 v6.501 - da `_rigaCard`, come tutte le altre: cosi' `_allineaRigheRetro` le
     // tiene in colonna per riga di griglia invece di lasciarle scorrere.
+    // 🆕 v7.134 (Franco: «su mobile … non scrivere "Famiglia:"»; «solo le etichette, tanto c'è il colore») - sul
+    //    telefono il solo valore, in giallo. Come TIPOLOGIA più giù.
     const famigliaHTML = _rigaCard(
-      _campoCard(currentLang === 'it' ? 'FAMIGLIA: ' : 'FAMILY: ', esc(_famigliaCard), COL_CATEGORIA),
+      _campoCard(_isMobileViewport() ? '' : (currentLang === 'it' ? 'FAMIGLIA: ' : 'FAMILY: '), esc(_famigliaCard), COL_CATEGORIA),
       'font-size:0.82rem;margin-top:1px;', 'famiglia');
     // v6.158 (Franco) - LE RIGHE DI UN PRODOTTO EXTRA SERIE: NOME, CATEGORIA, SOTTOCATEGORIA, una
   // per riga e in quest'ordine. Usa lo stesso `_rigaCard` dei retro, che tiene la riga anche quando
@@ -56082,9 +56087,12 @@ function renderItems() {
       // 🔄 v6.501 - la TIPOLOGIA e' sempre dichiarata e resta VUOTA sulle versioni base,
       // che sono la maggioranza: e' la riga che Franco ha nominato per ultima, e la piu'
       // importante da tenere ferma proprio perche' manca quasi sempre.
+      // 🆕 v7.134 (Franco: «su mobile, proviamo a non scrivere, sulle card della griglia, né "Famiglia:" né
+      //    "Tipologia"»; «solo le etichette, tanto c'è il colore che distingue i vari testi») - sul telefono resta il
+      //    solo valore, nel suo colore. Come FAMIGLIA più su.
       const typeIndicatorHTML = _rigaCard(
         _cardTypeLabel
-          ? '<span style="color:var(--text);">TIPOLOGIA: </span>'
+          ? (_isMobileViewport() ? '' : '<span style="color:var(--text);">TIPOLOGIA: </span>')
             // 🗑️ v6.519 (Franco: *"non scrivere (FRONTE) o (RETRO) sulla card"*) - QUI STAVA
             // LA PARENTESI COL LATO, e se n'è andata al posto giusto: il BADGE.
             // 📌 Questa riga nomina il TIPO dell'errore («DECENTRATA»), il badge nomina la
