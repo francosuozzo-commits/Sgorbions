@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.133 - Modificato js/app.js (e index, solo il numero). NIENTE SCALINI FRA LE CARD DI UNA RIGA (Franco: «perché non
+//          calcoliamo il numero di righe massimo, per quella riga, e diamo quello spazio per tutte le card di quella
+//          stessa riga?»; «vale sia per desktop che mobile», e anche per i caroselli). Nelle griglie
+//          `_allineaRigheRetro` dà a ogni campo, nome compreso, l'altezza della card della riga in cui è più alto, e la
+//          differenza che resta va sopra «Mia lista» invece che sotto il nome: niente più vuoto fra il nome e
+//          «FAMIGLIA» (Gastone Bubbone var. 3 e 4). Nei caroselli lo stesso sulla fila intera (`_allineaRigheCarosello`,
+//          le righe ora hanno `data-campo`), e sul telefono la riga del numero resta, vuota, se qualcuno nella fila ce l'ha.
 // v7.132 - Modificato js/app.js (e index, solo il numero). Nella scheda in MODIFICA di un articolo già salvato il tasto
 //          «Clona», nella barra in alto prima dei Salva (Franco: «si fa prima a creare tanti articoli mediante
 //          clonazione»). Chiama la stessa `cloneFigurine` della card, quindi copia l'articolo come è salvato.
@@ -30946,7 +30953,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.132';
+const JS_VERSION = 'v7.133';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33890,7 +33897,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
   // Default: se il parametro non arriva, la riga si mostra - il comportamento di prima.
   // v6.277 (Franco) - il nome della serie in BIANCO. Era `var(--accent)`, il verde lime, e in mezzo
   // al testo di un carosello era l'unico.
-  const rigaSerie = dim => (mostraSerie === false ? [] : [{ t: serie, col: 'var(--text)', dim, alt: '1.2em' }]);
+  const rigaSerie = dim => (mostraSerie === false ? [] : [{ t: serie, col: 'var(--text)', dim, alt: '1.2em', k: 'serie' }]);
   // 🆕 v6.722 (Franco, 10 settembre: «per gli articoli facenti parte di una sottoserie, scrivi il
   //    nome della sottoserie sotto alla serie … quando un dato non c'e' lascia la riga vuota»;
   //    e l'11: «anche i caroselli delle pagine delle serie devono mostrare la sottoserie; la
@@ -33943,7 +33950,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     if (conSottoserie === false) return [];
     const g = String(f.subseries || '').trim();
     return [{ t: g ? _parolaSottoserie() + ' ' + esc(g) : '',
-              col: COL_CATEGORIA, dim, alt: '1.2em' }];
+              col: COL_CATEGORIA, dim, alt: '1.2em', k: 'sottoserie' }];
   };
   // v6.080 (Franco) - SU TELEFONO una riga sola: il nome. Era il testo, non la foto, a fare il "box
   // allungato tantissimo in verticale": quattro righe per le figurine e CINQUE per i retro, ognuna
@@ -33997,14 +34004,14 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
         // servono", e le card restano comunque alte uguali perche' nella fila si stirano.
         // v6.279 (Franco) - gli stessi colori delle card del retro. La sottocategoria resta grigia:
         // non era fra le due nominate. Vedi il CHANGELOG.
-        { t: esc(f.category || ''),    col: COL_CATEGORIA,   dim: '0.64rem', alt: 'auto' },
+        { t: esc(f.category || ''),    col: COL_CATEGORIA,   dim: '0.64rem', alt: 'auto', k: 'categoria' },
         // v6.281 (Franco) - l'arancione delle card. Qui la categoria era gia' 'auto', quindi andava
         // a capo da se': il troncamento che si vedeva era quello del ramo non-telefono.
-        ...(_senzaSottocat ? [] : [{ t: esc(f.subcategory || ''), col: COL_SOTTOCAT, dim: '0.64rem', alt: '1.2em' }]),   // v7.125
+        ...(_senzaSottocat ? [] : [{ t: esc(f.subcategory || ''), col: COL_SOTTOCAT, dim: '0.64rem', alt: '1.2em', k: 'sottocategoria' }]),   // v7.125
         // 🔄 v6.722 - anche qui la stella e' la coda del nome, non una riga sua: una riga in
         //    meno su telefono e' proprio cio' che la v6.080 cercava.
         // 🆕 v6.991 - e anche qui il «Nome carosello mobile», se c'e', vince sull'etichetta
-        { t: (_nomeCaroselloMobile(f) ? _nomeCaroselloHTML(_nomeCaroselloMobile(f)) : esc(_etichettaR)), col: COL_IDENTITA, dim: '0.7rem', alt: 'auto',
+        { t: (_nomeCaroselloMobile(f) ? _nomeCaroselloHTML(_nomeCaroselloMobile(f)) : esc(_etichettaR)), col: COL_IDENTITA, dim: '0.7rem', alt: 'auto', k: 'nome',
           coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.66rem' }
       ];
     }
@@ -34019,8 +34026,11 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     const parole = _ncm ? _nomeCaroselloHTML(_ncm) : esc(String(f.name || '').trim().split(/\s+/).filter(Boolean).join(' '));
     const righe = rigaSerie('0.62rem');
     // v6.277 (Franco) - numero e nome in azzurro, come sulle card.
-    if (_haNumero(f) && f.number) righe.push({ t: esc(String(f.number)), col: COL_IDENTITA, dim: '0.66rem', alt: '1.2em' });
-    righe.push({ t: parole, col: COL_IDENTITA, dim: '0.72rem', alt: 'auto' });
+    // 🔄 v7.133 (Franco: «se l'informazione non c'è non mostriamo la riga relativa, ma solo se nella stessa riga non ci
+    //    sono altre card che la hanno») - la riga del numero c'è, vuota, se qualcuno nella fila il numero ce l'ha
+    //    (`conNumero`, come sul desktop); prima mancava sulla sola card senza numero e il nome saliva.
+    if (_haNumero(f) && (f.number || conNumero)) righe.push({ t: f.number ? esc(String(f.number)) : '', col: COL_IDENTITA, dim: '0.66rem', alt: '1.2em', k: 'numero' });
+    righe.push({ t: parole, col: COL_IDENTITA, dim: '0.72rem', alt: 'auto', k: 'nome' });
     return righe;
   }
   if ((f.section || '') === 'retros') {
@@ -34032,9 +34042,9 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
       // se una riga va a capo (vedi `_caroselloCard`), quindi si cambia quella. Fissa e non 'auto',
       // altrimenti una categoria lunga alzerebbe la sua card e sfalserebbe la fila.
       // v7.125 - una riga sola se nessuna categoria della fila va a capo; la sottocategoria solo se qualcuno ce l'ha
-      { t: esc(f.category || ''),    col: COL_CATEGORIA,    dim: '0.68rem', alt: _catCorta ? '1.2em' : '2.5em' },
-      ...(_senzaSottocat ? [] : [{ t: esc(f.subcategory || ''), col: COL_SOTTOCAT, dim: '0.68rem', alt: '1.2em' }]),
-      { t: esc(f.name || ''), col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em',
+      { t: esc(f.category || ''),    col: COL_CATEGORIA,    dim: '0.68rem', alt: _catCorta ? '1.2em' : '2.5em', k: 'categoria' },
+      ...(_senzaSottocat ? [] : [{ t: esc(f.subcategory || ''), col: COL_SOTTOCAT, dim: '0.68rem', alt: '1.2em', k: 'sottocategoria' }]),
+      { t: esc(f.name || ''), col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em', k: 'nome',
         coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }   // v6.722
     ];
   }
@@ -34046,8 +34056,8 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     ...rigaSottoserie('0.66rem'),
     // v6.277 (Franco) - numero e nome in azzurro, come sulle card. v6.080 - senza cancelletto.
     // 🔄 v7.124 - e solo dove qualcuno il numero ce l'ha (`_caroselloConNumero`), come la sottoserie
-    ...(conNumero === false ? [] : [{ t: f.number ? esc(String(f.number)) : '', col: COL_IDENTITA, dim: '0.7rem', alt: '1.2em' }]),
-    { t: esc(f.name || ''), col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em',
+    ...(conNumero === false ? [] : [{ t: f.number ? esc(String(f.number)) : '', col: COL_IDENTITA, dim: '0.7rem', alt: '1.2em', k: 'numero' }]),
+    { t: esc(f.name || ''), col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em', k: 'nome',
       coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }
   ];
 }
@@ -34259,8 +34269,10 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs,
       (i === 0 ? 'margin-top:0.4rem;' : '') +
       (r.alt === '1.2em' ? 'white-space:nowrap;text-overflow:ellipsis;' : '') +
       (r.dx ? 'text-align:' + r.dx + ';' : '');
-    if (!r.coda) return '<div style="' + base + '">' + (r.t || '&nbsp;') + '</div>';
-    return '<div style="' + base + 'display:flex;align-items:flex-end;gap:0.35rem;">' +
+    // 🆕 v7.133 - ogni riga dice che campo è: `_allineaRigheCarosello` dà a ogni campo l'altezza del più alto della fila
+    const cls = ' class="car-riga" data-campo="' + (r.k || 'r' + i) + '"';
+    if (!r.coda) return '<div' + cls + ' style="' + base + '">' + (r.t || '&nbsp;') + '</div>';
+    return '<div' + cls + ' style="' + base + 'display:flex;align-items:flex-end;gap:0.35rem;">' +
       '<span style="min-width:0;overflow:hidden;">' + (r.t || '&nbsp;') + '</span>' +
       '<span style="margin-left:auto;flex:0 0 auto;color:' + (r.codaCol || r.col) + ';' +
         'font-size:' + (r.codaDim || r.dim) + ';">' + r.coda + '</span>' +
@@ -34276,6 +34288,47 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs,
       'style="width:100%;' + (altezzaFoto ? 'height:' + altezzaFoto + 'px;' : 'aspect-ratio:1;height:auto;') + 'object-fit:contain;border-radius:6px;background:var(--card);">' +
     righe +
   '</div>';
+}
+
+// 🆕 v7.133 (Franco: «perché non calcoliamo il numero di righe massimo, per quella riga, e diamo quello spazio per tutte
+//    le card di quella stessa riga? Così non avremo poi scalini»; «vale sia per desktop che mobile»; per i caroselli: «va
+//    bene così») - IN UN CAROSELLO LA RIGA È LA FILA INTERA: ogni campo prende l'altezza della card in cui è più alto.
+// 📌 Sul desktop le righe hanno già un'altezza fissa (il nome lungo si taglia) e qui non cambia niente; sul telefono la
+//    categoria dei retro e i nomi sono ad altezza libera, ed erano loro a fare lo scalino.
+// ⚠️ Una fila nascosta misura zero: allora non si scrive niente e ci pensa l'osservatore, quando la fila prende
+//    larghezza. Si guarda solo la larghezza, come `_osservaRigheRetro`: l'altezza la cambiamo noi.
+function _allineaRigheCarosello(box) {
+  if (!box) return;
+  const righe = Array.from(box.querySelectorAll('.car-riga'));
+  righe.forEach(r => { r.style.minHeight = ''; });
+  _osservaRigheCarosello(box);
+  if (!box.offsetWidth) return;
+  const perCampo = new Map();
+  righe.forEach(r => {
+    const k = r.dataset.campo;
+    if (!perCampo.has(k)) perCampo.set(k, []);
+    perCampo.get(k).push(r);
+  });
+  // si legge tutto prima e si scrive tutto dopo
+  const misure = [];
+  perCampo.forEach(els => {
+    const hs = els.map(e => e.getBoundingClientRect().height);
+    misure.push({ els, hs, max: Math.max(...hs) });
+  });
+  misure.forEach(({ els, hs, max }) => els.forEach((e, i) => {
+    if (max - hs[i] > 0.5) e.style.minHeight = max + 'px';
+  }));
+}
+function _osservaRigheCarosello(box) {
+  if (box._roRighe || typeof ResizeObserver === 'undefined') return;
+  box._larghezzaRighe = box.offsetWidth;
+  box._roRighe = new ResizeObserver(entries => {
+    const w = Math.round(entries[0].contentRect.width);
+    if (w === box._larghezzaRighe) return;
+    box._larghezzaRighe = w;
+    requestAnimationFrame(() => _allineaRigheCarosello(box));
+  });
+  box._roRighe.observe(box);
 }
 
 // v6.072 (Franco) - il clic su una card. Da NON loggato la scheda non si apre: si dice perche' e si
@@ -34359,6 +34412,7 @@ function renderCarosello() {
   const mostraSerie = _caroselloMostraSerie(inFila);
   box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(inFila, CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs, _caroselloConSottoserie(inFila), _caroselloConNumero(inFila), _caroselloRetroOpz(inFila, CAROSELLO_ALTEZZA))).join('');
   sez.style.display = '';
+  _allineaRigheCarosello(box);   // v7.133
   const prec = document.getElementById('carosello-prec');
   const succ = document.getElementById('carosello-succ');
   if (prec) prec.onclick = () => _caroselloScorriBox(box, -1);
@@ -34407,6 +34461,7 @@ function renderCaroselloSerie() {
   // v7.124 - una serie sola: decidono le sue spunte
   box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(base, serieQui), _caroselloConNumero(base, serieQui), _caroselloRetroOpz(base, CAROSELLO_ALTEZZA_RIDOTTA))).join('');
   sez.style.display = '';
+  _allineaRigheCarosello(box);   // v7.133
   const prec = document.getElementById('serie-carosello-prec');
   const succ = document.getElementById('serie-carosello-succ');
   if (prec) prec.onclick = () => _caroselloScorriBox(box, -1);
@@ -34474,6 +34529,7 @@ function renderCaroselloSezione() {
   box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(base, serieSez), _caroselloConNumero(base, serieSez), _caroselloRetroOpz(base, CAROSELLO_ALTEZZA_RIDOTTA))).join('');
   box.scrollLeft = 0;
   sez.style.display = '';
+  _allineaRigheCarosello(box);   // v7.133
   const prec = document.getElementById('sezione-carosello-prec');
   const succ = document.getElementById('sezione-carosello-succ');
   if (prec) prec.onclick = () => _caroselloScorriBox(box, -1);
@@ -34779,6 +34835,7 @@ function renderCaroselloProdotto() {
   // v6.527 - qui, e solo qui, la foto e' al 75%: e' la pagina che Franco ha segnalato.
   box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(mazzo, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(mazzo), _caroselloConNumero(mazzo), _caroselloRetroOpz(mazzo, CAROSELLO_ALTEZZA_RIDOTTA))).join('');
   sez.style.display = '';
+  _allineaRigheCarosello(box);   // v7.133
   const prec = document.getElementById('prodotto-carosello-prec');
   const succ = document.getElementById('prodotto-carosello-succ');
   if (prec) prec.onclick = () => _caroselloScorriBox(box, -1);
@@ -56268,7 +56325,7 @@ function _allineaRigheRetro() {
   const grid = document.getElementById('items-grid');
   if (!grid) return;
   const righe = grid.querySelectorAll('.retro-riga');
-  righe.forEach(r => { r.style.display = ''; });   // si riparte sempre da tutte riservate
+  righe.forEach(r => { r.style.display = ''; r.style.minHeight = ''; });   // si riparte sempre da tutte riservate
   // 🆕 v7.082 (Franco: «allinea verso l'alto il nome») - IL NOME PARTE ALLA STESSA ALTEZZA IN TUTTA
   //    LA RIGA DI GRIGLIA. Il testo della card sta in basso (v6.501), quindi la scritta partiva tanto
   //    piu' in alto quanta piu' roba aveva sotto: un nome su due righe, un «Sfoglia l'album !».
@@ -56277,8 +56334,10 @@ function _allineaRigheRetro() {
   //    riquadro (min-height) di quanto manca: la scritta resta in cima al suo riquadro, e il riquadro
   //    arriva dove arriva quello del vicino. Vale in tutte le sezioni, quindi qui non si esce piu'
   //    quando le righe dei retro non ci sono.
+  // 🔄 v7.133 - il riquadro del nome NON si allunga piu' per questo: vedi in fondo alla funzione.
   const nomi = Array.from(grid.querySelectorAll('.fig-card .fig-name'));
   nomi.forEach(n => { n.style.minHeight = ''; });
+  grid.querySelectorAll('.fig-card .fig-actions').forEach(a => { a.style.marginTop = ''; });   // v7.133
 
   // LETTURA - tutti gli offsetTop (e le altezze dei nomi) in un giro solo, prima di toccare qualsiasi cosa.
   const cards = Array.from(grid.querySelectorAll('.fig-card'));
@@ -56300,19 +56359,46 @@ function _allineaRigheRetro() {
     daValutare.forEach(r => { if (!serve.has(r.dataset.campo)) r.style.display = 'none'; });
   });
 
-  // v7.082 - I NOMI, dopo le righe: nascondere una riga vuota cambia quanto c'e' sotto il nome, quindi
-  //    si misura a righe gia' decise. Ancora una lettura tutta insieme e una scrittura tutta insieme.
-  //    «Estensione» = dall'inizio del nome al fondo del corpo della card.
+  // 🆕 v7.133 (Franco: «perché non calcoliamo il numero di righe massimo, per quella riga, e diamo quello spazio per
+  //    tutte le card di quella stessa riga? Così non avremo poi scalini»; «vale sia per desktop che mobile») - OGNI
+  //    CAMPO, NOME COMPRESO, PRENDE L'ALTEZZA DELLA CARD DELLA RIGA IN CUI È PIÙ ALTO. Un nome del retro su due righe
+  //    accanto a uno su una faceva lo scalino.
+  // 🔄 E cambia la v7.082: prima la differenza andava tutta nel riquadro del NOME, e si apriva un vuoto fra il nome e
+  //    «FAMIGLIA» (Gastone Bubbone var. 3 e 4, 7 ottobre). Ora la differenza che resta - ciò che non è una riga fissa,
+  //    «TIPOLOGIA: OMAGGIO ROSSO», «Sfoglia l'album !» - va in fondo al testo, sopra «Mia lista»: il testo sale e il
+  //    nome parte comunque alla stessa altezza in tutta la riga.
+  // 📌 Si misura a righe vuote già decise (nasconderne una cambia le altezze). Leggere tutto, poi scrivere tutto.
+  const campi = [];
+  gruppi.forEach(gruppo => {
+    if (gruppo.length < 2) return;
+    const perCampo = new Map();
+    const metti = (k, el) => { if (!perCampo.has(k)) perCampo.set(k, []); perCampo.get(k).push(el); };
+    gruppo.forEach(c => {
+      const n = c.querySelector('.fig-name');
+      if (n) metti('fig-name', n);
+      c.querySelectorAll('.retro-riga').forEach(r => { if (r.style.display !== 'none') metti(r.dataset.campo, r); });
+    });
+    perCampo.forEach(els => {
+      const hs = els.map(e => e.getBoundingClientRect().height);
+      campi.push({ els, hs, max: Math.max(...hs) });
+    });
+  });
+  campi.forEach(({ els, hs, max }) => els.forEach((e, i) => {
+    if (max - hs[i] > 0.5) { e.style.boxSizing = 'border-box'; e.style.minHeight = max + 'px'; }
+  }));
+
+  // Quello che avanza, in fondo. «Estensione» = dall'inizio del nome al fondo del corpo della card.
   const misure = [];
   gruppi.forEach(gruppo => {
-    const suoi = gruppo.map(c => ({ n: c.querySelector('.fig-name'), b: c.querySelector('.fig-body') })).filter(x => x.n && x.b);
+    const suoi = gruppo.map(c => ({ n: c.querySelector('.fig-name'), b: c.querySelector('.fig-body'), a: c.querySelector('.fig-body > .fig-actions') }))
+      .filter(x => x.n && x.b && x.a);
     if (suoi.length < 2) return;
-    suoi.forEach(x => { x.est = x.b.getBoundingClientRect().bottom - x.n.getBoundingClientRect().top; x.h = x.n.offsetHeight; });
+    suoi.forEach(x => { x.est = x.b.getBoundingClientRect().bottom - x.n.getBoundingClientRect().top; });
     misure.push({ suoi, max: Math.max(...suoi.map(x => x.est)) });
   });
   misure.forEach(({ suoi, max }) => suoi.forEach(x => {
     const manca = Math.round(max - x.est);
-    if (manca > 0) x.n.style.minHeight = (x.h + manca) + 'px';
+    if (manca > 0) x.a.style.marginTop = manca + 'px';
   }));
 }
 
