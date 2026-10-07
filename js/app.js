@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.138 - Modificato js/app.js (e index, solo il numero). Sul telefono le numeriche della testata (categorie, famiglie,
+//          tipi di omaggio, change, errori) hanno la barra «Apri ▼» del desktop, chiuse all'inizio (Franco: «la maschera
+//          è già troppo alta in apertura di schermata»). Prima si chiudevano col triangolino solo da dieci voci in su.
 // v7.137 - Modificato index.html (e app.js, solo il numero). Sul telefono la home non dice più «Fatto con 💚 per
 //          collezionisti.» (Franco): `#hero-tagline` spento sotto gli 860px, e con lui il puntino. Desktop invariato.
 // v7.136 - Modificato js/app.js (e index, solo il numero). Sulla card della figurina la categoria del retro si scrive
@@ -30966,7 +30969,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.137';
+const JS_VERSION = 'v7.138';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -54302,16 +54305,18 @@ function renderSpecchiettiTop() {
   //    domanda a cui `valoreDi` risponde già, e le due potrebbero divergere.
   const perFamiglia = _raggrCounts(dellaSezione, _RAGGR_FAMIGLIA);
   const colFam = _righePerColonna(larg, perFamiglia.map(p => _raggrLabel(p[0])), perFamiglia.length);
-  const html = (cat.length ? _retroCatPanelHTML(cat, mob ? _specTopAperti.cat : true, false, mob ? 'toggleSpecTopCat' : null, colCat) : '')
+  // 🔄 v7.138 (Franco: «mettiamo anche sul telefonino il triangolino per collassare di default chiuso perché vedo che la
+  //    maschera è già troppo alta in apertura di schermata») - IL TELEFONO COME IL DESKTOP: i pannelli nascono aperti e
+  //    senza il loro triangolino (che c'era solo da dieci voci in su, `_SOGLIA_COLLASSO`), e la chiusura la fa la barra
+  //    «Apri ▼» qui sotto, chiusa all'inizio qualunque sia il numero di voci.
+  const html = (cat.length ? _retroCatPanelHTML(cat, true, false, null, colCat) : '')
              + (perFamiglia.length
-                 ? _raggrPanelHTML(_RAGGR_FAMIGLIA, perFamiglia, mob ? _raggr('famiglia').apertoTop : true,
-                                   false, mob ? `_toggleSpecTopRaggr('famiglia')` : null, colFam, null)
+                 ? _raggrPanelHTML(_RAGGR_FAMIGLIA, perFamiglia, true, false, null, colFam, null)
                  : '')
              + perVersione.map(({ v, pairs, parti }) => {
                  if (!pairs.length) return '';
                  const col = _righePerColonna(larg, pairs.map(p => _raggrLabel(p[0])), pairs.length);
-                 return _raggrPanelHTML(v, pairs, mob ? _raggr(v.chiave).apertoTop : true, false,
-                                        mob ? `_toggleSpecTopRaggr('${v.chiave}')` : null, col, parti);
+                 return _raggrPanelHTML(v, pairs, true, false, null, col, parti);
                }).join('');
   el.innerHTML = html;
   // 🆕 v7.126 (Franco: «le sezioni con le numeriche - Retro base per categoria, Versioni omaggio per tipo, Errori di
@@ -54320,7 +54325,8 @@ function renderSpecchiettiTop() {
   //    chiuso è una barra «Apri ▼ titolo», aperto ha il titolo sul bordo. Il titolo del riquadro (il primo figlio)
   //    diventa l'etichetta che la barra legge. Partono chiusi come i filtri; lo stato resta per la sessione, uno per
   //    riquadro (chiave dal titolo). Solo sul desktop: sul telefono questi riquadri si chiudono già col triangolino.
-  if (!mob) [...el.children].forEach(p => {
+  // 🔄 v7.138 - e sul telefono pure: il triangolino c'era solo da dieci voci in su, quindi quasi mai.
+  [...el.children].forEach(p => {
     const t = p.firstElementChild;
     if (!t) return;
     t.classList.add('bm-etichetta');
