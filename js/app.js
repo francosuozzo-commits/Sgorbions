@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.148 - Modificato js/app.js (e index, solo il numero). Nella scheda in modifica il Nome mobile sta sempre subito
+//          sotto il Nome, per ogni tipologia (Franco: «in tutte le form di modifica»). Retro: Nome, Nome mobile,
+//          Sottonome, Nomi alternativi; le altre: Nome, Nome mobile, Nomi alternativi, Sottonome.
 // v7.147 - Modificato js/app.js (e index, solo il numero). Nel carosello con più serie (polimorfico) la card del retro
 //          dice prima il nome e sotto categoria e sottocategoria, come nelle griglie (Franco: «mettiamo prima il nome,
 //          sempre, e sotto la categoria»). Telefono e desktop; i caroselli di una serie sola non cambiano.
@@ -31003,7 +31006,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.147';
+const JS_VERSION = 'v7.148';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -62467,6 +62470,9 @@ function switchToEditMode(figId) {
   html += '<div class="detail-row" id="fe-name-group" style="' + _eredStile('name') + '"' + _eredAttr('name') + '><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + esc((f.name||'')) + '"' + _eredRO('name') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   // 🆕 v7.146 (Franco: «nella form del retro, il sottonome va sotto al nome») - il posto del Sottonome del retro: qui,
   //    subito sotto il Nome. La riga si costruisce più giù (dove sta per le altre tipologie) e viene messa qui.
+  // 🆕 v7.148 (Franco: «nome mobile deve andare sempre sotto Nome, in tutte le form di modifica») - e prima ancora il
+  //    posto del Nome mobile, subito sotto il Nome per ogni tipologia (la riga si costruisce più giù e viene messa qui).
+  html += '<!--fe-nome-mobile-->';
   html += '<!--fe-sottonome-retro-->';
   // v6.036 (Franco) - il SOTTONOME sta SOTTO IL NOME, di cui e' la seconda parte. Stava fra
   // Sottocategoria e Numero, cioe' in mezzo ai campi della categoria e prima ancora del Nome: la
@@ -62492,7 +62498,8 @@ function switchToEditMode(figId) {
       : (currentLang === 'it' ? 'es. VIDEOREGI|STRATORE' : 'e.g. VIDEOREGI|STRATORE');
     // 🔄 v7.144 (Franco: «chiamarlo "nome mobile" perché non era solo per il carosello ma anche per la griglia») - il
     //    campo resta `nomeCaroselloMobile` nei dati; cambiano nome e spiegazione a schermo
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome mobile':'Mobile name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-carosello-mobile" value="' + esc(f.nomeCaroselloMobile || '') + '" placeholder="' + esc(_phNcm) + '" title="' + esc(currentLang==='it' ? 'Il nome sulle card del telefono, nella griglia e nei caroselli: anche più corto del Nome. Una barra | dove una parola troppo lunga può andare a capo (col trattino, solo se serve). Vuoto = il Nome.' : 'The name on phone cards, in grids and carousels: may be shorter than the Name. A bar | where a long word may break. Empty = the Name.') + '"></span></div>';
+    // v7.148: la riga va al suo posto, sotto il Nome
+    html = html.replace('<!--fe-nome-mobile-->', '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome mobile':'Mobile name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-carosello-mobile" value="' + esc(f.nomeCaroselloMobile || '') + '" placeholder="' + esc(_phNcm) + '" title="' + esc(currentLang==='it' ? 'Il nome sulle card del telefono, nella griglia e nei caroselli: anche più corto del Nome. Una barra | dove una parola troppo lunga può andare a capo (col trattino, solo se serve). Vuoto = il Nome.' : 'The name on phone cards, in grids and carousels: may be shorter than the Name. A bar | where a long word may break. Empty = the Name.') + '"></span></div>');
   }
   // 🔄 v7.093 (Franco: «il campo personaggio nella maschera di modifica è tutto in basso: mettilo in alto, subito
   //    dopo la fine dei nomi dell'articolo») - dopo Nome, Nomi alternativi, Nome carosello mobile e Sottonome
@@ -62505,7 +62512,7 @@ function switchToEditMode(figId) {
     if (f.section === 'retros') html = html.replace('<!--fe-sottonome-retro-->', _rigaSottonome);
     else html += _rigaSottonome;
   }
-  html = html.replace('<!--fe-sottonome-retro-->', '');
+  html = html.replace('<!--fe-sottonome-retro-->', '').replace('<!--fe-nome-mobile-->', '');   // v7.148: chi non è admin
   html += _rigaPersDopoNomi;
 
   // 🔄 v6.797 (Franco) - L'ORDINAMENTO SCENDE, E SI FERMA PRIMA DELLA RARITÀ. Parole sue:
