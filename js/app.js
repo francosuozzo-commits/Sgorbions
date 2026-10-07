@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.140 - Modificato js/app.js (e index, solo il numero). Sul telefono, nelle card della griglia, niente etichetta
+//          «CATEGORIA:» (retro, album, extra serie): resta il valore in giallo (Franco: «così recuperiamo spazio»).
+//          Sottocategoria e anno tengono l'etichetta. Desktop invariato.
 // v7.139 - Modificato js/app.js (e index, solo il numero). La famiglia sulla card in fucsia (`COL_FAMIGLIA`, #ff4fa3)
 //          invece del giallo della categoria (Franco: «il fucsia»). Desktop e telefono.
 // v7.138 - Modificato js/app.js (e index, solo il numero). Sul telefono le numeriche della testata (categorie, famiglie,
@@ -30971,7 +30974,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.139';
+const JS_VERSION = 'v7.140';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -55967,7 +55970,7 @@ function renderItems() {
   const _extraRigheHTML = !_eProdottoExtraSerie(f) ? '' : (
     // v6.273 - il colore ora sta nei due span di `_campoCard`, non nella riga: qui resta la sola
     // misura del testo. Lasciare anche un `color` avrebbe tinto solo lo spazio fra i due span.
-    _rigaCard(_campoCard('CATEGORIA: ', esc((f.category || '').trim()), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
+    _rigaCard(_campoCard((_isMobileViewport() ? '' : 'CATEGORIA: '), esc((f.category || '').trim()), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
     _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc((f.subcategory || '').trim()), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria') +
     // 🆕 v6.753 (Franco) - L'ANNO, terza riga, e solo dove la serie non ce l'ha da dare.
     // 📌 Il colore e' COL_IDENTITA, l'azzurro di numero, nome e sottonome: l'anno e' un FATTO
@@ -55981,7 +55984,7 @@ function renderItems() {
   // 🆕 v7.082 (Franco) - sugli album CATEGORIA e SOTTOCATEGORIA, con le stesse righe e gli stessi colori.
   //    Vuote, `_allineaRigheRetro` le toglie dove nessuna card della riga di griglia le ha.
   const _catTDARigheHTML = !TDA_CON_CATEGORIA.includes(f.section) ? '' : (
-    _rigaCard(_campoCard('CATEGORIA: ', esc((f.category || '').trim()), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
+    _rigaCard(_campoCard((_isMobileViewport() ? '' : 'CATEGORIA: '), esc((f.category || '').trim()), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
     _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc((f.subcategory || '').trim()), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
   );
   // 🔄 v6.667 - LA RIGA DEL SOTTONOME ESCE DAL BLOCCO DEI RETRO. Stava dentro
@@ -56010,8 +56013,12 @@ function renderItems() {
     _personaggioRigaHTML = _rigaCard(_nomi.length ? '🧑‍🎤 ' + esc(_nomi.join(' · ')) : '',
       'font-size:0.82rem;color:var(--nome-entita);margin-top:1px;', 'personaggio');
   }
+  // 🆕 v7.140 (Franco: «da mobile non scriviamo CATEGORIA:, così recuperiamo spazio») - sul telefono la riga della
+  //    categoria è il solo valore in giallo, qui e sulle card degli album e degli extra serie (come FAMIGLIA e
+  //    TIPOLOGIA dalla v7.134; sulla card della figurina la categoria del retro un'etichetta non l'ha mai avuta).
+  //    «SOTTOCATEGORIA:» e «ANNO:» restano: Franco ha nominato la sola categoria.
   const _retroRigheHTML = !isRetroCard ? '' : (
-        _rigaCard(_campoCard('CATEGORIA: ', esc(_catNuda), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
+        _rigaCard(_campoCard((_isMobileViewport() ? '' : 'CATEGORIA: '), esc(_catNuda), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
         _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc(_retroSub), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
       );
     // 🧪 v6.274 (Franco) - IL NOME E' AZZURRO, dello stesso colore del sottonome. Tre rami, un
