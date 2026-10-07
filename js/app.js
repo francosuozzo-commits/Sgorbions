@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.145 - Modificato js/app.js (e index, solo il numero). Sul telefono il Nome mobile, se scritto, se no il NOME: il
+//          sottonome non prende più il posto del nome (Franco: «lascia perdere il sottonome; tanto ora lo popolo io col
+//          sottonome, nel caso»). Card del retro, riga del retro sulla card della figurina, carosello. La riga fra
+//          parentesi del sottonome resta spenta sul telefono (v7.131).
 // v7.144 - Modificato js/app.js (e index, solo il numero). IL «NOME MOBILE» (Franco: «chiamarlo "nome mobile" perché non
 //          era solo per il carosello ma anche per la griglia»; «b, procedi»). Il campo della v6.991 «Nome carosello
 //          mobile» (`nomeCaroselloMobile`, dati invariati) si chiama «Nome mobile» in scheda, modifica e filtri admin
@@ -30987,7 +30991,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.144';
+const JS_VERSION = 'v7.145';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34037,7 +34041,9 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
       // 🔄 v7.135 (Franco: «solo da mobile, se un retro ha un sottonome, usare quello al posto del nome … sia nelle
       //    card della griglia che del carosello») - il sottonome vince SEMPRE, non più solo quando è più corto. La
       //    categoria qui ha già la sua riga, quindi «RICERCATO» resta scritto sopra.
-      const _etichettaR = _sottoR || _nomeR;
+      // 🔄 v7.145 (Franco: «lascia perdere il sottonome») - il nome: il testo corto si scrive nel Nome mobile, che
+      //    qui sotto vince comunque. `_sottoR` resta letto per la storia di questa regola, non si usa più.
+      const _etichettaR = _nomeR || _sottoR;
       return [
         ...rigaSerie('0.62rem'),
         // v6.080 (Franco) - la CATEGORIA va a capo se non ci sta, invece di essere troncata coi
@@ -56065,7 +56071,9 @@ function renderItems() {
     //    retro il sottonome se c'è (v7.135), se no il nome — la scelta b di Franco.
     const _nomeMob = _isMobileViewport() ? _nomeCaroselloMobile(f) : '';
     const figNameInner = isRetroCard
-      ? `<span style="color:${_COL_NOME};">${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : esc((_isMobileViewport() && (f.subname || '').trim()) || f.name || '')}</span>` /* v6.037 - riga 1 = il Nome */
+      // 🔄 v7.145 (Franco: «ora usiamo solo quello, nel mobile, se popolato; lascia perdere il sottonome; tanto ora lo
+      //    popolo io col sottonome, nel caso») - vuoto il Nome mobile, il nome: la regola del sottonome (v7.135) se ne va
+      ? `<span style="color:${_COL_NOME};">${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : esc(f.name || '')}</span>` /* v6.037 - riga 1 = il Nome */
       : (_mobileFigCard
           ? `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>${scoreInlineHTML}` +
             (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : f.name}</div>`)
@@ -56262,7 +56270,9 @@ function renderItems() {
                  // v6.276 (Franco) - in BIANCO, non piu' grigio. Vedi il CHANGELOG: e' il posto
                  // che il bianco ha lasciato libero passando l'identita' all'azzurro.
                  // v7.144: sul telefono il «Nome mobile» del retro, se scritto, viene prima di tutto
-                 _rigaCard(_nomeMobR ? _nomeCaroselloHTML(_nomeMobR) : esc(_sottoAlPosto ? sotto : _retroNomeCorto(r)), 'font-size:0.78rem;color:var(--text);', 'retro-nome') +
+                 // v7.145: vuoto il Nome mobile, il nome (non più il sottonome); la riga fra parentesi sul telefono resta
+                 //    vuota (`_sottoAlPosto`), come la v7.131 vuole per il sottonome sulle card del telefono
+                 _rigaCard(_nomeMobR ? _nomeCaroselloHTML(_nomeMobR) : esc(_retroNomeCorto(r)), 'font-size:0.78rem;color:var(--text);', 'retro-nome') +
                  // 🆕 v6.428 (Franco) - BIANCO E FRA PARENTESI, come nella card del retro.
                  // Franco: *"il Sottonome del retro e' azzurro, che pero' e' anche il
                  // nome-numero della figurina"*. Due cose diverse dello stesso colore nella
@@ -62414,7 +62424,7 @@ function switchToEditMode(figId) {
       : (currentLang === 'it' ? 'es. VIDEOREGI|STRATORE' : 'e.g. VIDEOREGI|STRATORE');
     // 🔄 v7.144 (Franco: «chiamarlo "nome mobile" perché non era solo per il carosello ma anche per la griglia») - il
     //    campo resta `nomeCaroselloMobile` nei dati; cambiano nome e spiegazione a schermo
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome mobile':'Mobile name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-carosello-mobile" value="' + esc(f.nomeCaroselloMobile || '') + '" placeholder="' + esc(_phNcm) + '" title="' + esc(currentLang==='it' ? 'Il nome sulle card del telefono, nella griglia e nei caroselli: anche più corto del Nome. Una barra | dove una parola troppo lunga può andare a capo (col trattino, solo se serve). Vuoto = il sottonome per i retro che ce l\'hanno, se no il Nome.' : 'The name on phone cards, in grids and carousels: may be shorter than the Name. A bar | where a long word may break. Empty = the subname for retros that have one, else the Name.') + '"></span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome mobile':'Mobile name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-carosello-mobile" value="' + esc(f.nomeCaroselloMobile || '') + '" placeholder="' + esc(_phNcm) + '" title="' + esc(currentLang==='it' ? 'Il nome sulle card del telefono, nella griglia e nei caroselli: anche più corto del Nome. Una barra | dove una parola troppo lunga può andare a capo (col trattino, solo se serve). Vuoto = il Nome.' : 'The name on phone cards, in grids and carousels: may be shorter than the Name. A bar | where a long word may break. Empty = the Name.') + '"></span></div>';
   }
   // 🔄 v7.093 (Franco: «il campo personaggio nella maschera di modifica è tutto in basso: mettilo in alto, subito
   //    dopo la fine dei nomi dell'articolo») - dopo Nome, Nomi alternativi, Nome carosello mobile e Sottonome
