@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.137 - Modificato index.html (e app.js, solo il numero). Sul telefono la home non dice più «Fatto con 💚 per
+//          collezionisti.» (Franco): `#hero-tagline` spento sotto gli 860px, e con lui il puntino. Desktop invariato.
 // v7.136 - Modificato js/app.js (e index, solo il numero). Sulla card della figurina la categoria del retro si scrive
 //          SEMPRE, anche quando il nome del retro comincia con lei (Franco: «tornare a mostrare la categoria»): taciuta
 //          lasciava solo una riga nera, perché la riga resta se un'altra card della riga di griglia la scrive.
@@ -30964,7 +30966,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.136';
+const JS_VERSION = 'v7.137';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
