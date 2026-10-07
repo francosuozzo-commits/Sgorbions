@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.147 - Modificato js/app.js (e index, solo il numero). Nel carosello con più serie (polimorfico) la card del retro
+//          dice prima il nome e sotto categoria e sottocategoria, come nelle griglie (Franco: «mettiamo prima il nome,
+//          sempre, e sotto la categoria»). Telefono e desktop; i caroselli di una serie sola non cambiano.
 // v7.146 - Modificato js/app.js (e index, solo il numero). Nella scheda in modifica del RETRO il Sottonome sta subito
 //          sotto il Nome, prima di Nomi alternativi e Nome mobile (Franco: «nella form del retro, il sottonome va sotto
 //          al nome»). Le altre tipologie col sottonome non cambiano. 🆕 CATEGORIA MOBILE e SOTTOCATEGORIA MOBILE
@@ -31000,7 +31003,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.146';
+const JS_VERSION = 'v7.147';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34023,6 +34026,18 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
   // Restano fuori categoria, sottocategoria e punteggio: sono le righe che gonfiavano il box senza
   // essere leggibili. Il numero si mostra solo dove vuol dire qualcosa (_haNumero, v6.077), quindi
   // sui retro quella riga non c'e' - loro un numero non ce l'hanno.
+  // 🆕 v7.147 (Franco: «nel carosello polimorfico, mettiamo prima il nome, sempre, e sotto la categoria, così rimane
+  //    uniforme come scriviamo») - NEL CAROSELLO CON PIÙ SERIE (è lì che la riga della serie c'è: `mostraSerie`, la
+  //    definizione di «polimorfico» della v7.124) il retro dice prima il nome e poi categoria e sottocategoria, come
+  //    nelle card della griglia. Telefono e desktop. Nei caroselli di una serie sola l'ordine resta quello di prima.
+  const _nomePrima = r => {
+    if (mostraSerie !== true) return r;
+    const iN = r.findIndex(x => x.k === 'nome'), iC = r.findIndex(x => x.k === 'categoria');
+    if (iN < 0 || iC < 0 || iN < iC) return r;
+    const [n] = r.splice(iN, 1);
+    r.splice(iC, 0, n);
+    return r;
+  };
   if (_isMobileViewport()) {
     const isRetro = (f.section || '') === 'retros';
     // v6.080 (Franco) - I RETRO SU TELEFONO HANNO LE LORO RIGHE: serie, categoria, sottocategoria,
@@ -34053,7 +34068,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
       // 🔄 v7.145 (Franco: «lascia perdere il sottonome») - il nome: il testo corto si scrive nel Nome mobile, che
       //    qui sotto vince comunque. `_sottoR` resta letto per la storia di questa regola, non si usa più.
       const _etichettaR = _nomeR || _sottoR;
-      return [
+      return _nomePrima([
         ...rigaSerie('0.62rem'),
         // v6.080 (Franco) - la CATEGORIA va a capo se non ci sta, invece di essere troncata coi
         // puntini: su una card da un centinaio di pixel "SGORBIONS HORRIBLE HOROSCOPES" su una
@@ -34071,7 +34086,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
         // 🆕 v6.991 - e anche qui il «Nome carosello mobile», se c'e', vince sull'etichetta
         { t: (_nomeCaroselloMobile(f) ? _nomeCaroselloHTML(_nomeCaroselloMobile(f)) : esc(_etichettaR)), col: COL_IDENTITA, dim: '0.7rem', alt: 'auto', k: 'nome',
           coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.66rem' }
-      ];
+      ]);
     }
     // Le figurine restano come deciso prima: serie, numero, e il nome parola per parola - li' sono
     // due parole e la spezzatura le rende leggibili invece che troncate.
@@ -34092,7 +34107,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     return righe;
   }
   if ((f.section || '') === 'retros') {
-    return [
+    return _nomePrima([
       ...rigaSerie('0.66rem'),
       ...rigaSottoserie('0.66rem'),   // v6.722
       // v6.279 (Franco) - come sopra, e per la stessa ragione.
@@ -34104,7 +34119,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
       ...(_senzaSottocat ? [] : [{ t: esc(f.subcategory || ''), col: COL_SOTTOCAT, dim: '0.68rem', alt: '1.2em', k: 'sottocategoria' }]),
       { t: esc(f.name || ''), col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em', k: 'nome',
         coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }   // v6.722
-    ];
+    ]);
   }
   // 🔄 v6.722 - QUATTRO RIGHE, come le ha elencate Franco: serie, sottoserie, numero, nome. E la
   //    stella non e' la quinta: *«la stella mettila in fondo a dx della quarta riga; niente
