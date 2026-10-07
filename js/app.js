@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.142 - Modificato js/app.js (e index, solo il numero). Sul telefono, nelle card della griglia e dei caroselli, niente
+//          spazio prima del «!» («OFFERTA SPECIALE!»): `_mobileSpazioEsclamativo` sui testi già disegnati, prima
+//          dell'allineamento delle righe (Franco). I dati non cambiano; il «?» resta.
 // v7.141 - Modificato js/app.js (e index, solo il numero). Sul telefono la card del retro non scrive più
 //          «SOTTOCATEGORIA:»: resta il valore in arancione (Franco). Album ed extra serie la tengono.
 // v7.140 - Modificato js/app.js (e index, solo il numero). Sul telefono, nelle card della griglia, niente etichetta
@@ -30976,7 +30979,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.141';
+const JS_VERSION = 'v7.142';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34331,6 +34334,7 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs,
 //    larghezza. Si guarda solo la larghezza, come `_osservaRigheRetro`: l'altezza la cambiamo noi.
 function _allineaRigheCarosello(box) {
   if (!box) return;
+  _mobileSpazioEsclamativo(box);   // v7.142: prima di misurare, perché il testo cambia di lunghezza
   const righe = Array.from(box.querySelectorAll('.car-riga'));
   righe.forEach(r => { r.style.minHeight = ''; });
   _osservaRigheCarosello(box);
@@ -34350,6 +34354,18 @@ function _allineaRigheCarosello(box) {
   misure.forEach(({ els, hs, max }) => els.forEach((e, i) => {
     if (max - hs[i] > 0.5) e.style.minHeight = max + 'px';
   }));
+}
+// 🆕 v7.142 (Franco: «da mobile, lo spazio prima del ! puoi non considerarlo, nelle card di griglia e carosello?») -
+//    SUL TELEFONO «OFFERTA SPECIALE !» DIVENTA «OFFERTA SPECIALE!». Si toglie lo spazio (anche quello fisso) davanti al
+//    punto esclamativo nei testi già disegnati delle card, invece che campo per campo: i testi arrivano da una decina di
+//    righe diverse (nome, sottonome, categoria, retro, «Sfoglia l'album !»…) e una regola sola le prende tutte.
+// 📌 I dati non cambiano: è solo come si scrive sul telefono. Il «?» non è stato nominato e resta com'è.
+function _mobileSpazioEsclamativo(root) {
+  if (!root || !_isMobileViewport()) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = w.nextNode(); n; n = w.nextNode()) {
+    if (/[  ]!/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/[  ]+!/g, '!');
+  }
 }
 function _osservaRigheCarosello(box) {
   if (box._roRighe || typeof ResizeObserver === 'undefined') return;
@@ -56309,6 +56325,7 @@ function renderItems() {
   }
 
   // v6.092 - i segnaposto della card Retro si decidono qui, a griglia disegnata (vedi la funzione).
+  _mobileSpazioEsclamativo(grid);   // v7.142: prima di misurare, perché il testo cambia di lunghezza
   _allineaRigheRetro();
   _osservaRigheRetro();
 
