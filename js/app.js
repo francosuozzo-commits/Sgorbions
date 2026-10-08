@@ -1,6 +1,30 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.149 - Modificati js/app.js e css/style.css (e index, solo il numero). Quattro richieste di Franco dal telefono.
+//          1. Sul telefono il logo della barra al centro (`_logoAlCentroSeCiSta`, classe `nav-logo-centro`), se non
+//          tocca panino, versione o comandi di destra. 2. Impersonando, la fascia gialla dice il nome e una ✕, senza
+//          «admin» (desktop e telefono). 3. Sul telefono meno nero fra «Sfoglia per» e il selettore (row-gap). 4. Nelle
+//          numeriche della serie una tipologia con UNA sottoserie sola non si spacchetta (Holidays: tatuaggi,
+//          trasferelli, carte d'identità). 5. Carosello del desktop: sulla riga della sottoserie, se l'articolo non ne
+//          ha, la sua tipologia («Retro»…), figurine e carte escluse. 6. Il titolo del carosello della home «Carosello degli
+//          articoli Sgorbions del sito» (era «Gli articoli Sgorbions censiti nel sito»; sul telefono resta il corto).
+//          7. 🐛 Carosello, riga del nome con la stella: un nome da tre righe perdeva la PRIMA (testo appoggiato in basso);
+//          ora parte dall'alto e si ferma coi puntini alla seconda, la stella resta in basso a destra.
+//          8. Il campo «Nome mobile» si chiama «Nome mobile e Carosello» (scheda, modifica, filtri admin; dati
+//          invariati, `nomeCaroselloMobile`), e anche sul desktop il carosello lo usa al posto del nome, se scritto.
+//          9. Carosello del desktop: «⭐ rarità 20» diventa «🪙 20 pt.» (`_monetaPunti`); griglie e telefono invariati.
+//          10. Carosello con più serie (home), desktop: il retro senza sottoserie scrive «Retro - CATEGORIA» sulla riga
+//          della tipologia, e la riga della categoria sparisce. La regola delle tipologie che restano vuote sta nel
+//          descrittore (`caroselloSenzaTipologia`: figurine con retro, per album e carte). E nella fila con più serie
+//          la riga c'è anche se nessuno ha una sottoserie, purché qualcuno ci scriva la tipologia (`_caroselloConSottoserie`).
+//          11. Sulla stessa riga una figurina senza sottoserie scrive la sua famiglia, se c'è (fucsia).
+//          12. Nel carosello con più serie (home) i retro non mostrano la sottocategoria, desktop e telefono.
+//          13. 🐛 Carosello del desktop: il nome usa tutta la riga; la moneta è un float in basso a destra e il nome ci
+//          gira attorno solo sulla seconda riga («SONO FUORI DI MELONE» andava a capo prima del bordo).
+//          14. «Categoria mobile e Carosello» e «Sottocategoria mobile e Carosello» (erano «… mobile»): anche il carosello
+//          del desktop le usa, se scritte (`_caroselloOppure`). In modifica si vedono solo se Categoria / Sottocategoria
+//          sono scritte, e si accendono scrivendole (`_seguiCampoMobile`).
 // v7.148 - Modificato js/app.js (e index, solo il numero). Nella scheda in modifica il Nome mobile sta sempre subito
 //          sotto il Nome, per ogni tipologia (Franco: «in tutte le form di modifica»). Retro: Nome, Nome mobile,
 //          Sottonome, Nomi alternativi; le altre: Nome, Nome mobile, Nomi alternativi, Sottonome.
@@ -31006,7 +31030,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.148';
+const JS_VERSION = 'v7.149';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32796,7 +32820,7 @@ const i18n = {
 'hero.challenge':'Challenge other collectors','hero.challengeDesc':'Who has the list with the highest rarity score? You can also appear anonymously.',
 'hero.desc':'The unofficial Inventory of the legendary \'90s series.','hero.descShort':'The Inventory of the legendary \'90s series.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
-'hero.cta1':'Explore the Sgorbions Inventory !','home.figurine':'The Sgorbions items listed on the site','home.figurineShort':'The Sgorbions items','hero.cta2':'Start collecting Sgorbions !',
+'hero.cta1':'Explore the Sgorbions Inventory !','home.figurine':'Carousel of the Sgorbions items on the site','home.figurineShort':'The Sgorbions items','hero.cta2':'Start collecting Sgorbions !',
 'hero.stat1':'Series','hero.stat3':'Collectors','hero.statLangs':'Site languages',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
 'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
@@ -32902,7 +32926,7 @@ const i18n = {
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','rc.title':'Ricarica il sito saltando la cache del browser','nav.mialista':'La mia lista Sgorbions',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri collezionisti','hero.challengeDesc':'Chi ha la lista con maggior punteggio rarità? Puoi anche apparire come anonimo.','hero.desc':'L\'Inventario non ufficiale della leggendaria serie anni \'90.','hero.descShort':'L\'Inventario della leggendaria serie anni \'90.',
-    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Gli articoli Sgorbions censiti nel sito','home.figurineShort':'Gli articoli Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions !',
+    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Carosello degli articoli Sgorbions del sito','home.figurineShort':'Gli articoli Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions !',
     'hero.stat1':'Serie','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
@@ -33713,6 +33737,7 @@ function _aggiornaLogoNavbar() {
   const inHome = !!attiva && attiva.id === 'page-home'
     && (!dettaglioSerie || dettaglioSerie.style.display === 'none');
   logo.style.display = inHome ? 'none' : '';
+  _logoAlCentroSeCiSta(logo);
   // 🔄 v6.947 — IL NOME SI SPEGNE DA LOGGATI, NON IN HOME. Per un'ora la regola era
   //    l'opposta, perché il nome stava anche nell'hero e in home si sarebbe letto due volte.
   //    Adesso vive solo qui, quindi in home ci deve stare — è l'unico posto che lo dice.
@@ -33727,6 +33752,24 @@ function _aggiornaLogoNavbar() {
   if (!nome) return;
   nome.style.display = '';
   if (typeof currentUser !== 'undefined' && currentUser) _nomeSitoSeCiSta(nome);
+}
+// 🆕 v7.149 (Franco: «nella versione mobile quando nella navbar viene visualizzato il logo, non è al centro») - SUL
+//    TELEFONO IL LOGO STA AL CENTRO DELLA BARRA. Prima veniva subito dopo il panino e la versione, cioè a sinistra.
+//    La classe `nav-logo-centro` lo posa al centro (css); poi si misura, come per il nome del desktop
+//    (`_nomeSitoSeCiSta`): se tocca il panino, la versione o i comandi di destra (da admin sono tanti), la classe si
+//    toglie e il logo torna al suo posto di prima, dove non copre niente.
+function _logoAlCentroSeCiSta(logo) {
+  const nav = document.getElementById('navbar');
+  if (!nav) return;
+  nav.classList.remove('nav-logo-centro');
+  if (!_isMobileViewport() || !logo.offsetParent) return;
+  nav.classList.add('nav-logo-centro');
+  const l = logo.getBoundingClientRect();
+  const ostacoli = [...document.querySelectorAll('#nav-hamburger, #nav-app-version-mobile, #navbar .nav-right > *')]
+    .filter(e => e.offsetParent);
+  const tocca = ostacoli.some(e => { const r = e.getBoundingClientRect();
+    return r.width && r.left < l.right + 6 && r.right > l.left - 6; });
+  if (tocca) nav.classList.remove('nav-logo-centro');
 }
 function _nomeSitoSeCiSta(nome) {
   if (!nome.offsetParent) return;
@@ -33941,10 +33984,19 @@ function _stellaRarita(n) {
   if (!(n > 0)) return '';
   return '&#11088; ' + (currentLang === 'it' ? 'rarità ' : 'rarity ') + esc(String(n));
 }
+// 🆕 v7.149 (Franco: «nel carosello desktop, togli la scritta "rarità", sostituiscila con pt. e cambia l'icona della
+//    stella con quella di una moneta d'oro»; scelta sua: «🪙 20 pt.») - SOLO IL CAROSELLO DEL DESKTOP. Le card delle
+//    griglie e il carosello del telefono restano con `_stellaRarita`.
+function _monetaPunti(n) {
+  if (!(n > 0)) return '';
+  return '&#129689; ' + esc(String(n)) + ' pt.';
+}
 
 function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, retroOpz) {
   // v7.125 - `retroOpz` (`_caroselloRetroOpz`): false = quella riga non serve a nessuno nella fila; assente = come prima
-  const _senzaSottocat = !!retroOpz && retroOpz.sottocat === false;
+  // 🔄 v7.149 (Franco: «nel carosello home, non mostrare la sottocategoria») - nel carosello con più serie (la home:
+  //    `mostraSerie === true`, come la v7.147) la riga della sottocategoria dei retro non c'è, desktop e telefono
+  const _senzaSottocat = (!!retroOpz && retroOpz.sottocat === false) || mostraSerie === true;
   const _catCorta = !!retroOpz && retroOpz.catLunga === false;
   const serie = esc(nomeSerie.get(f.seriesId) || '');
   // v6.081 (Franco) - LA SERIE SI MOSTRA SOLO SE DISTINGUE. Nel carosello della scheda serie tutte
@@ -34008,7 +34060,20 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     //    parametro non arriva vale la regola di prima, la riga sempre
     if (conSottoserie === false) return [];
     const g = String(f.subseries || '').trim();
-    return [{ t: g ? _parolaSottoserie() + ' ' + esc(g) : '',
+    // 🔄 v7.149 (Franco: «nel carosello desktop … per gli articoli che non hanno sottoserie quella riga è sempre vuota;
+    //    potremmo scriverci la TDA, ma non le figurine»; «per i retro, nel carosello, è vuota») - SENZA SOTTOSERIE LA
+    //    RIGA DICE LA TIPOLOGIA («Retro», «Tatuaggi»…), e qui cade la regola della v6.723 scritta sopra («resta VUOTA e
+    //    non scrive la sola tipologia»). Le figurine (con retro e per album) restano vuote, scelta di Franco. Le spille
+    //    hanno sempre la loro sottoserie, quindi non cambiano.
+    //    E le carte (Franco: «anche per le carte non scrivere la tda al posto della sottoserie»). Quali restano vuote
+    //    lo dice il descrittore (`caroselloSenzaTipologia`), non una lista scritta qui.
+    const _vuota = !!_art(f.section || 'figurines').caroselloSenzaTipologia;
+    // 🆕 v7.149 (Franco: «carosello home, al posto della sottoserie, per le figurine, scrivi la famiglia, se è
+    //    popolata») - senza sottoserie una figurina (con retro o per album: `TDA_CON_FAMIGLIA`) scrive la sua FAMIGLIA,
+    //    nel fucsia delle card (`COL_FAMIGLIA`, v7.139).
+    const _fam = TDA_CON_FAMIGLIA.includes(f.section || 'figurines') ? String(f.famiglia || '').trim() : '';
+    if (!g && _fam) return [{ t: esc(_fam), col: COL_FAMIGLIA, dim, alt: '1.2em', k: 'sottoserie' }];
+    return [{ t: g ? _parolaSottoserie() + ' ' + esc(g) : (_vuota ? '' : esc(getSectionLabel(f.section))),
               col: COL_CATEGORIA, dim, alt: '1.2em', k: 'sottoserie' }];
   };
   // v6.080 (Franco) - SU TELEFONO una riga sola: il nome. Era il testo, non la foto, a fare il "box
@@ -34109,19 +34174,39 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     righe.push({ t: parole, col: COL_IDENTITA, dim: '0.72rem', alt: 'auto', k: 'nome' });
     return righe;
   }
+  // 🆕 v7.149 (Franco: «il nome mobile lo userei anche nel carosello; quindi il campo chiamalo "Nome mobile e Carosello"»)
+  //    - ANCHE SUL DESKTOP IL CAROSELLO USA IL NOME MOBILE, se scritto (coi suoi «|»: `_nomeCaroselloHTML`), retro e
+  //    articoli. Vuoto, il nome di sempre. Il nome intero resta nel `title` della card.
+  // 🔄 v7.149 (Franco: «le regole di cambio campo tra Nome, Categoria, Sottocategoria … devono valere solo per i
+  //    caroselli polimorfici, quindi home e serie; non per quello di tipologia di articolo») - sul desktop i campi
+  //    «mobile e Carosello» valgono solo dove il chiamante lo dice (`retroOpz.campiCarosello`: home e pagina della
+  //    serie, i caroselli che mescolano tipologie). Nei caroselli di una tipologia, i campi di sempre.
+  const _campiC = !!retroOpz && retroOpz.campiCarosello === true;
+  const _ncmD = _campiC ? _nomeCaroselloMobile(f) : '';
+  const _nomeD = _ncmD ? _nomeCaroselloHTML(_ncmD) : esc(f.name || '');
+  const _caroselloOppure = (x, campo, valore) => _campiC ? _caroselloOppureVero(x, campo, valore) : esc(String(valore || '').trim());
   if ((f.section || '') === 'retros') {
+    // 🆕 v7.149 (Franco: «carosello home desktop: la categoria scrivila nella riga di "Retro", subito dopo, in questo
+    //    modo: "Retro - categoria"») - NEL CAROSELLO CON PIÙ SERIE (la home; `mostraSerie`, come la v7.147) un retro
+    //    senza sottoserie scrive la categoria sulla riga della tipologia, e la riga della categoria non c'è più. Se la
+    //    riga della sottoserie manca a tutta la fila (`conSottoserie === false`), la categoria resta dov'era.
+    const _rs = rigaSottoserie('0.66rem');
+    const _catInRiga = mostraSerie === true && _rs.length > 0 && !String(f.subseries || '').trim();
+    // v7.149: la categoria del carosello è la Categoria mobile e Carosello, se scritta (`_caroselloOppure`)
+    const _catC = _caroselloOppure(f, 'categoriaMobile', f.category);
+    if (_catInRiga && _catC) _rs[0].t += ' - ' + _catC;
     return _nomePrima([
       ...rigaSerie('0.66rem'),
-      ...rigaSottoserie('0.66rem'),   // v6.722
+      ..._rs,   // v6.722
       // v6.279 (Franco) - come sopra, e per la stessa ragione.
       // v6.281 (Franco) - la categoria su DUE righe invece di una troncata: e' l'altezza a decidere
       // se una riga va a capo (vedi `_caroselloCard`), quindi si cambia quella. Fissa e non 'auto',
       // altrimenti una categoria lunga alzerebbe la sua card e sfalserebbe la fila.
       // v7.125 - una riga sola se nessuna categoria della fila va a capo; la sottocategoria solo se qualcuno ce l'ha
-      { t: esc(f.category || ''),    col: COL_CATEGORIA,    dim: '0.68rem', alt: _catCorta ? '1.2em' : '2.5em', k: 'categoria' },
-      ...(_senzaSottocat ? [] : [{ t: esc(f.subcategory || ''), col: COL_SOTTOCAT, dim: '0.68rem', alt: '1.2em', k: 'sottocategoria' }]),
-      { t: esc(f.name || ''), col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em', k: 'nome',
-        coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }   // v6.722
+      ...(_catInRiga ? [] : [{ t: _catC,    col: COL_CATEGORIA,    dim: '0.68rem', alt: _catCorta ? '1.2em' : '2.5em', k: 'categoria' }]),   // v7.149: _catC
+      ...(_senzaSottocat ? [] : [{ t: _caroselloOppure(f, 'sottocategoriaMobile', f.subcategory), col: COL_SOTTOCAT, dim: '0.68rem', alt: '1.2em', k: 'sottocategoria' }]),   // v7.149
+      { t: _nomeD, col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em', k: 'nome',   // v7.149: _nomeD
+        coda: _monetaPunti(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }   // v6.722
     ]);
   }
   // 🔄 v6.722 - QUATTRO RIGHE, come le ha elencate Franco: serie, sottoserie, numero, nome. E la
@@ -34133,8 +34218,8 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     // v6.277 (Franco) - numero e nome in azzurro, come sulle card. v6.080 - senza cancelletto.
     // 🔄 v7.124 - e solo dove qualcuno il numero ce l'ha (`_caroselloConNumero`), come la sottoserie
     ...(conNumero === false ? [] : [{ t: f.number ? esc(String(f.number)) : '', col: COL_IDENTITA, dim: '0.7rem', alt: '1.2em', k: 'numero' }]),
-    { t: esc(f.name || ''), col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em', k: 'nome',
-      coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }
+    { t: _nomeD, col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em', k: 'nome',   // v7.149: _nomeD
+      coda: _monetaPunti(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }
   ];
 }
 
@@ -34280,9 +34365,13 @@ function _caroselloMostraSerie(elenco) {
 //    📏 Misurato prima di scriverlo: le spunte dicono il vero su tutte le serie per le sottoserie; per i numeri le
 //    Holidays hanno «Senza numeri» e due articoli col numero (ordinamenti), e tre serie senza numeri hanno la spunta
 //    spenta (lì la riga resta vuota, come prima).
+// 🐛 v7.149 (Franco: «è sparito ancora "Retro"») - SENZA LA SERIE (home, più serie) LA RIGA C'È ANCHE SE QUALCUNO CI
+//    SCRIVE LA TIPOLOGIA: da questa release un retro senza sottoserie la riga la riempie («Retro - CATEGORIA»), quindi
+//    contava solo chi ha una sottoserie e, in una fila pescata senza spille, la riga spariva e «Retro» con lei.
 function _caroselloConSottoserie(elenco, serie) {
   if (serie) return !!serie.hasSubseries;
-  return (elenco || []).some(f => String(f.subseries || '').trim());
+  return (elenco || []).some(f => String(f.subseries || '').trim() || !_art(f.section || 'figurines').caroselloSenzaTipologia
+    || (TDA_CON_FAMIGLIA.includes(f.section || 'figurines') && String(f.famiglia || '').trim()));   // v7.149: la famiglia
 }
 // 🆕 v7.125 (Franco, nella sezione retro della Mega 1: «dopo la categoria e prima del nome c'è una riga vuota, come
 //    mai?»; «procedi con entrambe») - LE DUE RIGHE DEI RETRO CHE RESTAVANO VUOTE. (1) La SOTTOCATEGORIA c'è solo se
@@ -34348,9 +34437,29 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs,
     // 🆕 v7.133 - ogni riga dice che campo è: `_allineaRigheCarosello` dà a ogni campo l'altezza del più alto della fila
     const cls = ' class="car-riga" data-campo="' + (r.k || 'r' + i) + '"';
     if (!r.coda) return '<div' + cls + ' style="' + base + '">' + (r.t || '&nbsp;') + '</div>';
-    return '<div' + cls + ' style="' + base + 'display:flex;align-items:flex-end;gap:0.35rem;">' +
-      '<span style="min-width:0;overflow:hidden;">' + (r.t || '&nbsp;') + '</span>' +
-      '<span style="margin-left:auto;flex:0 0 auto;color:' + (r.codaCol || r.col) + ';' +
+    // 🐛 v7.149 (Franco: «il nome non usa tutto lo spazio che ha sulla sua riga; termina anzitempo andando a capo»,
+    //    «SONO FUORI DI MELONE, ha "MELONE" che va a capo») - NEL FLEX LA MONETA SI TENEVA UNA COLONNA PER TUTTE E DUE
+    //    LE RIGHE, e il nome andava a capo prima del bordo anche sulla prima, dove la moneta non c'è. Sulla riga da due
+    //    (2,5em, il desktop) la moneta ora è un float in basso a destra, sotto un distanziale alto una riga: il nome
+    //    usa tutta la larghezza sulla prima riga e gira attorno alla moneta solo sulla seconda. Una terza riga resta
+    //    sotto, nascosta (`overflow:hidden`), quindi a sparire è la FINE del nome, non l'inizio.
+    if (r.alt === '2.5em') {
+      return '<div' + cls + ' style="' + base + '">' +
+        '<span style="float:right;width:0;height:1.25em;"></span>' +
+        '<span style="float:right;clear:right;margin-left:0.35rem;color:' + (r.codaCol || r.col) + ';' +
+          'font-size:' + (r.codaDim || r.dim) + ';line-height:' + 'calc(1.25 * ' + r.dim + ');">' + r.coda + '</span>' +
+        (r.t || '&nbsp;') +
+      '</div>';
+    }
+    // 🐛 v7.149 (Franco: «nel carosello dei retro, per certi retro il nome è mostrato ma senza la prima parola, che
+    //    coincide con la categoria»; desktop) - CON LA STELLA IL TESTO STAVA APPOGGIATO IN BASSO (`align-items:flex-end`
+    //    valeva per tutti e due i pezzi), quindi un nome da tre righe in un posto da due (2,5em) perdeva la riga di
+    //    SOPRA: la prima parola, che nei retro è spesso la categoria. Adesso il testo parte dall'alto e si ferma coi
+    //    puntini alla seconda riga (`line-clamp`); in basso a destra ci va solo la stella (`align-self:flex-end`).
+    const _righeTesto = r.alt === '2.5em' ? 'display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;' : '';
+    return '<div' + cls + ' style="' + base + 'display:flex;align-items:flex-start;gap:0.35rem;">' +
+      '<span style="min-width:0;overflow:hidden;' + _righeTesto + '">' + (r.t || '&nbsp;') + '</span>' +
+      '<span style="margin-left:auto;flex:0 0 auto;align-self:flex-end;color:' + (r.codaCol || r.col) + ';' +
         'font-size:' + (r.codaDim || r.dim) + ';">' + r.coda + '</span>' +
     '</div>';
   }).join('');
@@ -34500,7 +34609,7 @@ function renderCarosello() {
   const nomeSerie = new Map([..._serie].map(([id, x]) => [id, _nomeSerieCard(x, true)])); // v6.080, v6.493: sempre il nome BREVE
   const inFila = mazzo.slice(0, CAROSELLO_MAX); // v6.081 - la serie si guarda sulle card che finiscono davvero in fila
   const mostraSerie = _caroselloMostraSerie(inFila);
-  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(inFila, CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs, _caroselloConSottoserie(inFila), _caroselloConNumero(inFila), _caroselloRetroOpz(inFila, CAROSELLO_ALTEZZA))).join('');
+  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(inFila, CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs, _caroselloConSottoserie(inFila), _caroselloConNumero(inFila), Object.assign(_caroselloRetroOpz(inFila, CAROSELLO_ALTEZZA), { campiCarosello: true }))).join('');   // v7.149: campiCarosello
   sez.style.display = '';
   _allineaRigheCarosello(box);   // v7.133
   const prec = document.getElementById('carosello-prec');
@@ -34549,7 +34658,7 @@ function renderCaroselloSerie() {
   const mostraSerie = _caroselloMostraSerie(base);
   // v6.528 - al 75% come quello dei tipi di articolo. La home no: non e' stata chiesta.
   // v7.124 - una serie sola: decidono le sue spunte
-  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(base, serieQui), _caroselloConNumero(base, serieQui), _caroselloRetroOpz(base, CAROSELLO_ALTEZZA_RIDOTTA))).join('');
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(base, serieQui), _caroselloConNumero(base, serieQui), Object.assign(_caroselloRetroOpz(base, CAROSELLO_ALTEZZA_RIDOTTA), { campiCarosello: true }))).join('');   // v7.149: campiCarosello
   sez.style.display = '';
   _allineaRigheCarosello(box);   // v7.133
   const prec = document.getElementById('serie-carosello-prec');
@@ -34811,7 +34920,7 @@ function renderRicercaTipologia() {
     + bott(x._senzaRaritaFilter, "_rtToggle('_senzaRaritaFilter')", it ? 'Senza rarità' : 'Without rarity')
     + bott(x._senzaPersonaggioFilter, "_rtToggle('_senzaPersonaggioFilter')", it ? 'Senza personaggio' : 'Without character')
     + bott(x._conNomiAlternativiFilter, "_rtToggle('_conNomiAlternativiFilter')", it ? 'Con nomi alternativi' : 'With alternative names')
-    + bott(x._conNomeCaroselloFilter, "_rtToggle('_conNomeCaroselloFilter')", it ? 'Con Nome mobile alterato' : 'With altered mobile name')   // v7.144
+    + bott(x._conNomeCaroselloFilter, "_rtToggle('_conNomeCaroselloFilter')", it ? 'Con Nome mobile e Carosello alterato' : 'With altered mobile and carousel name')   // v7.144
     + bott(x._visibilitaFilter === 'visibili', "_rtVisibilita('visibili')", it ? 'Visibili' : 'Visible')
     + bott(x._visibilitaFilter === 'invisibili', "_rtVisibilita('invisibili')", it ? 'Invisibili' : 'Invisible')
     + '</div>');
@@ -39273,6 +39382,8 @@ const ARTICOLI = {
   //    diventati «Figurine con retro» (strumenti/migrazione-v6831.js), e la tipologia e' uscita.
   figurines: {
     riquadro: 1,   // v6.654
+    // 🆕 v7.149 (Franco) - nel carosello del desktop, senza sottoserie, la riga resta vuota: non dice la tipologia
+    caroselloSenzaTipologia: true,
     // 🔄 v6.481 (Franco) — «Figurine con velina» -> «Figurine con retro». L'inglese
     // l'ha scelto lui: «Stickers with backs». ⚠️ Il SINGOLARE dice `back`, non `backs`:
     // una figurina di retro ne ha uno, e le due righe devono concordare da sole.
@@ -39311,6 +39422,7 @@ const ARTICOLI = {
   },
   attaccare: {
     riquadro: 1,   // v6.654
+    caroselloSenzaTipologia: true,   // v7.149, come le figurine con retro
     // 🆕 v6.964 (Franco) - le sottoserie stanno DENTRO la griglia, a righe, e non in card
     //    separate nell'hub: le card per sottoserie le ha già la figurina con retro. Vedi
     //    `_sottoserieInGriglia`.
@@ -39371,6 +39483,7 @@ const ARTICOLI = {
   // aggiunge un campo e lo si misura su tutti e sette, non si scrive a memoria sui sei vecchi.
   carte: {
     riquadro: 1,   // v6.654
+    caroselloSenzaTipologia: true,   // v7.149 (Franco: «anche per le carte non scrivere la tda al posto della sottoserie»)
     it: 'Carte',   en: 'Cards',
     itSing: 'carta', enSing: 'card',
     genere: 'f',
@@ -39653,6 +39766,7 @@ const _ETICHETTE_DESCRITTORE = {
   genere: 'Genere', carosello: 'Carosello',
   sottoserieInGriglia: 'Sottoserie nella griglia',   // v6.964
   fotoRuotata: 'Fronte ruotato',                     // v7.132
+  caroselloSenzaTipologia: 'Carosello senza tipologia',   // v7.149
   numero: 'Numero', ordina: 'Ordinamento',
   ordinaDove: 'Ordina dove', nomeCompleto: 'Nome completo', nomeCompletoDove: 'Nome completo dove'
 };
@@ -45480,18 +45594,34 @@ function _testoMobile(f, campo) {
 }
 // La riga della scheda in modifica di un campo mobile: solo admin, come il Nome mobile; su una versione vuota il
 // segnaposto mostra il valore della base.
-function _rigaCampoMobileEdit(f, campo, idInput, it, en) {
+// 🆕 v7.149 (Franco: «il campo "Categoria mobile e carosello" deve vedersi solo se il campo "Categoria" è popolato;
+//    analogamente "Sottocategoria mobile e carosello"») - `valRif`, quando arriva, è il valore del campo di riferimento:
+//    vuoto, la riga nasce nascosta, e la riaccende (o rispegne) chi scrive nel campo di sopra (`_seguiCampoMobile`).
+function _rigaCampoMobileEdit(f, campo, idInput, it, en, valRif) {
   if (!currentUser?.isAdmin) return '';
+  const _nascosta = valRif !== undefined && !String(valRif || '').trim();
   const base = String(f[campo] || '').trim() ? '' : _testoMobile(f, campo);
   const ph = base ? (currentLang === 'it' ? 'dalla base: ' : 'from the base: ') + base : '';
   const tit = currentLang === 'it'
-    ? 'Sulle card del telefono, se scritto, prende il posto del campo sopra. Una barra | dove una parola troppo lunga può andare a capo. Vuoto = il campo sopra.'
-    : 'On phone cards, when filled, replaces the field above. A bar | where a long word may break. Empty = the field above.';
-  return '<div class="detail-row"><span class="detail-label">' + (currentLang === 'it' ? it : en) + '</span><span class="detail-value"><input class="form-input" type="text" id="' + idInput + '" value="' + esc(f[campo] || '') + '" placeholder="' + esc(ph) + '" title="' + esc(tit) + '"></span></div>';
+    ? 'Sulle card del telefono e nei caroselli, se scritto, prende il posto del campo sopra. Una barra | dove una parola troppo lunga può andare a capo. Vuoto = il campo sopra.'
+    : 'On phone cards and in carousels, when filled, replaces the field above. A bar | where a long word may break. Empty = the field above.';
+  return '<div class="detail-row" id="riga-' + idInput + '"' + (_nascosta ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang === 'it' ? it : en) + '</span><span class="detail-value"><input class="form-input" type="text" id="' + idInput + '" value="' + esc(f[campo] || '') + '" placeholder="' + esc(ph) + '" title="' + esc(tit) + '"></span></div>';
+}
+// v7.149 - chi scrive in Categoria / Sottocategoria accende o spegne la riga del suo campo mobile
+function _seguiCampoMobile(el, idInput) {
+  const riga = document.getElementById('riga-' + idInput);
+  if (riga) riga.style.display = String(el.value || '').trim() ? '' : 'none';
 }
 // Il testo da scrivere sulla card: sul telefono il campo mobile se c'è, se no il valore di sempre. Già in HTML.
 function _mobileOppure(f, campo, valore) {
   const t = _isMobileViewport() ? _testoMobile(f, campo) : '';
+  return t ? _nomeCaroselloHTML(t) : esc(String(valore || '').trim());
+}
+// 🆕 v7.149 (Franco: «anche i campi Categoria e Sottocategoria, nella loro versione mobile, devono essere rinominati in
+//    "mobile e carosello" e devono essere anche usati nei carosello desktop») - nel carosello il campo mobile vale
+//    SEMPRE, telefono o desktop, come il Nome mobile e Carosello.
+function _caroselloOppureVero(f, campo, valore) {
+  const t = _testoMobile(f, campo);
   return t ? _nomeCaroselloHTML(t) : esc(String(valore || '').trim());
 }
 
@@ -48546,7 +48676,11 @@ function _blocchiHub(cats, sezRows, _pfx, BULLET, colonna) {
     const gruppi = _sottoserieUsate(s, items);
     const righe = sezRows(c, gruppi.length > 0);
     if (!righe.length) return;
-    if (!gruppi.length) { tipologie.push(cella(_pfx(c), righe)); return; }
+    // 🔄 v7.149 (Franco, su Sgorbions Holidays: «per tatuaggi, trasferelli e carte d'identità questo è completamente
+    //    inutile perché la sottoserie è solo una; lascerei solo la numerica in verde») - UNA SOTTOSERIE SOLA NON SI
+    //    SPACCHETTA: la sua riga direbbe lo stesso numero della tipologia. Resta la riga della tipologia, fra le
+    //    «Numeriche per tipologia di articolo». Da due sottoserie in su (le Figurine: 30+30+1) tutto come prima.
+    if (gruppi.length <= 1) { tipologie.push(cella(_pfx(c), righe)); return; }
     gruppi.forEach(v => {
       const qui = items.filter(f => String(f.subseries || '').trim() === v);
       if (!qui.length) return;
@@ -52336,7 +52470,7 @@ function renderItemTypeFilters() {
       // 🆕 v6.987 - «Con nomi alternativi», copiato da «Senza personaggio»
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conNomiAlternativiFilter ? 'on' : ''}" onclick="toggleConNomiAlternativiFilter()" title="${itl ? 'Con nomi alternativi' : 'With alternative names'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con nomi alternativi' : 'With alternative names'}</span></div>`;
       // 🆕 v6.992 - «Con Nome carosello mobile alterato», copiato da quello sopra
-      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conNomeCaroselloFilter ? 'on' : ''}" onclick="toggleConNomeCaroselloFilter()" title="${itl ? 'Con Nome mobile alterato' : 'With altered mobile name'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con Nome mobile alterato' : 'With altered mobile name'}</span></div>`;   // v7.144: «Nome mobile»
+      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conNomeCaroselloFilter ? 'on' : ''}" onclick="toggleConNomeCaroselloFilter()" title="${itl ? 'Con Nome mobile e Carosello alterato' : 'With altered mobile and carousel name'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con Nome mobile e Carosello alterato' : 'With altered mobile and carousel name'}</span></div>`;   // v7.144: «Nome mobile»
       // 🆕 v6.540 - «Invisibili», accanto a «Senza rarità»: stesso interruttore, stessa riga.
       // 🔄 v6.545 - e con lei «Visibili». Sono due facce dello stesso stato: accenderne una
       // spegne l'altra, e non c'e' modo di averle accese insieme.
@@ -58631,7 +58765,7 @@ function _showImpersonateBanner() {
   //    Su due righe, il nome e sotto «Torna admin», largo al massimo 155px. Sul telefono resta dov'era.
   banner.style.cssText = 'position:fixed;z-index:99999;background:var(--warn);color:#0e0a1a;display:flex;font-family:var(--font-ui);font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);border-radius:8px;'
     + (_mob ? 'top:64px;right:0.5rem;left:auto;padding:0.35rem 0.6rem;align-items:center;gap:0.5rem;font-size:0.74rem;max-width:58vw;'
-            : 'top:5px;left:8px;right:auto;padding:4px 6px;flex-direction:column;align-items:stretch;gap:3px;font-size:0.74rem;max-width:155px;');
+            : 'top:5px;left:8px;right:auto;padding:4px 6px;align-items:center;gap:6px;font-size:0.74rem;max-width:155px;');
   // Il nome non deve poter allargare il banner oltre la sua misura: se e' lungo si taglia con i
   // puntini, e resta leggibile quanto basta per sapere chi sei.
   const _chi = '<strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">' + esc(currentUser.username || '') + '</strong>';
@@ -58640,9 +58774,12 @@ function _showImpersonateBanner() {
   const _testo = '<span style="display:flex;align-items:center;gap:0.3rem;min-width:0;"' + (_mob ? '' : ' title="' + (currentLang === 'it' ? 'Stai impersonando' : 'Impersonating') + ': ' + esc(currentUser.username || '') + ' — WRITE MODE"') + '>🎭 ' + _chi + '</span>';
   // ⚠️ Il pulsante NON si rimpicciolisce con il resto: e' l'unica strada per tornare admin, quindi
   // `flex-shrink:0` e un'area di tocco che resta premibile anche a 320px di schermo.
+  // 🔄 v7.149 (Franco: «quando impersonifico non è necessario indicare anche admin; basta semplicemente indicare il nome
+  //    dell'utente», desktop e telefono; scelta sua: «solo la ✕») - il pulsante dice solo ✕, il nome sta accanto (anche
+  //    sul desktop, non più sotto). «Torna admin» resta nel suggerimento e per i lettori di schermo.
+  const _torna = currentLang === 'it' ? 'Torna admin' : 'Back to admin';
   banner.innerHTML = _testo
-    + '<button onclick="stopImpersonation()" style="background:#0e0a1a;color:var(--warn);border:none;border-radius:6px;padding:' + (_mob ? '5px 12px' : '3px 8px') + ';cursor:pointer;font-weight:700;flex-shrink:0;white-space:nowrap;font-size:inherit;">'
-    + (_mob ? '✕ admin' : (currentLang === 'it' ? '✕ Torna admin' : '✕ Back to admin')) + '</button>';
+    + '<button onclick="stopImpersonation()" title="' + _torna + '" aria-label="' + _torna + '" style="background:#0e0a1a;color:var(--warn);border:none;border-radius:6px;padding:' + (_mob ? '5px 12px' : '3px 8px') + ';cursor:pointer;font-weight:700;flex-shrink:0;white-space:nowrap;font-size:inherit;">✕</button>';
   banner.style.display = 'flex';
 }
 
@@ -59513,7 +59650,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   //    resta scritta: e' il punto di taglio, ed e' cio' che l'admin deve poter rileggere.
   if (currentUser?.isAdmin && _nomeCaroselloMobile(f)) {
     const _daBaseC = !String(f.nomeCaroselloMobile || '').trim();
-    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome mobile' : 'Mobile name')}</span><span class="detail-value">${esc(_nomeCaroselloMobile(f))}${_daBaseC ? ' <span style="font-size:0.8rem;">' + (currentLang === 'it' ? '(dalla base)' : '(from the base)') + '</span>' : ''}</span></div>`);
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome mobile e Carosello' : 'Mobile and carousel name')}</span><span class="detail-value">${esc(_nomeCaroselloMobile(f))}${_daBaseC ? ' <span style="font-size:0.8rem;">' + (currentLang === 'it' ? '(dalla base)' : '(from the base)') + '</span>' : ''}</span></div>`);
   }
   if (_haSottonome(f.section) && (f.subname || '').trim()) {
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottonome' : 'Subname')}</span><span class="detail-value">${esc(f.subname.trim())}</span></div>`);
@@ -62414,9 +62551,9 @@ function switchToEditMode(figId) {
   // partenza.
   // I suggerimenti vengono dal MEDESIMO tipo, non da tutti: proporre a un Cartoncino le categorie
   // dei Poster sarebbe un elenco che cresce e non aiuta.
-    html += '<div class="detail-row" style="' + _eredStile('category') + '"' + _eredAttr('category') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category"' + (_catSuggerite ? ' list="fe-cat-list"' : '') + ' value="' + esc((f.category||'')) + '"' + _eredRO('category') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    html += '<div class="detail-row" style="' + _eredStile('category') + '"' + _eredAttr('category') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category"' + (_catSuggerite ? ' list="fe-cat-list"' : '') + ' value="' + esc((f.category||'')) + '"' + _eredRO('category') + ' oninput="_seguiCampoMobile(this,\'fe-categoria-mobile\')" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
     // 🆕 v7.146 (Franco: «anche categoria mobile; sul form, posizionali sotto al campo di riferimento»)
-    html += _rigaCampoMobileEdit(f, 'categoriaMobile', 'fe-categoria-mobile', 'Categoria mobile', 'Mobile category');
+    html += _rigaCampoMobileEdit(f, 'categoriaMobile', 'fe-categoria-mobile', 'Categoria mobile e Carosello', 'Mobile and carousel category', f.category);   // v7.149: il nome; solo con la Categoria
   if (_catSuggerite) {
     const _cats = [...new Set((getData('figurines', []) || [])
       .filter(x => _catStessoGruppo(x) && (x.category || '').trim())
@@ -62427,9 +62564,9 @@ function switchToEditMode(figId) {
       .map(x => x.subcategory.trim()))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
     html += '<datalist id="fe-subcat-list">' + _subs.map(c => '<option value="' + esc(c) + '"></option>').join('') + '</datalist>';
   }
-    if (isRetrosItem || _extraSerie || _conCatTDA) html += '<div class="detail-row" style="' + _eredStile('subcategory') + '"' + _eredAttr('subcategory') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory"' + (_catSuggerite ? ' list="fe-subcat-list"' : '') + ' value="' + esc((f.subcategory||'')) + '"' + _eredRO('subcategory') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    if (isRetrosItem || _extraSerie || _conCatTDA) html += '<div class="detail-row" style="' + _eredStile('subcategory') + '"' + _eredAttr('subcategory') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory"' + (_catSuggerite ? ' list="fe-subcat-list"' : '') + ' value="' + esc((f.subcategory||'')) + '"' + _eredRO('subcategory') + ' oninput="_seguiCampoMobile(this,\'fe-sottocategoria-mobile\')" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
     // 🆕 v7.146 (Franco: «posso avere anche un campo Sottocategoria mobile, con lo stesso funzionamento?»)
-    if (isRetrosItem || _extraSerie || _conCatTDA) html += _rigaCampoMobileEdit(f, 'sottocategoriaMobile', 'fe-sottocategoria-mobile', 'Sottocategoria mobile', 'Mobile subcategory');
+    if (isRetrosItem || _extraSerie || _conCatTDA) html += _rigaCampoMobileEdit(f, 'sottocategoriaMobile', 'fe-sottocategoria-mobile', 'Sottocategoria mobile e Carosello', 'Mobile and carousel subcategory', f.subcategory);   // v7.149: il nome; solo con la Sottocategoria
   }
 
   // 🆕 v6.753 (Franco) - L'ANNO DELL'ARTICOLO, dove la serie non ce l'ha da dare.
@@ -62499,7 +62636,7 @@ function switchToEditMode(figId) {
     // 🔄 v7.144 (Franco: «chiamarlo "nome mobile" perché non era solo per il carosello ma anche per la griglia») - il
     //    campo resta `nomeCaroselloMobile` nei dati; cambiano nome e spiegazione a schermo
     // v7.148: la riga va al suo posto, sotto il Nome
-    html = html.replace('<!--fe-nome-mobile-->', '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome mobile':'Mobile name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-carosello-mobile" value="' + esc(f.nomeCaroselloMobile || '') + '" placeholder="' + esc(_phNcm) + '" title="' + esc(currentLang==='it' ? 'Il nome sulle card del telefono, nella griglia e nei caroselli: anche più corto del Nome. Una barra | dove una parola troppo lunga può andare a capo (col trattino, solo se serve). Vuoto = il Nome.' : 'The name on phone cards, in grids and carousels: may be shorter than the Name. A bar | where a long word may break. Empty = the Name.') + '"></span></div>');
+    html = html.replace('<!--fe-nome-mobile-->', '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome mobile e Carosello':'Mobile and carousel name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-carosello-mobile" value="' + esc(f.nomeCaroselloMobile || '') + '" placeholder="' + esc(_phNcm) + '" title="' + esc(currentLang==='it' ? 'Il nome sulle card del telefono, nella griglia e nei caroselli: anche più corto del Nome. Una barra | dove una parola troppo lunga può andare a capo (col trattino, solo se serve). Vuoto = il Nome.' : 'The name on phone cards, in grids and carousels: may be shorter than the Name. A bar | where a long word may break. Empty = the Name.') + '"></span></div>');
   }
   // 🔄 v7.093 (Franco: «il campo personaggio nella maschera di modifica è tutto in basso: mettilo in alto, subito
   //    dopo la fine dei nomi dell'articolo») - dopo Nome, Nomi alternativi, Nome carosello mobile e Sottonome
