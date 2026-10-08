@@ -1,7 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.149 - Modificati js/app.js e css/style.css (e index, solo il numero). Quattro richieste di Franco dal telefono.
+// v7.150 - Modificato js/app.js (e index, solo il numero). I CAMPI RIDOTTI IN CONSOLE (Franco: «portare tutte queste
+//          impostazioni hard-codizzate in cfg … dove si usano i campi ridotti»): Tipo di articolo → «✂️ Campi ridotti»,
+//          sotto i caroselli. Sei posti (caroselli della home, della serie e di una tipologia sul desktop, caroselli e
+//          card sul telefono, card sul desktop) per tre campi «mobile e Carosello» (Nome, Categoria, Sottocategoria),
+//          `settings/campiRidotti`. Mai salvato = come la v7.149 (`_POSTI_RIDOTTI`, `def`). E le famiglie delle figurine
+//          per album in maiuscolo, solo a schermo (`_famigliaASchermo`); nel carosello della home (desktop) la famiglia
+//          si scrive «FAMIGLIA: NOME FAMIGLIA». Nel carosello della serie i retro dicono prima il nome e sotto la
+//          categoria (`_nomePrima`, anche con `posto: 'caroSerie'`), telefono e desktop.
+// v7.149 -Modificati js/app.js e css/style.css (e index, solo il numero). Quattro richieste di Franco dal telefono.
 //          1. Sul telefono il logo della barra al centro (`_logoAlCentroSeCiSta`, classe `nav-logo-centro`), se non
 //          tocca panino, versione o comandi di destra. 2. Impersonando, la fascia gialla dice il nome e una ✕, senza
 //          «admin» (desktop e telefono). 3. Sul telefono meno nero fra «Sfoglia per» e il selettore (row-gap). 4. Nelle
@@ -31030,7 +31038,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.149';
+const JS_VERSION = 'v7.150';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34071,8 +34079,12 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     // 🆕 v7.149 (Franco: «carosello home, al posto della sottoserie, per le figurine, scrivi la famiglia, se è
     //    popolata») - senza sottoserie una figurina (con retro o per album: `TDA_CON_FAMIGLIA`) scrive la sua FAMIGLIA,
     //    nel fucsia delle card (`COL_FAMIGLIA`, v7.139).
-    const _fam = TDA_CON_FAMIGLIA.includes(f.section || 'figurines') ? String(f.famiglia || '').trim() : '';
-    if (!g && _fam) return [{ t: esc(_fam), col: COL_FAMIGLIA, dim, alt: '1.2em', k: 'sottoserie' }];
+    const _fam = TDA_CON_FAMIGLIA.includes(f.section || 'figurines') ? _famigliaASchermo(f) : '';   // v7.150: fpa in maiuscolo
+    // 🔄 v7.150 (Franco: «nel carosello home desktop, dove scriviamo la famiglia, vorrei avere questo: FAMIGLIA: NOME
+    //    FAMIGLIA») - nella home l'etichetta davanti e il nome in maiuscolo
+    const _famHome = (retroOpz && retroOpz.posto) === 'caroHome';
+    if (!g && _fam) return [{ t: _famHome ? (currentLang === 'it' ? 'FAMIGLIA: ' : 'FAMILY: ') + esc(_fam.toLocaleUpperCase('it')) : esc(_fam),
+      col: COL_FAMIGLIA, dim, alt: '1.2em', k: 'sottoserie' }];
     return [{ t: g ? _parolaSottoserie() + ' ' + esc(g) : (_vuota ? '' : esc(getSectionLabel(f.section))),
               col: COL_CATEGORIA, dim, alt: '1.2em', k: 'sottoserie' }];
   };
@@ -34098,8 +34110,10 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
   //    uniforme come scriviamo») - NEL CAROSELLO CON PIÙ SERIE (è lì che la riga della serie c'è: `mostraSerie`, la
   //    definizione di «polimorfico» della v7.124) il retro dice prima il nome e poi categoria e sottocategoria, come
   //    nelle card della griglia. Telefono e desktop. Nei caroselli di una serie sola l'ordine resta quello di prima.
+  // 🔄 v7.150 (Franco: «per i retro metti sopra il nome e sotto la categoria»; «solo nel carosello della serie») - anche
+  //    nel carosello della pagina della serie (`retroOpz.posto === 'caroSerie'`), telefono e desktop.
   const _nomePrima = r => {
-    if (mostraSerie !== true) return r;
+    if (mostraSerie !== true && !(retroOpz && retroOpz.posto === 'caroSerie')) return r;
     const iN = r.findIndex(x => x.k === 'nome'), iC = r.findIndex(x => x.k === 'categoria');
     if (iN < 0 || iC < 0 || iN < iC) return r;
     const [n] = r.splice(iN, 1);
@@ -34145,14 +34159,14 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
         // servono", e le card restano comunque alte uguali perche' nella fila si stirano.
         // v6.279 (Franco) - gli stessi colori delle card del retro. La sottocategoria resta grigia:
         // non era fra le due nominate. Vedi il CHANGELOG.
-        { t: _mobileOppure(f, 'categoriaMobile', f.category),    col: COL_CATEGORIA,   dim: '0.64rem', alt: 'auto', k: 'categoria' },   // v7.146
+        { t: _ridottoOppure('caroTel', f, 'categoriaMobile', f.category),    col: COL_CATEGORIA,   dim: '0.64rem', alt: 'auto', k: 'categoria' },   // v7.146, v7.150: la console
         // v6.281 (Franco) - l'arancione delle card. Qui la categoria era gia' 'auto', quindi andava
         // a capo da se': il troncamento che si vedeva era quello del ramo non-telefono.
-        ...(_senzaSottocat ? [] : [{ t: _mobileOppure(f, 'sottocategoriaMobile', f.subcategory), col: COL_SOTTOCAT, dim: '0.64rem', alt: '1.2em', k: 'sottocategoria' }]),   // v7.125, v7.146
+        ...(_senzaSottocat ? [] : [{ t: _ridottoOppure('caroTel', f, 'sottocategoriaMobile', f.subcategory), col: COL_SOTTOCAT, dim: '0.64rem', alt: '1.2em', k: 'sottocategoria' }]),   // v7.125, v7.146, v7.150
         // 🔄 v6.722 - anche qui la stella e' la coda del nome, non una riga sua: una riga in
         //    meno su telefono e' proprio cio' che la v6.080 cercava.
         // 🆕 v6.991 - e anche qui il «Nome carosello mobile», se c'e', vince sull'etichetta
-        { t: (_nomeCaroselloMobile(f) ? _nomeCaroselloHTML(_nomeCaroselloMobile(f)) : esc(_etichettaR)), col: COL_IDENTITA, dim: '0.7rem', alt: 'auto', k: 'nome',
+        { t: (_nomeRidotto('caroTel', f) ? _nomeCaroselloHTML(_nomeRidotto('caroTel', f)) : esc(_etichettaR)), col: COL_IDENTITA,   /* v7.150: la console */ dim: '0.7rem', alt: 'auto', k: 'nome',
           coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.66rem' }
       ]);
     }
@@ -34163,7 +34177,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     //    intera»). Via i `<br>` fra le parole: il testo va a capo da sé dove finisce lo spazio, e
     //    le parole non si spezzano. L'altezza resta 'auto', come prima.
     // 🆕 v6.991 - col «Nome carosello mobile» scritto, vale quello (con i suoi punti di taglio)
-    const _ncm = _nomeCaroselloMobile(f);
+    const _ncm = _nomeRidotto('caroTel', f);   // v7.150: la console
     const parole = _ncm ? _nomeCaroselloHTML(_ncm) : esc(String(f.name || '').trim().split(/\s+/).filter(Boolean).join(' '));
     const righe = rigaSerie('0.62rem');
     // v6.277 (Franco) - numero e nome in azzurro, come sulle card.
@@ -34181,10 +34195,12 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
   //    caroselli polimorfici, quindi home e serie; non per quello di tipologia di articolo») - sul desktop i campi
   //    «mobile e Carosello» valgono solo dove il chiamante lo dice (`retroOpz.campiCarosello`: home e pagina della
   //    serie, i caroselli che mescolano tipologie). Nei caroselli di una tipologia, i campi di sempre.
-  const _campiC = !!retroOpz && retroOpz.campiCarosello === true;
-  const _ncmD = _campiC ? _nomeCaroselloMobile(f) : '';
+  // 🔄 v7.150 - il posto lo dice il chiamante (`retroOpz.posto`: 'caroHome', 'caroSerie'; senza, un carosello di una
+  //    tipologia, 'caroTda'), e cosa ci va lo dice la console (`_campoRidotto`).
+  const _postoD = (retroOpz && retroOpz.posto) || 'caroTda';
+  const _ncmD = _nomeRidotto(_postoD, f);
   const _nomeD = _ncmD ? _nomeCaroselloHTML(_ncmD) : esc(f.name || '');
-  const _caroselloOppure = (x, campo, valore) => _campiC ? _caroselloOppureVero(x, campo, valore) : esc(String(valore || '').trim());
+  const _caroselloOppure = (x, campo, valore) => _ridottoOppure(_postoD, x, campo, valore);
   if ((f.section || '') === 'retros') {
     // 🆕 v7.149 (Franco: «carosello home desktop: la categoria scrivila nella riga di "Retro", subito dopo, in questo
     //    modo: "Retro - categoria"») - NEL CAROSELLO CON PIÙ SERIE (la home; `mostraSerie`, come la v7.147) un retro
@@ -34318,6 +34334,10 @@ function _impostaCaroselli(d) {
   const prima = JSON.stringify(_CAROSELLI_CFG);
   _CAROSELLI_CFG = (d && d.voci && typeof d.voci === 'object') ? d.voci : {};
   if (JSON.stringify(_CAROSELLI_CFG) === prima) return;
+  _ridisegnaCaroselliInVista();
+}
+// v7.150 - estratta da `_impostaCaroselli`: la chiama anche `_impostaRidotti`
+function _ridisegnaCaroselliInVista() {
   const inVista = id => { const el = document.getElementById(id); return !!(el && el.parentElement && el.parentElement.getClientRects().length); };
   try { if (inVista('home-carosello-sez')) renderCarosello(); } catch (e) { console.error('renderCarosello', e); }
   try { if (inVista('serie-carosello-sez')) renderCaroselloSerie(); } catch (e) { console.error('renderCaroselloSerie', e); }
@@ -34609,7 +34629,7 @@ function renderCarosello() {
   const nomeSerie = new Map([..._serie].map(([id, x]) => [id, _nomeSerieCard(x, true)])); // v6.080, v6.493: sempre il nome BREVE
   const inFila = mazzo.slice(0, CAROSELLO_MAX); // v6.081 - la serie si guarda sulle card che finiscono davvero in fila
   const mostraSerie = _caroselloMostraSerie(inFila);
-  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(inFila, CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs, _caroselloConSottoserie(inFila), _caroselloConNumero(inFila), Object.assign(_caroselloRetroOpz(inFila, CAROSELLO_ALTEZZA), { campiCarosello: true }))).join('');   // v7.149: campiCarosello
+  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(inFila, CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs, _caroselloConSottoserie(inFila), _caroselloConNumero(inFila), Object.assign(_caroselloRetroOpz(inFila, CAROSELLO_ALTEZZA), { posto: 'caroHome' }))).join('');   // v7.150: il posto dei campi ridotti
   sez.style.display = '';
   _allineaRigheCarosello(box);   // v7.133
   const prec = document.getElementById('carosello-prec');
@@ -34658,7 +34678,7 @@ function renderCaroselloSerie() {
   const mostraSerie = _caroselloMostraSerie(base);
   // v6.528 - al 75% come quello dei tipi di articolo. La home no: non e' stata chiesta.
   // v7.124 - una serie sola: decidono le sue spunte
-  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(base, serieQui), _caroselloConNumero(base, serieQui), Object.assign(_caroselloRetroOpz(base, CAROSELLO_ALTEZZA_RIDOTTA), { campiCarosello: true }))).join('');   // v7.149: campiCarosello
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(base, serieQui), _caroselloConNumero(base, serieQui), Object.assign(_caroselloRetroOpz(base, CAROSELLO_ALTEZZA_RIDOTTA), { posto: 'caroSerie' }))).join('');   // v7.150: il posto dei campi ridotti
   sez.style.display = '';
   _allineaRigheCarosello(box);   // v7.133
   const prec = document.getElementById('serie-carosello-prec');
@@ -40028,6 +40048,7 @@ async function _caricaLegendeDefinizioni() {
     _impostaCaroselli(docs.find(x => x.id === 'caroselli'));   // v6.982 - stesso giro di letture
     _impostaOrdinamenti(docs.find(x => x.id === 'ordinamenti'));   // v7.082 - idem
     _impostaProtezione(docs.find(x => x.id === 'protezione'));   // v7.104 - idem
+    _impostaRidotti(docs.find(x => x.id === 'campiRidotti'));   // v7.150 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -40318,7 +40339,49 @@ function renderAdminCaroselliTDA() {
     '</p>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaCaroselliTDA()">' + (it ? 'Salva i caroselli' : 'Save carousels') + '</button>' +
+    '</div>' +
+    _tabellaCampiRidottiHTML(th, td, it);
+}
+
+// 🆕 v7.150 (Franco: «portare tutte queste impostazioni hard-codizzate in cfg … dove si usano i campi ridotti») - LA
+//    TABELLA DEI CAMPI RIDOTTI, sotto quella dei caroselli: una riga per posto, una spunta per campo. Le spunte si
+//    disegnano da `_campoRidotto`, cioè da ciò che il sito fa ADESSO (mai salvato: quello della v7.149).
+function _tabellaCampiRidottiHTML(th, td, it) {
+  return '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;">✂️ ' + (it ? 'Campi ridotti' : 'Short fields') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it
+        ? 'Dove la spunta è accesa, se l’articolo ha scritto il campo «mobile e Carosello» si usa quello al posto del campo di sempre.<br>' +
+          'Vuoto, vale sempre il campo di sempre.'
+        : 'Where checked, when the item has the «mobile and carousel» field filled, it replaces the usual field. Empty: the usual field.') +
+    '</p>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Dove' : 'Where') + '</th>' +
+      _CAMPI_RIDOTTI.map(c => '<th style="' + th + 'text-align:center;">' + (it ? c.it : c.en) + '</th>').join('') +
+    '</tr>' +
+    _POSTI_RIDOTTI.map(p =>
+      '<tr><td style="' + td + '">' + esc(it ? p.it : p.en) + '</td>' +
+      _CAMPI_RIDOTTI.map(c => '<td style="' + td + 'text-align:center;"><input type="checkbox" data-ridotto="' + p.k + ':' + c.k + '"' +
+        (_campoRidotto(p.k, c.k) ? ' checked' : '') + '></td>').join('') +
+      '</tr>').join('') +
+    '</table></div>' +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
+      '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaCampiRidotti()">' + (it ? 'Salva i campi ridotti' : 'Save short fields') + '</button>' +
     '</div>';
+}
+// Si salvano tutte le spunte, accese e spente, come i caroselli: una spenta è una decisione.
+async function salvaCampiRidotti() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const voci = {};
+  document.querySelectorAll('#admin-caroselli-tda input[data-ridotto]').forEach(el => { voci[el.dataset.ridotto] = !!el.checked; });
+  try {
+    await fsSave('settings', { id: 'campiRidotti', voci });
+    _impostaRidotti({ voci });
+    toast(it ? '✅ Campi ridotti salvati. Valgono da subito.' : '✅ Short fields saved.', 'success');
+  } catch (e) {
+    console.error('salvaCampiRidotti', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
 }
 
 // Si salvano TUTTE le righe, accese e spente: una riga spenta e' una decisione, e deve
@@ -45603,8 +45666,8 @@ function _rigaCampoMobileEdit(f, campo, idInput, it, en, valRif) {
   const base = String(f[campo] || '').trim() ? '' : _testoMobile(f, campo);
   const ph = base ? (currentLang === 'it' ? 'dalla base: ' : 'from the base: ') + base : '';
   const tit = currentLang === 'it'
-    ? 'Sulle card del telefono e nei caroselli, se scritto, prende il posto del campo sopra. Una barra | dove una parola troppo lunga può andare a capo. Vuoto = il campo sopra.'
-    : 'On phone cards and in carousels, when filled, replaces the field above. A bar | where a long word may break. Empty = the field above.';
+    ? 'Dove lo accende la console (Tipo di articolo → Campi ridotti), se scritto, prende il posto del campo sopra. Una barra | dove una parola troppo lunga può andare a capo. Vuoto = il campo sopra.'
+    : 'Where the console turns it on (Item type → Short fields), when filled, replaces the field above. A bar | where a long word may break. Empty = the field above.';
   return '<div class="detail-row" id="riga-' + idInput + '"' + (_nascosta ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang === 'it' ? it : en) + '</span><span class="detail-value"><input class="form-input" type="text" id="' + idInput + '" value="' + esc(f[campo] || '') + '" placeholder="' + esc(ph) + '" title="' + esc(tit) + '"></span></div>';
 }
 // v7.149 - chi scrive in Categoria / Sottocategoria accende o spegne la riga del suo campo mobile
@@ -45612,17 +45675,57 @@ function _seguiCampoMobile(el, idInput) {
   const riga = document.getElementById('riga-' + idInput);
   if (riga) riga.style.display = String(el.value || '').trim() ? '' : 'none';
 }
-// Il testo da scrivere sulla card: sul telefono il campo mobile se c'è, se no il valore di sempre. Già in HTML.
-function _mobileOppure(f, campo, valore) {
-  const t = _isMobileViewport() ? _testoMobile(f, campo) : '';
+// 🆕 v7.150 (Franco: «se vuoi possiamo portare tutte queste impostazioni hard-codizzate, in cfg; in pratica, dove si usano
+//    i campi ridotti»; «ok pubblica e poi passa alla cfg») - I CAMPI RIDOTTI SI ACCENDONO DALLA CONSOLE, POSTO PER POSTO.
+//    Admin console → Tipo di articolo → «✂️ Campi ridotti»: una riga per posto, una spunta per campo (Nome, Categoria,
+//    Sottocategoria «mobile e Carosello»), nel documento `settings/campiRidotti` ({ voci: { 'caroHome:nome': true, … } }).
+// 📌 Dove la console non ha mai salvato vale `def`, cioè quello che il sito faceva alla v7.149: sì nei caroselli della
+//    home e della serie sul desktop, nei caroselli e nelle card del telefono; no nei caroselli di una tipologia e nelle
+//    card del desktop. I «caroselli di una tipologia» sono due: la pagina della tipologia e la sezione dentro la serie.
+// 🔴 Una riga sola per tutti i caroselli del telefono: lì le quattro pagine non si distinguono (Franco: «carosello mobile»).
+const _POSTI_RIDOTTI = [
+  { k: 'caroHome',  def: true,  it: 'Carosello della home (desktop)',              en: 'Home carousel (desktop)' },
+  { k: 'caroSerie', def: true,  it: 'Carosello della pagina della serie (desktop)', en: 'Series page carousel (desktop)' },
+  { k: 'caroTda',   def: false, it: 'Carosello di una tipologia (desktop)',         en: 'Item type carousel (desktop)' },
+  { k: 'caroTel',   def: true,  it: 'Caroselli sul telefono',                       en: 'Carousels on phone' },
+  { k: 'cardTel',   def: true,  it: 'Card delle griglie sul telefono',              en: 'Grid cards on phone' },
+  { k: 'cardD',     def: false, it: 'Card delle griglie sul desktop',               en: 'Grid cards on desktop' }
+];
+const _CAMPI_RIDOTTI = [
+  { k: 'nome',           campo: 'nomeCaroselloMobile',  it: 'Nome',           en: 'Name' },
+  { k: 'categoria',      campo: 'categoriaMobile',      it: 'Categoria',      en: 'Category' },
+  { k: 'sottocategoria', campo: 'sottocategoriaMobile', it: 'Sottocategoria', en: 'Subcategory' }
+];
+let _RIDOTTI_CFG = {};
+function _campoRidotto(posto, campo) {
+  const v = _RIDOTTI_CFG[posto + ':' + campo];
+  if (typeof v === 'boolean') return v;
+  const p = _POSTI_RIDOTTI.find(x => x.k === posto);
+  return !!(p && p.def);
+}
+// Il posto di una card della griglia: telefono o desktop.
+function _postoCard() { return _isMobileViewport() ? 'cardTel' : 'cardD'; }
+// Il testo da scrivere in quel posto: il campo ridotto se il posto lo vuole ed è scritto, se no il valore di sempre. Già in HTML.
+function _ridottoOppure(posto, f, campo, valore) {
+  const c = _CAMPI_RIDOTTI.find(x => x.campo === campo);
+  const t = (c && _campoRidotto(posto, c.k)) ? _testoMobile(f, campo) : '';
   return t ? _nomeCaroselloHTML(t) : esc(String(valore || '').trim());
 }
-// 🆕 v7.149 (Franco: «anche i campi Categoria e Sottocategoria, nella loro versione mobile, devono essere rinominati in
-//    "mobile e carosello" e devono essere anche usati nei carosello desktop») - nel carosello il campo mobile vale
-//    SEMPRE, telefono o desktop, come il Nome mobile e Carosello.
-function _caroselloOppureVero(f, campo, valore) {
-  const t = _testoMobile(f, campo);
-  return t ? _nomeCaroselloHTML(t) : esc(String(valore || '').trim());
+// Il Nome ridotto in quel posto, o '' (vale il nome di sempre).
+function _nomeRidotto(posto, f) {
+  return _campoRidotto(posto, 'nome') ? _nomeCaroselloMobile(f) : '';
+}
+// Il testo da scrivere sulla card della griglia. 🔄 v7.150: decide la console (`_postoCard`), non più il solo telefono.
+function _mobileOppure(f, campo, valore) {
+  return _ridottoOppure(_postoCard(), f, campo, valore);
+}
+// v7.150 - letto da `_caricaLegendeDefinizioni` con gli altri `settings`; se cambia, si ridisegna ciò che si vede.
+function _impostaRidotti(d) {
+  const prima = JSON.stringify(_RIDOTTI_CFG);
+  _RIDOTTI_CFG = (d && d.voci && typeof d.voci === 'object') ? d.voci : {};
+  if (JSON.stringify(_RIDOTTI_CFG) === prima) return;
+  _ridisegnaCaroselliInVista();
+  try { if (currentSeriesId && currentSection && document.getElementById('items-grid')) renderItems(); } catch (e) { console.error('renderItems', e); }
 }
 
 function _campiRicercaFigurina(f) {
@@ -56179,7 +56282,7 @@ function renderItems() {
     // da-attaccare sta sul record stesso. Non e' una copia da unificare: e' lo stesso
     // dato guardato dai due capi del collegamento.
     // 🔄 v6.837 - la famiglia e' dell'articolo stesso, sulle due tipologie che ce l'hanno.
-    const _famigliaCard = TDA_CON_FAMIGLIA.includes(f.section) ? (f.famiglia || '').trim() : '';
+    const _famigliaCard = TDA_CON_FAMIGLIA.includes(f.section) ? _famigliaASchermo(f) : '';   // v7.150: fpa in maiuscolo
     // 🔄 v6.501 - da `_rigaCard`, come tutte le altre: cosi' `_allineaRigheRetro` le
     // tiene in colonna per riga di griglia invece di lasciarle scorrere.
     // 🆕 v7.134 (Franco: «su mobile … non scrivere "Famiglia:"»; «solo le etichette, tanto c'è il colore») - sul
@@ -56265,7 +56368,7 @@ function renderItems() {
     // 🆕 v7.144 (Franco: «b, procedi con il Nome mobile») - IL «NOME MOBILE» (era «Nome carosello mobile», v6.991) VALE
     //    SUL TELEFONO ANCHE NELLA GRIGLIA: scritto, prende il posto del nome, coi suoi punti di taglio. Vuoto: per il
     //    retro il sottonome se c'è (v7.135), se no il nome — la scelta b di Franco.
-    const _nomeMob = _isMobileViewport() ? _nomeCaroselloMobile(f) : '';
+    const _nomeMob = _nomeRidotto(_postoCard(), f);   // v7.150: la console (telefono: sì; desktop: no, se non lo accende)
     const figNameInner = isRetroCard
       // 🔄 v7.145 (Franco: «ora usiamo solo quello, nel mobile, se popolato; lascia perdere il sottonome; tanto ora lo
       //    popolo io col sottonome, nel caso») - vuoto il Nome mobile, il nome: la regola del sottonome (v7.135) se ne va
@@ -56284,7 +56387,7 @@ function renderItems() {
           // pochissimo spazio il nome puo' essere gia' dentro l'etichetta. Su desktop il nome si
           // scrive sempre, ed e' la decisione che quel ramo prende da sempre.
           : `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>`
-            + `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${f.name}</div>`);
+            + `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : f.name}</div>`);   // v7.150: se la console lo accende sul desktop
     // 🔄 v6.654 - QUI C'ERA UN `if` A DUE RAMI: «i retro, e tutti gli altri». Ha retto
     //    finche' gli articoli erano due famiglie; adesso sono OTTO, e ognuno ha una forma
     //    sua. E' la stessa famiglia delle quattro liste di sezioni scritte a mano trovate
@@ -56448,7 +56551,7 @@ function renderItems() {
           const _sottoAlPosto = _isMobileViewport() && !!sotto;
           // 🆕 v7.144 - il «Nome mobile» del retro (sul telefono). Col sottonome presente la riga fra parentesi resta
           //    vuota anche quando vince il Nome mobile: è `_sottoAlPosto` a deciderlo, come prima.
-          const _nomeMobR = _isMobileViewport() ? _nomeCaroselloMobile(r) : '';
+          const _nomeMobR = _nomeRidotto(_postoCard(), r);   // v7.150: la console
           // 🔄 v7.136 (Franco: «tornare a mostrare la categoria … anche quando essa è compresa nel nome del retro
           //    stesso») - LA CATEGORIA SI SCRIVE SEMPRE, desktop e telefono. Taciuta non faceva guadagnare spazio:
           //    la sua riga resta (vuota, nera) appena un'altra card della riga di griglia la scrive (v6.092), quindi
@@ -59305,6 +59408,13 @@ function _famiglieSerie(seriesId) {
 }
 // 🆕 v6.837 - le due tipologie che hanno la famiglia.
 const TDA_CON_FAMIGLIA = ['figurines', 'attaccare'];
+// 🆕 v7.150 (Franco: «le famiglie delle fpa, vorrei renderle maiuscole»; scelta sua: «solo a schermo») - la famiglia
+//    come si mostra: delle figurine per album in MAIUSCOLO, delle altre com'è scritta. I dati non cambiano (la famiglia
+//    della fpa la decide la figurina con retro, v6.837), e nemmeno la tendina della modifica.
+function _famigliaASchermo(f) {
+  const t = String((f && f.famiglia) || '').trim();
+  return (f && f.section) === 'attaccare' ? t.toLocaleUpperCase('it') : t;
+}
 // 🆕 v7.082 (Franco: «mettiamoli; sia sulla scheda di modifica che sulla form di dettaglio, da mostrare se
 //    popolati, sia sulla card della griglia») - le TDA di una serie con Categoria e Sottocategoria, oltre ai
 //    Retro (che le hanno da sempre, con regole loro) e agli articoli senza serie.
@@ -59592,7 +59702,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   // cosa da quella chiesta - «Abilita modifica» governa i TASTI, non la visibilita' dei campi.
   // 🔄 v6.837 - la Famiglia esce da qui: adesso e' delle due tipologie, e sta subito sotto.
   if (TDA_CON_FAMIGLIA.includes(f.section) && (f.famiglia || (isAdmin && _famiglieSerie(f.seriesId).length))) {
-    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Famiglia' : 'Family')}</span><span class="detail-value">${esc(f.famiglia || '')}</span></div>`);
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Famiglia' : 'Family')}</span><span class="detail-value">${esc(_famigliaASchermo(f))}</span></div>`);
   }
   if (f.section === 'attaccare') {
     if (f.commentoAlbum || isAdmin) {
@@ -62586,7 +62696,7 @@ function switchToEditMode(figId) {
   // 🔄 v6.840 - sulla figurina per album collegata la famiglia la comanda la con retro: si legge e basta.
   //    Senza tendina il salvataggio tiene il valore del record (v6.837), e la propagazione lo allinea.
   if (TDA_CON_FAMIGLIA.includes(f.section) && _campoComandatoDalGenitore(f, 'famiglia') && (_famiglieSerie(f.seriesId).length || f.famiglia)) {
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Famiglia':'Family') + '</span><span class="detail-value" title="' + (currentLang==='it' ? 'La decide la figurina con retro' : 'Set by the sticker with back') + '">' + esc(f.famiglia || '—') + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Famiglia':'Family') + '</span><span class="detail-value" title="' + (currentLang==='it' ? 'La decide la figurina con retro' : 'Set by the sticker with back') + '">' + esc(_famigliaASchermo(f) || '—') + '</span></div>';
   } else if (TDA_CON_FAMIGLIA.includes(f.section) && (_famiglieSerie(f.seriesId).length || f.famiglia)) {
     const _fams = _famiglieSerie(f.seriesId), _famAtt = f.famiglia || '';
     const _opt = v => '<option value="' + esc(v) + '"' + (v === _famAtt ? ' selected' : '') + '>' + esc(v) + '</option>';
@@ -73353,7 +73463,7 @@ function renderBulkEditView() {
           ${_cAnno ? (_articoloSenzaSerie(f) && isAdmin
             ? '<td style="padding:4px;text-align:center;"><input data-field="year" data-id="'+f.id+'" value="'+(f.year||'')+'" type="number" style="width:80px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
             : readCell(f.year || '', null, 'center')) : ''}
-          ${_cFamiglia ? readCell(esc(f.famiglia || ''), 120) : ''}
+          ${_cFamiglia ? readCell(esc(_famigliaASchermo(f)), 120) : ''}
           ${!_cAttaccare ? '' : (isAdmin
             ? `<td style="padding:4px;"><input data-field="commentoAlbum" data-id="${f.id}" value="${esc(f.commentoAlbum || '')}" style="width:100%;min-width:180px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:0.85rem;" onchange="saveBulkCell(this)"></td>`
             : readCell(f.commentoAlbum, 220))}
