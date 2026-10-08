@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.148">
+<link rel="stylesheet" href="css/style.css?v=7.149">
 
 
 <style>
@@ -2599,7 +2599,8 @@ button.back-btn { color:#ffffff; }
       <!-- 🔄 v7.083 (Franco: «il titolo del carosello della home si chiama figurine ma non contiene solo
            figurine. Chiamalo "Gli articoli Sgorbions"») -->
       <!-- 🔄 v7.112 (Franco: «anche su mobile: il titolo del carosello della home diventa "Gli articoli Sgorbions censiti nel sito"») -->
-      <h2 class="carosello-titolo" data-i18n="home.figurine">Gli articoli Sgorbions censiti nel sito</h2>
+      <!-- 🔄 v7.149 (Franco: «"Gli articoli Sgorbions censiti nel sito" diventa "Carosello degli articoli Sgorbions del sito"») -->
+      <h2 class="carosello-titolo" data-i18n="home.figurine">Carosello degli articoli Sgorbions del sito</h2>
       <!-- v6.065 (Franco) — via il titolo "Un assaggio dall'Inventario": le figurine si spiegano
            da sole, e una riga di titolo sopra una fila di immagini e' spazio che non aggiunge
            niente. Tolte anche le due voci dal dizionario: una chiave che nessuno usa piu' e' una
@@ -6439,7 +6440,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.148"></script>
+<script src="js/app.js?v=7.149"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6463,7 +6464,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.148'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.149'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
