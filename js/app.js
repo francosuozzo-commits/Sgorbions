@@ -1,7 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.150 - Modificato js/app.js (e index, solo il numero). I CAMPI RIDOTTI IN CONSOLE (Franco: «portare tutte queste
+// v7.151 - Modificati js/app.js e index.html. LA SEZIONE «🎠 CAROSELLI» DELLA CONSOLE (Franco: «crea una sezione a parte …
+//          chiamata Caroselli, e sposta lì l'attuale tab "Caroselli" della sezione "tipologie di articolo»): tab suo, con
+//          le tabelle di prima (tipologie e versioni nei caroselli, campi ridotti) e una nuova, «🔢 Posizione dei campi»
+//          (Franco: «per ognuno dei 5 caroselli indicare la posizione del campo»): un numero per campo, per i quattro
+//          caroselli e per le card delle griglie sul telefono, `settings/posizioniCampi`; vuota = dove sta oggi. E nei
+//          caroselli polimorfici (home e serie) la famiglia si scrive «Famiglia: NOME» (era «FAMIGLIA: », solo home).
+//          🐛 Nei caroselli la moneta sta sempre sull'ultima riga, e il nome sta alla stessa altezza in tutta la fila
+//          (`_allineaRigheCarosello` misura e aggiunge margine sopra i nomi più alti). La moneta sta nell'angolo in basso
+//          della card (le card di una fila sono alte uguali). E «Righe del nome» per i caroselli del desktop (`_righeNome`,
+//          2 di sempre), nella tabella delle posizioni.
+// v7.150 -Modificato js/app.js (e index, solo il numero). I CAMPI RIDOTTI IN CONSOLE (Franco: «portare tutte queste
 //          impostazioni hard-codizzate in cfg … dove si usano i campi ridotti»): Tipo di articolo → «✂️ Campi ridotti»,
 //          sotto i caroselli. Sei posti (caroselli della home, della serie e di una tipologia sul desktop, caroselli e
 //          card sul telefono, card sul desktop) per tre campi «mobile e Carosello» (Nome, Categoria, Sottocategoria),
@@ -31038,7 +31048,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.150';
+const JS_VERSION = 'v7.151';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34082,8 +34092,10 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     const _fam = TDA_CON_FAMIGLIA.includes(f.section || 'figurines') ? _famigliaASchermo(f) : '';   // v7.150: fpa in maiuscolo
     // 🔄 v7.150 (Franco: «nel carosello home desktop, dove scriviamo la famiglia, vorrei avere questo: FAMIGLIA: NOME
     //    FAMIGLIA») - nella home l'etichetta davanti e il nome in maiuscolo
-    const _famHome = (retroOpz && retroOpz.posto) === 'caroHome';
-    if (!g && _fam) return [{ t: _famHome ? (currentLang === 'it' ? 'FAMIGLIA: ' : 'FAMILY: ') + esc(_fam.toLocaleUpperCase('it')) : esc(_fam),
+    // 🔄 v7.151 (Franco: «caroselli polimorfici: FAMIGLIA: diventa Famiglia:») - l'etichetta in minuscolo, e nei due
+    //    caroselli polimorfici: la home e la pagina della serie
+    const _famHome = ['caroHome', 'caroSerie'].includes(retroOpz && retroOpz.posto);
+    if (!g && _fam) return [{ t: _famHome ? (currentLang === 'it' ? 'Famiglia: ' : 'Family: ') + esc(_fam.toLocaleUpperCase('it')) : esc(_fam),
       col: COL_FAMIGLIA, dim, alt: '1.2em', k: 'sottoserie' }];
     return [{ t: g ? _parolaSottoserie() + ' ' + esc(g) : (_vuota ? '' : esc(getSectionLabel(f.section))),
               col: COL_CATEGORIA, dim, alt: '1.2em', k: 'sottoserie' }];
@@ -34448,12 +34460,40 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs,
   // 🔴 La coda NON si stringe (`flex:0 0 auto`) e il testo si', o un nome lungo mangerebbe la
   //    stella invece di andare a capo: la cosa da troncare e' il nome, che continua nel titolo
   //    del passaggio del mouse, non il punteggio, che sparirebbe e basta.
-  const righe = _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, retroOpz).map((r, i) => {   // v7.124-125
+  // 🆕 v7.151 - l'ordine delle righe lo può dire la console (`_ordinaPerPosizione`): telefono, o il posto del chiamante
+  const _postoCar = _isMobileViewport() ? 'caroTel' : ((retroOpz && retroOpz.posto) || 'caroTda');
+  // 🐛 v7.151 (Franco: «la riga con punteggio rarità in alcuni casi non è l'ultima») - LA MONETA VA SEMPRE SULL'ULTIMA RIGA.
+  //    Viaggiava come coda della riga del nome, quindi quando il nome saliva (la console, o `_nomePrima` dei retro nei
+  //    caroselli con più serie) saliva con lui. Adesso, dopo l'ordine, la coda passa alla riga che è in fondo.
+  const _ordinate = _ordinaPerPosizione(_caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, retroOpz), r => r.k, _postoCar).slice();
+  // 🔄 v7.151 (Franco: «la moneta però deve stare sempre sull'ultima riga, ma considerando tutto il carosello; quindi può
+  //    avere sopra righe vuote») - LA MONETA ESCE DALLE RIGHE: sta nell'angolo in basso a destra della CARD, e le card di
+  //    una fila sono alte uguali (si stirano sulla più alta), quindi tutte le monete stanno sulla stessa riga, l'ultima
+  //    della fila. Sull'ultima riga di ogni card resta a destra il posto della moneta, perché il testo non ci passi sotto.
+  const _iCoda = _ordinate.findIndex(r => r.coda);
+  const _moneta = _iCoda >= 0 ? _ordinate[_iCoda] : null;
+  if (_moneta) {
+    _ordinate[_iCoda] = Object.assign({}, _moneta, { coda: '' });
+    const _ult = _ordinate.length - 1;
+    _ordinate[_ult] = Object.assign({}, _ordinate[_ult], { spazioCoda: (String(f.score || '').length + 5) * 0.62 });
+  }
+  const _monetaHTML = _moneta
+    ? '<div style="position:absolute;right:0.5rem;bottom:0.5rem;line-height:1.25;color:' + (_moneta.codaCol || _moneta.col) + ';font-size:' + (_moneta.codaDim || _moneta.dim) + ';">' + _moneta.coda + '</div>'
+    : '';
+  // 🆕 v7.151 (Franco: «serve un altro parametro: il numero di righe a disposizione per il titolo; vorrei infatti che nel
+  //    carosello di tda per i retro vi siano 3 righe») - LE RIGHE DEL NOME, per carosello del desktop (`_righeNome`): la
+  //    riga del nome è alta quelle righe (1,25em ciascuna). Il telefono no: lì il nome va già a capo quanto serve.
+  if (!_isMobileViewport()) {
+    const _rn = _righeNome(_postoCar);
+    _ordinate.forEach((r, j) => { if (r.k === 'nome' && r.alt === '2.5em' && _rn !== 2) _ordinate[j] = Object.assign({}, r, { alt: (_rn * 1.25) + 'em' }); });
+  }
+  const righe = _ordinate.map((r, i) => {   // v7.124-125
     const base = 'font-size:' + r.dim + ';color:' + r.col + ';line-height:1.25;' +
       (r.alt === 'auto' ? '' : 'height:' + r.alt + ';overflow:hidden;') +
       (i === 0 ? 'margin-top:0.4rem;' : '') +
       (r.alt === '1.2em' ? 'white-space:nowrap;text-overflow:ellipsis;' : '') +
-      (r.dx ? 'text-align:' + r.dx + ';' : '');
+      (r.dx ? 'text-align:' + r.dx + ';' : '') +
+      (r.spazioCoda ? 'padding-right:' + r.spazioCoda + 'em;' : '');   // v7.151: il posto della moneta
     // 🆕 v7.133 - ogni riga dice che campo è: `_allineaRigheCarosello` dà a ogni campo l'altezza del più alto della fila
     const cls = ' class="car-riga" data-campo="' + (r.k || 'r' + i) + '"';
     if (!r.coda) return '<div' + cls + ' style="' + base + '">' + (r.t || '&nbsp;') + '</div>';
@@ -34485,13 +34525,13 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs,
   }).join('');
   return '<div onclick="_caroselloApri(\'' + f.id + '\',\'' + f.seriesId + '\')" ' +
     'title="' + esc(etichetta) + '" ' +
-    'style="flex:0 0 auto;width:' + larghezza + ';scroll-snap-align:start;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">' +
+    'style="position:relative;flex:0 0 auto;width:' + larghezza + ';scroll-snap-align:start;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">' +   /* v7.151: relative, per la moneta */
     // v6.080 - altezzaFoto 0 vuol dire "quadrata rispetto alla card" (telefono): niente altezza
     // fissa sotto una card stretta, che e' cio' che allungava il box in verticale.
     // v7.113: nel carosello la scritta segue la colonna «anche nel carosello» della console (`_urlCarosello`)
     '<img src="' + _urlCarosello(f, _fotoFigurina(f, figs) || f.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" ' +
       'style="width:100%;' + (altezzaFoto ? 'height:' + altezzaFoto + 'px;' : 'aspect-ratio:1;height:auto;') + 'object-fit:contain;border-radius:6px;background:var(--card);">' +
-    righe +
+    righe + _monetaHTML +
   '</div>';
 }
 
@@ -34506,7 +34546,11 @@ function _allineaRigheCarosello(box) {
   if (!box) return;
   _mobileSpazioEsclamativo(box);   // v7.142: prima di misurare, perché il testo cambia di lunghezza
   const righe = Array.from(box.querySelectorAll('.car-riga'));
-  righe.forEach(r => { r.style.minHeight = ''; });
+  righe.forEach(r => {
+    r.style.minHeight = '';
+    // v7.151: il nome riparte dal suo margine di sempre (`data-mt`: quello scritto dal disegno, prima di noi)
+    if (r.dataset.campo === 'nome') { if (r.dataset.mt === undefined) r.dataset.mt = r.style.marginTop || ''; r.style.marginTop = r.dataset.mt; }
+  });
   _osservaRigheCarosello(box);
   if (!box.offsetWidth) return;
   const perCampo = new Map();
@@ -34524,6 +34568,19 @@ function _allineaRigheCarosello(box) {
   misure.forEach(({ els, hs, max }) => els.forEach((e, i) => {
     if (max - hs[i] > 0.5) e.style.minHeight = max + 'px';
   }));
+  // 🆕 v7.151 (Franco: «il nome di un retro deve essere alla stessa altezza del nome di una figurina»; «con questa tabella
+  //    non ce la faccio») - IL NOME ALLA STESSA ALTEZZA IN TUTTA LA FILA. Sopra il nome le card hanno righe diverse (la
+  //    figurina il numero, il retro no), quindi nessun ordine li allinea: si misura dove comincia il nome in ogni card e
+  //    si dà, sopra, lo spazio che manca per arrivare al più basso. Vale con qualunque ordine scelto in console.
+  // ⚠️ Margine e non `padding`: il sito è in `box-sizing: border-box`, e su una riga ad altezza fissa (2,5em) il padding
+  //    avrebbe mangiato il posto del testo.
+  const nomi = righe.filter(r => r.dataset.campo === 'nome');
+  const cime = nomi.map(e => e.getBoundingClientRect().top - e.parentElement.getBoundingClientRect().top);
+  const piuBasso = Math.max(0, ...cime);
+  nomi.forEach((e, i) => {
+    const manca = piuBasso - cime[i];
+    if (manca > 0.5) e.style.marginTop = 'calc(' + (e.dataset.mt || '0px') + ' + ' + manca + 'px)';
+  });
 }
 // 🆕 v7.142 (Franco: «da mobile, lo spazio prima del ! puoi non considerarlo, nelle card di griglia e carosello?») -
 //    SUL TELEFONO «OFFERTA SPECIALE !» DIVENTA «OFFERTA SPECIALE!». Si toglie lo spazio (anche quello fisso) davanti al
@@ -40049,6 +40106,7 @@ async function _caricaLegendeDefinizioni() {
     _impostaOrdinamenti(docs.find(x => x.id === 'ordinamenti'));   // v7.082 - idem
     _impostaProtezione(docs.find(x => x.id === 'protezione'));   // v7.104 - idem
     _impostaRidotti(docs.find(x => x.id === 'campiRidotti'));   // v7.150 - idem
+    _impostaPosizioni(docs.find(x => x.id === 'posizioniCampi'));   // v7.151 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -40340,7 +40398,61 @@ function renderAdminCaroselliTDA() {
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaCaroselliTDA()">' + (it ? 'Salva i caroselli' : 'Save carousels') + '</button>' +
     '</div>' +
-    _tabellaCampiRidottiHTML(th, td, it);
+    _tabellaCampiRidottiHTML(th, td, it) +
+    _tabellaPosizioniHTML(th, td, it);   // v7.151
+}
+
+// 🆕 v7.151 - LA TABELLA DELLE POSIZIONI, sotto i campi ridotti. Due blocchi perché i campi sono diversi: i quattro
+//    caroselli (le righe del carosello) e le card delle griglie sul telefono (le righe della card). Un numero per casella;
+//    vuota = dove sta oggi.
+function _tabellaPosizioniHTML(th, td, it) {
+  const cella = (p, c) => '<td style="' + td + 'text-align:center;"><input type="number" min="1" max="20" step="1" data-posizione="' + p + ':' + c + '"' +
+    ' value="' + (_posizioneCampo(p, c) || '') + '" style="width:3.4em;padding:2px 4px;text-align:center;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;"></td>';
+  // v7.151: nei caroselli, dopo i campi, la colonna «Righe del nome» (solo desktop; sul telefono «—»)
+  const cellaRighe = p => '<td style="' + td + 'text-align:center;border-left:1px solid var(--border2);">' + (p === 'caroTel' ? '—'
+    : '<input type="number" min="1" max="6" step="1" data-righe-nome="' + p + '" value="' + _righeNome(p) + '" style="width:3.4em;padding:2px 4px;text-align:center;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;">') + '</td>';
+  const tabella = (posti, campi, conRighe) => '<div style="overflow-x:auto;margin-bottom:1rem;"><table style="border-collapse:collapse;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Dove' : 'Where') + '</th>' +
+      campi.map(c => '<th style="' + th + 'text-align:center;white-space:normal;max-width:7rem;">' + (it ? c.it : c.en) + '</th>').join('') +
+      (conRighe ? '<th style="' + th + 'text-align:center;white-space:normal;max-width:7rem;border-left:1px solid var(--border2);">' + (it ? 'Righe del nome' : 'Name lines') + '</th>' : '') + '</tr>' +
+    posti.map(p => '<tr><td style="' + td + '">' + esc(it ? p.it : p.en) + '</td>' + campi.map(c => cella(p.k, c.k)).join('') + (conRighe ? cellaRighe(p.k) : '') + '</tr>').join('') +
+    '</table></div>';
+  return '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;">🔢 ' + (it ? 'Posizione dei campi' : 'Field positions') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it
+        ? 'Il numero dice in che posizione, dall’alto, sta la riga di quel campo: 1 è la prima.<br>' +
+          'Una casella vuota vuol dire «dove sta oggi». Senza nessun numero in una riga, quel posto resta com’è.<br>' +
+          'La posizione non cambia come il campo è scritto (con o senza «FAMIGLIA:», «Retro - …»).'
+        : 'The number is the position, from the top, of that field’s line: 1 is the first. Empty = where it is today.') +
+    '</p>' +
+    tabella(_POSTI_POSIZIONI.filter(p => p.k !== 'cardTel'), _CAMPI_POSIZIONE_CAROSELLO, true) +
+    tabella(_POSTI_POSIZIONI.filter(p => p.k === 'cardTel'), _CAMPI_POSIZIONE_CARD, false) +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.3rem;">' +
+      '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaPosizioniCampi()">' + (it ? 'Salva le posizioni' : 'Save positions') + '</button>' +
+    '</div>';
+}
+// Si salvano solo i numeri scritti: una casella vuota non è una decisione, è «come oggi».
+async function salvaPosizioniCampi() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const voci = {};
+  document.querySelectorAll('#admin-caroselli-tda input[data-posizione]').forEach(el => {
+    const n = parseInt(el.value, 10);
+    if (n > 0) voci[el.dataset.posizione] = n;
+  });
+  // v7.151: le righe del nome, solo se diverse dalle 2 di sempre
+  document.querySelectorAll('#admin-caroselli-tda input[data-righe-nome]').forEach(el => {
+    const n = parseInt(el.value, 10);
+    if (n >= 1 && n <= 6 && n !== 2) voci[el.dataset.righeNome + ':_righeNome'] = n;
+  });
+  try {
+    await fsSave('settings', { id: 'posizioniCampi', voci });
+    _impostaPosizioni({ voci });
+    toast(it ? '✅ Posizioni salvate. Valgono da subito.' : '✅ Positions saved.', 'success');
+  } catch (e) {
+    console.error('salvaPosizioniCampi', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
 }
 
 // 🆕 v7.150 (Franco: «portare tutte queste impostazioni hard-codizzate in cfg … dove si usano i campi ridotti») - LA
@@ -45666,8 +45778,8 @@ function _rigaCampoMobileEdit(f, campo, idInput, it, en, valRif) {
   const base = String(f[campo] || '').trim() ? '' : _testoMobile(f, campo);
   const ph = base ? (currentLang === 'it' ? 'dalla base: ' : 'from the base: ') + base : '';
   const tit = currentLang === 'it'
-    ? 'Dove lo accende la console (Tipo di articolo → Campi ridotti), se scritto, prende il posto del campo sopra. Una barra | dove una parola troppo lunga può andare a capo. Vuoto = il campo sopra.'
-    : 'Where the console turns it on (Item type → Short fields), when filled, replaces the field above. A bar | where a long word may break. Empty = the field above.';
+    ? 'Dove lo accende la console (Caroselli → Campi ridotti), se scritto, prende il posto del campo sopra. Una barra | dove una parola troppo lunga può andare a capo. Vuoto = il campo sopra.'
+    : 'Where the console turns it on (Carousels → Short fields), when filled, replaces the field above. A bar | where a long word may break. Empty = the field above.';
   return '<div class="detail-row" id="riga-' + idInput + '"' + (_nascosta ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang === 'it' ? it : en) + '</span><span class="detail-value"><input class="form-input" type="text" id="' + idInput + '" value="' + esc(f[campo] || '') + '" placeholder="' + esc(ph) + '" title="' + esc(tit) + '"></span></div>';
 }
 // v7.149 - chi scrive in Categoria / Sottocategoria accende o spegne la riga del suo campo mobile
@@ -45724,6 +45836,79 @@ function _impostaRidotti(d) {
   const prima = JSON.stringify(_RIDOTTI_CFG);
   _RIDOTTI_CFG = (d && d.voci && typeof d.voci === 'object') ? d.voci : {};
   if (JSON.stringify(_RIDOTTI_CFG) === prima) return;
+  _ridisegnaCaroselliInVista();
+  try { if (currentSeriesId && currentSection && document.getElementById('items-grid')) renderItems(); } catch (e) { console.error('renderItems', e); }
+}
+
+// 🆕 v7.151 (Franco: «una tabella di configurazione, che consenta per ognuno dei 5 caroselli di indicare la posizione del
+//    campo (indipendentemente da come lo scriviamo; intendo con o senza prefisso)»; i cinque: carosello della home,
+//    della serie, di una tipologia sul desktop, caroselli sul telefono, card delle griglie sul telefono) - LA POSIZIONE
+//    DI OGNI CAMPO, POSTO PER POSTO. Console → «🎠 Caroselli» → «🔢 Posizione dei campi», `settings/posizioniCampi`
+//    ({ voci: { 'caroHome:nome': 1, … } }).
+// 📌 Una casella vuota vuol dire «dove sta oggi»: si ordinano per numero i campi che ce l'hanno, e chi non ce l'ha tiene
+//    il suo posto di oggi come numero. A parità vince chi ha il numero scritto, poi l'ordine di oggi. Nessun numero =
+//    niente cambia.
+// ⚠️ La posizione dice DOVE sta la riga, non COSA ci si scrive: «Retro - CATEGORIA» o «FAMIGLIA: …» restano come sono.
+const _POSTI_POSIZIONI = _POSTI_RIDOTTI.filter(p => p.k !== 'cardD');
+const _CAMPI_POSIZIONE_CAROSELLO = [
+  { k: 'serie',          it: 'Serie',          en: 'Series' },
+  { k: 'sottoserie',     it: 'Sottoserie / famiglia / tipologia', en: 'Subseries / family / type' },
+  { k: 'numero',         it: 'Numero',         en: 'Number' },
+  { k: 'nome',           it: 'Nome',           en: 'Name' },
+  { k: 'categoria',      it: 'Categoria',      en: 'Category' },
+  { k: 'sottocategoria', it: 'Sottocategoria', en: 'Subcategory' }
+];
+const _CAMPI_POSIZIONE_CARD = [
+  { k: 'nome',           it: 'Nome',           en: 'Name' },
+  { k: 'subname',        it: 'Sottonome',      en: 'Subname' },
+  { k: 'personaggio',    it: 'Personaggio',    en: 'Character' },
+  { k: 'famiglia',       it: 'Famiglia',       en: 'Family' },
+  { k: 'tipologia',      it: 'Tipologia',      en: 'Type' },
+  { k: 'categoria',      it: 'Categoria',      en: 'Category' },
+  { k: 'sottocategoria', it: 'Sottocategoria', en: 'Subcategory' },
+  { k: 'anno',           it: 'Anno',           en: 'Year' },
+  { k: 'descrizione',    it: 'Descrizione',    en: 'Description' },
+  { k: 'taglia',         it: 'Taglia',         en: 'Size' }
+];
+const _campiPosizioneDi = posto => posto === 'cardTel' ? _CAMPI_POSIZIONE_CARD : _CAMPI_POSIZIONE_CAROSELLO;
+let _POSIZIONI_CFG = {};
+function _posizioneCampo(posto, campo) {
+  const v = Number(_POSIZIONI_CFG[posto + ':' + campo]);
+  return v > 0 ? v : null;
+}
+// 🆕 v7.151 (Franco: «il numero di righe a disposizione per il titolo») - le righe del nome in un carosello del desktop,
+//    nello stesso documento (`<posto>:_righeNome`); non scritto = 2, quello di sempre (v6.281). Da 1 a 6.
+function _righeNome(posto) {
+  const v = parseInt(_POSIZIONI_CFG[posto + ':_righeNome'], 10);
+  return v >= 1 && v <= 6 ? v : 2;
+}
+// L'elenco riordinato per quel posto; `chiaveDi` dice di che campo è ogni elemento.
+function _ordinaPerPosizione(elenco, chiaveDi, posto) {
+  if (!elenco.some(x => _posizioneCampo(posto, chiaveDi(x)) !== null)) return elenco;
+  // a parità di numero vince chi l'ha scritto in console: «Nome 1» va in cima anche se oggi in cima c'è un altro campo
+  return elenco.map((x, i) => { const p = _posizioneCampo(posto, chiaveDi(x)); return { x, i, s: p !== null ? 0 : 1, p: p !== null ? p : i + 1 }; })
+    .sort((a, b) => a.p - b.p || a.s - b.s || a.i - b.i).map(o => o.x);
+}
+// Le card della griglia sul telefono: dopo il disegno, le righe col loro campo (il nome è `.fig-name`) si rimettono nei
+// posti che occupavano, nell'ordine della console. Il resto della card (pulsanti, righe senza campo) non si muove.
+function _ordinaRigheCard(grid) {
+  if (!grid || !_isMobileViewport()) return;
+  if (!_CAMPI_POSIZIONE_CARD.some(c => _posizioneCampo('cardTel', c.k) !== null)) return;
+  const campoDi = e => e.classList.contains('fig-name') ? 'nome' : (e.dataset.campo || '');
+  grid.querySelectorAll('.fig-body').forEach(body => {
+    const righe = [...body.children].filter(e => campoDi(e));
+    if (righe.length < 2) return;
+    const ordinate = _ordinaPerPosizione(righe, campoDi, 'cardTel');
+    if (ordinate.every((e, j) => e === righe[j])) return;
+    const segni = righe.map(e => { const s = document.createComment('p'); e.replaceWith(s); return s; });
+    segni.forEach((s, j) => s.replaceWith(ordinate[j]));
+  });
+}
+// letto da `_caricaLegendeDefinizioni` con gli altri `settings`; se cambia, si ridisegna ciò che si vede
+function _impostaPosizioni(d) {
+  const prima = JSON.stringify(_POSIZIONI_CFG);
+  _POSIZIONI_CFG = (d && d.voci && typeof d.voci === 'object') ? d.voci : {};
+  if (JSON.stringify(_POSIZIONI_CFG) === prima) return;
   _ridisegnaCaroselliInVista();
   try { if (currentSeriesId && currentSection && document.getElementById('items-grid')) renderItems(); } catch (e) { console.error('renderItems', e); }
 }
@@ -56631,6 +56816,7 @@ function renderItems() {
     </div>`;
   });
   grid.innerHTML = _incollaGruppi(items, _cardsHTML, _geoRender, _allFigs, _idx);
+  _ordinaRigheCard(grid);   // v7.151: sul telefono, l'ordine delle righe dalla console
 
   // Event delegation per i pulsanti cuore wishlist: rimossa la vecchia istanza e aggiunta nuova
   if (grid._wishlistHandler) grid.removeEventListener('click', grid._wishlistHandler);
@@ -57741,7 +57927,7 @@ function adminTab(tab) {
   const tabEl = document.getElementById('admin-' + tab);
   if (tabEl) { tabEl.classList.add('active'); }
   if (tab === 'series') renderAdminSeries();
-  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminCaroselliTDA(); renderAdminOrdinamentiTDA();   // v6.982, v7.082
+  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminOrdinamentiTDA();   // v7.082
     renderCampiMassiviConfig(); _aggiornaCampiMassiviDaConfigurazione().then(renderCampiMassiviConfig); }   // v6.842: qui, non in Impostazioni   // v6.221, v6.233, v6.234
   if (tab === 'figurines') renderAdminFigs();
   if (tab === 'contacts') { renderAdminContacts(); updateMsgBadge(); }
@@ -57760,6 +57946,7 @@ function adminTab(tab) {
   if (tab === 'ebay') loadEbaySettingsFields();
   if (tab === 'griglie') renderGriglieVisualizzazione();   // v6.197
   if (tab === 'protezione') renderAdminProtezioneTDA();   // v7.104, tab suo dalla v7.121
+  if (tab === 'caroselli') renderAdminCaroselliTDA();     // v6.982, tab suo dalla v7.151 (Franco)
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
