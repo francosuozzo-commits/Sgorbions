@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.150">
+<link rel="stylesheet" href="css/style.css?v=7.151">
 
 
 <style>
@@ -3873,6 +3873,9 @@ di tutte le serie</button>
                contare le icone. Si apre ancora su «Utenti», che ora è l'ultimo.
                📌 Le ragioni di vicinanza scritte qui prima (v6.221 «accanto a Serie»; v6.633 Google Search Console
                fuori da «Funzioni») valgono per il CONTENUTO dei tab, non più per il loro ordine. -->
+          <!-- 🆕 v7.151 (Franco: «crea una sezione a parte, nella admin console, chiamata Caroselli, e sposta lì l'attuale tab
+               "Caroselli" della sezione "tipologie di articolo"») - in ordine alfabetico è la prima. -->
+          <button class="admin-tab" onclick="adminTab('caroselli')">🎠 Caroselli</button>
           <button class="admin-tab" onclick="adminTab('email')" data-i18n="admin.email.tab">✉️ Comunicazioni</button>
           <button class="admin-tab" onclick="adminTab('foto')" data-i18n="admin.foto">📥 Data import</button>
           <button class="admin-tab" onclick="adminTab('ebay')">🏷️ Ebay</button>
@@ -3920,8 +3923,7 @@ di tutte le serie</button>
             <button class="admin-subtab" onclick="tdaSubTab('legende')">📖 Definizioni delle legende</button>
             <button class="admin-subtab" onclick="tdaSubTab('partenze')">🔀 Da chi nasce una versione</button>
             <button class="admin-subtab" onclick="tdaSubTab('massivi')">✏️ Campi dell'aggiornamento massivo</button>
-            <!-- 🆕 v6.982 (Franco: «carosello si-no per tda») -->
-            <button class="admin-subtab" onclick="tdaSubTab('caroselli')">🎠 Caroselli</button>
+            <!-- 🔄 v7.151 - qui c'era «🎠 Caroselli» (v6.982): ora è il tab «🎠 Caroselli» della console -->
             <!-- 🆕 v7.082 (Franco: «rendere anche questo aspetto configurabile da me») -->
             <button class="admin-subtab" onclick="tdaSubTab('ordinamenti')">↕️ Ordinamento delle griglie</button>
             <!-- 🔄 v7.121 - qui c'era «🔒 Foto protette» (v7.104): ora è il tab «🔒 Protezione foto» della console -->
@@ -3946,10 +3948,6 @@ di tutte le serie</button>
                della definizione che non serve piu'. -->
           <div class="tda-sub" id="tda-sub-legende" style="display:none;">
           <div id="admin-legende-definizioni"></div>
-          </div>
-          <!-- 🆕 v6.982 — una spunta per tipologia: comanda i tre caroselli (`renderAdminCaroselliTDA`). -->
-          <div class="tda-sub" id="tda-sub-caroselli" style="display:none;">
-          <div id="admin-caroselli-tda"></div>
           </div>
           <!-- 🆕 v7.082 — le chiavi d'ordinamento della griglia per tipologia (`renderAdminOrdinamentiTDA`). -->
           <div class="tda-sub" id="tda-sub-ordinamenti" style="display:none;">
@@ -4222,6 +4220,12 @@ di tutte le serie</button>
              CE N'ERA UNA: Griglie, Impostazioni (generali + email) ed Ebay. I riquadri sono gli stessi, spostati. -->
         <!-- 🆕 v7.121 (Franco: «la sezione "Foto protette" della sezione Tda spostiamola fuori: tab dedicato, di nome
              "Protezione foto"») - le tabelle le disegna `renderAdminProtezioneTDA`: tipologie e, sotto, versioni. -->
+        <!-- 🆕 v7.151 (Franco) - LA SEZIONE «CAROSELLI», uscita da Tipo di articolo come la Protezione foto alla v7.121.
+             Dentro: quali tipologie e versioni girano (v6.982), i campi ridotti (v7.150), le posizioni dei campi (v7.151).
+             Le disegna `renderAdminCaroselliTDA`. -->
+        <div id="admin-caroselli" class="admin-section">
+          <div><div id="admin-caroselli-tda"></div></div>
+        </div>
         <div id="admin-protezione" class="admin-section">
           <div><div id="admin-protezione-tda"></div></div>   <!-- v7.122: senza tetto, gli esempi degli stili (320px) occupano la larghezza del pannello -->
 
@@ -6440,7 +6444,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.150"></script>
+<script src="js/app.js?v=7.151"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6464,7 +6468,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.150'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.151'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
