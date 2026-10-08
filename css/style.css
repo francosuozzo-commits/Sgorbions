@@ -2929,3 +2929,17 @@ body:not(.wz-visibile) .solo-wz { display: none !important; }
     font-size: 0.55rem; padding: 1px 4px; line-height: 1.1; border-radius: 6px;
   }
 }
+/* 🆕 v7.149 (Franco: «nella versione mobile quando nella navbar viene visualizzato il logo, non è al centro») - SUL
+   TELEFONO IL LOGO AL CENTRO DELLA BARRA. La classe la mette `_logoAlCentroSeCiSta` (app.js) solo se il logo, al
+   centro, non tocca il panino, la versione o i comandi di destra; se no il logo resta dov'era. */
+@media (max-width: 860px) {
+  #navbar.nav-logo-centro .nav-logo { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+}
+/* 🆕 v7.149 (Franco: «da mobile, dopo "sfoglia per" c'è dello spazio inutilizzato, proverei a rimuoverlo») - LO
+   SPAZIO FRA «SFOGLIA PER» E IL SELETTORE. 📏 Il `gap:1rem` del bivio vale anche fra le righe, e sul telefono le
+   righe sono tre: «Sfoglia per» (col pulsante delle numeriche), l'a capo vuoto della v7.012 (`::before`, alto 0) e
+   il selettore. Quindi due salti da 16px, 32px di nero per niente. Fra le righe adesso 0,3rem; fra le cose della
+   stessa riga resta 1rem. */
+@media (max-width: 860px) {
+  #bivio-inventario { row-gap: 0.3rem !important; }
+}
