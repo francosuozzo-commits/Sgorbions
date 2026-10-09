@@ -1,6 +1,24 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.152 - Modificati js/app.js e index.html. Due domande aperte, risposte da Franco:
+//          1. QUESTIONARIO, LA SCHERMATA A TRE CARTE (Franco: «sì, uguale alle quattro»): foto e frasi centrate e
+//             domanda gialla per tutte le tipologie (carte, tatuaggi…), non più per le sole figurine con retro.
+//          2. PAGINA ERRORI, #8 «Hanno il fronte ma non il fronte ruotato» (Franco: «sì, contale»): nel riquadro
+//             delle foto, sotto il #6; chiede `_haFotoRuotata` (oggi le Olografiche), conta chi ha il fronte suo e
+//             non `imgRuotato`; sospendibile per serie (`senzaRuotato`), entra nel pallino rosso.
+//          E le parole del «Confermi?» del questionario restano (Franco: «vanno bene»).
+//          3. CONSOLE, 🎠 Caroselli (Franco: «correggiamo perché i caroselli sono 4»): la frase sopra la tabella dice
+//             «quattro caroselli» e nomina anche la sezione della serie, che la spunta la seguiva già.
+//          4. COME GIRANO I CAROSELLI, DALLA CONSOLE (Franco: «è bello parametrizzare tutte quelle cose … senza però
+//             avere di fronte una tabella enorme; se serve fai più mini tabelle»): in 🎠 Caroselli, sotto la tabella
+//             delle tipologie, tre blocchi piccoli e un Salva («Salva come girano», `settings/caroselliModo`):
+//             🎛️ per ognuno dei quattro caroselli acceso, quanti, secondi fra gli scatti (0 = fermo), ordine (di
+//             sempre / a caso / per numero / per nome); 🏷️ il titolo della home, computer e telefono, IT ed EN;
+//             🏠 le serie del carosello della home (le IN ARRIVO restano sempre fuori). Vuoto = il sito di prima.
+//             `_impostaModoCaroselli`, `_caroselloAcceso`, `_caroselloQuanti`, `_caroselloTaglia`, `_caroselloOrdina`,
+//             `_serieNellaHome`; `_caroselloPasso(quale)`. Gli articoli scelti a mano per la home (📌): scritti e
+//             smontati nella stessa versione (Franco: «così descritta, non mi interessa; smonta tutto»).
 // v7.151 - Modificati js/app.js e index.html. LA SEZIONE «🎠 CAROSELLI» DELLA CONSOLE (Franco: «crea una sezione a parte …
 //          chiamata Caroselli, e sposta lì l'attuale tab "Caroselli" della sezione "tipologie di articolo»): tab suo, con
 //          le tabelle di prima (tipologie e versioni nei caroselli, campi ridotti) e una nuova, «🔢 Posizione dei campi»
@@ -31048,7 +31066,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.151';
+const JS_VERSION = 'v7.152';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33831,7 +33849,11 @@ const CAROSELLO_PASSO_MS = Math.round(4000 / 1.3 / 1.15 / 1.55); // 4000 -> 3077
 // a scorrere tutta - e si e' rivelato semplicemente il ritmo giusto.
 // I fattori restano scritti uno per uno invece del risultato: cosi' si legge la storia (4000 di
 // partenza, -30%, -15%, -35%) e non un numero magico che nessuno sa piu' da dove viene.
-function _caroselloPasso() { return CAROSELLO_PASSO_MS; }
+// 🔄 v7.152 - il passo lo può scrivere la console, carosello per carosello (`<quale>:passo`, in secondi; 0 = fermo)
+function _caroselloPasso(quale) {
+  const s = parseFloat(String(_CAR_MODO_CFG[quale + ':passo'] ?? '').replace(',', '.'));
+  return (s >= 0) ? Math.round(s * 1000) : CAROSELLO_PASSO_MS;
+}
 // Larghezza della card come FRAZIONE del contenitore: con un valore in pixel il numero di schede
 // visibili cambierebbe con la finestra, e "6 e mezzo" varrebbe solo sul monitor di chi l'ha
 // misurato. La mezza scheda tagliata sul bordo e' voluta: dice che la fila continua.
@@ -34348,6 +34370,64 @@ function _impostaCaroselli(d) {
   if (JSON.stringify(_CAROSELLI_CFG) === prima) return;
   _ridisegnaCaroselliInVista();
 }
+// 🆕 v7.152 (Franco: «mi piace la tua idea; è bello parametrizzare tutte quelle cose; vedi tu come fare a farmi
+//    controllare tutti questi aspetti senza però avere di fronte una tabella enorme; se serve fai più mini tabelle») -
+//    COME GIRANO I QUATTRO CAROSELLI, dalla console (🎠 Caroselli): `settings/caroselliModo` ({ voci: { ... } }).
+//    Chiavi: `<carosello>:acceso` (bool), `<carosello>:quanti` (numero; 0 o assente = di sempre), `<carosello>:passo`
+//    (secondi fra uno scatto e l'altro; 0 = fermo, si scorre con le frecce), `<carosello>:ordine` ('' = di sempre,
+//    'caso', 'numero', 'nome'); `home:serie:<id>` false = quella serie fuori dal carosello della home; `titolo:<it|en>`
+//    e `titoloTel:<it|en>` = il titolo del carosello della home sul computer e sul telefono.
+// 📌 Dove la console non ha scritto niente vale il sito di prima: è la stessa regola delle altre tabelle.
+//    I nomi dei caroselli sono le chiavi di `_caroselloTimers`.
+let _CAR_MODO_CFG = {};
+const _CAROSELLI_QUATTRO = [
+  { k: 'home',     it: 'Home',                    en: 'Home',            quanti: CAROSELLO_MAX, ordine: 'a caso' },
+  { k: 'serie',    it: 'Pagina della serie',      en: 'Series page',     quanti: 0, ordine: 'per numero, una tipologia per volta' },
+  { k: 'prodotto', it: 'Pagina della tipologia',  en: 'Item type page',  quanti: 0, ordine: 'a caso (le bustine per serie)' },
+  { k: 'sezione',  it: 'Sezione della serie',     en: 'Series section',  quanti: 0, ordine: 'per numero' }
+];
+const _caroselloAcceso = c => _CAR_MODO_CFG[c + ':acceso'] !== false;
+// quanti card al massimo; 0 vuol dire tutte
+function _caroselloQuanti(c) {
+  const n = parseInt(_CAR_MODO_CFG[c + ':quanti'], 10);
+  if (n > 0) return n;
+  return (_CAROSELLI_QUATTRO.find(x => x.k === c) || {}).quanti || 0;
+}
+const _caroselloTaglia = (c, elenco) => { const n = _caroselloQuanti(c); return n > 0 ? elenco.slice(0, n) : elenco; };
+// l'ordine scritto in console; '' = quello che il carosello ha già fatto (si restituisce l'elenco com'è)
+function _caroselloOrdina(c, elenco) {
+  const o = _CAR_MODO_CFG[c + ':ordine'] || '';
+  const fila = elenco.slice();
+  if (o === 'caso') {
+    for (let i = fila.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [fila[i], fila[j]] = [fila[j], fila[i]]; }
+  } else if (o === 'numero') {
+    // senza numero (i retro) in fondo: davanti avrebbero riempito la fila (il baco della v6.985)
+    const num = f => (f.number != null && String(f.number).trim() !== '' && !isNaN(Number(f.number))) ? Number(f.number) : Infinity;
+    fila.sort((a, b) => (num(a) - num(b)) || String(a.name || '').localeCompare(String(b.name || ''), 'it', { numeric: true }));
+  } else if (o === 'nome') {
+    fila.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'it', { numeric: true }));
+  }
+  return fila;
+}
+const _serieNellaHome = sid => _CAR_MODO_CFG['home:serie:' + sid] !== false;
+// i titoli scritti dal dizionario, presi UNA volta: una casella svuotata li deve ritrovare
+const _TITOLI_CAROSELLO_DI_SEMPRE = {};
+function _impostaModoCaroselli(d) {
+  const prima = JSON.stringify(_CAR_MODO_CFG);
+  _CAR_MODO_CFG = (d && d.voci && typeof d.voci === 'object') ? d.voci : {};
+  // il titolo passa dal dizionario: così lo rilegge anche `applyI18n` al cambio di lingua
+  [['titolo', 'home.figurine'], ['titoloTel', 'home.figurineShort']].forEach(([k, chiave]) => ['it', 'en'].forEach(l => {
+    if (!i18n[l]) return;
+    if (!(l + chiave in _TITOLI_CAROSELLO_DI_SEMPRE)) _TITOLI_CAROSELLO_DI_SEMPRE[l + chiave] = i18n[l][chiave];
+    const scritto = String(_CAR_MODO_CFG[k + ':' + l] || '').trim();
+    i18n[l][chiave] = scritto || _TITOLI_CAROSELLO_DI_SEMPRE[l + chiave];
+  }));
+  const tit = document.querySelector('.carosello-titolo[data-i18n^="home.figurine"]');
+  if (tit) tit.textContent = t(tit.getAttribute('data-i18n'));
+  if (JSON.stringify(_CAR_MODO_CFG) === prima) return;
+  _ridisegnaCaroselliInVista();
+}
+
 // v7.150 - estratta da `_impostaCaroselli`: la chiama anche `_impostaRidotti`
 function _ridisegnaCaroselliInVista() {
   const inVista = id => { const el = document.getElementById(id); return !!(el && el.parentElement && el.parentElement.getClientRects().length); };
@@ -34627,11 +34707,13 @@ function _caroselloApri(figId, seriesId) {
 function _caroselloAvviaBox(box, quale, vivo) {
   _caroselloSpegni(quale);
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; // "riduci animazioni"
+  const passo = _caroselloPasso(quale);
+  if (!passo) return;                     // v7.152: passo 0 = fermo, si scorre con le frecce
   const t = setInterval(() => {
     if (document.hidden) return;          // scheda del browser in secondo piano
     if (!vivo()) { _caroselloSpegni(quale); return; }
     _caroselloScorriBox(box, 1);
-  }, _caroselloPasso());
+  }, passo);
   _caroselloTimers[quale] = t;
 }
 function _caroselloSpegni(quale) {
@@ -34647,6 +34729,7 @@ function renderCarosello() {
   const box = document.getElementById('home-carosello');
   if (!sez || !box) return;
   _caroselloSpegni('home');
+  if (!_caroselloAcceso('home')) { sez.style.display = 'none'; box.innerHTML = ''; return; }   // v7.152
   // 🆕 v6.463 - la foto si chiede a `_fotoFigurina`, non si legge da `f.img`. L'elenco si legge UNA
   // volta e si passa: `_fotoFigurina` senza `figs` rifarebbe `getData` per ogni figurina.
   // 🗄️ (fino alla v7.083; dalla v7.084 la home filtra `_eBase`, vedi sotto)
@@ -34674,6 +34757,7 @@ function renderCarosello() {
     && !_fpaDoppione(f, _serie.get(f.seriesId), conFcr)
     && _inCaroselloPerVersione(f)
     && _serieInVetrina(_serie.get(f.seriesId))
+    && _serieNellaHome(f.seriesId)   // v7.152: la console può lasciarne fuori qualcuna
     && _fotoFigurina(f, _figs));
   if (disponibili.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   // si mescola una COPIA: ordinare a caso l'elenco vero cambierebbe l'ordine in tutto il sito
@@ -34684,7 +34768,9 @@ function renderCarosello() {
   }
   // 🔄 v6.703 - i nomi si ricavano dall'elenco gia' letto sopra, non da un secondo `getData`.
   const nomeSerie = new Map([..._serie].map(([id, x]) => [id, _nomeSerieCard(x, true)])); // v6.080, v6.493: sempre il nome BREVE
-  const inFila = mazzo.slice(0, CAROSELLO_MAX); // v6.081 - la serie si guarda sulle card che finiscono davvero in fila
+  // v6.081 - la serie si guarda sulle card che finiscono davvero in fila
+  // v7.152 - ordine e quante dalla console (di sempre: a caso, `CAROSELLO_MAX`)
+  const inFila = _caroselloTaglia('home', _caroselloOrdina('home', mazzo));
   const mostraSerie = _caroselloMostraSerie(inFila);
   box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(inFila, CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs, _caroselloConSottoserie(inFila), _caroselloConNumero(inFila), Object.assign(_caroselloRetroOpz(inFila, CAROSELLO_ALTEZZA), { posto: 'caroHome' }))).join('');   // v7.150: il posto dei campi ridotti
   sez.style.display = '';
@@ -34712,6 +34798,7 @@ function renderCaroselloSerie() {
   const box = document.getElementById('serie-carosello');
   if (!sez || !box) return;
   _caroselloSpegni('serie');
+  if (!_caroselloAcceso('serie')) { sez.style.display = 'none'; box.innerHTML = ''; return; }   // v7.152
   // 🆕 v6.463 - vedi il commento in `renderCarosello`: la foto la sa `_fotoFigurina`.
   const _figs = getData('figurines', []);
   // 🔄 v6.690 - stessa domanda del carosello della home, stessa funzione: sulla pagina
@@ -34727,6 +34814,7 @@ function renderCaroselloSerie() {
   // 🐛 v6.985 (Franco: «nella pagina della serie 1 il carosello mostra solo retro») - le tipologie
   //    si alternano: per numero i retro (senza numero, cioe' 0) venivano tutti prima delle figurine.
   base.splice(0, base.length, ..._caroselloAlterna(base));
+  base.splice(0, base.length, ..._caroselloTaglia('serie', _caroselloOrdina('serie', base)));   // v7.152: dalla console
   if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x, true)])); // v6.080, v6.493: sempre il nome BREVE
   // v6.081 - qui il filtro e' f.seriesId === currentSeriesId, quindi vale sempre false. Si calcola
@@ -34785,6 +34873,7 @@ function renderCaroselloSezione() {
   if (!sez || !box) return;
   _caroselloSpegni('sezione');
   const spento = () => { sez.style.display = 'none'; box.innerHTML = ''; };
+  if (!_caroselloAcceso('sezione')) { spento(); return; }   // v7.152
   // 🔄 v7.120 - dentro il box di un tipo senza serie decide la riga del tipo (`_articoloInCarosello`): prima qui non
   //    c'era mai, perché la console quei tipi non li conosceva
   if (!currentSeriesId || !currentSection || !_articoloInCarosello({ section: currentSection, tipoProdotto: _tipoProdottoCorrente })) { spento(); return; }
@@ -34797,6 +34886,7 @@ function renderCaroselloSezione() {
       && (!gruppo || String(f.subseries || '').trim() === gruppo)
       && _inCaroselloPerVersione(f) && _fotoFigurina(f, _figs))
     .sort((a, b) => (a.number || 0) - (b.number || 0));
+  base.splice(0, base.length, ..._caroselloTaglia('sezione', _caroselloOrdina('sezione', base)));   // v7.152: dalla console
   if (base.length < 2) { spento(); return; }
   const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x, true)]));
   const mostraSerie = _caroselloMostraSerie(base);   // una serie sola: la riga della serie non c'e'
@@ -35071,6 +35161,7 @@ function renderCaroselloProdotto() {
   const box = document.getElementById('prodotto-carosello');
   if (!sez || !box) return;
   _caroselloSpegni('prodotto');
+  if (!_caroselloAcceso('prodotto')) { sez.style.display = 'none'; box.innerHTML = ''; return; }   // v7.152
   // 🆕 v6.982 - la stessa domanda degli altri due caroselli (Franco: «tutti e tre»).
   // 🔄 v7.120 - la domanda si fa articolo per articolo (`_articoloInCarosello`, nel filtro qui sotto): negli Altri
   //    articoli ogni tipo senza serie ha la sua riga
@@ -35107,6 +35198,7 @@ function renderCaroselloProdotto() {
       [mazzo[i], mazzo[j]] = [mazzo[j], mazzo[i]];
     }
   }
+  mazzo.splice(0, mazzo.length, ..._caroselloTaglia('prodotto', _caroselloOrdina('prodotto', mazzo)));   // v7.152: dalla console
   const mostraSerie = _caroselloMostraSerie(mazzo); // v6.081 - qui le serie sono di solito piu' d'una, ma non per forza
   // v6.527 - qui, e solo qui, la foto e' al 75%: e' la pagina che Franco ha segnalato.
   box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(mazzo, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs, _caroselloConSottoserie(mazzo), _caroselloConNumero(mazzo), _caroselloRetroOpz(mazzo, CAROSELLO_ALTEZZA_RIDOTTA))).join('');
@@ -40107,6 +40199,7 @@ async function _caricaLegendeDefinizioni() {
     _impostaProtezione(docs.find(x => x.id === 'protezione'));   // v7.104 - idem
     _impostaRidotti(docs.find(x => x.id === 'campiRidotti'));   // v7.150 - idem
     _impostaPosizioni(docs.find(x => x.id === 'posizioniCampi'));   // v7.151 - idem
+    _impostaModoCaroselli(docs.find(x => x.id === 'caroselliModo'));   // v7.152 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -40334,7 +40427,7 @@ async function salvaLegendeDefinizioni() {
 
 // 🆕 v6.982 (Franco: «carosello si-no per tda») — LA TABELLA DEI CAROSELLI, sotto-tab «🎠
 //    Caroselli» di Tipo di articolo. Una riga per tipologia, una spunta: accesa, gli articoli
-//    base con foto di quella tipologia girano nei tre caroselli; spenta, in nessuno.
+//    base con foto di quella tipologia girano nei caroselli (quattro dalla v6.984); spenta, in nessuno.
 // 📌 La spunta si disegna da `_vaInCarosello`, cioe' da cio' che il sito fa ADESSO: dove la
 //    console non ha mai salvato niente mostra il descrittore, non una casella vuota che mente.
 // 📌 Il Salva porta .admin-anche-telefono: sul telefono i .btn-admin sono nascosti.
@@ -40353,11 +40446,13 @@ function renderAdminCaroselliTDA() {
     '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">\uD83C\uDFA0 ' + (it ? 'Caroselli' : 'Carousels') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
-        ? 'Accesa, gli articoli base con foto di quella tipologia girano nei <strong>tre caroselli</strong>: ' +
-          'la home, la pagina della serie e la pagina della tipologia.<br>Spenta, in nessuno dei tre.<br>' +
+        // 🔄 v7.152 (Franco: «correggiamo perché i caroselli sono 4») - c'è anche quello dentro la sezione di una serie
+        //    (v6.984), che la spunta la segue già (`_articoloInCarosello` in `renderCaroselloSezione`)
+        ? 'Accesa, gli articoli base con foto di quella tipologia girano nei <strong>quattro caroselli</strong>: ' +
+          'la home, la pagina della serie, la pagina della tipologia e la sezione della serie.<br>Spenta, in nessuno dei quattro.<br>' +
           'Le colonne delle versioni aggiungono anche quelle versioni, se hanno una foto loro.'
-        : 'Checked: the base items with a photo of that type scroll in the <strong>three carousels</strong> ' +
-          '(home, series page, item type page). Unchecked: in none of them. ' +
+        : 'Checked: the base items with a photo of that type scroll in the <strong>four carousels</strong> ' +
+          '(home, series page, item type page, series section). Unchecked: in none of them. ' +
           'The version columns add those versions too, when they have their own photo.') +
     '</p>' +
     // 🔄 v7.110 (Franco: «nella tabella Caroselli la spunta è troppo lontana dalla voce; avvicinarla di molto») - la
@@ -40398,8 +40493,97 @@ function renderAdminCaroselliTDA() {
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaCaroselliTDA()">' + (it ? 'Salva i caroselli' : 'Save carousels') + '</button>' +
     '</div>' +
+    _tabelleModoCaroselliHTML(th, td, it) +   // v7.152
     _tabellaCampiRidottiHTML(th, td, it) +
     _tabellaPosizioniHTML(th, td, it);   // v7.151
+}
+
+// 🆕 v7.152 (Franco: «senza però avere di fronte una tabella enorme da gestire; se serve fai più mini tabelle») - TRE
+//    BLOCCHI PICCOLI, un salvataggio solo (`settings/caroselliModo`, vedi `_impostaModoCaroselli`):
+//    🎛️ come girano i quattro caroselli (acceso, quanti, secondi, ordine), 🏷️ il titolo della home, 🏠 le serie della home.
+//    Le caselle vuote mostrano in grigio quello che il sito fa oggi.
+function _tabelleModoCaroselliHTML(th, td, it) {
+  const st = 'padding:2px 4px;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;';
+  const v = k => (_CAR_MODO_CFG[k] ?? '') === '' ? '' : esc(String(_CAR_MODO_CFG[k]));
+  const ORDINI = [['', it ? 'di sempre' : 'usual'], ['caso', it ? 'a caso' : 'random'], ['numero', it ? 'per numero' : 'by number'], ['nome', it ? 'per nome' : 'by name']];
+  const passoDiSempre = String(CAROSELLO_PASSO_MS / 1000).replace('.', it ? ',' : '.');
+  const righe = _CAROSELLI_QUATTRO.map(c =>
+    '<tr><td style="' + td + '">' + esc(it ? c.it : c.en) + '</td>' +
+    '<td style="' + td + 'text-align:center;"><input type="checkbox" data-car-modo="' + c.k + ':acceso"' + (_caroselloAcceso(c.k) ? ' checked' : '') + '></td>' +
+    '<td style="' + td + 'text-align:center;"><input type="number" min="0" max="500" step="1" data-car-modo="' + c.k + ':quanti" value="' + v(c.k + ':quanti') + '"' +
+      ' placeholder="' + (c.quanti || (it ? 'tutti' : 'all')) + '" style="width:4.2em;text-align:center;' + st + '"></td>' +
+    '<td style="' + td + 'text-align:center;"><input type="text" inputmode="decimal" data-car-modo="' + c.k + ':passo" value="' + v(c.k + ':passo').replace('.', it ? ',' : '.') + '"' +
+      ' placeholder="' + passoDiSempre + '" style="width:4.2em;text-align:center;' + st + '"></td>' +
+    '<td style="' + td + '"><select data-car-modo="' + c.k + ':ordine" style="' + st + '" title="' + esc(it ? 'di sempre: ' + c.ordine : '') + '">' +
+      ORDINI.map(([val, nome]) => '<option value="' + val + '"' + ((_CAR_MODO_CFG[c.k + ':ordine'] || '') === val ? ' selected' : '') + '>' +
+        esc(val === '' && it ? nome + ' (' + c.ordine + ')' : nome) + '</option>').join('') +
+    '</select></td></tr>').join('');
+  const titolo = (k, l, chiave) => '<td style="' + td + '"><input type="text" data-car-modo="' + k + ':' + l + '" value="' + v(k + ':' + l) + '"' +
+    ' placeholder="' + esc(_TITOLI_CAROSELLO_DI_SEMPRE[l + chiave] ?? ((i18n[l] || {})[chiave] || '')) + '" style="width:100%;min-width:15rem;' + st + '"></td>';
+  const serie = getData('series', []).filter(_serieInVetrina)
+    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999) || String(a.name || '').localeCompare(String(b.name || ''), 'it', { numeric: true }));
+  return '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;">🎛️ ' + (it ? 'Come girano i caroselli' : 'How the carousels run') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it
+        ? '<strong>Acceso</strong>: spento, quel carosello non c’è. <strong>Quanti</strong>: le card al massimo. ' +
+          '<strong>Secondi</strong>: il tempo fra uno scatto e l’altro; 0 = fermo, si scorre con le frecce.<br>' +
+          'Casella vuota o «di sempre»: vale quello che il sito fa oggi, scritto in grigio.'
+        : 'Empty or «usual»: what the site does today, shown in grey. Seconds 0 = still, arrows only.') +
+    '</p>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Carosello' : 'Carousel') + '</th>' +
+      '<th style="' + th + 'text-align:center;">' + (it ? 'Acceso' : 'On') + '</th>' +
+      '<th style="' + th + 'text-align:center;">' + (it ? 'Quanti' : 'How many') + '</th>' +
+      '<th style="' + th + 'text-align:center;">' + (it ? 'Secondi' : 'Seconds') + '</th>' +
+      '<th style="' + th + '">' + (it ? 'Ordine' : 'Order') + '</th></tr>' +
+    righe + '</table></div>' +
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🏷️ ' + (it ? 'Titolo del carosello della home' : 'Home carousel title') + '</h4>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
+    '<tr><th style="' + th + '"></th><th style="' + th + '">' + (it ? 'Italiano' : 'Italian') + '</th><th style="' + th + '">' + (it ? 'Inglese' : 'English') + '</th></tr>' +
+    '<tr><td style="' + td + '">' + (it ? 'Computer' : 'Desktop') + '</td>' + titolo('titolo', 'it', 'home.figurine') + titolo('titolo', 'en', 'home.figurine') + '</tr>' +
+    '<tr><td style="' + td + '">' + (it ? 'Telefono' : 'Phone') + '</td>' + titolo('titoloTel', 'it', 'home.figurineShort') + titolo('titoloTel', 'en', 'home.figurineShort') + '</tr>' +
+    '</table></div>' +
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🏠 ' + (it ? 'Serie nel carosello della home' : 'Series in the home carousel') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;line-height:1.5;">' +
+      (it ? 'Ci sono le serie pubblicate e in completamento; le IN ARRIVO restano sempre fuori. Togli la spunta per lasciarne fuori una.'
+          : 'Published and in-progress series; upcoming ones are always out. Uncheck to leave one out.') +
+    '</p>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:0.35rem 1.2rem;max-width:52rem;">' +
+      serie.map(s => '<label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;color:var(--text);cursor:pointer;white-space:nowrap;">' +
+        '<input type="checkbox" data-car-serie="' + esc(s.id) + '"' + (_serieNellaHome(s.id) ? ' checked' : '') + '>' + esc(s.name || s.id) + '</label>').join('') +
+    '</div>' +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
+      '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaModoCaroselli()">' + (it ? 'Salva come girano' : 'Save carousel settings') + '</button>' +
+    '</div>';
+}
+// Si salva quello che è scritto: una casella vuota non entra (vale il sito di prima); le spunte entrano solo spente,
+// perché accese sono già la regola di sempre.
+async function salvaModoCaroselli() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const voci = {}, errori = [];
+  document.querySelectorAll('#admin-caroselli-tda [data-car-modo]').forEach(el => {
+    const k = el.dataset.carModo;
+    if (el.type === 'checkbox') { if (!el.checked) voci[k] = false; return; }
+    const val = String(el.value || '').trim();
+    if (val === '') return;
+    if (/:quanti$/.test(k)) {
+      const n = parseInt(val, 10);
+      if (n > 0) voci[k] = n; else if (n !== 0) errori.push(val);
+    } else if (/:passo$/.test(k)) {
+      const s = parseFloat(val.replace(',', '.'));
+      if (s >= 0 && s <= 60) voci[k] = s; else errori.push(val);
+    } else voci[k] = val;
+  });
+  document.querySelectorAll('#admin-caroselli-tda input[data-car-serie]').forEach(el => { if (!el.checked) voci['home:serie:' + el.dataset.carSerie] = false; });  if (errori.length) { toast((it ? '❌ Numeri che non capisco: ' : '❌ Invalid numbers: ') + errori.join(', '), 'error'); return; }
+  try {
+    await fsSave('settings', { id: 'caroselliModo', voci });
+    _impostaModoCaroselli({ voci });
+    toast(it ? '✅ Caroselli salvati. Valgono da subito.' : '✅ Carousels saved.', 'success');
+  } catch (e) {
+    console.error('salvaModoCaroselli', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
 }
 
 // 🆕 v7.151 - LA TABELLA DELLE POSIZIONI, sotto i campi ridotti. Due blocchi perché i campi sono diversi: i quattro
@@ -52013,7 +52197,8 @@ function _wzDisegna(tieni) {
       // 🔄 v7.132 (Franco: «anche nella pagina delle figurine con retro, leva la miniatura, metti immagine e domanda al
       //    centro e fai domanda in giallo») - e le figurine con retro: senza miniatura, e `_alCentro` qui sotto
       const _senzaMini = ['attaccare', 'figurines'].includes(String(p).split('|')[0]);
-      const _alCentro = String(p).split('|')[0] === 'figurines';
+      // 🔄 v7.152 (Franco: «sì, uguale alle quattro») - il centrato e la domanda gialla delle tre carte valgono per
+      //    TUTTE le tipologie (carte, tatuaggi…), non più per le sole figurine con retro: via `_alCentro`
       const intest = '<div class="wz-domanda">' + (_senzaMini ? '' : _wzImg(_wzFotoSez(p, s.id), 120, 120, 'wz-icona-sez')) + nome + '</div>';
       // 🆕 v7.130 (Franco: «in ogni pagina nella quale chiediamo quanti articoli lo user ha, indicherei il numero di
       //    articoli che il sito già sa che l'utente ha»; la frase è sua) - sotto la domanda «quante ne hai?», con lo
@@ -52081,10 +52266,11 @@ function _wzDisegna(tieni) {
         // 🔄 v7.130 (Franco: «la domanda mettila tra la foto e i tre box, ma allineata a sx rispetto ai 3 box») - la
         //    frase esce dalla colonna di destra: sotto la foto, sopra le carte, a sinistra (`.wz-sopra-carte`)
         // v7.132: sulle figurine con retro immagine e frasi al centro, domanda gialla (come le figurine per album)
-        corpo += intest + azzerata + '<div class="wz-due' + (_alCentro ? ' wz-centro' : '') + '"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div></div></div>'
-          + '<p class="wz-testo wz-sopra-carte' + (_alCentro ? ' wz-centro wz-quante' : '') + '">' + (it
+        // v7.152: per tutte le tipologie
+        corpo += intest + azzerata + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div></div></div>'
+          + '<p class="wz-testo wz-sopra-carte wz-centro wz-quante">' + (it
               ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
-              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>' + giaFrase('wz-sopra-carte' + (_alCentro ? ' wz-centro' : '') + ' wz-gia-mie')
+              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>' + giaFrase('wz-sopra-carte wz-centro wz-gia-mie')
           + '<div class="wz-scelte">'
           + carta('tutte', '🏆', it ? 'Tutte' : 'All', ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
           // v7.130 (Franco: «"Alcune" può sembrare che voglia dire "poche"») - «Una parte»; la chiave resta `alcune`
@@ -69534,7 +69720,10 @@ const CONTROLLI_SOSPENDIBILI = [
   { id: 'senzaNumero', it: 'Figurine senza numero',      en: 'Stickers without a number' },
   // v6.084 (Franco) - sospendibile come gli altri: una serie in cui i retro-change si stanno
   // ancora caricando avrebbe l'elenco pieno di righe che si sistemano da sole finendo il lavoro.
-  { id: 'changeRetroErrato', it: 'Change collegato al retro sbagliato', en: 'Change linked to the wrong back' }
+  { id: 'changeRetroErrato', it: 'Change collegato al retro sbagliato', en: 'Change linked to the wrong back' },
+  // 🆕 v7.152 (Franco: «sì, contale») - le tipologie col «Fronte ruotato» (`_haFotoRuotata`) che hanno il fronte e
+  //    non ancora la terza foto. Sospendibile come il senza-retro: è lo stesso lavoro, una foto alla volta.
+  { id: 'senzaRuotato', it: 'Fronte senza fronte ruotato', en: 'Front without a rotated front' }
 ];
 // La serie sospende quel controllo? Legge dal record della serie, che e' l'unico posto dove sta.
 function _controlloSospeso(seriesId, idControllo, seriesList) {
@@ -69762,6 +69951,21 @@ function _diagnosiErrori() {
   const _totSenzaFoto  = PRODOTTI_INVENTARIO.reduce((n, s) => n + _senzaFoto[s].length, 0);
   const _totSenzaRetro = PRODOTTI_INVENTARIO.reduce((n, s) => n + _senzaRetro[s].length, 0);
 
+  // 🆕 v7.152 (Franco: «sì, contale») - IL «FRONTE RUOTATO» MANCANTE (#8). Si chiede a `_haFotoRuotata`, non a un
+  //    elenco di tipologie: oggi risponde sì le sole Olografiche. Conta chi ha la foto del fronte PROPRIA e non la
+  //    terza: senza fronte l'articolo sta già nel #5, e il ruotato non si fotografa prima del fronte. «Foto non
+  //    disponibile» resta fuori come negli altri due.
+  const _senzaRuotato = {};
+  PRODOTTI_INVENTARIO.forEach(s => { _senzaRuotato[s] = []; });
+  let _sospesiRuotato = 0;
+  allFigs.forEach(f => {
+    const sez = f.section || 'figurines';
+    if (!_senzaRuotato[sez] || f.fotoNonDisponibile || !_haFotoRuotata(f) || !f.img || f.imgRuotato) return;
+    if (_controlloSospeso(f.seriesId, 'senzaRuotato', seriesList)) _sospesiRuotato++;
+    else _senzaRuotato[sez].push(f);
+  });
+  const _totSenzaRuotato = PRODOTTI_INVENTARIO.reduce((n, s) => n + _senzaRuotato[s].length, 0);
+
   // v6.084 (Franco) - CHANGE COLLEGATO AL RETRO SBAGLIATO.
   // Trovato il 7 agosto 2026 partendo da una domanda sola: "#417 ZACCARIA BIRRERIA - MOSCA NERA
   // e' un change, perche' compare fra gli item senza foto?". Perche' il suo retroId punta a
@@ -69796,7 +70000,8 @@ function _diagnosiErrori() {
   return { seriesList, allFigs, missingNumber, brokenRetroLinks, duplicateBaseFigGroups,
            duplicateRetroGroups, _senzaFoto, _senzaRetro, _totSenzaFoto, _totSenzaRetro, _fotoNonDisp,
            _sospesiFoto, _sospesiRetro, _retroNonDisp,
-           _changeRetroErrato, _totChangeRetroErrato, _sospesiChangeRetro };
+           _changeRetroErrato, _totChangeRetroErrato, _sospesiChangeRetro,
+           _senzaRuotato, _totSenzaRuotato, _sospesiRuotato };
 }
 
 // v6.079 (Franco) - il pallino rosso in navbar, SOLO ADMIN: c'e' finche' la sezione Errori ha
@@ -69822,7 +70027,8 @@ function _totaleSegnalazioniErrori() {
     const d = _diagnosiErrori();
     return d.missingNumber.length + d.brokenRetroLinks.length + d.duplicateBaseFigGroups.length
          + d.duplicateRetroGroups.length + d._totSenzaFoto + d._totSenzaRetro
-         + d._totChangeRetroErrato; // v6.084
+         + d._totChangeRetroErrato   // v6.084
+         + d._totSenzaRuotato;   // v7.152
   } catch(e) { console.error('_totaleSegnalazioniErrori', e); return 0; }
 }
 
@@ -69833,7 +70039,8 @@ function renderAdminErrori() {
   const { seriesList, allFigs, missingNumber, brokenRetroLinks, duplicateBaseFigGroups,
           duplicateRetroGroups, _senzaFoto, _senzaRetro, _totSenzaFoto, _totSenzaRetro,
           _fotoNonDisp, _sospesiFoto, _sospesiRetro, _retroNonDisp,
-          _changeRetroErrato, _totChangeRetroErrato, _sospesiChangeRetro } = _diagnosiErrori();
+          _changeRetroErrato, _totChangeRetroErrato, _sospesiChangeRetro,
+          _senzaRuotato, _totSenzaRuotato, _sospesiRuotato } = _diagnosiErrori();
 
   // v6.079 (Franco) - un numero da solo non dice a COSA si riferisce, e un contatore su cui non si
   // puo' andare a vedere non serve a lavorarci. Ogni riga si apre e mostra gli oggetti, ognuno un
@@ -70112,6 +70319,10 @@ function renderAdminErrori() {
           <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;">#6 ${currentLang==='it'?'Hanno il fronte ma non il retro':'Front only, back missing'} <span style="color:var(--text);font-weight:400;">· ${_totSenzaRetro}</span></div>
           ${_rigaSez(_senzaRetro, 'retro')}
           ${_avvisoSospensione('senzaRetro', _sospesiRetro)}
+          <div style="border-top:1px solid var(--border);margin:0.7rem 0 0.5rem;"></div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;">#8 ${currentLang==='it'?'Hanno il fronte ma non il fronte ruotato':'Front only, rotated front missing'} <span style="color:var(--text);font-weight:400;">· ${_totSenzaRuotato}</span></div>
+          ${_rigaSez(_senzaRuotato, 'ruotato')}
+          ${_avvisoSospensione('senzaRuotato', _sospesiRuotato)}
           <div style="font-size:0.78rem;color:var(--text);margin-top:0.7rem;line-height:1.5;">
             ${currentLang==='it'
               ? 'Esclusi i ' + _fotoNonDisp + ' articoli marcati "Foto non disponibile". Una variazione che mostra la foto della sua base non è considerata senza foto — il suo fronte è quello. Un ERRORE DI STAMPA FRONTALE invece sì: il fronte è l\'unica cosa che lo distingue, e quello che mostra è di un altro.'
