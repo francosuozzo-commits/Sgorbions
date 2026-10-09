@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.153 - Modificato js/app.js (e index per la versione). Ricerca globale, blocco dei Personaggi (Franco: «sì,
+//          aggiungila»): ogni riga dell'elenco degli articoli dice anche la TIPOLOGIA — «Serie · Tipologia · Nome · n.12»
+//          — perché nella stessa serie carta, tatuaggio e trasferello hanno lo stesso nome e numero e sembravano
+//          doppioni. Un articolo di un tipo senza serie dice il nome del suo tipo (`_rgPersonaggiHTML`, `tipologiaDi`).
+//          E dopo la tipologia la SOTTOSERIE, dove c'è (Franco, sulle tre spille uguali di GINO TAPPINO).
 // v7.152 - Modificati js/app.js e index.html. Due domande aperte, risposte da Franco:
 //          1. QUESTIONARIO, LA SCHERMATA A TRE CARTE (Franco: «sì, uguale alle quattro»): foto e frasi centrate e
 //             domanda gialla per tutte le tipologie (carte, tatuaggi…), non più per le sole figurine con retro.
@@ -31066,7 +31071,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.152';
+const JS_VERSION = 'v7.153';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -46974,6 +46979,16 @@ function _rgPersonaggiHTML(q, qn) {
   const ordSerie = new Map(_serieOrdinate(getData('series', [])).map((s, i) => [s.id, i]));
   // 🔄 v7.116 (Franco: «il nome della serie deve essere quello esteso») - `_nomeSerieCard(s)`, non quello breve
   const nomeS = new Map(getData('series', []).map(s => [s.id, _nomeSerieCard(s)]));
+  // 🆕 v7.153 (Franco: «sì, aggiungila») - LA TIPOLOGIA NELLA RIGA: nella stessa serie un personaggio può avere più
+  //    articoli con lo stesso nome e lo stesso numero (Holidays: carta, tatuaggio, trasferello), e senza la tipologia le
+  //    righe sembravano doppioni. Un articolo di un tipo senza serie dice il nome del suo tipo.
+  const tipiPr = new Map(_tipiProdotto().map(tp => [tp.id, tp]));
+  const tipologiaDi = a => (a.tipoProdotto && tipiPr.has(a.tipoProdotto)) ? _nomeTipo(tipiPr.get(a.tipoProdotto)) : getSectionLabel(a.section || 'figurines');
+  // v7.153 (Franco, con l'esempio di GINO TAPPINO: tre righe «Spille · Spille · NON VEDO, NON SENTO, NON PARLO.» uguali)
+  //    - e la SOTTOSERIE, dopo la tipologia, dove l'articolo ne ha una: è lei che distingue le tre spille. Nel suo giallo
+  //    (Franco: «scrivila colorata; abbiamo già un colore per lei?»): `COL_CATEGORIA`, quello delle pillole delle
+  //    sottoserie sulle card e della riga della sottoserie nei caroselli
+  const sottoserieDi = a => String(a.subseries || '').trim();
   const ordina = l => l.slice().sort((a, b) => (ordSerie.get(a.seriesId) ?? 1e9) - (ordSerie.get(b.seriesId) ?? 1e9)
     || String(a.section || 'figurines').localeCompare(String(b.section || 'figurines')) || (parseInt(a.number, 10) || 0) - (parseInt(b.number, 10) || 0));
   // la misura della miniatura in un posto solo (prova-v6405 vieta le misure scritte a mano nella ricerca)
@@ -46985,7 +47000,7 @@ function _rgPersonaggiHTML(q, qn) {
       : '<span style="' + _dimMini + 'border-radius:6px;background:var(--card2);border:1px dashed var(--border);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">🧑‍🎤</span>';
     const elenco = ordina(arts).map(a => '<li><a href="javascript:void(0)" onclick="openFigFromSearch(\'' + a.id + '\',\'' + a.seriesId + '\',\'' + (a.section || 'figurines') + '\')" style="color:var(--text);text-decoration:none;">'
       // v7.116 (Franco: «usa un colore che non sia bianco per il nome della serie») - l'azzurro dei titoli di serie (`--info`)
-      + '<span style="color:var(--info);">' + esc(nomeS.get(a.seriesId) || '') + '</span> · ' + esc(a.name || '') + ((a.number != null && a.number !== '' && !a.noNumber) ? ' · n.' + esc(String(a.number)) : '') + '</a></li>').join('');
+      + '<span style="color:var(--info);">' + esc(nomeS.get(a.seriesId) || '') + '</span> · ' + esc(tipologiaDi(a)) + (sottoserieDi(a) ? ' · <span style="color:' + COL_CATEGORIA + ';">' + esc(sottoserieDi(a)) + '</span>' : '') + ' · ' + esc(a.name || '') + ((a.number != null && a.number !== '' && !a.noNumber) ? ' · n.' + esc(String(a.number)) : '') + '</a></li>').join('');
     return '<div style="display:flex;gap:0.8rem;align-items:flex-start;padding:0.5rem 0;border-top:1px solid var(--border);">'
       + '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + pid + '\')" title="' + esc(D.perId.get(pid).nome) + '">' + mini + '</a>'
       + '<div style="min-width:0;">'
