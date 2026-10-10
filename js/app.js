@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.157 - Modificato js/app.js (e index per la versione). Questionario (Franco: «i pulsanti seleziona tutto e
+//          deseleziona tutto mostriamoli solo per le tipologie per le quali hai fatto la domanda con le quattro
+//          opzioni»): nelle griglie dove si arriva senza domanda (olografiche, altri articoli, bustine) non ci sono più.
+//          E dopo l'ultima serie niente messaggio a comparsa di «Salva e continua» (Franco: «il pop-up … alla fine del
+//          questionario insieme alla schermata riepilogativa»): lo dice già la tabella della pagina finale.
+//          E sul telefono, nell'album da sfogliare (Franco: «i tasti per andare avanti in alto, i tasti per andare
+//          indietro in basso»): la riga sopra l'album ha solo successiva/ultima, quella sotto solo precedente/prima
+//          (regola nell'index). E sempre sul telefono «Mostra solo pagina sinistra / destra» diventano «Zooma pagina
+//          sinistra / destra» (Franco); sul desktop restano come sono.
 // v7.156 - Modificato js/app.js (e index per la versione). Questionario, la finestra di conferma di «Prosegui» (Franco,
 //          le frasi sue): «Prima di procedere, una conferma:» / «Con questo questionario stai aggiungendo N [articoli]
 //          e rimuovendo M [articoli].» / «La tua lista arriverà quindi a N [articoli].» / «Confermi ?». Uno zero non
@@ -31093,7 +31102,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.156';
+const JS_VERSION = 'v7.157';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -52025,7 +52034,9 @@ async function _wzSalvaSerie() {
   w.fatte.push({ s, n: nuovi, t: tolti });
   // 🆕 v7.074 (Franco: «quando premo "Salva e continua" manda un pop-up che dice quante figurine ho aggiunto alla
   //    mia lista per quella serie») - il messaggio a comparsa del sito, sopra la schermata della serie dopo
-  if (nuovi || tolti) {
+  // 🔄 v7.157 (Franco: «il pop-up da togliere è quello che c'è alla fine del questionario insieme alla schermata
+  //    riepilogativa») - dopo l'ULTIMA serie no: dice le stesse cose della tabella della pagina finale (v7.156)
+  if ((nuovi || tolti) && w.i + 1 < w.serie.length) {
     const it = currentLang === 'it', nome = _nomeSerieCard(s, true);
     // v7.075: per tipologia (Franco: «devi dire quanti oggetti per ogni tda»)
     toast(it
@@ -52514,8 +52525,11 @@ function _wzDisegna(tieni) {
           // 🔄 v7.130 (Franco: «"2 pagine" diventa "mostra 2 pagine", "sinistra" "mostra solo pagina sinistra", "destra"
           //    "mostra solo pagina destra"; mostra "mostra 2 pagine" in modalità una pagina, e gli altri 2 in modalità 2
           //    pagine») - si vede solo quello che cambia la vista; da una pagina all'altra si passa dalle due
+          // 🔄 v7.157 (Franco: «solo da mobile i tasti "mostra solo pagina destra" e "mostra solo pagina sinistra",
+          //    chiamali "Zooma pagina destra" e "Zooma pagina sinistra"») - questa riga sul desktop è spenta (lì i tasti
+          //    stanno nella colonna a destra dell'album, `.wz-meta-lato`, e restano come sono)
           + (giu ? '' : '<span class="wz-album-meta">' + (meta === 'tutte'
-              ? bv('sx', it ? 'Mostra solo pagina sinistra' : 'Show left page only') + bv('dx', it ? 'Mostra solo pagina destra' : 'Show right page only')
+              ? bv('sx', it ? 'Zooma pagina sinistra' : 'Zoom left page') + bv('dx', it ? 'Zooma pagina destra' : 'Zoom right page')
               : bv('tutte', it ? 'Mostra 2 pagine' : 'Show 2 pages')) + '</span>')
           + '</div>';
         // 🧪 v7.132 (Franco: «PROVA a tirare su tutto partendo dal fatto che il titolo della pagina lo metti in alto, sulla
@@ -52560,8 +52574,10 @@ function _wzDisegna(tieni) {
             : (it ? 'Tocca quelle che <b>ti mancano</b>: tutte le altre entrano nella tua lista.' : 'Tap the ones you are <b>missing</b>.')) + '</p>'
           // 🔄 v7.130 (Franco: «"Tocca tutte" diventa "Seleziona tutte", "Nessuna" diventa "Deseleziona tutte"; questi 2
           //    bottoni sono azione, quindi vanno in blu») - `.btn-primary`; premuti restano verdi (`.wz-cmd-on`, v7.072)
-          + '<div class="wz-comandi"><button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'tutte' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Seleziona tutte' : 'Select all') + '</button>'
-          + '<button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'nessuna' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Deseleziona tutte' : 'Deselect all') + '</button></div>'
+          // 🔄 v7.157 (Franco: «i pulsanti seleziona tutto e deseleziona tutto mostriamoli solo per le tipologie per le quali
+          //    hai fatto la domanda con le quattro opzioni») - nelle griglie dirette (`c.diretta`, v7.156) non ci sono
+          + (c.diretta ? '' : '<div class="wz-comandi"><button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'tutte' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Seleziona tutte' : 'Select all') + '</button>'
+          + '<button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'nessuna' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Deseleziona tutte' : 'Deselect all') + '</button></div>')
           + '<div class="wz-griglia">' + tutti.map(f =>
               '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
               + (mie.has(f.id) ? '<span class="wz-mia">' + (it ? 'già tua' : 'yours') + '</span>' : '')
