@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.163 - Modificato index.html (e app.js per la versione). La finestra «La mia lista Sgorbions» riordinata da Franco:
+//          prima frase che finisce con «collezione», subito il pulsante «📋 Accedi alla tua lista», la frase del
+//          questionario col suo pulsante sotto, «Oppure…», poi la guida di sempre. Via i tre titoletti verdi.
 // v7.162 - Modificato js/app.js (e index per la versione). «Esci dal questionario» (Franco, «la 2»): la seconda riga dice
 //          «Le modifiche che hai apportato alle serie già concluse, saranno salvate nella tua lista.», perché uscendo la
 //          serie in corso non si salva. E il riepilogo dell'uscita (Franco): «Nella tua lista ci sono N articoli. / N li
@@ -31126,7 +31129,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.162';
+const JS_VERSION = 'v7.163';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
