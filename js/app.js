@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.160 - Modificati js/app.js e index.html. 🆕 LA PAGINA «LA MIA LISTA SGORBIONS» (Franco: «non abbiamo una pagina che
+//          mostra la collezione di un utente»): in alto le locandine di tutte le serie, grigie quelle di cui la lista
+//          non ha niente; sotto un tab per ogni serie di cui ha qualcosa, con una riga per tipologia e versione:
+//          miniatura, «N di M», barretta, percentuale, e il totale della serie (`renderMiaLista`, pagina `lamialista`).
+//          Si entra dalla finestra «La mia lista Sgorbions» (sezione nuova «La mia lista», in cima, «📋 Guarda la tua
+//          lista») e da «Vai alla tua lista →» a fine questionario. La vedono tutti.
 // v7.159 - Modificati js/app.js e index.html. La voce «Liste» della barra diventa «Export liste» (Franco; EN «Export
 //          lists»), e con lei «← Torna a Export liste» nel profilo. Il titolo della pagina resta «Le mie liste».
 // v7.158 - Modificato js/app.js (e index per la versione). 🐛 Questionario (Franco: «"Vai alla tua lista" va alla
@@ -31107,7 +31113,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.159';
+const JS_VERSION = 'v7.160';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35257,7 +35263,7 @@ function renderCaroselloProdotto() {
 }
 
 function showPage(page) {
-  const protectedPages = ['catalog', 'blog', 'classifica', 'wantlist', 'profile', 'newsletter', 'wishlist', 'unsubscribe'];
+  const protectedPages = ['catalog', 'blog', 'classifica', 'wantlist', 'profile', 'newsletter', 'wishlist', 'unsubscribe', 'lamialista'];   // v7.160
   if (protectedPages.includes(page) && !currentUser) {
     openAuth('login');
     return;
@@ -35334,6 +35340,7 @@ function showPage(page) {
   }
   if (page === 'home') { renderHomeStats(); renderHomeSeries(); }
   if (page === 'wantlist') renderWantlist();
+  if (page === 'lamialista') renderMiaLista();   // v7.160
   if (page === 'newsletter') { renderNewsletterUsers(); renderEmailLog(); }
   if (page === 'wishlist') renderWishlist();
   if (page === 'unsubscribe') renderUnsubscribePage();
@@ -52125,9 +52132,68 @@ async function _wzAzzeraDavvero() {
   toast(currentLang === 'it' ? 'La tua lista è stata azzerata.' : 'Your list has been reset.', 'success');
   _wz.passo = 'intro'; _wzDisegna();
 }
+// 🆕 v7.160 (Franco: «non abbiamo una pagina che mostra la collezione di un utente, intendo la sua lista: vorrei una
+//    pagina nuova che si intitola "La mia lista Sgorbions" con una serie di tab, uno per serie, che mostrano con un
+//    riepilogo tutto ciò che ha l'utente, tipologia per tipologia; la parte alta mostra la locandina di tutte le serie,
+//    con quelle che l'utente non ha in grigio») - LA PAGINA `lamialista`. Le risposte di Franco: si entra dalla finestra
+//    «La mia lista Sgorbions» (terza sezione) e da «Vai alla tua lista →» a fine questionario; i tab solo per le serie
+//    di cui la lista ha qualcosa; tutte le versioni che l'utente ha; la vedono tutti.
+//    📌 Le serie e gli articoli sono quelli che il sito conta (`_wzSerie`, `_articoliDaContareSito`): niente IN ARRIVO
+//    né invisibili. Una riga per tipologia e versione di cui c'è almeno un articolo, «N di M» con la barretta; «(base)»
+//    solo dove la stessa tipologia ha anche una versione in elenco. Parole e forma della riga sono mie.
+let _mlSerie = null;   // il tab aperto
+function _mlRighe(s, mie) {
+  const it = currentLang === 'it', gruppi = new Map(), ordine = _wzSezioni();
+  for (const f of _articoliDaContareSito()) {
+    if (f.seriesId !== s.id) continue;
+    const z = f.section || 'figurines', v = _VERSIONI_VIVE.find(x => f[x.campo]), k = z + '|' + (v ? v.chiave : '');
+    if (!gruppi.has(k)) gruppi.set(k, { z, v, n: 0, tot: 0 });
+    const g = gruppi.get(k); g.tot++; if (mie.has(f.id)) g.n++;
+  }
+  const pos = z => { const i = ordine.indexOf(z); return i < 0 ? 999 : i; };
+  const vive = [...gruppi.values()].filter(g => g.n > 0);
+  const conVersioni = new Set(vive.filter(g => g.v).map(g => g.z));
+  return vive.sort((a, b) => pos(a.z) - pos(b.z) || (a.v ? _VERSIONI_VIVE.indexOf(a.v) + 1 : 0) - (b.v ? _VERSIONI_VIVE.indexOf(b.v) + 1 : 0))
+    .map(g => ({ z: g.z, nome: _wzEtichetta(g.z) + (g.v ? ' (' + (it ? g.v.it : g.v.en) + ')' : conVersioni.has(g.z) ? ' (base)' : ''), n: g.n, tot: g.tot }));
+}
+function apriMiaLista() { if (!currentUser) { openAuth('login'); return; } showPage('lamialista'); }
+function _mlApriSerie(id) { _mlSerie = id; renderMiaLista(); }
+function renderMiaLista() {
+  const box = document.getElementById('ml-pagina');
+  if (!box || !currentUser) return;
+  const it = currentLang === 'it', mie = new Set(getOwned()), serie = _wzSerie();
+  const piene = serie.filter(s => _articoliDaContareSito().some(f => f.seriesId === s.id && mie.has(f.id)));
+  if (!piene.some(s => s.id === _mlSerie)) _mlSerie = piene.length ? piene[0].id : null;
+  const locandine = '<div class="ml-locandine">' + serie.map(s => {
+      const piena = piene.includes(s);
+      return '<button type="button" class="ml-locandina' + (piena ? '' : ' ml-grigia') + (s.id === _mlSerie ? ' on' : '') + '"'
+        + (piena ? ' onclick="_mlApriSerie(\'' + s.id + '\')"' : ' disabled') + ' title="' + esc(_nomeSerieCard(s)) + '">'
+        + _wzImg(s.img, 240, 240, '') + '<span>' + esc(_nomeSerieCard(s, true)) + '</span></button>';
+    }).join('') + '</div>';
+  if (!piene.length) {
+    box.innerHTML = locandine + '<p class="ml-vuota">' + (it ? 'La tua lista è ancora vuota.' : 'Your list is still empty.') + '</p>';
+    return;
+  }
+  const s = piene.find(x => x.id === _mlSerie), righe = _mlRighe(s, mie);
+  const n = righe.reduce((a, r) => a + r.n, 0), tot = righe.reduce((a, r) => a + r.tot, 0);
+  const riga = (foto, nome, k, m, cls) => {
+    const pct = m ? Math.round(k / m * 100) : 0;
+    return '<div class="ml-riga' + (cls || '') + '">' + foto + '<span class="ml-nome">' + nome + '</span>'
+      + '<span class="ml-conto"><b>' + nfmtWz(k) + '</b> ' + (it ? 'di' : 'of') + ' ' + nfmtWz(m) + '</span>'
+      + '<span class="ml-barra"><span style="width:' + pct + '%;"></span></span><span class="ml-pct">' + (pct === 100 ? '✅' : pct + '%') + '</span></div>';
+  };
+  box.innerHTML = locandine
+    + '<div class="ml-tab">' + piene.map(x => '<button type="button" class="ml-tab-voce' + (x.id === _mlSerie ? ' on' : '') + '" onclick="_mlApriSerie(\'' + x.id + '\')">'
+      + esc(_nomeSerieCard(x, true)) + '</button>').join('') + '</div>'
+    + '<div class="ml-corpo">'
+    + righe.map(r => riga(_wzImg(_wzFotoSez(r.z, s.id), 120, 120, 'ml-mini'), esc(r.nome), r.n, r.tot)).join('')
+    + (righe.length > 1 ? riga('<span class="ml-mini"></span>', (it ? 'Totale ' : 'Total ') + esc(_nomeSerieCard(s, true)), n, tot, ' ml-totale') : '')
+    + '</div>';
+}
 // 🐛 v7.158 (Franco: «quando alla fine del questionario premi "Vai alla tua lista", in realtà va alla home»; «mi aspetto
 //    di arrivare alla schermata liste») - i due «Vai alla tua lista →» (pagina finale e riepilogo dell'uscita) portavano
 //    a `profile`, che per l'admin è la console: ora a `wantlist`, «Le mie liste».
+// 🔄 v7.160 (Franco: «hai capito perfettamente») - e dalla v7.160 alla pagina nuova «La mia lista Sgorbions» (`lamialista`)
 function _wzChiudi() {
   const ov = document.getElementById('wz-overlay');
   if (ov) ov.remove();
@@ -52268,7 +52334,7 @@ function _wzDisegna(tieni) {
       + (tot && vuote ? '<p class="wz-nota">' + (it ? (vuote === 1 ? 'Di 1 serie non hai ancora niente nella tua lista.' : 'Di ' + vuote + ' serie non hai ancora niente nella tua lista.')
                                                   : (vuote === 1 ? 'You have nothing yet from 1 series.' : 'You have nothing yet from ' + vuote + ' series.')) + '</p>' : '');
     piede = '<button type="button" class="btn-secondary" onclick="_wzChiudi()">' + (it ? 'Chiudi' : 'Close') + '</button>'
-      + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'wantlist\')">' + (it ? 'Vai alla tua lista →' : 'Go to your list →') + '</button>';
+      + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'lamialista\')">' + (it ? 'Vai alla tua lista →' : 'Go to your list →') + '</button>';
   } else if (w.passo === 'finale') {
     corpo = '<div class="wz-titolo">🎉 ' + (it ? 'Fatto !' : 'Done !') + '</div>'
       + '<p class="wz-testo">' + (it
@@ -52278,7 +52344,7 @@ function _wzDisegna(tieni) {
         : (w.aggiunti || w.tolti ? 'Your list is updated: +' + nfmtWz(w.aggiunti) + ' / −' + nfmtWz(w.tolti) + '.' : 'Your list was already up to date.')) + '</p>'
       + _wzTabellaFinale();
     piede = '<button type="button" class="btn-secondary" onclick="_wzChiudi()">' + (it ? 'Chiudi' : 'Close') + '</button>'
-      + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'wantlist\')">' + (it ? 'Vai alla tua lista →' : 'Go to your list →') + '</button>';
+      + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'lamialista\')">' + (it ? 'Vai alla tua lista →' : 'Go to your list →') + '</button>';
   } else {
     const s = w.serie[w.i], p = w.passo;
     corpo = _wzTesta(s);
