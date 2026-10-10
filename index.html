@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.169">
+<link rel="stylesheet" href="css/style.css?v=7.170">
 
 
 <style>
@@ -1298,7 +1298,10 @@ span.ml-mini { background: none; }
   .hero-stats-side .stat-label { margin:0; text-align:left; line-height:1.1; }
   /* 🆕 v7.169 (Franco: «anche le etichette degli score allineate») - cifre a larghezza fissa, così la larghezza in `ch`
      che scrive `_allineaEtichetteScore` è quella vera del numero più lungo della colonna */
-  .hero-stats-side .stat-num { font-variant-numeric: tabular-nums; }
+  /* 🔄 v7.170 (Franco: «i numeri non sono giustificati a sinistra ma centrati; giustificali a sinistra mantenendo
+     l'allineamento delle etichette») - la regola di tutti i numeroni li centra (`text-align:center`, più su): con la
+     larghezza della colonna un numero corto finiva in mezzo. Sul telefono a sinistra. */
+  .hero-stats-side .stat-num { font-variant-numeric: tabular-nums; text-align: left; }
 }
 /* v5.950 → v5.952 — SCHEDA SERIE: i due bottoni di ritorno nel MARGINE ESTERNO (Franco).
    "← Inventario" (chiude la scheda serie) e "← Sezioni" (chiude una sezione) stavano ciascuno su
@@ -3974,6 +3977,9 @@ di tutte le serie</button>
                fuori da «Funzioni») valgono per il CONTENUTO dei tab, non più per il loro ordine. -->
           <!-- 🆕 v7.151 (Franco: «crea una sezione a parte, nella admin console, chiamata Caroselli, e sposta lì l'attuale tab
                "Caroselli" della sezione "tipologie di articolo"») - in ordine alfabetico è la prima. -->
+          <!-- 🆕 v7.170 (Franco: «nella admin console, in una nuova sezione chiamata aggiornamenti massivi») - in ordine
+               alfabetico è la prima -->
+          <button class="admin-tab" onclick="adminTab('aggiornamenti')">🔁 Aggiornamenti massivi</button>
           <button class="admin-tab" onclick="adminTab('caroselli')">🎠 Caroselli</button>
           <button class="admin-tab" onclick="adminTab('email')" data-i18n="admin.email.tab">✉️ Comunicazioni</button>
           <button class="admin-tab" onclick="adminTab('foto')" data-i18n="admin.foto">📥 Data import</button>
@@ -4325,6 +4331,10 @@ di tutte le serie</button>
         <!-- 🆕 v7.151 (Franco) - LA SEZIONE «CAROSELLI», uscita da Tipo di articolo come la Protezione foto alla v7.121.
              Dentro: quali tipologie e versioni girano (v6.982), i campi ridotti (v7.150), le posizioni dei campi (v7.151).
              Le disegna `renderAdminCaroselliTDA`. -->
+        <!-- 🆕 v7.170 - LA SEZIONE «AGGIORNAMENTI MASSIVI»: la disegna `renderAdminAggiornamenti` -->
+        <div id="admin-aggiornamenti" class="admin-section">
+          <div><div id="admin-aggiornamenti-box"></div></div>
+        </div>
         <div id="admin-caroselli" class="admin-section">
           <div><div id="admin-caroselli-tda"></div></div>
         </div>
@@ -6597,7 +6607,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.169"></script>
+<script src="js/app.js?v=7.170"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6621,7 +6631,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.169'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.170'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
