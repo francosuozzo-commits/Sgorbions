@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.153">
+<link rel="stylesheet" href="css/style.css?v=7.154">
 
 
 <style>
@@ -1087,6 +1087,16 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
   .wz-esci-basso { display: block; position: static; width: 100%; max-width: 1200px; box-sizing: border-box;
     margin: auto auto 1.2rem; padding: 0 1rem; text-align: right; flex-shrink: 0; pointer-events: none; }
   .wz-esci-basso .wz-esci { font-size: 0.8rem; padding: 0.35rem 0.8rem; pointer-events: auto; }
+  /* 🆕 v7.154 (Franco: «la pagina con la domanda sul livello deve essere portata tutta al centro perché altrimenti non
+     sfruttiamo lo schermo»; «in generale nelle pagine del questionario, per la versione desktop, quello che accade
+     accade in centro allo schermo, di modo che l'utente deve guardare sempre in centro») - LA SCHERMATA AL CENTRO ANCHE
+     IN ALTEZZA. In orizzontale lo era già; in altezza partiva dall'alto e sotto restava vuoto. Il margine automatico
+     sopra il pannello si divide lo spazio libero con quello di «Esci» in fondo (v7.088), e dove «Esci» in fondo non c'è
+     lo prende il margine sotto il piede: schermata e tasti stanno in mezzo. Quando la schermata è più alta della
+     finestra i margini automatici valgono zero, quindi niente si taglia in cima e si scorre come prima. */
+  .wz-overlay > .wz-pannello { margin-top: auto; }
+  .wz-overlay > .wz-piede:last-child { margin-bottom: auto; }
+  .wz-overlay > .wz-pannello:has(+ .wz-piede:empty:last-child) { margin-bottom: auto; }
 }
 /* 🔄 v7.061 (Franco: «non intendevo tutto il tasto in rosso, ma tasto bianco con la scritta in rosso, una cosa meno
    visiva»; e anche «Salta questa serie») - fondo bianco, scritta e bordo rossi. Rosso pieno resta solo «Azzera
@@ -6444,7 +6454,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.153"></script>
+<script src="js/app.js?v=7.154"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6468,7 +6478,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.153'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.154'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
