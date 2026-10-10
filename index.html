@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.167">
+<link rel="stylesheet" href="css/style.css?v=7.168">
 
 
 <style>
@@ -1115,6 +1115,9 @@ span.ml-mini { background: none; }
   .ml-riga .ml-pct { grid-column: 3 / 4; }
   .ml-nome { font-size: 0.85rem; }
 }
+/* 🆕 v7.168 (Franco: «una schermata per ogni sottoserie») - la riga col nome della sottoserie sopra la griglia */
+.wz-sottoserie { text-align: center; font-family: var(--font-ui); font-size: 1.05rem; color: var(--text); margin: 0.2rem 0 0.7rem; }
+.wz-sottoserie-dove { opacity: 0.8; font-size: 0.9rem; }
 /* 🆕 v7.055 (Franco) - «Esci dal questionario» in cima a ogni schermata, piccolo e a destra */
 .wz-esci-alto { text-align: right; margin: 0 0 0.3rem; }
 .wz-esci-alto .wz-esci { font-size: 0.8rem; padding: 0.35rem 0.8rem; }   /* v7.058: era .btn-secondary, ora rosso */
@@ -6591,7 +6594,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.167"></script>
+<script src="js/app.js?v=7.168"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6615,7 +6618,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.167'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.168'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
