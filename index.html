@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.168">
+<link rel="stylesheet" href="css/style.css?v=7.169">
 
 
 <style>
@@ -1296,6 +1296,9 @@ span.ml-mini { background: none; }
   .hero-stats-side .stat-item { display:flex; align-items:center; justify-content:flex-start; gap:0.3rem; text-align:left; }
   .hero-stats-side .stat-num { flex-shrink:0; }
   .hero-stats-side .stat-label { margin:0; text-align:left; line-height:1.1; }
+  /* 🆕 v7.169 (Franco: «anche le etichette degli score allineate») - cifre a larghezza fissa, così la larghezza in `ch`
+     che scrive `_allineaEtichetteScore` è quella vera del numero più lungo della colonna */
+  .hero-stats-side .stat-num { font-variant-numeric: tabular-nums; }
 }
 /* v5.950 → v5.952 — SCHEDA SERIE: i due bottoni di ritorno nel MARGINE ESTERNO (Franco).
    "← Inventario" (chiude la scheda serie) e "← Sezioni" (chiude una sezione) stavano ciascuno su
@@ -6594,7 +6597,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.168"></script>
+<script src="js/app.js?v=7.169"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6618,7 +6621,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.168'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.169'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
