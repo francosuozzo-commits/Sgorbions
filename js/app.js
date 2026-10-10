@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.168 - Modificati js/app.js e index.html. 🐛 Questionario, la griglia (Franco: «non gestisce bene le sottoserie»;
+//          «una schermata per ogni sottoserie, con i tasti avanti e indietro»): dove la tipologia della serie ha più
+//          sottoserie, la griglia ne mostra una alla volta, col nome e «2 di 4»; «Prosegui» e «Indietro» passano
+//          dall'una all'altra, ai capi fanno quello di sempre; «Seleziona / Deseleziona tutte» valgono per la sottoserie
+//          a schermo. Album da sfogliare invariato.
 // v7.167 - Modificato js/app.js (e index per la versione). Il tasto «indietro» della tipologia aperta da «La mia lista
 //          Sgorbions» (Franco: «se lo spazio lo consente, "Torna a La mia lista Sgorbions"»): così sul computer, «La mia
 //          lista» sul telefono, dove sta sulla riga del titolo. E sotto i tab: «Clicca sulla riga per vedere i tuoi
@@ -31156,7 +31161,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.167';
+const JS_VERSION = 'v7.168';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -51950,6 +51955,7 @@ function _wzVerso(sez, verso) {
     c.selDaAzzera = !!c.azzera;   // v7.132
   }
   c.verso = verso;
+  c.subI = 0;   // v7.168 - la griglia riparte dalla prima sottoserie
   _wzDisegna();
 }
 function _wzTocca(chiave, id, el) {
@@ -52055,11 +52061,30 @@ function _wzRigheFine(idNuovi, idTolti) {
   return [...gruppi.values()].sort((a, b) => ordine.indexOf(a.z) - ordine.indexOf(b.z))
     .map(g => ({ nome: _wzEtichetta(g.z) + (g.v ? ' (' + (it ? g.v.it : g.v.en) + ')' : ''), nuovi: g.nuovi, tolti: g.tolti }));
 }
+// 🆕 v7.168 (Franco: «una schermata per ogni sottoserie, con i tasti avanti e indietro») - in cima alla griglia la
+//    sottoserie in vista e dove si è («2 di 4»; parole mie), e il passo fra una e l'altra
+function _wzTestaSottoserie(sub) {
+  if (!sub) return '';
+  const it = currentLang === 'it';
+  // il nome nel colore delle sottoserie del sito (`COL_CATEGORIA`, come sulle card e nella ricerca globale, v7.153)
+  return '<div class="wz-sottoserie">' + esc(_parolaSottoserie()) + ': <b style="color:' + COL_CATEGORIA + ';">' + esc(_etichettaSottoserie(sub.nome)) + '</b>'
+    + ' <span class="wz-sottoserie-dove">· ' + (sub.i + 1) + (it ? ' di ' : ' of ') + sub.n + '</span></div>';
+}
+function _wzSottoseriePasso(p, d) {
+  const c = _wz.scelte[p];
+  c.subI = (c.subI || 0) + d;
+  _wzDisegna();
+}
 function _wzTutte(chiave, accendi) {
   const w = _wz, s = w.serie[w.i];
   const set = chiave === 'albums' ? w.scelte.albums : w.scelte[chiave].sel;
+  // 🔄 v7.168 - con le schermate per sottoserie, solo quelle a schermo (`visibili`, scritto dalla griglia)
+  const visibili = chiave !== 'albums' && w.scelte[chiave].visibili;
+  if (visibili) visibili.forEach(id => { if (accendi) set.add(id); else set.delete(id); });
+  else {
   set.clear();
   if (accendi) _wzArticoli(s.id, chiave).forEach(f => set.add(f.id));
+  }
   // 🆕 v7.072 (Franco: «se premo "tutte" o "nessuna" colora di verde quel bottone, ma non appena faccio qualsiasi
   //    modifica, spegnilo») - il pulsante premuto per ultimo resta verde finché non si tocca una figurina (`_wzTocca`)
   if (chiave !== 'albums') w.scelte[chiave].ultimo = accendi ? 'tutte' : 'nessuna';
@@ -52734,6 +52759,7 @@ function _wzDisegna(tieni) {
         //    linea dei due tasti "Torna indietro" e "Prosegui"») - sul desktop il titolo va fra i due tasti in alto
         //    (`titoloAlto`, lo mette chi scrive la copia del piede); qui resta per il telefono (`.wz-tit-basso`)
         titoloAlto = intest;
+        c.visibili = null;   // v7.168 - nell'album «Seleziona / Deseleziona tutte» valgono per tutte (il limite è della griglia)
         corpo += '<div class="wz-tit-basso">' + intest + '</div>' + '<p class="wz-testo">' + (c.verso === 'ho'
             ? (it ? 'Sfoglia l\'album e tocca le figurine che <b>hai</b>.' : 'Leaf through the album and tap the stickers you <b>have</b>.')
             : (it ? 'Sfoglia l\'album e tocca le figurine che <b>ti mancano</b>: le altre entreranno nella tua lista.' : 'Leaf through the album and tap the stickers you are <b>missing</b>.')) + '</p>'
@@ -52767,6 +52793,16 @@ function _wzDisegna(tieni) {
           + avanti("_wzProsegui('" + p + "')");   // v7.130: prima il popup di conferma
       } else {
         const figs = getData('figurines', []), mie = new Set(getOwned());
+        // 🆕 v7.168 (Franco: «il questionario non gestisce bene le sottoserie: la griglia deve essere suddivisa per
+        //    sottoserie»; «forse vale la pena fare una schermata per ogni sottoserie, con i tasti avanti e indietro») -
+        //    UNA SCHERMATA PER SOTTOSERIE, nell'ordine del sito (`_sottoserieUsate`, «Set principale» per chi non ne
+        //    ha). `c.subI` è la sottoserie in vista; `c.visibili` gli id a schermo, che «Seleziona / Deseleziona tutte»
+        //    toccano (solo quelli della sottoserie in vista). Senza sottoserie, o con una sola, tutto come prima.
+        const subs = _sottoserieUsate(s, tutti);
+        const sub = (subs.length > 1 && subs.some(v => v)) ? { i: Math.min(Math.max(c.subI || 0, 0), subs.length - 1), n: subs.length } : null;
+        if (sub) { c.subI = sub.i; sub.nome = subs[sub.i]; }
+        const visibili = sub ? tutti.filter(f => String(f.subseries || '').trim() === sub.nome) : tutti;
+        c.visibili = sub ? visibili.map(f => f.id) : null;
         corpo += intest + '<p class="wz-testo">' + (c.verso === 'ho'
             ? (it ? 'Tocca quelle che <b>hai</b>.' : 'Tap the ones you <b>have</b>.')
             : (it ? 'Tocca quelle che <b>ti mancano</b>: tutte le altre entrano nella tua lista.' : 'Tap the ones you are <b>missing</b>.')) + '</p>'
@@ -52776,13 +52812,16 @@ function _wzDisegna(tieni) {
           //    hai fatto la domanda con le quattro opzioni») - nelle griglie dirette (`c.diretta`, v7.156) non ci sono
           + (c.diretta ? '' : '<div class="wz-comandi"><button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'tutte' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Seleziona tutte' : 'Select all') + '</button>'
           + '<button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'nessuna' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Deseleziona tutte' : 'Deselect all') + '</button></div>')
-          + '<div class="wz-griglia">' + tutti.map(f =>
+          + _wzTestaSottoserie(sub)
+          + '<div class="wz-griglia">' + visibili.map(f =>
               '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
               + (mie.has(f.id) ? '<span class="wz-mia">' + (it ? 'già tua' : 'yours') + '</span>' : '')
               + _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, '')
               + '<div class="wz-num">' + esc(String(f.number || '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
-        piede = indietro + '<span class="wz-conto-testo"><b id="wz-conto">' + c.sel.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(c.sel.size, p) + '</span></span>'
-          + avanti("_wzProsegui('" + p + "')");   // v7.130: prima il popup di conferma
+        // v7.168: fra le sottoserie «Indietro» e «Prosegui» passano dall'una all'altra; ai due capi fanno quello di sempre
+        piede = (sub && sub.i > 0 ? indietro.replace('onclick="_wzIndietro()"', 'onclick="_wzSottoseriePasso(\'' + p + '\',-1)"') : indietro)
+          + '<span class="wz-conto-testo"><b id="wz-conto">' + c.sel.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(c.sel.size, p) + '</span></span>'
+          + (sub && sub.i < sub.n - 1 ? avanti("_wzSottoseriePasso('" + p + "',1)") : avanti("_wzProsegui('" + p + "')"));   // v7.130: prima il popup di conferma
       }
     } else if (p === 'fine') {
       const { nuovi, tolti, idNuovi, idTolti } = _wzListaNuova();
