@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.162 - Modificato js/app.js (e index per la versione). «Esci dal questionario» (Franco, «la 2»): la seconda riga dice
+//          «Le modifiche che hai apportato alle serie già concluse, saranno salvate nella tua lista.», perché uscendo la
+//          serie in corso non si salva. E il riepilogo dell'uscita (Franco): «Nella tua lista ci sono N articoli. / N li
+//          hai aggiunti col questionario. / Ecco quanti ne hai aggiunti, serie per serie.», una riga vuota fra le frasi.
+//          E via del tutto il messaggio a comparsa di «Salva e continua» (Franco: «contenuto informativo duplicato»).
 // v7.161 - Modificati js/app.js e index.html. Il titolo della pagina «Le mie liste» diventa «Export liste» (Franco:
 //          «all'interno della pagina "export liste" il titolo è ancora "le mie liste"»; EN «Export lists»).
 //          🐛 E il pulsante «📋 Guarda la tua lista» della finestra diceva la scritta del questionario (Franco): aveva la
@@ -31121,7 +31126,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.161';
+const JS_VERSION = 'v7.162';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -52056,13 +52061,9 @@ async function _wzSalvaSerie() {
   //    mia lista per quella serie») - il messaggio a comparsa del sito, sopra la schermata della serie dopo
   // 🔄 v7.157 (Franco: «il pop-up da togliere è quello che c'è alla fine del questionario insieme alla schermata
   //    riepilogativa») - dopo l'ULTIMA serie no: dice le stesse cose della tabella della pagina finale (v7.156)
-  if ((nuovi || tolti) && w.i + 1 < w.serie.length) {
-    const it = currentLang === 'it', nome = _nomeSerieCard(s, true);
-    // v7.075: per tipologia (Franco: «devi dire quanti oggetti per ogni tda»)
-    toast(it
-      ? nome + ': ' + [nuovi ? 'hai aggiunto alla tua lista ' + _wzPerTipo(idNuovi) : '', tolti ? (nuovi ? 'e hai tolto ' : 'hai tolto dalla tua lista ') + _wzPerTipo(idTolti) : ''].filter(Boolean).join(', ') + '.'
-      : nome + ': ' + [nuovi ? 'added ' + _wzPerTipo(idNuovi) : '', tolti ? 'removed ' + _wzPerTipo(idTolti) : ''].filter(Boolean).join(', ') + '.', 'success');
-  }
+  // 🗑️ v7.162 (Franco: «il pop-up che dice che cosa hai aggiunto a fine di una serie … visto che anche qui abbiamo messo
+  //    la schermata di riepilogo, è un contenuto informativo duplicato; lo toglierei») - VIA IN TUTTE LE SERIE: lo dice
+  //    già la pagina di fine serie («Ecco cosa cambia nella tua lista»), che si vede prima di «Salva e continua».
   _wzIniziaSerie(w.i + 1);
 }
 // 🆕 L'AZZERAMENTO (Franco: «resettare la propria lista riazzerando il questionario… con domanda da doppia
@@ -52281,8 +52282,10 @@ function _wzDisegna(tieni) {
     corpo = '<div class="wz-titolo">' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</div>'
       // 🔄 v7.161 (Franco: «"Vuoi davvero uscire dal questionario ? / Le modifiche che hai apportato alle liste, saranno
       //    salvate nella tua lista." Mi raccomando attenzione all'accapo») - le sue parole, a capo dopo il «?»; l'inglese è mio
-      + '<p class="wz-testo">' + (it ? 'Vuoi davvero uscire dal questionario ?<br>Le modifiche che hai apportato alle liste, saranno salvate nella tua lista.'
-        : 'Do you really want to exit the questionnaire ?<br>The changes you made to the lists will be saved in your list.') + '</p>'
+      // 🔄 v7.162 (Franco, «la 2») - uscendo la serie in corso non si salva (lo fa solo «Salva e continua»): la frase lo
+      //    dice, «alle serie già concluse» al posto di «alle liste»
+      + '<p class="wz-testo">' + (it ? 'Vuoi davvero uscire dal questionario ?<br>Le modifiche che hai apportato alle serie già concluse, saranno salvate nella tua lista.'
+        : 'Do you really want to exit the questionnaire ?<br>The changes you made to the series you already finished will be saved in your list.') + '</p>'
       // v7.089: «Sì, esci» porta al riepilogo (`_wzUscita`), e si chiude da lì
       + '<div class="wz-inizia"><button type="button" class="btn-primary wz-grande" onclick="_wzUscita()">' + (it ? 'Sì, esci' : 'Yes, exit') + '</button></div>';
     piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(_wz.primaDiEsci || \'intro\')">← ' + (it ? 'Resta nel questionario' : 'Stay') + '</button>';
@@ -52337,9 +52340,16 @@ function _wzDisegna(tieni) {
     }).join('');
     corpo = '<div class="wz-titolo">📋 ' + (it ? 'La tua lista Sgorbions' : 'Your Sgorbions list') + '</div>'
       + '<p class="wz-testo">' + (it
-        ? (tot ? 'Nella tua lista ci sono <b>' + nfmtWz(tot) + '</b> articoli' + (totNuovi ? ', e <b>' + nfmtWz(totNuovi) + '</b> li hai aggiunti col questionario.' : '. Col questionario non ne hai aggiunti.') + '<br>Ecco quanti sono, serie per serie.'
+        // 🔄 v7.162 (Franco: «"Nella tua lista ci sono 751 articoli. / 517 li hai aggiunti col questionario. / Ecco quanti
+        //    ne hai aggiunti, serie per serie."», con una riga vuota fra l'una e l'altra) - le sue parole. Mie: «1 l'hai
+        //    aggiunto», e senza aggiunti la frase di prima («non ne hai aggiunti» / «Ecco quanti sono»)
+        ? (tot ? 'Nella tua lista ci sono <b>' + nfmtWz(tot) + '</b> articoli.<br><br>' + (totNuovi
+                 ? '<b>' + nfmtWz(totNuovi) + '</b> ' + (totNuovi === 1 ? 'l\'hai aggiunto' : 'li hai aggiunti') + ' col questionario.<br><br>Ecco quanti ne hai aggiunti, serie per serie.'
+                 : 'Col questionario non ne hai aggiunti.<br><br>Ecco quanti sono, serie per serie.')
                : 'La tua lista è ancora vuota.')
-        : (tot ? 'Your list has <b>' + nfmtWz(tot) + '</b> items' + (totNuovi ? ', and you added <b>' + nfmtWz(totNuovi) + '</b> with the questionnaire.' : '. You added none with the questionnaire.') + '<br>Here they are, series by series.'
+        : (tot ? 'Your list has <b>' + nfmtWz(tot) + '</b> items.<br><br>' + (totNuovi
+                 ? 'You added <b>' + nfmtWz(totNuovi) + '</b> with the questionnaire.<br><br>Here is how many you added, series by series.'
+                 : 'You added none with the questionnaire.<br><br>Here they are, series by series.')
                : 'Your list is still empty.')) + '</p>'
       + blocchi
       + (tot && vuote ? '<p class="wz-nota">' + (it ? (vuote === 1 ? 'Di 1 serie non hai ancora niente nella tua lista.' : 'Di ' + vuote + ' serie non hai ancora niente nella tua lista.')
