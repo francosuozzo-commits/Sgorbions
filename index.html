@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.158">
+<link rel="stylesheet" href="css/style.css?v=7.159">
 
 
 <style>
@@ -2266,7 +2266,7 @@ button.back-btn { color:#ffffff; }
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
     <a onclick="showPage('catalog')" data-page="catalog" data-i18n="nav.catalog" id="nav-catalog" style="display:none;">Inventario</a>
     <a onclick="showPage('blog')" data-page="blog" id="nav-blog" style="display:none;" data-i18n="nav.blog">Blog</a>
-    <a onclick="showPage('wantlist')" data-page="wantlist" id="nav-wantlist" style="display:none;" data-i18n="nav.wantlist">Liste</a>
+    <a onclick="showPage('wantlist')" data-page="wantlist" id="nav-wantlist" style="display:none;" data-i18n="nav.wantlist">Export liste</a>
     <!-- 🆕 v7.087 (Franco: «aggiungiamo una voce alla navbar che si chiama "Questionario" e che fa partire il
          questionario») - `solo-wz`: finché il questionario non è finito la vede solo l'admin, come gli altri
          suoi pulsanti. Sul telefono no: la v7.015 aveva tolto dal panino la riga del questionario (Franco). -->
@@ -6486,7 +6486,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.158"></script>
+<script src="js/app.js?v=7.159"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6510,7 +6510,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.158'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.159'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
