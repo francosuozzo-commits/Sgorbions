@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.154 - Modificato index.html (e app.js per la versione). Questionario, desktop (Franco: «la pagina con la domanda
+//          sul livello deve essere portata tutta al centro»; «in generale … quello che accade accade in centro allo
+//          schermo»): ogni schermata sta al centro anche in altezza, coi suoi tasti. Le schermate più alte della
+//          finestra partono dall'alto e scorrono come prima. Regola nell'index, accanto a quella di «Esci» in fondo.
 // v7.153 - Modificato js/app.js (e index per la versione). Ricerca globale, blocco dei Personaggi (Franco: «sì,
 //          aggiungila»): ogni riga dell'elenco degli articoli dice anche la TIPOLOGIA — «Serie · Tipologia · Nome · n.12»
 //          — perché nella stessa serie carta, tatuaggio e trasferello hanno lo stesso nome e numero e sembravano
@@ -31071,7 +31075,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.153';
+const JS_VERSION = 'v7.154';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
