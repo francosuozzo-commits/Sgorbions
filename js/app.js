@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.169 - Modificato js/app.js (e index per la versione). Home, telefono (Franco: «proviamo nella versione mobile a
+//          cambiare "leggendaria" con "mitica"»): «L'Inventario della mitica serie anni '90.» (`hero.descShort`, solo
+//          in italiano; il computer e l'inglese restano). E sul telefono le etichette degli score allineate fra loro
+//          (Franco): ogni numero largo quanto il più lungo della sua colonna (`_allineaEtichetteScore`).
 // v7.168 - Modificati js/app.js e index.html. 🐛 Questionario, la griglia (Franco: «non gestisce bene le sottoserie»;
 //          «una schermata per ogni sottoserie, con i tasti avanti e indietro»): dove la tipologia della serie ha più
 //          sottoserie, la griglia ne mostra una alla volta, col nome e «2 di 4»; «Prosegui» e «Indietro» passano
@@ -31161,7 +31165,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.168';
+const JS_VERSION = 'v7.169';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33056,7 +33060,7 @@ const i18n = {
 
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','rc.title':'Ricarica il sito saltando la cache del browser','nav.mialista':'La mia lista Sgorbions',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
-    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'<em>Mia lista</em> / Totale Inventario','hero.challenge':'Sfida gli altri collezionisti','hero.challengeDesc':'Chi ha la lista con maggior punteggio rarità? Puoi anche apparire come anonimo.','hero.desc':'L\'Inventario non ufficiale della leggendaria serie anni \'90.','hero.descShort':'L\'Inventario della leggendaria serie anni \'90.',
+    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'<em>Mia lista</em> / Totale Inventario','hero.challenge':'Sfida gli altri collezionisti','hero.challengeDesc':'Chi ha la lista con maggior punteggio rarità? Puoi anche apparire come anonimo.','hero.desc':'L\'Inventario non ufficiale della leggendaria serie anni \'90.','hero.descShort':'L\'Inventario della mitica serie anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Carosello degli articoli Sgorbions del sito','home.figurineShort':'Gli articoli Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions !',
     'hero.stat1':'Serie','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
@@ -67525,6 +67529,7 @@ function animateCount(el, target) {
   // clearInterval, quindi l'errore si ripeterebbe per sempre, molte volte al secondo. Un elemento
   // in meno nell'HTML non deve poter accendere un ciclo infinito.
   if (!el) return;
+  el.dataset.fine = String(target);   // v7.169 - il numero d'arrivo, per `_allineaEtichetteScore`
   let current = 0;
   const step = Math.ceil(target / 30);
   const interval = setInterval(() => {
@@ -67781,6 +67786,25 @@ function renderHomeStats() {
   animateCount(document.getElementById('stat-users'), users.length);
   animateCount(document.getElementById('stat-langs'), contaLingueSito());
   updateOwnedCounter();
+  _allineaEtichetteScore();   // v7.169
+}
+// 🆕 v7.169 (Franco: «nella home della versione mobile i numeri degli score sono allineati in verticale ma non lo sono
+//    le rispettive etichette; fai in modo che anche le etichette siano allineate») - SUL TELEFONO numero ed etichetta
+//    stanno sulla stessa riga (v7.077), in tre colonne: un «7» e un «160» spingevano l'etichetta in due punti diversi.
+//    Ogni numero prende la larghezza del più lungo della SUA colonna, misurata in cifre dal numero d'arrivo
+//    (`data-fine`, scritto da `animateCount`: durante l'animazione le cifre crescono) e scritta in `ch`, con le cifre a
+//    larghezza fissa (index). Le voci spente (score a zero, v6.947) non occupano una cella e non contano.
+//    Sul desktop le etichette stanno sotto i numeri: lì si toglie tutto.
+function _allineaEtichetteScore() {
+  const mob = _isMobileViewport();
+  ['hero-stats', 'hero-stats-right'].forEach(id => {
+    const box = document.getElementById(id);
+    if (!box) return;
+    const voci = [...box.querySelectorAll('.stat-item')].filter(v => v.style.display !== 'none');
+    const larghe = [0, 0, 0];
+    voci.forEach((v, i) => { const n = v.querySelector('.stat-num'); if (n) larghe[i % 3] = Math.max(larghe[i % 3], String(n.dataset.fine || n.textContent || '').length); });
+    voci.forEach((v, i) => { const n = v.querySelector('.stat-num'); if (n) n.style.minWidth = mob ? larghe[i % 3] + 'ch' : ''; });
+  });
 }
 
 function updateOwnedCounter() {
