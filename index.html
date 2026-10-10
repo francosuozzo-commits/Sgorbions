@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.171">
+<link rel="stylesheet" href="css/style.css?v=7.172">
 
 
 <style>
@@ -2777,7 +2777,9 @@ button.back-btn { color:#ffffff; }
              del titolo del carosello («Le figurine»). -->
         <!-- 🔄 v7.011 (Franco: «deve essere in giallo, e allineata a sx; e un po' più piccola») - il giallo
              è quello dei nomi delle categorie (`COL_CATEGORIA`, #ffd84d); da 1,45 a 1,15rem. -->
-        <h2 class="carosello-titolo solo-telefono" style="color:#ffd84d;text-align:left;font-size:1.15rem;" data-i18n="home.cosaFare">Cosa puoi fare in questo sito ?</h2>
+        <!-- 🔄 v7.172 (Franco: «"Cosa puoi fare in questo sito ?" diventa "Ecco cosa puoi fare in questo sito", senza "."
+             finale, e centralo orizzontalmente con i box sotto») - centrato (era a sinistra, v7.011) -->
+        <h2 class="carosello-titolo solo-telefono" style="color:#ffd84d;text-align:center;font-size:1.15rem;" data-i18n="home.cosaFare">Ecco cosa puoi fare in questo sito</h2>
         <!-- 🔄 v7.019 - qui stava il pulsante del questionario (v7.014): Franco l'ha voluto come box della
              griglia qui sotto («un'altra sezione come quelle, graficamente»). -->
       </div>
@@ -2795,14 +2797,15 @@ button.back-btn { color:#ffffff; }
         <!-- v7.052: `solo-wz`, il questionario lo vede solo l'admin finché non è finito -->
         <div class="solo-wz" style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="apriWizardLista()" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">📝</div>
-          <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n-html="how.q.title">Crea la tua lista col <span class="how-q-a-capo">Questionario Sgorbions</span></h3>
+          <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n-html="how.q.title">Crea la tua lista personale col <span class="how-q-a-capo">Questionario Sgorbions</span></h3>
           <p style="font-size:0.88rem;" data-i18n="how.q.desc">Rispondi a poche domande, serie per serie: la tua lista Sgorbions sarà pronta in un attimo.</p>
         </div>
         <!-- 🆕 v7.045 (Franco: «blocco 2: dedicato al flag Mia lista»; «usa il testo che già hai») - apre la finestra
              «La mia lista Sgorbions», come la voce di menu che porta lo stesso nome. -->
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="openDemoToggleModal()" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
-          <div style="font-size:2.875rem;margin-bottom:1rem;">✍️</div>
-          <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.m.title">La mia lista Sgorbions</h3>
+          <!-- v7.172 (Franco: «cambierei la icona del box "la mia lista sgorbions": qualcosa che ricorda una spunta») - era ✍️ -->
+          <div style="font-size:2.875rem;margin-bottom:1rem;">✅</div>
+          <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.m.title">La tua lista Sgorbions</h3>
           <p style="font-size:0.88rem;" data-i18n="how.m.desc">Aggiungi manualmente gli articoli Sgorbions alla tua lista personale.</p>
         </div>
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('contact')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
@@ -6607,7 +6610,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.171"></script>
+<script src="js/app.js?v=7.172"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6631,7 +6634,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.171'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.172'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
