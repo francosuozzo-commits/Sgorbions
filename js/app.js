@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.165 - Modificati js/app.js e index.html. *Mia lista* in corsivo ovunque (Franco: «sì, Mia lista in corsivo
+//          ovunque»): etichetta del selettore sulle card (`owned.toggle`, `owned.yes`), scheda dell'articolo, colonna
+//          della vista tabellare, privacy, conferma di cancellazione dell'account (passa a `data-i18n-html`), testi
+//          admin (serie nascosta, ricalcolo dei punteggi, che passa a `innerHTML`), l'esempio nella finestra. E nella
+//          finestra la nota con le parole di Franco, su due righe e senza «NOTA —»: «È semplicemente una lista tua: cosa
+//          significhi per te (possesso, preferiti, o qualsiasi altra cosa) lo decidi tu. / Non è visibile da altri utenti.»
+//          «Oppure spuntando a mano il selettore Mia lista…» (Franco: «chiamiamolo sempre selettore», era «flag»); «Tocca
+//          il selettore per aggiungere un articolo alla tua lista personale.» (Franco). Sul telefono niente spazio prima
+//          del «?» nelle domande del questionario e della finestra (`_mobileSpazioDomanda`, Franco). E sopra l'esempio
+//          del selettore «Qui sotto, un esempio del selettore.» e «Prova a toccare il selettore Mia lista !!!» (Franco).
 // v7.164 - Modificato index.html (e app.js per la versione). Finestra «La mia lista Sgorbions» (Franco): «Oppure
 //          spuntando a mano il flag Mia lista sugli articoli, navigando l'Inventario.» E la domanda della guida diventa
 //          «Come funziona il selettore Mia lista ?»; «Mia lista» in corsivo in tutte e due (Franco: «va sempre in italico»);
@@ -31136,7 +31146,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.164';
+const JS_VERSION = 'v7.165';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32902,7 +32912,7 @@ const i18n = {
     'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Export lists','nav.questionarioBreve':'Questionnaire','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Resume the Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory !','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
-'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
+'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your <em>My list</em> and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
 'modal.scoreBoost.title':'Congratulations !','modal.scoreBoost.ok':'Great !','modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go !','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Rarity scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on the Rarity score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
@@ -32922,7 +32932,7 @@ const i18n = {
 'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.introNumeri':'On this site you will find...','hero.tagline':'Made with 💚 for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.spille':'Pins','catalog.attaccare':'Album stickers','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','catalog.backToSeries':'Series','form.series.firstNumber':'First sticker N.','form.series.lastNumber':'Last sticker N.','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','rc.title':'Reload the site bypassing the browser cache','nav.mialista':'My Sgorbions list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
-'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
+'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'<em>My list</em> / Total Inventory',
 'hero.challenge':'Challenge other collectors','hero.challengeDesc':'Who has the list with the highest rarity score? You can also appear anonymously.',
 'hero.desc':'The unofficial Inventory of the legendary \'90s series.','hero.descShort':'The Inventory of the legendary \'90s series.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
@@ -32981,7 +32991,7 @@ const i18n = {
 'footer.desc':'The unofficial fan database dedicated to the legendary Italian sticker collection of the \'90s. Made with 💚 by collectors, for collectors.',
 'footer.nav':'Navigation','footer.account':'Account',
 'footer.copy':'© 2026 figurinesgorbions.it — Unofficial fan site.',
-'owned.toggle':'My list','owned.yes':'✓ My list',
+'owned.toggle':'<em>My list</em>','owned.yes':'✓ <em>My list</em>',
 'contact.q1':'Do you want more information about Sgorbions?','contact.q2':'Do you want to report an error?',
 'contact.q3':'Or do you just want to compliment the administrator?',
 'contact.cta':'For any of these things, send us a message !',
@@ -32995,7 +33005,7 @@ const i18n = {
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
 'nav.onlineSince':'Online dal 21.06.2026',
 'profile.changeNat':'✏️ Cambia nazionalità','profile.setNat':'✏️ Imposta nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','profile.changeUsername':'✏️ Cambia nome utente','profile.changeUsername.title':'✏️ Cambia nome utente','profile.changeUsername.hint':'Il nome utente è il nome pubblico visibile ad altri utenti (es. nella Classifica).<br><br>Usare solo lettere, numeri e underscore, massimo 20 caratteri.','profile.changeUsername.save':'Salva','profile.changeUsername.welcomeIntro':'Ti abbiamo assegnato questo nome utente in automatico. Vuoi personalizzarlo? Puoi sempre cambiarlo in seguito dal tuo profilo.','profile.deleteAccount':'🗑️ Elimina il mio account','profile.statsTitle':'I tuoi numeri Sgorbions','profile.myMessages.title':'I miei messaggi con lo staff',
-'modal.deleteAccount.title':'🗑️ Elimina il mio account','modal.deleteAccount.intro':'Se continui, cancelleremo per sempre:','modal.deleteAccount.item1':'Il tuo profilo: nickname, e-mail, avatar, nazionalità','modal.deleteAccount.item2':'La tua "Mia lista" e la tua posizione in Classifica','modal.deleteAccount.item3':'La tua lista "Ciò che cerco"','modal.deleteAccount.item4':'Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato','modal.deleteAccount.blogNote':'Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.','modal.deleteAccount.irreversible':'Questa azione non si può annullare.','modal.deleteAccount.confirmPwd':'Conferma la tua password per procedere','modal.deleteAccount.confirmBtn':'Elimina definitivamente il mio account','modal.deleteAccount.confirmGoogleBtn':'Verifica con Google ed elimina il mio account',
+'modal.deleteAccount.title':'🗑️ Elimina il mio account','modal.deleteAccount.intro':'Se continui, cancelleremo per sempre:','modal.deleteAccount.item1':'Il tuo profilo: nickname, e-mail, avatar, nazionalità','modal.deleteAccount.item2':'La tua <em>Mia lista</em> e la tua posizione in Classifica','modal.deleteAccount.item3':'La tua lista "Ciò che cerco"','modal.deleteAccount.item4':'Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato','modal.deleteAccount.blogNote':'Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.','modal.deleteAccount.irreversible':'Questa azione non si può annullare.','modal.deleteAccount.confirmPwd':'Conferma la tua password per procedere','modal.deleteAccount.confirmBtn':'Elimina definitivamente il mio account','modal.deleteAccount.confirmGoogleBtn':'Verifica con Google ed elimina il mio account',
 'modal.scoreBoost.title':'Complimenti !','modal.scoreBoost.ok':'Perfetto !','modal.accountDeleted.title':'Account eliminato','modal.accountDeleted.desc':'Il tuo account e tutti i tuoi dati sono stati cancellati definitivamente. Ci dispiace vederti andare via !','modal.accountDeleted.close':'Chiudi',
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi rarità','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al Punteggio rarità. Ogni livello si attiva dal punteggio minimo indicato in su.',
@@ -33031,7 +33041,7 @@ const i18n = {
 
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','rc.title':'Ricarica il sito saltando la cache del browser','nav.mialista':'La mia lista Sgorbions',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
-    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri collezionisti','hero.challengeDesc':'Chi ha la lista con maggior punteggio rarità? Puoi anche apparire come anonimo.','hero.desc':'L\'Inventario non ufficiale della leggendaria serie anni \'90.','hero.descShort':'L\'Inventario della leggendaria serie anni \'90.',
+    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'<em>Mia lista</em> / Totale Inventario','hero.challenge':'Sfida gli altri collezionisti','hero.challengeDesc':'Chi ha la lista con maggior punteggio rarità? Puoi anche apparire come anonimo.','hero.desc':'L\'Inventario non ufficiale della leggendaria serie anni \'90.','hero.descShort':'L\'Inventario della leggendaria serie anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Carosello degli articoli Sgorbions del sito','home.figurineShort':'Gli articoli Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions !',
     'hero.stat1':'Serie','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
@@ -33065,7 +33075,7 @@ const i18n = {
     'admin.series.title':'Gestisci Serie','admin.figurines.title':'Gestisci Figurine','admin.contacts.title':'Messaggi Ricevuti','admin.users.title':'Utenti Registrati:',
     'footer.desc':'Il database fan non ufficiale dedicato alla leggendaria collezione di figurine italiana degli anni \'90. Fatto con 💚 da collezionisti, per collezionisti.',
     'footer.nav':'Navigazione','footer.account':'Account','footer.copy':'© 2026 figurinesgorbions.it — Sito fan non ufficiale.',
-    'owned.toggle':'Mia lista','owned.yes':'✓ Mia lista'
+    'owned.toggle':'<em>Mia lista</em>','owned.yes':'✓ <em>Mia lista</em>'
   
   ,'form.fig.noNumber':'Non ha numero','auth.googleBtn':'Accedi con Google','auth.or':'oppure'}
 };
@@ -34745,6 +34755,16 @@ function _mobileSpazioEsclamativo(root) {
     if (/[  ][!?]/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/[  ]+([!?])/g, '$1');
   }
 }
+// 🆕 v7.165 (Franco: «nella versione mobile, togli lo spazio prima del punto di domanda alla fine delle domande») - la
+//    gemella della qui sopra per il solo «?»: le domande del questionario («Che collezionista sei ?», «Confermi ?»…) e
+//    della finestra «La mia lista Sgorbions». Il «!» lì resta com'è: Franco ha nominato solo le domande.
+function _mobileSpazioDomanda(root) {
+  if (!root || !_isMobileViewport()) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = w.nextNode(); n; n = w.nextNode()) {
+    if (/[  ]\?/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/[  ]+\?/g, '?');
+  }
+}
 function _osservaRigheCarosello(box) {
   if (box._roRighe || typeof ResizeObserver === 'undefined') return;
   box._larghezzaRighe = box.offsetWidth;
@@ -35759,6 +35779,7 @@ function openDemoToggleModal() {
     if (label) label.style.color = 'var(--muted)';
   }
   document.getElementById('demo-toggle-modal').classList.remove('hidden');
+  _mobileSpazioDomanda(document.getElementById('demo-toggle-modal'));   // v7.165 (Franco)
 }
 
 function toggleDemoBtn() {
@@ -52775,6 +52796,7 @@ function _wzDisegna(tieni) {
   ov.innerHTML = '<div class="wz-pannello">' + corpo + '</div><div class="wz-piede">' + piede + '</div>'
     + (_wzConEsci && !_wzEsciInRiga ? '<div class="wz-esci-basso">' + _wzBtnEsci + '</div>' : '');
   ov.scrollTop = tieni ? _wzY : 0;
+  _mobileSpazioDomanda(ov);   // v7.165 (Franco): sul telefono «Confermi?», non «Confermi ?»
   // 🆕 v7.130 (Franco: «nella finestra di riepilogo delle tda, se deve apparire la scrollbar, disponi le miniature su 2
   //    colonne, così che la finestra non sia così alta; al limite "figurine con retro" li scrivi su 2 righe») - si
   //    misura il popup appena disegnato: se il contenuto è più alto della finestra, due colonne (`.wz-popup-due`).
@@ -52894,7 +52916,8 @@ async function backfillPublicScores() {
     const realUserIds = new Set(allUsers.map(u => u.id));
     const orphanOwned = allOwned.filter(o => !realUserIds.has(o.userId)).length;
 
-    if (progressEl) progressEl.textContent = 'Completato: Punteggio rarità aggiornato per tutti i ' + done + ' utenti.' + (orphanOwned ? ' (' + orphanOwned + ' dati "Mia lista" orfani ignorati, utenti non più esistenti)' : '');
+    // v7.165 (Franco: «Mia lista in corsivo ovunque») - `innerHTML` per il corsivo; dentro ci sono solo due numeri
+    if (progressEl) progressEl.innerHTML = 'Completato: Punteggio rarità aggiornato per tutti i ' + done + ' utenti.' + (orphanOwned ? ' (' + orphanOwned + ' dati <em>Mia lista</em> orfani ignorati, utenti non più esistenti)' : '');
     toast(currentLang === 'it' ? 'Punteggio rarità ricalcolato per tutti i ' + done + ' utenti' : 'Rarity score recalculated for all ' + done + ' users', 'success');
     _cache.public_profiles = await fsGetAll('public_profiles');
     renderClassifica();
@@ -60815,7 +60838,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   if (currentUser && photoEl) {
     const _azioni = [];
     _azioni.push(`<span style="display:inline-flex;align-items:center;gap:0.45rem;">
-      <span style="font-size:0.8rem;color:var(--muted);">${currentLang === 'it' ? 'Mia lista' : 'My list'}</span>
+      <span style="font-size:0.8rem;color:var(--muted);"><em>${currentLang === 'it' ? 'Mia lista' : 'My list'}</em></span>
       <button class="owned-btn ${isOwned ? 'on' : ''}" id="fig-detail-toggle" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista':'In your list') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="toggleOwnedFromDetail('${f.id}')">\u2713</button>
     </span>`);
     if (!isAdmin) {
@@ -74053,7 +74076,7 @@ function renderBulkEditView() {
           <!-- 🆕 v6.971 (Franco) - Personaggio, per tutti, a destra: vedi _cellaPersonaggio. -->
           ${_cPersonaggio ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Personaggio' : 'Character'}</th>` : ''}
           ${!isAdmin ? `
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Mia lista' : 'My list'}</th>
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);"><em>${currentLang === 'it' ? 'Mia lista' : 'My list'}</em></th>
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</th>` : ''}
 `;
 
