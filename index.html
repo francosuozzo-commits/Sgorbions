@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.156">
+<link rel="stylesheet" href="css/style.css?v=7.157">
 
 
 <style>
@@ -807,6 +807,14 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
    gruppo di due tasti: in colonna ai lati dell'album, in fila nelle righe del telefono (lì «Prima» viene prima di
    «Precedente», `row-reverse`, così la fila va dal capo al centro e dal centro al capo) */
 .wz-pag-lato { display: none; }
+/* 🆕 v7.157 (Franco: «quando mostriamo l'album per selezionare le figurine, in versione mobile, non mostriamo tutti i
+   tasti di navigazione sia sopra che sotto, bensì i tasti per andare avanti in alto e i tasti per andare indietro in
+   basso») - sul telefono la riga sopra l'album tiene «Pagina successiva» / «Ultima pagina», quella sotto «Pagina
+   precedente» / «Prima pagina». «Schermata N di M» resta in tutte e due, lo zoom in quella sopra. */
+@media (max-width: 860px) {
+  .wz-album-riga > .wz-album-nav:first-child .wz-pag-sx { display: none; }
+  .wz-album-riga > .wz-album-nav:last-child .wz-pag-nav:not(.wz-pag-sx) { display: none; }
+}
 .wz-pag-nav { display: inline-flex; gap: 0.4rem; }
 .wz-pag-nav.wz-pag-sx { flex-direction: row-reverse; }
 @media (min-width: 861px) {
@@ -6478,7 +6486,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.156"></script>
+<script src="js/app.js?v=7.157"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6502,7 +6510,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.156'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.157'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
