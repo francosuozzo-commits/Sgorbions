@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.170 - Modificato js/app.js (e index per la versione). 🐛 Home sul telefono (Franco: «l'allineamento delle
+//          etichette ha funzionato solo sulla prima delle tre colonne»): le due griglie dei numeri, una sotto l'altra,
+//          si misurano insieme, colonna per colonna (`_allineaEtichetteScore`). E i numeri a sinistra, non centrati
+//          (Franco; index).
+//          🆕 Console, tab nuovo «🔁 Aggiornamenti massivi» (Franco): per serie, una riga per ogni Categoria (e, nella
+//          seconda sezione, Sottocategoria) col numero di articoli e la casella «… mobile e Carosello»; il salvataggio la
+//          porta su tutti gli articoli di quella riga (versioni comprese: chi eredita dalla base la segue), una scrittura
+//          per serie, poi rilegge dal server e dice quanti tornano (`renderAdminAggiornamenti`, `salvaAggiornamentiMassivi`).
 // v7.169 - Modificato js/app.js (e index per la versione). Home, telefono (Franco: «proviamo nella versione mobile a
 //          cambiare "leggendaria" con "mitica"»): «L'Inventario della mitica serie anni '90.» (`hero.descShort`, solo
 //          in italiano; il computer e l'inglese restano). E sul telefono le etichette degli score allineate fra loro
@@ -31165,7 +31173,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.169';
+const JS_VERSION = 'v7.170';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40736,6 +40744,125 @@ function renderAdminQuestionario() {
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaQuestionario()">' + (it ? 'Salva il questionario' : 'Save questionnaire') + '</button>' +
     '</div>';
+}
+// 🆕 v7.170 (Franco: «un meccanismo di propagazione di aggiornamenti fatto da configurazione: un posto dove scrivere la
+//    versione mobile e carosello di categoria e sottocategoria una volta sola, avviando una propagazione su tutti gli
+//    oggetti che la utilizzano; nella admin console, in una nuova sezione chiamata aggiornamenti massivi; una sezione per
+//    le categorie e una per le sottocategorie; raggruppate per serie»; risposte sue: «per serie», «casella svuotata = il
+//    campo mobile si cancella», «tutte le tipologie che hanno una categoria, versioni comprese») - IL TAB «🔁
+//    AGGIORNAMENTI MASSIVI». Per ogni serie una riga per ogni valore di Categoria (o Sottocategoria) che vi compare, col
+//    numero di articoli e la casella del campo «mobile e Carosello». La casella parte col valore di oggi; se gli
+//    articoli non sono d'accordo dice «valori diversi» e, lasciata vuota, non cambia niente.
+//    📌 Il salvataggio scrive solo le righe cambiate, e di loro solo gli articoli che hanno davvero un valore diverso;
+//       una scrittura per serie (`_salvaFigurineInBlocco`, come la vista tabellare), poi rilegge dal SERVER
+//       (`fsGetAllDalServer`) e dice quanti articoli tornano col valore nuovo.
+//    📌 Il valore si pulisce come nella scheda (spazi doppi, «|» attaccati): stesso campo, stessa regola.
+// ⚠️ chiavi fra virgolette: prova-v6801 e v6810 leggono i descrittori cercando le righe «  nome: {», e queste due
+//    sembrerebbero due tipologie
+const _AGG_CAMPI = {
+  'categorie':      { base: 'category',    mobile: 'categoriaMobile',      it: 'Categoria',      en: 'Category',    itMob: 'Categoria mobile e Carosello',      enMob: 'Mobile and carousel category' },
+  'sottocategorie': { base: 'subcategory', mobile: 'sottocategoriaMobile', it: 'Sottocategoria', en: 'Subcategory', itMob: 'Sottocategoria mobile e Carosello', enMob: 'Mobile and carousel subcategory' },
+};
+const _aggPulisci = v => String(v || '').trim().split(/\s+/).filter(Boolean).join(' ').replace(/\s*\|\s*/g, '|');
+function _aggGruppi(quale) {
+  const c = _AGG_CAMPI[quale], figs = getData('figurines', []);
+  const serie = getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  return serie.map(s => {
+    const m = new Map();
+    figs.forEach(f => {
+      if (f.seriesId !== s.id) return;
+      const v = String(f[c.base] || '').trim();
+      if (!v) return;
+      if (!m.has(v)) m.set(v, []);
+      m.get(v).push(f);
+    });
+    const righe = [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'it'))
+      // il valore che si VEDE: una versione col campo vuoto eredita quello della base (`_testoMobile`, v7.146)
+      .map(([val, arr]) => { const mob = new Set(arr.map(f => _testoMobile(f, c.mobile))); return { val, arr, mob: mob.size === 1 ? [...mob][0] : null }; });
+    return { s, righe };
+  }).filter(g => g.righe.length);
+}
+function renderAdminAggiornamenti() {
+  const box = document.getElementById('admin-aggiornamenti-box');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:4px 8px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);';
+  const st = 'padding:3px 6px;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;width:100%;min-width:14rem;';
+  const sezione = quale => {
+    const c = _AGG_CAMPI[quale];
+    return '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">' + (quale === 'categorie' ? (it ? '🗂️ Categorie' : '🗂️ Categories') : (it ? '🗂️ Sottocategorie' : '🗂️ Subcategories')) + '</h4>'
+      + '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.8rem;line-height:1.5;">'
+      + (it ? 'Scrivi la «' + c.itMob + '» una volta sola: il salvataggio la porta su tutti gli articoli della serie che hanno quella ' + c.it.toLowerCase() + ', versioni comprese.<br>'
+            + 'Casella vuota: il campo si cancella, e sul telefono e nei caroselli torna a valere la ' + c.it + '. «valori diversi»: gli articoli oggi non sono d\'accordo; lasciata vuota, non cambia niente.'
+          : 'Write the value once: saving writes it on every item of the series with that ' + c.en.toLowerCase() + ', versions included. Empty: the field is cleared.')
+      + '</p>'
+      + _aggGruppi(quale).map(g =>
+        '<div style="font-family:var(--font-ui);font-weight:700;margin:1rem 0 0.3rem;color:var(--info);">' + esc(g.s.name || g.s.id) + '</div>'
+        + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:min(100%,40rem);">'
+        + '<tr><th style="' + th + '">' + esc(it ? c.it : c.en) + '</th><th style="' + th + 'text-align:right;">' + (it ? 'Articoli' : 'Items') + '</th><th style="' + th + '">' + esc(it ? c.itMob : c.enMob) + '</th></tr>'
+        + g.righe.map(r => '<tr><td style="' + td + '">' + esc(r.val) + '</td><td style="' + td + 'text-align:right;font-variant-numeric:tabular-nums;">' + r.arr.length + '</td>'
+          + '<td style="' + td + '"><input type="text" data-agg="' + quale + '" data-serie="' + esc(g.s.id) + '" data-valore="' + esc(encodeURIComponent(r.val)) + '"'
+          + ' data-iniziale="' + esc(r.mob === null ? '' : r.mob) + '"' + (r.mob === null ? ' data-diversi="1" placeholder="' + (it ? 'valori diversi' : 'mixed values') + '"' : '')
+          + ' value="' + esc(r.mob === null ? '' : r.mob) + '" style="' + st + '"></td></tr>').join('')
+        + '</table></div>').join('')
+      + '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">'
+      + '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaAggiornamentiMassivi(\'' + quale + '\')">' + (quale === 'categorie' ? (it ? 'Salva le categorie' : 'Save categories') : (it ? 'Salva le sottocategorie' : 'Save subcategories')) + '</button>'
+      + '<span id="agg-esito-' + quale + '" style="font-size:0.85rem;color:var(--text);"></span></div>';
+  };
+  box.innerHTML = '<h3 style="font-family:var(--font-ui);margin:0 0 0.4rem;">🔁 ' + (it ? 'Aggiornamenti massivi' : 'Bulk updates') + '</h3>'
+    + sezione('categorie') + sezione('sottocategorie');
+}
+// quali articoli cambiano, riga per riga: solo le righe toccate, e solo gli articoli col valore diverso
+function _aggPiano(quale) {
+  const c = _AGG_CAMPI[quale], figs = getData('figurines', []), piano = [];
+  document.querySelectorAll('#admin-aggiornamenti-box input[data-agg="' + quale + '"]').forEach(el => {
+    const nuovo = _aggPulisci(el.value), diversi = el.dataset.diversi === '1';
+    if (diversi ? nuovo === '' : nuovo === el.dataset.iniziale) return;
+    const val = decodeURIComponent(el.dataset.valore), sid = el.dataset.serie;
+    const gruppo = figs.filter(f => f.seriesId === sid && String(f[c.base] || '').trim() === val), ids = new Set(gruppo.map(f => f.id));
+    // si scrive chi ha il valore suo diverso; una versione col campo vuoto che eredita da una base del gruppo no: la segue
+    const arr = gruppo.filter(f => {
+      const suo = String(f[c.mobile] || '').trim();
+      if (!suo && f.baseFigurineId && ids.has(f.baseFigurineId)) return false;
+      return suo !== nuovo;
+    });
+    if (arr.length) piano.push({ val, sid, nuovo, arr });
+  });
+  return piano;
+}
+async function salvaAggiornamentiMassivi(quale) {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it', c = _AGG_CAMPI[quale], esito = document.getElementById('agg-esito-' + quale);
+  const piano = _aggPiano(quale), n = piano.reduce((a, p) => a + p.arr.length, 0);
+  if (!n) { toast(it ? 'Niente da cambiare' : 'Nothing to change', 'info'); return; }
+  if (!confirm(it ? 'Cambio ' + n + (n === 1 ? ' articolo' : ' articoli') + ' in ' + piano.length + (piano.length === 1 ? ' riga' : ' righe') + '. Confermi?'
+                  : 'Change ' + n + ' item(s) in ' + piano.length + ' row(s)?')) return;
+  const daScrivere = piano.flatMap(p => p.arr.map(f => ({ ...f, [c.mobile]: p.nuovo })));
+  if (esito) esito.textContent = it ? 'Scrittura in corso…' : 'Writing…';
+  try {
+    await _salvaFigurineInBlocco(daScrivere);
+  } catch (e) {
+    console.error('salvaAggiornamentiMassivi', e);
+    if (esito) esito.textContent = '';
+    toast((it ? '❌ Scrittura fallita: ' : '❌ Write failed: ') + (e?.code || e?.message || 'errore'), 'error');
+    return;
+  }
+  const figs = getData('figurines', []);
+  daScrivere.forEach(rec => { const i = figs.findIndex(x => x.id === rec.id); if (i >= 0) figs[i] = rec; });
+  _cache.figurines = figs;
+  // la prova: si rilegge dal server e si contano gli articoli che hanno davvero il valore nuovo
+  let giusti = null;
+  try {
+    const attesi = new Map(daScrivere.map(r => [r.id, r[c.mobile]]));
+    const dalServer = (await fsGetAllDalServer('series')).flatMap(s => s.items || []);
+    giusti = dalServer.filter(f => attesi.has(f.id) && String(f[c.mobile] || '') === attesi.get(f.id)).length;
+  } catch (e) { console.error('salvaAggiornamentiMassivi (rilettura)', e); }
+  renderAdminAggiornamenti();
+  const e2 = document.getElementById('agg-esito-' + quale);
+  if (e2) e2.textContent = (it ? 'Scritti ' + daScrivere.length + ' articoli' : 'Written ' + daScrivere.length + ' items')
+    + (giusti === null ? (it ? ' (rilettura non riuscita)' : ' (re-read failed)') : (it ? '; riletti dal server: ' + giusti + ' giusti.' : '; re-read from server: ' + giusti + ' correct.'));
+  toast(it ? '✅ Aggiornamento fatto' : '✅ Update done', giusti === daScrivere.length ? 'success' : 'error');
 }
 // si salvano solo le spunte diverse dal descrittore: le altre seguono lui, anche se un giorno cambia
 async function salvaQuestionario() {
@@ -58547,6 +58674,7 @@ function adminTab(tab) {
   if (tab === 'protezione') renderAdminProtezioneTDA();   // v7.104, tab suo dalla v7.121
   if (tab === 'caroselli') renderAdminCaroselliTDA();     // v6.982, tab suo dalla v7.151 (Franco)
   if (tab === 'questionario') renderAdminQuestionario();  // v7.156 (Franco)
+  if (tab === 'aggiornamenti') renderAdminAggiornamenti();   // v7.170 (Franco)
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
@@ -67795,16 +67923,23 @@ function renderHomeStats() {
 //    (`data-fine`, scritto da `animateCount`: durante l'animazione le cifre crescono) e scritta in `ch`, con le cifre a
 //    larghezza fissa (index). Le voci spente (score a zero, v6.947) non occupano una cella e non contano.
 //    Sul desktop le etichette stanno sotto i numeri: lì si toglie tutto.
+// 🐛 v7.170 (Franco: «l'allineamento delle etichette ha funzionato solo sulla prima delle tre colonne») - a schermo è
+//    UNA griglia di tre colonne, ma sono due blocchi uno sotto l'altro (`hero-stats` e `hero-stats-right`, i due fianchi
+//    del desktop), con le colonne alle stesse x: la larghezza di una colonna si misura su TUTTI E DUE. La v7.169 la
+//    misurava blocco per blocco, e la prima colonna tornava solo perché i due blocchi lì avevano le stesse cifre.
 function _allineaEtichetteScore() {
-  const mob = _isMobileViewport();
+  const mob = _isMobileViewport(), larghe = [0, 0, 0], celle = [];
   ['hero-stats', 'hero-stats-right'].forEach(id => {
     const box = document.getElementById(id);
     if (!box) return;
-    const voci = [...box.querySelectorAll('.stat-item')].filter(v => v.style.display !== 'none');
-    const larghe = [0, 0, 0];
-    voci.forEach((v, i) => { const n = v.querySelector('.stat-num'); if (n) larghe[i % 3] = Math.max(larghe[i % 3], String(n.dataset.fine || n.textContent || '').length); });
-    voci.forEach((v, i) => { const n = v.querySelector('.stat-num'); if (n) n.style.minWidth = mob ? larghe[i % 3] + 'ch' : ''; });
+    [...box.querySelectorAll('.stat-item')].filter(v => v.style.display !== 'none').forEach((v, i) => {
+      const n = v.querySelector('.stat-num');
+      if (!n) return;
+      celle.push([n, i % 3]);
+      larghe[i % 3] = Math.max(larghe[i % 3], String(n.dataset.fine || n.textContent || '').length);
+    });
   });
+  celle.forEach(([n, col]) => { n.style.minWidth = mob ? larghe[col] + 'ch' : ''; });
 }
 
 function updateOwnedCounter() {
