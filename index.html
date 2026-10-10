@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.164">
+<link rel="stylesheet" href="css/style.css?v=7.165">
 
 
 <style>
@@ -3654,7 +3654,7 @@ di tutte le serie</button>
         <ul style="margin:0.5rem 0 1rem 1.3rem;">
           <li><strong>Account</strong>: nickname, indirizzo e-mail, password (gestita da Firebase Authentication — non la vediamo né la conserviamo noi in chiaro)</li>
           <li><strong>Profilo facoltativo</strong>: avatar, nazionalità</li>
-          <li><strong>La tua lista</strong>: quali figurine/oggetti hai aggiunto alla tua lista ("Mia lista") e la tua lista "Ciò che cerco". Dati privati, visibili solo a te e all'amministratore</li>
+          <li><strong>La tua lista</strong>: quali figurine/oggetti hai aggiunto alla tua lista (<em>Mia lista</em>) e la tua lista "Ciò che cerco". Dati privati, visibili solo a te e all'amministratore</li>
           <li><strong>Profilo pubblico</strong>: nickname, avatar, nazionalità e Punteggio rarità aggregato, visibili nella Classifica — <u>mai</u> l'e-mail. Puoi in qualsiasi momento scegliere di apparire in forma anonima nella Classifica, dal tuo profilo</li>
           <li><strong>Conferma età</strong>: una dichiarazione booleana ("ho almeno 16 anni") con la data, richiesta dalla legge per l'iscrizione dei minori</li>
           <li><strong>Scelta sulla newsletter</strong>: se hai detto sì o no, <u>insieme alla data e al punto in cui l'hai espressa</u> (la registrazione, la domanda che ti compare al primo accesso, il tuo profilo, o il link in fondo a una e-mail newsletter). Conserviamo data e origine perché la legge non ci chiede soltanto di avere il tuo consenso, ma di poterlo <u>dimostrare</u> — a te per primo, se un giorno ci chiedessi conto di come l'abbiamo ottenuto</li>
@@ -4546,7 +4546,7 @@ di tutte le serie</button>
       <div id="classifica-admin-backfill" style="display:none;margin-top:2.5rem;background:var(--card2);border-radius:12px;padding:1.25rem;border:1px solid rgba(var(--warn-rgb),0.3);">
         <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">🏆 Ricalcolo punteggi rarità pubblici</h4>
         <p style="font-size:0.82rem;color:var(--text);margin-bottom:0.75rem;">
-          Il Punteggio rarità di ciascun utente viene calcolato e pubblicato automaticamente ad ogni modifica di "Mia lista" — l'elenco dettagliato di cosa contiene resta privato. Usa questo ricalcolo per gli utenti registrati prima dell'introduzione di questo meccanismo (mostrano 0 finché non lo esegui), o se noti punteggi disallineati.
+          Il Punteggio rarità di ciascun utente viene calcolato e pubblicato automaticamente ad ogni modifica di <em>Mia lista</em> — l'elenco dettagliato di cosa contiene resta privato. Usa questo ricalcolo per gli utenti registrati prima dell'introduzione di questo meccanismo (mostrano 0 finché non lo esegui), o se noti punteggi disallineati.
         </p>
         <button class="btn-primary btn-admin" style="font-size:0.88rem;" onclick="backfillPublicScores()" id="backfill-score-btn">▶ Ricalcola i Punteggi rarità di tutti</button>
         <div id="backfill-score-progress" style="display:none;font-size:0.85rem;color:var(--text);margin-top:0.5rem;"></div>
@@ -5691,7 +5691,7 @@ di tutte le serie</button>
       <div class="form-hint">
         <b>In completamento</b>: sulla copertina compare <b>IN COMPLETAMENTO</b> (<b>WORK IN PROGRESS !</b>), e la serie resta apribile &mdash; serve a spiegare a chi guarda perch&eacute; mancano delle foto.<br>
         <b>In arrivo</b>: compare <b>IN ARRIVO !</b> (<b>COMING SOON !</b>), la serie si vede ma non si apre, e non entra nelle pagine per Google.<br>
-        <b>Nascosta</b>: la serie <b>e tutti i suoi articoli</b> spariscono dal sito &mdash; catalogo, ricerca globale, caroselli, classifica, contatori e Mia lista. Restano visibili solo all&rsquo;admin.
+        <b>Nascosta</b>: la serie <b>e tutti i suoi articoli</b> spariscono dal sito &mdash; catalogo, ricerca globale, caroselli, classifica, contatori e <em>Mia lista</em>. Restano visibili solo all&rsquo;admin.
       </div>
     </div>
 
@@ -5965,17 +5965,28 @@ di tutte le serie</button>
          spazio, e quindi prima del bottone accedi alla mia lista; anche prima di questo bottone lascerei uno spazio»;
          «lascia anche uno spazio prima del bottone del questionario») - la NOTA sale qui; gli spazi li dà `.ml-nota`
          sopra e sotto, e `.ml-pulsante-riga` sopra i due pulsanti (index, fra gli stili della pagina della lista) -->
-    <p class="ml-nota" style="font-size:0.82rem;color:var(--text);font-style:italic;"><strong style="font-style:normal;color:var(--text);">NOTA</strong> — È semplicemente una lista tua: cosa significhi per te (che tu la possieda, l'abbia vista, o qualsiasi altra cosa) lo decidi solo tu — <span style="color:var(--danger);">non è visibile né interpretabile da altri utenti.</span></p>
+    <!-- 🔄 v7.165 (Franco: «È semplicemente una lista tua: cosa significhi per te (possesso, preferiti, o qualsiasi altra
+         cosa) lo decidi tu. / Non è visibile da altri utenti.») - le sue parole, su due righe, senza «NOTA —»; la seconda
+         resta rossa come prima -->
+    <p class="ml-nota" style="font-size:0.82rem;color:var(--text);font-style:italic;">È semplicemente una lista tua: cosa significhi per te (possesso, preferiti, o qualsiasi altra cosa) lo decidi tu.<br><span style="color:var(--danger);">Non è visibile da altri utenti.</span></p>
     <div class="ml-pulsante-riga"><button type="button" class="btn-primary ml-pulsante" onclick="closeModal('demo-toggle-modal');apriMiaLista()">📋 Accedi alla tua lista</button></div>
     <p class="ml-intro solo-wz">Puoi costruire questa lista in un batter d'occhio con il <strong style="color:#ffd84d;">Questionario Sgorbions</strong>.</p>
     <div class="solo-wz ml-pulsante-riga"><button type="button" class="btn-primary wz-pulsante" onclick="closeModal('demo-toggle-modal');apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
     <!-- v7.164 (Franco: «falla finire con ", navigando l'Inventario."») -->
-    <p class="ml-intro solo-wz ml-oppure">Oppure spuntando a mano il flag <strong style="color:#ffd84d;"><em>Mia lista</em></strong> sugli articoli, navigando l'Inventario.</p>
+    <!-- v7.165 (Franco: «il selettore Mia lista chiamiamolo sempre selettore») - era «il flag» -->
+    <p class="ml-intro solo-wz ml-oppure">Oppure spuntando a mano il selettore <strong style="color:#ffd84d;"><em>Mia lista</em></strong> sugli articoli, navigando l'Inventario.</p>
     <!-- v7.164 (Franco: «cambia "come funziona la mia lista Sgorbions?" con "come funziona il selettore Mia lista?"») -->
     <!-- v7.164 (Franco: «Mia lista va sempre in italico»; e «Il colore cambierà per indicarti che è stato aggiunto alla
          lista !», con lo spazio prima del «!» come tutto il sito: prova-v6390) -->
     <p class="ml-domanda">Come funziona il selettore <em>Mia lista</em> ?</p>
-    <p style="font-size:0.88rem;color:var(--text);margin-bottom:0.75rem;">Tocca il selettore <em>Mia lista</em> per aggiungere una figurina alla tua lista personale.<br>Il colore cambierà per indicarti che è stato aggiunto alla lista !</p>
+    <p style="font-size:0.88rem;color:var(--text);margin-bottom:0.75rem;">Tocca il selettore per aggiungere un articolo alla tua lista personale.<br>Il colore cambierà per indicarti che è stato aggiunto alla lista !</p>
+    <!-- 🔄 v7.165 (Franco: «la frase "prova a toccare il selettore Mia lista" mettila prima della immagine, e precedila da
+         questa frase: "Qui sotto, un esempio del selettore."; metti uno spazio tra questa frase e la immagine») - le due
+         frasi salgono sopra l'esempio, e sotto di loro lo spazio (margin-bottom). -->
+    <p style="font-size:0.88rem;color:var(--text);margin-bottom:0.3rem;">Qui sotto, un esempio del selettore.</p>
+    <!-- v5.957 — data-i18n-html e NON data-i18n: applyI18n scrive i primi con textContent, che
+         cancellerebbe il corsivo di Mia lista. Il testo vero sta nel dizionario in app.js. -->
+    <p style="font-size:0.8rem;color:var(--text);text-align:center;margin-bottom:1rem;" data-i18n-html="profile.sliderHint">Prova a toccare il selettore <em>Mia lista</em> !!!</p>
     <div style="display:flex;align-items:center;gap:1.5rem;background:var(--card2);border-radius:12px;padding:1.25rem;">
       <!-- v5.956 — il riquadro parte con l'emoji e app.js ci mette la foto VERA della figurina
              (Gastone Bubbone, n. 1 della "Serie 1") cercandola nei dati: vedi openDemoToggleModal().
@@ -5986,13 +5997,10 @@ di tutte le serie</button>
         <div id="demo-toggle-sub" style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Serie 1 — N. 1</div>
         <div style="display:flex;align-items:center;gap:0.6rem;">
           <button id="demo-toggle-btn" class="toggle-btn-blue" onclick="toggleDemoBtn()" title="Mia lista"></button>
-          <span id="demo-toggle-label" style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">Mia lista</span>
+          <span id="demo-toggle-label" style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);"><em>Mia lista</em></span>
         </div>
       </div>
     </div>
-    <!-- v5.957 — data-i18n-html e NON data-i18n: applyI18n scrive i primi con textContent, che
-         cancellerebbe il corsivo di Mia lista. Il testo vero sta nel dizionario in app.js. -->
-    <p style="font-size:0.8rem;color:var(--text);text-align:center;margin-top:1rem;" data-i18n-html="profile.sliderHint">Prova a toccare il selettore <em>Mia lista</em> !!!</p>
   </div>
 </div>
 
@@ -6183,7 +6191,9 @@ di tutte le serie</button>
     </p>
     <ul style="color:var(--muted);font-size:0.88rem;margin:0 0 1rem 1.2rem;line-height:1.7;">
       <li data-i18n="modal.deleteAccount.item1">Il tuo profilo: nickname, e-mail, avatar, nazionalità</li>
-      <li data-i18n="modal.deleteAccount.item2">La tua "Mia lista" e la tua posizione in Classifica</li>
+      <!-- v7.165 (Franco: «Mia lista in corsivo ovunque») - `data-i18n-html`: `data-i18n` scrive con textContent e il
+           corsivo sparirebbe -->
+      <li data-i18n-html="modal.deleteAccount.item2">La tua <em>Mia lista</em> e la tua posizione in Classifica</li>
       <li data-i18n="modal.deleteAccount.item3">La tua lista "Ciò che cerco"</li>
       <li data-i18n="modal.deleteAccount.item4">Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato</li>
     </ul>
@@ -6576,7 +6586,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.164"></script>
+<script src="js/app.js?v=7.165"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6600,7 +6610,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.164'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.165'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
