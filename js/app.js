@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.166 - Modificato js/app.js (e index per la versione). Pagina «La mia lista Sgorbions», sopra le locandine
+//          (Franco): «Clicca sulla foto di una serie o sul suo tab.» E nei tab via la riga del totale della serie
+//          (Franco: «non è un dato interessante»). Finestra della lista: una riga vuota prima di «Qui sotto, un esempio
+//          del selettore.» e «Prova a toccare…» a sinistra (Franco). 🆕 E toccando una riga di un tab si apre la
+//          pagina di quella tipologia nella serie con «Presenti nella mia lista» e la versione della riga già accesi
+//          (`_mlApriTipologia`); «indietro» torna alla lista, sul tab di prima (`_sezioneApertaDaMiaLista`).
 // v7.165 - Modificati js/app.js e index.html. *Mia lista* in corsivo ovunque (Franco: «sì, Mia lista in corsivo
 //          ovunque»): etichetta del selettore sulle card (`owned.toggle`, `owned.yes`), scheda dell'articolo, colonna
 //          della vista tabellare, privacy, conferma di cancellazione dell'account (passa a `data-i18n-html`), testi
@@ -31146,7 +31152,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.165';
+const JS_VERSION = 'v7.166';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -50167,6 +50173,7 @@ function _opzioniSottoLaCopertina() {
 }
 window.addEventListener('resize', () => { try { _opzioniSottoLaCopertina(); } catch (e) {} });
 function openSeriesDetail(seriesId) {
+  _sezioneApertaDaMiaLista = false;   // v7.166 - chi apre una serie per un'altra strada non torna alla lista
   currentSeriesId = seriesId;
   setTimeout(() => { try { _disegnaNavSerie(); } catch (e) { console.error('frecce delle serie', e); } }, 0);   // v7.041
   currentSection = null;
@@ -51112,6 +51119,17 @@ function closeItemsSection() {
   // 🆕 v6.984 - uscendo dalla sezione il suo carosello si spegne subito, senza aspettare il timer.
   _caroselloSpegni('sezione');
   { const _cz = document.getElementById('sezione-carosello-sez'); if (_cz) _cz.style.display = 'none'; }
+  // 🆕 v7.166 (Franco: «3. sì») - aperta da «La mia lista Sgorbions», «indietro» torna lì, sul tab di prima
+  if (_sezioneApertaDaMiaLista) {
+    _sezioneApertaDaMiaLista = false;
+    _ownedFilter = 'all';
+    currentSection = null;
+    currentSeriesId = null;
+    document.getElementById('items-section').style.display = 'none';
+    document.getElementById('series-detail').style.display = 'none';
+    showPage('lamialista');
+    return;
+  }
   // v6.153 (Franco) - DENTRO UN BOX DI TIPO PRODOTTO, "indietro" torna all'INVENTARIO, non alle
   // sezioni. Le sezioni di "Extra serie" sono un piano che non si e' mai attraversato: chi e'
   // entrato da un box non ci e' passato, e mandarlo li' non e' tornare indietro, e' portarlo in un
@@ -52194,7 +52212,41 @@ function _mlRighe(s, mie) {
   const vive = [...gruppi.values()].filter(g => g.n > 0);
   const conVersioni = new Set(vive.filter(g => g.v).map(g => g.z));
   return vive.sort((a, b) => pos(a.z) - pos(b.z) || (a.v ? _VERSIONI_VIVE.indexOf(a.v) + 1 : 0) - (b.v ? _VERSIONI_VIVE.indexOf(b.v) + 1 : 0))
-    .map(g => ({ z: g.z, nome: _wzEtichetta(g.z) + (g.v ? ' (' + (it ? g.v.it : g.v.en) + ')' : conVersioni.has(g.z) ? ' (base)' : ''), n: g.n, tot: g.tot }));
+    .map(g => ({ z: g.z, ver: g.v ? g.v.chiave : '', nome: _wzEtichetta(g.z) + (g.v ? ' (' + (it ? g.v.it : g.v.en) + ')' : conVersioni.has(g.z) ? ' (base)' : ''), n: g.n, tot: g.tot }));
+}
+// 🆕 v7.166 (Franco: «alla pressione di quel numero si apra una pagina che mostra gli articoli della lista dell'utente,
+//    con la vista a griglia; non sarebbe altro che riproporre la griglia della pagina della serie con un filtro
+//    preimpostato»; risposte sue: «1. ok» la pagina che c'è già, «2. mobile solo griglia», «3. sì» indietro torna qui,
+//    «4. tutta la riga») - TOCCARE UNA RIGA APRE LA PAGINA DELLA TIPOLOGIA NELLA SERIE, con «Presenti nella mia lista»
+//    acceso (`_ownedFilter`) e la pillola della versione della riga (`versione`: 'base' o la chiave). La vista tabellare
+//    è quella di sempre della pagina (sul telefono non c'è, v7.094).
+//    📌 DOPO `openSeriesSection`, che azzera i filtri entrando (`_azzeraFiltriNonDuraturi`): accesi prima, sparirebbero.
+//    📌 Dove la tipologia è divisa in pagine di sottoserie (le spille) la pagina ne mostra una alla volta: si entra
+//       nella prima che ha un articolo della riga nella lista.
+//    `_sezioneApertaDaMiaLista`: «indietro» (`closeItemsSection`) torna qui, sul tab da cui si è partiti (`_mlSerie`).
+let _sezioneApertaDaMiaLista = false;
+function _mlApriTipologia(sid, z, ver) {
+  const mie = new Set(getOwned()), v = ver ? _VERSIONI_VIVE.find(x => x.chiave === ver) : null;
+  const diRiga = f => f.seriesId === sid && (f.section || 'figurines') === z && mie.has(f.id)
+    && (v ? !!f[v.campo] : !_VERSIONI_VIVE.some(x => f[x.campo]));
+  openSeriesDetail(sid);
+  currentSection = z;   // `_sottoserieDellaSezione` guarda la sezione corrente
+  const gruppi = _sottoserieDellaSezione();
+  let sub;
+  if (gruppi.length) {
+    const mia = _articoliDaContareSito().find(diRiga);
+    sub = mia ? String(mia.subseries || '').trim() : undefined;
+    if (!gruppi.includes(sub)) sub = undefined;
+  }
+  openSeriesSection(z, sub);
+  _ownedFilter = 'owned';
+  _raggr('versione').filtro = new Set([ver || 'base']);
+  _sezioneApertaDaMiaLista = true;
+  const _btnSerie = document.querySelector('#series-detail > .series-hero .back-btn');
+  if (_btnSerie) _btnSerie.style.display = 'none';   // un solo «indietro», come dentro un box (v6.156)
+  const _btnIndietro = document.querySelector('#items-section .back-btn span');
+  if (_btnIndietro) { _btnIndietro.removeAttribute('data-i18n'); _btnIndietro.textContent = currentLang === 'it' ? 'La mia lista' : 'My list'; }
+  renderItems();
 }
 function apriMiaLista() { if (!currentUser) { openAuth('login'); return; } showPage('lamialista'); }
 function _mlApriSerie(id) { _mlSerie = id; renderMiaLista(); }
@@ -52215,22 +52267,25 @@ function renderMiaLista() {
     return;
   }
   const s = piene.find(x => x.id === _mlSerie), righe = _mlRighe(s, mie);
-  const n = righe.reduce((a, r) => a + r.n, 0), tot = righe.reduce((a, r) => a + r.tot, 0);
-  const riga = (foto, nome, k, m, cls) => {
+  // v7.166: `apri` = l'azione della riga (tutta la riga si tocca, Franco)
+  const riga = (foto, nome, k, m, cls, apri) => {
     const pct = m ? Math.round(k / m * 100) : 0;
-    return '<div class="ml-riga' + (cls || '') + '">' + foto + '<span class="ml-nome">' + nome + '</span>'
+    return '<div class="ml-riga' + (cls || '') + (apri ? ' ml-riga-link" role="button" tabindex="0" onclick="' + apri + '"' : '"') + '>' + foto + '<span class="ml-nome">' + nome + '</span>'
       + '<span class="ml-conto"><b>' + nfmtWz(k) + '</b> ' + (it ? 'di' : 'of') + ' ' + nfmtWz(m) + '</span>'
       + '<span class="ml-barra"><span style="width:' + pct + '%;"></span></span><span class="ml-pct">' + (pct === 100 ? '✅' : pct + '%') + '</span></div>';
   };
   // 🆕 v7.164 (Franco: «prima delle foto delle serie metti questa frase: "Clicca sulla miniatura della serie di interesse
   //    o sul tab relativo"») - il punto finale è mio; con la lista vuota non c'è (non ci sarebbe niente da cliccare)
-  box.innerHTML = '<p class="ml-intro-pagina">' + (it ? 'Clicca sulla miniatura della serie di interesse o sul tab relativo.' : 'Click the thumbnail of the series you want, or its tab.') + '</p>'
+  // 🔄 v7.166 (Franco) - «Clicca sulla foto di una serie o sul suo tab.»
+  box.innerHTML = '<p class="ml-intro-pagina">' + (it ? 'Clicca sulla foto di una serie o sul suo tab.' : 'Click the photo of a series, or its tab.') + '</p>'
     + locandine
     + '<div class="ml-tab">' + piene.map(x => '<button type="button" class="ml-tab-voce' + (x.id === _mlSerie ? ' on' : '') + '" onclick="_mlApriSerie(\'' + x.id + '\')">'
       + esc(_nomeSerieCard(x, true)) + '</button>').join('') + '</div>'
     + '<div class="ml-corpo">'
-    + righe.map(r => riga(_wzImg(_wzFotoSez(r.z, s.id), 120, 120, 'ml-mini'), esc(r.nome), r.n, r.tot)).join('')
-    + (righe.length > 1 ? riga('<span class="ml-mini"></span>', (it ? 'Totale ' : 'Total ') + esc(_nomeSerieCard(s, true)), n, tot, ' ml-totale') : '')
+    + righe.map(r => riga(_wzImg(_wzFotoSez(r.z, s.id), 120, 120, 'ml-mini'), esc(r.nome), r.n, r.tot, '',
+        "_mlApriTipologia('" + s.id + "','" + r.z + "','" + r.ver + "')")).join('')
+    // 🗑️ v7.166 (Franco: «togli quella sezione relativa al conteggio totale; non è un dato interessante») - via la riga del
+    //    totale della serie
     + '</div>';
 }
 // 🐛 v7.158 (Franco: «quando alla fine del questionario premi "Vai alla tua lista", in realtà va alla home»; «mi aspetto
