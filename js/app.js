@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.156 - Modificato js/app.js (e index per la versione). Questionario, la finestra di conferma di «Prosegui» (Franco,
+//          le frasi sue): «Prima di procedere, una conferma:» / «Con questo questionario stai aggiungendo N [articoli]
+//          e rimuovendo M [articoli].» / «La tua lista arriverà quindi a N [articoli].» / «Confermi ?». Uno zero non
+//          si scrive; senza cambiamenti la seconda riga non c'è e la terza dice «La tua lista resta a N».
+//          E la domanda «quante ne hai?» (Franco: «per figurine per album, figurine con retro e retro … le quattro
+//          opzioni»; poi carte, trasferelli, tatuaggi, carte d'identità, spille): QUATTRO CARTE per quelle otto
+//          tipologie (`questionarioQuattro` nel descrittore); le altre (olografiche, altri articoli, bustine) senza
+//          domanda, dritte alla griglia (`_wzDiretta`). Gli album restano con la loro schermata. Nuovo tab admin
+//          «📝 Questionario» (Franco: «se vuoi … in configurazione»): una spunta per tipologia, `settings/questionario`.
+//          E la pagina finale «🎉 Fatto !» (Franco: «un pochino bruttina»): al posto delle copertine col «+N» una
+//          tabella, una riga per serie (miniatura | tipologie e versioni coi numeri della lista, «+N» verde per gli
+//          aggiunti; «(base)» se il livello non è Amatore), le serie senza niente contate in fondo (`_wzTabellaFinale`).
 // v7.155 - Modificato js/app.js (e index per la versione). Questionario, «Che collezionista sei ?» (Franco: «rinominare
 //          il livello 2 in intenditore»): la seconda carta dice «Intenditore» (EN «Connoisseur»). La chiave salvata
 //          resta 'esperto': il livello di chi ha già risposto non cambia.
@@ -31081,7 +31093,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.155';
+const JS_VERSION = 'v7.156';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -39565,6 +39577,7 @@ const ARTICOLI = {
   // 🗑️ v6.831 (Franco) - qui c'era `figurine`, «Figurine»: i suoi 61 articoli di Holidays sono
   //    diventati «Figurine con retro» (strumenti/migrazione-v6831.js), e la tipologia e' uscita.
   figurines: {
+    questionarioQuattro: true,   // v7.156 (Franco): nel questionario le quattro carte; la console lo può cambiare
     riquadro: 1,   // v6.654
     // 🆕 v7.149 (Franco) - nel carosello del desktop, senza sottoserie, la riga resta vuota: non dice la tipologia
     caroselloSenzaTipologia: true,
@@ -39605,6 +39618,7 @@ const ARTICOLI = {
     nomeCompletoDove: 'computeFullName'       // rami variazione/change/errore/base
   },
   attaccare: {
+    questionarioQuattro: true,   // v7.156 (Franco): nel questionario le quattro carte; la console lo può cambiare
     riquadro: 1,   // v6.654
     caroselloSenzaTipologia: true,   // v7.149, come le figurine con retro
     // 🆕 v6.964 (Franco) - le sottoserie stanno DENTRO la griglia, a righe, e non in card
@@ -39666,6 +39680,7 @@ const ARTICOLI = {
   // semplicemente non avranno record nella sezione Retro. Se un giorno servisse dichiararlo, si
   // aggiunge un campo e lo si misura su tutti e sette, non si scrive a memoria sui sei vecchi.
   carte: {
+    questionarioQuattro: true,   // v7.156 (Franco): nel questionario le quattro carte; la console lo può cambiare
     riquadro: 1,   // v6.654
     caroselloSenzaTipologia: true,   // v7.149 (Franco: «anche per le carte non scrivere la tda al posto della sottoserie»)
     it: 'Carte',   en: 'Cards',
@@ -39691,6 +39706,7 @@ const ARTICOLI = {
   //    tipologie che l'elenco salvato non nomina - «e' l'unica delle due assenze che si
   //    nota». Una tipologia nuova compare quindi ultima, e si sposta con le frecce.
   spille: {
+    questionarioQuattro: true,   // v7.156 (Franco): nel questionario le quattro carte; la console lo può cambiare
     // 🔴 v6.654 (Franco: «l'altezza della card e' decisamente troppo alta,
     //    considerando la dimensione delle foto; direi di un 30% di altezza
     //    possiamo scendere (senza rimpicciolire la foto)») — 1 / 0,7 = 1,43.
@@ -39723,6 +39739,7 @@ const ARTICOLI = {
   //    state scartate perche' ogni sistema le disegna a modo suo: quello che vede chi
   //    scrive non e' quello che vede chi apre il sito.
   tatuaggi: {
+    questionarioQuattro: true,   // v7.156 (Franco): nel questionario le quattro carte; la console lo può cambiare
     riquadro: 1,
     it: 'Tatuaggi',   en: 'Tattoos',
     itSing: 'tatuaggio', enSing: 'tattoo',
@@ -39739,6 +39756,7 @@ const ARTICOLI = {
   // 📌 L'icona dice DOVE VA A FINIRE l'oggetto, non com'e' fatto - la maglietta - e fa
   //    coppia con la spirale dei tatuaggi, che sta sulla pelle. Due superfici, due icone.
   trasferelli: {
+    questionarioQuattro: true,   // v7.156 (Franco): nel questionario le quattro carte; la console lo può cambiare
     riquadro: 1,
     it: 'Trasferelli',   en: 'Iron-ons',
     itSing: 'trasferello', enSing: 'iron-on',
@@ -39759,6 +39777,7 @@ const ARTICOLI = {
   // 📌 In inglese «Cardboards» e non «Backing cards», che sarebbe il termine da
   //    collezionismo: contiene la parola «cards», cioe' proprio quella da cui vanno distinti.
   cartoncini: {
+    questionarioQuattro: true,   // v7.156 (Franco): nel questionario le quattro carte; la console lo può cambiare
     riquadro: 1,
     // 🔄 v6.700 (Franco: «da altre parti definiremo un cartoncino una cosa diversa; il
     //    fatto che c'e' cartone e figurine sopra lo allontana da un cartoncino puro») - IL
@@ -39803,6 +39822,7 @@ const ARTICOLI = {
     nomeCompletoDove: 'computeFullName'
   },
   retros: {
+    questionarioQuattro: true,   // v7.156 (Franco): nel questionario le quattro carte; la console lo può cambiare
     // 📌 1.6 e' il valore che il codice applicava gia': era l'unico ramo
     //    dichiarato dell'`if` che questa release ha tolto.
     riquadro: 1.6,   // v6.654
@@ -39951,6 +39971,7 @@ const _ETICHETTE_DESCRITTORE = {
   sottoserieInGriglia: 'Sottoserie nella griglia',   // v6.964
   fotoRuotata: 'Fronte ruotato',                     // v7.132
   caroselloSenzaTipologia: 'Carosello senza tipologia',   // v7.149
+  questionarioQuattro: 'Questionario a quattro carte',   // v7.156
   numero: 'Numero', ordina: 'Ordinamento',
   ordinaDove: 'Ordina dove', nomeCompleto: 'Nome completo', nomeCompletoDove: 'Nome completo dove'
 };
@@ -40215,6 +40236,7 @@ async function _caricaLegendeDefinizioni() {
     _impostaRidotti(docs.find(x => x.id === 'campiRidotti'));   // v7.150 - idem
     _impostaPosizioni(docs.find(x => x.id === 'posizioniCampi'));   // v7.151 - idem
     _impostaModoCaroselli(docs.find(x => x.id === 'caroselliModo'));   // v7.152 - idem
+    _impostaQuestionario(docs.find(x => x.id === 'questionario'));   // v7.156 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -40597,6 +40619,54 @@ async function salvaModoCaroselli() {
     toast(it ? '✅ Caroselli salvati. Valgono da subito.' : '✅ Carousels saved.', 'success');
   } catch (e) {
     console.error('salvaModoCaroselli', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
+}
+
+// 🆕 v7.156 (Franco: «se vuoi possiamo gestire anche questa cosa in configurazione») - IL TAB «📝 QUESTIONARIO»: una riga
+//    per tipologia, una spunta. Accesa, la domanda «quante ne hai?» ha le quattro carte (Tutte, Nessuna, Poche, Molte);
+//    spenta, niente domanda e si va dritti alla griglia. Gli album no: hanno la loro schermata di foto.
+//    La spunta si disegna da quello che il sito fa adesso (`_wzQuattroTDA`), come la tabella dei caroselli.
+function renderAdminQuestionario() {
+  const box = document.getElementById('admin-questionario-tda');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
+  box.innerHTML =
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">📝 ' + (it ? 'Questionario: la domanda «quante ne hai?»' : 'Questionnaire: the «how many?» question') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it
+        ? 'Accesa: quattro carte, <strong>Tutte</strong>, <strong>Nessuna</strong>, <strong>Poche</strong> (si toccano quelle che ci sono) e ' +
+          '<strong>Molte</strong> (si toccano quelle che mancano).<br>Spenta: nessuna domanda, si va dritti alla griglia e si toccano quelle che ci sono.<br>' +
+          'Gli album non sono in tabella: hanno la loro schermata con le foto da toccare.'
+        : 'Checked: four cards (All, None, A few, Many). Unchecked: no question, straight to the grid. Albums have their own screen.') +
+    '</p>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
+      '<th style="' + th + 'text-align:center;">' + (it ? 'Quattro carte' : 'Four cards') + '</th></tr>' +
+    PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez] && sez !== 'albums').map(sez =>
+      '<tr><td style="' + td + '">' + esc(_wzEtichetta(sez)) + '</td>' +
+      '<td style="' + td + 'text-align:center;"><input type="checkbox" data-wz-quattro="' + sez + '"' + (_wzQuattroTDA(sez) ? ' checked' : '') + '></td></tr>').join('') +
+    '</table></div>' +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
+      '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaQuestionario()">' + (it ? 'Salva il questionario' : 'Save questionnaire') + '</button>' +
+    '</div>';
+}
+// si salvano solo le spunte diverse dal descrittore: le altre seguono lui, anche se un giorno cambia
+async function salvaQuestionario() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it', voci = {};
+  document.querySelectorAll('#admin-questionario-tda input[data-wz-quattro]').forEach(el => {
+    const z = el.dataset.wzQuattro;
+    if (el.checked !== !!(_art(z) || {}).questionarioQuattro) voci['quattro:' + z] = !!el.checked;
+  });
+  try {
+    await fsSave('settings', { id: 'questionario', voci });
+    _impostaQuestionario({ voci });
+    toast(it ? '✅ Questionario salvato. Vale dalla prossima serie che si apre.' : '✅ Questionnaire saved.', 'success');
+  } catch (e) {
+    console.error('salvaQuestionario', e);
     toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
   }
 }
@@ -51564,6 +51634,9 @@ function _wzImg(url, w, h, cls) {
 function _wzProposta(sid, z) {
   const tutti = _wzArticoli(sid, z).map(f => f.id), mie = new Set(getOwned());
   const n = tutti.filter(id => mie.has(id)).length;
+  // 🆕 v7.156 - le tipologie senza domanda (`_wzDiretta`) partono già sulla griglia, «quelle che hai», con la lista
+  if (_wzDiretta(z)) return { modo: 'alcune', verso: 'ho', sel: new Set(tutti.filter(id => mie.has(id))), selVerso: 'ho',
+    pModo: 'alcune', pVerso: 'ho', nGia: n, conf: 'si', pConf: 'si', azzera: false, diretta: true };
   // 🆕 v7.132 - `nGia`: quanti di questa schermata sono già nella lista; con più di zero la prima domanda è «Confermi?»
   //    (`conf`: null = da chiedere, 'si', 'no'; `pConf` la carta accesa). Vedi `_wzConfermaGia`.
   return { modo: null, verso: null, sel: new Set(), selVerso: null,
@@ -51644,7 +51717,8 @@ function _wzRiapri(c) { if (c.modo) c.pModo = c.modo; if (c.verso) c.pVerso = c.
 function _wzIndietro() {
   const w = _wz;
   const p = w.passi[w.k];
-  if (w.scelte[p] && _wzAScelta(p)) {
+  // v7.156: le tipologie senza domanda (`diretta`) non hanno una schermata prima della griglia: si torna al passo prima
+  if (w.scelte[p] && _wzAScelta(p) && !w.scelte[p].diretta) {
     const c = w.scelte[p];
     // v7.065: dall'album o dalla griglia si torna alla domanda «Come vuoi selezionare…?»
     if (c.vista && c.verso && _wzMappa(w.serie[w.i].id, p)) { c.pVista = c.vista; c.vista = null; _wzDisegna(); return; }
@@ -51657,7 +51731,7 @@ function _wzIndietro() {
   }
   if (w.k === 0) { if (w.i > 0) _wzIniziaSerie(w.i - 1); else { w.passo = 'livello'; _wzDisegna(); } return; }   // v7.034: prima c'è il livello
   w.k--; w.passo = w.passi[w.k];
-  if (w.scelte[w.passo] && _wzAScelta(w.passo)) _wzRiapri(w.scelte[w.passo]);
+  if (w.scelte[w.passo] && _wzAScelta(w.passo) && !w.scelte[w.passo].diretta) _wzRiapri(w.scelte[w.passo]);
   _wzDisegna();
 }
 function _wzModo(sez, modo) {
@@ -51669,7 +51743,22 @@ function _wzModo(sez, modo) {
 //    indica quali»; «molte: indica quali mancano») - QUATTRO CARTE IN UNA SCHERMATA, solo per le Figurine album (anche
 //    nelle loro versioni). «Poche» e «Molte» sono le vecchie «Alcune» + «ne ho di meno / me ne mancano di meno»: il verso
 //    si sceglie qui e la seconda schermata non c'è. Il resto (griglia, proposta, Indietro) è quello di sempre.
-function _wzQuattro(p) { return String(p).split('|')[0] === 'attaccare'; }
+// 🔄 v7.156 (Franco: «per figurine per album, figurine con retro e retro la schermata deve proporre le quattro opzioni:
+//    tutte, nessuna, poche, molte»; «fai questo anche per carte»; «gestiamo anche trasferelli, tatuaggi, carte
+//    d'identità»; «anche le spille con i quattro bottoni») - le quattro carte per otto tipologie (le carte
+//    d'identità sono `cartoncini`). Per loro la schermata a tre carte e poi «Poche o Tante?» non c'è più.
+//    Chi le ha lo dice il descrittore (`questionarioQuattro`), non una lista scritta qui; e (Franco: «se vuoi possiamo
+//    gestire anche questa cosa in configurazione») la console lo cambia dal tab «📝 Questionario» (`settings/questionario`,
+//    `_WZ_CFG`, chiavi `quattro:<tipologia>`). Senza niente salvato vale il descrittore.
+let _WZ_CFG = {};
+function _impostaQuestionario(d) { _WZ_CFG = (d && d.voci) || {}; }
+function _wzQuattroTDA(z) { const v = _WZ_CFG['quattro:' + z]; return typeof v === 'boolean' ? v : !!(_art(z) || {}).questionarioQuattro; }
+function _wzQuattro(p) { return _wzQuattroTDA(String(p).split('|')[0]); }
+// 🆕 v7.156 (Franco: «per le altre tipologie, quindi album, figurine olografiche, altro materiale, mostriamo
+//    semplicemente tutto quello che c'è a schermo») - LE ALTRE VANNO DRITTE ALLA GRIGLIA: niente domanda, niente
+//    «Confermi?», si toccano quelle che si hanno partendo dalla lista. Gli album hanno già la loro schermata di foto.
+//    ⚠️ Le bustine Franco non le ha nominate: stanno fra «le altre» (detto a lui).
+function _wzDiretta(p) { return _wzAScelta(String(p).split('|')[0]) && !_wzQuattro(p); }
 // 🆕 v7.065 (Franco: «la doppia possibilità per spuntare le figurine mancanti o quelle che hai, attraverso due
 //    modalità: 1 il clic sulle pagine, 2 una normale griglia a selezione multipla») - LE MAPPE DEGLI ALBUM.
 //    Per ogni foto delle pagine, i riquadri (in % della foto) di ogni figurina, legati al suo id. Le hanno fatte
@@ -51969,7 +52058,8 @@ function _wzUscita() {
   w.passo = 'uscita'; _wzDisegna();
 }
 // per una serie: le righe della tabella, una per tipologia (e per versione, col suo nome fra parentesi)
-function _wzRigheUscita(s, mie, inizio) {
+// v7.156: `conBase` scrive «(base)» dopo la tipologia del set base (la tabella della pagina finale, livelli sopra Amatore)
+function _wzRigheUscita(s, mie, inizio, conBase) {
   const it = currentLang === 'it', gruppi = new Map(), ordine = _wzSezioni();
   for (const f of _articoliDaContareSito()) {
     if (f.seriesId !== s.id || !mie.has(f.id)) continue;
@@ -51981,7 +52071,31 @@ function _wzRigheUscita(s, mie, inizio) {
   const pos = z => { const i = ordine.indexOf(z); return i < 0 ? 999 : i; };
   return [...gruppi.values()]
     .sort((a, b) => pos(a.z) - pos(b.z) || (a.v ? _VERSIONI_VIVE.indexOf(a.v) + 1 : 0) - (b.v ? _VERSIONI_VIVE.indexOf(b.v) + 1 : 0))
-    .map(g => ({ nome: _wzEtichetta(g.z) + (g.v ? ' (' + (it ? g.v.it : g.v.en) + ')' : ''), n: g.n, nuovi: g.nuovi }));
+    .map(g => ({ nome: _wzEtichetta(g.z) + (g.v ? ' (' + (it ? g.v.it : g.v.en) + ')' : conBase ? ' (base)' : ''), n: g.n, nuovi: g.nuovi }));
+}
+// 🆕 v7.156 (Franco: «la pagina di recap finale … è un pochino bruttina: una tabella che mostra una miniatura per ogni
+//    serie e a fianco i numeri di ogni tipologia di articolo che ho per quella serie; ovviamente per versione») - al
+//    posto delle copertine col «+N» della pagina «🎉 Fatto !»: una riga per serie, la miniatura col nome a sinistra, a
+//    destra le tipologie (e versioni) coi numeri incolonnati, cioè tutto quello che c'è nella lista. Le risposte di
+//    Franco: solo in questa pagina (il riepilogo dell'uscita resta com'è); gli aggiunti col questionario come «+N» verde
+//    accanto al numero, solo dove ce n'è; «(base)» scritto se il livello non è Amatore; le serie senza niente fuori,
+//    contate da una frase in fondo (la stessa del riepilogo dell'uscita).
+function _wzTabellaFinale() {
+  const w = _wz, it = currentLang === 'it', mie = new Set(getOwned()), inizio = w.inizio || new Set();
+  const conBase = (w.livello || _wzLivello || 'amatore') !== 'amatore';
+  let vuote = 0;
+  const righe = w.serie.map(s => {
+    const voci = _wzRigheUscita(s, mie, inizio, conBase);
+    if (!voci.length) { vuote++; return ''; }
+    return '<tr><td class="wz-ft-serie">' + _wzImg(s.img, 160, 160, '') + '<div>' + esc(_nomeSerieCard(s)) + '</div></td>'
+      + '<td><div class="wz-ft-voci">' + voci.map(r => '<span>' + esc(r.nome) + '</span><b>' + nfmtWz(r.n) + '</b>'
+        + '<span class="wz-ft-nuovi">' + (r.nuovi ? '+' + nfmtWz(r.nuovi) : '') + '</span>').join('') + '</div></td></tr>';
+  }).join('');
+  // una riga sotto la tabella dice cos'è il verde (parole mie), solo se c'è
+  return (righe ? '<table class="wz-ft-tab"><tbody>' + righe + '</tbody></table>' : '')
+    + (righe.includes('wz-ft-nuovi">+') ? '<p class="wz-nota">' + (it ? 'In verde, quelli aggiunti con questo questionario.' : 'In green, the ones added with this questionnaire.') + '</p>' : '')
+    + (vuote ? '<p class="wz-nota">' + (it ? (vuote === 1 ? 'Di 1 serie non hai ancora niente nella tua lista.' : 'Di ' + vuote + ' serie non hai ancora niente nella tua lista.')
+                                         : (vuote === 1 ? 'You have nothing yet from 1 series.' : 'You have nothing yet from ' + vuote + ' series.')) + '</p>' : '');
 }
 async function _wzAzzeraDavvero() {
   const b = document.getElementById('wz-azzera-si'); if (b) { b.disabled = true; b.textContent = currentLang === 'it' ? 'Azzeramento…' : 'Resetting…'; }
@@ -52143,7 +52257,7 @@ function _wzDisegna(tieni) {
           ? 'La tua lista è aggiornata: ' + [w.aggiunti ? '<b>' + nfmtWz(w.aggiunti) + '</b> articoli aggiunti' : '', w.tolti ? '<b>' + nfmtWz(w.tolti) + '</b> tolti' : ''].filter(Boolean).join(', ') + '.'
           : 'La tua lista era già in ordine: nessun cambiamento.')
         : (w.aggiunti || w.tolti ? 'Your list is updated: +' + nfmtWz(w.aggiunti) + ' / −' + nfmtWz(w.tolti) + '.' : 'Your list was already up to date.')) + '</p>'
-      + '<div class="wz-mosaico">' + w.fatte.map(x => '<div class="wz-mosaico-voce">' + _wzImg(x.s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(x.s)) + '</div><div class="wz-piu">' + _wzCambio(x.n, x.t) + '</div></div>').join('') + '</div>';
+      + _wzTabellaFinale();
     piede = '<button type="button" class="btn-secondary" onclick="_wzChiudi()">' + (it ? 'Chiudi' : 'Close') + '</button>'
       + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'profile\')">' + (it ? 'Vai alla tua lista →' : 'Go to your list →') + '</button>';
   } else {
@@ -52278,7 +52392,9 @@ function _wzDisegna(tieni) {
               : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>' + giaFrase('wz-sopra-carte wz-centro wz-gia-mie')
           + '<div class="wz-scelte">'
           // 🔄 v7.132 (Franco: «il sottotitolo di "Tutte" diventa "Album completo"») - era «il set base completo»
-          + carta4('tutte', '🏆', it ? 'Tutte' : 'All', it ? 'Album completo' : 'Complete album')
+          // v7.156: le quattro carte valgono anche per altre tipologie; lì il sottotitolo è quello delle tre carte
+          + carta4('tutte', '🏆', it ? 'Tutte' : 'All', String(p).split('|')[0] === 'attaccare' ? (it ? 'Album completo' : 'Complete album')
+              : ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
           + carta4('nessuna', '😢', it ? 'Nessuna' : 'None', '')
           // 🔄 v7.132 (Franco: «il sottotitolo di "Poche" diventa "Indica quali sono nella tua lista"», «di "Molte" diventa
           //    "Indica quali mancano dalla tua lista"», «queste 2 frasi, per mobile non cambiarle») - le nuove sul desktop
@@ -52504,18 +52620,22 @@ function _wzDisegna(tieni) {
   //    del Riepilogo
   if (w.conferma) {
     const q = w.conferma, n = q.ids.length, { agg, tolte } = _wzAggTolte(q.chiave, q.ids);
-    const fem = (_art(String(q.chiave).split('|')[0]) || {}).genere === 'f';   // «aggiunte / tolte», ma «aggiunti / tolti» per gli album
-    // 🔄 v7.132 (Franco: «se è uno, allora la frase va al singolare; lo zero non si dice mai») - il participio segue il
-    //    numero («ne hai aggiunta 1», «aggiunto 1» per gli album), e una parte a zero non si scrive: con una sola parte
-    //    resta quella («ne hai tolte 3»), con tutte e due a zero la riga non c'è.
-    const _part = (rad, k) => rad + (k === 1 ? (fem ? 'a' : 'o') : (fem ? 'e' : 'i'));
-    const _pezzi = it
-      ? [agg ? _part('aggiunt', agg) + ' <b>' + nfmtWz(agg) + '</b>' : '', tolte ? _part('tolt', tolte) + ' <b>' + nfmtWz(tolte) + '</b>' : '']
-      : [agg ? 'added <b>' + nfmtWz(agg) + '</b>' : '', tolte ? 'removed <b>' + nfmtWz(tolte) + '</b>' : ''];
-    const _conto = _pezzi.filter(Boolean).join(it ? ' e ' : ' and ');
+    // 🔄 v7.156 (Franco: «cambiare i messaggi così: "Prima di procedere, una conferma:" / "Con questo questionario stai
+    //    aggiungendo/rimuovendo n [articoli]." / "La tua lista arriverà quindi a n [articoli]."») - tre righe al posto
+    //    delle due della v7.130. Il gerundio non si accorda, quindi via il participio della v7.132; resta la sua regola
+    //    «lo zero non si dice mai»: una parte a zero non si scrive, e con tutte e due a zero la riga non c'è. Il nome
+    //    segue ogni numero (`_wzNomeQuanti`: «1 figurina album», «3 figurine album»). Senza cambiamenti «arriverà
+    //    quindi» non ha un perché: lì la riga dice «resta a» (parole mie).
+    const _nq = k => '<b>' + nfmtWz(k) + '</b> ' + esc(_wzNomeQuanti(q.chiave, k));
+    const _conto = (it
+      ? [agg ? 'aggiungendo ' + _nq(agg) : '', tolte ? 'rimuovendo ' + _nq(tolte) : '']
+      : [agg ? 'adding ' + _nq(agg) : '', tolte ? 'removing ' + _nq(tolte) : '']).filter(Boolean).join(it ? ' e ' : ' and ');
     corpo += '<div class="wz-popup-sfondo"><div class="wz-popup">'
-      + '<p class="wz-testo">' + (it ? 'La tua lista così avrà <b>' : 'Your list will then have <b>') + nfmtWz(n) + '</b> ' + esc(_wzNomeQuanti(q.chiave, n)) + '.</p>'
-      + (_conto ? '<p class="wz-testo wz-conferma-conto">(' + (it ? 'Con questo questionario ne hai ' : 'With this questionnaire you ') + _conto + '.)</p>' : '')
+      + '<p class="wz-testo">' + (it ? 'Prima di procedere, una conferma:' : 'Before going on, a confirmation:') + '</p>'
+      + (_conto ? '<p class="wz-testo">' + (it ? 'Con questo questionario stai ' : 'With this questionnaire you are ') + _conto + '.</p>' : '')
+      + '<p class="wz-testo">' + (_conto
+        ? (it ? 'La tua lista arriverà quindi a ' : 'Your list will then reach ')
+        : (it ? 'La tua lista resta a ' : 'Your list stays at ')) + _nq(n) + '.</p>'
       + '<p class="wz-testo wz-confermi">' + (it ? 'Confermi ?' : 'Do you confirm ?') + '</p>'
       + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzModificaPasso()">← ' + (it ? 'Modifica' : 'Change') + '</button>'
       + '<button type="button" class="btn-primary wz-grande wz-conferma" onclick="_wzConfermaPasso()">' + (it ? 'Confermo 👍' : 'Confirm 👍') + '</button></div>'
@@ -58166,6 +58286,7 @@ function adminTab(tab) {
   if (tab === 'griglie') renderGriglieVisualizzazione();   // v6.197
   if (tab === 'protezione') renderAdminProtezioneTDA();   // v7.104, tab suo dalla v7.121
   if (tab === 'caroselli') renderAdminCaroselliTDA();     // v6.982, tab suo dalla v7.151 (Franco)
+  if (tab === 'questionario') renderAdminQuestionario();  // v7.156 (Franco)
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
