@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.162">
+<link rel="stylesheet" href="css/style.css?v=7.163">
 
 
 <style>
@@ -1094,6 +1094,10 @@ span.ml-mini { background: none; }
    `_wzNomePulsanti` userebbe per riscriverne la scritta */
 .ml-pulsante { font-size: 1.12rem; padding: 0.9rem 1.8rem; border-radius: 999px; box-shadow: 0 6px 22px rgba(37,99,235,0.35); }
 @media (max-width: 860px) { .ml-pulsante { font-size: 1rem; padding: 0.8rem 1.3rem; } }
+/* 🆕 v7.163 (Franco) - nella finestra «La mia lista Sgorbions» i due pulsanti subito sotto la loro frase, e dopo di loro
+   lo spazio prima della frase seguente; la riga vuota dopo «Oppure…», prima della guida */
+.ml-pulsante-riga { text-align: center; margin: 0.5rem 0 1.6rem; }
+.ml-intro.ml-oppure { margin-bottom: 1.5rem; }
 @media (max-width: 860px) {
   .ml-locandine { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; }
   .ml-locandina span { font-size: 0.66rem; }
@@ -5945,20 +5949,18 @@ di tutte le serie</button>
       <h2 class="modal-title" style="color:var(--accent3);">La mia lista Sgorbions</h2>
       <button class="modal-close" onclick="closeModal('demo-toggle-modal')">✕</button>
     </div>
-    <p class="ml-intro">«La mia lista Sgorbions» è il modo con cui puoi costruire una tua lista personale della collezione Sgorbions.</p>
-    <!-- v7.052: le quattro righe del questionario solo per l'admin («Oppure…» senza la riga prima non regge) -->
+    <!-- 🔄 v7.163 (Franco: «la prima frase deve terminare con la parola "collezione"; subito dopo questa frase il bottone
+         "accedi alla tua lista"; sparisce il titolo in verde "la mia lista"; uno spazio prima della riga che menziona il
+         questionario; il bottone del questionario subito dopo questa riga; via il titolo in verde "il questionario
+         sgorbions"; una riga vuota e dopo la frase che comincia con "oppure"; dopo, tutto quello che c'è già oggi dopo il
+         titolo "la mia lista sgorbions", e anche questo titolo sparisce») - LA FINESTRA SENZA TITOLETTI VERDI. Le righe del
+         questionario restano `solo-wz` (v7.052: «Oppure…» senza la riga prima non regge). Il pulsante della lista ha la
+         classe sua (`ml-pulsante`, v7.161: `wz-pulsante` lo farebbe riscrivere da `_wzNomePulsanti`). -->
+    <p class="ml-intro">«La mia lista Sgorbions» è il modo con cui puoi costruire una tua lista personale della collezione.</p>
+    <div class="ml-pulsante-riga"><button type="button" class="btn-primary ml-pulsante" onclick="closeModal('demo-toggle-modal');apriMiaLista()">📋 Accedi alla tua lista</button></div>
     <p class="ml-intro solo-wz">Puoi costruire questa lista in un batter d'occhio con il <strong style="color:#ffd84d;">Questionario Sgorbions</strong>.</p>
-    <p class="ml-intro solo-wz">Oppure spuntando a mano il flag <strong style="color:#ffd84d;">Mia lista</strong> sugli articoli.</p>
-    <!-- 🆕 v7.160 (Franco: «aggiungerei una terza sezione che si chiama la mia lista, avente un bottone che punta alla nuova
-         pagina»; «mettilo in prima posizione») - per tutti, non solo per chi vede il questionario -->
-    <h3 class="ml-titoletto">La mia lista</h3>
-    <!-- 🐛 v7.161 (Franco: «il bottone che punta alla nuova pagina lo hai chiamato "il questionario Sgorbions"») - aveva la
-         classe `wz-pulsante`, e `_wzNomePulsanti` riscrive la scritta di tutti i pulsanti con quella classe: ora `ml-pulsante`,
-         stessa forma (regola qui sotto, fra gli stili della pagina) -->
-    <div style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary ml-pulsante" onclick="closeModal('demo-toggle-modal');apriMiaLista()">📋 Guarda la tua lista</button></div>
-    <h3 class="ml-titoletto solo-wz">Il questionario Sgorbions</h3>
-    <div class="solo-wz" style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary wz-pulsante" onclick="closeModal('demo-toggle-modal');apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
-    <h3 class="ml-titoletto">La mia lista Sgorbions</h3>
+    <div class="solo-wz ml-pulsante-riga"><button type="button" class="btn-primary wz-pulsante" onclick="closeModal('demo-toggle-modal');apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
+    <p class="ml-intro solo-wz ml-oppure">Oppure spuntando a mano il flag <strong style="color:#ffd84d;">Mia lista</strong> sugli articoli.</p>
     <p class="ml-domanda">Come funziona «La mia lista Sgorbions» ?</p>
     <p style="font-size:0.88rem;color:var(--text);margin-bottom:0.75rem;">Tocca il selettore <em>Mia lista</em> per aggiungere una figurina alla tua lista personale.<br>Il colore cambierà per indicarti che è nella lista !</p>
     <p style="font-size:0.82rem;color:var(--text);margin-bottom:1.5rem;font-style:italic;"><strong style="font-style:normal;color:var(--text);">NOTA</strong> — È semplicemente una lista tua: cosa significhi per te (che tu la possieda, l'abbia vista, o qualsiasi altra cosa) lo decidi solo tu — <span style="color:var(--danger);">non è visibile né interpretabile da altri utenti.</span></p>
@@ -6562,7 +6564,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.162"></script>
+<script src="js/app.js?v=7.163"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6586,7 +6588,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.162'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.163'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
