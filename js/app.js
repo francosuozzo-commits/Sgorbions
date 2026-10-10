@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.167 - Modificato js/app.js (e index per la versione). Il tasto «indietro» della tipologia aperta da «La mia lista
+//          Sgorbions» (Franco: «se lo spazio lo consente, "Torna a La mia lista Sgorbions"»): così sul computer, «La mia
+//          lista» sul telefono, dove sta sulla riga del titolo. E sotto i tab: «Clicca sulla riga per vedere i tuoi
+//          articoli.» (Franco).
 // v7.166 - Modificato js/app.js (e index per la versione). Pagina «La mia lista Sgorbions», sopra le locandine
 //          (Franco): «Clicca sulla foto di una serie o sul suo tab.» E nei tab via la riga del totale della serie
 //          (Franco: «non è un dato interessante»). Finestra della lista: una riga vuota prima di «Qui sotto, un esempio
@@ -31152,7 +31156,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.166';
+const JS_VERSION = 'v7.167';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -52245,7 +52249,14 @@ function _mlApriTipologia(sid, z, ver) {
   const _btnSerie = document.querySelector('#series-detail > .series-hero .back-btn');
   if (_btnSerie) _btnSerie.style.display = 'none';   // un solo «indietro», come dentro un box (v6.156)
   const _btnIndietro = document.querySelector('#items-section .back-btn span');
-  if (_btnIndietro) { _btnIndietro.removeAttribute('data-i18n'); _btnIndietro.textContent = currentLang === 'it' ? 'La mia lista' : 'My list'; }
+  // 🔄 v7.167 (Franco: «se lo spazio lo consente, lo chiamerei "Torna a La mia lista Sgorbions"») - per intero sul
+  //    computer; sul telefono il tasto sta sulla riga del titolo e resta «La mia lista» (`.wz-solo-desktop/-tel`)
+  if (_btnIndietro) {
+    _btnIndietro.removeAttribute('data-i18n');
+    _btnIndietro.innerHTML = currentLang === 'it'
+      ? '<span class="wz-solo-desktop">Torna a La mia lista Sgorbions</span><span class="wz-solo-tel">La mia lista</span>'
+      : '<span class="wz-solo-desktop">Back to My Sgorbions list</span><span class="wz-solo-tel">My list</span>';
+  }
   renderItems();
 }
 function apriMiaLista() { if (!currentUser) { openAuth('login'); return; } showPage('lamialista'); }
@@ -52281,6 +52292,9 @@ function renderMiaLista() {
     + locandine
     + '<div class="ml-tab">' + piene.map(x => '<button type="button" class="ml-tab-voce' + (x.id === _mlSerie ? ' on' : '') + '" onclick="_mlApriSerie(\'' + x.id + '\')">'
       + esc(_nomeSerieCard(x, true)) + '</button>').join('') + '</div>'
+    // 🆕 v7.167 (Franco: «prima della tabellina, cioè sotto i selettori dei tab, metti una frase che dice "Clicca sulla
+    //    riga per vedere i tuoi articoli."»)
+    + '<p class="ml-intro-pagina">' + (it ? 'Clicca sulla riga per vedere i tuoi articoli.' : 'Click a row to see your items.') + '</p>'
     + '<div class="ml-corpo">'
     + righe.map(r => riga(_wzImg(_wzFotoSez(r.z, s.id), 120, 120, 'ml-mini'), esc(r.nome), r.n, r.tot, '',
         "_mlApriTipologia('" + s.id + "','" + r.z + "','" + r.ver + "')")).join('')
