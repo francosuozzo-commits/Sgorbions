@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.164 - Modificato index.html (e app.js per la versione). Finestra «La mia lista Sgorbions» (Franco): «Oppure
+//          spuntando a mano il flag Mia lista sugli articoli, navigando l'Inventario.» E la domanda della guida diventa
+//          «Come funziona il selettore Mia lista ?»; «Mia lista» in corsivo in tutte e due (Franco: «va sempre in italico»);
+//          e «Il colore cambierà per indicarti che è stato aggiunto alla lista !» (Franco; lo spazio prima del «!» è la
+//          regola del sito, prova-v6390). La NOTA sale sotto la prima frase, e c'è spazio prima dei due pulsanti (Franco).
+//          Nella pagina «La mia lista Sgorbions», sopra le locandine (Franco): «Clicca sulla miniatura della serie di
+//          interesse o sul tab relativo.»
 // v7.163 - Modificato index.html (e app.js per la versione). La finestra «La mia lista Sgorbions» riordinata da Franco:
 //          prima frase che finisce con «collezione», subito il pulsante «📋 Accedi alla tua lista», la frase del
 //          questionario col suo pulsante sotto, «Oppure…», poi la guida di sempre. Via i tre titoletti verdi.
@@ -31129,7 +31136,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.163';
+const JS_VERSION = 'v7.164';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -52194,7 +52201,10 @@ function renderMiaLista() {
       + '<span class="ml-conto"><b>' + nfmtWz(k) + '</b> ' + (it ? 'di' : 'of') + ' ' + nfmtWz(m) + '</span>'
       + '<span class="ml-barra"><span style="width:' + pct + '%;"></span></span><span class="ml-pct">' + (pct === 100 ? '✅' : pct + '%') + '</span></div>';
   };
-  box.innerHTML = locandine
+  // 🆕 v7.164 (Franco: «prima delle foto delle serie metti questa frase: "Clicca sulla miniatura della serie di interesse
+  //    o sul tab relativo"») - il punto finale è mio; con la lista vuota non c'è (non ci sarebbe niente da cliccare)
+  box.innerHTML = '<p class="ml-intro-pagina">' + (it ? 'Clicca sulla miniatura della serie di interesse o sul tab relativo.' : 'Click the thumbnail of the series you want, or its tab.') + '</p>'
+    + locandine
     + '<div class="ml-tab">' + piene.map(x => '<button type="button" class="ml-tab-voce' + (x.id === _mlSerie ? ' on' : '') + '" onclick="_mlApriSerie(\'' + x.id + '\')">'
       + esc(_nomeSerieCard(x, true)) + '</button>').join('') + '</div>'
     + '<div class="ml-corpo">'
