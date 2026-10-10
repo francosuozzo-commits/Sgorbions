@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.158 - Modificato js/app.js (e index per la versione). 🐛 Questionario (Franco: «"Vai alla tua lista" va alla
+//          home»; «mi aspetto di arrivare alla schermata liste»): i due «Vai alla tua lista →» portano a «Le mie liste»
+//          (`wantlist`), non più al profilo.
 // v7.157 - Modificato js/app.js (e index per la versione). Questionario (Franco: «i pulsanti seleziona tutto e
 //          deseleziona tutto mostriamoli solo per le tipologie per le quali hai fatto la domanda con le quattro
 //          opzioni»): nelle griglie dove si arriva senza domanda (olografiche, altri articoli, bustine) non ci sono più.
@@ -31102,7 +31105,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.157';
+const JS_VERSION = 'v7.158';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -52120,6 +52123,9 @@ async function _wzAzzeraDavvero() {
   toast(currentLang === 'it' ? 'La tua lista è stata azzerata.' : 'Your list has been reset.', 'success');
   _wz.passo = 'intro'; _wzDisegna();
 }
+// 🐛 v7.158 (Franco: «quando alla fine del questionario premi "Vai alla tua lista", in realtà va alla home»; «mi aspetto
+//    di arrivare alla schermata liste») - i due «Vai alla tua lista →» (pagina finale e riepilogo dell'uscita) portavano
+//    a `profile`, che per l'admin è la console: ora a `wantlist`, «Le mie liste».
 function _wzChiudi() {
   const ov = document.getElementById('wz-overlay');
   if (ov) ov.remove();
@@ -52260,7 +52266,7 @@ function _wzDisegna(tieni) {
       + (tot && vuote ? '<p class="wz-nota">' + (it ? (vuote === 1 ? 'Di 1 serie non hai ancora niente nella tua lista.' : 'Di ' + vuote + ' serie non hai ancora niente nella tua lista.')
                                                   : (vuote === 1 ? 'You have nothing yet from 1 series.' : 'You have nothing yet from ' + vuote + ' series.')) + '</p>' : '');
     piede = '<button type="button" class="btn-secondary" onclick="_wzChiudi()">' + (it ? 'Chiudi' : 'Close') + '</button>'
-      + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'profile\')">' + (it ? 'Vai alla tua lista →' : 'Go to your list →') + '</button>';
+      + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'wantlist\')">' + (it ? 'Vai alla tua lista →' : 'Go to your list →') + '</button>';
   } else if (w.passo === 'finale') {
     corpo = '<div class="wz-titolo">🎉 ' + (it ? 'Fatto !' : 'Done !') + '</div>'
       + '<p class="wz-testo">' + (it
@@ -52270,7 +52276,7 @@ function _wzDisegna(tieni) {
         : (w.aggiunti || w.tolti ? 'Your list is updated: +' + nfmtWz(w.aggiunti) + ' / −' + nfmtWz(w.tolti) + '.' : 'Your list was already up to date.')) + '</p>'
       + _wzTabellaFinale();
     piede = '<button type="button" class="btn-secondary" onclick="_wzChiudi()">' + (it ? 'Chiudi' : 'Close') + '</button>'
-      + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'profile\')">' + (it ? 'Vai alla tua lista →' : 'Go to your list →') + '</button>';
+      + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'wantlist\')">' + (it ? 'Vai alla tua lista →' : 'Go to your list →') + '</button>';
   } else {
     const s = w.serie[w.i], p = w.passo;
     corpo = _wzTesta(s);
