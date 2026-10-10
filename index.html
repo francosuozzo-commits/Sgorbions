@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.165">
+<link rel="stylesheet" href="css/style.css?v=7.166">
 
 
 <style>
@@ -1088,6 +1088,9 @@ span.ml-mini { background: none; }
 .ml-barra > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
 .ml-pct { font-variant-numeric: tabular-nums; text-align: right; font-size: 0.85rem; }
 .ml-totale { font-weight: 800; border-top: 2px solid var(--border2); }
+/* 🆕 v7.166 (Franco: «tutta la riga») - la riga si tocca: apre la tipologia con «Presenti nella mia lista» acceso */
+.ml-riga-link { cursor: pointer; border-radius: 8px; }
+.ml-riga-link:hover, .ml-riga-link:focus-visible { background: var(--card2); outline: none; }
 .ml-vuota { text-align: center; color: var(--text); margin: 1rem 0; }
 .ml-intro-pagina { text-align: center; color: var(--text); font-size: 1rem; margin: 0 auto 0.8rem; }
 /* 🐛 v7.161 - il pulsante «📋 Guarda la tua lista»: la forma di `.wz-pulsante` (style.css), senza la sua classe, che
@@ -5983,10 +5986,12 @@ di tutte le serie</button>
     <!-- 🔄 v7.165 (Franco: «la frase "prova a toccare il selettore Mia lista" mettila prima della immagine, e precedila da
          questa frase: "Qui sotto, un esempio del selettore."; metti uno spazio tra questa frase e la immagine») - le due
          frasi salgono sopra l'esempio, e sotto di loro lo spazio (margin-bottom). -->
-    <p style="font-size:0.88rem;color:var(--text);margin-bottom:0.3rem;">Qui sotto, un esempio del selettore.</p>
+    <!-- v7.166 (Franco: «una riga vuota prima della frase "qui sotto un esempio del selettore"; la frase successiva
+         giustificala a sinistra») - lo spazio sopra, e «Prova a toccare…» a sinistra (era centrata) -->
+    <p style="font-size:0.88rem;color:var(--text);margin-top:1.4rem;margin-bottom:0.3rem;">Qui sotto, un esempio del selettore.</p>
     <!-- v5.957 — data-i18n-html e NON data-i18n: applyI18n scrive i primi con textContent, che
          cancellerebbe il corsivo di Mia lista. Il testo vero sta nel dizionario in app.js. -->
-    <p style="font-size:0.8rem;color:var(--text);text-align:center;margin-bottom:1rem;" data-i18n-html="profile.sliderHint">Prova a toccare il selettore <em>Mia lista</em> !!!</p>
+    <p style="font-size:0.8rem;color:var(--text);text-align:left;margin-bottom:1rem;" data-i18n-html="profile.sliderHint">Prova a toccare il selettore <em>Mia lista</em> !!!</p>
     <div style="display:flex;align-items:center;gap:1.5rem;background:var(--card2);border-radius:12px;padding:1.25rem;">
       <!-- v5.956 — il riquadro parte con l'emoji e app.js ci mette la foto VERA della figurina
              (Gastone Bubbone, n. 1 della "Serie 1") cercandola nei dati: vedi openDemoToggleModal().
@@ -6586,7 +6591,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.165"></script>
+<script src="js/app.js?v=7.166"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6610,7 +6615,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.165'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.166'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
