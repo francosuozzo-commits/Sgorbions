@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.160">
+<link rel="stylesheet" href="css/style.css?v=7.161">
 
 
 <style>
@@ -1060,6 +1060,13 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
 /* 🆕 v7.160 (Franco) - LA PAGINA «LA MIA LISTA SGORBIONS» (`renderMiaLista`): le locandine in una griglia, grigie quelle
    senza niente; i tab come pillole; le righe miniatura | tipologia | «N di M» | barretta | percentuale. */
 #page-lamialista { padding-top: 0; }
+/* 🔄 v7.161 (Franco: «il titolo intanto deve essere viola») - il viola del titolo della finestra «La mia lista Sgorbions»
+   (`--accent3`); `!important` e l'id perché la regola dei titoli di pagina (v7.087) li vuole bianchi con `!important` */
+#page-lamialista h1.titolo-pagina { color: var(--accent3) !important; }
+/* 🔄 v7.161 (Franco: «nella versione mobile c'è dello spazio vuoto tra il titolo della pagina e l'inizio del contenuto;
+   questo spazio non serve») - era il margine di sempre sotto `.section-header` (3rem; 1,5rem sul desktop, v7.087): qui
+   0,6rem, su tutte e due («quantomeno alla versione mobile») */
+#page-lamialista .section-header { margin-bottom: 0.6rem !important; }
 #page-lamialista > .section:first-child { padding-top: 0.5rem; }
 .ml-locandine { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.7rem; max-width: 1100px; margin: 0 auto 1.4rem; }
 .ml-locandina { background: var(--card); border: 2px solid var(--border2); border-radius: var(--radius-lg); padding: 0.4rem; cursor: pointer; color: var(--text); font: inherit; text-align: center; }
@@ -1083,6 +1090,10 @@ span.ml-mini { background: none; }
 .ml-totale { font-weight: 800; border-top: 2px solid var(--border2); }
 .ml-vuota { text-align: center; color: var(--text); margin: 1rem 0; }
 .ml-intro-pagina { text-align: center; color: var(--text); font-size: 1rem; margin: 0 auto 0.8rem; }
+/* 🐛 v7.161 - il pulsante «📋 Guarda la tua lista»: la forma di `.wz-pulsante` (style.css), senza la sua classe, che
+   `_wzNomePulsanti` userebbe per riscriverne la scritta */
+.ml-pulsante { font-size: 1.12rem; padding: 0.9rem 1.8rem; border-radius: 999px; box-shadow: 0 6px 22px rgba(37,99,235,0.35); }
+@media (max-width: 860px) { .ml-pulsante { font-size: 1rem; padding: 0.8rem 1.3rem; } }
 @media (max-width: 860px) {
   .ml-locandine { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; }
   .ml-locandina span { font-size: 0.66rem; }
@@ -4564,7 +4575,7 @@ di tutte le serie</button>
     <div class="section-inner">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
         <div>
-          <h1 class="titolo-pagina" style="font-family:var(--font-ui);font-size:2.2rem;" data-i18n="wantlist.pageTitle">Le mie liste</h1>
+          <h1 class="titolo-pagina" style="font-family:var(--font-ui);font-size:2.2rem;" data-i18n="wantlist.pageTitle">Export liste</h1>
           <p style="color:var(--accent);font-size:0.95rem;margin-top:0.5rem;font-weight:600;" data-i18n-html="wantlist.hook">Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l'Inventario?<br>Se la risposta è sì, sei nel posto giusto !!<br><br></p>
           <p style="color:var(--text);font-size:0.88rem;margin-top:4px;" data-i18n-html="wantlist.desc">Qui trovi l'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)</p>
         </div>
@@ -5941,7 +5952,10 @@ di tutte le serie</button>
     <!-- 🆕 v7.160 (Franco: «aggiungerei una terza sezione che si chiama la mia lista, avente un bottone che punta alla nuova
          pagina»; «mettilo in prima posizione») - per tutti, non solo per chi vede il questionario -->
     <h3 class="ml-titoletto">La mia lista</h3>
-    <div style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary wz-pulsante" onclick="closeModal('demo-toggle-modal');apriMiaLista()">📋 Guarda la tua lista</button></div>
+    <!-- 🐛 v7.161 (Franco: «il bottone che punta alla nuova pagina lo hai chiamato "il questionario Sgorbions"») - aveva la
+         classe `wz-pulsante`, e `_wzNomePulsanti` riscrive la scritta di tutti i pulsanti con quella classe: ora `ml-pulsante`,
+         stessa forma (regola qui sotto, fra gli stili della pagina) -->
+    <div style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary ml-pulsante" onclick="closeModal('demo-toggle-modal');apriMiaLista()">📋 Guarda la tua lista</button></div>
     <h3 class="ml-titoletto solo-wz">Il questionario Sgorbions</h3>
     <div class="solo-wz" style="text-align:center;margin:0 0 1.4rem;"><button type="button" class="btn-primary wz-pulsante" onclick="closeModal('demo-toggle-modal');apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
     <h3 class="ml-titoletto">La mia lista Sgorbions</h3>
@@ -6548,7 +6562,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.160"></script>
+<script src="js/app.js?v=7.161"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6572,7 +6586,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.160'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.161'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
