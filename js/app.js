@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.155 - Modificato js/app.js (e index per la versione). Questionario, «Che collezionista sei ?» (Franco: «rinominare
+//          il livello 2 in intenditore»): la seconda carta dice «Intenditore» (EN «Connoisseur»). La chiave salvata
+//          resta 'esperto': il livello di chi ha già risposto non cambia.
+//          🐛 E «Molte» / «Tante» con la lista vuota per quella tipologia (Franco: «ne tocco 10 e mi aspetto che mi dica
+//          ne stai aggiungendo 150; invece mi dice 10»): le mancanti partivano tutte accese, e toccare le 10 mancanti
+//          le spegneva. Ora si parte da nessuna mancante (`_wzVerso`).
 // v7.154 - Modificato index.html (e app.js per la versione). Questionario, desktop (Franco: «la pagina con la domanda
 //          sul livello deve essere portata tutta al centro»; «in generale … quello che accade accade in centro allo
 //          schermo»): ogni schermata sta al centro anche in altezza, coi suoi tasti. Le schermate più alte della
@@ -31075,7 +31081,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.154';
+const JS_VERSION = 'v7.155';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -51758,6 +51764,12 @@ function _wzVerso(sez, verso) {
     // v7.132: dopo «No, ricomincio da zero» la lista di questa tipologia vale vuota
     const tutti = _wzArticoli(w.serie[w.i].id, sez).map(f => f.id), mie = c.azzera ? new Set() : new Set(getOwned());
     c.sel = new Set(tutti.filter(id => verso === 'ho' ? mie.has(id) : !mie.has(id)));
+    // 🐛 v7.155 (Franco: «su 160 ne ho 150, seleziono "molte", lui mi offre tutto l'album già selezionato, ne tocco 10
+    //    e mi aspetto che mi dica ne stai aggiungendo 150; invece mi dice 10») - con la lista vuota per questa
+    //    tipologia (o azzerata) «quelle che mancano» erano TUTTE, quindi partivano tutte accese: chi toccava le sue 10
+    //    mancanti le spegneva, e restavano mancanti le altre 150. «Molte» vuol dire che ne ha tante: si parte da
+    //    nessuna mancante, e si toccano quelle che mancano. Con qualcosa già nella lista si parte ancora dalla lista.
+    if (verso === 'manca' && !tutti.some(id => mie.has(id))) c.sel = new Set();
     c.selVerso = verso;
     c.selDaAzzera = !!c.azzera;   // v7.132
   }
@@ -52074,8 +52086,10 @@ function _wzDisegna(tieni) {
       + '<p class="wz-testo">' + (it ? 'Indica il livello di collezionista che più corrisponde a te.<br>Il questionario sarà tarato su quel livello.' : 'Choose the collector level that fits you best.<br>The questionnaire will be tuned to that level.') + '</p>'
       + '<div class="wz-scelte wz-scelte-livelli">'   // v7.060: sul telefono la terza al centro (regola nell'index)
       // 🔄 v7.052 (Franco) - le scritte sotto le card; l'inglese è mio
+      // 🔄 v7.155 (Franco: «rinominare il livello 2 in intenditore») - a schermo «Intenditore» (EN «Connoisseur», mio);
+      //    la chiave salvata resta 'esperto', così le risposte già date non cambiano
       + carta('amatore', '🌱', it ? 'Amatore' : 'Amateur', it ? 'Solo articoli in versione base.' : 'Base version items only.')
-      + carta('esperto', '⭐', it ? 'Esperto' : 'Expert', it ? 'Aggiungiamo le variazioni ufficiali degli articoli.' : "Let's add the official variations of the items.")
+      + carta('esperto', '⭐', it ? 'Intenditore' : 'Connoisseur', it ? 'Aggiungiamo le variazioni ufficiali degli articoli.' : "Let's add the official variations of the items.")
       + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'Aggiungiamo le variazioni non ufficiali ed altri articoli rari.' : "Let's add the unofficial variations and other rare items.")
       + '</div>';
     piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">← ' + (it ? '<span class="wz-solo-desktop">Torna</span><span class="wz-solo-tel">Vai</span> indietro' : 'Go back') + '</button>'
