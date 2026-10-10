@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.163">
+<link rel="stylesheet" href="css/style.css?v=7.164">
 
 
 <style>
@@ -1097,6 +1097,10 @@ span.ml-mini { background: none; }
 /* 🆕 v7.163 (Franco) - nella finestra «La mia lista Sgorbions» i due pulsanti subito sotto la loro frase, e dopo di loro
    lo spazio prima della frase seguente; la riga vuota dopo «Oppure…», prima della guida */
 .ml-pulsante-riga { text-align: center; margin: 0.5rem 0 1.6rem; }
+/* 🔄 v7.164 (Franco: «la nota … dopo la prima frase ma separata da uno spazio … prima del bottone accedi alla mia lista;
+   anche prima di questo bottone lascerei uno spazio»; «lascia anche uno spazio prima del bottone del questionario») */
+.ml-nota { margin: 1.1rem 0 0; }
+.ml-pulsante-riga { margin-top: 1.1rem; }
 .ml-intro.ml-oppure { margin-bottom: 1.5rem; }
 @media (max-width: 860px) {
   .ml-locandine { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; }
@@ -5957,13 +5961,21 @@ di tutte le serie</button>
          questionario restano `solo-wz` (v7.052: «Oppure…» senza la riga prima non regge). Il pulsante della lista ha la
          classe sua (`ml-pulsante`, v7.161: `wz-pulsante` lo farebbe riscrivere da `_wzNomePulsanti`). -->
     <p class="ml-intro">«La mia lista Sgorbions» è il modo con cui puoi costruire una tua lista personale della collezione.</p>
+    <!-- 🔄 v7.164 (Franco: «la nota che c'è a fondo pagina va messa più in alto: dopo la prima frase ma separata da uno
+         spazio, e quindi prima del bottone accedi alla mia lista; anche prima di questo bottone lascerei uno spazio»;
+         «lascia anche uno spazio prima del bottone del questionario») - la NOTA sale qui; gli spazi li dà `.ml-nota`
+         sopra e sotto, e `.ml-pulsante-riga` sopra i due pulsanti (index, fra gli stili della pagina della lista) -->
+    <p class="ml-nota" style="font-size:0.82rem;color:var(--text);font-style:italic;"><strong style="font-style:normal;color:var(--text);">NOTA</strong> — È semplicemente una lista tua: cosa significhi per te (che tu la possieda, l'abbia vista, o qualsiasi altra cosa) lo decidi solo tu — <span style="color:var(--danger);">non è visibile né interpretabile da altri utenti.</span></p>
     <div class="ml-pulsante-riga"><button type="button" class="btn-primary ml-pulsante" onclick="closeModal('demo-toggle-modal');apriMiaLista()">📋 Accedi alla tua lista</button></div>
     <p class="ml-intro solo-wz">Puoi costruire questa lista in un batter d'occhio con il <strong style="color:#ffd84d;">Questionario Sgorbions</strong>.</p>
     <div class="solo-wz ml-pulsante-riga"><button type="button" class="btn-primary wz-pulsante" onclick="closeModal('demo-toggle-modal');apriWizardLista()" data-i18n="wz.pulsante">✨ Crea la tua lista col Questionario Sgorbions</button></div>
-    <p class="ml-intro solo-wz ml-oppure">Oppure spuntando a mano il flag <strong style="color:#ffd84d;">Mia lista</strong> sugli articoli.</p>
-    <p class="ml-domanda">Come funziona «La mia lista Sgorbions» ?</p>
-    <p style="font-size:0.88rem;color:var(--text);margin-bottom:0.75rem;">Tocca il selettore <em>Mia lista</em> per aggiungere una figurina alla tua lista personale.<br>Il colore cambierà per indicarti che è nella lista !</p>
-    <p style="font-size:0.82rem;color:var(--text);margin-bottom:1.5rem;font-style:italic;"><strong style="font-style:normal;color:var(--text);">NOTA</strong> — È semplicemente una lista tua: cosa significhi per te (che tu la possieda, l'abbia vista, o qualsiasi altra cosa) lo decidi solo tu — <span style="color:var(--danger);">non è visibile né interpretabile da altri utenti.</span></p>
+    <!-- v7.164 (Franco: «falla finire con ", navigando l'Inventario."») -->
+    <p class="ml-intro solo-wz ml-oppure">Oppure spuntando a mano il flag <strong style="color:#ffd84d;"><em>Mia lista</em></strong> sugli articoli, navigando l'Inventario.</p>
+    <!-- v7.164 (Franco: «cambia "come funziona la mia lista Sgorbions?" con "come funziona il selettore Mia lista?"») -->
+    <!-- v7.164 (Franco: «Mia lista va sempre in italico»; e «Il colore cambierà per indicarti che è stato aggiunto alla
+         lista !», con lo spazio prima del «!» come tutto il sito: prova-v6390) -->
+    <p class="ml-domanda">Come funziona il selettore <em>Mia lista</em> ?</p>
+    <p style="font-size:0.88rem;color:var(--text);margin-bottom:0.75rem;">Tocca il selettore <em>Mia lista</em> per aggiungere una figurina alla tua lista personale.<br>Il colore cambierà per indicarti che è stato aggiunto alla lista !</p>
     <div style="display:flex;align-items:center;gap:1.5rem;background:var(--card2);border-radius:12px;padding:1.25rem;">
       <!-- v5.956 — il riquadro parte con l'emoji e app.js ci mette la foto VERA della figurina
              (Gastone Bubbone, n. 1 della "Serie 1") cercandola nei dati: vedi openDemoToggleModal().
@@ -6564,7 +6576,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.163"></script>
+<script src="js/app.js?v=7.164"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6588,7 +6600,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.163'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.164'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
