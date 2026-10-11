@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.173 - Modificato js/app.js (e index per la versione). 🐛 La pagina «La mia lista Sgorbions» non si ridisegnava al
+//          cambio lingua (Franco: «farei solo il punto 1»): `renderAll` ora la rifà se è aperta, come le altre pagine.
+//          E il tab «🔁 Aggiornamenti massivi» (Franco: «si differisca tra le diverse tda»): dentro ogni serie un blocco
+//          per tipologia (`_aggTipoDi`, `_aggNomeTipo`); lo stesso valore in due tipologie fa due righe separate.
+//          Intestazioni delle colonne in arancio (Franco: «i titoli … in altro colore»). Un solo «Salva» per le due
+//          tabelle, e la conferma con le parole di Franco, una frase per campo (`_aggMessaggio`).
 // v7.172 - Modificati js/app.js e index.html. Home sul telefono (Franco): «Cosa puoi fare in questo sito ?» diventa
 //          «Ecco cosa puoi fare in questo sito», senza punto, centrata coi box sotto (EN «Here is what you can do on this
 //          site», mio). E i due box della home (Franco): «Crea la tua lista personale col Questionario Sgorbions» e
@@ -31183,7 +31189,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.172';
+const JS_VERSION = 'v7.173';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40774,29 +40780,49 @@ const _AGG_CAMPI = {
   'sottocategorie': { base: 'subcategory', mobile: 'sottocategoriaMobile', it: 'Sottocategoria', en: 'Subcategory', itMob: 'Sottocategoria mobile e Carosello', enMob: 'Mobile and carousel subcategory' },
 };
 const _aggPulisci = v => String(v || '').trim().split(/\s+/).filter(Boolean).join(' ').replace(/\s*\|\s*/g, '|');
+// 🆕 v7.173 (Franco, guardando la serie 1: «cosa è la categoria BUSTA?» — erano due versioni dell'album L. 2000 — e poi
+//    «forse è meglio che in quella tabella si differisca tra le diverse tda») - DENTRO LA SERIE, UN BLOCCO PER TIPOLOGIA.
+//    La tipologia è quella dell'articolo: il tipo (`tipoProdotto`) se ce l'ha, se no la sezione. Le versioni hanno la
+//    sezione della loro base, quindi stanno nel suo blocco. Lo stesso valore in due tipologie fa due righe, e ognuna si
+//    salva per conto suo. Ordine: le sezioni come nel descrittore `ARTICOLI`, poi i tipi per nome.
+const _aggTipoDi = f => f.tipoProdotto ? 'tp:' + f.tipoProdotto : (f.section || 'figurines');
+function _aggNomeTipo(k) {
+  if (!k.startsWith('tp:')) return getSectionLabel(k);
+  const id = k.slice(3);
+  return _nomeTipo(_tipiProdotto().find(t => t.id === id)) || id;
+}
 function _aggGruppi(quale) {
   const c = _AGG_CAMPI[quale], figs = getData('figurines', []);
   const serie = getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  const sezioni = Object.keys(ARTICOLI);
+  const posto = k => { const i = sezioni.indexOf(k); return i < 0 ? 9999 : i; };
   return serie.map(s => {
-    const m = new Map();
+    const perTipo = new Map();
     figs.forEach(f => {
       if (f.seriesId !== s.id) return;
       const v = String(f[c.base] || '').trim();
       if (!v) return;
+      const k = _aggTipoDi(f);
+      if (!perTipo.has(k)) perTipo.set(k, new Map());
+      const m = perTipo.get(k);
       if (!m.has(v)) m.set(v, []);
       m.get(v).push(f);
     });
-    const righe = [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'it'))
-      // il valore che si VEDE: una versione col campo vuoto eredita quello della base (`_testoMobile`, v7.146)
-      .map(([val, arr]) => { const mob = new Set(arr.map(f => _testoMobile(f, c.mobile))); return { val, arr, mob: mob.size === 1 ? [...mob][0] : null }; });
-    return { s, righe };
-  }).filter(g => g.righe.length);
+    const tipi = [...perTipo.entries()]
+      .map(([k, m]) => ({ k, righe: [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'it'))
+        // il valore che si VEDE: una versione col campo vuoto eredita quello della base (`_testoMobile`, v7.146)
+        .map(([val, arr]) => { const mob = new Set(arr.map(f => _testoMobile(f, c.mobile))); return { val, arr, mob: mob.size === 1 ? [...mob][0] : null }; }) }))
+      .sort((a, b) => posto(a.k) - posto(b.k) || _aggNomeTipo(a.k).localeCompare(_aggNomeTipo(b.k), 'it'));
+    return { s, tipi };
+  }).filter(g => g.tipi.length);
 }
 function renderAdminAggiornamenti() {
   const box = document.getElementById('admin-aggiornamenti-box');
   if (!box) return;
   const it = currentLang === 'it';
-  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  // v7.173 (Franco: «i titoli, mettili in altro colore rispetto alle righe») - le intestazioni delle colonne in arancio
+  //    (`--accent2`): l'azzurro è della serie, il lime della tipologia
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--accent2);font-weight:600;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
   const td = 'padding:4px 8px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);';
   const st = 'padding:3px 6px;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;width:100%;min-width:14rem;';
   const sezione = quale => {
@@ -40809,19 +40835,22 @@ function renderAdminAggiornamenti() {
       + '</p>'
       + _aggGruppi(quale).map(g =>
         '<div style="font-family:var(--font-ui);font-weight:700;margin:1rem 0 0.3rem;color:var(--info);">' + esc(g.s.name || g.s.id) + '</div>'
-        + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:min(100%,40rem);">'
+        // v7.173 - un blocco per tipologia, col suo nome nell'accento del sito (`--accent`, il lime delle tipologie)
+        + g.tipi.map(t => '<div style="font-family:var(--font-ui);font-size:0.85rem;font-weight:600;margin:0.6rem 0 0.2rem 0.4rem;color:var(--accent);">' + esc(_aggNomeTipo(t.k)) + '</div>'
+        + '<div style="overflow-x:auto;margin-left:0.4rem;"><table style="border-collapse:collapse;min-width:min(100%,40rem);">'
         + '<tr><th style="' + th + '">' + esc(it ? c.it : c.en) + '</th><th style="' + th + 'text-align:right;">' + (it ? 'Articoli' : 'Items') + '</th><th style="' + th + '">' + esc(it ? c.itMob : c.enMob) + '</th></tr>'
-        + g.righe.map(r => '<tr><td style="' + td + '">' + esc(r.val) + '</td><td style="' + td + 'text-align:right;font-variant-numeric:tabular-nums;">' + r.arr.length + '</td>'
-          + '<td style="' + td + '"><input type="text" data-agg="' + quale + '" data-serie="' + esc(g.s.id) + '" data-valore="' + esc(encodeURIComponent(r.val)) + '"'
+        + t.righe.map(r => '<tr><td style="' + td + '">' + esc(r.val) + '</td><td style="' + td + 'text-align:right;font-variant-numeric:tabular-nums;">' + r.arr.length + '</td>'
+          + '<td style="' + td + '"><input type="text" data-agg="' + quale + '" data-serie="' + esc(g.s.id) + '" data-tipo="' + esc(t.k) + '" data-valore="' + esc(encodeURIComponent(r.val)) + '"'
           + ' data-iniziale="' + esc(r.mob === null ? '' : r.mob) + '"' + (r.mob === null ? ' data-diversi="1" placeholder="' + (it ? 'valori diversi' : 'mixed values') + '"' : '')
           + ' value="' + esc(r.mob === null ? '' : r.mob) + '" style="' + st + '"></td></tr>').join('')
-        + '</table></div>').join('')
-      + '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">'
-      + '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaAggiornamentiMassivi(\'' + quale + '\')">' + (quale === 'categorie' ? (it ? 'Salva le categorie' : 'Save categories') : (it ? 'Salva le sottocategorie' : 'Save subcategories')) + '</button>'
-      + '<span id="agg-esito-' + quale + '" style="font-size:0.85rem;color:var(--text);"></span></div>';
+        + '</table></div>').join('')).join('');
   };
+  // v7.173 (Franco: «un pulsante unico») - UN SOLO «SALVA» IN FONDO, per le due tabelle: era uno per sezione
   box.innerHTML = '<h3 style="font-family:var(--font-ui);margin:0 0 0.4rem;">🔁 ' + (it ? 'Aggiornamenti massivi' : 'Bulk updates') + '</h3>'
-    + sezione('categorie') + sezione('sottocategorie');
+    + sezione('categorie') + sezione('sottocategorie')
+    + '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:1.2rem;">'
+    + '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaAggiornamentiMassivi()">' + (it ? 'Salva' : 'Save') + '</button>'
+    + '<span id="agg-esito" style="font-size:0.85rem;color:var(--text);"></span></div>';
 }
 // quali articoli cambiano, riga per riga: solo le righe toccate, e solo gli articoli col valore diverso
 function _aggPiano(quale) {
@@ -40829,26 +40858,54 @@ function _aggPiano(quale) {
   document.querySelectorAll('#admin-aggiornamenti-box input[data-agg="' + quale + '"]').forEach(el => {
     const nuovo = _aggPulisci(el.value), diversi = el.dataset.diversi === '1';
     if (diversi ? nuovo === '' : nuovo === el.dataset.iniziale) return;
-    const val = decodeURIComponent(el.dataset.valore), sid = el.dataset.serie;
-    const gruppo = figs.filter(f => f.seriesId === sid && String(f[c.base] || '').trim() === val), ids = new Set(gruppo.map(f => f.id));
+    const val = decodeURIComponent(el.dataset.valore), sid = el.dataset.serie, tipo = el.dataset.tipo;
+    // v7.173 - e della sola tipologia della riga
+    const gruppo = figs.filter(f => f.seriesId === sid && _aggTipoDi(f) === tipo && String(f[c.base] || '').trim() === val), ids = new Set(gruppo.map(f => f.id));
     // si scrive chi ha il valore suo diverso; una versione col campo vuoto che eredita da una base del gruppo no: la segue
     const arr = gruppo.filter(f => {
       const suo = String(f[c.mobile] || '').trim();
       if (!suo && f.baseFigurineId && ids.has(f.baseFigurineId)) return false;
       return suo !== nuovo;
     });
-    if (arr.length) piano.push({ val, sid, nuovo, arr });
+    if (arr.length) piano.push({ val, sid, tipo, nuovo, arr });
   });
   return piano;
 }
-async function salvaAggiornamentiMassivi(quale) {
+// 🔄 v7.173 (Franco: «"Hai modificato N categorie/sottocategorie; come conseguenza saranno aggiornati M articoli base."
+//    … se ho modificato 2 campi diversi, allora mi fai 2 frasi») - una frase per campo toccato, N = le righe cambiate,
+//    M = gli articoli da scrivere. 📌 «base» è esatto perché le versioni col campo vuoto ereditano e non si scrivono, e
+//    l'11 ottobre le 38 versioni che avevano una copia del valore della base sono state svuotate (dal sito).
+// 🔄 v7.173 (Franco: «per ogni voce aggiornata da "aggiornamenti massivi" vorrei leggere quanti articoli (base) si vanno
+//    a modificare») - sotto ogni frase una riga per voce: serie · tipologia · valore → valore nuovo: quanti articoli
+function _aggMessaggio(piani) {
+  const it = currentLang === 'it';
+  const nomeS = new Map(getData('series', []).map(s => [s.id, s.name || s.id]));
+  const quanti = m => m === 1 ? (it ? '1 articolo base' : '1 base item') : m + (it ? ' articoli base' : ' base items');
+  return Object.keys(_AGG_CAMPI).filter(q => piani[q].length).map(q => {
+    const n = piani[q].length, m = piani[q].reduce((a, p) => a + p.arr.length, 0), c = _AGG_CAMPI[q];
+    return (it ? 'Hai modificato ' + n + ' ' + (n === 1 ? c.it.toLowerCase() : q) + '; come conseguenza '
+                + (m === 1 ? 'sarà aggiornato 1 articolo base.' : 'saranno aggiornati ' + m + ' articoli base.')
+              : 'You changed ' + n + ' ' + c.en.toLowerCase() + (n === 1 ? '' : ' values') + '; as a result ' + quanti(m) + ' will be updated.')
+      + piani[q].map(p => '\n• ' + nomeS.get(p.sid) + ' · ' + _aggNomeTipo(p.tipo) + ' · «' + p.val + '» → '
+          + (p.nuovo ? '«' + p.nuovo + '»' : (it ? '(vuoto)' : '(empty)')) + ': ' + quanti(p.arr.length)).join('');
+  }).join('\n\n') + (it ? '\n\nConfermi ?' : '\n\nConfirm?');
+}
+async function salvaAggiornamentiMassivi() {
   if (!currentUser?.isAdmin) return;
-  const it = currentLang === 'it', c = _AGG_CAMPI[quale], esito = document.getElementById('agg-esito-' + quale);
-  const piano = _aggPiano(quale), n = piano.reduce((a, p) => a + p.arr.length, 0);
-  if (!n) { toast(it ? 'Niente da cambiare' : 'Nothing to change', 'info'); return; }
-  if (!confirm(it ? 'Cambio ' + n + (n === 1 ? ' articolo' : ' articoli') + ' in ' + piano.length + (piano.length === 1 ? ' riga' : ' righe') + '. Confermi?'
-                  : 'Change ' + n + ' item(s) in ' + piano.length + ' row(s)?')) return;
-  const daScrivere = piano.flatMap(p => p.arr.map(f => ({ ...f, [c.mobile]: p.nuovo })));
+  const it = currentLang === 'it', esito = document.getElementById('agg-esito');
+  // v7.173 - le due tabelle insieme: un articolo che cambia in tutte e due si scrive una volta, coi due campi
+  const piani = {}, perId = new Map(), attesi = [];
+  Object.keys(_AGG_CAMPI).forEach(q => {
+    const c = _AGG_CAMPI[q];
+    piani[q] = _aggPiano(q);
+    piani[q].forEach(p => p.arr.forEach(f => {
+      perId.set(f.id, { ...(perId.get(f.id) || f), [c.mobile]: p.nuovo });
+      attesi.push([f.id, c.mobile, p.nuovo]);
+    }));
+  });
+  if (!perId.size) { toast(it ? 'Niente da cambiare' : 'Nothing to change', 'info'); return; }
+  if (!confirm(_aggMessaggio(piani))) return;
+  const daScrivere = [...perId.values()];
   if (esito) esito.textContent = it ? 'Scrittura in corso…' : 'Writing…';
   try {
     await _salvaFigurineInBlocco(daScrivere);
@@ -40861,15 +40918,15 @@ async function salvaAggiornamentiMassivi(quale) {
   const figs = getData('figurines', []);
   daScrivere.forEach(rec => { const i = figs.findIndex(x => x.id === rec.id); if (i >= 0) figs[i] = rec; });
   _cache.figurines = figs;
-  // la prova: si rilegge dal server e si contano gli articoli che hanno davvero il valore nuovo
+  // la prova: si rilegge dal server e si contano gli articoli che hanno davvero il valore nuovo (in ogni campo scritto)
   let giusti = null;
   try {
-    const attesi = new Map(daScrivere.map(r => [r.id, r[c.mobile]]));
-    const dalServer = (await fsGetAllDalServer('series')).flatMap(s => s.items || []);
-    giusti = dalServer.filter(f => attesi.has(f.id) && String(f[c.mobile] || '') === attesi.get(f.id)).length;
+    const dalServer = new Map((await fsGetAllDalServer('series')).flatMap(s => s.items || []).map(f => [f.id, f]));
+    const sbagliati = new Set(attesi.filter(([id, k, v]) => String((dalServer.get(id) || {})[k] || '') !== v).map(a => a[0]));
+    giusti = daScrivere.filter(r => dalServer.has(r.id) && !sbagliati.has(r.id)).length;
   } catch (e) { console.error('salvaAggiornamentiMassivi (rilettura)', e); }
   renderAdminAggiornamenti();
-  const e2 = document.getElementById('agg-esito-' + quale);
+  const e2 = document.getElementById('agg-esito');
   if (e2) e2.textContent = (it ? 'Scritti ' + daScrivere.length + ' articoli' : 'Written ' + daScrivere.length + ' items')
     + (giusti === null ? (it ? ' (rilettura non riuscita)' : ' (re-read failed)') : (it ? '; riletti dal server: ' + giusti + ' giusti.' : '; re-read from server: ' + giusti + ' correct.'));
   toast(it ? '✅ Aggiornamento fatto' : '✅ Update done', giusti === daScrivere.length ? 'success' : 'error');
@@ -73661,6 +73718,8 @@ function renderAll() {
   if (document.getElementById('page-classifica')?.classList.contains('active')) renderClassifica();
   if (document.getElementById('page-wantlist')?.classList.contains('active')) renderWantlist();
   if (document.getElementById('page-wishlist')?.classList.contains('active')) renderWishlist();
+  // 🐛 v7.173 - la pagina «La mia lista Sgorbions» (v7.160) mancava: al cambio lingua restava nella lingua di prima
+  if (document.getElementById('page-lamialista')?.classList.contains('active')) renderMiaLista();
   if (document.getElementById('page-newsletter')?.classList.contains('active')) { renderNewsletterUsers(); renderEmailLog(); }
 
   // Re-render items section if open
