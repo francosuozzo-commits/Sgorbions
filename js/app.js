@@ -1,6 +1,25 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.178 - Modificati js/app.js e index.html. «Allinea i personaggi» della serie gemella (Franco: «la finestra di
+//          allineamento tra le 2 serie è piccola. tutte le righe vanno a capo»): da `confirm()` del browser alla
+//          finestra del sito `_finestraConferma`, larga 1100px, ogni articolo diverso sulla sua riga. E nella VT
+//          delle fpa (Franco: «la colonna NOME è enorme mentre la colonna Commento album è piccolissima») lo
+//          spazio libero (`width:99%`) passa dal Nome al Commento album. 🐛 E (Franco: «ho aperto una fpa ed ho
+//          salvato il campo "Commenti per album"; la foto si è persa») il Salva della scheda azzerava il
+//          `baseFigurineId` di ogni base, fpa comprese: sulle fpa ora si conserva. Rimesse a mano dal sito le due
+//          rimaste staccate (serie 1, n.8 e n.38). Le linguette (Franco: «si allungano solamente … ne accorcerei
+//          il valore quando non c'è il mouse»): chiusa «📝 Questionario» (era «Riprendi il Questionario») e
+//          «🧽 Macchie» / «💧 Macchie» secondo se vanno tolte o rimesse; al passaggio la frase intera. E (Franco:
+//          «mostrare il campo "Commento album" quando si fa mouse over sulle card di una fpa / fcr») il commento in
+//          una riga gialla in fondo alla foto, col mouse sopra: sulla fpa il suo, sulla fcr quello della fpa collegata; sulle
+//          versioni non base quello della fpa della loro base (`_lettoreCommentoAlbum`). Nella VT delle fcr una colonna
+//          «Commento album» in sola lettura prima del N. E sulla card della fpa la famiglia com'è scritta, come
+//          sulla fcr (il maiuscolo della v7.150 resta fuori dalla griglia), col valore a capo. «Sfoglia album»
+//          (Franco: «avvicinerei le frecce … c'è troppa distanza»; «il numero della pagina non è allineato al centro»;
+//          prima e ultima pagina «come nella funzione sfoglia album del Questionario … sotto al tasto di prossima
+//          pagina e pagina precedente»): la cornice larga quanto la pagina più larga dell'album
+//          (`_sfogliaAdattaCornice`), il contatore sotto il centro della pagina, ⏮/⏭ con la scritta sotto le frecce.
 // v7.177 - Modificati css/style.css e index.html (app.js per la versione). Scheda dell'articolo sul telefono (Franco:
 //          «il valore dei campi sia messo alla destra della sua etichetta. Non sotto»): sotto i 560px etichetta e
 //          valore di nuovo affiancati, il valore a destra. E le etichette (Franco: «un colore diverso, da usare poi in
@@ -31224,7 +31243,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.177';
+const JS_VERSION = 'v7.178';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32992,7 +33011,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Export lists','nav.questionarioBreve':'Questionnaire<br>and <em>my list</em>','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Resume the Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory !','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Export lists','nav.questionarioBreve':'Questionnaire<br>and <em>my list</em>','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory !','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','sfoglia.prima':'First page','sfoglia.ultima':'Last page','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your <em>My list</em> and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -33081,7 +33100,7 @@ const i18n = {
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with backs) and cards in your list (complete series)','wantlist.pageTitle':'Export lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in your list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in your list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Export liste','nav.questionarioBreve':'Questionario<br>e <em>mia lista</em>','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Riprendi il Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions !','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca nel sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Export liste','nav.questionarioBreve':'Questionario<br>e <em>mia lista</em>','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions !','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca nel sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','sfoglia.prima':'Prima pagina','sfoglia.ultima':'Ultima pagina','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
@@ -40382,6 +40401,7 @@ async function _caricaLegendeDefinizioni() {
     _impostaOrdinamenti(docs.find(x => x.id === 'ordinamenti'));   // v7.082 - idem
     _impostaProtezione(docs.find(x => x.id === 'protezione'));   // v7.104 - idem
     _impostaRidotti(docs.find(x => x.id === 'campiRidotti'));   // v7.150 - idem
+    _impostaCommentoCard(docs.find(x => x.id === 'commentoCard'));   // v7.178 - idem
     _impostaPosizioni(docs.find(x => x.id === 'posizioniCampi'));   // v7.151 - idem
     _impostaModoCaroselli(docs.find(x => x.id === 'caroselliModo'));   // v7.152 - idem
     _impostaQuestionario(docs.find(x => x.id === 'questionario'));   // v7.156 - idem
@@ -44804,11 +44824,13 @@ async function allineaPersonaggiGemella() {
     }
   });
   if (!scritture.length) { toast(it ? 'Già allineate: niente da fare' : 'Already aligned: nothing to do', 'success'); return; }
-  if (!confirm(it
+  // 🔄 v7.178 (Franco: «la finestra di allineamento tra le 2 serie è piccola. tutte le righe vanno a capo») - da
+  //    `confirm()`, che non si allarga, alla finestra del sito larga come quella degli Aggiornamenti massivi
+  if (!await _finestraConferma({ titolo: '🔗 ' + (it ? 'Allinea i personaggi' : 'Align the characters'), larghezza: '1100px', aCapo: true, ok: it ? 'Allinea' : 'Align', testo: it
     ? 'Allineo i personaggi di ' + s.name + ' e ' + g.name + '?\n\n· ' + daGem + ' articoli di ' + s.name + ' prendono il personaggio da ' + g.name
       + '\n· ' + versoGem + ' articoli di ' + g.name + ' prendono il personaggio da ' + s.name + (conflitti ? ' (di cui ' + conflitti + ' diversi: vince ' + s.name + ')' : '')
       + (elencoDiversi.length ? '\n\nI diversi:\n' + elencoDiversi.join('\n') : '')
-    : 'Align the characters of ' + s.name + ' and ' + g.name + '?\n\n· ' + daGem + ' from ' + g.name + '\n· ' + versoGem + ' to ' + g.name + (conflitti ? ' (' + conflitti + ' different: ' + s.name + ' wins)' : ''))) return;
+    : 'Align the characters of ' + s.name + ' and ' + g.name + '?\n\n· ' + daGem + ' from ' + g.name + '\n· ' + versoGem + ' to ' + g.name + (conflitti ? ' (' + conflitti + ' different: ' + s.name + ' wins)' : '') })) return;
   try {
     await _scriviPacchetto(d => scritture.forEach(([riga, pids]) => {
       d.associazioni = d.associazioni.filter(x => x.a !== riga.id);
@@ -56952,6 +56974,12 @@ function renderItems() {
   // 🗑️ v6.837 (Franco: «quel campo preesistente togliamolo pure») - qui c'era `_famigliaPerBase`: la
   //    famiglia della v6.366 viveva sulla figurina per album e la card della con retro la prendeva
   //    in prestito. Adesso ognuna delle due ha la sua, scelta fra le Famiglie della serie.
+  // 🆕 v7.178 (Franco: «mostrare il campo "Commento album" quando si fa mouse over sulle card di una fpa / fcr») - il
+  //    commento sta sulla fpa; la fcr lo prende dalla fpa collegata (`baseFigurineId`). Mappa fatta una volta.
+  // v7.178 - acceso o spento per tipologia dalla console (Griglie → Commento album sulle card)
+  const _lettoreCommento = _lettoreCommentoAlbum(_allFigs);
+  const _commentoAlbumCard = f => ((f.section === 'attaccare' && _COMMENTO_CARD_CFG.fpa)
+    || ((f.section || 'figurines') === 'figurines' && _COMMENTO_CARD_CFG.fcr)) ? _lettoreCommento(f) : '';
   // 🔄 v6.767 - QUI C'ERA `grid.innerHTML = items.map(...).join('')`. Adesso l'HTML delle card
   //    si costruisce in un elenco e lo incolla `_incollaGruppi`, che ci infila le celle vuote dove
   //    un gruppo non entrerebbe nella riga. Il disegno della singola card non cambia di una riga.
@@ -57333,13 +57361,17 @@ function renderItems() {
     // da-attaccare sta sul record stesso. Non e' una copia da unificare: e' lo stesso
     // dato guardato dai due capi del collegamento.
     // 🔄 v6.837 - la famiglia e' dell'articolo stesso, sulle due tipologie che ce l'hanno.
-    const _famigliaCard = TDA_CON_FAMIGLIA.includes(f.section) ? _famigliaASchermo(f) : '';   // v7.150: fpa in maiuscolo
+    // 🔄 v7.178 (Franco: «Griglia: la famiglia nelle fpa è scritta in maiuscolo; la farei come nelle fcr») - sulla card
+    //    com'è scritta, come sulla fcr; il maiuscolo della v7.150 resta fuori dalla griglia
+    const _famigliaCard = TDA_CON_FAMIGLIA.includes(f.section) ? (f.famiglia || '').trim() : '';
     // 🔄 v6.501 - da `_rigaCard`, come tutte le altre: cosi' `_allineaRigheRetro` le
     // tiene in colonna per riga di griglia invece di lasciarle scorrere.
     // 🆕 v7.134 (Franco: «su mobile … non scrivere "Famiglia:"»; «solo le etichette, tanto c'è il colore») - sul
     //    telefono il solo valore, in giallo. Come TIPOLOGIA più giù.
     const famigliaHTML = _rigaCard(
       _campoCard(_isMobileViewport() ? '' : (currentLang === 'it' ? 'FAMIGLIA: ' : 'FAMILY: '), esc(_famigliaCard), COL_FAMIGLIA),   // v7.139
+      // 🔄 v7.178 (Franco: «nelle fpa il valore della famiglia scriviamolo a capo») - lo fa il foglio, con `data-sez`
+      //    sulla card: uno stile `display` scritto qui lo azzera `_allineaRigheRetro` (`r.style.display = ''`)
       'font-size:0.82rem;margin-top:1px;', 'famiglia');
     // v6.158 (Franco) - LE RIGHE DI UN PRODOTTO EXTRA SERIE: NOME, CATEGORIA, SOTTOCATEGORIA, una
   // per riga e in quest'ordine. Usa lo stesso `_rigaCard` dei retro, che tiene la riga anche quando
@@ -57648,13 +57680,13 @@ function renderItems() {
       ? (hasWidePair ? 'cursor:pointer;flex:0 0 350px;' : 'cursor:pointer;flex:0 0 247px;')
       : 'cursor:pointer;';
     const finalAspectRatio = hasWidePair ? '2' : imgAspectRatio;
-    return `<div class="fig-card${_cardNoPhoto ? ' fig-card--noimg' : ''}"${(_haFotoRuotata(f) && f.imgRuotato && f.img) ? ` data-ruotato="${esc(cloudinaryUrl(f.imgRuotato))}"` : ''} onclick="if(!event.target.closest('button'))openFigDetail('${f.id}')" style="${cardSpanStyle}">
+    return `<div class="fig-card${_cardNoPhoto ? ' fig-card--noimg' : ''}" data-sez="${esc(f.section || 'figurines')}"${(_haFotoRuotata(f) && f.imgRuotato && f.img) ? ` data-ruotato="${esc(cloudinaryUrl(f.imgRuotato))}"` : ''} onclick="if(!event.target.closest('button'))openFigDetail('${f.id}')" style="${cardSpanStyle}">
       ${_mobileFigCard ? `<div class="fig-badge-row">${typeBadgeHTML}</div>` : ''}
       <!-- v6.555 - IL LATO SI DICHIARA QUI, UNA VOLTA. La coppia si disegna in cinque
            modi diversi (_retroViewMode): scrivere la cornice dentro ognuno voleva dire
            dieci punti da tenere allineati. Qui c'e' il FATTO, il disegno lo fa il CSS. -->
       <div class="fig-img-placeholder"${_latoErrCard ? ` data-lato-errore="${_latoErrCard}"` : ''} style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;container-type:inline-size;">
-        ${imgHTML}${_timbroInvisibile(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}
+        ${imgHTML}${_timbroInvisibile(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}${_commentoAlbumCard(f) ? `<div class="fig-commento-album">${esc(_commentoAlbumCard(f))}</div>` : ''}
       </div>
       ${_contrassegnoVariazioneHTML(f)}
       <div class="fig-body">
@@ -58572,7 +58604,12 @@ function _aggiornaLinguettaImpersona() {
   const mac = document.getElementById('mac-linguetta');
   if (mac) {
     mac.style.display = admin ? 'flex' : 'none';
-    mac.textContent = _adminSenzaMacchie ? (currentLang === 'it' ? '💧 Metti macchie' : '💧 Show watermarks') : (currentLang === 'it' ? '💧 Togli macchie' : '💧 Hide watermarks');
+    // 🔄 v7.178 (Franco: «Togli macchie diventa solo "Macchie", magari con due icone diverse, per far capire se vanno
+    //    tolte o messe») - chiusa «🧽 Macchie» (si tolgono) o «💧 Macchie» (si rimettono); al passaggio la frase intera
+    const it = currentLang === 'it';
+    const lunga = _adminSenzaMacchie ? (it ? '💧 Metti macchie' : '💧 Show watermarks') : (it ? '🧽 Togli macchie' : '🧽 Hide watermarks');
+    const corta = (_adminSenzaMacchie ? '💧 ' : '🧽 ') + (it ? 'Macchie' : 'Watermarks');
+    mac.innerHTML = '<span class="wz-ling-corta">' + corta + '</span><span class="wz-ling-lunga">' + lunga + '</span>';
   }
 }
 // 🆕 v7.120 - accende e spegne le macchie per l'admin, e ridisegna quello che è a schermo (stesso giro di
@@ -58822,6 +58859,7 @@ function adminTab(tab) {
   // 🆕 v7.121 (Franco) - Ebay e Griglie escono da Impostazioni, con un tab ciascuno
   if (tab === 'ebay') loadEbaySettingsFields();
   if (tab === 'griglie') renderGriglieVisualizzazione();   // v6.197
+  if (tab === 'griglie') _riempiCommentoCard();   // v7.178 - le due spunte del Commento album sulle card
   if (tab === 'protezione') renderAdminProtezioneTDA();   // v7.104, tab suo dalla v7.121
   if (tab === 'caroselli') renderAdminCaroselliTDA();     // v6.982, tab suo dalla v7.151 (Franco)
   if (tab === 'questionario') renderAdminQuestionario();  // v7.156 (Franco)
@@ -60255,6 +60293,56 @@ function _daAttaccareModificaVietata(f) {
   if (!f || f.section !== 'attaccare') return false;
   const s = getData('series', []).find(x => x.id === f.seriesId);
   return !(s && s.abilitaModifica);
+}
+// 🆕 v7.178 (Franco: «mostrare il campo "Commento album" quando si fa mouse over sulle card di una fpa / fcr»; «anche
+//    nelle versioni non base»; «nella VT delle fcr … tra la foto e il numero») - chi dice il commento di un articolo.
+//    Sta sulla fpa; la fcr lo prende dalla fpa collegata (`baseFigurineId`), e una variazione, un change, un errore o
+//    un omaggio risalgono la catena fino alla base. Le mappe si fanno una volta: torna la funzione che risponde.
+// 🆕 v7.178 (Franco: «il commento sulle card della griglia (sia fpa che fcr) attivabile in cfg») - `settings/commentoCard`,
+//    { fpa, fcr }; finché non è scritto valgono accese tutte e due, com'era prima della spunta
+let _COMMENTO_CARD_CFG = { fpa: true, fcr: true };
+function _impostaCommentoCard(d) {
+  const nuovo = { fpa: !(d && d.fpa === false), fcr: !(d && d.fcr === false) };
+  const cambia = JSON.stringify(nuovo) !== JSON.stringify(_COMMENTO_CARD_CFG);
+  _COMMENTO_CARD_CFG = nuovo;
+  _riempiCommentoCard();
+  if (cambia && currentSeriesId && document.getElementById('items-grid')) { try { renderItems(); } catch (e) { console.error('renderItems (commentoCard)', e); } }
+}
+function _riempiCommentoCard() {
+  const a = document.getElementById('commento-card-fpa'), b = document.getElementById('commento-card-fcr');
+  if (a) a.checked = _COMMENTO_CARD_CFG.fpa;
+  if (b) b.checked = _COMMENTO_CARD_CFG.fcr;
+}
+async function salvaCommentoCard() {
+  const it = currentLang === 'it';
+  const v = { fpa: !!document.getElementById('commento-card-fpa')?.checked, fcr: !!document.getElementById('commento-card-fcr')?.checked };
+  try {
+    await fsSave('settings', { id: 'commentoCard', ...v });
+    _impostaCommentoCard(v);
+    toast(it ? '✅ Commento sulle card salvato. Vale da subito.' : '✅ Saved.', 'success');
+  } catch (e) {
+    console.error('salvaCommentoCard', e);
+    toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error');
+    _riempiCommentoCard();
+  }
+}
+function _lettoreCommentoAlbum(allFigs) {
+  const perFcr = new Map(), perId = new Map();
+  allFigs.forEach(x => {
+    perId.set(x.id, x);
+    if (x.section === 'attaccare' && x.baseFigurineId && (x.commentoAlbum || '').trim()) perFcr.set(x.baseFigurineId, x.commentoAlbum.trim());
+  });
+  return f => {
+    if (!f) return '';
+    if (f.section === 'attaccare') return (f.commentoAlbum || '').trim();
+    if ((f.section || 'figurines') !== 'figurines') return '';
+    let x = f;
+    for (let i = 0; i < 10 && x; i++) {
+      if (perFcr.has(x.id)) return perFcr.get(x.id);
+      x = x.baseFigurineId ? perId.get(x.baseFigurineId) : null;
+    }
+    return '';
+  };
 }
 // 🗑️ v6.366 - `_daAttaccareSoloLettura` non c'e' piu': rispondeva a due domande con una risposta
 // sola. Le due funzioni qui sopra la sostituiscono, e il nome vecchio e' stato tolto invece di
@@ -62279,7 +62367,8 @@ function _contrassegnoVariazioneHTML(f) {
   // condividono la variabile, o il giorno che una si muove si trascina l'altra.
   // ⚠️ `min-width` + `padding` + `border-radius:999px`: cerchio con una cifra, pastiglia
   // con due. Una larghezza fissa avrebbe tagliato il numero il giorno che arriva a 10.
-  return '<div style="display:flex;justify-content:flex-end;padding:5px 8px 0;line-height:1;">'
+  // v7.178 - `fig-num-versione`: sta sopra la riga del Commento album (vedi il foglio), che non deve coprirlo
+  return '<div class="fig-num-versione" style="display:flex;justify-content:flex-end;padding:5px 8px 0;line-height:1;">'
     + '<span title="' + (currentLang === 'it' ? 'Versione n. ' : 'Version no. ') + n
     + '" style="display:inline-flex;align-items:center;justify-content:center;'
     + 'min-width:1.15rem;height:1.15rem;padding:0 0.3rem;box-sizing:border-box;'
@@ -65047,7 +65136,45 @@ function apriSfogliaAlbum(idAlbum) {
   if (!m) return;
   m.classList.remove('hidden');
   document.addEventListener('keydown', _sfogliaTasti);
+  window.addEventListener('resize', _sfogliaAdattaCornice);
   _disegnaSfoglia();
+  // 🆕 v7.178 - la proporzione di ogni pagina, da una miniatura (c_fit tiene la forma): la cornice prende la più larga
+  _sfogliaAspetto = 0;
+  const ora = _sfogliaPagine;
+  _sfogliaAdattaCornice();
+  ora.forEach(p => {
+    const im = new Image();
+    im.onload = () => {
+      if (_sfogliaPagine !== ora || !im.naturalHeight) return;
+      const a = im.naturalWidth / im.naturalHeight;
+      if (a > _sfogliaAspetto) { _sfogliaAspetto = a; _sfogliaAdattaCornice(); }
+    };
+    im.src = cloudinaryUrl(p.url, 'w_200,h_200,c_fit,q_auto,f_auto');
+  });
+}
+// 🆕 v7.178 (Franco: «avvicinerei le frecce (e i pulsanti alla sx delle frecce) alla finestra dell'album; c'è troppa
+//    distanza»; «il numero della pagina non è allineato al centro della finestra che mostra la pagina») - LA CORNICE
+//    LARGA QUANTO LA PAGINA PIÙ LARGA DELL'ALBUM. Era sempre `min(70vw, 1100px)`, e una pagina verticale ci stava in
+//    mezzo con un mare di nero ai lati: frecce e tasti stavano al bordo della cornice, lontani dalla foto.
+// 📌 La regola della v6.868 resta: la misura è una per tutto l'album (la pagina più larga), quindi sfogliando le
+//    frecce non si muovono. Al massimo si sistemano una volta, appena arrivano le miniature.
+// 📌 E il contatore si sposta sotto il centro della pagina: la colonna dei tasti sta solo a sinistra, quindi il centro
+//    della riga non era quello della foto. Sul telefono la cornice la decide il foglio (`!important`) e lo
+//    spostamento viene zero.
+let _sfogliaAspetto = 0;
+function _sfogliaAdattaCornice() {
+  const m = document.getElementById('sfoglia-album-modal');
+  const c = m && m.querySelector('.sfoglia-cornice');
+  if (!c || m.classList.contains('hidden')) return;
+  const tetto = Math.min(window.innerWidth * 0.7, 1100);
+  c.style.width = _sfogliaAspetto ? Math.round(Math.min(tetto, c.clientHeight * _sfogliaAspetto)) + 'px' : 'min(70vw, 1100px)';
+  const cnt = document.getElementById('sfoglia-album-conta');
+  const riga = cnt && cnt.parentElement;
+  if (!riga) return;
+  riga.style.transform = '';
+  const rc = c.getBoundingClientRect(), rr = riga.getBoundingClientRect();
+  const sposta = Math.round((rc.left + rc.width / 2) - (rr.left + rr.width / 2));
+  riga.style.transform = sposta ? 'translateX(' + sposta + 'px)' : '';
 }
 
 // 🆕 v6.864 (Franco: «una volta che si e' aperta la form dove si sfogliano le pagine dell'album,
@@ -65169,6 +65296,7 @@ function chiudiSfogliaAlbum() {
   const m = document.getElementById('sfoglia-album-modal');
   if (m) m.classList.add('hidden');
   document.removeEventListener('keydown', _sfogliaTasti);
+  window.removeEventListener('resize', _sfogliaAdattaCornice);   // v7.178
   _sfogliaPagine = [];
 }
 
@@ -67251,9 +67379,14 @@ async function saveFigFromDetail(figId, opzioni) {
     // v6.235 - l'omaggio ha SEMPRE una partenza (Franco: *"e' sempre collegato a un articolo di
     // partenza"*), quindi entra qui: senza, il collegamento scelto verrebbe buttato via a `null` —
     // e' esattamente il difetto (a) della v5.734, sull'errore di stampa.
+    // 🐛 v7.178 (Franco: «ho aperto una fpa ed ho salvato il campo "Commenti per album"; la foto si è persa») - una
+    //    fpa è BASE nella sua sezione (v6.358) ma è figlia della fcr per `baseFigurineId`: qui finiva a null, e con
+    //    lui foto, Nome e Numero ereditati. Sulle fpa il legame si conserva.
     updates.baseFigurineId = !_eBase(updates)   // v6.314 - a somma zero, era la stessa quintina
       ? (document.getElementById('fe-base-figurine')?.value || null)
-      : null;
+      : (existingForCheck?.section === 'attaccare'
+          ? (document.getElementById('fe-base-figurine')?.value || existingForCheck.baseFigurineId || null)
+          : null);
 
     // Un Errore di stampa non ha changeType (dalla v5.711 e' un tipo a se'): azzeriamo un
     // eventuale valore residuo del select, coerente con l'import.
@@ -74454,6 +74587,10 @@ function renderBulkEditView() {
   // domanda che ne ha gia' una - ed e' cosi' che nascono i difetti di questo file.
   const _cAttaccare = currentSection === 'attaccare'
     && !_daAttaccareModificaVietata({ section: 'attaccare', seriesId: currentSeriesId });
+  // 🆕 v7.178 (Franco: «nella VT delle fcr lo mostrerei in quello spazio che c'è tra la foto e il numero») - il Commento
+  //    album delle fcr, in sola lettura (si scrive sulla fpa), prima del N.
+  const _cCommentoFcr = currentSection === 'figurines';
+  const _commentoFcr = _cCommentoFcr ? _lettoreCommentoAlbum(getData('figurines', [])) : null;
   // 🗑️ v6.909 (Franco: «nella VT della pagina delle FPA ... togliere la colonna "Figurina per album
   //    di partenza"») - E LA RAGIONE E' GIA' SCRITTA QUINDICI RIGHE PIU' SU, nella v6.370: «una
   //    da-incollare non e' una versione di niente (v6.358: e' la stessa figurina in un'altra forma
@@ -74601,6 +74738,7 @@ function renderBulkEditView() {
           ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Categoria</th>' : ''}
           ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Sottocategoria</th>' : ''}
           ${currentSection === 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Categoria</th><th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Sottocategoria</th>' : ''}
+          ${_cCommentoFcr ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Commento album' : 'Album note'}</th>` : ''}
           ${_cMostraNumero ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">N.</th>' : ''}
           <!-- v6.184 (Franco) - nelle Figurine qui c'era "Nome Completo" in sola lettura, e il Nome
                non c'era affatto. Ora c'e' il NOME, modificabile come nelle altre sezioni, e il Nome
@@ -74714,6 +74852,7 @@ function renderBulkEditView() {
             ? '<td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" list="bulk-sub-'+f.tipoProdotto+'" value="'+esc(f.subcategory||'')+'" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
             : '<td style="padding:4px;font-size:0.8rem;color:var(--muted);">'+esc(f.subcategory||'')+'</td>') : ''}
           ${currentSection === 'retros' ? (isAdmin && !_campoComandatoDalGenitore(f, 'category') ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
+          ${_cCommentoFcr ? `<td style="padding:4px 8px;color:#ffd84d;font-size:0.8rem;line-height:1.3;min-width:220px;max-width:340px;">${esc(_commentoFcr(f))}</td>` : ''}
           ${_cMostraNumero ? (isAdmin ? '<td style="padding:4px;text-align:center;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? f.number : '', null, 'center')) : ''}
           ${(() => {
             // v6.184 (Franco) - IL NOME, e non piu' il Nome completo. Nelle Figurine questa cella
@@ -74722,17 +74861,20 @@ function renderBulkEditView() {
             // Ora la regola e' una sola per tutte le sezioni, cioe' quella che le altre avevano gia'.
             // v6.143 - su un FIGLIO il Nome lo comanda il genitore: cella di sola lettura, come
             // nella scheda, dove il campo e' nascosto dalla v6.038.
+            // 🔄 v7.178 (Franco: «nella VT fpa la colonna NOME è enorme mentre la colonna Commento album è
+            //    piccolissima») - dove c'è il Commento album lo spazio libero va a lui, non al Nome
+            const _nomeLargo = currentSection !== 'figurines' && !_cAttaccare;
             return (isAdmin && !_campoComandatoDalGenitore(f, 'name'))
-              ? `<td style="padding:4px;${currentSection === 'figurines' ? '' : 'width:99%;'}"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:${currentSection === 'figurines' ? 150 : 280}px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`
-              : readCell(f.name, 300);
+              ? `<td style="padding:4px;${_nomeLargo ? 'width:99%;' : ''}"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:${_nomeLargo ? 280 : (_cAttaccare ? 180 : 150)}px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`
+              : readCell(f.name, _cAttaccare ? 180 : 300);
           })()}
           ${_cAnno ? (_articoloSenzaSerie(f) && isAdmin
             ? '<td style="padding:4px;text-align:center;"><input data-field="year" data-id="'+f.id+'" value="'+(f.year||'')+'" type="number" style="width:80px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
             : readCell(f.year || '', null, 'center')) : ''}
           ${_cFamiglia ? readCell(esc(_famigliaASchermo(f)), 120) : ''}
           ${!_cAttaccare ? '' : (isAdmin
-            ? `<td style="padding:4px;"><input data-field="commentoAlbum" data-id="${f.id}" value="${esc(f.commentoAlbum || '')}" style="width:100%;min-width:180px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:0.85rem;" onchange="saveBulkCell(this)"></td>`
-            : readCell(f.commentoAlbum, 220))}
+            ? `<td style="padding:4px;width:99%;"><input data-field="commentoAlbum" data-id="${f.id}" value="${esc(f.commentoAlbum || '')}" style="width:100%;min-width:360px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:0.85rem;" onchange="saveBulkCell(this)"></td>`
+            : readCell(f.commentoAlbum, 360))}
           ${currentSection === 'figurines' ? (() => {
             // v6.184 (Franco) - IL RETRO ASSOCIATO, col suo Nome completo. Non c'e' logica nuova:
             // `_dueFacce` sa gia' quale retro il sito associa a questa figurina, e segue la regola
