@@ -1,6 +1,19 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.174 - Modificato js/app.js (e index per la versione). 🐛 Un clic fuori da una finestra di modifica (o Esc) la
+//          chiudeva e si perdeva il non salvato (Franco: «1.»): ora le finestre con qualcosa da salvare si chiudono
+//          solo con ✕ o Annulla (`_FINESTRE_DI_MODIFICA`, `_finestraInModifica`); la scheda dell'articolo solo
+//          quando è in modifica. Tolto da NO_CLICK_CLOSE l'orfano `'add-fig-modal'`. E la conferma degli
+//          Aggiornamenti massivi (Franco: «falla più larga») passa da `confirm()` a `_finestraConferma`, larga 1100px,
+//          con le righe per voce a capo (opzioni nuove `larghezza` e `aCapo`). E (Franco: «"Vista campi mobile" …
+//          Numero, Nome, Nome mobile, Categoria, Categoria Mobile, Sottocategoria, Sottocategoria mobile») il pulsante
+//          admin accanto a «Vista tabellare»: la tabella degli articoli base coi tre campi mobile da scrivere e un
+//          «Salva» (`_vtMobile`, `toggleVistaMobile`, `_vistaMobileHTML`, `salvaVistaMobile`). Anche index.html.
+//          Barra in alto (Franco): «Ricerca nel sito» (era «Ricerca in tutto il sito»; EN «Search the site»); i punti
+//          sotto la coppa; via il nome utente anche sul desktop; nell'avatar due iniziali quando si può (`_iniziali`:
+//          «Andrea Pasta» e «AndreaPasta» → AP, «Andreapasta» → A), anche nel profilo; «Questionario» va su due righe,
+//          «Questionario / e *mia lista*».
 // v7.173 - Modificato js/app.js (e index per la versione). 🐛 La pagina «La mia lista Sgorbions» non si ridisegnava al
 //          cambio lingua (Franco: «farei solo il punto 1»): `renderAll` ora la rifà se è aperta, come le altre pagine.
 //          E il tab «🔁 Aggiornamenti massivi» (Franco: «si differisca tra le diverse tda»): dentro ogni serie un blocco
@@ -29303,6 +29316,8 @@ function _finestraConferma(opz) {
     // Piu' larga di una modale normale: due colonne di testo in 662px si spezzano su due righe
     // ciascuna, e una tabella che va a capo non e' piu' una tabella.
     box.style.maxWidth = '760px';
+    // 🆕 v7.174 - `larghezza`: chi ha righe lunghe da leggere la chiede più larga (Aggiornamenti massivi)
+    if (o.larghezza) { box.style.maxWidth = o.larghezza; box.style.width = '96vw'; }
 
     const head = document.createElement('div');
     head.className = 'modal-header';
@@ -29339,6 +29354,8 @@ function _finestraConferma(opz) {
       if (!par.trim()) return;
       const p = document.createElement('p');
       p.style.cssText = 'color:var(--text);font-size:0.92rem;line-height:1.5;margin-bottom:0.9rem;';
+      // 🆕 v7.174 - `aCapo`: dentro un paragrafo ogni «\n» va a capo (le righe «• Serie · Tipologia …»)
+      if (o.aCapo) p.style.whiteSpace = 'pre-line';
       p.textContent = par;
       box.appendChild(p);
     });
@@ -31189,7 +31206,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.173';
+const JS_VERSION = 'v7.174';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32952,7 +32969,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Export lists','nav.questionarioBreve':'Questionnaire','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Resume the Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory !','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the whole site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Export lists','nav.questionarioBreve':'Questionnaire<br>and <em>my list</em>','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Resume the Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory !','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your <em>My list</em> and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -33041,7 +33058,7 @@ const i18n = {
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with backs) and cards in your list (complete series)','wantlist.pageTitle':'Export lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in your list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in your list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Export liste','nav.questionarioBreve':'Questionario','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Riprendi il Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions !','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca in tutto il sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Export liste','nav.questionarioBreve':'Questionario<br>e <em>mia lista</em>','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Riprendi il Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions !','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca nel sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
@@ -36664,7 +36681,7 @@ function updateNavUser() {
       navAvatar.style.backgroundSize = 'cover';
       navAvatar.style.backgroundPosition = 'center';
     } else {
-      navAvatar.textContent = currentUser.username[0].toUpperCase();
+      navAvatar.textContent = _iniziali(currentUser.username);   // v7.174
     }
     if (addSeriesBtn) addSeriesBtn.style.display = currentUser.isAdmin ? '' : 'none';
   } else {
@@ -40904,7 +40921,10 @@ async function salvaAggiornamentiMassivi() {
     }));
   });
   if (!perId.size) { toast(it ? 'Niente da cambiare' : 'Nothing to change', 'info'); return; }
-  if (!confirm(_aggMessaggio(piani))) return;
+  // 🆕 v7.174 (Franco: «la finestra che mostra le conseguenze … falla più larga») - `confirm()` è del browser e
+  //    non si allarga: passa alla finestra del sito, larga, con le righe per voce ognuna sulla sua riga
+  if (!await _finestraConferma({ titolo: '🔁 ' + (it ? 'Aggiornamenti massivi' : 'Bulk updates'), testo: _aggMessaggio(piani),
+    larghezza: '1100px', aCapo: true, ok: it ? 'Salva' : 'Save' })) return;
   const daScrivere = [...perId.values()];
   if (esito) esito.textContent = it ? 'Scrittura in corso…' : 'Writing…';
   try {
@@ -50905,6 +50925,7 @@ function openSeriesSection(section, sottoserie) {
   currentItemPage = 1;
   bulkEditActive = false;
   _vtOrdine = null;   // v6.839
+  _vtMobile = false;   // v7.174 - la «Vista campi mobile» non sopravvive al cambio di sezione
   const bulkView = document.getElementById('bulk-edit-view');
   if (bulkView) bulkView.innerHTML = '';
   const btn = document.getElementById('bulk-edit-toggle-btn');
@@ -51376,6 +51397,7 @@ function closeSeriesDetail() {
   // Reset bulk edit state
   bulkEditActive = false;
   _vtOrdine = null;   // v6.839
+  _vtMobile = false;   // v7.174 - la «Vista campi mobile» non sopravvive al cambio di sezione
   const bulkView = document.getElementById('bulk-edit-view');
   if (bulkView) { bulkView.style.display = 'none'; bulkView.innerHTML = ''; }
   const bulkBtn = document.getElementById('bulk-edit-toggle-btn');
@@ -57671,12 +57693,22 @@ function _applicaVistaCorrente() {
   const paginationTop = document.getElementById('items-pagination-top');
   const bulkView = document.getElementById('bulk-edit-view');
   const btn = document.getElementById('bulk-edit-toggle-btn');
+  // v7.174 - il pulsante della Vista campi mobile: solo admin; dice «Vista griglia» quando la sua tabella è aperta
+  const btnM = document.getElementById('vista-mobile-toggle-btn');
+  if (btnM) {
+    btnM.style.display = currentUser?.isAdmin ? '' : 'none';
+    btnM.textContent = (bulkEditActive && _vtMobile)
+      ? (currentLang === 'it' ? '🔲 Vista griglia' : '🔲 Grid view')
+      : (currentLang === 'it' ? '📱 Vista campi mobile' : '📱 Mobile fields view');
+  }
   if (bulkEditActive) {
     if (grid) grid.style.display = 'none';
     if (pagination) pagination.style.display = 'none';
     if (paginationTop) paginationTop.style.display = 'none';
     if (bulkView) bulkView.style.display = '';
-    if (btn) btn.textContent = currentLang === 'it' ? '🔲 Vista griglia' : '🔲 Grid view';
+    if (btn) btn.textContent = _vtMobile
+      ? (currentLang === 'it' ? '📋 Vista tabellare' : '📋 Table view')
+      : (currentLang === 'it' ? '🔲 Vista griglia' : '🔲 Grid view');
   } else {
     if (pagination) pagination.style.display = '';
     if (paginationTop) paginationTop.style.display = '';
@@ -58620,7 +58652,7 @@ function renderProfile() {
     profileAvatar.style.backgroundSize = 'cover';
     profileAvatar.style.backgroundPosition = 'center';
   } else {
-    if (avatarText) { avatarText.style.display = ''; avatarText.textContent = currentUser.username[0].toUpperCase(); }
+    if (avatarText) { avatarText.style.display = ''; avatarText.textContent = _iniziali(currentUser.username); }   // v7.174: come in barra
   }
   // 🔄 v6.824 — «I tuoi numeri Sgorbions» sono contatori: stesso elenco del «N / totale».
   const allFigs = _articoliDaContareSito();
@@ -59670,6 +59702,17 @@ async function renderAdminRisorse() {
 // intitolare un post "<img src=x onerror=...>" e farlo eseguire nel pannello
 // dell'admin. Da qui in avanti l'HTML nelle descrizioni lo mettiamo NOI
 // (il <strong> attorno al nome), e tutto ciò che arriva dall'utente passa da esc().
+// 🆕 v7.174 (Franco: «invece che la iniziale userei 2 lettere, quando è possibile … Andrea Pasta → AP, AndreaPasta →
+//    AP, Andreapasta → A») - le iniziali dell'avatar: le prime lettere delle prime due parole; con una parola sola, la
+//    prima lettera e la prima maiuscola che segue una minuscola; se no la sola iniziale.
+function _iniziali(nome) {
+  const s = String(nome || '').trim();
+  if (!s) return '?';
+  const parole = s.split(/[\s._-]+/).filter(Boolean);
+  if (parole.length >= 2) return (parole[0][0] + parole[1][0]).toUpperCase();
+  const m = /[a-zà-ÿ]([A-ZÀ-Þ])/.exec(s);
+  return (s[0] + (m ? m[1] : '')).toUpperCase();
+}
 function esc(str) {
   return String(str ?? '').replace(/[&<>"']/g, c =>
     ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
@@ -68057,14 +68100,15 @@ function updateOwnedCounter() {
       const davanti = getData('public_profiles', []).filter(p => p && p.id && p.id !== currentUser.id && (p.score || 0) > mio).length;
       const pos = davanti + 1;
       const ordinale = it ? pos + '°' : pos + ((pos % 100 >= 11 && pos % 100 <= 13) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[pos % 10] || 'th'));
-      navEl.style.display = '';
+      navEl.style.display = 'inline-flex';   // v7.174 - due righe, in colonna (lo stile sta nell'index)
       navEl.style.cursor = 'pointer';
       navEl.title = it ? 'Apri la Classifica' : 'Open the Leaderboard';
       navEl.onclick = () => showPage('classifica');
       // il singolare a mano e non con `_codaPunti`: qui il numero c'è già, e questa funzione gira anche nei banchi
       //    di prova-v6824, che `_codaPunti` non lo hanno
-      navEl.innerHTML = '🏆 ' + (mio > 0 ? ordinale + ' · ' : '') + mio.toLocaleString(it ? 'it-IT' : 'en-US')
-        + (it ? (mio === 1 ? ' punto' : ' punti') : (mio === 1 ? ' point' : ' points'));
+      // 🔄 v7.174 (Franco: «i numero di punti mettilo sotto alla icona della coppa») - sopra «🏆 3°», sotto i punti
+      navEl.innerHTML = '<span>🏆' + (mio > 0 ? ' ' + ordinale : '') + '</span><span>' + mio.toLocaleString(it ? 'it-IT' : 'en-US')
+        + (it ? (mio === 1 ? ' punto' : ' punti') : (mio === 1 ? ' point' : ' points')) + '</span>';
     } else {
       navEl.style.display = 'none';
     }
@@ -68115,11 +68159,20 @@ function _rifaiRicercaGlobaleSeAperta() {
     chiusa = ora;
   }).observe(m, { attributes: true, attributeFilter: ['class'] });
 })();
-const NO_CLICK_CLOSE = ['auth-modal', 'change-pwd-modal', 'reset-pwd-modal', 'add-series-modal', 'add-fig-modal', 'ebay-bulk-modal'];
+const NO_CLICK_CLOSE = ['auth-modal', 'change-pwd-modal', 'reset-pwd-modal', 'add-series-modal', 'ebay-bulk-modal'];
+// 🆕 v7.174 (Franco: «nelle finestre di modifica, se si clicca fuori dalla finestra si perde tutto il
+//    contenuto della finestra non salvato») - LE FINESTRE CON QUALCOSA DA SALVARE si chiudono solo con
+//    ✕ o Annulla: né il clic sullo sfondo né Esc. La scheda dell'articolo lo diventa solo in modifica
+//    (c'è il suo «Salva»): in lettura resta chiudibile come prima.
+const _FINESTRE_DI_MODIFICA = ['add-tipo-prodotto-modal', 'add-personaggio-modal', 'post-modal', 'bulk-score-modal',
+  'delete-account-modal', 'segnalazione-modal', 'foto-scelta-modal', 'username-modal', 'nationality-modal', 'edit-user-modal'];
+function _finestraInModifica(m) {
+  if (!m) return false;
+  if (NO_CLICK_CLOSE.includes(m.id) || _FINESTRE_DI_MODIFICA.includes(m.id)) return true;
+  return m.id === 'fig-detail-modal' && !!m.querySelector('#fig-edit-save-btn');
+}
 document.querySelectorAll('.modal-overlay').forEach(m => {
-  if (!NO_CLICK_CLOSE.includes(m.id)) {
-    m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); });
-  }
+  m.addEventListener('click', e => { if (e.target === m && !_finestraInModifica(m)) m.classList.add('hidden'); });
 });
 
 // Listener permanente delegato per il cuore wishlist nella modal dettaglio
@@ -73960,12 +74013,25 @@ let bulkEditActive = false;
 //    📌 Vive solo nella tabella: la griglia non lo legge, e passando alla griglia si azzera, perche'
 //    le due viste degli stessi articoli devono dire lo stesso ordine (v6.155).
 let _vtOrdine = null;
+// 🆕 v7.174 (Franco: «una vista tabellare focalizzata al mobile … "Vista campi mobile" … Numero, Nome, Nome mobile,
+//    Categoria, Categoria Mobile, Sottocategoria, Sottocategoria mobile») - LA TABELLA DEI CAMPI MOBILE, solo admin.
+//    Non è una terza vista: è la vista tabellare con un altro contenuto (`bulkEditActive` acceso, `_vtMobile` acceso),
+//    così griglia e tabella restano decise in un posto solo (`_applicaVistaCorrente`, v6.106).
+let _vtMobile = false;
 
 // v6.106 - il pulsante cambia lo stato e basta; a mettere a posto lo schermo pensa chi lo sa fare.
 // Tornando alla griglia si passa da `renderItems`, che la ridisegna e le da' la disposizione giusta:
 // prima qui c'era `grid.style.display = 'grid'` scritto a mano, che nelle sezioni disegnate a `flex`
 // era pure il valore sbagliato - non si vedeva solo perche' il ridisegno successivo lo correggeva.
 function toggleBulkEditView() {
+  // v7.174 - dalla Vista campi mobile, «Vista tabellare» porta alla tabella di sempre (non alla griglia)
+  if (bulkEditActive && _vtMobile) {
+    _vtMobile = false; _vtOrdine = null;
+    renderBulkEditView();
+    _applicaVistaCorrente();
+    return;
+  }
+  _vtMobile = false;
   bulkEditActive = !bulkEditActive;
   _vtOrdine = null;   // v6.839 - fra griglia e tabella l'ordine e' sempre quello normale
   if (bulkEditActive) {
@@ -73974,6 +74040,99 @@ function toggleBulkEditView() {
   } else {
     renderItems();   // finisce chiamando _applicaVistaCorrente()
   }
+}
+// v7.174 - le righe della Vista campi mobile: gli articoli BASE fra quelli filtrati, nell'ordine della vista tabellare.
+//    Le versioni no: col campo vuoto ereditano dalla base (`_testoMobile`), come negli Aggiornamenti massivi.
+function _vistaMobileRighe() {
+  return getCurrentlyFilteredItems().filter(f => !f.baseFigurineId).sort(cmpVistaTabellare(currentSection));
+}
+const _VM_CAMPI = [
+  { campo: 'nomeCaroselloMobile',  base: 'name',        it: 'Nome',           en: 'Name',        itM: 'Nome mobile',           enM: 'Mobile name' },
+  { campo: 'categoriaMobile',      base: 'category',    it: 'Categoria',      en: 'Category',    itM: 'Categoria mobile',      enM: 'Mobile category' },
+  { campo: 'sottocategoriaMobile', base: 'subcategory', it: 'Sottocategoria', en: 'Subcategory', itM: 'Sottocategoria mobile', enM: 'Mobile subcategory' }
+];
+function _vistaMobileHTML() {
+  const it = currentLang === 'it';
+  const righe = _vistaMobileRighe();
+  const th = 'style="color:var(--accent2);font-weight:700;white-space:nowrap;"';
+  const casella = (f, c) => {
+    const v = String(f[c.campo] || '').trim();
+    return '<td><input type="text" class="vm-campo" data-id="' + esc(f.id) + '" data-campo="' + c.campo + '"'
+      + ' data-iniziale="' + esc(v) + '" value="' + esc(v) + '" placeholder="' + esc(String(f[c.base] || '').trim()) + '"'
+      + ' style="width:100%;min-width:9rem;font-size:0.85rem;padding:0.25rem 0.4rem;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);"></td>';
+  };
+  const testa = '<div class="vt-solo-admin">' + (it ? '(solo admin)' : '(admin only)') + '</div>'
+    + '<p style="color:var(--muted);font-size:0.85rem;margin:0 0 0.6rem;">'
+    + (it ? 'Solo gli articoli base: le versioni ereditano. Una casella vuota vale il campo di sempre (in grigio); la «|» manda a capo.'
+          : 'Base items only: versions inherit. An empty box means the usual field (in grey); «|» breaks the line.') + '</p>';
+  if (!righe.length) return testa + '<p style="color:var(--muted);">' + (it ? 'Nessun articolo base.' : 'No base items.') + '</p>';
+  const intest = '<tr><th ' + th + '>' + (it ? 'Numero' : 'Number') + '</th>'
+    + _VM_CAMPI.map(c => '<th ' + th + '>' + (it ? c.it : c.en) + '</th><th ' + th + '>' + (it ? c.itM : c.enM) + '</th>').join('') + '</tr>';
+  const corpo = righe.map(f => '<tr><td style="white-space:nowrap;">' + esc(String(f.number ?? '')) + '</td>'
+    + _VM_CAMPI.map((c, i) => '<td style="' + (i === 0 ? 'color:var(--nome-entita);font-weight:600;' : 'color:var(--text);') + '">'
+      + esc(String(f[c.base] || '')) + '</td>' + casella(f, c)).join('') + '</tr>').join('');
+  return testa + '<div style="overflow-x:auto;"><table class="data-table compact"><thead>' + intest + '</thead><tbody>' + corpo + '</tbody></table></div>'
+    + '<div style="display:flex;align-items:center;gap:0.8rem;margin-top:0.8rem;">'
+    + '<button class="btn-primary btn-admin" onclick="salvaVistaMobile()">' + (it ? 'Salva' : 'Save') + '</button>'
+    + '<span id="vm-esito" style="color:var(--muted);font-size:0.85rem;"></span></div>';
+}
+// v7.174 - scrive solo le caselle cambiate (pulite come negli Aggiornamenti massivi), poi rilegge dal server
+async function salvaVistaMobile() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const figs = getData('figurines', []);
+  const perId = new Map(), attesi = [];
+  document.querySelectorAll('#bulk-edit-view .vm-campo').forEach(inp => {
+    const nuovo = _aggPulisci(inp.value);
+    if (nuovo === inp.dataset.iniziale) return;
+    const f = perId.get(inp.dataset.id) || figs.find(x => x.id === inp.dataset.id);
+    if (!f) return;
+    perId.set(f.id, { ...f, [inp.dataset.campo]: nuovo });
+    attesi.push([f.id, inp.dataset.campo, nuovo]);
+  });
+  if (!perId.size) { toast(it ? 'Niente da cambiare' : 'Nothing to change', 'info'); return; }
+  const n = attesi.length, m = perId.size;
+  if (!await _finestraConferma({ titolo: '📱 ' + (it ? 'Vista campi mobile' : 'Mobile fields view'),
+    testo: it ? 'Hai modificato ' + n + (n === 1 ? ' campo' : ' campi') + '; come conseguenza ' + (m === 1 ? 'sarà aggiornato 1 articolo base.' : 'saranno aggiornati ' + m + ' articoli base.') + '\n\nConfermi ?'
+              : 'You changed ' + n + (n === 1 ? ' field' : ' fields') + '; ' + m + (m === 1 ? ' base item' : ' base items') + ' will be updated.\n\nConfirm?',
+    ok: it ? 'Salva' : 'Save' })) return;
+  const daScrivere = [...perId.values()];
+  const esito = document.getElementById('vm-esito');
+  if (esito) esito.textContent = it ? 'Scrittura in corso…' : 'Writing…';
+  try {
+    await _salvaFigurineInBlocco(daScrivere);
+  } catch (e) {
+    console.error('salvaVistaMobile', e);
+    if (esito) esito.textContent = '';
+    toast((it ? '❌ Scrittura fallita: ' : '❌ Write failed: ') + (e?.code || e?.message || 'errore'), 'error');
+    return;
+  }
+  daScrivere.forEach(rec => { const i = figs.findIndex(x => x.id === rec.id); if (i >= 0) figs[i] = rec; });
+  _cache.figurines = figs;
+  let giusti = null;
+  try {
+    const dalServer = new Map((await fsGetAllDalServer('series')).flatMap(s => s.items || []).map(f => [f.id, f]));
+    const sbagliati = new Set(attesi.filter(([id, k, v]) => String((dalServer.get(id) || {})[k] || '') !== v).map(a => a[0]));
+    giusti = daScrivere.filter(r => dalServer.has(r.id) && !sbagliati.has(r.id)).length;
+  } catch (e) { console.error('salvaVistaMobile (rilettura)', e); }
+  renderBulkEditView();
+  const e2 = document.getElementById('vm-esito');
+  if (e2) e2.textContent = (it ? 'Scritti ' + m + (m === 1 ? ' articolo' : ' articoli') : 'Written ' + m + (m === 1 ? ' item' : ' items'))
+    + (giusti === null ? (it ? ' (rilettura non riuscita)' : ' (re-read failed)') : (it ? '; riletti dal server: ' + giusti + ' giusti.' : '; re-read from server: ' + giusti + ' correct.'));
+  toast(it ? '✅ Salvato' : '✅ Saved', giusti === m ? 'success' : 'error');
+}
+// v7.174 - il pulsante «📱 Vista campi mobile»: apre la tabella dei campi mobile; premuto lì, torna alla griglia
+function toggleVistaMobile() {
+  if (!currentUser?.isAdmin) return;
+  _vtOrdine = null;
+  if (bulkEditActive && _vtMobile) {
+    _vtMobile = false; bulkEditActive = false;
+    renderItems();
+    return;
+  }
+  _vtMobile = true; bulkEditActive = true;
+  renderBulkEditView();
+  _applicaVistaCorrente();
 }
 
 // 🆕 v6.378 (Franco: *"nella vista tabella puoi mettere un tasto (admin) «Aggiorna», per comandare
@@ -74070,6 +74229,7 @@ function renderBulkEditView() {
   bulkView.style.marginLeft = '50%';
   bulkView.style.marginRight = '0';
   bulkView.style.transform = 'translateX(-50%)';
+  if (_vtMobile && currentUser?.isAdmin) { bulkView.innerHTML = _vistaMobileHTML(); return; }   // v7.174
 
   const isAdmin = !!currentUser?.isAdmin;
   // 🆕 v6.378 - LA BARRA STA DENTRO LA TABELLA, e non e' una preferenza di posizione: cosi' non
@@ -76823,7 +76983,7 @@ initFirebase().catch(e => {
 // keyboard close modals
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
+    document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => { if (!_finestraInModifica(m)) m.classList.add('hidden'); });
   }
 });
 
