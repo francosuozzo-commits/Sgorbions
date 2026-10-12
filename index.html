@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.176">
+<link rel="stylesheet" href="css/style.css?v=7.177">
 
 
 <style>
@@ -1655,7 +1655,9 @@ button.back-btn { color:#ffffff; }
   /* Sotto gli 860px `.detail-row` diventa una colonna con l'etichetta sopra e il valore sotto, a
      tutta larghezza: li' "a destra" non allineerebbe niente a niente, allontanerebbe soltanto il
      valore dalla sua etichetta. Si torna a sinistra, come il resto della colonna. */
-  .detail-value input[readonly] { text-align: left; }
+  /* 🔄 v7.177 - ma dalla v7.177 anche sul telefono il valore sta a destra dell'etichetta (Franco): a destra
+     anche qui */
+  .detail-value input[readonly] { text-align: right; }
 }
 /* 🆕 v6.218 (Franco: "nella admin console, i nomi del tab, possiamo metterli in bianco?") — I TAB
    DELLA CONSOLE ADMIN SPENTI ERANO `--muted` (#8b7aaa), cioe' viola slavato su fondo scuro: undici
@@ -6622,7 +6624,7 @@ di tutte le serie</button>
     <button type="button" id="sfoglia-album-ultima" onclick="sfogliaVaiA(-1)" title="Ultima pagina" aria-label="Ultima pagina" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.3rem 0.7rem;font-size:1rem;line-height:1;cursor:pointer;">&#9197;</button>
   </div>
 </div>
-<script src="js/app.js?v=7.176"></script>
+<script src="js/app.js?v=7.177"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6646,7 +6648,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.176'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.177'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
