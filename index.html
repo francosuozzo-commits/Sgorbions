@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.175">
+<link rel="stylesheet" href="css/style.css?v=7.176">
 
 
 <style>
@@ -6615,10 +6615,14 @@ di tutte le serie</button>
          vestito a mano, e queste non sono comandi della foto — sono la navigazione fra le pagine.
          📌 Il censimento ha fatto esattamente il suo mestiere, e la correzione giusta era togliere
          la classe, non alzare il numero. -->
+    <!-- 🆕 v7.176 (Franco: «non si può andare direttamente alla prima o ultima pagina») - ai lati del contatore, coi
+         segni e non con parole, come le frecce; si spengono ai capi come loro (`_disegnaSfoglia`) -->
+    <button type="button" id="sfoglia-album-prima" onclick="sfogliaVaiA(0)" title="Prima pagina" aria-label="Prima pagina" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.3rem 0.7rem;font-size:1rem;line-height:1;cursor:pointer;">&#9198;</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
+    <button type="button" id="sfoglia-album-ultima" onclick="sfogliaVaiA(-1)" title="Ultima pagina" aria-label="Ultima pagina" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.3rem 0.7rem;font-size:1rem;line-height:1;cursor:pointer;">&#9197;</button>
   </div>
 </div>
-<script src="js/app.js?v=7.175"></script>
+<script src="js/app.js?v=7.176"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6642,7 +6646,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.175'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.176'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
