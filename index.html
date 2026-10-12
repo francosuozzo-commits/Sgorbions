@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.173">
+<link rel="stylesheet" href="css/style.css?v=7.174">
 
 
 <style>
@@ -2337,7 +2337,8 @@ button.back-btn { color:#ffffff; }
     <!-- 🆕 v7.087 (Franco: «aggiungiamo una voce alla navbar che si chiama "Questionario" e che fa partire il
          questionario») - `solo-wz`: finché il questionario non è finito la vede solo l'admin, come gli altri
          suoi pulsanti. Sul telefono no: la v7.015 aveva tolto dal panino la riga del questionario (Franco). -->
-    <a onclick="apriWizardLista()" id="nav-questionario" class="solo-wz" data-i18n="nav.questionarioBreve">Questionario</a>
+    <!-- 🔄 v7.174 (Franco: «Questionario diventa Questionario, e, capo "e mia lista"») - due righe, *mia lista* in corsivo -->
+    <a onclick="apriWizardLista()" id="nav-questionario" class="solo-wz" data-i18n-html="nav.questionarioBreve" style="text-align:center;line-height:1.15;">Questionario<br>e <em>mia lista</em></a>
     <a onclick="showPage('wishlist')" data-page="wishlist" id="nav-wishlist" style="display:none;position:relative;"><span data-i18n="nav.wishlist">Ciò che cerco</span><span id="nav-wishlist-badge" style="display:none;position:absolute;top:-6px;right:-10px;background:var(--danger);color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span></a>
     <a onclick="showPage('classifica')" data-page="classifica" id="nav-classifica" style="display:none;" data-i18n="nav.classifica">🏆 Classifica</a>
     <a onclick="showPage('newsletter')" id="nav-newsletter-btn" style="display:none;">📧 Newsletter</a>
@@ -2375,7 +2376,7 @@ button.back-btn { color:#ffffff; }
            navbar ha poco spazio, e lì la casella si stringe invece di spingere fuori le voci del
            menu. 🔄 v6.852: i 325px sono diventati un `clamp`, e il `title` del browser è stato
            sostituito dal suggerimento che compare sotto. -->
-      <input type="text" id="nav-search-input" placeholder="Ricerca in tutto il sito"
+      <input type="text" id="nav-search-input" placeholder="Ricerca nel sito"
              data-i18n-placeholder="nav.search"
              onkeydown="if(event.key==='Enter'){event.preventDefault();ricercaGlobaleDaNavbar();}"
              style="background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:999px;color:var(--text);font-family:var(--font-ui);font-size:0.82rem;padding:0.3rem 0.75rem;outline:none;">
@@ -2385,7 +2386,7 @@ button.back-btn { color:#ffffff; }
     <!-- 🆕 v6.853 - IL TASTO PICCOLO, per le finestre dove la casella non ci sta: apre la stessa
          finestrella del telefono. Sta qui e non in `.nav-right` perché è il RICAMBIO della casella:
          due posti diversi vorrebbero dire due visibilità da tenere allineate. -->
-    <a onclick="openRicercaGlobaleModal()" id="nav-search-mini" data-i18n-title="nav.search" title="Ricerca in tutto il sito">🔍</a>
+    <a onclick="openRicercaGlobaleModal()" id="nav-search-mini" data-i18n-title="nav.search" title="Ricerca nel sito">🔍</a>
     <!-- v5.953 — Logout: su TELEFONO ultima voce del panino, non piu' nella navbar (vedi CSS in
          testa e updateNavUser in app.js). Su desktop resta il pulsante in .nav-right. -->
     <!-- v5.973 — TELEFONO: voce che apre la mini guida del selettore "Mia lista", la stessa che
@@ -2435,14 +2436,16 @@ button.back-btn { color:#ffffff; }
       <!-- 🎨 v6.932 (Franco: «anche la versione e il nome utente») - IL NOME DI CHI E' ENTRATO ERA
            `--muted`, cioe' il grigio delle note che si possono saltare. E' la riga che dice a
            chi guarda CHI E', e su una navbar scura si leggeva peggio di tutto il resto. -->
-      <span id="nav-username" style="font-family:var(--font-ui);color:var(--text);font-size:1.05rem;"></span>
+      <!-- 🔄 v7.174 (Franco: «Il nome utente lo toglierei, tanto c'è gia la lettera del nome») - spento anche sul
+           desktop, come sul telefono dalla v5.863; l'elemento resta perché lo scrive `updateNavUI` -->
+      <span id="nav-username" style="font-family:var(--font-ui);color:var(--text);font-size:1.05rem;display:none;"></span>
       <!-- v6.079 (Franco) — pallino rosso SOLO ADMIN: c'è finché la sezione Errori ha qualcosa da
            segnalare. Cliccandolo si va lì. Lo accende aggiornaPallinoErrori(), che chiede il conto
            alla stessa funzione che disegna quella pagina — così non possono dire cose diverse. -->
       <span id="nav-errori-dot" onclick="showPage('admin');" style="display:none;width:9px;height:9px;border-radius:50%;background:var(--danger);cursor:pointer;flex-shrink:0;"></span>
       <!-- 🔄 v7.089 (Franco) - non più «Figurine nella tua lista N / M» ma «🏆 3° · 49.432 punti»: lo scrive
            updateOwnedCounter, una riga sola (`white-space:nowrap`), e porta alla Classifica -->
-      <span id="nav-owned-counter" style="white-space:nowrap;font-family:var(--font-ui);font-size:0.85rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:2px 10px;border-radius:20px;display:none;"></span>
+      <span id="nav-owned-counter" style="white-space:nowrap;font-family:var(--font-ui);font-size:0.85rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:2px 10px;border-radius:20px;display:none;flex-direction:column;align-items:center;line-height:1.2;"></span>
       <div class="avatar-btn" id="nav-avatar" onclick="showPage('profile')" style="overflow:hidden;padding:0;"></div>
       <button class="btn-logout" onclick="logout()" data-i18n="nav.logout">Logout</button>
     </div>
@@ -3538,6 +3541,7 @@ di tutte le serie</button>
       <div id="fig-label-selector" style="display:none;align-items:center;gap:0.5rem;"></div>
       <div id="user-table-view-btn" style="display:none;gap:0.75rem;flex-wrap:wrap;">
         <button class="btn-primary" onclick="toggleBulkEditView()" id="bulk-edit-toggle-btn" style="font-size:0.9rem;padding:0.4rem 1.1rem;">📋 Vista tabellare</button>
+        <button class="btn-primary btn-admin" onclick="toggleVistaMobile()" id="vista-mobile-toggle-btn" style="display:none;font-size:0.9rem;padding:0.4rem 1.1rem;">📱 Vista campi mobile</button>
       </div>
       <div id="retro-view-selector" style="display:none;align-items:center;gap:0.5rem;">
         <label style="font-size:0.82rem;color:var(--text);white-space:nowrap;" data-i18n="items.retroViewMode.label">Modalità visualizzazione:</label>
@@ -6039,7 +6043,7 @@ di tutte le serie</button>
       <h2 class="modal-title" data-i18n="modal.rg.title">Ricerca</h2>
       <button class="modal-close" onclick="closeModal('rg-modal')">✕</button>
     </div>
-    <input type="text" id="rg-modal-input" class="form-input" placeholder="Ricerca in tutto il sito"
+    <input type="text" id="rg-modal-input" class="form-input" placeholder="Ricerca nel sito"
            data-i18n-placeholder="nav.search"
            onkeydown="if(event.key==='Enter'){event.preventDefault();ricercaGlobaleDaModal();}">
     <button class="btn-primary" style="width:100%;margin-top:0.9rem;" onclick="ricercaGlobaleDaModal()" data-i18n="modal.rg.go">Cerca</button>
@@ -6610,7 +6614,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.173"></script>
+<script src="js/app.js?v=7.174"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6634,7 +6638,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.173'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.174'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
