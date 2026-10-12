@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.179 - Modificati js/app.js e index.html. Anomalie della v7.178 (Franco): (1) «per le fcr avevo detto che lo volevo
+//          fisso, non in mouse-hovering; lascialo in mouse hovering solo per le fpa» - sulla card della fcr il Commento
+//          album è una `_rigaCard` fissa fra la foto e il numero (non sul telefono); il passaggio del mouse resta alle
+//          fpa. (2) «la serie 3 continua a non mostrare il Commento per album nella vt delle fpa» - la colonna c'è sempre
+//          nelle fpa; dove la modifica non è abilitata la cella si legge e basta (`_cAttaccareModifica`). E (Franco:
+//          «aggiungi un filtri admin alla ricerca di fpa e fcr che si chiama "Con commento album"») il filtro admin
+//          `_conCommentoFilter`, in `_FILTRI` e in `_passaFiltriAdmin`, col lettore della card (`_lettoreCommentoAlbum`).
 // v7.178 - Modificati js/app.js e index.html. «Allinea i personaggi» della serie gemella (Franco: «la finestra di
 //          allineamento tra le 2 serie è piccola. tutte le righe vanno a capo»): da `confirm()` del browser alla
 //          finestra del sito `_finestraConferma`, larga 1100px, ogni articolo diverso sulla sua riga. E nella VT
@@ -31243,7 +31250,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.178';
+const JS_VERSION = 'v7.179';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33465,6 +33472,7 @@ let _senzaPersonaggioFilter = false;   // v6.980
 //    SULL'ARTICOLO: una versione che lo prende soltanto dalla base non c'e', perche' li' non c'e'
 //    niente da rivedere - si rivede la base.
 let _conNomiAlternativiFilter = false;   // v6.987
+let _conCommentoFilter = false;   // v7.179 - «Con commento album», fpa e fcr
 // 🆕 v6.992 (Franco: «un campo per la ricerca admin che trovi gli articoli con questo campo
 //    popolato; chiamalo "Con Nome carosello mobile alterato"») - gemello di quello sopra: il
 //    campo `nomeCaroselloMobile` scritto SULL'ARTICOLO, non quello preso dalla base.
@@ -53407,6 +53415,13 @@ function toggleConNomiAlternativiFilter() {
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (toggleConNomiAlternativiFilter)', e); }
 }
+// 🆕 v7.179 (Franco: «aggiungi un filtri admin alla ricerca di fpa e fcr che si chiama "Con commento album"») - copiato
+//    da «Con nomi alternativi»
+function toggleConCommentoFilter() {
+  _conCommentoFilter = !_conCommentoFilter;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleConCommentoFilter)', e); }
+}
 // 🆕 v6.992 - «Con Nome carosello mobile alterato», copiato da «Con nomi alternativi»
 function toggleConNomeCaroselloFilter() {
   _conNomeCaroselloFilter = !_conNomeCaroselloFilter;
@@ -53583,6 +53598,7 @@ function renderItemTypeFilters() {
       _senzaPersonaggioFilter = false;   // v6.980 - e il suo gemello
       _conNomiAlternativiFilter = false;   // v6.987 - e l'ultimo arrivato
       _conNomeCaroselloFilter = false;   // v6.992 - e il suo gemello
+      _conCommentoFilter = false;   // v7.179
       _visibilitaFilter = 'all';    // v6.545 - e questo e' quel punto
     } else {
       const itl = (currentLang === 'it');
@@ -53646,6 +53662,8 @@ function renderItemTypeFilters() {
       // 🆕 v6.987 - «Con nomi alternativi», copiato da «Senza personaggio»
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conNomiAlternativiFilter ? 'on' : ''}" onclick="toggleConNomiAlternativiFilter()" title="${itl ? 'Con nomi alternativi' : 'With alternative names'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con nomi alternativi' : 'With alternative names'}</span></div>`;
       // 🆕 v6.992 - «Con Nome carosello mobile alterato», copiato da quello sopra
+      // 🆕 v7.179 - «Con commento album», solo dove il commento c'è: fpa e fcr (sulla fcr è quello della sua fpa)
+      if (currentSection === 'attaccare' || currentSection === 'figurines') ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conCommentoFilter ? 'on' : ''}" onclick="toggleConCommentoFilter()" title="${itl ? 'Con commento album' : 'With album note'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con commento album' : 'With album note'}</span></div>`;
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conNomeCaroselloFilter ? 'on' : ''}" onclick="toggleConNomeCaroselloFilter()" title="${itl ? 'Con Nome mobile e Carosello alterato' : 'With altered mobile and carousel name'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con Nome mobile e Carosello alterato' : 'With altered mobile and carousel name'}</span></div>`;   // v7.144: «Nome mobile»
       // 🆕 v6.540 - «Invisibili», accanto a «Senza rarità»: stesso interruttore, stessa riga.
       // 🔄 v6.545 - e con lei «Visibili». Sono due facce dello stesso stato: accenderne una
@@ -54174,6 +54192,8 @@ const _FILTRI = [
                                   acceso: () => _senzaPersonaggioFilter },
   { nome: 'con nomi alternativi', azzera: () => { _conNomiAlternativiFilter = false; },   // v6.987
                                   acceso: () => _conNomiAlternativiFilter },
+  { nome: 'con commento album',   azzera: () => { _conCommentoFilter = false; },   // v7.179
+                                  acceso: () => _conCommentoFilter },
   { nome: 'con nome carosello',   azzera: () => { _conNomeCaroselloFilter = false; },   // v6.992
                                   acceso: () => _conNomeCaroselloFilter },
   { nome: 'visibilita',           azzera: () => { _visibilitaFilter = 'all'; },
@@ -54270,7 +54290,7 @@ function _aggiornaBottoneAzzera() {
 //    tipologia i suoi. `_ixPersFiltro` è l'indice dei personaggi, o null se il filtro è spento.
 function _passaFiltriAdmin(f, allFigs, stato) {
   const { _fotoFilter, _noteFilter, _senzaRaritaFilter, _ixPersFiltro,
-          _conNomiAlternativiFilter, _conNomeCaroselloFilter, _visibilitaFilter } = stato;
+          _conNomiAlternativiFilter, _conNomeCaroselloFilter, _visibilitaFilter, _lettoreCommentoFiltro } = stato;
   // v6.086 (Franco) - si chiede `_fotoFigurina()`, non `f.img`. Il filtro guardava la foto
   // PROPRIA del record mentre la griglia disegna col ripiego sulla base: una variazione senza
   // foto sua, che a schermo la foto ce l'ha eccome, passava per "senza foto". E' la stessa
@@ -54313,6 +54333,9 @@ function _passaFiltriAdmin(f, allFigs, stato) {
   if (_conNomiAlternativiFilter && !String(f.nomeAlternativo || '').trim()) return false;
   // 🆕 v6.992 - «Con Nome carosello mobile alterato»: il campo scritto sull'articolo
   if (_conNomeCaroselloFilter && !String(f.nomeCaroselloMobile || '').trim()) return false;
+  // 🆕 v7.179 - «Con commento album»: lo stesso commento che la card mostra (fpa il suo, fcr quello della sua fpa).
+  //    Il lettore arriva solo a filtro acceso, fatto una volta per tutto il setaccio.
+  if (_lettoreCommentoFiltro && !_lettoreCommentoFiltro(f)) return false;
   // 🔄 v6.545 - tre posizioni: 'invisibili' tiene solo i nascosti, 'visibili' solo gli
   // altri, 'all' non filtra. Le due domande sono l'una il complemento dell'altra, quindi
   // si scrivono in una riga sola: due righe separate si sarebbero potute contraddire.
@@ -54368,7 +54391,8 @@ function getCurrentlyFilteredItems(opts) {
   const _idxLato = (_latoAcceso || _vincoloTip) ? new Map(allFigs.map(x => [x.id, x])) : null;
   // 🆕 v6.994 - lo stato dei filtri admin della sezione, per `_passaFiltriAdmin`
   const _statoFiltriAdmin = { _fotoFilter, _noteFilter, _senzaRaritaFilter, _ixPersFiltro,
-                              _conNomiAlternativiFilter, _conNomeCaroselloFilter, _visibilitaFilter };
+                              _conNomiAlternativiFilter, _conNomeCaroselloFilter, _visibilitaFilter,
+                              _lettoreCommentoFiltro: _conCommentoFilter ? _lettoreCommentoAlbum(allFigs) : null };   // v7.179
   return allFigs.filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
     // 🆕 v6.651 - LA SOTTOSERIE CHE SI STA GUARDANDO. Sta qui e non in un secondo modo di
@@ -57686,10 +57710,15 @@ function renderItems() {
            modi diversi (_retroViewMode): scrivere la cornice dentro ognuno voleva dire
            dieci punti da tenere allineati. Qui c'e' il FATTO, il disegno lo fa il CSS. -->
       <div class="fig-img-placeholder"${_latoErrCard ? ` data-lato-errore="${_latoErrCard}"` : ''} style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;container-type:inline-size;">
-        ${imgHTML}${_timbroInvisibile(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}${_commentoAlbumCard(f) ? `<div class="fig-commento-album">${esc(_commentoAlbumCard(f))}</div>` : ''}
+        ${imgHTML}${_timbroInvisibile(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}${f.section === 'attaccare' && _commentoAlbumCard(f) ? `<div class="fig-commento-album">${esc(_commentoAlbumCard(f))}</div>` : ''}
       </div>
       ${_contrassegnoVariazioneHTML(f)}
       <div class="fig-body">
+        ${/* 🔄 v7.179 (Franco: «per le fcr avevo detto che lo volevo fisso, non in mouse-hovering; lascialo in mouse hovering
+             solo per le fpa») - sulla fcr il commento è una riga fissa fra la foto e il numero. Una `_rigaCard`: così
+             `_allineaRigheRetro` la tiene alla stessa altezza nella riga di griglia e la toglie dove nessuna card l'ha.
+             Sul telefono no: la card è stretta e la frase la allungherebbe di molto. */''}
+        ${(f.section || 'figurines') === 'figurines' && !_isMobileViewport() ? _rigaCard(esc(_commentoAlbumCard(f)), 'font-size:0.8rem;color:#ffd84d;line-height:1.3;margin-bottom:0.35rem;', 'commento') : ''}
         <div class="fig-name">${figNameInner}</div>
         ${_sottonomeRigaHTML}${_personaggioRigaHTML}${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : famigliaHTML + _catTDARigheHTML)}
         ${retroNameHTML}${cartoncinoHTML}
@@ -74585,7 +74614,10 @@ function renderBulkEditView() {
   // finto della sezione corrente: qui non c'e' una riga da esaminare, si sta decidendo se la colonna
   // esiste. Riscrivere `currentSeries?.abilitaModifica` a mano sarebbe stata la seconda copia di una
   // domanda che ne ha gia' una - ed e' cosi' che nascono i difetti di questo file.
-  const _cAttaccare = currentSection === 'attaccare'
+  // 🔄 v7.179 (Franco: «la serie 3 continua a non mostrare il Commento per album nella vt delle fpa») - la COLONNA c'è
+  //    sempre nelle fpa; la modifica abilitata decide solo se la cella si scrive (`_cAttaccareModifica`) o si legge
+  const _cAttaccare = currentSection === 'attaccare';
+  const _cAttaccareModifica = _cAttaccare
     && !_daAttaccareModificaVietata({ section: 'attaccare', seriesId: currentSeriesId });
   // 🆕 v7.178 (Franco: «nella VT delle fcr lo mostrerei in quello spazio che c'è tra la foto e il numero») - il Commento
   //    album delle fcr, in sola lettura (si scrive sulla fpa), prima del N.
@@ -74872,7 +74904,7 @@ function renderBulkEditView() {
             ? '<td style="padding:4px;text-align:center;"><input data-field="year" data-id="'+f.id+'" value="'+(f.year||'')+'" type="number" style="width:80px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
             : readCell(f.year || '', null, 'center')) : ''}
           ${_cFamiglia ? readCell(esc(_famigliaASchermo(f)), 120) : ''}
-          ${!_cAttaccare ? '' : (isAdmin
+          ${!_cAttaccare ? '' : (isAdmin && _cAttaccareModifica
             ? `<td style="padding:4px;width:99%;"><input data-field="commentoAlbum" data-id="${f.id}" value="${esc(f.commentoAlbum || '')}" style="width:100%;min-width:360px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:0.85rem;" onchange="saveBulkCell(this)"></td>`
             : readCell(f.commentoAlbum, 360))}
           ${currentSection === 'figurines' ? (() => {
