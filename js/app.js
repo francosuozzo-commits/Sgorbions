@@ -1,7 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.174 - Modificato js/app.js (e index per la versione). 🐛 Un clic fuori da una finestra di modifica (o Esc) la
+// v7.175 - Modificato js/app.js (e index per la versione). Ricerca globale, blocco dei Personaggi (Franco: «per me va
+//          bene»): quando la tipologia si chiama come la serie («Spille · Spille») resta solo la serie
+//          (`tipologiaUguale` in `_rgPersonaggiHTML`); la sottoserie gialla resta.
+// v7.174 -Modificato js/app.js (e index per la versione). 🐛 Un clic fuori da una finestra di modifica (o Esc) la
 //          chiudeva e si perdeva il non salvato (Franco: «1.»): ora le finestre con qualcosa da salvare si chiudono
 //          solo con ✕ o Annulla (`_FINESTRE_DI_MODIFICA`, `_finestraInModifica`); la scheda dell'articolo solo
 //          quando è in modifica. Tolto da NO_CLICK_CLOSE l'orfano `'add-fig-modal'`. E la conferma degli
@@ -31206,7 +31209,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.174';
+const JS_VERSION = 'v7.175';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -47367,6 +47370,10 @@ function _rgPersonaggiHTML(q, qn) {
   //    (Franco: «scrivila colorata; abbiamo già un colore per lei?»): `COL_CATEGORIA`, quello delle pillole delle
   //    sottoserie sulle card e della riga della sottoserie nei caroselli
   const sottoserieDi = a => String(a.subseries || '').trim();
+  // 🆕 v7.175 (Franco: «per me va bene») - «Spille · Spille»: quando la tipologia si chiama come la serie (maiuscole e
+  //    spazi a parte), la seconda non dice niente di più e resta solo la serie
+  const _soloLettere = t => String(t || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  const tipologiaUguale = a => _soloLettere(tipologiaDi(a)) === _soloLettere(nomeS.get(a.seriesId));
   const ordina = l => l.slice().sort((a, b) => (ordSerie.get(a.seriesId) ?? 1e9) - (ordSerie.get(b.seriesId) ?? 1e9)
     || String(a.section || 'figurines').localeCompare(String(b.section || 'figurines')) || (parseInt(a.number, 10) || 0) - (parseInt(b.number, 10) || 0));
   // la misura della miniatura in un posto solo (prova-v6405 vieta le misure scritte a mano nella ricerca)
@@ -47378,7 +47385,7 @@ function _rgPersonaggiHTML(q, qn) {
       : '<span style="' + _dimMini + 'border-radius:6px;background:var(--card2);border:1px dashed var(--border);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">🧑‍🎤</span>';
     const elenco = ordina(arts).map(a => '<li><a href="javascript:void(0)" onclick="openFigFromSearch(\'' + a.id + '\',\'' + a.seriesId + '\',\'' + (a.section || 'figurines') + '\')" style="color:var(--text);text-decoration:none;">'
       // v7.116 (Franco: «usa un colore che non sia bianco per il nome della serie») - l'azzurro dei titoli di serie (`--info`)
-      + '<span style="color:var(--info);">' + esc(nomeS.get(a.seriesId) || '') + '</span> · ' + esc(tipologiaDi(a)) + (sottoserieDi(a) ? ' · <span style="color:' + COL_CATEGORIA + ';">' + esc(sottoserieDi(a)) + '</span>' : '') + ' · ' + esc(a.name || '') + ((a.number != null && a.number !== '' && !a.noNumber) ? ' · n.' + esc(String(a.number)) : '') + '</a></li>').join('');
+      + '<span style="color:var(--info);">' + esc(nomeS.get(a.seriesId) || '') + '</span>' + (tipologiaUguale(a) ? '' : ' · ' + esc(tipologiaDi(a))) + (sottoserieDi(a) ? ' · <span style="color:' + COL_CATEGORIA + ';">' + esc(sottoserieDi(a)) + '</span>' : '') + ' · ' + esc(a.name || '') + ((a.number != null && a.number !== '' && !a.noNumber) ? ' · n.' + esc(String(a.number)) : '') + '</a></li>').join('');
     return '<div style="display:flex;gap:0.8rem;align-items:flex-start;padding:0.5rem 0;border-top:1px solid var(--border);">'
       + '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + pid + '\')" title="' + esc(D.perId.get(pid).nome) + '">' + mini + '</a>'
       + '<div style="min-width:0;">'
