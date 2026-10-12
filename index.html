@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.177">
+<link rel="stylesheet" href="css/style.css?v=7.178">
 
 
 <style>
@@ -761,6 +761,38 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
   background: var(--action-admin); color: #fff; font-family: var(--font-ui); font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
 #mac-linguetta:hover { background: var(--action-admin-hover); }
 @media (max-width: 860px) { #mac-linguetta { display: none !important; } }
+/* 🔄 v7.178 (Franco: «non sono a scomparsa, si allungano solamente … ne accorcerei il valore quando non c'è il
+   mouse») - anche «Macchie» corta da chiusa e intera al passaggio, con le regole delle linguette blu (v7.108) */
+#mac-linguetta .wz-ling-lunga { display: inline-block; max-width: 0; overflow: hidden; opacity: 0; transition: opacity 0.2s ease; }
+#mac-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga { position: absolute; }
+#mac-linguetta:hover .wz-ling-corta, #mac-linguetta:focus-visible .wz-ling-corta { display: none; }
+#mac-linguetta:hover .wz-ling-lunga, #mac-linguetta:focus-visible .wz-ling-lunga { max-width: 26rem; opacity: 1; }
+/* 🆕 v7.178 (Franco: «mostrare il campo "Commento album" quando si fa mouse over sulle card di una fpa / fcr») - una
+   riga gialla sopra il fondo della foto, accesa al passaggio del mouse; sul telefono non c'è passaggio, quindi niente */
+.fig-commento-album { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 0.45rem 0.55rem;
+  background: rgba(10, 6, 20, 0.86); color: #ffd84d; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 600;
+  line-height: 1.3; text-align: center; opacity: 0; transition: opacity 0.15s ease; pointer-events: none; }
+.fig-card:hover .fig-commento-album { opacity: 1; }
+/* 🔄 v7.178 (Franco: «il commento sulle card della fcr è rimasto … sopra la foto; chiedevo di averlo sotto») - sulla
+   fcr la riga esce SOTTO la foto, nello spazio prima del numero, sullo sfondo della card */
+.fig-card[data-sez="figurines"] .fig-commento-album { top: 100%; bottom: auto; background: var(--card); }
+/* 🔄 v7.178 (Franco: «sulle fcr però non deve coprire il n. della variazione; quello scrivilo in sovraimpressione») - il
+   numero della versione resta sopra la riga del commento, e il testo gli lascia il posto a destra */
+.fig-num-versione { position: relative; z-index: 4; }
+.fig-card:has(.fig-num-versione) .fig-commento-album { padding-right: 2.2rem; }
+@media (hover: none), (max-width: 860px) { .fig-commento-album { display: none; } }
+/* 🆕 v7.178 (Franco: «come nella funzione sfoglia album del Questionario … sopra la freccia scriverei "prima pagina" e
+   "ultima pagina"; … sotto al tasto di prossima pagina e pagina precedente») - Sfoglia album: ogni lato una colonna,
+   la freccia e sotto il capo, scritta sopra e icona sotto (come `.wz-freccia`) */
+.sfoglia-lato { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.sfoglia-capo { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25); color: var(--text); border-radius: 8px; padding: 0.3rem 0.5rem; cursor: pointer;
+  font-family: var(--font-ui); font-size: 0.72rem; line-height: 1.15; white-space: nowrap; }
+.sfoglia-capo .sfoglia-capo-icona { font-size: 1rem; line-height: 1; }
+.sfoglia-capo:disabled { opacity: 0.35; cursor: not-allowed; }
+/* 🆕 v7.178 (Franco: «nelle fpa il valore della famiglia scriviamolo a capo (la card di una fpa è larga la metà di
+   quella di una fcr)») - il valore (l'ultimo span di `_campoCard`) va sotto l'etichetta */
+.fig-card[data-sez="attaccare"] .retro-riga[data-campo="famiglia"] > span:last-child { display: block; }
 /* 🆕 v7.087 (Franco, solo desktop: «lascia più spazio tra il titolo "Il questionario Sgorbions" e la riga "Col
    Questionario Sgorbions costruisci…"; il font per le frasi testuali del questionario aumentiamolo un minimo») */
 /* 🆕 v7.087 (Franco) - «Salta serie» sulla riga del nome della serie, a destra, solo sul desktop; lì quello del
@@ -2258,9 +2290,9 @@ button.back-btn { color:#ffffff; }
 <!-- 🆕 v7.110 - le linguette in una colonna (`#linguette`, regola nell'index): si impilano da sole -->
 <div id="linguette">
 <!-- 🆕 v7.120 (Franco) - «Togli macchie»: solo admin, arancio, prima della colonna blu (sotto «Impersona») -->
-<button type="button" id="mac-linguetta" onclick="_cliccaLinguettaMacchie()">💧 Togli macchie</button>
+<button type="button" id="mac-linguetta" onclick="_cliccaLinguettaMacchie()">🧽 Macchie</button>
 <button type="button" id="wz-linguetta" class="solo-wz" onclick="apriWizardLista()" aria-label="Riprendi il Questionario Sgorbions">
-  <span class="wz-ling-corta">📝 <span data-i18n="wz.lingCorta">Riprendi il Questionario</span></span>
+  <span class="wz-ling-corta">📝 <span data-i18n="wz.lingCorta">Questionario</span></span>
   <span class="wz-ling-lunga" data-i18n="wz.linguetta">Riprendi il Questionario Sgorbions</span>
 </button>
 <!-- 🆕 v7.088 (Franco: «mettiamo un'altra linguetta sulla sinistra, nella home page; etichetta "Inventario"; quando
@@ -4380,6 +4412,16 @@ di tutte le serie</button>
                    numero e se ne applicavano quattordici. Ora il salvataggio sta accanto a ogni
                    singola casella (il 💾 nella tabella qui sopra) e vale solo per quella. -->
               <div id="griglie-feedback" style="display:none;margin-top:0.6rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;"></div>
+            </div>
+            <!-- 🆕 v7.178 (Franco: «il commento sulle card della griglia (sia fpa che fcr) attivabile in cfg») - due
+                 spunte, salvate al clic in `settings/commentoCard` -->
+            <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+              <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">💬 Commento album sulle card</h4>
+              <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:0.9rem;">
+                <label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;"><input type="checkbox" id="commento-card-fpa" onchange="salvaCommentoCard()"> Figurine per album</label>
+                <label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;"><input type="checkbox" id="commento-card-fcr" onchange="salvaCommentoCard()"> Figurine con retro</label>
+              </div>
+              <div class="form-hint" style="margin-top:0.6rem;">Col mouse sopra la card compare il Commento album: sulla figurina per album il suo, sulla figurina con retro quello della figurina per album collegata. Solo su computer.</div>
             </div>
           </div>
         </div>
@@ -6594,7 +6636,14 @@ di tutte le serie</button>
   <!-- 🔄 v6.865 (Franco: «le frecce mettile a dx e sx invece che sotto») - LA NAVIGAZIONE STA AI
        DUE LATI DELLA PAGINA: il gesto e' dove si guarda, e sotto l'immagine costringeva a
        scendere con l'occhio per cambiare pagina. Sotto resta il solo contatore. -->
+    <!-- 🔄 v7.178 (Franco: «i tasti di prima e ultima pagina li farei come nella funzione sfoglia album del Questionario:
+         ok la icona con la freccia, ma sopra la freccia scriverei "prima pagina" e "ultima pagina"; e metterei questi 2
+         tasti sotto al tasto di prossima pagina e pagina precedente») - ogni lato è una colonna: la freccia e, sotto,
+         il capo con la scritta sopra l'icona (`.sfoglia-capo`). Prima stavano ai lati del contatore. -->
+    <div class="sfoglia-lato">
     <button type="button" id="sfoglia-album-prec" onclick="sfogliaVai(-1)" style="min-width:3rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.4rem 0.8rem;font-size:1.3rem;line-height:1;cursor:pointer;">&#8249;</button>
+    <button type="button" id="sfoglia-album-prima" class="sfoglia-capo" onclick="sfogliaVaiA(0)" aria-label="Prima pagina"><span data-i18n="sfoglia.prima">Prima pagina</span><span class="sfoglia-capo-icona">&#9198;</span></button>
+    </div>
   <!-- 🔄 v6.868 (Franco: «le frecce che consentono di sfogliare l'album si spostano al cambio
        pagina; devono rimanere ferme, anche se la dimensione di una pagina e' diversa da quella
        precedente/successiva») - LA PAGINA VIVE IN UNA CORNICE DI MISURA FISSA.
@@ -6606,7 +6655,10 @@ di tutte le serie</button>
   <div class="sfoglia-cornice" style="width:min(70vw, 1100px);height:calc(100vh - 10rem);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
     <img id="sfoglia-album-img" alt="" style="max-width:100%;max-height:100%;object-fit:contain;">
   </div>
+    <div class="sfoglia-lato">
     <button type="button" id="sfoglia-album-succ" onclick="sfogliaVai(1)" style="min-width:3rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.4rem 0.8rem;font-size:1.3rem;line-height:1;cursor:pointer;">&#8250;</button>
+    <button type="button" id="sfoglia-album-ultima" class="sfoglia-capo" onclick="sfogliaVaiA(-1)" aria-label="Ultima pagina"><span data-i18n="sfoglia.ultima">Ultima pagina</span><span class="sfoglia-capo-icona">&#9197;</span></button>
+    </div>
   </div>
   <!-- ⚠️ v6.806 - `var(--text)` e non `#fff`: il sito ha un tema solo, e un bianco
        letterale e' proprio cio' che `prova-v6393` e' venuta a togliere. E' diventata
@@ -6619,12 +6671,11 @@ di tutte le serie</button>
          la classe, non alzare il numero. -->
     <!-- 🆕 v7.176 (Franco: «non si può andare direttamente alla prima o ultima pagina») - ai lati del contatore, coi
          segni e non con parole, come le frecce; si spengono ai capi come loro (`_disegnaSfoglia`) -->
-    <button type="button" id="sfoglia-album-prima" onclick="sfogliaVaiA(0)" title="Prima pagina" aria-label="Prima pagina" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.3rem 0.7rem;font-size:1rem;line-height:1;cursor:pointer;">&#9198;</button>
+    <!-- 🔄 v7.178 - ⏮ e ⏭ sono scesi sotto le frecce, ai lati della pagina -->
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
-    <button type="button" id="sfoglia-album-ultima" onclick="sfogliaVaiA(-1)" title="Ultima pagina" aria-label="Ultima pagina" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.3rem 0.7rem;font-size:1rem;line-height:1;cursor:pointer;">&#9197;</button>
   </div>
 </div>
-<script src="js/app.js?v=7.177"></script>
+<script src="js/app.js?v=7.178"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6648,7 +6699,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.177'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.178'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
