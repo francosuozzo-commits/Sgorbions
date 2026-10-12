@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.180 - Modificati js/app.js e index.html (per la versione). Card della griglia (Franco: «il commento fisso … non è in
+//          riga 1; vedo che a volte c'è il numero della versione … spostiamolo sulla (fine) della riga dove c'è il numero
+//          della figurina (o dove c'è il nome, per le serie senza numero)»): `_contrassegnoVariazioneHTML` torna il solo
+//          pallino in linea, e la card lo mette in coda al numero o, senza numero, al nome. Niente più riga sua.
 // v7.179 - Modificati js/app.js e index.html. Anomalie della v7.178 (Franco): (1) «per le fcr avevo detto che lo volevo
 //          fisso, non in mouse-hovering; lascialo in mouse hovering solo per le fpa» - sulla card della fcr il Commento
 //          album è una `_rigaCard` fissa fra la foto e il numero (non sul telefono); il passaggio del mouse resta alle
@@ -31250,7 +31254,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.179';
+const JS_VERSION = 'v7.180';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -57476,13 +57480,18 @@ function renderItems() {
     //    SUL TELEFONO ANCHE NELLA GRIGLIA: scritto, prende il posto del nome, coi suoi punti di taglio. Vuoto: per il
     //    retro il sottonome se c'è (v7.135), se no il nome — la scelta b di Franco.
     const _nomeMob = _nomeRidotto(_postoCard(), f);   // v7.150: la console (telefono: sì; desktop: no, se non lo accende)
+    // 🔄 v7.180 (Franco: «il commento fisso … non è in riga 1; vedo che a volte c'è il numero della versione … spostiamolo
+    //    sulla (fine) della riga dove c'è il numero della figurina (o dove c'è il nome, per le serie senza numero)») - il
+    //    pallino della versione non ha più una riga sua sotto la foto: chiude la riga del numero, o quella del nome
+    const _pv = _contrassegnoVariazioneHTML(f);
+    const _pvSulNumero = !!figLabel;
     const figNameInner = isRetroCard
       // 🔄 v7.145 (Franco: «ora usiamo solo quello, nel mobile, se popolato; lascia perdere il sottonome; tanto ora lo
       //    popolo io col sottonome, nel caso») - vuoto il Nome mobile, il nome: la regola del sottonome (v7.135) se ne va
-      ? `<span style="color:${_COL_NOME};">${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : esc(f.name || '')}</span>` /* v6.037 - riga 1 = il Nome */
+      ? `<span style="color:${_COL_NOME};">${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : esc(f.name || '')}</span>${_pv}` /* v6.037 - riga 1 = il Nome */
       : (_mobileFigCard
-          ? `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>${scoreInlineHTML}` +
-            (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : f.name}</div>`)
+          ? `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>${scoreInlineHTML}${(_pvSulNumero || _figLabelOnlyNumber()) ? _pv : ''}` +
+            (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : f.name}${_pvSulNumero ? '' : _pv}</div>`)
           // 🔧 v6.416 (Franco) - NUMERO E NOME SU DUE RIGHE ANCHE SU DESKTOP.
           // Franco: *"secondo me aiuta anche mettere sempre il numero e il nome delle figurine su
           // due righe separate; a volte il nome e' lungo e la riga unica potrebbe andare a capo"*.
@@ -57493,8 +57502,8 @@ function renderItems() {
           // ⚠️ Il ripiego `_figLabelOnlyNumber()` NON si copia dal mobile: li' serve perche' con
           // pochissimo spazio il nome puo' essere gia' dentro l'etichetta. Su desktop il nome si
           // scrive sempre, ed e' la decisione che quel ramo prende da sempre.
-          : `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>`
-            + `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : f.name}</div>`);   // v7.150: se la console lo accende sul desktop
+          : `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>${_pvSulNumero ? _pv : ''}`
+            + `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : f.name}${_pvSulNumero ? '' : _pv}</div>`);   // v7.150: se la console lo accende sul desktop
     // 🔄 v6.654 - QUI C'ERA UN `if` A DUE RAMI: «i retro, e tutti gli altri». Ha retto
     //    finche' gli articoli erano due famiglie; adesso sono OTTO, e ognuno ha una forma
     //    sua. E' la stessa famiglia delle quattro liste di sezioni scritte a mano trovate
@@ -57712,7 +57721,6 @@ function renderItems() {
       <div class="fig-img-placeholder"${_latoErrCard ? ` data-lato-errore="${_latoErrCard}"` : ''} style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;container-type:inline-size;">
         ${imgHTML}${_timbroInvisibile(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}${f.section === 'attaccare' && _commentoAlbumCard(f) ? `<div class="fig-commento-album">${esc(_commentoAlbumCard(f))}</div>` : ''}
       </div>
-      ${_contrassegnoVariazioneHTML(f)}
       <div class="fig-body">
         ${/* 🔄 v7.179 (Franco: «per le fcr avevo detto che lo volevo fisso, non in mouse-hovering; lascialo in mouse hovering
              solo per le fpa») - sulla fcr il commento è una riga fissa fra la foto e il numero. Una `_rigaCard`: così
@@ -62396,14 +62404,15 @@ function _contrassegnoVariazioneHTML(f) {
   // condividono la variabile, o il giorno che una si muove si trascina l'altra.
   // ⚠️ `min-width` + `padding` + `border-radius:999px`: cerchio con una cifra, pastiglia
   // con due. Una larghezza fissa avrebbe tagliato il numero il giorno che arriva a 10.
-  // v7.178 - `fig-num-versione`: sta sopra la riga del Commento album (vedi il foglio), che non deve coprirlo
-  return '<div class="fig-num-versione" style="display:flex;justify-content:flex-end;padding:5px 8px 0;line-height:1;">'
-    + '<span title="' + (currentLang === 'it' ? 'Versione n. ' : 'Version no. ') + n
-    + '" style="display:inline-flex;align-items:center;justify-content:center;'
+  // 🔄 v7.180 (Franco: «spostiamolo sulla (fine) della riga dove c'è il numero della figurina (o dove c'è il nome»)) -
+  //    non più una riga sua sotto la foto: il solo pallino, in linea, che la card mette in coda al numero o al nome
+  return '<span class="fig-num-versione" title="' + (currentLang === 'it' ? 'Versione n. ' : 'Version no. ') + n
+    // (Franco: «avevo detto in fondo alla riga; non subito dopo il numero») - `float:right`: va al bordo destro della riga
+    + '" style="display:inline-flex;align-items:center;justify-content:center;float:right;margin:0.15rem 0 0 0.4rem;'
     + 'min-width:1.15rem;height:1.15rem;padding:0 0.3rem;box-sizing:border-box;'
     + 'border-radius:999px;background:var(--action-hover);color:var(--num-versione);'
     + 'font-family:var(--font-ui);font-size:0.72rem;font-weight:800;letter-spacing:0.02em;">'
-    + n + '</span></div>';
+    + n + '</span>';
 }
 
 // 🔄 v6.618 (Franco: *«la variazione base la numeri come 1, quelle ufficiali proseguono la
