@@ -130,6 +130,10 @@
   --accent2: #ff6b1a;
   --accent3: #c84bff;
   --text: #f0eaff;
+  /* 🆕 v7.177 (Franco: «le etichette sono tutte bianche … un colore diverso, da usare poi in tutto il sito»;
+     «il colore celeste (azzurro pastello)») - IL COLORE DELLE ETICHETTE. Non è #7fd4ff, che è dei tipi
+     (--type-unofficial), né --info: è più chiaro e più spento di tutti e due. */
+  --etichetta: #a9d6ef;
   --muted: #8b7aaa;
   --border: rgba(181,255,46,0.18);
   --border2: rgba(200,75,255,0.18);
@@ -1204,7 +1208,8 @@ body {
 .detail-row-edit { border-bottom: none !important; padding: 0.25rem 0; }
 /* v6.525 - bianche, non grigie (Franco). Il grigio nella scheda resta a dire «vuoto»
    (i «non impostato»), non a dire «etichetta». */
-.detail-label { color: var(--text); font-size: 0.85rem; min-width: 180px; }
+/* 🔄 v7.177 (Franco: «il colore celeste (azzurro pastello)») - in `--etichetta`, il colore delle etichette */
+.detail-label { color: var(--etichetta); font-size: 0.85rem; min-width: 180px; }
 .detail-value { color: var(--text); font-weight: 500; padding-left: 0.5rem; }
 
 .toggle-btn-blue {
@@ -1831,10 +1836,12 @@ footer {
 
 /* ---- Telefoni stretti ---- */
 @media (max-width: 560px) {
-  /* schede dettaglio: etichetta sopra, valore sotto (non più affiancati) */
-  .detail-row { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
-  .detail-label { min-width: 0; }
-  .detail-value { padding-left: 0; }
+  /* 🔄 v7.177 (Franco: «il valore dei campi sia messo alla destra della sua etichetta. Non sotto») - schede
+     dettaglio: di nuovo affiancati, l'etichetta senza la larghezza fissa del desktop e il valore a destra,
+     che va a capo da sé se è lungo */
+  .detail-row { gap: 0.6rem; }
+  .detail-label { min-width: 0; flex: 0 0 auto; max-width: 45%; }
+  .detail-value { padding-left: 0; text-align: right; min-width: 0; overflow-wrap: anywhere; }
 
   /* campi "in vendita su Ebay" (prezzo/qtà/condizione) a 2 colonne invece di 3 */
   #fe-for-sale-fields { grid-template-columns: 1fr 1fr !important; }
