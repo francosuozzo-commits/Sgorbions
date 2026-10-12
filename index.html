@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.178">
+<link rel="stylesheet" href="css/style.css?v=7.179">
 
 
 <style>
@@ -773,13 +773,8 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
   background: rgba(10, 6, 20, 0.86); color: #ffd84d; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 600;
   line-height: 1.3; text-align: center; opacity: 0; transition: opacity 0.15s ease; pointer-events: none; }
 .fig-card:hover .fig-commento-album { opacity: 1; }
-/* 🔄 v7.178 (Franco: «il commento sulle card della fcr è rimasto … sopra la foto; chiedevo di averlo sotto») - sulla
-   fcr la riga esce SOTTO la foto, nello spazio prima del numero, sullo sfondo della card */
-.fig-card[data-sez="figurines"] .fig-commento-album { top: 100%; bottom: auto; background: var(--card); }
-/* 🔄 v7.178 (Franco: «sulle fcr però non deve coprire il n. della variazione; quello scrivilo in sovraimpressione») - il
-   numero della versione resta sopra la riga del commento, e il testo gli lascia il posto a destra */
-.fig-num-versione { position: relative; z-index: 4; }
-.fig-card:has(.fig-num-versione) .fig-commento-album { padding-right: 2.2rem; }
+/* 🗑️ v7.179 - via la riga della fcr sotto la foto al passaggio (v7.178) e il numero della versione sopra di lei: sulla
+   fcr il commento ora è fisso, una riga della card (Franco: «per le fcr avevo detto che lo volevo fisso») */
 @media (hover: none), (max-width: 860px) { .fig-commento-album { display: none; } }
 /* 🆕 v7.178 (Franco: «come nella funzione sfoglia album del Questionario … sopra la freccia scriverei "prima pagina" e
    "ultima pagina"; … sotto al tasto di prossima pagina e pagina precedente») - Sfoglia album: ogni lato una colonna,
@@ -4421,7 +4416,7 @@ di tutte le serie</button>
                 <label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;"><input type="checkbox" id="commento-card-fpa" onchange="salvaCommentoCard()"> Figurine per album</label>
                 <label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;"><input type="checkbox" id="commento-card-fcr" onchange="salvaCommentoCard()"> Figurine con retro</label>
               </div>
-              <div class="form-hint" style="margin-top:0.6rem;">Col mouse sopra la card compare il Commento album: sulla figurina per album il suo, sulla figurina con retro quello della figurina per album collegata. Solo su computer.</div>
+              <div class="form-hint" style="margin-top:0.6rem;">Sulla figurina per album il suo Commento album compare col mouse sopra la card; sulla figurina con retro (e sulle sue versioni) quello della figurina per album collegata è sempre scritto, fra la foto e il numero. Solo su computer.</div>
             </div>
           </div>
         </div>
@@ -6675,7 +6670,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.178"></script>
+<script src="js/app.js?v=7.179"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6699,7 +6694,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.178'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.179'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
