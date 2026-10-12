@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.177 - Modificati css/style.css e index.html (app.js per la versione). Scheda dell'articolo sul telefono (Franco:
+//          «il valore dei campi sia messo alla destra della sua etichetta. Non sotto»): sotto i 560px etichetta e
+//          valore di nuovo affiancati, il valore a destra. E le etichette (Franco: «un colore diverso, da usare poi in
+//          tutto il sito»; «celeste (azzurro pastello)») in `--etichetta`, #a9d6ef. E (Franco: «il campo NOME deve
+//          andare sempre dopo il campo Numero. A volte non è così») in lettura la riga del Numero subito prima del
+//          Nome (in mezzo c'erano Famiglia, Commento album, Categoria, Anno); in modifica il N. sale prima del Nome in
+//          ogni tipologia col Numero, non più nelle sole Carte (v7.103); l'Ordinamento resta in basso.
 // v7.176 - Modificati js/app.js e index.html. «Sfoglia album» (Franco: «non si può andare direttamente alla prima o
 //          ultima pagina»): ⏮ e ⏭ ai lati del contatore, e i tasti Home / Fine (`sfogliaVaiA`); si spengono ai capi
 //          come le frecce. Console → Protezione foto (Franco: «il nome della sezione è scritto in bianco … usiamo
@@ -31217,7 +31224,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.176';
+const JS_VERSION = 'v7.177';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -60749,10 +60756,9 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   // si nascondono)". Numero e Nome mancavano come righe nella vista (per le figurine comparivano
   // solo nel titolo, v5.764): ora ci sono, quando presenti. Numero: i Retro non sono numerati, quindi
   // per loro la riga resta assente. Nome: tutte le sezioni (prima solo Retro).
-  if (_haNumero(f) && f.number) { // v6.077 - la riga esiste dove il campo esiste, vedi _haNumero()
-    const _rowNumero = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Numero' : 'Number')}</span><span class="detail-value">${f.number}</span></div>`;
-    (_mobileDetail ? rowsTop : rows).push(_rowNumero);
-  }
+  // 🔄 v7.177 (Franco: «il campo NOME deve andare sempre dopo il campo Numero. A volte non è così») - fra i due si
+  //    infilavano Famiglia, Commento album, Categoria e Anno: la riga del Numero ora si scrive più giù, subito prima
+  //    del Nome (come nella scheda in modifica, dove il N. sta subito prima del Nome)
   // Categoria (sempre visibile per i Retro), Sottocategoria (solo se popolata).
   // v6.026 (Franco) — su TELEFONO salgono sopra la foto, insieme a Serie e Nome. Per un retro
   // "Categoria + Nome" e' l'identita' — e' la regola del Nome completo: prima dico DI COSA parlo,
@@ -60805,6 +60811,10 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Anno' : 'Year')}</span><span class="detail-value">${esc(String(f.year))}</span></div>`);
   }
   // Nome — tutte le sezioni, quando presente (hide-empty).
+  if (_haNumero(f) && f.number) { // v6.077 - la riga esiste dove il campo esiste, vedi _haNumero()
+    const _rowNumero = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Numero' : 'Number')}</span><span class="detail-value">${f.number}</span></div>`;
+    (_mobileDetail ? rowsTop : rows).push(_rowNumero);   // v7.177: qui, subito prima del Nome
+  }
   if (f.name) {
     const _rowNome = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome' : 'Name')}</span><span class="detail-value">${esc(f.name)}</span></div>`;
     (_mobileDetail ? rowsTop : rows).push(_rowNome);
@@ -64409,7 +64419,9 @@ function switchToEditMode(figId) {
   //    le due righe del numero (la sua e quella del numero ereditato) salgono prima del Nome. Si spostano i nodi
   //    già disegnati: il blocco del numero resta uno solo, scritto una volta (v6.797), per tutte le tipologie.
   try {
-    if ((f.section || 'figurines') === 'carte') {
+    // 🔄 v7.177 (Franco: «il campo NOME deve andare sempre dopo il campo Numero. A volte non è così») - non più le sole
+    //    Carte: ogni tipologia dove il campo è il Numero; dove è l'Ordinamento resta in basso (v6.797)
+    if (!_numeroEOrdinamento(f.section || 'figurines')) {
       const nome = document.getElementById('fe-name-group');
       ['fe-number-group', 'fe-number-ered-group'].forEach(id => { const r = document.getElementById(id); if (nome && r) nome.parentNode.insertBefore(r, nome); });
     }
