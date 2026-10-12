@@ -1,10 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.176 - Modificati js/app.js e index.html. «Sfoglia album» (Franco: «non si può andare direttamente alla prima o
+//          ultima pagina»): ⏮ e ⏭ ai lati del contatore, e i tasti Home / Fine (`sfogliaVaiA`); si spengono ai capi
+//          come le frecce. Console → Protezione foto (Franco: «il nome della sezione è scritto in bianco … usiamo
+//          l'azzurro serie»): i titoli delle sezioni in `--info`. E il «✅ … salvato!» della scheda dell'articolo
+//          (Franco: «appare proprio al centro; sarebbe meglio averlo più in alto») esce in alto, `toast(…, 'alto')`.
+//          E (Franco: «gestire a parte le pagine grandi, come la funzione sfoglia album … una terza sezione») in
+//          Protezione foto la terza fila «Nelle pagine degli album»: `stilePag`, per le pagine degli album protetti
+//          dovunque compaiano (`_fpCache.pagine`, `_filaPagineHTML`); non scelto = come prima.
 // v7.175 - Modificato js/app.js (e index per la versione). Ricerca globale, blocco dei Personaggi (Franco: «per me va
 //          bene»): quando la tipologia si chiama come la serie («Spille · Spille») resta solo la serie
 //          (`tipologiaUguale` in `_rgPersonaggiHTML`); la sottoserie gialla resta.
-// v7.174 -Modificato js/app.js (e index per la versione). 🐛 Un clic fuori da una finestra di modifica (o Esc) la
+// v7.174 - Modificato js/app.js (e index per la versione). 🐛 Un clic fuori da una finestra di modifica (o Esc) la
 //          chiudeva e si perdeva il non salvato (Franco: «1.»): ora le finestre con qualcosa da salvare si chiudono
 //          solo con ✕ o Annulla (`_FINESTRE_DI_MODIFICA`, `_finestraInModifica`); la scheda dell'articolo solo
 //          quando è in modifica. Tolto da NO_CLICK_CLOSE l'orfano `'add-fig-modal'`. E la conferma degli
@@ -31209,7 +31217,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.175';
+const JS_VERSION = 'v7.176';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31353,11 +31361,13 @@ function cloudinaryUrl(url, opts = 'w_300,h_300,c_fit,q_auto,f_auto') {
 //    transformations»: è un'impostazione del pannello, la accende Franco.
 // 🔄 v7.127 - una Map foto → riga della console (tipologia o `tipo:<id>`), non più un Set: lo stile della macchia può
 //    cambiare da una tipologia all'altra (`_stileMacchia`). `.has` resta quello di prima.
-let _fpCache = { figs: null, n: -1, set: new Map() };
+// 🆕 v7.176 (Franco: «gestire a parte le pagine grandi, come la funzione sfoglia album») - e a parte l'elenco delle
+//    PAGINE degli album protetti (`pagine`): hanno uno stile loro, `stilePag` (vedi `_filigrana`)
+let _fpCache = { figs: null, n: -1, set: new Map(), pagine: new Set() };
 function _fotoProtette() {
   const figs = (typeof _cache !== 'undefined' && _cache && Array.isArray(_cache.figurines)) ? _cache.figurines : [];
   if (_fpCache.figs === figs && _fpCache.n === figs.length) return _fpCache.set;
-  const set = new Map();
+  const set = new Map(), pagine = new Set();
   // v7.104: `_eProtetto` - la spunta dell'articolo, o quella della sua tipologia in console
   figs.forEach(f => {
     if (!_eProtetto(f)) return;
@@ -31366,12 +31376,12 @@ function _fotoProtette() {
     // 🆕 v7.129 (Franco: «possiamo applicare le macchie anche alle foto degli album, dove abbiamo la funzione Sfoglia
     //    album?») - e le pagine dell'album, anche quelle prese da un altro album (`_pagineDaMostrare`). Solo `url`: da
     //    `orig` parte la pulizia dello sfondo, che scarica senza scritta (`_urlSenzaScritta`)
-    if (f.section === 'albums') _pagineDaMostrare(f).forEach(p => { if (p.url && !set.has(p.url)) set.set(p.url, k); });
+    if (f.section === 'albums') _pagineDaMostrare(f).forEach(p => { if (p.url && !set.has(p.url)) set.set(p.url, k); if (p.url) pagine.add(p.url); });
   });
-  _fpCache = { figs, n: figs.length, set };
+  _fpCache = { figs, n: figs.length, set, pagine };
   return set;
 }
-function _fotoProtetteRifai() { _fpCache = { figs: null, n: -1, set: new Map() }; }
+function _fotoProtetteRifai() { _fpCache = { figs: null, n: -1, set: new Map(), pagine: new Set() }; }
 // 🆕 v7.113 (Franco: «per ogni tda vorrei poter decidere se macchiare anche il carosello oppure no») - nei caroselli
 //    la foto protetta ha la scritta solo se la sua riga in console (tipologia o tipo senza serie) ha accesa anche
 //    «Anche nel carosello» (`car:<chiave>`; se non è mai stata salvata, sì: come prima). `_fpSenzaScritta` dice a
@@ -31458,6 +31468,9 @@ function _filigrana(url, opts) {
     if (w <= MINIATURA_MAX_W) return '';
     // 🔄 v7.121 - lo stile scelto in console, uno per le foto e uno per i caroselli (`_trasfMacchia`)
     // 🔄 v7.127 - e quello della tipologia della foto, se ne ha uno suo
+    // 🆕 v7.176 - una pagina d'album ha lo stile delle pagine, se è stato scelto; se no come prima
+    const sp = _PROTEZIONE_CFG.stilePag;
+    if (_fpCache.pagine.has(url) && STILI_MACCHIA.some(s => s.k === sp)) return _trasfMacchia(sp, w);
     return _trasfMacchia(_stileMacchia(_fpInCarosello, prot.get(url)), w);
   } catch (e) { return ''; }
 }
@@ -41273,7 +41286,9 @@ function renderAdminProtezioneTDA() {
   };
   box.innerHTML =
     // 🔄 v7.121 - tab suo, col nome scelto da Franco
-    '<h4 style="font-family:var(--font-ui);margin:0 0 0.5rem;">🔒 ' + (it ? 'Protezione foto' : 'Photo protection') + '</h4>' +
+    // 🔄 v7.176 (Franco: «il nome della sezione è scritto in bianco, come il suo contenuto … usiamo l'azzurro serie») -
+    //    i tre titoli e i due sottotitoli degli stili in `--info`
+    '<h4 style="font-family:var(--font-ui);margin:0 0 0.5rem;color:var(--info);">🔒 ' + (it ? 'Protezione foto' : 'Photo protection') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Accesa: gli articoli di quella tipologia hanno <strong>«Foto protetta» d’ufficio</strong>, e chi visita il sito vede le loro foto con la scritta «figurinesgorbions.it». ' +
@@ -41302,7 +41317,7 @@ function renderAdminProtezioneTDA() {
     '</table></div>' +
     // 🆕 v7.121 (Franco: «macchiare anche per versione, indipendentemente dalla tda») - una riga per versione, chiave
     //    `ver:<versione>` (vedi `_protettoDUfficioArt`); un Salva solo per le due tabelle, che scrivono lo stesso documento
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🧬 ' + (it ? 'Per versione' : 'By version') + '</h4>' +
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">🧬 ' + (it ? 'Per versione' : 'By version') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Accesa: tutti gli articoli di quella versione hanno <strong>«Foto protetta» d’ufficio</strong>, in qualunque tipologia, anche dove la tipologia qui sopra è spenta. ' +
@@ -41345,19 +41360,42 @@ function _stiliMacchiaHTML(it) {
           '<input type="radio" name="' + nome + '" value="' + s.k + '"' + (_stileMacchia(carosello) === s.k ? ' checked' : '') + '>' +
           '<strong style="color:var(--warn);">' + s.k + '</strong> ' + esc(it ? s.it : s.en) + '</span></label>';
     }).join('') + '</div>';
-  return '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🎨 ' + (it ? 'Stile della macchia' : 'Watermark style') + '</h4>' +
+  return '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">🎨 ' + (it ? 'Stile della macchia' : 'Watermark style') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it ? 'Uno stile per le foto e uno per i caroselli: valgono per le tipologie che nella tabella dicono «come le altre». Gli esempi sono veri, una figurina e un retro: è come Cloudinary darà la foto a chi visita il sito.'
           : 'One style for photos and one for carousels. The examples are real.') + '</p>' +
-    '<div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:0.4rem;">' + (it ? 'Nelle foto' : 'In photos') + '</div>' + fila('prot-stile', false) +
-    '<div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:0.4rem;">' + (it ? 'Nei caroselli' : 'In carousels') + '</div>' + fila('prot-stileCar', true);
+    '<div style="font-size:0.9rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">' + (it ? 'Nelle foto' : 'In photos') + '</div>' + fila('prot-stile', false) +
+    '<div style="font-size:0.9rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">' + (it ? 'Nei caroselli' : 'In carousels') + '</div>' + fila('prot-stileCar', true) +
+    _filaPagineHTML(it, figs);
+}
+// 🆕 v7.176 (Franco: «gestire a parte le pagine grandi, come la funzione sfoglia album … una terza sezione») - lo stile
+//    delle PAGINE degli album protetti, dovunque compaiano; la prima scelta lascia le pagine come prima (lo stile della
+//    riga «Album», o quello generale). L'esempio è una pagina vera, alla misura di «Sfoglia album».
+function _filaPagineHTML(it, figs) {
+  let pag = null;
+  for (const a of figs) {
+    if (a.section !== 'albums') continue;
+    const p = _pagineDaMostrare(a).find(x => x.url && /cloudinary\.com/.test(x.url));
+    if (p) { pag = p.url; break; }
+  }
+  const v = _PROTEZIONE_CFG.stilePag || '';
+  const scatola = (val, foto, testo) => '<label style="display:flex;flex-direction:column;align-items:center;gap:0.35rem;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.5rem;min-width:0;">' + foto +
+    '<span style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--text);text-align:center;">' +
+      '<input type="radio" name="prot-stilePag" value="' + val + '"' + (v === val ? ' checked' : '') + '>' + testo + '</span></label>';
+  const img = s => pag ? '<img src="' + esc(pag.replace('/upload/', '/upload/w_1600,h_1600,c_fit/' + _trasfMacchia(s, 1600) + 'w_700,q_auto,f_auto/')) + '" alt="" loading="lazy" style="width:100%;aspect-ratio:1.4;object-fit:contain;background:#000;border-radius:6px;min-width:0;">' : '';
+  return '<div style="font-size:0.9rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">' + (it ? 'Nelle pagine degli album' : 'In album pages') + '</div>' +
+    '<p style="font-size:0.8rem;color:var(--text);margin:0 0 0.5rem;">' + (it ? 'Vale per le pagine degli album protetti, in «Sfoglia album» e dovunque compaiano.' : 'For the pages of protected albums, wherever they appear.') + '</p>' +
+    '<div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:0.7rem;margin-bottom:1rem;">' +
+      scatola('', '', esc(it ? 'Come la riga «Album» della tabella' : 'Like the «Album» row of the table')) +
+      STILI_MACCHIA.map(s => scatola(s.k, img(s.k), '<strong style="color:var(--warn);">' + s.k + '</strong> ' + esc(it ? s.it : s.en))).join('') +
+    '</div>';
 }
 async function salvaProtezioneTDA() {
   if (!currentUser?.isAdmin) return;
   const it = currentLang === 'it';
   const voci = {};
   // v7.121: i due stili della macchia
-  ['stile', 'stileCar'].forEach(k => { const r = document.querySelector('#admin-protezione-tda input[name="prot-' + k + '"]:checked'); if (r) voci[k] = r.value; });
+  ['stile', 'stileCar', 'stilePag' /* v7.176 */].forEach(k => { const r = document.querySelector('#admin-protezione-tda input[name="prot-' + k + '"]:checked'); if (r) voci[k] = r.value; });
   // v7.127: lo stile per tipologia
   // 🔄 v7.128 - anche «come le altre», scritto vuoto: il salvataggio fa il merge, e una chiave tolta da `voci` restava
   //    sul server con lo stile di prima
@@ -65127,7 +65165,16 @@ function chiudiSfogliaAlbum() {
 function _sfogliaTasti(ev) {
   if (ev.key === 'ArrowRight' || ev.key === ' ') { ev.preventDefault(); sfogliaVai(1); }
   else if (ev.key === 'ArrowLeft') { ev.preventDefault(); sfogliaVai(-1); }
+  else if (ev.key === 'Home') { ev.preventDefault(); sfogliaVaiA(0); }   // v7.176
+  else if (ev.key === 'End') { ev.preventDefault(); sfogliaVaiA(-1); }
   else if (ev.key === 'Escape') chiudiSfogliaAlbum();
+}
+// 🆕 v7.176 (Franco: «non si può andare direttamente alla prima o ultima pagina») - 0 = la prima, -1 = l'ultima
+function sfogliaVaiA(i) {
+  const n = _sfogliaPagine.length;
+  if (!n) return;
+  _sfogliaQui = i < 0 ? n - 1 : Math.min(i, n - 1);
+  _disegnaSfoglia();
 }
 
 // ⚠️ NON si gira in tondo: dall'ultima pagina la freccia avanti non riporta alla prima. Un
@@ -65154,6 +65201,10 @@ function _disegnaSfoglia() {
   //    la riga, e a schermo pieno lo si nota.
   if (pre) pre.disabled = _sfogliaQui === 0;
   if (suc) suc.disabled = _sfogliaQui >= n - 1;
+  // v7.176 - e la prima e l'ultima pagina, con le stesse regole
+  const prima = document.getElementById('sfoglia-album-prima'), ultima = document.getElementById('sfoglia-album-ultima');
+  if (prima) prima.disabled = _sfogliaQui === 0;
+  if (ultima) ultima.disabled = _sfogliaQui >= n - 1;
   // 📌 Si precarica la pagina dopo: sfogliando, l'attesa si sente tutta.
   if (_sfogliaQui + 1 < n) {
     const p = new Image();
@@ -67434,7 +67485,7 @@ async function saveFigFromDetail(figId, opzioni) {
     const _extra = _propagati
       ? (currentLang==='it' ? ` — aggiornati anche ${_propagati} collegat${_propagati===1?'o':'i'}` : ` — ${_propagati} linked item${_propagati===1?'':'s'} updated too`)
       : '';
-    toast((currentLang==='it'?`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} salvat${savedLabel.endsWith('a')?'a':'o'}!`:`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} saved !`) + _extra, 'success', null, _propagati ? 6000 : 3500);
+    toast((currentLang==='it'?`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} salvat${savedLabel.endsWith('a')?'a':'o'}!`:`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} saved !`) + _extra, 'success', 'alto', _propagati ? 6000 : 3500);   // v7.176 (Franco: «appare proprio al centro; sarebbe meglio averlo più in alto»): come la copia (v6.971)
     // v6.104 (§12.1) - CREAZIONE: tre cose che la modifica non ha bisogno di fare.
     // La terza e' quella che conta. Con "Salva e resta" la scheda rimane aperta, e i due pulsanti
     // portano l'id in `data-fig-id`: se restassero sull'id vuoto della bozza, il secondo Salva
