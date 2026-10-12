@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.174">
+<link rel="stylesheet" href="css/style.css?v=7.175">
 
 
 <style>
@@ -5166,18 +5166,22 @@ di tutte le serie</button>
                collega anche al suo gemello. Il legame vale nei due sensi (`saveSeries` lo scrive su tutte e due).
                «Allinea i personaggi» fa una volta sola, per tutte le coppie, quello che il «Salva» fa da qui in
                poi (`allineaPersonaggiGemella`). -->
-          <div id="series-gemella-group" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;font-size:0.88rem;margin-top:0.35rem;">
-            <label for="series-gemella-input" class="form-label" style="margin:0;">Serie gemella</label>
-            <select id="series-gemella-input" class="form-input" style="max-width:260px;padding:0.25rem 0.5rem;font-size:0.85rem;"></select>
+          <!-- 🔄 v7.175 (Franco: «difficoltà a selezionare la serie … da telefonino usando la versione desktop»; «quello che
+               usiamo nelle finestre di import dati») - la tendina come quella dell'import: `form-select` a tutta
+               larghezza, su una riga sua, e il tasto sotto -->
+          <div id="series-gemella-group" style="font-size:0.88rem;margin-top:0.6rem;">
+            <label for="series-gemella-input" class="form-label">Serie gemella</label>
+            <select id="series-gemella-input" class="form-select" style="margin-bottom:0.5rem;"></select>
             <button type="button" class="btn-primary btn-admin admin-anche-telefono" id="series-gemella-allinea-btn" onclick="allineaPersonaggiGemella()" style="padding:0.25rem 0.8rem;font-size:0.8rem;">Allinea i personaggi</button>
           </div>
           <!-- 🆕 v7.123 (Franco: «le serie Mega 1 e 2 non sono gemelle: condividono solo lo stesso set di 37 retro»; «come
                possiamo fare per evitare di censire 37 foto di retro due volte?») - I RETRO IN COMUNE. Solo i retro: la foto
                caricata su un retro va anche sul retro con lo stesso nome dell'altra serie (`_propagaFotoRetroCondiviso`);
                «Allinea le foto dei retro» copia quelle già caricate dove l'altro lato è vuoto. Bidirezionale come la gemella. -->
-          <div id="series-retro-condivisi-group" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;font-size:0.88rem;margin-top:0.35rem;">
-            <label for="series-retro-condivisi-input" class="form-label" style="margin:0;">Retro in comune con</label>
-            <select id="series-retro-condivisi-input" class="form-input" style="max-width:260px;padding:0.25rem 0.5rem;font-size:0.85rem;"></select>
+          <!-- 🔄 v7.175 - come la gemella qui sopra -->
+          <div id="series-retro-condivisi-group" style="font-size:0.88rem;margin-top:0.6rem;">
+            <label for="series-retro-condivisi-input" class="form-label">Retro in comune con</label>
+            <select id="series-retro-condivisi-input" class="form-select" style="margin-bottom:0.5rem;"></select>
             <button type="button" class="btn-primary btn-admin admin-anche-telefono" id="series-retro-condivisi-allinea-btn" onclick="allineaFotoRetroCondivisi()" style="padding:0.25rem 0.8rem;font-size:0.8rem;">Allinea le foto dei retro</button>
           </div>
           <!-- 🆕 v6.369 (Franco: *"i campi «Senza numeri» e «Serie contenitore» mettili SOPRA il
@@ -6614,7 +6618,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.174"></script>
+<script src="js/app.js?v=7.175"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6638,7 +6642,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.174'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.175'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
