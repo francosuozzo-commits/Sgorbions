@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.180">
+<link rel="stylesheet" href="css/style.css?v=7.181">
 
 
 <style>
@@ -3491,6 +3491,12 @@ di tutte le serie</button>
           <div id="items-collection-box-label" style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);">Filtri legati alla tua lista</div>
           <div id="items-owned-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
         </div>
+        <!-- 🆕 v7.181 (Franco) - il riquadro «Ristampe», per tutti: solo fra le figurine per album di una serie con
+             la spunta «Ha ristampe». Lo riempie `renderItemTypeFilters`. -->
+        <div id="items-ristampe-box" style="display:none;position:relative;margin-top:0.95rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">
+          <div id="items-ristampe-box-label" style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);">Ristampe</div>
+          <div id="items-ristampe-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:center;"></div>
+        </div>
         <div id="items-admin-filters" style="display:none;position:relative;margin-top:0.95rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">
           <!-- 🆕 v6.730 (Franco) - IL BOX DEI FILTRI ADMIN SI CHIUDE. L'etichetta sul bordo
                diventa la testata premibile, con il triangolino degli altri riquadri.
@@ -5283,6 +5289,12 @@ di tutte le serie</button>
             <input type="checkbox" id="series-abilita-modifica-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
             <span data-i18n="form.series.abilitaModifica">Abilita modifica figurine per album</span>
           </label>
+          <!-- 🆕 v7.181 (Franco) - «Ha ristampe»: accende il campo «Ristampa» sulle figurine per album della
+               serie e il riquadro «Ristampe» nella ricerca. Nasce spenta su ogni serie. -->
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-ha-ristampe-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span data-i18n="form.series.haRistampe">Ha ristampe</span>
+          </label>
             <!-- 🆕 v6.837 (Franco) - LE FAMIGLIE DELLA SERIE, una per riga. Sono i valori fra cui si sceglie la
                «Famiglia» delle figurine con retro e per album. Sta nel tab Generale e non in Sottoserie
                (Franco: «quel tab si vede solo se la serie ha sottoserie, e le famiglie non sono sottoserie»). -->
@@ -6670,7 +6682,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.180"></script>
+<script src="js/app.js?v=7.181"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6694,7 +6706,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.180'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.181'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
