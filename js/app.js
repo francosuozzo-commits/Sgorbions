@@ -1,7 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.180 - Modificati js/app.js e index.html (per la versione). Card della griglia (Franco: «il commento fisso … non è in
+// v7.181 - Modificati js/app.js e index.html. LE RISTAMPE (Franco: «ok per le ristampe»): spunta «Ha ristampe» sulla
+//          serie (`haRistampe`, tab Generale); campo «Ristampa» (`ristampa`: true / false, assente = non detto) sulle
+//          fpa delle serie con la spunta, nella scheda per tutti e in modifica una tendina «— / Sì / No»
+//          (`_conRistampa`); riquadro «Ristampe» nella ricerca della sezione, per tutti, «Tutte / Solo ristampe /
+//          Solo originali» (`_ristampaFilter`, in `_FILTRI`; «Tutte» non conta fra gli accesi, `data-bm-neutro`).
+// v7.180 -Modificati js/app.js e index.html (per la versione). Card della griglia (Franco: «il commento fisso … non è in
 //          riga 1; vedo che a volte c'è il numero della versione … spostiamolo sulla (fine) della riga dove c'è il numero
 //          della figurina (o dove c'è il nome, per le serie senza numero)»): `_contrassegnoVariazioneHTML` torna il solo
 //          pallino in linea, e la card lo mette in coda al numero o, senza numero, al nome. Niente più riga sua.
@@ -31254,7 +31259,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.180';
+const JS_VERSION = 'v7.181';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33084,7 +33089,7 @@ const i18n = {
 'modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','modal.series.delete':'Delete series',
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
-'form.series.hasSizes':'Album stickers differ from the ones with backs','form.series.abilitaModifica':'Enable editing of album stickers','form.series.hasSubseries':'Has subseries',
+'form.series.hasSizes':'Album stickers differ from the ones with backs','form.series.abilitaModifica':'Enable editing of album stickers','form.series.haRistampe':'Has reprints','form.series.hasSubseries':'Has subseries',
 'form.series.hasVariations':'Official variations','form.series.hasUnofficialVariations':'Unofficial variations','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.countRetroChange':'No. of Change','form.series.descPlaceholder':'Describe this series...','form.series.sottoserie':'Subseries','form.series.sottoserieHint':'One row per subseries, with its photo. The ORDER matters: it is the order the subseries will appear in. A subseries written on an item but not listed here does not disappear: it shows up last.',
 'form.fig.subseries':'Subseries',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
@@ -33179,7 +33184,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità ai risultati','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Export liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli articoli non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista articoli non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista articoli non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine per album diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine per album','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Variazioni ufficiali','form.series.hasUnofficialVariations':'Variazioni non ufficiali','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change','form.series.countRetroChange':'N. change','form.series.descPlaceholder':'Descrivi questa serie...','form.series.sottoserie':'Sottoserie','form.series.sottoserieHint':'Una riga per sottoserie, con la sua foto. L\'ORDINE conta: è l\'ordine con cui le sottoserie si vedranno. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','admin.catalogo':'Catalogo','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine per album diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine per album','form.series.haRistampe':'Ha ristampe','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Variazioni ufficiali','form.series.hasUnofficialVariations':'Variazioni non ufficiali','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change','form.series.countRetroChange':'N. change','form.series.descPlaceholder':'Descrivi questa serie...','form.series.sottoserie':'Sottoserie','form.series.sottoserieHint':'Una riga per sottoserie, con la sua foto. L\'ORDINE conta: è l\'ordine con cui le sottoserie si vedranno. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','admin.catalogo':'Catalogo','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -33477,6 +33482,7 @@ let _senzaPersonaggioFilter = false;   // v6.980
 //    niente da rivedere - si rivede la base.
 let _conNomiAlternativiFilter = false;   // v6.987
 let _conCommentoFilter = false;   // v7.179 - «Con commento album», fpa e fcr
+let _ristampaFilter = 'tutte';    // v7.181 - riquadro «Ristampe»: 'tutte' | 'ristampe' | 'originali'
 // 🆕 v6.992 (Franco: «un campo per la ricerca admin che trovi gli articoli con questo campo
 //    popolato; chiamalo "Con Nome carosello mobile alterato"») - gemello di quello sopra: il
 //    campo `nomeCaroselloMobile` scritto SULL'ARTICOLO, non quello preso dalla base.
@@ -38486,6 +38492,7 @@ function _ripristinaFlagSerie(s) {
   _aggiornaCasellaSottoserie();   // v6.650 - dopo la spunta, o leggerebbe quella di prima
   spunta('series-has-sizes-input',                 s && s.hasSizes);
   spunta('series-abilita-modifica-input',          s && s.abilitaModifica); // v6.366         // v6.169
+  spunta('series-ha-ristampe-input',               s && s.haRistampe);      // v7.181
   spunta('series-has-variations-input',            _spuntaVersioneSerie(s, 'figurines', 'variation'));    // v6.169
   // 🔴 v6.219 - IL FLAG NUOVO, E QUESTA E' LA RIGA PIU' IMPORTANTE DELLA RELEASE. Senza, la
   // casella si aprirebbe sempre spenta, `saveSeries` la leggerebbe e scriverebbe `false`: il
@@ -39117,6 +39124,7 @@ async function saveSeries() {
   const year = document.getElementById('series-year-input').value;
   const hasSizes = document.getElementById('series-has-sizes-input').checked;
   const abilitaModifica = document.getElementById('series-abilita-modifica-input').checked; // v6.366
+  const haRistampe = document.getElementById('series-ha-ristampe-input').checked; // v7.181
   // v6.162 - le colonne della griglia. Vuoto -> `null`, che e' "non deciso": zero direbbe "nessuna
   // colonna", ed e' un'altra cosa.
   // v6.163 - dieci campi (cinque sezioni x due) in un oggetto solo. Dove il campo e' vuoto o storto
@@ -39361,7 +39369,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, haRistampe /* v7.181 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -39383,7 +39391,7 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, haRistampe /* v7.181 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -53426,6 +53434,12 @@ function toggleConCommentoFilter() {
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (toggleConCommentoFilter)', e); }
 }
+// 🆕 v7.181 - il riquadro «Ristampe»: tre voci che si escludono, «Tutte» è il filtro spento
+function setRistampaFilter(v) {
+  _ristampaFilter = v;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (setRistampaFilter)', e); }
+}
 // 🆕 v6.992 - «Con Nome carosello mobile alterato», copiato da «Con nomi alternativi»
 function toggleConNomeCaroselloFilter() {
   _conNomeCaroselloFilter = !_conNomeCaroselloFilter;
@@ -53742,6 +53756,22 @@ function renderItemTypeFilters() {
     const _colBox = document.getElementById('items-collection-box');
     if (_colBox) _colBox.style.display = currentUser ? '' : 'none';
   }
+  // 🆕 v7.181 (Franco) - IL RIQUADRO «Ristampe», per tutti: solo fra le figurine per album di una serie con la spunta.
+  //    «Tutte» porta `data-bm-neutro`, così la barra non la conta fra i filtri accesi.
+  const _rsBox = document.getElementById('items-ristampe-box');
+  const _rsT = document.getElementById('items-ristampe-toggles');
+  if (_rsBox && _rsT) {
+    const _rsSi = currentSection === 'attaccare' && _serieHaRistampe(currentSeriesId);
+    if (!_rsSi) _ristampaFilter = 'tutte';
+    const itl = (currentLang === 'it');
+    const _rsLbl = document.getElementById('items-ristampe-box-label');
+    if (_rsLbl) _rsLbl.textContent = itl ? 'Ristampe' : 'Reprints';
+    const _rsVoce = (v, label) => `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_ristampaFilter === v ? 'on' : ''}"${v === 'tutte' ? ' data-bm-neutro="1"' : ''} onclick="setRistampaFilter('${v}')" title="${label}"></button><span style="font-size:0.82rem;color:var(--text);">${label}</span></div>`;
+    _rsT.innerHTML = _rsSi ? _rsVoce('tutte', itl ? 'Tutte' : 'All')
+      + _rsVoce('ristampe', itl ? 'Solo ristampe' : 'Reprints only')
+      + _rsVoce('originali', itl ? 'Solo originali' : 'Originals only') : '';
+    _rsBox.style.display = _rsSi ? '' : 'none';
+  }
   const introEl = document.getElementById('items-filter-intro');
   if (introEl) {
     introEl.style.display = 'flex';
@@ -53751,6 +53781,7 @@ function renderItemTypeFilters() {
   // 🆕 v7.000 - «Filtri legati alla tua lista» e «Filtri aggiuntivi admin» diventano barre
   _bmApplica(document.getElementById('items-collection-box'), 'lista');
   _bmApplica(document.getElementById('items-admin-filters'), 'admin');
+  _bmApplica(document.getElementById('items-ristampe-box'), 'ristampe');   // v7.181
 }
 
 // Usata dalla modalità "Fronte e retro sempre grandi": aspetta di conoscere
@@ -54198,6 +54229,8 @@ const _FILTRI = [
                                   acceso: () => _conNomiAlternativiFilter },
   { nome: 'con commento album',   azzera: () => { _conCommentoFilter = false; },   // v7.179
                                   acceso: () => _conCommentoFilter },
+  { nome: 'ristampe',             azzera: () => { _ristampaFilter = 'tutte'; },   // v7.181
+                                  acceso: () => _ristampaFilter !== 'tutte' },
   { nome: 'con nome carosello',   azzera: () => { _conNomeCaroselloFilter = false; },   // v6.992
                                   acceso: () => _conNomeCaroselloFilter },
   { nome: 'visibilita',           azzera: () => { _visibilitaFilter = 'all'; },
@@ -54503,6 +54536,9 @@ function getCurrentlyFilteredItems(opts) {
       if (hasOfficialVariation) return false;
     }
     if (_ebayFilter && !f.forSale) return false;
+    // 🆕 v7.181 - il riquadro «Ristampe»: «Solo originali» sono quelle dette «No», non quelle senza risposta
+    if (_ristampaFilter === 'ristampe' && !(_conRistampa(f) && f.ristampa === true)) return false;
+    if (_ristampaFilter === 'originali' && !(_conRistampa(f) && f.ristampa === false)) return false;
     if (_skipSearch || !searchQ) return true;
     // v6.049 - `subname` esplicito: ci si arrivava gia' attraverso il Nome completo, ma quello e'
     // un campo SALVATO che puo' restare indietro rispetto ai dati (§13). Un campo cercato
@@ -55865,7 +55901,7 @@ function _bmApplica(box, chiave) {
   const tit = String(et ? et.textContent : '').replace(/[▶▼▲▸▾►]/g, '').replace(/\(\s*\d+\s*(totali|total)\s*\)/i, '').replace(/\s+/g, ' ').trim();
   const vecchia = box.querySelector(':scope > .bm-barra');
   if (vecchia) vecchia.remove();
-  const accese = box.querySelectorAll('.toggle-btn-blue.on').length + box.querySelectorAll('span[style*="background:var(--accent)"]').length;
+  const accese = box.querySelectorAll('.toggle-btn-blue.on:not([data-bm-neutro])').length + box.querySelectorAll('span[style*="background:var(--accent)"]').length;
   box.classList.add('bm-box');
   box.dataset.bmChiave = chiave;
   box.classList.toggle('bm-aperto', !!_bmAperti[chiave]);
@@ -60331,6 +60367,15 @@ function _daAttaccareModificaVietata(f) {
   const s = getData('series', []).find(x => x.id === f.seriesId);
   return !(s && s.abilitaModifica);
 }
+// 🆕 v7.181 (Franco) - LE RISTAMPE. Il campo «Ristampa» (`ristampa`: true / false, assente = non detto) vive solo
+//    sulle figurine per album delle serie con la spunta «Ha ristampe»; lo vedono tutti, lo cambia l'admin.
+function _serieHaRistampe(seriesId) {
+  const s = getData('series', []).find(x => x.id === seriesId);
+  return !!(s && s.haRistampe);
+}
+function _conRistampa(f) {
+  return !!f && f.section === 'attaccare' && _serieHaRistampe(f.seriesId);
+}
 // 🆕 v7.178 (Franco: «mostrare il campo "Commento album" quando si fa mouse over sulle card di una fpa / fcr»; «anche
 //    nelle versioni non base»; «nella VT delle fcr … tra la foto e il numero») - chi dice il commento di un articolo.
 //    Sta sulla fpa; la fcr lo prende dalla fpa collegata (`baseFigurineId`), e una variazione, un change, un errore o
@@ -60909,6 +60954,11 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     if (f.commentoAlbum || isAdmin) {
       (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Commento album' : 'Album note')}</span><span class="detail-value">${esc(f.commentoAlbum || '')}</span></div>`);
     }
+  }
+  // 🆕 v7.181 - «Ristampa», per tutti; dove non è detto lo vede solo l'admin (col trattino)
+  if (_conRistampa(f) && (typeof f.ristampa === 'boolean' || isAdmin)) {
+    const _rs = f.ristampa === true ? (currentLang === 'it' ? 'Sì' : 'Yes') : f.ristampa === false ? 'No' : '—';
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Ristampa' : 'Reprint')}</span><span class="detail-value">${_rs}</span></div>`);
   }
   if (f.section === 'retros' || _eProdottoExtraSerie(f)) {
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Categoria' : 'Category')}</span><span class="detail-value">${f.category ? esc(f.category) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostata' : 'not set') + '</span>'}</span></div>`);
@@ -63915,6 +63965,13 @@ function switchToEditMode(figId) {
   }
   if (f.section === 'attaccare') {
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Commento album':'Album note') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-commento-album" value="' + esc(f.commentoAlbum || '') + '"></span></div>';
+  }
+  // 🆕 v7.181 - «Ristampa», stessa condizione della scheda in lettura
+  if (_conRistampa(f)) {
+    const _rv = f.ristampa === true ? 'si' : f.ristampa === false ? 'no' : '';
+    const _ro = (v, t) => '<option value="' + v + '"' + (v === _rv ? ' selected' : '') + '>' + t + '</option>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Ristampa':'Reprint') + '</span><span class="detail-value"><select class="form-select" id="fe-ristampa">'
+      + _ro('', '—') + _ro('si', currentLang==='it' ? 'Sì' : 'Yes') + _ro('no', 'No') + '</select></span></div>';
   }
 
   // Nome
@@ -67320,6 +67377,9 @@ async function saveFigFromDetail(figId, opzioni) {
         ? (document.getElementById('fe-famiglia').value || '').trim()
         : (existingForCheck?.famiglia || '')),
       commentoAlbum: document.getElementById('fe-commento-album')?.value.trim() || '',
+      // 🆕 v7.181 - «Ristampa». Solo se la tendina c'e': altrove la chiave non si scrive (come qui sotto).
+      ...(document.getElementById('fe-ristampa')
+            ? { ristampa: ({ si: true, no: false })[document.getElementById('fe-ristampa').value] ?? null } : {}),
       // 🆕 v6.969 - «Foto dall'album». Solo se la tendina c'e' (album): altrove la chiave non si
       //    scrive, cosi' un salvataggio da un'altra tipologia non tocca niente.
       ...(document.getElementById('fe-foto-da-album')
