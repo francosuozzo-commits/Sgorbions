@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.181">
+<link rel="stylesheet" href="css/style.css?v=7.182">
 
 
 <style>
@@ -4032,6 +4032,9 @@ di tutte le serie</button>
                tenuti d'occhio: sono l'unica cosa nel sito che esiste ma non si vede, e senza un
                posto dove guardarli si dimenticano. -->
           <button class="admin-tab" onclick="adminTab('figurine')">🫥 Figurine</button>
+          <!-- 🆕 v7.182 (Franco: «fai una nuova sezione nella admin console, dedicata allo scopo») - in ordine alfabetico
+               fra Figurine e Funzioni -->
+          <button class="admin-tab" onclick="adminTab('fotoannuncio')">📸 Foto annuncio</button>
           <button class="admin-tab" onclick="adminTab('funzioni')" data-i18n="admin.funzioni">Funzioni</button>
           <button class="admin-tab" onclick="adminTab('gsc')">🔍 Google Search Console</button>
           <button class="admin-tab" onclick="adminTab('griglie')">&#128208; Griglie</button>
@@ -4376,6 +4379,10 @@ di tutte le serie</button>
         <!-- 🆕 v7.170 - LA SEZIONE «AGGIORNAMENTI MASSIVI»: la disegna `renderAdminAggiornamenti` -->
         <div id="admin-aggiornamenti" class="admin-section">
           <div><div id="admin-aggiornamenti-box"></div></div>
+        </div>
+        <!-- 🆕 v7.182 - LA SEZIONE «FOTO ANNUNCIO»: la disegna `renderAdminFotoAnnuncio`, lo strumento si apre in una finestra sua -->
+        <div id="admin-fotoannuncio" class="admin-section">
+          <div><div id="admin-fotoannuncio-box"></div></div>
         </div>
         <div id="admin-caroselli" class="admin-section">
           <div><div id="admin-caroselli-tda"></div></div>
@@ -6682,7 +6689,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.181"></script>
+<script src="js/app.js?v=7.182"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6706,7 +6713,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.181'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.182'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
