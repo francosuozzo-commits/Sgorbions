@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.182 - Modificati js/app.js e index.html. FOTO ANNUNCIO (Franco: «fai una nuova sezione nella admin console, dedicata
+//          allo scopo … si apre in una nuova finestra»): tab «📸 Foto annuncio» col pulsante «Apri», che apre una finestra
+//          (`_faApri`). Scelti album e sito (eBay 24, Vinted 20; Subito spento), le foto delle pagine caricate si mettono
+//          in ordine e nel verso giusto confrontandole con le pagine del sito, si ritagliano dello sfondo in più e si
+//          uniscono secondo `_faPiano` (copertina e retro sole, pagina 1 sola, coppie dalla 2). Si scaricano e basta.
+//          Poi, provandola (Franco): «Usa le foto del sito» (le pagine già in ordine, foto pronte subito); i numeri
+//          stampati delle facciate (`_faNomePagina`, «II cop. + pag. 1», «pagg. 2–3», …; serie 3 fino a «64–65»);
+//          la firma senza colori (luce e contorni 45×60: la serie 3 ha sei edizioni di colori diversi); le foto
+//          ritagliate su una facciata sola confrontate anche con le mezze pagine e riallargate (`_faCorreggiForma`);
+//          margine del 5%; ◀ ▶ ai lati della pagina aperta e della foto ingrandita, frecce e Esc; zoom della pagina
+//          (fino a 4×) e delle miniature; didascalie su due righe; «Scarica tutte» fa un file .zip solo (`_faZip`).
 // v7.181 - Modificati js/app.js e index.html. LE RISTAMPE (Franco: «ok per le ristampe»): spunta «Ha ristampe» sulla
 //          serie (`haRistampe`, tab Generale); campo «Ristampa» (`ristampa`: true / false, assente = non detto) sulle
 //          fpa delle serie con la spunta, nella scheda per tutti e in modifica una tendina «— / Sì / No»
@@ -31259,7 +31270,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.181';
+const JS_VERSION = 'v7.182';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40841,6 +40852,773 @@ function renderAdminQuestionario() {
       '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaQuestionario()">' + (it ? 'Salva il questionario' : 'Save questionnaire') + '</button>' +
     '</div>';
 }
+// 🆕 v7.182 (Franco: «spostiamoci nel sito; fai una nuova sezione nella admin console, dedicata allo scopo e lavoriamo da
+//    li; metti un bottone … e si apre … in una nuova finestra») - IL TAB «📸 FOTO ANNUNCIO». Dalle foto delle pagine di
+//    un album, scattate da Franco, le foto per un annuncio: in ordine di pagina, girate nel verso giusto, senza lo sfondo
+//    in più, e unite quando il sito dell'annuncio non ne accetta abbastanza. Si scaricano e basta: sul sito non si scrive
+//    niente (Franco: «le immagini che produciamo con questo processo sono usa e getta: le scarico io nel pc»).
+//    📌 I LIMITI (Franco): eBay 24 foto, Vinted 20, Subito 6. Copertina e retro sempre da sole; se le pagine interne non
+//       ci stanno, la pagina 1 resta da sola (Franco: «metti la pagina numero 1, da sola, non la ultima») e dalla 2 si
+//       uniscono a coppie, a quattro solo se le coppie non bastano (`_faPiano`). Subito è spento: lì nessun album ci sta
+//       (Franco: «credo sia meglio saltare delle pagine»), e quali saltare si decide dopo.
+//    📌 LA PAGINA SI RICONOSCE DALLE FOTO DEL SITO: le `pagine` dell'album, la prima è la copertina e l'ultima il retro.
+//       Una firma 30×40 a colori di ogni foto, confrontata nei quattro versi con quelle delle pagine: la più simile dice
+//       la pagina e il verso. Provata il 14 ottobre sui cinque album, con le foto del sito girate a caso su un finto
+//       tavolo: 135 su 135 (con la firma 18×24 erano 25 su 27).
+//    📌 LA FINESTRA NASCE VUOTA E LA RIEMPIE QUESTO FILE (`_faApri`): nessuna pagina in più da pubblicare, e gli album
+//       sono quelli già in memoria. Ha la stessa origine del sito, quindi i suoi elementi li toccano queste funzioni.
+//    ⚠️ Lo sfondo si toglie solo se il bordo della foto è quasi tutto di un colore: se l'album arriva al bordo, la foto si
+//       tiene intera. Si raddrizzano i quarti di giro, non le foto prese di sbieco.
+const _FA_SITI = [
+  { nome: 'eBay', limite: 24 },
+  { nome: 'Vinted', limite: 20 },
+  { nome: 'Subito', limite: 6, spento: true },
+];
+let _fa = null;   // lo stato della finestra aperta: { w, album, sito, foto, rif, uscite }
+function renderAdminFotoAnnuncio() {
+  const box = document.getElementById('admin-fotoannuncio-box');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const n = _faAlbum().length;
+  box.innerHTML =
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">📸 ' + (it ? 'Foto annuncio' : 'Listing photos') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it
+        ? 'Dalle foto delle pagine di un album, le foto per un annuncio su eBay o Vinted: in ordine di pagina, girate nel verso giusto, ' +
+          'senza lo sfondo in più e unite a due (o a quattro) quando le pagine sono più delle foto che il sito accetta.<br>' +
+          'Le foto si scaricano e basta: sul sito non si salva niente. Album con le pagine: <strong>' + n + '</strong>.'
+        : 'Listing photos for eBay or Vinted from the photos of an album\'s pages. Nothing is saved on the site. Albums with pages: <strong>' + n + '</strong>.') +
+    '</p>' +
+    '<button class="btn-primary btn-admin" onclick="_faApri()">' + (it ? '📸 Apri' : '📸 Open') + '</button>';
+}
+// Gli album che hanno le pagine. Due album con le stesse foto (l'Omaggio e il L. 1000 della serie 3) sono uno solo.
+function _faAlbum() {
+  const visti = new Set(), out = [];
+  getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999)).forEach(s => {
+    (s.items || []).forEach(f => {
+      if (f.section !== 'albums' || !Array.isArray(f.pagine) || f.pagine.length < 3) return;
+      const pagine = f.pagine.map(p => p && p.url).filter(Boolean);
+      const chiave = pagine.join(' ');
+      if (pagine.length < 3 || visti.has(chiave)) return;
+      visti.add(chiave);
+      const nome = s.name + ' — ' + (f.name || '');
+      out.push({ nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine });
+    });
+  });
+  return out;
+}
+// 🔄 v7.182 (Franco: «vorrei leggere anche i numeri pagina (reali) dell'album») - ogni foto del sito è l'album APERTO,
+//    cioè due facciate, e il nome dice i numeri stampati. Letti sulle foto, il 14 ottobre: la seconda foto interna è
+//    «2 | 3» in tutti e cinque gli album, l'ultima interna ha a sinistra 32 (serie 1, Holidays) o 48 (Mitici) e a
+//    destra la terza di copertina. Quindi la prima interna è seconda di copertina + 1, la k-esima 2k-2 | 2k-1, l'ultima
+//    il suo numero + terza di copertina.
+// ⚠️ Fa eccezione la serie 3: lì l'ultima foto interna è «64 | 65», tutte e due numerate (letta il 15 ottobre). La si
+//    riconosce dalla prima foto delle pagine, che è la stessa per il L. 1000 e per l'Omaggio.
+const _FA_ULTIMA_NUMERATA = ['glmffpv1aenad1tgpxuk'];
+function _faNomePagina(i, N, album) {
+  if (i === 0) return 'Copertina';
+  if (i === N - 1) return 'Retro';
+  if (i === 1) return 'II cop. + pag. 1';
+  const alb = album || (typeof _fa !== 'undefined' && _fa ? _fa.album : null);
+  const ultimaNumerata = !!alb && _FA_ULTIMA_NUMERATA.some(id => String(alb.pagine[0]).includes(id));
+  if (i === N - 2 && !ultimaNumerata) return 'pag. ' + (2 * i - 2) + ' + III cop.';
+  return 'pagg. ' + (2 * i - 2) + '–' + (2 * i - 1);
+}
+// Quali pagine vanno nella stessa foto: un elenco di gruppi di indici, nell'ordine dell'album.
+function _faPiano(N, limite) {
+  const gruppi = [[0]], I = N - 2, S = limite - 2;
+  if (I <= S) for (let i = 1; i <= I; i++) gruppi.push([i]);
+  else {
+    gruppi.push([1]);
+    const resto = I - 1, posti = S - 1;
+    let q = 0, p, s;
+    for (;; q++) {
+      p = (resto - posti) - 3 * q; s = posti - p - q;
+      if (p >= 0 && s >= 0) break;
+      if (p < 0) { p = 0; s = posti - q; break; }
+    }
+    let k = 2;
+    for (let j = 0; j < q; j++) { gruppi.push([k, k + 1, k + 2, k + 3]); k += 4; }
+    for (let j = 0; j < p; j++) { gruppi.push([k, k + 1]); k += 2; }
+    while (k <= I) gruppi.push([k++]);
+  }
+  gruppi.push([N - 1]);
+  return gruppi;
+}
+function _faDescriviPiano(g) {
+  const c = { 1: 0, 2: 0, 4: 0 };
+  g.slice(1, -1).forEach(x => c[x.length]++);
+  const pezzi = [];
+  if (c[1]) pezzi.push(c[1] + (c[1] === 1 ? ' pagina da sola' : ' pagine da sole'));
+  if (c[2]) pezzi.push(c[2] + ' foto da 2 pagine');
+  if (c[4]) pezzi.push(c[4] + ' foto da 4 pagine');
+  return '<b>' + g.length + ' foto</b>: copertina, ' + pezzi.join(', ') + ', retro.';
+}
+
+const _FA_HTML = `<!doctype html><html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Foto annuncio</title><style>
+* { box-sizing:border-box; }
+body { margin:0; background:#f4f1ea; color:#222; font:15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width:1100px; margin:0 auto; padding:16px; }
+h1 { font-size:22px; margin:6px 0 4px; }
+.nota { color:#777; font-size:13px; }
+.passo { background:#fff; border:1px solid #ddd; border-radius:10px; padding:14px 16px; margin:14px 0; }
+.passo h2 { font-size:16px; margin:0 0 10px; }
+.scelte { display:flex; flex-wrap:wrap; gap:8px; }
+.scelte button, .btn { border:1px solid #ddd; background:#fafafa; border-radius:8px; padding:8px 14px; font:inherit; cursor:pointer; color:#222; }
+.scelte button.on, .btn.primario { background:#c0392b; border-color:#c0392b; color:#fff; }
+.scelte button:disabled, .btn:disabled { opacity:.45; cursor:not-allowed; }
+.griglia { display:grid; grid-template-columns:repeat(auto-fill, minmax(var(--mini, 140px), 1fr)); gap:12px; }
+.zoom { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#777; margin:8px 0; }
+.zoom button { border:1px solid #ddd; background:#fff; border-radius:6px; padding:2px 10px; cursor:pointer; font-size:15px; }
+.mini { border:1px solid #ddd; border-radius:8px; padding:6px; background:#fafafa; text-align:center; }
+.mini canvas { max-width:100%; height:calc(var(--mini, 140px) - 10px); object-fit:contain; display:block; margin:0 auto 6px; cursor:pointer; background:#eee; }
+.mini select { width:100%; font:inherit; font-size:13px; margin-bottom:4px; }
+.mini .riga { display:flex; gap:4px; justify-content:center; }
+.mini .riga button { border:1px solid #ddd; background:#fff; border-radius:6px; padding:2px 8px; cursor:pointer; font-size:15px; }
+.mini.dubbia { border-color:#e0a000; background:#fff8e1; }
+.avviso { background:#fff3cd; border:1px solid #e0c060; border-radius:8px; padding:8px 12px; margin:10px 0; font-size:14px; }
+.piano { font-size:14px; margin:6px 0 12px; }
+.risultati { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:12px; }
+.risultati figure { margin:0; background:#fafafa; border:1px solid #ddd; border-radius:8px; padding:6px; text-align:center; }
+.risultati img { max-width:100%; height:150px; object-fit:contain; display:block; margin:0 auto 4px; }
+.risultati figcaption { font-size:12px; color:#777; white-space:pre-line; }
+.risultati a { font-size:13px; color:#c0392b; }
+#stato { font-size:14px; color:#777; margin-top:8px; min-height:1.4em; }
+#editor { position:fixed; inset:0; background:rgba(0,0,0,.82); color:#fff; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:10; padding:16px; }
+#editor.aperto { display:flex; }
+#ed-scorri { max-width:calc(100vw - 150px); max-height:calc(100vh - 200px); overflow:auto; }
+.riga-fr { display:flex; align-items:center; gap:12px; max-width:100%; }
+.freccia { flex:none; width:48px; height:96px; font-size:26px; border:none; border-radius:10px; background:rgba(255,255,255,.88); color:#222; cursor:pointer; }
+.freccia:disabled { opacity:.25; cursor:default; }
+#editor canvas { display:block; touch-action:none; background:#333; }
+#editor .barra { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; justify-content:center; }
+#editor .barra .btn { background:#fff; }
+#editor .barra .btn.primario { background:#c0392b; }
+#editor p { color:#ddd; font-size:13px; margin:0 0 8px; text-align:center; }
+#vista { position:fixed; inset:0; background:rgba(0,0,0,.88); color:#fff; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:11; padding:16px; }
+#vista.aperto { display:flex; }
+#vista img { max-width:calc(100vw - 150px); max-height:calc(100vh - 120px); object-fit:contain; background:#fff; }
+#vista .barra { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; justify-content:center; }
+#vista .barra .btn { background:#fff; }
+#vista .barra .btn.primario { background:#c0392b; }
+.risultati img { cursor:zoom-in; }
+</style></head><body><main>
+<h1>📸 Foto annuncio</h1>
+<div class="nota">Le foto restano in questa finestra: sul sito non si salva niente.</div>
+<section class="passo"><h2>1. Quale album?</h2><div class="scelte" id="scelta-album"></div></section>
+<section class="passo"><h2>2. Per quale sito servono le foto?</h2><div class="scelte" id="scelta-sito"></div><div class="piano" id="piano"></div></section>
+<section class="passo"><h2>3. Le foto delle pagine</h2>
+  <div class="scelte">
+    <label class="btn primario">Carica le foto<input type="file" id="file" accept="image/*" multiple hidden></label>
+    <button class="btn" id="demo">Usa le foto del sito</button>
+  </div>
+  <div id="stato"></div><div id="avvisi"></div>
+  <div class="nota" id="spiega" style="display:none;margin:8px 0;">Le foto sono già in ordine di pagina, girate e ritagliate. Tocca una miniatura per correggere il ritaglio; con ⟲ ⟳ la giri; dal menu cambi la pagina (le due pagine si scambiano).</div>
+  <div class="zoom" id="zoom-mini" style="display:none;">🔍 Miniature <button id="mini-meno" title="Più piccole">−</button><button id="mini-piu" title="Più grandi">+</button></div>
+  <div class="griglia" id="miniature"></div>
+</section>
+<section class="passo"><h2>4. Le foto per l'annuncio</h2>
+  <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte (un file .zip)</button></div>
+  <div class="piano" id="piano2"></div><div class="risultati" id="risultati"></div>
+</section></main>
+<div id="editor"><p>Trascina i bordi del riquadro, oppure trascinalo da dentro per spostarlo.</p><div class="riga-fr"><button class="freccia" id="ed-prec" title="Pagina precedente (tasto ←)">◀</button><div id="ed-scorri"><canvas id="ed-tela"></canvas></div><button class="freccia" id="ed-succ" title="Pagina successiva (tasto →)">▶</button></div>
+  <div class="barra"><button class="btn" id="ed-meno" title="Rimpicciolisci (tasto −)">🔍 −</button><span id="ed-zoom" style="align-self:center;font-size:14px;min-width:4em;text-align:center;"></span><button class="btn" id="ed-piu" title="Ingrandisci (tasto +)">🔍 +</button><span id="ed-dove" style="align-self:center;font-size:14px;min-width:9em;text-align:center;margin-left:12px;"></span></div>
+  <div class="barra"><button class="btn" id="ed-auto">Ritaglio automatico</button><button class="btn" id="ed-tutta">Tutta la foto</button><button class="btn primario" id="ed-ok">Fatto</button></div>
+</div>
+<div id="vista"><div class="riga-fr"><button class="freccia" id="vi-prec" title="Foto precedente (tasto ←)">◀</button><img id="vi-img" alt=""><button class="freccia" id="vi-succ" title="Foto successiva (tasto →)">▶</button></div>
+  <div class="barra"><span id="vi-dove" style="align-self:center;font-size:14px;min-width:12em;text-align:center;white-space:pre-line;"></span></div>
+  <div class="barra"><a class="btn" id="vi-scarica" style="text-decoration:none;">Scarica</a><button class="btn primario" id="vi-chiudi">Chiudi</button></div>
+</div></body></html>`;
+
+function _faApri() {
+  if (!currentUser || !currentUser.isAdmin) return;
+  const it = currentLang === 'it';
+  const w = window.open('', 'foto-annuncio');
+  if (!w) { toast(it ? 'Il browser ha bloccato la finestra: consenti le finestre per questo sito' : 'The browser blocked the window', 'error'); return; }
+  w.document.open(); w.document.write(_FA_HTML); w.document.close();
+  _fa = { w, album: null, sito: null, foto: [], rif: null, uscite: [], ed: null };
+  const $ = id => w.document.getElementById(id);
+  $('file').onchange = e => { _faCaricaFile(e.target.files).catch(err => _faStato('Errore: ' + err.message)); e.target.value = ''; };
+  $('demo').onclick = () => _faFotoDelSito().catch(err => _faStato('Errore: ' + err.message));
+  $('componi').onclick = () => _faComponi().catch(err => _faStato('Errore: ' + err.message));
+  $('scarica').onclick = _faScaricaTutte;
+  _faEditorEventi();
+  _faDisegnaScelte();
+  w.focus();
+}
+const _fa$ = id => _fa.w.document.getElementById(id);
+const _faStato = t => { _fa$('stato').textContent = t || ''; };
+function _faSvuota() {
+  _fa.foto = []; _fa.uscite.forEach(u => URL.revokeObjectURL(u.url)); _fa.uscite = [];
+  ['miniature', 'avvisi', 'risultati', 'piano2'].forEach(id => { _fa$(id).innerHTML = ''; });
+  _fa$('spiega').style.display = 'none'; _fa$('zoom-mini').style.display = 'none'; _fa$('scarica').disabled = true; _fa$('componi').disabled = true; _faStato('');
+}
+function _faDisegnaScelte() {
+  const d = _fa.w.document;
+  const albumBox = _fa$('scelta-album'); albumBox.innerHTML = '';
+  _faAlbum().forEach(a => {
+    const b = d.createElement('button');
+    b.textContent = a.nome + ' — ' + a.pagine.length + ' pag.';
+    if (_fa.album && a.file === _fa.album.file) b.className = 'on';
+    // cambiando album le foto caricate si buttano: erano di un altro album
+    b.onclick = () => { if (_fa.album && a.file === _fa.album.file) return; _fa.album = a; _fa.rif = null; _faSvuota(); _faDisegnaScelte(); };
+    albumBox.appendChild(b);
+  });
+  const sitoBox = _fa$('scelta-sito'); sitoBox.innerHTML = '';
+  _FA_SITI.forEach(s => {
+    const b = d.createElement('button');
+    b.textContent = s.nome + ' (' + s.limite + ' foto)' + (s.spento ? ' — prossimamente' : '');
+    b.disabled = !!s.spento;
+    if (s === _fa.sito) b.className = 'on';
+    b.onclick = () => { _fa.sito = s; _faDisegnaScelte(); };
+    sitoBox.appendChild(b);
+  });
+  // 🔄 v7.182 (Franco: «se clicco sulla serie, non succede nulla») - ogni scelta risponde subito con una riga, anche
+  //    quando manca l'altra: prima l'album acceso in rosso era l'unico segno, e non si notava
+  const a = _fa.album, s = _fa.sito;
+  _fa$('piano').innerHTML = a && s
+    ? esc(a.nome) + ', ' + a.pagine.length + ' pagine. Su ' + s.nome + ' (massimo ' + s.limite + ' foto) → ' + _faDescriviPiano(_faPiano(a.pagine.length, s.limite)) + '<br>Ora carica le foto delle pagine (passo 3).'
+    : a ? 'Album scelto: <b>' + esc(a.nome) + '</b>, ' + a.pagine.length + ' pagine. Ora scegli il sito.'
+    : s ? 'Sito scelto: <b>' + s.nome + '</b>. Ora scegli l’album (passo 1).'
+    : 'Scegli l’album e il sito.';
+  _fa$('componi').disabled = !_fa.foto.length || !_fa.sito;
+}
+
+// ---- le tele ----
+// ⚠️ Le tele e le immagini nascono nella FINESTRA, non nella scheda del sito: quella resta dietro, e il browser rallenta
+//    le schede nascoste. Provato: preparare 20 foto con le tele del sito ci metteva più di un minuto.
+function _faTela(w, h) { const c = _fa.w.document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+function _faRiduci(sorgente, w, h, lato) {
+  const k = Math.min(1, lato / Math.max(w, h));
+  const c = _faTela(w * k, h * k);
+  c.getContext('2d').drawImage(sorgente, 0, 0, c.width, c.height);
+  return c;
+}
+// un quarto di giro in senso orario per ogni `volte`
+function _faGira(c, volte) {
+  volte = ((volte % 4) + 4) % 4;
+  if (!volte) return c;
+  const d = volte % 2 ? _faTela(c.height, c.width) : _faTela(c.width, c.height);
+  const x = d.getContext('2d');
+  x.translate(d.width / 2, d.height / 2);
+  x.rotate(volte * Math.PI / 2);
+  x.drawImage(c, -c.width / 2, -c.height / 2);
+  return d;
+}
+// il riquadro del ritaglio segue la foto quando la si gira
+function _faGiraRett(r, W, H, volte) {
+  volte = ((volte % 4) + 4) % 4;
+  for (let i = 0; i < volte; i++) { r = { x: H - (r.y + r.h), y: r.x, w: r.h, h: r.w }; const t = W; W = H; H = t; }
+  return r;
+}
+function _faGiraFoto(f, volte) { const W = f.tela.width, H = f.tela.height; f.tela = _faGira(f.tela, volte); f.rett = _faGiraRett(f.rett, W, H, volte); }
+function _faRitaglio(f) {
+  const r = f.rett, c = _faTela(r.w, r.h);
+  c.getContext('2d').drawImage(f.tela, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+  return c;
+}
+
+// ---- il ritaglio automatico ----
+// Il colore dello sfondo si legge sul bordo della foto; si tiene la zona che se ne stacca, più un margine del 5%.
+function _faAutoTaglio(tela) {
+  const tutta = { x: 0, y: 0, w: tela.width, h: tela.height };
+  const p = _faRiduci(tela, tela.width, tela.height, 260);
+  const W = p.width, H = p.height;
+  const d = p.getContext('2d').getImageData(0, 0, W, H).data;
+  const b = Math.max(2, Math.round(Math.min(W, H) * 0.03));
+  const R = [], G = [], B = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (x >= b && x < W - b && y >= b && y < H - b) continue;
+    const i = (y * W + x) * 4; R.push(d[i]); G.push(d[i + 1]); B.push(d[i + 2]);
+  }
+  const med = a => { const s = a.slice().sort((u, v) => u - v); return s[s.length >> 1]; };
+  const fr = med(R), fg = med(G), fb = med(B);
+  const scarti = R.map((r, k) => Math.max(Math.abs(r - fr), Math.abs(G[k] - fg), Math.abs(B[k] - fb)));
+  // un bordo di tanti colori vuol dire che l'album arriva al bordo: niente sfondo da togliere
+  if (scarti.filter(s => s < 40).length < scarti.length * 0.7) return tutta;
+  const soglia = Math.max(32, med(scarti) * 3 + 14);
+  const m = new Uint8Array(W * H);
+  for (let k = 0; k < W * H; k++) {
+    const i = k * 4;
+    m[k] = Math.max(Math.abs(d[i] - fr), Math.abs(d[i + 1] - fg), Math.abs(d[i + 2] - fb)) > soglia ? 1 : 0;
+  }
+  // le strisce di righe (o colonne) piene, tollerando buchi di tre; si tiene dalla prima all'ultima striscia lunga
+  // almeno l'8%. 🔄 v7.182 (Franco: «come mai mostri solo una pagina, nella miniatura?») - prima si teneva la sola
+  // striscia più lunga, e la piega in mezzo all'album aperto spezzava le due facciate: ne restava una.
+  const corsa = (n, frazione) => {
+    const strisce = [];
+    let inizio = -1, buchi = 0;
+    for (let i = 0; i <= n; i++) {
+      const pieno = i < n && frazione(i) > 0.18;
+      if (pieno) { if (inizio < 0) inizio = i; buchi = 0; }
+      else if (inizio >= 0) {
+        buchi++;
+        if (buchi > 3 || i === n) { strisce.push([inizio, i - buchi]); inizio = -1; buchi = 0; }
+      }
+    }
+    const lunghe = strisce.filter(s => s[1] - s[0] + 1 >= n * 0.08);
+    return lunghe.length ? [lunghe[0][0], lunghe[lunghe.length - 1][1]] : null;
+  };
+  const righe = corsa(H, y => { let s = 0; for (let x = 0; x < W; x++) s += m[y * W + x]; return s / W; });
+  if (!righe) return tutta;
+  const colonne = corsa(W, x => { let s = 0; for (let y = righe[0]; y <= righe[1]; y++) s += m[y * W + x]; return s / (righe[1] - righe[0] + 1); });
+  if (!colonne) return tutta;
+  // 🔄 v7.182 (Franco: «aumenta il margine ambientale attorno alla pagina nuda e cruda dell'album») - dal 2% al 5%
+  const k = tela.width / W, mx = W * 0.05, my = H * 0.05;
+  const x0 = Math.max(0, colonne[0] - mx), x1 = Math.min(W, colonne[1] + 1 + mx);
+  const y0 = Math.max(0, righe[0] - my), y1 = Math.min(H, righe[1] + 1 + my);
+  if ((x1 - x0) * (y1 - y0) < W * H * 0.2) return tutta;
+  return { x: Math.round(x0 * k), y: Math.round(y0 * k), w: Math.round((x1 - x0) * k), h: Math.round((y1 - y0) * k) };
+}
+
+// ---- riconoscere le pagine ----
+// 🔄 v7.182 (Franco: «la serie 3 esiste con album in molti formati diversi (6); cambia il colore delle pagine … per la
+//    serie 3 usa le figurine, piuttosto, ma non il colore della pagina») - LA FIRMA NON GUARDA PIÙ I COLORI: la luce
+//    (in grigio, mezzo peso) e i contorni (Sobel, peso pieno), 45×60. Misurato il 15 ottobre sui cinque album, con le
+//    pagine del sito su un finto tavolo, girate, mescolate e coi colori stravolti (tinta girata di 120° e di 220°, più
+//    luce e meno contrasto): 405 su 405. La firma a colori di prima, sulla serie 3 con la tinta girata: 16 su 35.
+const _FA_FW = 45, _FA_FH = 60;
+function _faFirma(c) {
+  const W = _FA_FW, H = _FA_FH, n = W * H;
+  const t = _faTela(W * 2, H * 2); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+  const u = _faTela(W, H), x = u.getContext('2d');
+  x.imageSmoothingQuality = 'high'; x.drawImage(t, 0, 0, W, H);
+  const d = x.getImageData(0, 0, W, H).data, g = new Float32Array(n), e = new Float32Array(n);
+  for (let k = 0; k < n; k++) g[k] = 0.299 * d[k * 4] + 0.587 * d[k * 4 + 1] + 0.114 * d[k * 4 + 2];
+  const p = (y, q) => g[y * W + q];
+  for (let y = 1; y < H - 1; y++) for (let q = 1; q < W - 1; q++) {
+    const gx = p(y - 1, q + 1) + 2 * p(y, q + 1) + p(y + 1, q + 1) - p(y - 1, q - 1) - 2 * p(y, q - 1) - p(y + 1, q - 1);
+    const gy = p(y + 1, q - 1) + 2 * p(y + 1, q) + p(y + 1, q + 1) - p(y - 1, q - 1) - 2 * p(y - 1, q) - p(y - 1, q + 1);
+    e[y * W + q] = Math.sqrt(gx * gx + gy * gy);
+  }
+  const v = new Float32Array(2 * n);
+  [[g, 0.5, 0], [e, 1, n]].forEach(([a, peso, da]) => {
+    let s = 0, s2 = 0;
+    for (let k = 0; k < n; k++) { s += a[k]; s2 += a[k] * a[k]; }
+    const media = s / n, dev = Math.sqrt(Math.max(1, s2 / n - media * media));
+    for (let k = 0; k < n; k++) v[da + k] = peso * (a[k] - media) / dev;
+  });
+  return v;
+}
+function _faSomiglia(a, b) { let s = 0; for (let k = 0; k < a.length; k++) s += a[k] * b[k]; return s / a.length; }
+// le foto del sito in una larghezza data (Cloudinary la fa da sé)
+const _faCld = (url, w) => url.includes('/image/upload/') ? url.replace('/image/upload/', '/image/upload/w_' + w + '/') : url;
+function _faImg(src) {
+  // dopo 30 secondi senza risposta si dice, invece di restare fermi su «Scarico dal sito…» per sempre
+  return new Promise((ok, ko) => { setTimeout(() => ko(new Error('la foto non arriva: ' + src)), 30000); const i = new _fa.w.Image(); i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = () => ko(new Error('foto non caricata: ' + src)); i.src = src; });
+}
+async function _faFirmeDelSito() {
+  const a = _fa.album;
+  if (_fa.rif && _fa.rif.file === a.file) return _fa.rif.firme;
+  const firme = [], forme = [], mezze = [];
+  for (let i = 0; i < a.pagine.length; i++) {
+    _faStato('Leggo le pagine del sito: ' + (i + 1) + ' di ' + a.pagine.length + '…');
+    const img = await _faImg(_faCld(a.pagine[i], 300));
+    // le foto del sito sono già ritagliate: si confrontano intere
+    const c = _faRiduci(img, img.naturalWidth, img.naturalHeight, 300), w2 = Math.round(c.width / 2);
+    firme.push(_faFirma(c));
+    forme.push(img.naturalWidth / img.naturalHeight);
+    // e le due facciate da sole, per la foto ritagliata su una facciata sola (vedi `_faOrdina`)
+    mezze.push([{ x: 0, y: 0, w: w2, h: c.height }, { x: w2, y: 0, w: c.width - w2, h: c.height }].map(r => _faFirma(_faRitaglio({ tela: c, rett: r }))));
+  }
+  _fa.rif = { file: a.file, firme, forme, mezze };
+  return firme;
+}
+async function _faOrdina() {
+  const firme = await _faFirmeDelSito();
+  _faStato('Riconosco le pagine…');
+  const coppie = [], { forme, mezze } = _fa.rif;
+  _fa.foto.forEach((f, fi) => {
+    const base = _faNucleo(f);
+    for (let v = 0; v < 4; v++) {
+      const fv = _faFirma(_faGira(base, v));
+      const forma = v % 2 ? base.height / base.width : base.width / base.height;
+      firme.forEach((fp, pi) => {
+        // 🆕 v7.182 (Franco: «12-13 è in realtà la 50-51», «14-15 è 56-57», «16-17 è 38-39») - una foto ritagliata su
+        //    UNA facciata somiglia poco all'album aperto, e il confronto sbagliava pagina. Se la foto è stretta, si
+        //    confronta anche con le due facciate da sole, e si ricorda quale ha vinto per allargare il ritaglio.
+        let s = _faSomiglia(fv, fp), parte = null;
+        if (forma < forme[pi] * 0.8) [0, 1].forEach(m => { const sm = _faSomiglia(fv, mezze[pi][m]); if (sm > s) { s = sm; parte = m ? 'dx' : 'sx'; } });
+        coppie.push({ fi, pi, v, s, parte });
+      });
+    }
+  });
+  // la coppia foto-pagina più simile vince, e né la foto né la pagina tornano in gioco
+  coppie.sort((a, b) => b.s - a.s);
+  const presaF = new Set(), presaP = new Set(), scelta = new Map();
+  for (const c of coppie) {
+    if (presaF.has(c.fi) || presaP.has(c.pi)) continue;
+    presaF.add(c.fi); presaP.add(c.pi); scelta.set(c.fi, c);
+  }
+  _fa.foto.forEach((f, fi) => {
+    const c = scelta.get(fi);
+    if (!c) { f.pagina = null; f.dubbia = true; return; }
+    if (c.v) _faGiraFoto(f, c.v);
+    _faCorreggiForma(f, c.pi, c.parte);
+    // dubbia: somiglianza bassa, oppure un'altra pagina le somiglia quasi altrettanto
+    const seconda = Math.max(-1, ...coppie.filter(x => x.fi === fi && x.pi !== c.pi).map(x => x.s));
+    f.pagina = c.pi; f.dubbia = c.s < 0.2 || c.s - seconda < 0.05;
+  });
+  _faInOrdine();
+  _faStato('');
+  _faMiniature();
+}
+// 🆕 v7.182 (Franco: «come mai mostri solo una pagina, nella miniatura?») - LA SECONDA RETE: riconosciuta la pagina, il
+//    ritaglio deve avere la sua forma (l'album aperto è circa una volta e mezza più largo che alto). Se è molto più
+//    stretto (o più basso), si allarga fino alla forma giusta, dal lato in cui la firma somiglia di più alla pagina
+//    del sito: una facciata rimasta fuori dal ritaglio si recupera da sé, senza trascinare il margine a mano.
+//    Se il confronto ha già detto quale facciata c'è (`parte`), si allarga dall'altro lato e basta.
+function _faCorreggiForma(f, pi, parte) {
+  const forma = _fa.rif && _fa.rif.forme && _fa.rif.forme[pi];
+  if (!forma) return;
+  const r = f.rett, W = f.tela.width, H = f.tela.height, ora = r.w / r.h;
+  let candidati = [];
+  if (ora < forma * 0.8) {
+    const w = Math.min(W, Math.round(r.h * forma * 1.05));
+    const xs = parte === 'sx' ? [Math.min(r.x, W - w)] : parte === 'dx' ? [Math.max(0, r.x + r.w - w)]
+      : [Math.min(r.x, W - w), Math.max(0, r.x + r.w - w), Math.round(Math.min(Math.max(0, r.x + r.w / 2 - w / 2), W - w))];
+    candidati = xs.map(x => ({ x, y: r.y, w, h: r.h }));
+  } else if (ora > forma * 1.25) {
+    const h = Math.min(H, Math.round(r.w / forma * 1.05));
+    candidati = [Math.min(r.y, H - h), Math.max(0, r.y + r.h - h), Math.round(Math.min(Math.max(0, r.y + r.h / 2 - h / 2), H - h))]
+      .map(y => ({ x: r.x, y, w: r.w, h }));
+  }
+  if (!candidati.length) return;
+  const rif = _fa.rif.firme[pi];
+  let meglio = null;
+  candidati.forEach(c => { const s = _faSomiglia(_faFirma(_faNucleo({ tela: f.tela, rett: c })), rif); if (!meglio || s > meglio.s) meglio = { c, s }; });
+  f.rett = meglio.c;
+}
+// Il ritaglio senza il margine del 5% (`_faAutoTaglio`): è quello che si confronta con le pagine del sito, che il
+// margine non ce l'hanno. Confrontando anche il tavolo, col margine passato dal 2 al 5% le dubbie sulla serie 2 erano
+// salite a 24 su 35.
+function _faNucleo(f) {
+  const r = f.rett, dx = Math.round(r.w * 0.05 / 1.1), dy = Math.round(r.h * 0.05 / 1.1);
+  return _faRitaglio({ tela: f.tela, rett: { x: r.x + dx, y: r.y + dy, w: Math.max(1, r.w - 2 * dx), h: Math.max(1, r.h - 2 * dy) } });
+}
+function _faInOrdine() { _fa.foto.sort((a, b) => (a.pagina ?? 999) - (b.pagina ?? 999)); }
+
+// ---- caricare ----
+async function _faCaricaFile(lista) {
+  if (!_fa.album) { _faStato('Scegli prima l’album.'); return; }
+  _faSvuota();
+  const files = [...lista];
+  for (let i = 0; i < files.length; i++) {
+    _faStato('Preparo le foto: ' + (i + 1) + ' di ' + files.length + '…');
+    try {
+      const bm = await _fa.w.createImageBitmap(files[i], { imageOrientation: 'from-image' });
+      const tela = _faRiduci(bm, bm.width, bm.height, 2000);
+      if (bm.close) bm.close();
+      _fa.foto.push({ tela, rett: _faAutoTaglio(tela), pagina: null, dubbia: false });
+    } catch (e) { console.error('_faCaricaFile', files[i].name, e); }
+  }
+  await _faOrdina();
+}
+// 🔄 v7.182 (Franco: «dove sta la anteprima con le foto che gia abbiamo nel sito?») - LE FOTO DEL SITO, COSÌ COME
+//    SONO: già in ordine, già dritte e già ritagliate, quindi niente riconoscimento e niente taglio. Con il sito
+//    scelto, le foto dell'annuncio si preparano subito. Prima questo pulsante era una prova del riconoscimento (le
+//    pagine su un finto tavolo, girate e mescolate): serviva a me, non a chi fa l'annuncio.
+async function _faFotoDelSito() {
+  const a = _fa.album;
+  if (!a) { _faStato('Scegli prima l’album.'); return; }
+  _faSvuota();
+  for (let i = 0; i < a.pagine.length; i++) {
+    _faStato('Scarico dal sito la pagina ' + (i + 1) + ' di ' + a.pagine.length + '…');
+    // 1600: è il lato delle foto dell'annuncio, scaricarle più grandi allunga l'attesa e non si vede
+    const img = await _faImg(_faCld(a.pagine[i], _FA_LATO));
+    const tela = _faRiduci(img, img.naturalWidth, img.naturalHeight, _FA_LATO);
+    _fa.foto.push({ tela, rett: { x: 0, y: 0, w: tela.width, h: tela.height }, pagina: i, dubbia: false });
+  }
+  _faStato('');
+  _faMiniature();
+  if (_fa.sito) await _faComponi();
+}
+
+// ---- le miniature ----
+function _faMiniature() {
+  const d = _fa.w.document, box = _fa$('miniature'), a = _fa.album, N = a.pagine.length;
+  box.innerHTML = ''; _fa$('avvisi').innerHTML = '';
+  _fa$('spiega').style.display = _fa.foto.length ? '' : 'none';
+  _fa$('zoom-mini').style.display = _fa.foto.length ? '' : 'none';
+  const avvisi = [];
+  if (_fa.foto.length !== N) avvisi.push('Hai caricato ' + _fa.foto.length + ' foto, ma l’album ha ' + N + ' pagine.');
+  const mancano = [];
+  for (let i = 0; i < N; i++) if (!_fa.foto.some(f => f.pagina === i)) mancano.push(_faNomePagina(i, N));
+  if (mancano.length) avvisi.push('Mancano: ' + mancano.join(', ') + '.');
+  const dubbie = _fa.foto.filter(f => f.dubbia).length;
+  if (dubbie) avvisi.push(dubbie === 1 ? '1 foto riconosciuta con poca sicurezza (bordo giallo): controllala.' : dubbie + ' foto riconosciute con poca sicurezza (bordo giallo): controllale.');
+  avvisi.forEach(t => { const el = d.createElement('div'); el.className = 'avviso'; el.textContent = t; _fa$('avvisi').appendChild(el); });
+  _fa.foto.forEach(f => {
+    const card = d.createElement('div'); card.className = 'mini' + (f.dubbia ? ' dubbia' : '');
+    const c = _faRiduci(_faRitaglio(f), f.rett.w, f.rett.h, 2 * (_fa.mini || 140));
+    c.title = 'Correggi il ritaglio';
+    c.onclick = () => _faApriEditor(f);
+    const sel = d.createElement('select');
+    const vuota = d.createElement('option'); vuota.value = ''; vuota.textContent = '— quale pagina? —'; sel.appendChild(vuota);
+    for (let i = 0; i < N; i++) { const o = d.createElement('option'); o.value = i; o.textContent = _faNomePagina(i, N); if (f.pagina === i) o.selected = true; sel.appendChild(o); }
+    // la pagina scelta, se era di un'altra foto, passa a quella la pagina di questa: le due si scambiano
+    sel.onchange = () => {
+      const nuova = sel.value === '' ? null : +sel.value;
+      const altra = nuova === null ? null : _fa.foto.find(g => g !== f && g.pagina === nuova);
+      if (altra) altra.pagina = f.pagina;
+      f.pagina = nuova; f.dubbia = false;
+      _faInOrdine(); _faMiniature();
+    };
+    const riga = d.createElement('div'); riga.className = 'riga';
+    [['⟲', 3, 'Gira a sinistra'], ['⟳', 1, 'Gira a destra']].forEach(([s, v, t]) => {
+      const b = d.createElement('button'); b.textContent = s; b.title = t;
+      b.onclick = () => { _faGiraFoto(f, v); _faMiniature(); };
+      riga.appendChild(b);
+    });
+    card.append(c, sel, riga);
+    box.appendChild(card);
+  });
+  _fa$('componi').disabled = !_fa.foto.length || !_fa.sito;
+}
+
+// ---- la correzione del ritaglio ----
+// 🔄 v7.182 (Franco: «nella sezione 3, dammi il modo di fare uno zoom; a volte la finestra è piccola») - la pagina
+//    aperta parte grande quanto la finestra (non più fino a 1000px) e si ingrandisce con 🔍 + / − o i tasti + e −;
+//    ingrandita, si scorre. Lo zoom resta passando alla pagina vicina. Le miniature hanno il loro 🔍 (`_faZoomMini`).
+const _FA_ZOOM = [1, 1.5, 2, 3, 4];
+function _faApriEditor(f) {
+  const t = _fa$('ed-tela'), w = _fa.w;
+  // 150: le due frecce ai lati (Franco: «le frecce per scorrere le pagine mettile a sx e dx della finestra della pagina»)
+  const kFit = Math.min((w.innerWidth - 150) / f.tela.width, (w.innerHeight - 230) / f.tela.height, 1);
+  const z = _FA_ZOOM[_fa.edZoom || 0];
+  const k = kFit * z;
+  _fa.ed = { f, k, r: { ...f.rett }, presa: null };
+  t.width = Math.round(f.tela.width * k); t.height = Math.round(f.tela.height * k);
+  _fa$('ed-zoom').textContent = Math.round(z * 100) + '%';
+  _fa$('ed-meno').disabled = !_fa.edZoom;
+  _fa$('ed-piu').disabled = (_fa.edZoom || 0) >= _FA_ZOOM.length - 1;
+  const i = _fa.foto.indexOf(f), N = _fa.album.pagine.length;
+  _fa$('ed-dove').textContent = (f.pagina === null ? 'Pagina ?' : _faNomePagina(f.pagina, N)) + ' (' + (i + 1) + ' di ' + _fa.foto.length + ')';
+  _fa$('ed-prec').disabled = i <= 0;
+  _fa$('ed-succ').disabled = i >= _fa.foto.length - 1;
+  _fa$('editor').classList.add('aperto');
+  _faDisegnaEditor();
+}
+// 🆕 v7.182 (Franco: «metti dei pulsantini per passare da una pagina all'altra dopo che ne ho aperta una, senza dover
+//    chiudere la finestra») - ◀ ▶ e le frecce della tastiera: il ritaglio della pagina lasciata si tiene, come con «Fatto»
+function _faEditorZoom(passo) {
+  const ed = _fa.ed;
+  if (!ed || !_fa$('editor').classList.contains('aperto')) return;
+  const z = Math.max(0, Math.min(_FA_ZOOM.length - 1, (_fa.edZoom || 0) + passo));
+  if (z === (_fa.edZoom || 0)) return;
+  // si tiene il centro di quello che si stava guardando
+  const s = _fa$('ed-scorri'), cx = (s.scrollLeft + s.clientWidth / 2) / s.scrollWidth, cy = (s.scrollTop + s.clientHeight / 2) / s.scrollHeight;
+  const r = ed.r;
+  _fa.edZoom = z;
+  _faApriEditor(ed.f);
+  _fa.ed.r = r;
+  _faDisegnaEditor();
+  s.scrollLeft = cx * s.scrollWidth - s.clientWidth / 2; s.scrollTop = cy * s.scrollHeight - s.clientHeight / 2;
+}
+function _faZoomMini(passo) {
+  _fa.mini = Math.max(100, Math.min(400, (_fa.mini || 140) + passo * 60));
+  _fa.w.document.documentElement.style.setProperty('--mini', _fa.mini + 'px');
+  _faMiniature();
+}
+function _faEditorPassa(passo) {
+  const ed = _fa.ed;
+  if (!ed || !_fa$('editor').classList.contains('aperto')) return;
+  const j = _fa.foto.indexOf(ed.f) + passo;
+  if (j < 0 || j >= _fa.foto.length) return;
+  ed.f.rett = ed.r;
+  _faMiniature();
+  _faApriEditor(_fa.foto[j]);
+}
+function _faDisegnaEditor() {
+  const t = _fa$('ed-tela'), x = t.getContext('2d'), { f, k, r } = _fa.ed;
+  x.drawImage(f.tela, 0, 0, t.width, t.height);
+  x.fillStyle = 'rgba(0,0,0,.55)';
+  x.fillRect(0, 0, t.width, r.y * k);
+  x.fillRect(0, (r.y + r.h) * k, t.width, t.height - (r.y + r.h) * k);
+  x.fillRect(0, r.y * k, r.x * k, r.h * k);
+  x.fillRect((r.x + r.w) * k, r.y * k, t.width - (r.x + r.w) * k, r.h * k);
+  x.strokeStyle = '#ffeb3b'; x.lineWidth = 2; x.strokeRect(r.x * k, r.y * k, r.w * k, r.h * k);
+}
+function _faEditorEventi() {
+  const t = _fa$('ed-tela');
+  const punto = e => { const b = t.getBoundingClientRect(), s = t.width / b.width; return { x: (e.clientX - b.left) * s / _fa.ed.k, y: (e.clientY - b.top) * s / _fa.ed.k }; };
+  t.addEventListener('pointerdown', e => {
+    const ed = _fa.ed, p = punto(e), r = ed.r, tol = 24 / ed.k;
+    const vicino = (a, b) => Math.abs(a - b) < tol;
+    const lati = { l: vicino(p.x, r.x), r: vicino(p.x, r.x + r.w), t: vicino(p.y, r.y), b: vicino(p.y, r.y + r.h) };
+    const dentro = p.x > r.x && p.x < r.x + r.w && p.y > r.y && p.y < r.y + r.h;
+    const bordo = lati.l || lati.r || lati.t || lati.b;
+    if (!bordo && !dentro) return;
+    ed.presa = { lati, sposta: !bordo, p0: p, r0: { ...r } };
+    t.setPointerCapture(e.pointerId);
+  });
+  t.addEventListener('pointermove', e => {
+    const ed = _fa.ed;
+    if (!ed || !ed.presa) return;
+    const p = punto(e), W = ed.f.tela.width, H = ed.f.tela.height, r0 = ed.presa.r0, min = 40;
+    const dx = p.x - ed.presa.p0.x, dy = p.y - ed.presa.p0.y;
+    let x0 = r0.x, y0 = r0.y, x1 = r0.x + r0.w, y1 = r0.y + r0.h;
+    if (ed.presa.sposta) {
+      const mx = Math.max(-x0, Math.min(W - x1, dx)), my = Math.max(-y0, Math.min(H - y1, dy));
+      x0 += mx; x1 += mx; y0 += my; y1 += my;
+    } else {
+      if (ed.presa.lati.l) x0 = Math.max(0, Math.min(x1 - min, x0 + dx));
+      if (ed.presa.lati.r) x1 = Math.min(W, Math.max(x0 + min, x1 + dx));
+      if (ed.presa.lati.t) y0 = Math.max(0, Math.min(y1 - min, y0 + dy));
+      if (ed.presa.lati.b) y1 = Math.min(H, Math.max(y0 + min, y1 + dy));
+    }
+    ed.r = { x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0) };
+    _faDisegnaEditor();
+  });
+  t.addEventListener('pointerup', () => { if (_fa.ed) _fa.ed.presa = null; });
+  _fa$('ed-auto').onclick = () => { _fa.ed.r = _faAutoTaglio(_fa.ed.f.tela); _faDisegnaEditor(); };
+  _fa$('ed-tutta').onclick = () => { _fa.ed.r = { x: 0, y: 0, w: _fa.ed.f.tela.width, h: _fa.ed.f.tela.height }; _faDisegnaEditor(); };
+  _fa$('ed-ok').onclick = () => { _fa.ed.f.rett = _fa.ed.r; _fa$('editor').classList.remove('aperto'); _faMiniature(); };
+  _fa$('ed-prec').onclick = () => _faEditorPassa(-1);
+  _fa$('ed-succ').onclick = () => _faEditorPassa(1);
+  _fa$('ed-meno').onclick = () => _faEditorZoom(-1);
+  _fa$('ed-piu').onclick = () => _faEditorZoom(1);
+  _fa$('mini-meno').onclick = () => _faZoomMini(-1);
+  _fa$('mini-piu').onclick = () => _faZoomMini(1);
+  _fa$('vi-prec').onclick = () => _faVista(_fa.vista - 1);
+  _fa$('vi-succ').onclick = () => _faVista(_fa.vista + 1);
+  _fa$('vi-chiudi').onclick = () => _fa$('vista').classList.remove('aperto');
+  // le frecce valgono per la finestra aperta: la foto dell'annuncio, se no la pagina col ritaglio
+  _fa.w.document.addEventListener('keydown', e => {
+    const vista = _fa$('vista').classList.contains('aperto');
+    if (vista && e.key === 'ArrowLeft') _faVista(_fa.vista - 1);
+    else if (vista && e.key === 'ArrowRight') _faVista(_fa.vista + 1);
+    else if (vista && e.key === 'Escape') _fa$('vi-chiudi').click();
+    else if (e.key === '+' || e.key === '=') _faEditorZoom(1);
+    else if (e.key === '-') _faEditorZoom(-1);
+    else if (e.key === 'ArrowLeft') _faEditorPassa(-1);
+    else if (e.key === 'ArrowRight') _faEditorPassa(1);
+    else if (e.key === 'Escape' && _fa$('editor').classList.contains('aperto')) _fa$('ed-ok').click();
+  });
+}
+
+// ---- comporre ----
+// Due pagine larghe (l'album aperto) una sopra l'altra: affiancate verrebbe una striscia tre volte più larga che alta.
+// Due pagine strette una accanto all'altra; quattro in due righe da due.
+const _FA_SPAZIO = 16, _FA_LATO = 1600;
+function _faAffianca(tele, h) {
+  const s = tele.map(c => { const t = _faTela(c.width * h / c.height, h); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height); return t; });
+  const out = _faTela(s.reduce((a, c) => a + c.width, 0) + _FA_SPAZIO * (s.length - 1), h), x = out.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, out.width, out.height);
+  let px = 0; s.forEach(c => { x.drawImage(c, px, 0); px += c.width + _FA_SPAZIO; });
+  return out;
+}
+function _faImpila(righe) {
+  const W = Math.max(...righe.map(c => c.width));
+  const out = _faTela(W, righe.reduce((a, c) => a + c.height, 0) + _FA_SPAZIO * (righe.length - 1)), x = out.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, out.width, out.height);
+  let py = 0; righe.forEach(c => { x.drawImage(c, Math.round((W - c.width) / 2), py); py += c.height + _FA_SPAZIO; });
+  return out;
+}
+function _faComponiGruppo(tele) {
+  if (tele.length === 1) return _faRiduci(tele[0], tele[0].width, tele[0].height, _FA_LATO);
+  if (tele.length === 2) {
+    if (!tele.every(c => c.width > c.height)) return _faAffianca(tele, _FA_LATO);
+    const w = Math.min(_FA_LATO, ...tele.map(c => c.width));
+    return _faImpila(tele.map(c => _faRiduci(c, c.width, c.height, w)));
+  }
+  return _faImpila([_faAffianca(tele.slice(0, 2), _FA_LATO / 2), _faAffianca(tele.slice(2, 4), _FA_LATO / 2)]);
+}
+async function _faComponi() {
+  const a = _fa.album, sito = _fa.sito;
+  if (!a || !sito) return;
+  const N = a.pagine.length, d = _fa.w.document;
+  const perPagina = new Map(_fa.foto.filter(f => f.pagina !== null).map(f => [f.pagina, f]));
+  _fa.uscite.forEach(u => URL.revokeObjectURL(u.url)); _fa.uscite = [];
+  _fa$('risultati').innerHTML = '';
+  const saltate = [];
+  for (const g of _faPiano(N, sito.limite)) {
+    g.filter(p => !perPagina.has(p)).forEach(p => saltate.push(_faNomePagina(p, N)));
+    const presenti = g.filter(p => perPagina.has(p));
+    if (!presenti.length) continue;
+    _faStato('Preparo la foto ' + (_fa.uscite.length + 1) + '…');
+    const c = _faComponiGruppo(presenti.map(p => _faRitaglio(perPagina.get(p))));
+    const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.9));
+    const n = String(_fa.uscite.length + 1).padStart(2, '0');
+    _fa.uscite.push({ nome: a.file + '-' + sito.nome.toLowerCase() + '-' + n + '.jpg', blob, url: URL.createObjectURL(blob), dida: presenti.map(p => _faNomePagina(p, N)).join(' + ') });
+  }
+  _faStato('');
+  _fa$('piano2').innerHTML = _fa.uscite.length + ' foto pronte per ' + sito.nome + ' (massimo ' + sito.limite + ').' +
+    (saltate.length ? ' <span style="color:#c0392b">Mancano: ' + esc(saltate.join(', ')) + '.</span>' : '');
+  _fa.uscite.forEach((u, i) => {
+    const fig = d.createElement('figure');
+    const img = d.createElement('img'); img.src = u.url; img.alt = ''; img.title = 'Ingrandisci';
+    img.onclick = () => _faVista(i);
+    // Franco: «scrivi i numeri di pagina su due righe» - «Foto 6:» sopra, le pagine sotto (`white-space:pre-line`)
+    const cap = d.createElement('figcaption'); cap.textContent = 'Foto ' + (i + 1) + ':\n' + u.dida;
+    const link = d.createElement('a'); link.href = u.url; link.download = u.nome; link.textContent = 'Scarica';
+    fig.append(img, cap, link);
+    _fa$('risultati').appendChild(fig);
+  });
+  _fa$('scarica').disabled = !_fa.uscite.length;
+}
+// 🆕 v7.182 (Franco: «le frecce non le hai messe nelle finestre della sezione "le pagine per l'annuncio"») - la foto
+//    dell'annuncio, toccata, si apre grande con ◀ ▶ (e le frecce della tastiera), «Scarica» e «Chiudi»
+function _faVista(i) {
+  if (i < 0 || i >= _fa.uscite.length) return;
+  const u = _fa.uscite[i];
+  _fa.vista = i;
+  _fa$('vi-img').src = u.url;
+  _fa$('vi-dove').textContent = 'Foto ' + (i + 1) + ' di ' + _fa.uscite.length + ':\n' + u.dida;
+  _fa$('vi-scarica').href = u.url; _fa$('vi-scarica').download = u.nome;
+  _fa$('vi-prec').disabled = i === 0;
+  _fa$('vi-succ').disabled = i === _fa.uscite.length - 1;
+  _fa$('vista').classList.add('aperto');
+}
+// 🔄 v7.182 (Franco: «mettimi un tasto per scaricare tutte le foto in un colpo solo») - UN FILE SOLO, uno .zip con
+//    tutte le foto dentro. Prima «Scarica tutte» scaricava le foto una per una, e il browser al secondo file chiede
+//    se permettere i download multipli (o li ferma senza dirlo). Lo zip è «senza compressione»: i jpg sono già
+//    compressi, e così bastano poche righe invece di una libreria.
+function _faCrc32(b) {
+  let t = _faCrc32.t;
+  if (!t) {
+    t = _faCrc32.t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+  }
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < b.length; i++) c = t[(c ^ b[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+async function _faZip(file) {
+  const parti = [], centrale = [], enc = new TextEncoder();
+  const ora = new Date();
+  const tempo = (ora.getHours() << 11) | (ora.getMinutes() << 5) | (ora.getSeconds() >> 1);
+  const data = ((ora.getFullYear() - 1980) << 9) | ((ora.getMonth() + 1) << 5) | ora.getDate();
+  let pos = 0;
+  for (const f of file) {
+    const nome = enc.encode(f.nome), dati = new Uint8Array(await f.blob.arrayBuffer()), crc = _faCrc32(dati);
+    const loc = new DataView(new ArrayBuffer(30));
+    [[0, 0x04034b50, 4], [4, 20, 2], [6, 0x0800, 2], [8, 0, 2], [10, tempo, 2], [12, data, 2], [14, crc, 4], [18, dati.length, 4], [22, dati.length, 4], [26, nome.length, 2], [28, 0, 2]]
+      .forEach(([o, v, n]) => n === 4 ? loc.setUint32(o, v, true) : loc.setUint16(o, v, true));
+    const cen = new DataView(new ArrayBuffer(46));
+    [[0, 0x02014b50, 4], [4, 20, 2], [6, 20, 2], [8, 0x0800, 2], [10, 0, 2], [12, tempo, 2], [14, data, 2], [16, crc, 4], [20, dati.length, 4], [24, dati.length, 4], [28, nome.length, 2], [30, 0, 2], [32, 0, 2], [34, 0, 2], [36, 0, 2], [38, 0, 4], [42, pos, 4]]
+      .forEach(([o, v, n]) => n === 4 ? cen.setUint32(o, v, true) : cen.setUint16(o, v, true));
+    parti.push(loc, nome, dati); centrale.push(cen, nome);
+    pos += 30 + nome.length + dati.length;
+  }
+  const lungCentrale = centrale.reduce((s, x) => s + x.byteLength, 0);
+  const fine = new DataView(new ArrayBuffer(22));
+  [[0, 0x06054b50, 4], [4, 0, 2], [6, 0, 2], [8, file.length, 2], [10, file.length, 2], [12, lungCentrale, 4], [16, pos, 4], [20, 0, 2]]
+    .forEach(([o, v, n]) => n === 4 ? fine.setUint32(o, v, true) : fine.setUint16(o, v, true));
+  return new Blob([...parti, ...centrale, fine], { type: 'application/zip' });
+}
+async function _faScaricaTutte() {
+  if (!_fa.uscite.length) return;
+  _faStato('Preparo lo zip…');
+  const zip = await _faZip(_fa.uscite);
+  const url = URL.createObjectURL(zip), d = _fa.w.document;
+  const a = d.createElement('a'); a.href = url; a.download = _fa.album.file + '-' + _fa.sito.nome.toLowerCase() + '.zip';
+  d.body.appendChild(a); a.click(); a.remove();
+  _fa.w.setTimeout(() => URL.revokeObjectURL(url), 60000);
+  _faStato('');
+}
+
 // 🆕 v7.170 (Franco: «un meccanismo di propagazione di aggiornamenti fatto da configurazione: un posto dove scrivere la
 //    versione mobile e carosello di categoria e sottocategoria una volta sola, avviando una propagazione su tutti gli
 //    oggetti che la utilizzano; nella admin console, in una nuova sezione chiamata aggiornamenti massivi; una sezione per
@@ -58937,6 +59715,7 @@ function adminTab(tab) {
   if (tab === 'caroselli') renderAdminCaroselliTDA();     // v6.982, tab suo dalla v7.151 (Franco)
   if (tab === 'questionario') renderAdminQuestionario();  // v7.156 (Franco)
   if (tab === 'aggiornamenti') renderAdminAggiornamenti();   // v7.170 (Franco)
+  if (tab === 'fotoannuncio') renderAdminFotoAnnuncio();     // v7.182 (Franco)
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
