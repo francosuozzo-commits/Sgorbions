@@ -1,6 +1,20 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.184 - Modificati js/app.js e index.html (per la versione). La conferma del tasto che elimina l'articolo dalla
+//          scheda (Franco: «correggi quel messaggio per adattarlo alla tda corrente») nomina la tipologia: «Eliminare
+//          questo album?», «Eliminare questa carta?» (`_soggettoArticolo`); prima diceva «figurina» per tutto.
+//          🐛 «Clona» copiava le pagine dell'album (Franco: «è possibile che il tasto "clona" clona le foto?»): ora la
+//          copia nasce senza pagine e senza «album da sfogliare»; le altre foto già non si copiavano.
+//          FOTO ANNUNCIO, IL PIANO SCRITTO (Franco: «per ogni album, ci servono dei meta dati … quali pagine accoppiare
+//          (2 a 2 o 4 a 4) in funzione del sito»): nel tab Ebay dell'album base con le pagine sue, «📸 Foto annuncio:
+//          come unire le pagine», una casella per eBay, Vinted e Subito (`fotoAnnuncio`), controllata mentre si scrive
+//          e al salvataggio (`_faLeggiPiano`). Nella finestra vince il piano scritto (`_faPianoDi`); vuoto, eBay e
+//          Vinted dividono da soli e Subito per quell'album resta spento.
+//          ANNUNCI (Franco): il tab «📸 Foto annuncio» diventa «📢 Annunci», «📸 Apri» diventa «📸 Crea foto per
+//          annunci», e sotto «📋 Annunci in corso»: tabella Sito / Serie / Oggetto / Titolo / Descrizione / Prezzo /
+//          Foto, «+ Aggiungi annuncio» e ✏️ aprono una finestra (serie dalla tendina dell'Inventario, oggetto fra gli
+//          articoli della serie, zip caricato su Cloudinary come file raw); dati in `settings/annunci`.
 // v7.183 - Modificati js/app.js e index.html (per la versione). Foto annuncio (Franco: «è meglio la finestra la fai più
 //          grande; alla fine uso sempre lo zoom»): nella pagina aperta i comandi in una riga sola sopra, la spiegazione
 //          nel suggerimento della pagina, e la pagina riempie la finestra (anche ingrandendo una foto più piccola).
@@ -31278,7 +31292,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.183';
+const JS_VERSION = 'v7.184';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40867,8 +40881,9 @@ function renderAdminQuestionario() {
 //    niente (Franco: «le immagini che produciamo con questo processo sono usa e getta: le scarico io nel pc»).
 //    📌 I LIMITI (Franco): eBay 24 foto, Vinted 20, Subito 6. Copertina e retro sempre da sole; se le pagine interne non
 //       ci stanno, la pagina 1 resta da sola (Franco: «metti la pagina numero 1, da sola, non la ultima») e dalla 2 si
-//       uniscono a coppie, a quattro solo se le coppie non bastano (`_faPiano`). Subito è spento: lì nessun album ci sta
-//       (Franco: «credo sia meglio saltare delle pagine»), e quali saltare si decide dopo.
+//       uniscono a coppie, a quattro solo se le coppie non bastano (`_faPiano`). Su Subito nessun album ci sta
+//       (Franco: «credo sia meglio saltare delle pagine»): dalla v7.184 quali pagine e come unirle lo scrive Franco
+//       nella scheda dell'album (`_faPianoDi`, qui sotto).
 //    📌 LA PAGINA SI RICONOSCE DALLE FOTO DEL SITO: le `pagine` dell'album, la prima è la copertina e l'ultima il retro.
 //       Una firma 30×40 a colori di ogni foto, confrontata nei quattro versi con quelle delle pagine: la più simile dice
 //       la pagina e il verso. Provata il 14 ottobre sui cinque album, con le foto del sito girate a caso su un finto
@@ -40877,19 +40892,55 @@ function renderAdminQuestionario() {
 //       sono quelli già in memoria. Ha la stessa origine del sito, quindi i suoi elementi li toccano queste funzioni.
 //    ⚠️ Lo sfondo si toglie solo se il bordo della foto è quasi tutto di un colore: se l'album arriva al bordo, la foto si
 //       tiene intera. Si raddrizzano i quarti di giro, non le foto prese di sbieco.
+// 🔄 v7.184 (Franco: «per ogni album, ci servono dei meta dati … per sapere esattamente quali pagine accoppiare (2 a
+//    2 o 4 a 4) in funzione del sito … nella sezione Ebay della form dell'album») - IL PIANO SCRITTO. Nel tab Ebay
+//    dell'album base una casella per sito (`fotoAnnuncio`: { ebay, vinted, subito }, testo), letta da `_faLeggiPiano`.
+//    Scritta, vince lei; vuota, eBay e Vinted dividono da soli (`_faPiano`) e Subito per quell'album resta spento
+//    (`soloScritto`): lì nessun album ci sta intero, e quali pagine saltare lo decide Franco album per album.
 const _FA_SITI = [
-  { nome: 'eBay', limite: 24 },
-  { nome: 'Vinted', limite: 20 },
-  { nome: 'Subito', limite: 6, spento: true },
+  { nome: 'eBay', chiave: 'ebay', limite: 24 },
+  { nome: 'Vinted', chiave: 'vinted', limite: 20 },
+  { nome: 'Subito', chiave: 'subito', limite: 6, soloScritto: true },
 ];
+// Il piano scritto nella scheda: i numeri del tab Pagine (1 = copertina), la virgola separa le foto e il + unisce le
+// pagine della stessa foto (1, 2 o 4); le pagine non scritte si saltano. Restituisce { gruppi } (indici da 0, null se
+// vuoto) o { errore }, con la frase da mostrare.
+function _faLeggiPiano(testo, N, limite) {
+  const t = String(testo || '').trim();
+  if (!t) return { gruppi: null };
+  const gruppi = [], visti = new Set();
+  for (const pezzo of t.split(',').map(x => x.trim()).filter(Boolean)) {
+    const nums = pezzo.split('+').map(x => x.trim());
+    if (nums.some(x => !/^\d+$/.test(x))) return { errore: '«' + pezzo + '» non è un numero di pagina (né più numeri uniti col +)' };
+    const g = nums.map(Number);
+    for (const n of g) {
+      if (n < 1 || n > N) return { errore: 'la pagina ' + n + ' non c’è: vanno da 1 a ' + N };
+      if (visti.has(n)) return { errore: 'la pagina ' + n + ' è scritta due volte' };
+      visti.add(n);
+    }
+    if (![1, 2, 4].includes(g.length)) return { errore: '«' + pezzo + '»: una foto unisce 1, 2 o 4 pagine' };
+    gruppi.push(g.map(n => n - 1));
+  }
+  if (!gruppi.length) return { gruppi: null };
+  if (gruppi.length > limite) return { errore: gruppi.length + ' foto, ma il sito ne accetta ' + limite };
+  return { gruppi };
+}
+// Il piano di un album per un sito: quello scritto, se c'è; se no quello automatico, o null dove serve scritto.
+function _faPianoDi(a, s) {
+  const scritto = _faLeggiPiano((a.piani || {})[s.chiave], a.pagine.length, s.limite);
+  if (scritto.gruppi) return scritto.gruppi;
+  return s.soloScritto ? null : _faPiano(a.pagine.length, s.limite);
+}
 let _fa = null;   // lo stato della finestra aperta: { w, album, sito, foto, rif, uscite }
 function renderAdminFotoAnnuncio() {
   const box = document.getElementById('admin-fotoannuncio-box');
   if (!box) return;
   const it = currentLang === 'it';
   const n = _faAlbum().length;
+  // 🔄 v7.184 (Franco: «La sezione … rinominala in "Annunci"»; «Il tasto apri rinominalo come "Crea foto per annunci"»;
+  //    «Li dentro vorrei creare una sotto sezione che si chiama Annunci in corso … per ora mettila sotto al tasto Apri»)
   box.innerHTML =
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">📸 ' + (it ? 'Foto annuncio' : 'Listing photos') + '</h4>' +
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">📸 ' + (it ? 'Foto per annunci' : 'Listing photos') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Dalle foto delle pagine di un album, le foto per un annuncio su eBay o Vinted: in ordine di pagina, girate nel verso giusto, ' +
@@ -40897,7 +40948,210 @@ function renderAdminFotoAnnuncio() {
           'Le foto si scaricano e basta: sul sito non si salva niente. Album con le pagine: <strong>' + n + '</strong>.'
         : 'Listing photos for eBay or Vinted from the photos of an album\'s pages. Nothing is saved on the site. Albums with pages: <strong>' + n + '</strong>.') +
     '</p>' +
-    '<button class="btn-primary btn-admin admin-anche-telefono" onclick="_faApri()">' + (it ? '📸 Apri' : '📸 Open') + '</button>';
+    '<button class="btn-primary btn-admin admin-anche-telefono" onclick="_faApri()">' + (it ? '📸 Crea foto per annunci' : '📸 Create listing photos') + '</button>' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.8rem;flex-wrap:wrap;margin:2rem 0 0.6rem;">' +
+      '<h4 style="font-family:var(--font-ui);margin:0;">📋 ' + (it ? 'Annunci in corso' : 'Current listings') + '</h4>' +
+      '<button type="button" class="btn-primary" onclick="_annApriFinestra(null)">' + (it ? '+ Aggiungi annuncio' : '+ Add listing') + '</button>' +
+    '</div>' +
+    '<div id="annunci-tabella" style="font-size:0.85rem;color:var(--text);">' + (it ? 'Carico gli annunci…' : 'Loading…') + '</div>';
+  _annCarica();
+}
+
+// ============================================================
+// 🆕 v7.184 (Franco: «una sotto sezione che si chiama Annunci in corso … una tabella con questi campi: Sito; Serie;
+//    Oggetto; Titolo; Descrizione; Prezzo; Foto. Serie, deve essere una tendina che mostra l'elenco delle serie
+//    dell'Inventario. Foto deve essere un link a uno zip; Lo zip deve essere caricato a mano da me») - GLI ANNUNCI IN CORSO.
+//    Scelte di Franco: lo zip si carica con un tasto della finestra (va su Cloudinary, nella cella resta il link);
+//    l'Oggetto è un articolo dell'Inventario, scelto fra quelli della serie.
+// 📌 STANNO IN UN DOCUMENTO SOLO, `settings/annunci` = { righe: [ { id, sito, seriesId, oggettoId, titolo, descrizione,
+//    prezzo, zip } ] }: sono poche righe, e `settings` lo scrive solo l'admin (§15.2). ⚠️ `settings` si legge da tutti:
+//    titoli e prezzi sono quelli già pubblici sui siti degli annunci.
+// 📌 Come i comandi gemelli: «+ Aggiungi annuncio» in alto a destra e una finestra con Annulla / Salva; ✏️ e 🗑️ sulla
+//    riga. I tasti non sono `.btn-admin`: il tab lo apre solo l'admin, e così si usano anche dal telefono.
+let _annRighe = [];
+async function _annCarica() {
+  const it = currentLang === 'it';
+  try {
+    const d = (await fsGetAll('settings')).find(x => x.id === 'annunci');
+    _annRighe = (d && Array.isArray(d.righe)) ? d.righe : [];
+    _annDisegna();
+  } catch (e) {
+    console.error('_annCarica', e);
+    const box = document.getElementById('annunci-tabella');
+    if (box) box.textContent = (it ? '⚠️ Non riesco a leggere gli annunci: ' : '⚠️ Cannot read the listings: ') + (e?.message || e);
+  }
+}
+function _annSerie() {
+  return getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+}
+function _annNomeArticolo(f) {
+  return f ? (f.fullName || f.name || f.id) : '';
+}
+function _annDisegna() {
+  const box = document.getElementById('annunci-tabella');
+  if (!box) return;
+  const it = currentLang === 'it';
+  if (!_annRighe.length) {
+    box.innerHTML = '<p style="font-style:italic;margin:0;">' + (it ? 'Nessun annuncio in corso.' : 'No current listings.') + '</p>';
+    return;
+  }
+  const serie = new Map(getData('series', []).map(s => [s.id, s]));
+  const figs = new Map((getData('figurines', []) || []).map(f => [f.id, f]));
+  const th = t => '<th style="white-space:nowrap;">' + t + '</th>';
+  box.innerHTML = '<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;">'
+    + '<table class="data-table compact"><thead><tr>'
+    + th(it ? 'Sito' : 'Site') + th(it ? 'Serie' : 'Series') + th(it ? 'Articolo' : 'Item') + th(it ? 'Titolo' : 'Title')
+    + th(it ? 'Descrizione' : 'Description') + th(it ? 'Prezzo' : 'Price') + th('Foto') + '<th></th>'
+    + '</tr></thead><tbody>'
+    + _annRighe.map((r, i) => {
+        const s = serie.get(r.seriesId), f = figs.get(r.articoloId);
+        return '<tr>'
+          + '<td style="white-space:nowrap;">' + esc(r.sito || '') + '</td>'
+          + '<td style="white-space:nowrap;color:var(--nome-entita);">' + esc(s ? _nomeSerie(s) : '') + '</td>'
+          + '<td>' + (f ? '<a href="#" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;">' + esc(_annNomeArticolo(f)) + '</a>'
+                       : (r.articoloId ? '<span style="color:var(--warn);">' + (it ? 'articolo non trovato' : 'item not found') + '</span>' : '')) + '</td>'
+          + '<td>' + esc(r.titolo || '') + '</td>'
+          + '<td style="white-space:pre-line;min-width:220px;">' + esc(r.descrizione || '') + '</td>'
+          + '<td style="white-space:nowrap;text-align:right;">' + (r.prezzo != null && r.prezzo !== '' ? esc(Number(r.prezzo).toFixed(2).replace('.', ',')) + ' €' : '') + '</td>'
+          + '<td style="white-space:nowrap;">' + (r.zip ? '<a href="' + esc(r.zip) + '" target="_blank" rel="noopener">📦 zip</a>' : '') + '</td>'
+          + '<td style="white-space:nowrap;">'
+            + '<button type="button" class="tbl-btn tbl-btn-edit" title="' + (it ? 'Modifica' : 'Edit') + '" onclick="_annApriFinestra(' + i + ')">✏️</button> '
+            + '<button type="button" class="tbl-btn" title="' + (it ? 'Elimina' : 'Delete') + '" onclick="_annElimina(' + i + ')">🗑️</button>'
+          + '</td></tr>';
+      }).join('')
+    + '</tbody></table></div>';
+}
+// Le voci della tendina Oggetto: gli articoli della serie, a gruppi per tipologia (l'ordine del descrittore).
+function _annOpzioniArticolo(seriesId, scelto) {
+  const it = currentLang === 'it';
+  if (!seriesId) return '<option value="">' + (it ? '— scegli prima la serie —' : '— choose the series first —') + '</option>';
+  const ordine = Object.keys(ARTICOLI);
+  const perSez = new Map();
+  (getData('figurines', []) || []).filter(f => f.seriesId === seriesId).forEach(f => {
+    if (!perSez.has(f.section)) perSez.set(f.section, []);
+    perSez.get(f.section).push(f);
+  });
+  const sezDellaSerie = [...perSez.keys()].sort((a, b) => (ordine.indexOf(a) + 1 || 999) - (ordine.indexOf(b) + 1 || 999));
+  return '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+    + sezDellaSerie.map(sez => '<optgroup label="' + esc((ARTICOLI[sez] && (it ? ARTICOLI[sez].it : ARTICOLI[sez].en)) || sez) + '">'
+        + perSez.get(sez).sort((a, b) => ((+a.number || 99999) - (+b.number || 99999)) || _annNomeArticolo(a).localeCompare(_annNomeArticolo(b)))
+            .map(f => '<option value="' + esc(f.id) + '"' + (f.id === scelto ? ' selected' : '') + '>' + esc(_annNomeArticolo(f)) + '</option>').join('')
+        + '</optgroup>').join('');
+}
+// La finestra: `i` = la riga da modificare, null = annuncio nuovo. Annulla / Salva, come le finestre gemelle.
+function _annApriFinestra(i) {
+  const it = currentLang === 'it';
+  const r = (i !== null && _annRighe[i]) ? _annRighe[i] : {};
+  const vecchia = document.getElementById('annuncio-modal');
+  if (vecchia) vecchia.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'annuncio-modal';
+  const lab = t => '<label class="detail-label" style="display:block;margin:0.7rem 0 0.25rem;">' + t + '</label>';
+  ov.innerHTML = '<div class="modal" style="max-width:640px;">'
+    + '<div class="modal-header"><h2 class="modal-title">' + (r.id ? (it ? 'Modifica annuncio' : 'Edit listing') : (it ? 'Nuovo annuncio' : 'New listing')) + '</h2>'
+    + '<button type="button" class="modal-close" onclick="document.getElementById(\'annuncio-modal\').remove()">✕</button></div>'
+    + lab(it ? 'Sito' : 'Site')
+    + '<select id="ann-sito" class="form-select">' + _FA_SITI.map(s => '<option' + (s.nome === r.sito ? ' selected' : '') + '>' + s.nome + '</option>').join('') + '</select>'
+    + lab(it ? 'Serie' : 'Series')
+    + '<select id="ann-serie" class="form-select" onchange="document.getElementById(\'ann-articolo\').innerHTML = _annOpzioniArticolo(this.value, null)">'
+      + '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+      + _annSerie().map(s => '<option value="' + esc(s.id) + '"' + (s.id === r.seriesId ? ' selected' : '') + '>' + esc(_nomeSerie(s)) + '</option>').join('')
+    + '</select>'
+    + lab(it ? 'Articolo' : 'Item')
+    + '<select id="ann-articolo" class="form-select">' + _annOpzioniArticolo(r.seriesId || '', r.articoloId) + '</select>'
+    + lab(it ? 'Titolo' : 'Title')
+    + '<input id="ann-titolo" class="form-input" type="text" value="' + esc(r.titolo || '') + '">'
+    + lab(it ? 'Descrizione' : 'Description')
+    + '<textarea id="ann-descrizione" class="form-input" rows="5" style="resize:vertical;">' + esc(r.descrizione || '') + '</textarea>'
+    + lab(it ? 'Prezzo (€)' : 'Price (€)')
+    + '<input id="ann-prezzo" class="form-input" type="number" min="0" step="0.01" value="' + (r.prezzo ?? '') + '" style="max-width:10rem;">'
+    + lab('Foto (zip)')
+    + '<div style="font-size:0.8rem;margin-bottom:0.4rem;">' + (r.zip ? '<a href="' + esc(r.zip) + '" target="_blank" rel="noopener">📦 ' + (it ? 'lo zip caricato' : 'uploaded zip') + '</a>'
+        + ' <label style="margin-left:0.8rem;cursor:pointer;"><input type="checkbox" id="ann-zip-togli"> ' + (it ? 'toglilo' : 'remove it') + '</label>'
+        : '<span>' + (it ? 'Nessuno zip.' : 'No zip.') + '</span>') + '</div>'
+    + '<label class="btn-secondary" style="display:inline-block;cursor:pointer;">📦 ' + (r.zip ? (it ? 'Carica un altro zip' : 'Upload another zip') : (it ? 'Carica zip' : 'Upload zip'))
+    + '<input type="file" id="ann-zip" accept=".zip,application/zip" style="display:none;" onchange="document.getElementById(\'ann-zip-nome\').textContent = this.files[0] ? this.files[0].name : \'\'"></label>'
+    + ' <span id="ann-zip-nome" style="font-size:0.8rem;"></span>'
+    + '<div id="ann-stato" style="font-size:0.8rem;color:var(--text);min-height:1.2em;margin-top:0.6rem;"></div>'
+    + '<div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.8rem;">'
+      + '<button type="button" class="btn-secondary" onclick="document.getElementById(\'annuncio-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+      + '<button type="button" class="btn-primary" id="ann-salva" onclick="_annSalva(' + (i === null ? 'null' : i) + ')">' + (it ? 'Salva' : 'Save') + '</button>'
+    + '</div></div>';
+  document.body.appendChild(ov);
+}
+// Lo zip va su Cloudinary come file «raw» (non è un'immagine): stessa cartella e stesso preset delle foto.
+async function _annCaricaZip(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/raw/upload`, { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.secure_url) { _trackCloudinaryUpload(); return data.secure_url; }
+  throw new Error((data.error && data.error.message) || ('HTTP ' + res.status));
+}
+async function _annScrivi(righe) {
+  await fsSave('settings', { id: 'annunci', righe });
+  _annRighe = righe;
+  _annDisegna();
+}
+async function _annSalva(i) {
+  const it = currentLang === 'it';
+  const v = id => document.getElementById(id);
+  const stato = v('ann-stato'), bott = v('ann-salva');
+  const prezzo = parseFloat(v('ann-prezzo').value);
+  const riga = {
+    id: (i !== null && _annRighe[i] && _annRighe[i].id) || ('ann' + Date.now().toString(36)),
+    sito: v('ann-sito').value,
+    seriesId: v('ann-serie').value || null,
+    articoloId: v('ann-articolo').value || null,
+    titolo: v('ann-titolo').value.trim(),
+    descrizione: v('ann-descrizione').value.trim(),
+    prezzo: Number.isFinite(prezzo) ? prezzo : null,
+    zip: (i !== null && _annRighe[i] && !v('ann-zip-togli')?.checked) ? (_annRighe[i].zip || null) : null,
+  };
+  if (!riga.seriesId || !riga.titolo) {
+    stato.style.color = 'var(--danger, #e5484d)';
+    stato.textContent = it ? 'Servono almeno la serie e il titolo.' : 'Series and title are required.';
+    return;
+  }
+  bott.disabled = true;
+  try {
+    const file = v('ann-zip').files[0];
+    if (file) {
+      stato.style.color = 'var(--text)';
+      stato.textContent = (it ? 'Carico lo zip (' : 'Uploading the zip (') + (file.size / 1048576).toFixed(1).replace('.', ',') + ' MB)…';
+      riga.zip = await _annCaricaZip(file);
+    }
+    const righe = _annRighe.slice();
+    if (i !== null && righe[i]) righe[i] = riga; else righe.push(riga);
+    await _annScrivi(righe);
+    document.getElementById('annuncio-modal')?.remove();
+    toast(it ? '✅ Annuncio salvato.' : '✅ Listing saved.', 'success');
+  } catch (e) {
+    console.error('_annSalva', e);
+    stato.style.color = 'var(--danger, #e5484d)';
+    stato.textContent = (it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e);
+    bott.disabled = false;
+  }
+}
+async function _annElimina(i) {
+  const it = currentLang === 'it';
+  const r = _annRighe[i];
+  if (!r) return;
+  const ok = await _finestraConferma({
+    titolo: '🗑️ ' + (it ? 'Eliminare questo annuncio?' : 'Delete this listing?'),
+    testo: (r.sito || '') + ' · ' + (r.titolo || ''),
+    ok: it ? 'Elimina' : 'Delete', annulla: it ? 'Annulla' : 'Cancel'
+  });
+  if (!ok) return;
+  try {
+    await _annScrivi(_annRighe.filter((_, k) => k !== i));
+    toast(it ? '✅ Annuncio eliminato.' : '✅ Listing deleted.', 'success');
+  } catch (e) {
+    console.error('_annElimina', e);
+    toast((it ? '⚠️ NON eliminato: ' : '⚠️ NOT deleted: ') + (e?.message || e), 'error');
+  }
 }
 // Gli album che hanno le pagine. Due album con le stesse foto (l'Omaggio e il L. 1000 della serie 3) sono uno solo.
 function _faAlbum() {
@@ -40910,7 +41164,8 @@ function _faAlbum() {
       if (pagine.length < 3 || visti.has(chiave)) return;
       visti.add(chiave);
       const nome = s.name + ' — ' + (f.name || '');
-      out.push({ nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine });
+      // v7.184: `piani` = le caselle del tab Ebay dell'album (`fotoAnnuncio`)
+      out.push({ nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, piani: f.fotoAnnuncio || {} });
     });
   });
   return out;
@@ -40953,14 +41208,19 @@ function _faPiano(N, limite) {
   gruppi.push([N - 1]);
   return gruppi;
 }
-function _faDescriviPiano(g) {
+// 🔄 v7.184 - con il piano scritto la prima e l'ultima foto possono non essere copertina e retro, e delle pagine si
+//    possono saltare: la frase lo dice (`N`, quante pagine ha l'album)
+function _faDescriviPiano(g, N) {
   const c = { 1: 0, 2: 0, 4: 0 };
-  g.slice(1, -1).forEach(x => c[x.length]++);
+  const capi = g.length > 1 && g[0].length === 1 && g[0][0] === 0 && g[g.length - 1].length === 1 && g[g.length - 1][0] === N - 1;
+  (capi ? g.slice(1, -1) : g).forEach(x => c[x.length]++);
   const pezzi = [];
   if (c[1]) pezzi.push(c[1] + (c[1] === 1 ? ' pagina da sola' : ' pagine da sole'));
   if (c[2]) pezzi.push(c[2] + ' foto da 2 pagine');
   if (c[4]) pezzi.push(c[4] + ' foto da 4 pagine');
-  return '<b>' + g.length + ' foto</b>: copertina, ' + pezzi.join(', ') + ', retro.';
+  const saltate = N ? N - g.reduce((t, x) => t + x.length, 0) : 0;
+  const coda = saltate > 0 ? '; ' + saltate + (saltate === 1 ? ' pagina saltata' : ' pagine saltate') : '';
+  return '<b>' + g.length + ' foto</b>: ' + (capi ? 'copertina, ' + pezzi.join(', ') + ', retro' : pezzi.join(', ')) + coda + '.';
 }
 
 const _FA_HTML = `<!doctype html><html lang="it"><head><meta charset="utf-8">
@@ -41073,10 +41333,13 @@ function _faDisegnaScelte() {
     albumBox.appendChild(b);
   });
   const sitoBox = _fa$('scelta-sito'); sitoBox.innerHTML = '';
+  // v7.184: un sito che vuole il piano scritto (Subito) si accende solo per l'album che ce l'ha
+  if (_fa.sito && _fa.album && !_faPianoDi(_fa.album, _fa.sito)) _fa.sito = null;
   _FA_SITI.forEach(s => {
     const b = d.createElement('button');
-    b.textContent = s.nome + ' (' + s.limite + ' foto)' + (s.spento ? ' — prossimamente' : '');
-    b.disabled = !!s.spento;
+    const usabile = !s.soloScritto || (!!_fa.album && !!_faPianoDi(_fa.album, s));
+    b.textContent = s.nome + ' (' + s.limite + ' foto)' + (usabile ? '' : (_fa.album ? ' — pagine da scegliere nella scheda dell’album' : ' — scegli prima l’album'));
+    b.disabled = !usabile;
     if (s === _fa.sito) b.className = 'on';
     b.onclick = () => { _fa.sito = s; _faDisegnaScelte(); };
     sitoBox.appendChild(b);
@@ -41085,7 +41348,8 @@ function _faDisegnaScelte() {
   //    quando manca l'altra: prima l'album acceso in rosso era l'unico segno, e non si notava
   const a = _fa.album, s = _fa.sito;
   _fa$('piano').innerHTML = a && s
-    ? esc(a.nome) + ', ' + a.pagine.length + ' pagine. Su ' + s.nome + ' (massimo ' + s.limite + ' foto) → ' + _faDescriviPiano(_faPiano(a.pagine.length, s.limite)) + '<br>Ora carica le foto delle pagine (passo 3).'
+    ? esc(a.nome) + ', ' + a.pagine.length + ' pagine. Su ' + s.nome + ' (massimo ' + s.limite + ' foto) → ' + _faDescriviPiano(_faPianoDi(a, s), a.pagine.length)
+      + (_faLeggiPiano(a.piani[s.chiave], a.pagine.length, s.limite).gruppi ? ' Come scritto nella scheda dell’album.' : '') + '<br>Ora carica le foto delle pagine (passo 3).'
     : a ? 'Album scelto: <b>' + esc(a.nome) + '</b>, ' + a.pagine.length + ' pagine. Ora scegli il sito.'
     : s ? 'Sito scelto: <b>' + s.nome + '</b>. Ora scegli l’album (passo 1).'
     : 'Scegli l’album e il sito.';
@@ -41554,7 +41818,7 @@ async function _faComponi() {
   _fa.uscite.forEach(u => URL.revokeObjectURL(u.url)); _fa.uscite = [];
   _fa$('risultati').innerHTML = '';
   const saltate = [];
-  for (const g of _faPiano(N, sito.limite)) {
+  for (const g of (_faPianoDi(a, sito) || [])) {
     g.filter(p => !perPagina.has(p)).forEach(p => saltate.push(_faNomePagina(p, N)));
     const presenti = g.filter(p => perPagina.has(p));
     if (!presenti.length) continue;
@@ -52665,6 +52929,11 @@ function cloneFigurine(itemId) {
   // oggetto avra' la sua foto e il suo retro. (Franco: "possibile che cloni anche il retro?")
   b.img = null; b.imgRetro = null; b.ebayImg = null; b.retroId = null;
   b.imgRuotato = null;   // v7.132: anche il fronte ruotato è del pezzo fisico
+  // 🐛 v7.184 (Franco: «è possibile che il tasto "clona" clona le foto?»; «quando cloni non cloni anche le foto; mai,
+  //    per nessuna TDA») - e le PAGINE dell'album, che restavano: l'OMAGGIO della serie 3 e la versione di «W gli
+  //    Sgorbions» erano nati con le foto delle pagine dell'album clonato. Con le pagine se ne va «album da sfogliare».
+  //    I file su Cloudinary non si toccano: la copia semplicemente non li elenca.
+  b.pagine = []; b.sfogliabile = false;
   // v6.105 - e non copia nemmeno l'ESITO della pubblicazione. Non era un caso da gestire prima,
   // perche' la finestra ripopolava i campi uno per uno e questi non li toccava; con lo spread ci
   // finirebbero dentro tutti. `ebay` contiene `listingId` e `offerId` di annunci VERI: un oggetto
@@ -65238,6 +65507,8 @@ function switchToEditMode(figId) {
   //    sempre visibile: non dipende da «In vendita». Il tab lo vede solo l'admin.
   html += '<div style="margin-bottom:0.75rem;"><label class="detail-label" style="display:block;margin-bottom:0.3rem;">📦 ' + (currentLang==='it'?'Disponibilità':'Availability') + '</label>'
     + '<input class="form-input" type="text" id="fe-disponibilita" value="' + esc(f.disponibilita || '') + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>';
+  // 🆕 v7.184 - le pagine per le foto annuncio, solo sull'album base con le pagine sue (vedi `_FA_SITI`)
+  html += _bloccoFotoAnnuncioEdit(f);
   html += '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">' +
     '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;font-weight:600;margin-bottom:' + (f.forSale ? '0.6rem' : '0') + ';">' +
     '<input type="checkbox" id="fe-for-sale" onchange="toggleFeForSaleFields()" ' + (f.forSale ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
@@ -66324,6 +66595,52 @@ function _pagineVisibili(f) {
 
 // 🆕 v6.857 - il TASTO del tab. Stessa condizione del contenuto (`_pagineVisibili`): un tab che
 // apre un pannello vuoto e' peggio di un tab che non c'e'.
+// 🆕 v7.184 (Franco: «crea dei campi da mostrare nella sezione Ebay della form dell'album principale»; «si si parliamo
+//    dell'album base») - LE CASELLE DELLE FOTO ANNUNCIO, una per sito. Ci sono solo sull'album base che ha le pagine
+//    sue: le versioni non hanno foto, e Mega 1 e Mega 2 usano quelle di «W gli Sgorbions» (`fotoDaAlbumId`).
+//    📌 Ogni casella si controlla mentre si scrive (`_feFaControlla`) e il salvataggio rifiuta un piano sbagliato.
+function _albumConCaselleFotoAnnuncio(f) {
+  return !!f && f.section === 'albums' && !f.baseFigurineId && _pagineDi(f).length >= 3;
+}
+function _bloccoFotoAnnuncioEdit(f) {
+  if (!_albumConCaselleFotoAnnuncio(f)) return '';
+  const it = currentLang === 'it', N = _pagineDi(f).length, p = f.fotoAnnuncio || {};
+  return '<div id="fe-foto-annuncio" data-n="' + N + '" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
+    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.3rem;">📸 ' + (it ? 'Foto annuncio: come unire le pagine' : 'Listing photos: how to join the pages') + '</div>'
+    + '<div style="font-size:0.72rem;color:var(--text);margin-bottom:0.6rem;line-height:1.45;">' + (it
+        ? 'I numeri del tab Pagine (1 = copertina, ' + N + ' = retro). La virgola separa una foto dall’altra, il + unisce le pagine della stessa foto (2 o 4); le pagine non scritte si saltano. Esempio: 1, 2, 3+4, 5+6, ' + N + '.<br>'
+          + 'Vuota: eBay e Vinted dividono le pagine da soli, Subito per questo album resta spento.'
+        : 'Page numbers from the Pages tab (1 = cover, ' + N + ' = back). A comma separates the photos, + joins pages in the same photo (2 or 4); pages not written are skipped. Example: 1, 2, 3+4, 5+6, ' + N + '.<br>'
+          + 'Empty: eBay and Vinted split the pages by themselves, Subito stays off for this album.') + '</div>'
+    + _FA_SITI.map(s => '<div style="margin-bottom:0.5rem;"><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">'
+        + s.nome + ' (' + (it ? 'massimo ' : 'max ') + s.limite + ' foto) <span id="fe-fa-esito-' + s.chiave + '" style="font-size:0.7rem;"></span></label>'
+        + '<input class="form-input" type="text" id="fe-fa-' + s.chiave + '" value="' + esc(p[s.chiave] || '') + '" oninput="_feFaControlla(\'' + s.chiave + '\')"'
+        + ' style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>').join('')
+    + '</div>';
+}
+// La riga accanto al nome del sito: quante foto escono, o cosa non va. Restituisce l'errore (o '').
+function _feFaControlla(chiave) {
+  const box = document.getElementById('fe-foto-annuncio'), el = document.getElementById('fe-fa-' + chiave);
+  const sp = document.getElementById('fe-fa-esito-' + chiave), s = _FA_SITI.find(x => x.chiave === chiave);
+  if (!box || !el || !s) return '';
+  const r = _faLeggiPiano(el.value, +box.dataset.n, s.limite);
+  if (sp) {
+    sp.textContent = r.errore ? '— ⚠️ ' + r.errore : (r.gruppi ? '— ✓ ' + r.gruppi.length + ' foto' : '');
+    sp.style.color = r.errore ? 'var(--danger, #e5484d)' : 'var(--muted)';
+  }
+  el.style.borderColor = r.errore ? 'var(--danger, #e5484d)' : '';
+  return r.errore ? s.nome + ': ' + r.errore : '';
+}
+// Il valore da salvare: le caselle ripulite degli spazi; tutte vuote = null.
+function _feFotoAnnuncio() {
+  const out = {};
+  _FA_SITI.forEach(s => {
+    const v = (document.getElementById('fe-fa-' + s.chiave)?.value || '').split(',').map(x => x.trim().split('+').map(y => y.trim()).join('+')).filter(Boolean).join(', ');
+    if (v) out[s.chiave] = v;
+  });
+  return Object.keys(out).length ? out : null;
+}
+
 function _tabPagineBtn(f) {
   if (!f || !_haPagine(f.section) || !currentUser || !currentUser.isAdmin) return '';
   const n = _pagineDi(f).length;
@@ -68050,6 +68367,11 @@ async function saveFigFromDetail(figId, opzioni) {
       const _msgSfo = _messaggioSfogliabileDoppio(_serieQui, figId, _sfoChk);
       if (_msgSfo) { toast(_msgSfo, 'error', null, 9000); return; }
     }
+    // 🆕 v7.184 - un piano delle foto annuncio sbagliato ferma il salvataggio, e si dice quale casella e perché
+    if (document.getElementById('fe-foto-annuncio')) {
+      const _msgFa = _FA_SITI.map(s => _feFaControlla(s.chiave)).filter(Boolean)[0];
+      if (_msgFa) { switchFeTab('ebay'); toast('📸 ' + _msgFa, 'error', null, 9000); return; }
+    }
     if (existingForCheck?.section === 'retros') {
       const category = _catEff; // v6.038
       const changeTypeVal = document.getElementById('fe-retro-change-type')?.value || '';
@@ -68217,6 +68539,8 @@ async function saveFigFromDetail(figId, opzioni) {
       printErrorType: document.getElementById('fe-print-error-type')?.value.trim() || null,
       // 🆕 v7.039 - la disponibilità: il vuoto diventa null
       disponibilita: (document.getElementById('fe-disponibilita')?.value || '').trim() || null,
+      // 🆕 v7.184 - le caselle delle foto annuncio. Solo se c'erano: altrove la chiave non si scrive
+      ...(document.getElementById('fe-foto-annuncio') ? { fotoAnnuncio: _feFotoAnnuncio() } : {}),
       // 🆕 v7.103 - vedi `_fotoProtette`. 🔄 v7.104: si scrive solo l'ECCEZIONE alla tipologia; uguale = null
       fotoProtetta: (() => { const el = document.getElementById('fe-foto-protetta'); if (!el) return null;
         const rec = (typeof _recordInModifica === 'function' && _recordInModifica(figId)) || _bozzaCorrente || {};
@@ -68572,8 +68896,13 @@ async function saveFigFromDetail(figId, opzioni) {
   }
 }
 
+// 🔄 v7.184 (Franco: «correggi quel messaggio per adattarlo alla tda corrente») - la domanda nomina la tipologia
+//    dell'articolo («Eliminare questo album?»), con `_soggettoArticolo`: prima diceva «figurina» per tutto.
 async function deleteItemFromDetail(itemId) {
-  if (!confirm(currentLang === 'it' ? 'Eliminare questa figurina?' : 'Delete this sticker?')) return;
+  const _daTogliere = (getData('figurines', []) || []).find(x => x.id === itemId) || { section: 'figurines' };
+  const _sogg = _soggettoArticolo(_daTogliere);
+  const _cosa = _sogg.charAt(0).toLowerCase() + _sogg.slice(1);
+  if (!confirm((currentLang === 'it' ? 'Eliminare ' : 'Delete ') + _cosa + '?')) return;
   try {
     await fsDelete('figurines', itemId);
   } catch(e) {
