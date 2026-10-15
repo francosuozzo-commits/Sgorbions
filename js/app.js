@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.183 - Modificati js/app.js e index.html (per la versione). Foto annuncio (Franco: «è meglio la finestra la fai più
+//          grande; alla fine uso sempre lo zoom»): nella pagina aperta i comandi in una riga sola sopra, la spiegazione
+//          nel suggerimento della pagina, e la pagina riempie la finestra (anche ingrandendo una foto più piccola).
+//          Lo stesso per la foto ingrandita della sezione 4. E (Franco: «la foto 50-51 ti mette sempre in crisi; la hai
+//          chiamata 56-57») il colore torna nella firma come tinta, fuori dalla serie 3 (`_FA_SENZA_COLORE`).
+//          E (Franco: «mi servirebbe il bottone per accedere alla nuova funzionalità di foto per annunci, dalla
+//          versione mobile; mettila visibile solo alla admin») «📸 Apri» porta .admin-anche-telefono: è un .btn-admin,
+//          quindi lo vede solo l'admin, e ora anche dal telefono.
 // v7.182 - Modificati js/app.js e index.html. FOTO ANNUNCIO (Franco: «fai una nuova sezione nella admin console, dedicata
 //          allo scopo … si apre in una nuova finestra»): tab «📸 Foto annuncio» col pulsante «Apri», che apre una finestra
 //          (`_faApri`). Scelti album e sito (eBay 24, Vinted 20; Subito spento), le foto delle pagine caricate si mettono
@@ -31270,7 +31278,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.182';
+const JS_VERSION = 'v7.183';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40889,7 +40897,7 @@ function renderAdminFotoAnnuncio() {
           'Le foto si scaricano e basta: sul sito non si salva niente. Album con le pagine: <strong>' + n + '</strong>.'
         : 'Listing photos for eBay or Vinted from the photos of an album\'s pages. Nothing is saved on the site. Albums with pages: <strong>' + n + '</strong>.') +
     '</p>' +
-    '<button class="btn-primary btn-admin" onclick="_faApri()">' + (it ? '📸 Apri' : '📸 Open') + '</button>';
+    '<button class="btn-primary btn-admin admin-anche-telefono" onclick="_faApri()">' + (it ? '📸 Apri' : '📸 Open') + '</button>';
 }
 // Gli album che hanno le pagine. Due album con le stesse foto (l'Omaggio e il L. 1000 della serie 3) sono uno solo.
 function _faAlbum() {
@@ -40985,9 +40993,9 @@ h1 { font-size:22px; margin:6px 0 4px; }
 .risultati figcaption { font-size:12px; color:#777; white-space:pre-line; }
 .risultati a { font-size:13px; color:#c0392b; }
 #stato { font-size:14px; color:#777; margin-top:8px; min-height:1.4em; }
-#editor { position:fixed; inset:0; background:rgba(0,0,0,.82); color:#fff; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:10; padding:16px; }
+#editor { position:fixed; inset:0; background:rgba(0,0,0,.82); color:#fff; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:10; padding:8px; }
 #editor.aperto { display:flex; }
-#ed-scorri { max-width:calc(100vw - 150px); max-height:calc(100vh - 200px); overflow:auto; }
+#ed-scorri { max-width:calc(100vw - 136px); max-height:calc(100vh - 74px); overflow:auto; }
 .riga-fr { display:flex; align-items:center; gap:12px; max-width:100%; }
 .freccia { flex:none; width:48px; height:96px; font-size:26px; border:none; border-radius:10px; background:rgba(255,255,255,.88); color:#222; cursor:pointer; }
 .freccia:disabled { opacity:.25; cursor:default; }
@@ -40996,9 +41004,9 @@ h1 { font-size:22px; margin:6px 0 4px; }
 #editor .barra .btn { background:#fff; }
 #editor .barra .btn.primario { background:#c0392b; }
 #editor p { color:#ddd; font-size:13px; margin:0 0 8px; text-align:center; }
-#vista { position:fixed; inset:0; background:rgba(0,0,0,.88); color:#fff; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:11; padding:16px; }
+#vista { position:fixed; inset:0; background:rgba(0,0,0,.88); color:#fff; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:11; padding:8px; }
 #vista.aperto { display:flex; }
-#vista img { max-width:calc(100vw - 150px); max-height:calc(100vh - 120px); object-fit:contain; background:#fff; }
+#vista img { width:calc(100vw - 136px); height:calc(100vh - 90px); object-fit:contain; }
 #vista .barra { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; justify-content:center; }
 #vista .barra .btn { background:#fff; }
 #vista .barra .btn.primario { background:#c0392b; }
@@ -41022,13 +41030,12 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte (un file .zip)</button></div>
   <div class="piano" id="piano2"></div><div class="risultati" id="risultati"></div>
 </section></main>
-<div id="editor"><p>Trascina i bordi del riquadro, oppure trascinalo da dentro per spostarlo.</p><div class="riga-fr"><button class="freccia" id="ed-prec" title="Pagina precedente (tasto ←)">◀</button><div id="ed-scorri"><canvas id="ed-tela"></canvas></div><button class="freccia" id="ed-succ" title="Pagina successiva (tasto →)">▶</button></div>
-  <div class="barra"><button class="btn" id="ed-meno" title="Rimpicciolisci (tasto −)">🔍 −</button><span id="ed-zoom" style="align-self:center;font-size:14px;min-width:4em;text-align:center;"></span><button class="btn" id="ed-piu" title="Ingrandisci (tasto +)">🔍 +</button><span id="ed-dove" style="align-self:center;font-size:14px;min-width:9em;text-align:center;margin-left:12px;"></span></div>
-  <div class="barra"><button class="btn" id="ed-auto">Ritaglio automatico</button><button class="btn" id="ed-tutta">Tutta la foto</button><button class="btn primario" id="ed-ok">Fatto</button></div>
+<div id="editor">
+  <div class="barra" style="margin:0 0 8px;"><span id="ed-dove" style="align-self:center;font-size:14px;min-width:9em;text-align:center;"></span><button class="btn" id="ed-meno" title="Rimpicciolisci (tasto −)">🔍 −</button><span id="ed-zoom" style="align-self:center;font-size:14px;min-width:3.5em;text-align:center;"></span><button class="btn" id="ed-piu" title="Ingrandisci (tasto +)">🔍 +</button><button class="btn" id="ed-auto" style="margin-left:12px;">Ritaglio automatico</button><button class="btn" id="ed-tutta">Tutta la foto</button><button class="btn primario" id="ed-ok">Fatto</button></div>
+  <div class="riga-fr"><button class="freccia" id="ed-prec" title="Pagina precedente (tasto ←)">◀</button><div id="ed-scorri"><canvas id="ed-tela" title="Trascina i bordi del riquadro, oppure trascinalo da dentro per spostarlo"></canvas></div><button class="freccia" id="ed-succ" title="Pagina successiva (tasto →)">▶</button></div>
 </div>
 <div id="vista"><div class="riga-fr"><button class="freccia" id="vi-prec" title="Foto precedente (tasto ←)">◀</button><img id="vi-img" alt=""><button class="freccia" id="vi-succ" title="Foto successiva (tasto →)">▶</button></div>
-  <div class="barra"><span id="vi-dove" style="align-self:center;font-size:14px;min-width:12em;text-align:center;white-space:pre-line;"></span></div>
-  <div class="barra"><a class="btn" id="vi-scarica" style="text-decoration:none;">Scarica</a><button class="btn primario" id="vi-chiudi">Chiudi</button></div>
+  <div class="barra"><span id="vi-dove" style="align-self:center;font-size:14px;min-width:12em;text-align:center;white-space:pre-line;"></span><a class="btn" id="vi-scarica" style="text-decoration:none;">Scarica</a><button class="btn primario" id="vi-chiudi">Chiudi</button></div>
 </div></body></html>`;
 
 function _faApri() {
@@ -41179,6 +41186,7 @@ function _faAutoTaglio(tela) {
 //    pagine del sito su un finto tavolo, girate, mescolate e coi colori stravolti (tinta girata di 120° e di 220°, più
 //    luce e meno contrasto): 405 su 405. La firma a colori di prima, sulla serie 3 con la tinta girata: 16 su 35.
 const _FA_FW = 45, _FA_FH = 60;
+const _FA_SENZA_COLORE = ['glmffpv1aenad1tgpxuk'];   // la serie 3: la prima foto delle pagine del L. 1000 e dell'Omaggio
 function _faFirma(c) {
   const W = _FA_FW, H = _FA_FH, n = W * H;
   const t = _faTela(W * 2, H * 2); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
@@ -41192,8 +41200,18 @@ function _faFirma(c) {
     const gy = p(y + 1, q - 1) + 2 * p(y + 1, q) + p(y + 1, q + 1) - p(y - 1, q - 1) - 2 * p(y - 1, q) - p(y - 1, q + 1);
     e[y * W + q] = Math.sqrt(gx * gx + gy * gy);
   }
-  const v = new Float32Array(2 * n);
-  [[g, 0.5, 0], [e, 1, n]].forEach(([a, peso, da]) => {
+  // 🔄 v7.183 (Franco: «la foto 50-51 ti mette sempre in crisi; la hai chiamata 56-57») - nella serie 2 le 50–51 sono
+  //    rosa e le 56–57 verdi, con figurine in posti simili: senza colore si somigliano. Il colore torna, ma come TINTA
+  //    (quanto rosso e quanto verde sul totale, che non cambia con la luce), e fuori dalla serie 3 (`_FA_SENZA_COLORE`).
+  const conColore = !!_fa && !!_fa.album && !_FA_SENZA_COLORE.some(id => String(_fa.album.pagine[0]).includes(id));
+  const strati = [[g, 0.5, 0], [e, 1, n]];
+  if (conColore) {
+    const cr = new Float32Array(n), cg = new Float32Array(n);
+    for (let k = 0; k < n; k++) { const s = d[k * 4] + d[k * 4 + 1] + d[k * 4 + 2] + 1; cr[k] = d[k * 4] / s; cg[k] = d[k * 4 + 1] / s; }
+    strati.push([cr, 0.8, 2 * n], [cg, 0.8, 3 * n]);
+  }
+  const v = new Float32Array(strati.length * n);
+  strati.forEach(([a, peso, da]) => {
     let s = 0, s2 = 0;
     for (let k = 0; k < n; k++) { s += a[k]; s2 += a[k] * a[k]; }
     const media = s / n, dev = Math.sqrt(Math.max(1, s2 / n - media * media));
@@ -41385,7 +41403,10 @@ const _FA_ZOOM = [1, 1.5, 2, 3, 4];
 function _faApriEditor(f) {
   const t = _fa$('ed-tela'), w = _fa.w;
   // 150: le due frecce ai lati (Franco: «le frecce per scorrere le pagine mettile a sx e dx della finestra della pagina»)
-  const kFit = Math.min((w.innerWidth - 150) / f.tela.width, (w.innerHeight - 230) / f.tela.height, 1);
+  // 🔄 v7.183 (Franco: «è meglio la finestra la fai più grande; alla fine uso sempre lo zoom») - i comandi stanno in
+  //    UNA riga sopra la pagina (erano tre sotto, più la riga di spiegazione, ora nel suggerimento della pagina), e la
+  //    pagina riempie il resto della finestra anche se la foto è più piccola dello schermo
+  const kFit = Math.min((w.innerWidth - 136) / f.tela.width, (w.innerHeight - 74) / f.tela.height);
   const z = _FA_ZOOM[_fa.edZoom || 0];
   const k = kFit * z;
   _fa.ed = { f, k, r: { ...f.rett }, presa: null };
