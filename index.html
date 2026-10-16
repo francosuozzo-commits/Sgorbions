@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.185">
+<link rel="stylesheet" href="css/style.css?v=7.186">
 
 
 <style>
@@ -2371,6 +2371,9 @@ button.back-btn { color:#ffffff; }
     <a onclick="showPage('wishlist')" data-page="wishlist" id="nav-wishlist" style="display:none;position:relative;"><span data-i18n="nav.wishlist">Ciò che cerco</span><span id="nav-wishlist-badge" style="display:none;position:absolute;top:-6px;right:-10px;background:var(--danger);color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span></a>
     <a onclick="showPage('classifica')" data-page="classifica" id="nav-classifica" style="display:none;" data-i18n="nav.classifica">🏆 Classifica</a>
     <a onclick="showPage('newsletter')" id="nav-newsletter-btn" style="display:none;">📧 Newsletter</a>
+    <!-- 🆕 v7.186 (Franco: «nella navbar metti una voce Annunci, admin visible, che porta alla pagina Annunci») -
+         apre la sezione «📢 Annunci» della console. Passa da `showAdminTab`, la porta che chiede chi sei (v6.914). -->
+    <a onclick="showAdminTab('fotoannuncio')" id="nav-annunci" style="display:none;">📢 Annunci</a>
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contatti</a>
     <!-- 🆕 v6.341 (Franco) — LA RICERCA GLOBALE IN NAVBAR, dopo Contatti. Solo admin, solo desktop.
          📌 NON È UNA SECONDA RICERCA: scrive nella casella dell'Inventario e chiama `renderCatalog()`,
@@ -6694,7 +6697,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.185"></script>
+<script src="js/app.js?v=7.186"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6718,7 +6721,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.185'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.186'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
