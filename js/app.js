@@ -1,6 +1,30 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.185 - Modificati js/app.js e index.html (per la versione). Sulla foto della card di un album, solo per l'admin, una
+//          «A» in basso a sinistra quando il tab Ebay ha testi scritti (Franco: «sulla copertina degli album che hanno
+//          uno dei campi Ebay popolato … una "A" va benissimo»): titoli, descrizioni, piani delle foto annuncio,
+//          Disponibilità (`_albumHaTestiAnnuncio`, `_segnoAnnuncio`). Poi (Franco: «fai apparire questa A anche nel
+//          carosello della pagina della serie») anche sulla foto delle card dei caroselli.
+//          E il piano delle foto annuncio (Franco: «invece di scriverli così: "1+2+3+4", scrivilo così: [1+2+3+4]»): le
+//          pagine della stessa foto fra quadre; senza quadre si legge ancora (le caselle già scritte restano buone).
+//          Testi del riquadro foto annuncio (Franco, dettati): «come unire le foto delle pagine», «dividono le foto
+//          delle pagine da soli», errori «numero di foto di pagine», «la foto N…», «1, 2 o 4 foto di pagine».
+//          «Sfoglia album» (Franco: «vorrei che indicassimo anche i numeri di pagina; esattamente come … nella
+//          procedura annunci»): sotto la foto «Foto 9 / 35» e a capo «pagine 14, 15» (`_nomeFotoAlbum`); sopra la foto,
+//          centrato, «NOME SERIE - NOME ALBUM» (`_serieTrattinoAlbum`). Lo stesso nel questionario: sotto
+//          «Schermata N di M» le pagine, sopra l'album il nome (`_albumDellaFoto` ritrova la foto fra quelle degli album).
+//          LO SFONDO DELLE FOTO (Franco: «come è possibile che come foto n.9 tu metta una foto che contiene lo sfondo
+//          verde, quando la pagina 9 ha sfondo giallo?»; «tip scritti nell'inventario, foto per foto»): nel tab Pagine
+//          tre tendine per foto, «Sfondo», «Sfondo pagina sx», «Sfondo pagina dx», colori in ordine alfabetico
+//          (`sfondiFoto` = { t, sx, dx } per nome del file originale), salvate col Salva della scheda.
+//          IL RICONOSCIMENTO, MISURATO SULLE FOTO VERE (le 35 della serie 2 in `foto originali\`): prima 4 al posto
+//          sbagliato (la 56-57 verde sulla 14-15 gialla vista da Franco). Ora tutti i posti si scelgono insieme
+//          (`_faUngherese`, `_faAssegna`) e al punteggio si toglie la distanza fra le tinte dello sfondo, misurate sulle
+//          foto e con la luce corretta (`_faTinta`, `_FA_PESO_TINTA`): 35 su 35, una sola segnata dubbia. Provati e tolti
+//          lungo la strada: la «seconda occhiata», il divieto sugli sfondi scritti nelle tendine e lo scarto dal migliore
+//          (con loro, Franco: «è andata molto peggio di prima!»). Le tendine dello sfondo restano, ma il riconoscimento
+//          non le usa: la tinta la misura da sé.
 // v7.184 - Modificati js/app.js e index.html (per la versione). La conferma del tasto che elimina l'articolo dalla
 //          scheda (Franco: «correggi quel messaggio per adattarlo alla tda corrente») nomina la tipologia: «Eliminare
 //          questo album?», «Eliminare questa carta?» (`_soggettoArticolo`); prima diceva «figurina» per tutto.
@@ -31292,7 +31316,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.184';
+const JS_VERSION = 'v7.185';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34836,14 +34860,19 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs,
         'font-size:' + (r.codaDim || r.dim) + ';">' + r.coda + '</span>' +
     '</div>';
   }).join('');
+  const _segnoCar = _segnoAnnuncio(f);
   return '<div onclick="_caroselloApri(\'' + f.id + '\',\'' + f.seriesId + '\')" ' +
     'title="' + esc(etichetta) + '" ' +
     'style="position:relative;flex:0 0 auto;width:' + larghezza + ';scroll-snap-align:start;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">' +   /* v7.151: relative, per la moneta */
     // v6.080 - altezzaFoto 0 vuol dire "quadrata rispetto alla card" (telefono): niente altezza
     // fissa sotto una card stretta, che e' cio' che allungava il box in verticale.
     // v7.113: nel carosello la scritta segue la colonna «anche nel carosello» della console (`_urlCarosello`)
+    // 🆕 v7.185 (Franco: «fai apparire questa A anche nel carosello della pagina della serie») - la «A» degli album con
+    //    testi per gli annunci sta sulla foto: solo quando c'è, la foto entra in un riquadro suo che le fa da riferimento.
+    (_segnoCar ? '<div style="position:relative;line-height:0;">' : '') +
     '<img src="' + _urlCarosello(f, _fotoFigurina(f, figs) || f.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" ' +
       'style="width:100%;' + (altezzaFoto ? 'height:' + altezzaFoto + 'px;' : 'aspect-ratio:1;height:auto;') + 'object-fit:contain;border-radius:6px;background:var(--card);">' +
+    (_segnoCar ? _segnoCar + '</div>' : '') +
     righe + _monetaHTML +
   '</div>';
 }
@@ -40910,15 +40939,18 @@ function _faLeggiPiano(testo, N, limite) {
   if (!t) return { gruppi: null };
   const gruppi = [], visti = new Set();
   for (const pezzo of t.split(',').map(x => x.trim()).filter(Boolean)) {
-    const nums = pezzo.split('+').map(x => x.trim());
-    if (nums.some(x => !/^\d+$/.test(x))) return { errore: '«' + pezzo + '» non è un numero di pagina (né più numeri uniti col +)' };
+    // v7.185: le pagine della stessa foto fra quadre, [3+4]; senza quadre (com'era nella v7.184) vale lo stesso
+    const quadre = /^\[(.*)\]$/.exec(pezzo);
+    if (!quadre && /[\[\]]/.test(pezzo)) return { errore: '«' + pezzo + '»: una quadra aperta e non chiusa' };
+    const nums = (quadre ? quadre[1] : pezzo).split('+').map(x => x.trim());
+    if (nums.some(x => !/^\d+$/.test(x))) return { errore: '«' + pezzo + '» non è un numero di foto di pagine (né più numeri uniti col +)' };
     const g = nums.map(Number);
     for (const n of g) {
-      if (n < 1 || n > N) return { errore: 'la pagina ' + n + ' non c’è: vanno da 1 a ' + N };
-      if (visti.has(n)) return { errore: 'la pagina ' + n + ' è scritta due volte' };
+      if (n < 1 || n > N) return { errore: 'la foto ' + n + ' non c’è: vanno da 1 a ' + N };
+      if (visti.has(n)) return { errore: 'la foto ' + n + ' è scritta due volte' };
       visti.add(n);
     }
-    if (![1, 2, 4].includes(g.length)) return { errore: '«' + pezzo + '»: una foto unisce 1, 2 o 4 pagine' };
+    if (![1, 2, 4].includes(g.length)) return { errore: '«' + pezzo + '»: una foto unisce 1, 2 o 4 foto di pagine' };
     gruppi.push(g.map(n => n - 1));
   }
   if (!gruppi.length) return { gruppi: null };
@@ -41159,13 +41191,16 @@ function _faAlbum() {
   getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999)).forEach(s => {
     (s.items || []).forEach(f => {
       if (f.section !== 'albums' || !Array.isArray(f.pagine) || f.pagine.length < 3) return;
-      const pagine = f.pagine.map(p => p && p.url).filter(Boolean);
+      const pag = _pagineDi(f), pagine = pag.map(p => p.url);
       const chiave = pagine.join(' ');
       if (pagine.length < 3 || visti.has(chiave)) return;
       visti.add(chiave);
       const nome = s.name + ' — ' + (f.name || '');
       // v7.184: `piani` = le caselle del tab Ebay dell'album (`fotoAnnuncio`)
-      out.push({ nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, piani: f.fotoAnnuncio || {} });
+      // v7.185: `sfondi` = lo sfondo di ogni foto, scelto nel tab Pagine (`sfondiFoto`, per nome del file originale)
+      const sf = f.sfondiFoto || {};
+      out.push({ nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, piani: f.fotoAnnuncio || {},
+        sfondi: pag.map(p => _sfondoLati(sf[_nomeFileFoto(p.orig)])) });
     });
   });
   return out;
@@ -41178,14 +41213,56 @@ function _faAlbum() {
 // ⚠️ Fa eccezione la serie 3: lì l'ultima foto interna è «64 | 65», tutte e due numerate (letta il 15 ottobre). La si
 //    riconosce dalla prima foto delle pagine, che è la stessa per il L. 1000 e per l'Omaggio.
 const _FA_ULTIMA_NUMERATA = ['glmffpv1aenad1tgpxuk'];
-function _faNomePagina(i, N, album) {
+function _faNomePagina(i, N, album, lungo) {
+  // 🔄 v7.185 (Franco: «"pagg. 14–15 + pagg. 16–17" diventa "pagine 14–15 + pagine 16–17"»; poi «la abbreviazione
+  //    "pagine" -> "pagg." lasciala nelle schermate con tante foto») - `lungo`: «pagine» per esteso, dove la foto è una
+  //    sola a schermo (la foto aperta, la foto ingrandita); senza, «pagg.» (miniature, risultati, menu, avvisi).
   if (i === 0) return 'Copertina';
   if (i === N - 1) return 'Retro';
   if (i === 1) return 'II cop. + pag. 1';
   const alb = album || (typeof _fa !== 'undefined' && _fa ? _fa.album : null);
   const ultimaNumerata = !!alb && _FA_ULTIMA_NUMERATA.some(id => String(alb.pagine[0]).includes(id));
   if (i === N - 2 && !ultimaNumerata) return 'pag. ' + (2 * i - 2) + ' + III cop.';
-  return 'pagg. ' + (2 * i - 2) + '–' + (2 * i - 1);
+  return (lungo ? 'pagine ' : 'pagg. ') + (2 * i - 2) + '–' + (2 * i - 1);
+}
+// v7.185 - lo stesso nome in inglese, per «Sfoglia album» sul sito in inglese (parole mie: IFC/IBC sono le sigle
+// inglesi della seconda e della terza di copertina)
+function _faNomePaginaEn(s) {
+  return s.replace('Copertina', 'Cover').replace('Retro', 'Back cover').replace('III cop.', 'IBC').replace('II cop.', 'IFC')
+    .replace('pagine', 'pp.').replace('pagg.', 'pp.').replace('pag.', 'p.');
+}
+// v7.185 - le pagine dell'album contenute nella foto `i` di un album (`urls` = le sue foto, in ordine), nella lingua
+// del sito: per «Sfoglia album» e per l'album del questionario. Franco: «riga 2: "pagine x, y"» - quindi «pagine 14, 15»,
+// «pagine II cop., 1», «pagine 64, III cop.»; copertina e retro col loro nome. Si parte da `_faNomePagina`, così la
+// numerazione (e l'eccezione della serie 3) resta una sola.
+function _nomeFotoAlbum(i, urls) {
+  const it = currentLang === 'it';
+  const s = _faNomePagina(i, urls.length, { pagine: urls });
+  if (s === 'Copertina') return it ? s : 'Cover';
+  if (s === 'Retro') return it ? s : 'Back cover';
+  const pezzi = s.replace(/^(pagine|pagg?\.) /, '').replace(' + pag. ', ' + ').replace(/(\d+)–(\d+)/, '$1 + $2').split(' + ');
+  return (it ? 'pagine ' : 'pages ') + pezzi.map(x => it ? x : x.replace('III cop.', 'IBC').replace('II cop.', 'IFC')).join(', ');
+}
+// v7.185 (Franco: «NOME SERIE - NOME ALBUM») - '' se l'album non si trova
+function _serieTrattinoAlbum(alb) {
+  if (!alb) return '';
+  const s = getData('series', []).find(x => x.id === alb.seriesId);
+  return [s && s.name, alb.name].filter(Boolean).join(' - ');
+}
+// v7.185 - nel questionario le schermate sono solo le foto con figurine della tipologia: la foto si ritrova fra quelle
+// degli album (per il nome del file su Cloudinary, che non cambia con le trasformazioni) per sapere QUALE è
+const _nomeFileFoto = u => String(u || '').split('?')[0].split('/').pop().replace(/\.[a-z0-9]+$/i, '');
+function _albumDellaFoto(url) {
+  const nome = _nomeFileFoto;
+  const cerco = nome(url);
+  if (!cerco) return null;
+  for (const a of getData('figurines', [])) {
+    if (a.section !== 'albums') continue;
+    const pag = _pagineDi(a), urls = pag.map(p => p.url);
+    const i = pag.findIndex(p => nome(p.url) === cerco || nome(p.orig) === cerco);
+    if (i >= 0) return { album: a, i, urls };
+  }
+  return null;
 }
 // Quali pagine vanno nella stessa foto: un elenco di gruppi di indici, nell'ordine dell'album.
 function _faPiano(N, limite) {
@@ -41275,8 +41352,7 @@ h1 { font-size:22px; margin:6px 0 4px; }
 <h1>📸 Foto annuncio</h1>
 <div class="nota">Le foto restano in questa finestra: sul sito non si salva niente.</div>
 <section class="passo"><h2>1. Quale album?</h2><div class="scelte" id="scelta-album"></div></section>
-<section class="passo"><h2>2. Per quale sito servono le foto?</h2><div class="scelte" id="scelta-sito"></div><div class="piano" id="piano"></div></section>
-<section class="passo"><h2>3. Le foto delle pagine</h2>
+<section class="passo"><h2>2. Le foto delle pagine</h2>
   <div class="scelte">
     <label class="btn primario">Carica le foto<input type="file" id="file" accept="image/*" multiple hidden></label>
     <button class="btn" id="demo">Usa le foto del sito</button>
@@ -41286,6 +41362,8 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <div class="zoom" id="zoom-mini" style="display:none;">🔍 Miniature <button id="mini-meno" title="Più piccole">−</button><button id="mini-piu" title="Più grandi">+</button></div>
   <div class="griglia" id="miniature"></div>
 </section>
+<!-- v7.185 (Franco: «dovremmo invertire gli step 2 e 3; prima si caricano le foto e dopo si sceglie il sito») -->
+<section class="passo"><h2>3. Per quale sito servono le foto?</h2><div class="scelte" id="scelta-sito"></div><div class="piano" id="piano"></div></section>
 <section class="passo"><h2>4. Le foto per l'annuncio</h2>
   <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte (un file .zip)</button></div>
   <div class="piano" id="piano2"></div><div class="risultati" id="risultati"></div>
@@ -41312,6 +41390,11 @@ function _faApri() {
   $('scarica').onclick = _faScaricaTutte;
   _faEditorEventi();
   _faDisegnaScelte();
+  // 🐛 v7.185 (Franco: «quando premo il pulsante … mi mostra la ultima pagina dell'album aperta; dovrebbe reiniziare
+  //    sempre daccapo») - la finestra ha un nome, quindi se era rimasta aperta il browser riusa QUELLA: il contenuto si
+  //    riscrive da zero, ma lo scorrimento restava dov'era, in fondo. Si riparte dall'alto.
+  w.scrollTo(0, 0);
+  if (w.document.documentElement) w.document.documentElement.scrollTop = 0;
   w.focus();
 }
 const _fa$ = id => _fa.w.document.getElementById(id);
@@ -41349,8 +41432,10 @@ function _faDisegnaScelte() {
   const a = _fa.album, s = _fa.sito;
   _fa$('piano').innerHTML = a && s
     ? esc(a.nome) + ', ' + a.pagine.length + ' pagine. Su ' + s.nome + ' (massimo ' + s.limite + ' foto) → ' + _faDescriviPiano(_faPianoDi(a, s), a.pagine.length)
-      + (_faLeggiPiano(a.piani[s.chiave], a.pagine.length, s.limite).gruppi ? ' Come scritto nella scheda dell’album.' : '') + '<br>Ora carica le foto delle pagine (passo 3).'
-    : a ? 'Album scelto: <b>' + esc(a.nome) + '</b>, ' + a.pagine.length + ' pagine. Ora scegli il sito.'
+      + (_faLeggiPiano(a.piani[s.chiave], a.pagine.length, s.limite).gruppi ? ' Come scritto nella scheda dell’album.' : '')
+      + (_fa.foto.length ? '<br>Ora prepara le foto (passo 4).' : '<br>Ora carica le foto delle pagine (passo 2).')
+    // v7.185: il sito è diventato il passo 3, dopo le foto
+    : a ? 'Album scelto: <b>' + esc(a.nome) + '</b>, ' + a.pagine.length + ' pagine. Carica le foto delle pagine (passo 2), poi scegli il sito.'
     : s ? 'Sito scelto: <b>' + s.nome + '</b>. Ora scegli l’album (passo 1).'
     : 'Scegli l’album e il sito.';
   _fa$('componi').disabled = !_fa.foto.length || !_fa.sito;
@@ -41484,6 +41569,78 @@ function _faFirma(c) {
   return v;
 }
 function _faSomiglia(a, b) { let s = 0; for (let k = 0; k < a.length; k++) s += a[k] * b[k]; return s / a.length; }
+// 🔄 v7.185 (Franco: «ci sono delle pagine che quando le scansioni le collochi male … se rilancio la procedura daccapo
+//    … commetti lo stesso errore»; poi, provando: «è andata molto peggio di prima!») - MISURATO SULLE FOTO VERE, il 16
+//    ottobre: le 35 foto della serie 2 in `foto originali\` (scattate in ordine, quindi la foto k è la pagina k).
+//    📏 Con la scelta di prima (la coppia più simile vince, poi la seconda, …) 4 foto su 35 al posto sbagliato:
+//       29→27, 30→9 (la 56-57 verde al posto della 14-15 gialla, quella vista da Franco), 9→29, 27→30. Le firme delle
+//       foto vere somigliano poco a quelle del sito (0,07–0,19), e un posto preso da un'altra fa scivolare le altre.
+//    ✅ Due rimedi, misurati insieme: 35 su 35.
+//       1. LA SCELTA DI TUTTI I POSTI INSIEME (`_faUngherese`): la sistemazione con la somiglianza totale più alta,
+//          invece di una coppia alla volta. Da sola: 33 su 35 (resta lo scambio 9 ↔ 30).
+//       2. LA TINTA DELLO SFONDO (`_faTinta`): quanto rosso e quanto verde sul totale, media della foto intera. Si toglie
+//          al punteggio la distanza fra la tinta della tua foto e quella della foto del sito (`_FA_PESO_TINTA`). Prima di
+//          confrontare si corregge la luce: le tue tinte si spostano della differenza fra la loro media e quella del sito
+//          (solo con almeno l'80% delle foto, se no la media non è dell'album intero).
+//       Con la tinta il risultato tiene da 0,5 a 8 di peso, con e senza correzione; 1 è quello che sbaglia meno anche
+//       come prima scelta di ogni foto (1 su 35, la 9, che l'insieme rimette a posto).
+//    🗑️ Tolti, perché sulle foto vere non servivano o facevano danni: la «seconda occhiata» (scritta prima di avere le
+//       foto), il divieto sugli sfondi scritti a mano e lo scarto dal migliore (con loro, Franco: «molte foto non le
+//       hai nemmeno girate»: erano le foto rimaste senza posto).
+const _FA_PESO_TINTA = 1;
+function _faTinta(c) {
+  const W = 30, H = 40, t = _faTela(W, H), x = t.getContext('2d');
+  x.drawImage(c, 0, 0, W, H);
+  const d = x.getImageData(0, 0, W, H).data;
+  let r = 0, g = 0;
+  for (let k = 0; k < W * H; k++) { const s = d[k * 4] + d[k * 4 + 1] + d[k * 4 + 2] + 1; r += d[k * 4] / s; g += d[k * 4 + 1] / s; }
+  return [r / (W * H), g / (W * H)];
+}
+// L'assegnamento migliore di una matrice quadrata da MASSIMIZZARE: a[riga] = colonna (metodo ungherese, n³).
+function _faUngherese(M) {
+  const n = M.length, INF = 1e9, u = Array(n + 1).fill(0), v = Array(n + 1).fill(0), p = Array(n + 1).fill(0), via = Array(n + 1).fill(0);
+  for (let i = 1; i <= n; i++) {
+    p[0] = i;
+    let j0 = 0;
+    const minv = Array(n + 1).fill(INF), usata = Array(n + 1).fill(false);
+    do {
+      usata[j0] = true;
+      const i0 = p[j0];
+      let delta = INF, j1 = 0;
+      for (let j = 1; j <= n; j++) if (!usata[j]) {
+        const cur = -M[i0 - 1][j - 1] - u[i0] - v[j];
+        if (cur < minv[j]) { minv[j] = cur; via[j] = j0; }
+        if (minv[j] < delta) { delta = minv[j]; j1 = j; }
+      }
+      for (let j = 0; j <= n; j++) if (usata[j]) { u[p[j]] += delta; v[j] -= delta; } else minv[j] -= delta;
+      j0 = j1;
+    } while (p[j0] !== 0);
+    do { const j1 = via[j0]; p[j0] = p[j1]; j0 = j1; } while (j0);
+  }
+  const a = Array(n);
+  for (let j = 1; j <= n; j++) a[p[j] - 1] = j - 1;
+  return a;
+}
+// Il posto di ogni tua foto: per ognuna { c (la coppia: pagina, verso, parte), prima (la pagina che preferiva da sola) },
+// o null se resta senza posto (più foto che pagine). `tinteFoto[fi]` e `tinteSito[pi]` = [rosso, verde].
+function _faAssegna(coppie, tinteFoto, tinteSito, F, P) {
+  const media = a => [a.reduce((s, x) => s + x[0], 0) / a.length, a.reduce((s, x) => s + x[1], 0) / a.length];
+  let tf = tinteFoto;
+  if (F && P && F >= P * 0.8) {
+    const ms = media(tinteSito), mt = media(tinteFoto);
+    tf = tinteFoto.map(t => [t[0] - mt[0] + ms[0], t[1] - mt[1] + ms[1]]);
+  }
+  const coppia = Array.from({ length: F }, () => Array(P).fill(null));
+  coppie.forEach(c => { const x = coppia[c.fi][c.pi]; if (!x || c.s > x.s) coppia[c.fi][c.pi] = c; });
+  const punti = coppia.map((r, fi) => r.map((c, pi) => c ? c.s - _FA_PESO_TINTA * Math.hypot(tf[fi][0] - tinteSito[pi][0], tf[fi][1] - tinteSito[pi][1]) : -9));
+  const n = Math.max(F, P), M = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i < F && j < P) ? punti[i][j] : -9));
+  const a = _faUngherese(M);
+  return punti.map((r, fi) => {
+    const pi = a[fi];
+    if (pi == null || pi >= P || !coppia[fi][pi]) return null;
+    return { c: coppia[fi][pi], prima: r.indexOf(Math.max(...r)) };
+  });
+}
 // le foto del sito in una larghezza data (Cloudinary la fa da sé)
 const _faCld = (url, w) => url.includes('/image/upload/') ? url.replace('/image/upload/', '/image/upload/w_' + w + '/') : url;
 function _faImg(src) {
@@ -41493,26 +41650,28 @@ function _faImg(src) {
 async function _faFirmeDelSito() {
   const a = _fa.album;
   if (_fa.rif && _fa.rif.file === a.file) return _fa.rif.firme;
-  const firme = [], forme = [], mezze = [];
+  const firme = [], forme = [], mezze = [], tinte = [];
   for (let i = 0; i < a.pagine.length; i++) {
     _faStato('Leggo le pagine del sito: ' + (i + 1) + ' di ' + a.pagine.length + '…');
     const img = await _faImg(_faCld(a.pagine[i], 300));
     // le foto del sito sono già ritagliate: si confrontano intere
     const c = _faRiduci(img, img.naturalWidth, img.naturalHeight, 300), w2 = Math.round(c.width / 2);
     firme.push(_faFirma(c));
+    tinte.push(_faTinta(c));   // v7.185: la tinta dello sfondo (`_faAssegna`)
     forme.push(img.naturalWidth / img.naturalHeight);
     // e le due facciate da sole, per la foto ritagliata su una facciata sola (vedi `_faOrdina`)
     mezze.push([{ x: 0, y: 0, w: w2, h: c.height }, { x: w2, y: 0, w: c.width - w2, h: c.height }].map(r => _faFirma(_faRitaglio({ tela: c, rett: r }))));
   }
-  _fa.rif = { file: a.file, firme, forme, mezze };
+  _fa.rif = { file: a.file, firme, forme, mezze, tinte };
   return firme;
 }
 async function _faOrdina() {
   const firme = await _faFirmeDelSito();
   _faStato('Riconosco le pagine…');
-  const coppie = [], { forme, mezze } = _fa.rif;
+  const coppie = [], { forme, mezze } = _fa.rif, tinteFoto = [];
   _fa.foto.forEach((f, fi) => {
     const base = _faNucleo(f);
+    tinteFoto[fi] = _faTinta(base);   // v7.185: la tinta non dipende dal verso
     for (let v = 0; v < 4; v++) {
       const fv = _faFirma(_faGira(base, v));
       const forma = v % 2 ? base.height / base.width : base.width / base.height;
@@ -41526,21 +41685,17 @@ async function _faOrdina() {
       });
     }
   });
-  // la coppia foto-pagina più simile vince, e né la foto né la pagina tornano in gioco
-  coppie.sort((a, b) => b.s - a.s);
-  const presaF = new Set(), presaP = new Set(), scelta = new Map();
-  for (const c of coppie) {
-    if (presaF.has(c.fi) || presaP.has(c.pi)) continue;
-    presaF.add(c.fi); presaP.add(c.pi); scelta.set(c.fi, c);
-  }
+  // 🔄 v7.185 - tutti i posti insieme, con la tinta dello sfondo (vedi `_faAssegna`, e le misure sopra `_FA_PESO_TINTA`)
+  const scelte = _faAssegna(coppie, tinteFoto, _fa.rif.tinte || [], _fa.foto.length, firme.length);
   _fa.foto.forEach((f, fi) => {
-    const c = scelta.get(fi);
-    if (!c) { f.pagina = null; f.dubbia = true; return; }
+    const x = scelte[fi];
+    if (!x) { f.pagina = null; f.dubbia = true; return; }
+    const c = x.c;
     if (c.v) _faGiraFoto(f, c.v);
     _faCorreggiForma(f, c.pi, c.parte);
-    // dubbia: somiglianza bassa, oppure un'altra pagina le somiglia quasi altrettanto
-    const seconda = Math.max(-1, ...coppie.filter(x => x.fi === fi && x.pi !== c.pi).map(x => x.s));
-    f.pagina = c.pi; f.dubbia = c.s < 0.2 || c.s - seconda < 0.05;
+    // 🔄 v7.185 - dubbia: da sola avrebbe scelto un'altra pagina, e il posto gliel'ha dato l'insieme. Prima era «sotto
+    //    0,2 o a meno di 0,05 dalla seconda»: sulle foto vere i punteggi stanno fra 0,07 e 0,19, quindi era dubbia ogni foto.
+    f.pagina = c.pi; f.dubbia = x.prima !== c.pi;
   });
   _faInOrdine();
   _faStato('');
@@ -41679,7 +41834,7 @@ function _faApriEditor(f) {
   _fa$('ed-meno').disabled = !_fa.edZoom;
   _fa$('ed-piu').disabled = (_fa.edZoom || 0) >= _FA_ZOOM.length - 1;
   const i = _fa.foto.indexOf(f), N = _fa.album.pagine.length;
-  _fa$('ed-dove').textContent = (f.pagina === null ? 'Pagina ?' : _faNomePagina(f.pagina, N)) + ' (' + (i + 1) + ' di ' + _fa.foto.length + ')';
+  _fa$('ed-dove').textContent = (f.pagina === null ? 'Pagina ?' : _faNomePagina(f.pagina, N, null, true)) + ' (' + (i + 1) + ' di ' + _fa.foto.length + ')';
   _fa$('ed-prec').disabled = i <= 0;
   _fa$('ed-succ').disabled = i >= _fa.foto.length - 1;
   _fa$('editor').classList.add('aperto');
@@ -41826,7 +41981,7 @@ async function _faComponi() {
     const c = _faComponiGruppo(presenti.map(p => _faRitaglio(perPagina.get(p))));
     const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.9));
     const n = String(_fa.uscite.length + 1).padStart(2, '0');
-    _fa.uscite.push({ nome: a.file + '-' + sito.nome.toLowerCase() + '-' + n + '.jpg', blob, url: URL.createObjectURL(blob), dida: presenti.map(p => _faNomePagina(p, N)).join(' + ') });
+    _fa.uscite.push({ nome: a.file + '-' + sito.nome.toLowerCase() + '-' + n + '.jpg', blob, url: URL.createObjectURL(blob), dida: presenti.map(p => _faNomePagina(p, N)).join(' + '), didaLunga: presenti.map(p => _faNomePagina(p, N, null, true)).join(' + ') });
   }
   _faStato('');
   _fa$('piano2').innerHTML = _fa.uscite.length + ' foto pronte per ' + sito.nome + ' (massimo ' + sito.limite + ').' +
@@ -41850,7 +42005,7 @@ function _faVista(i) {
   const u = _fa.uscite[i];
   _fa.vista = i;
   _fa$('vi-img').src = u.url;
-  _fa$('vi-dove').textContent = 'Foto ' + (i + 1) + ' di ' + _fa.uscite.length + ':\n' + u.dida;
+  _fa$('vi-dove').textContent = 'Foto ' + (i + 1) + ' di ' + _fa.uscite.length + ':\n' + (u.didaLunga || u.dida);
   _fa$('vi-scarica').href = u.url; _fa$('vi-scarica').download = u.nome;
   _fa$('vi-prec').disabled = i === 0;
   _fa$('vi-succ').disabled = i === _fa.uscite.length - 1;
@@ -48851,6 +49006,27 @@ function _timbroInvisibile(f) {
   return _timbroHTML(currentLang === 'it' ? 'INVISIBILE' : 'HIDDEN', 'var(--in-arrivo)');
 }
 
+// 🆕 v7.185 (Franco: «sulla copertina degli album che hanno uno dei campi Ebay popolato (ad esempio, titolo o
+//    descrizione), vorrei che dalla card della griglia l'admin lo noti … una "A" va benissimo») - SOLO ADMIN, SOLO ALBUM.
+//    Contano i testi scritti a mano nel tab Ebay della scheda: titoli e descrizioni dell'annuncio, i piani delle foto
+//    annuncio (`fotoAnnuncio`) e la Disponibilità. Prezzo, quantità e condizione no: hanno sempre un valore di partenza.
+//    In basso a sinistra: in alto ci sono i tasti admin (sinistra) e la tipologia (destra), e sul telefono la tipologia
+//    scende in basso a destra.
+function _albumHaTestiAnnuncio(f) {
+  if (!f || f.section !== 'albums') return false;
+  const pieno = v => typeof v === 'string' && v.trim() !== '';
+  return ['ebayTitleIt', 'ebayTitleEn', 'ebayDescIt', 'ebayDescEn', 'disponibilita'].some(k => pieno(f[k]))
+    || Object.values(f.fotoAnnuncio || {}).some(pieno);
+}
+function _segnoAnnuncio(f) {
+  if (!currentUser?.isAdmin || !_albumHaTestiAnnuncio(f)) return '';
+  const tit = currentLang === 'it' ? 'Ha testi per gli annunci (tab Ebay)' : 'Has listing texts (Ebay tab)';
+  return '<div class="fig-segno-annuncio" title="' + tit + '" style="position:absolute;bottom:6px;left:6px;'
+    + 'width:20px;height:20px;border-radius:50%;background:var(--accent);color:#0e0a1a;'
+    + 'display:flex;align-items:center;justify-content:center;'
+    + 'font-family:var(--font-ui);font-size:0.75rem;font-weight:800;line-height:1;pointer-events:auto;">A</div>';
+}
+
 // 🆕 v6.609 (Franco: *«io li aggiungerei un prefisso alla scritta del nome articoli»*)
 // 🔴 NELLA RICERCA GLOBALE IL TIMBRO NON CI STA, ED E' UNA MISURA: la miniatura di un
 // risultato e' 44px (v6.405). «IN ARRIVO !» misura 94 dentro 114, quindi qui il corpo
@@ -54106,6 +54282,7 @@ function _wzDisegna(tieni) {
         //    di una pagina e quello del capo (`_wzPagina` con un salto grande: si ferma alla prima o all'ultima)
         const bPag = (d, testo, freccia, spento) => '<button type="button" class="btn-secondary" onclick="_wzPagina(\'' + p + '\',' + d + ')"' + (spento ? ' disabled' : '') + '>' + testo + '<span class="wz-freccia">' + freccia + '</span></button>';
         const ultima = pg === m.pagine.length - 1;
+        const _qui = _albumDellaFoto(P.url);   // v7.185: di quale album è la foto in vista, e quale foto è
         // 🔄 v7.132 (Franco: «la finestra con le pagine dell'album deve essere al centro dello schermo; altrimenti lo user
         //    ad ogni cambio pagina deve scrollare… mettiamo i due pulsanti blu "seleziona/deseleziona tutte" a sx; ma
         //    facciamoli meno alti, larghi quanto i due pulsanti rosa sotto ma altezza il minimo indispensabile») - sul
@@ -54125,7 +54302,10 @@ function _wzDisegna(tieni) {
           + pagPrec('wz-pag-nav wz-pag-sx')
           // 🔄 v7.130 (Franco: «"pagina 1 di N" è fuorviante, lo user potrebbe pensare al numero di pagina dell'album;
           //    chiamalo "Schermata 1 di N"»)
-          + '<span class="wz-album-dove">' + (it ? 'Schermata ' : 'Screen ') + (pg + 1) + (it ? ' di ' : ' of ') + m.pagine.length + '</span>'
+          // 🆕 v7.185 (Franco: «farei lo stesso nella procedura del questionario») - e le pagine dell'album nella foto,
+          //    come in «Sfoglia album» (`_nomeFotoAlbum`), se la foto si ritrova fra quelle di un album
+          + '<span class="wz-album-dove">' + (it ? 'Schermata ' : 'Screen ') + (pg + 1) + (it ? ' di ' : ' of ') + m.pagine.length
+          + (_qui ? '<br>' + _nomeFotoAlbum(_qui.i, _qui.urls) : '') + '</span>'
           + pagSucc('wz-pag-nav')
           // 🔄 v7.130 (Franco: «"2 pagine" diventa "mostra 2 pagine", "sinistra" "mostra solo pagina sinistra", "destra"
           //    "mostra solo pagina destra"; mostra "mostra 2 pagine" in modalità una pagina, e gli altri 2 in modalità 2
@@ -54148,6 +54328,8 @@ function _wzDisegna(tieni) {
           // 🔄 v7.130 (Franco: «"Tocca tutte" diventa "Seleziona tutte", "Nessuna" diventa "Deseleziona tutte"; questi 2
           //    bottoni sono azione, quindi vanno in blu») - `.btn-primary`; premuti restano verdi (`.wz-cmd-on`, v7.072)
           + cmdTutte('wz-comandi-sopra')   // v7.132: sul telefono qui; sul desktop nella colonna di sinistra
+          // 🆕 v7.185 (Franco: «leggere sopra la finestra il nome dell'album che si sta sfogliando … NOME SERIE - NOME ALBUM»)
+          + (_qui ? '<div class="wz-album-nome" style="text-align:center;font-family:var(--font-ui);font-weight:700;margin:0.2rem 0 0.4rem;">' + esc(_serieTrattinoAlbum(_qui.album)) + '</div>' : '')
           // v7.130: i tasti ai lati dell'album; e le due righe (sopra e sotto) stanno nella stessa griglia, nella colonna
           //    dell'album, così «Schermata N di M» parte dal suo bordo sinistro (Franco)
           + '<div class="wz-album-riga">' + nav(false) + pagPrec('wz-pag-lato wz-lato-sx', cmdTutte('wz-comandi-lato'))
@@ -58823,7 +59005,7 @@ function renderItems() {
            modi diversi (_retroViewMode): scrivere la cornice dentro ognuno voleva dire
            dieci punti da tenere allineati. Qui c'e' il FATTO, il disegno lo fa il CSS. -->
       <div class="fig-img-placeholder"${_latoErrCard ? ` data-lato-errore="${_latoErrCard}"` : ''} style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;container-type:inline-size;">
-        ${imgHTML}${_timbroInvisibile(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}${f.section === 'attaccare' && _commentoAlbumCard(f) ? `<div class="fig-commento-album">${esc(_commentoAlbumCard(f))}</div>` : ''}
+        ${imgHTML}${_timbroInvisibile(f)}${_segnoAnnuncio(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}${f.section === 'attaccare' && _commentoAlbumCard(f) ? `<div class="fig-commento-album">${esc(_commentoAlbumCard(f))}</div>` : ''}
       </div>
       <div class="fig-body">
         ${/* 🔄 v7.179 (Franco: «per le fcr avevo detto che lo volevo fisso, non in mouse-hovering; lascialo in mouse hovering
@@ -65303,6 +65485,7 @@ function switchToEditMode(figId) {
   // dalla catena, o si infila fra `getData()` e `.filter()` e spezza l'espressione — `node --check`
   // lo vede, ma vale la pena scriverlo: e' il punto in cui il commento lungo invita a sbagliare.
   _feRecord = f;   // v6.321 - il toggle ne ha bisogno per rifare l'elenco
+  _feSfondiBozza = null;   // v7.185 - gli sfondi delle foto ripartono da quelli salvati
   const _partenzeAmmesse = _costruisciPartenze(f, _chiaveTipo(f));
   // 🗑️ v6.321 - QUI STAVA LA COSTRUZIONE DELL'ELENCO, scritta in linea. E' diventata
   // `_costruisciPartenze()` perche' serve DUE volte: qui e nel toggle delle caselle del tipo.
@@ -66502,7 +66685,17 @@ function _disegnaSfoglia() {
   const suc = document.getElementById('sfoglia-album-succ');
   const n = _sfogliaPagine.length;
   if (img) img.src = cloudinaryUrl(_sfogliaPagine[_sfogliaQui].url, 'w_1600,h_1600,c_fit,q_auto,f_auto');
-  if (cnt) cnt.textContent = (_sfogliaQui + 1) + ' / ' + n;
+  // 🆕 v7.185 (Franco: «indichiamo, per ogni foto, il numero della foto. vorrei che indicassimo anche i numeri di
+  //    pagina; esattamente come li indichi nella procedura annunci») - accanto al contatore, i numeri delle pagine
+  //    dell'album che la foto contiene, scritti da `_faNomePagina` come sotto le miniature della procedura annunci
+  // v7.185 (Franco: «riga 1: "Foto 1/N"; riga 2: "pagine x, y"»)
+  if (cnt) {
+    cnt.style.whiteSpace = 'pre-line';
+    cnt.textContent = (currentLang === 'it' ? 'Foto ' : 'Photo ') + (_sfogliaQui + 1) + ' / ' + n + '\n' + _nomeFotoAlbum(_sfogliaQui, _sfogliaPagine.map(p => p.url));
+  }
+  // v7.185 - e sopra, «NOME SERIE - NOME ALBUM» (Franco)
+  const nomeEl = document.getElementById('sfoglia-album-nome');
+  if (nomeEl) nomeEl.textContent = _serieTrattinoAlbum(getData('figurines', []).find(x => x.id === _sfogliaAlbumId));
   // 📌 I comandi si SPENGONO ai due capi invece di sparire: un tasto che va e viene fa ballare
   //    la riga, e a schermo pieno lo si nota.
   if (pre) pre.disabled = _sfogliaQui === 0;
@@ -66606,11 +66799,11 @@ function _bloccoFotoAnnuncioEdit(f) {
   if (!_albumConCaselleFotoAnnuncio(f)) return '';
   const it = currentLang === 'it', N = _pagineDi(f).length, p = f.fotoAnnuncio || {};
   return '<div id="fe-foto-annuncio" data-n="' + N + '" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
-    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.3rem;">📸 ' + (it ? 'Foto annuncio: come unire le pagine' : 'Listing photos: how to join the pages') + '</div>'
+    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.3rem;">📸 ' + (it ? 'Foto annuncio: come unire le foto delle pagine' : 'Listing photos: how to join the page photos') + '</div>'
     + '<div style="font-size:0.72rem;color:var(--text);margin-bottom:0.6rem;line-height:1.45;">' + (it
-        ? 'I numeri del tab Pagine (1 = copertina, ' + N + ' = retro). La virgola separa una foto dall’altra, il + unisce le pagine della stessa foto (2 o 4); le pagine non scritte si saltano. Esempio: 1, 2, 3+4, 5+6, ' + N + '.<br>'
-          + 'Vuota: eBay e Vinted dividono le pagine da soli, Subito per questo album resta spento.'
-        : 'Page numbers from the Pages tab (1 = cover, ' + N + ' = back). A comma separates the photos, + joins pages in the same photo (2 or 4); pages not written are skipped. Example: 1, 2, 3+4, 5+6, ' + N + '.<br>'
+        ? 'I numeri del tab Pagine (1 = copertina, ' + N + ' = retro). La virgola separa una foto dall’altra; le pagine della stessa foto (2 o 4) vanno fra quadre, unite dal +; le pagine non scritte si saltano. Esempio: 1, 2, [3+4], [5+6+7+8], ' + N + '.<br>'
+          + 'Vuota: eBay e Vinted dividono le foto delle pagine da soli, Subito per questo album resta spento.'
+        : 'Page numbers from the Pages tab (1 = cover, ' + N + ' = back). A comma separates the photos; pages in the same photo (2 or 4) go in square brackets, joined by +; pages not written are skipped. Example: 1, 2, [3+4], [5+6+7+8], ' + N + '.<br>'
           + 'Empty: eBay and Vinted split the pages by themselves, Subito stays off for this album.') + '</div>'
     + _FA_SITI.map(s => '<div style="margin-bottom:0.5rem;"><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">'
         + s.nome + ' (' + (it ? 'massimo ' : 'max ') + s.limite + ' foto) <span id="fe-fa-esito-' + s.chiave + '" style="font-size:0.7rem;"></span></label>'
@@ -66744,6 +66937,60 @@ function _bloccoPagineLettura(f) {
   //    volta. Chi cerca qui la riga della v6.888 la trova spiegata, invece di non trovarla.
 }
 
+// 🆕 v7.185 (Franco: «potremmo avere dei tip scritti nell'inventario, foto per foto»; «la tua proposta mi piace») - LO
+//    SFONDO DI OGNI FOTO, una tendina sotto il numero. Serve alla procedura annunci (`_faSfondoVieta`): una tua foto
+//    non va mai al posto di una foto del sito con uno sfondo diverso. Si scrive solo dove serve.
+// 📌 La chiave è il nome del file ORIGINALE su Cloudinary, non la posizione: le foto si spostano, si puliscono (la
+//    `url` cambia, l'`orig` no), e lo sfondo deve restare attaccato alla sua foto.
+// 📌 Le scelte non ancora salvate stanno in `_feSfondiBozza`: il tab si ridisegna a ogni spostamento di foto, e
+//    senza la bozza una tendina toccata tornerebbe com'era. Si salvano col «Salva» della scheda.
+// 🔄 v7.185 (Franco: «la tendina … vorrei li elencasse in modo ordinato»; «come facciamo con le foto che hanno le due
+//    pagine di colore diverso? … 3 tendine: Sfondo, Sfondo pagina sx, Sfondo pagina dx; se sono diverse ti popolo
+//    due tendine, se sono uguali una sola») - in ordine alfabetico, e per ogni foto { t, sx, dx }: `t` vale per tutte e
+//    due le pagine, `sx` e `dx` per una sola (e vincono su `t` dal loro lato). Si salvano solo le tendine scritte.
+const _SFONDI_FOTO = ['Giallo', 'Verde', 'Rosa', 'Azzurro', 'Blu', 'Arancione', 'Rosso', 'Viola', 'Bianco', 'Grigio', 'Marrone', 'Nero']
+  .sort((a, b) => a.localeCompare(b, 'it'));
+// lo sfondo salvato di una foto come { t, sx, dx } (anche da una stringa sola)
+const _sfondoComeOggetto = v => (typeof v === 'string' ? { t: v } : Object.assign({}, v || {}));
+// lo sfondo di ciascun lato, per la procedura annunci: { sx, dx } con '' dove non è scritto
+const _sfondoLati = v => { const o = _sfondoComeOggetto(v); return { sx: o.sx || o.t || '', dx: o.dx || o.t || '' }; };
+let _feSfondiBozza = null;   // { id, mappa } dell'album aperto in modifica
+function _sfondiDellaScheda(f) {
+  if (!_feSfondiBozza || _feSfondiBozza.id !== f.id) {
+    const m = {};
+    Object.entries(f.sfondiFoto || {}).forEach(([k, v]) => { m[k] = _sfondoComeOggetto(v); });
+    _feSfondiBozza = { id: f.id, mappa: m };
+  }
+  return _feSfondiBozza.mappa;
+}
+function _feSfondoScelto(chiave, lato, valore) {
+  const m = _feSfondiBozza.mappa;
+  m[chiave] = Object.assign(m[chiave] || {}, { [lato]: valore });
+}
+function _sceltaSfondoFoto(f, p, it) {
+  const chiave = _nomeFileFoto(p.orig), ora = _sfondiDellaScheda(f)[chiave] || {};
+  const tendina = (lato, nome) => '<select class="form-input fe-sfondo-foto" title="' + nome + (it ? ' (per la procedura annunci)' : ' (for the listing procedure)') + '"'
+    + ' onchange="_feSfondoScelto(\'' + esc(chiave) + '\',\'' + lato + '\',this.value)"'
+    + ' style="padding:0.15rem 0.3rem;font-size:0.75rem;margin-bottom:0.2rem;width:100%;">'
+    + '<option value="">' + nome + ': —</option>'
+    + _SFONDI_FOTO.map(c => '<option value="' + c + '"' + (c === ora[lato] ? ' selected' : '') + '>' + c + '</option>').join('')
+    + '</select>';
+  return '<div style="margin-bottom:0.2rem;">'
+    + tendina('t', it ? 'Sfondo' : 'Background')
+    + tendina('sx', it ? 'Sfondo pagina sx' : 'Left page background')
+    + tendina('dx', it ? 'Sfondo pagina dx' : 'Right page background')
+    + '</div>';
+}
+// al salvataggio: solo le tendine scritte, e solo delle foto che l'album ha ancora; null se nessuna
+function _feSfondiFoto(f) {
+  const m = _sfondiDellaScheda(f), out = {};
+  _pagineDi(f).forEach(p => {
+    const k = _nomeFileFoto(p.orig), o = {};
+    ['t', 'sx', 'dx'].forEach(l => { if (m[k] && m[k][l]) o[l] = m[k][l]; });
+    if (Object.keys(o).length) out[k] = o;
+  });
+  return Object.keys(out).length ? out : null;
+}
 function _bloccoPagineEdit(f) {
   const it = currentLang === 'it';
   if (!f || !_haPagine(f.section) || !currentUser || !currentUser.isAdmin || !_pagineVisibili(f)) {
@@ -66789,6 +67036,7 @@ function _bloccoPagineEdit(f) {
     '<div style="border:1px solid var(--border);border-radius:8px;padding:0.4rem;text-align:center;">'
     + '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.2rem;">' + (i + 1)
     + (p.url !== p.orig ? ' · ' + (it ? 'pulita' : 'cleaned') : '') + '</div>'
+    + _sceltaSfondoFoto(f, p, it)
     // 🆕 v6.862 (Franco: «cliccando su una foto delle pagine, vorrei la foto si aprisse - foto piu'
     //    grande in una piccola finestra») - LA MINIATURA SI APRE. 96px bastano per riconoscere una
     //    pagina, non per vedere se la pulizia l'ha rovinata: e' la domanda che si fa qui dentro.
@@ -68541,6 +68789,8 @@ async function saveFigFromDetail(figId, opzioni) {
       disponibilita: (document.getElementById('fe-disponibilita')?.value || '').trim() || null,
       // 🆕 v7.184 - le caselle delle foto annuncio. Solo se c'erano: altrove la chiave non si scrive
       ...(document.getElementById('fe-foto-annuncio') ? { fotoAnnuncio: _feFotoAnnuncio() } : {}),
+      // 🆕 v7.185 - gli sfondi delle foto del tab Pagine. Solo se le tendine c'erano: altrove la chiave non si scrive
+      ...(document.querySelector('.fe-sfondo-foto') && _figSlotF ? { sfondiFoto: _feSfondiFoto(_figSlotF) } : {}),
       // 🆕 v7.103 - vedi `_fotoProtette`. 🔄 v7.104: si scrive solo l'ECCEZIONE alla tipologia; uguale = null
       fotoProtetta: (() => { const el = document.getElementById('fe-foto-protetta'); if (!el) return null;
         const rec = (typeof _recordInModifica === 'function' && _recordInModifica(figId)) || _bozzaCorrente || {};
