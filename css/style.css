@@ -2951,3 +2951,26 @@ body:not(.wz-visibile) .solo-wz { display: none !important; }
 @media (max-width: 860px) {
   #bivio-inventario { row-gap: 0.3rem !important; }
 }
+/* v7.187 (Franco: «nella tabella degli annunci vorrei poter editare anche senza aprire il record») - le caselle dentro
+   le righe di «Annunci in corso»: sottili, col colore del testo, il bordo si accende solo quando ci sei sopra. */
+.ann-cella { background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--text);
+  font: inherit; font-size: 0.85rem; padding: 2px 6px; }
+.ann-cella:focus { outline: none; border-color: var(--info); }
+.ann-cella option { background: var(--card); color: var(--text); }
+/* v7.187 (Franco: «la form deve essere più grande e mostrare la Descrizione da sola, nella parte dx della finestra,
+   bella lunga verso il basso») - la finestra dell'annuncio: campi a sinistra, Descrizione a destra alta quanto loro
+   (almeno 28rem). Sul telefono una sotto l'altra. */
+.ann-griglia { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 0 1.6rem; }
+.ann-colonna-desc { display: flex; flex-direction: column; }
+/* 🔄 v7.187 (Franco: «un campo Condizioni … sotto a Descrizione ma senza allungare ulteriormente la finestra (accorcia
+   Descrizione)») - la colonna è alta quanto quella dei campi (la griglia la stira) e le due caselle se la dividono:
+   due parti la Descrizione, una le Condizioni. */
+/* 🔄 v7.187 - la Descrizione diventa due (IT ed EN): tre caselle, due parti per ognuna delle descrizioni e una per le
+   Condizioni. */
+.ann-colonna-desc textarea { flex: 2; min-height: 7rem; resize: vertical; }
+.ann-colonna-desc textarea.ann-condizioni { flex: 1; min-height: 5rem; }
+@media (max-width: 860px) {
+  .ann-griglia { grid-template-columns: 1fr; }
+  .ann-colonna-desc textarea { min-height: 14rem; }
+  .ann-colonna-desc textarea.ann-condizioni { min-height: 7rem; }
+}
