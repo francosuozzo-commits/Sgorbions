@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.188 - Modificati js/app.js e index.html (per la versione). Foto annuncio (Franco: «nella finestra di visualizzazione
+//          della pagina, i due tastini per ruotare di 90 gradi la foto, come ci sono nella vista delle foto tutte
+//          assieme»): ⟲ ⟳ nella barra della pagina aperta (`ed-sx`, `ed-dx`), con `_faGiraFoto`; e la tendina della
+//          pagina (`ed-pagina`, «la tendina per cambiare il numero della foto»). «Subito» → «Subito.it» (Franco); gli
+//          annunci salvati col nome vecchio si leggono col nuovo; i file scaricati usano la chiave (`subito`). prova-v7188.
 // v7.187 - Modificati js/app.js e index.html (per la versione). Annunci (Franco: «aggiungi un campo "Link" per ospitare il
 //          link dell'annuncio, nella form dell'Annuncio»): campo «Link» dopo «Prezzo», salvato in `link`; in tabella la
 //          colonna «Link» con l'indirizzo per intero, al posto della Descrizione («il campo descrizione non mostrarlo
@@ -31345,7 +31350,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.187';
+const JS_VERSION = 'v7.188';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40961,7 +40966,8 @@ function renderAdminQuestionario() {
 const _FA_SITI = [
   { nome: 'eBay', chiave: 'ebay', limite: 24 },
   { nome: 'Vinted', chiave: 'vinted', limite: 20 },
-  { nome: 'Subito', chiave: 'subito', limite: 6, soloScritto: true },
+  // v7.188 (Franco: «"Subito" in realtà si chiama "Subito.it"») - il nome a schermo; la chiave resta `subito`
+  { nome: 'Subito.it', chiave: 'subito', limite: 6, soloScritto: true },
 ];
 // Il piano scritto nella scheda: i numeri del tab Pagine (1 = copertina), la virgola separa le foto e il + unisce le
 // pagine della stessa foto (1, 2 o 4); le pagine non scritte si saltano. Restituisce { gruppi } (indici da 0, null se
@@ -41039,6 +41045,9 @@ async function _annCarica() {
   try {
     const d = (await fsGetAll('settings')).find(x => x.id === 'annunci');
     _annRighe = (d && Array.isArray(d.righe)) ? d.righe : [];
+    // v7.188 - gli annunci salvati quando il sito si chiamava «Subito»: si leggono come «Subito.it» (e si scrivono
+    //    così al primo salvataggio), se no la tendina e le pillole non li riconoscerebbero
+    _annRighe.forEach(r => { if (r.sito === 'Subito') r.sito = 'Subito.it'; });
     _annDisegna();
   } catch (e) {
     console.error('_annCarica', e);
@@ -41664,7 +41673,7 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <div class="piano" id="piano2"></div><div class="risultati" id="risultati"></div>
 </section></main>
 <div id="editor">
-  <div class="barra" style="margin:0 0 8px;"><span id="ed-dove" style="align-self:center;font-size:14px;min-width:9em;text-align:center;"></span><button class="btn" id="ed-meno" title="Rimpicciolisci (tasto −)">🔍 −</button><span id="ed-zoom" style="align-self:center;font-size:14px;min-width:3.5em;text-align:center;"></span><button class="btn" id="ed-piu" title="Ingrandisci (tasto +)">🔍 +</button><button class="btn" id="ed-auto" style="margin-left:12px;">Ritaglio automatico</button><button class="btn" id="ed-tutta">Tutta la foto</button><button class="btn primario" id="ed-ok">Fatto</button></div>
+  <div class="barra" style="margin:0 0 8px;"><span id="ed-dove" style="align-self:center;font-size:14px;min-width:9em;text-align:center;"></span><button class="btn" id="ed-meno" title="Rimpicciolisci (tasto −)">🔍 −</button><span id="ed-zoom" style="align-self:center;font-size:14px;min-width:3.5em;text-align:center;"></span><button class="btn" id="ed-piu" title="Ingrandisci (tasto +)">🔍 +</button><select id="ed-pagina" title="Quale pagina è questa foto" style="font:inherit;font-size:14px;border-radius:6px;padding:4px 6px;"></select><button class="btn" id="ed-sx" title="Gira a sinistra" style="margin-left:12px;">⟲</button><button class="btn" id="ed-dx" title="Gira a destra">⟳</button><button class="btn" id="ed-auto" style="margin-left:12px;">Ritaglio automatico</button><button class="btn" id="ed-tutta">Tutta la foto</button><button class="btn primario" id="ed-ok">Fatto</button></div>
   <div class="riga-fr"><button class="freccia" id="ed-prec" title="Pagina precedente (tasto ←)">◀</button><div id="ed-scorri"><canvas id="ed-tela" title="Trascina i bordi del riquadro, oppure trascinalo da dentro per spostarlo"></canvas></div><button class="freccia" id="ed-succ" title="Pagina successiva (tasto →)">▶</button></div>
 </div>
 <div id="vista"><div class="riga-fr"><button class="freccia" id="vi-prec" title="Foto precedente (tasto ←)">◀</button><img id="vi-img" alt=""><button class="freccia" id="vi-succ" title="Foto successiva (tasto →)">▶</button></div>
@@ -42140,6 +42149,20 @@ function _faApriEditor(f) {
   _fa$('ed-dove').textContent = (f.pagina === null ? 'Pagina ?' : _faNomePagina(f.pagina, N, null, true)) + ' (' + (i + 1) + ' di ' + _fa.foto.length + ')';
   _fa$('ed-prec').disabled = i <= 0;
   _fa$('ed-succ').disabled = i >= _fa.foto.length - 1;
+  // v7.188 (Franco: «e sempre in quella pagina, vorrei anche la tendina per cambiare il numero della foto») - la stessa
+  //    tendina delle miniature, con la stessa regola: la pagina scelta, se era di un'altra foto, passa a quella la
+  //    pagina di questa (le due si scambiano)
+  const sel = _fa$('ed-pagina');
+  sel.innerHTML = '<option value="">— quale pagina? —</option>'
+    + Array.from({ length: N }, (_, p) => '<option value="' + p + '"' + (f.pagina === p ? ' selected' : '') + '>' + esc(_faNomePagina(p, N)) + '</option>').join('');
+  sel.onchange = () => {
+    const nuova = sel.value === '' ? null : +sel.value;
+    const altra = nuova === null ? null : _fa.foto.find(g => g !== f && g.pagina === nuova);
+    if (altra) altra.pagina = f.pagina;
+    f.pagina = nuova; f.dubbia = false;
+    f.rett = _fa.ed.r;
+    _faInOrdine(); _faMiniature(); _faApriEditor(f);
+  };
   _fa$('editor').classList.add('aperto');
   _faDisegnaEditor();
 }
@@ -42216,6 +42239,12 @@ function _faEditorEventi() {
   });
   t.addEventListener('pointerup', () => { if (_fa.ed) _fa.ed.presa = null; });
   _fa$('ed-auto').onclick = () => { _fa.ed.r = _faAutoTaglio(_fa.ed.f.tela); _faDisegnaEditor(); };
+  // v7.188 (Franco: «nella finestra di visualizzazione della pagina, i due tastini per ruotare di 90 gradi la foto, come ci
+  //    sono nella vista delle foto tutte assieme») - la stessa `_faGiraFoto` delle miniature. Il ritaglio che si stava
+  //    correggendo si tiene (gira con la foto), e la pagina si ridisegna per la forma nuova.
+  [['ed-sx', 3], ['ed-dx', 1]].forEach(([id, volte]) => {
+    _fa$(id).onclick = () => { const f = _fa.ed.f; f.rett = _fa.ed.r; _faGiraFoto(f, volte); _faMiniature(); _faApriEditor(f); };
+  });
   _fa$('ed-tutta').onclick = () => { _fa.ed.r = { x: 0, y: 0, w: _fa.ed.f.tela.width, h: _fa.ed.f.tela.height }; _faDisegnaEditor(); };
   _fa$('ed-ok').onclick = () => { _fa.ed.f.rett = _fa.ed.r; _fa$('editor').classList.remove('aperto'); _faMiniature(); };
   _fa$('ed-prec').onclick = () => _faEditorPassa(-1);
@@ -42284,7 +42313,8 @@ async function _faComponi() {
     const c = _faComponiGruppo(presenti.map(p => _faRitaglio(perPagina.get(p))));
     const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.9));
     const n = String(_fa.uscite.length + 1).padStart(2, '0');
-    _fa.uscite.push({ nome: a.file + '-' + sito.nome.toLowerCase() + '-' + n + '.jpg', blob, url: URL.createObjectURL(blob), dida: presenti.map(p => _faNomePagina(p, N)).join(' + '), didaLunga: presenti.map(p => _faNomePagina(p, N, null, true)).join(' + ') });
+    // v7.188: nel nome del file la chiave del sito (`subito`), non il nome a schermo («Subito.it» darebbe «subito.it-1.jpg»)
+    _fa.uscite.push({ nome: a.file + '-' + sito.chiave + '-' + n + '.jpg', blob, url: URL.createObjectURL(blob), dida: presenti.map(p => _faNomePagina(p, N)).join(' + '), didaLunga: presenti.map(p => _faNomePagina(p, N, null, true)).join(' + ') });
   }
   _faStato('');
   _fa$('piano2').innerHTML = _fa.uscite.length + ' foto pronte per ' + sito.nome + ' (massimo ' + sito.limite + ').' +
