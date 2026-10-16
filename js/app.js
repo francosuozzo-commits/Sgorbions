@@ -1,6 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.187 - Modificati js/app.js e index.html (per la versione). Annunci (Franco: «aggiungi un campo "Link" per ospitare il
+//          link dell'annuncio, nella form dell'Annuncio»): campo «Link» dopo «Prezzo», salvato in `link`; in tabella la
+//          colonna «Link» con l'indirizzo per intero, al posto della Descrizione («il campo descrizione non mostrarlo
+//          nella tabella degli annunci; mostra invece la url»), che resta nella finestra. In tabella si modifica
+//          senza aprire («vorrei poter editare anche senza aprire il record»): Sito, Account, Titolo, Prezzo, Link
+//          sono caselle che si salvano quando cambiano (`_annCampo`); Serie e Articolo restano nella finestra. I link
+//          in azzurro (`--info`, «usiamo un azzurro»). «📄 Clona» nella finestra e accanto a ✏️ (`_annClonaQui`,
+//          `_annClona`): una riga in più con lo stesso zip; Clona arancione come Modifica, Elimina rosa. «📢 Annunci» in
+//          navbar spinto a destra, prima della casella di ricerca. Campo «N» dopo Articolo, anche in tabella. La
+//          finestra larga a due colonne, la Descrizione da sola a destra (`.ann-griglia`). Via la colonna Foto
+//          dalla tabella. Campo «Condizioni» sotto la Descrizione. Clona con l'icona ⧉ di sempre. «Scarica tutte» delle
+//          foto annuncio senza zip: si sceglie la cartella (`showDirectoryPicker`), o una per una nei
+//          download (via `_faZip` e `_faCrc32`). Campo «Costo» prima di Prezzo; Link corto in tabella; 👁 sola lettura
+//          prima di ✏️; ordinamento per ogni colonna (`_annOrdina`, `_ANN_COLONNE`). Serie col
+//          nome corto; la copia nasce col link vuoto; per Vinted il titolo TUTTO MAIUSCOLO diventa a iniziali
+//          maiuscole (`_annTitoloPerSito`). Sopra la tabella i riquadri «Filtra per sito» e «Filtra per account»,
+//          con le pillole della ricerca (`_chipTipoHTML`, `_annFiltriHTML`, `_annFiltra`), e «Azzera filtri».
+//          Descrizione IT ed EN separate (`descrizioneEn`). Larghezze: Costo/Prezzo/N più strette, Titolo più larga.
+//          Foto annuncio: «Carica le foto» e «Usa le foto del sito» spenti finché non si sceglie l'album. Tab
+//          «Articoli dello stesso personaggio»: il nome della figurina sulla prima riga, il retro sulla seconda. Modificati anche css/style.css (`.ann-cella`, `.ann-griglia`) e index.html. prova-v7187.
 // v7.186 - Modificati js/app.js e index.html (per la versione). Finestra «Nuovo annuncio» (Franco: «il campo "Articolo"
 //          mettilo dopo il campo "Tipologia di articolo"; e "Articolo" deve pescare solo articoli di quella tda; … in
 //          modo ordinato (numero, se presente, nome, se numero non presente)»): fra Serie e Articolo la tendina
@@ -31325,7 +31345,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.186';
+const JS_VERSION = 'v7.187';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40997,6 +41017,7 @@ function renderAdminFotoAnnuncio() {
       '<h4 style="font-family:var(--font-ui);margin:0;">📋 ' + (it ? 'Annunci in corso' : 'Current listings') + '</h4>' +
       '<button type="button" class="btn-primary" onclick="_annApriFinestra(null)">' + (it ? '+ Aggiungi annuncio' : '+ Add listing') + '</button>' +
     '</div>' +
+    '<div id="annunci-filtri" style="display:flex;flex-direction:column;gap:1rem;margin:0.4rem 0 0.9rem;"></div>' +   // v7.187
     '<div id="annunci-tabella" style="font-size:0.85rem;color:var(--text);">' + (it ? 'Carico gli annunci…' : 'Loading…') + '</div>';
   _annCarica();
 }
@@ -41031,37 +41052,152 @@ function _annSerie() {
 function _annNomeArticolo(f) {
   return f ? (f.fullName || f.name || f.id) : '';
 }
+// v7.187 (Franco: «quando un annuncio viene salvato per Vinted, il titolo non deve contenere tutte lettere maiuscole;
+//    convertire direttamente») - un titolo per Vinted scritto TUTTO MAIUSCOLO diventa «Ogni Parola Con L'iniziale
+//    Maiuscola». Uno che ha già delle minuscole resta com'è: è stato scritto così apposta.
+function _annTitoloPerSito(sito, t) {
+  t = String(t || '');
+  if (sito !== 'Vinted' || !/\p{Lu}/u.test(t) || /\p{Ll}/u.test(t)) return t;
+  return t.toLowerCase().replace(/(^|[\s\-–\/(“"«])(\p{Ll})/gu, (m, a, c) => a + c.toUpperCase());
+}
+// 🆕 v7.187 (Franco: «sopra la tabellina degli annunci metti una sezioncina di ricerca con le pillole; prima sezione:
+//    sito: 3 pillole (ebay-vinted-subito); seconda sezione: Account: 3 pillole (franco-lendys-fabio); lo stile delle
+//    pillole e delle sezioni deve essere quello usato nelle altre pagine di ricerca del sito») - I DUE RIQUADRI DELLA
+//    RICERCA. Le pillole sono `_chipTipoHTML`, la stessa funzione dei riquadri «Filtra per…» dell'Inventario, e il
+//    riquadro ha la loro veste (titolo azzurro sul bordo, profilo bianco). Anche i gesti sono quelli: clic sul nome =
+//    solo questo (ripremuto, toglie il filtro), «+» = aggiungi, «−» = togli. Il numero conta gli annunci che passano
+//    l'ALTRO riquadro; a zero la pillola si spegne. Fra i due riquadri vale «e».
+const _annFiltro = { sito: new Set(), account: new Set() };
+const _ANN_RIQUADRI = [
+  { k: 'sito', it: 'Filtra per sito', en: 'Filter by site', voci: () => _FA_SITI.map(s => s.nome) },
+  { k: 'account', it: 'Filtra per account', en: 'Filter by account', voci: () => _ANN_ACCOUNT },
+];
+function _annPassa(r, salta) {
+  return _ANN_RIQUADRI.every(q => q.k === salta || !_annFiltro[q.k].size || _annFiltro[q.k].has(r[q.k]));
+}
+function _annFiltra(k, j, aggiungi) {
+  const f = _annFiltro[k], v = _ANN_RIQUADRI.find(q => q.k === k).voci()[j];   // la voce per posizione: niente apici nell'onclick
+  if (aggiungi) { if (f.has(v)) f.delete(v); else f.add(v); }
+  else if (f.size === 1 && f.has(v)) f.clear();
+  else { f.clear(); f.add(v); }
+  _annDisegna();
+}
+// v7.187 (Franco: «metti il tasto "Azzera filtri"») - lo stesso tasto della ricerca dell'Inventario
+function _annAzzeraFiltri() {
+  _ANN_RIQUADRI.forEach(q => _annFiltro[q.k].clear());
+  _annDisegna();
+}
+function _annFiltriHTML() {
+  const it = currentLang === 'it';
+  return '<div><button type="button" class="btn-primary" onclick="_annAzzeraFiltri()" style="font-size:0.82rem;padding:0.3rem 1rem;">'
+    + (it ? 'Azzera filtri' : 'Reset filters') + '</button></div>'
+    + _ANN_RIQUADRI.map(q => {
+    const voci = q.voci();
+    const chips = voci.map((v, j) => _chipTipoHTML({
+      etichetta: v, n: _annRighe.filter(r => _annPassa(r, q.k) && r[q.k] === v).length,
+      attiva: _annFiltro[q.k].has(v), it,
+      onSet: "_annFiltra('" + q.k + "'," + j + ",false)", onAdd: "_annFiltra('" + q.k + "'," + j + ",true)",
+      titolo: it ? 'Solo questo' : 'Only this',
+    })).join('');
+    return '<div style="position:relative;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:1.05rem 0.9rem 0.7rem;">'
+      + '<div style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;white-space:nowrap;">'
+      + '<span style="font-size:0.78rem;font-weight:600;color:var(--info);">' + (it ? q.it : q.en) + '</span></div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">' + chips + '</div></div>';
+  }).join('');
+}
+// v7.187 - l'ordinamento della tabella: le chiavi delle colonne, in fila come i titoli, e la colonna scelta
+const _ANN_COLONNE = ['sito', 'account', 'serie', 'articolo', 'n', 'titolo', 'costo', 'prezzo', 'link'];
+let _annOrdine = { col: null, su: true };
+function _annOrdina(k) {
+  _annOrdine = _annOrdine.col === k ? { col: k, su: !_annOrdine.su } : { col: k, su: true };
+  _annDisegna();
+}
 function _annDisegna() {
   const box = document.getElementById('annunci-tabella');
   if (!box) return;
   const it = currentLang === 'it';
+  const filtri = document.getElementById('annunci-filtri');   // v7.187: i riquadri della ricerca
+  if (filtri) filtri.innerHTML = _annRighe.length ? _annFiltriHTML() : '';
   if (!_annRighe.length) {
     box.innerHTML = '<p style="font-style:italic;margin:0;">' + (it ? 'Nessun annuncio in corso.' : 'No current listings.') + '</p>';
     return;
   }
   const serie = new Map(getData('series', []).map(s => [s.id, s]));
   const figs = new Map((getData('figurines', []) || []).map(f => [f.id, f]));
-  const th = t => '<th style="white-space:nowrap;">' + t + '</th>';
+  // v7.187 (Franco: «nella tabellina degli annunci deve essere possibile ordinare per ogni colonna») - un clic sul
+  //    titolo ordina per quella colonna, un secondo clic rovescia. Le colonne sono nell'ordine dei `th` qui sotto: ogni
+  //    `th` prende la sua chiave da `_ANN_COLONNE`, in fila. Le righe tengono il loro indice vero (`i`), che è quello
+  //    che i tasti e le caselle usano.
+  let _col = 0;
+  const th = t => {
+    const k = _ANN_COLONNE[_col++], su = _annOrdine.col === k;
+    return '<th style="white-space:nowrap;cursor:pointer;user-select:none;" onclick="_annOrdina(\'' + k + '\')" title="' + (it ? 'Ordina' : 'Sort') + '">'
+      + t + (su ? (_annOrdine.su ? ' ▲' : ' ▼') : '') + '</th>';
+  };
+  const valore = r => {
+    const k = _annOrdine.col;
+    if (k === 'serie') { const s = serie.get(r.seriesId); return s ? _nomeSerieCard(s, true) : ''; }
+    if (k === 'articolo') { const f = figs.get(r.articoloId); return f ? _annNomeArticolo(f) : ''; }
+    return r[k] ?? '';
+  };
+  const righe = _annRighe.map((r, i) => [r, i]).filter(([r]) => _annPassa(r));   // v7.187: i filtri della ricerca
+  if (!righe.length) {
+    box.innerHTML = '<p style="font-style:italic;margin:0;">' + (it ? 'Nessun annuncio con questi filtri.' : 'No listings match these filters.') + '</p>';
+    return;
+  }
+  if (_annOrdine.col) righe.sort(([a], [b]) => {
+    const x = valore(a), y = valore(b);
+    if (x === '' || y === '') return (x === '') - (y === '');   // i vuoti sempre in fondo
+    const c = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'it', { numeric: true, sensitivity: 'base' });
+    return _annOrdine.su ? c : -c;
+  });
   box.innerHTML = '<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;">'
     + '<table class="data-table compact"><thead><tr>'
-    + th(it ? 'Sito' : 'Site') + th('Account') + th(it ? 'Serie' : 'Series') + th(it ? 'Articolo' : 'Item') + th(it ? 'Titolo' : 'Title')
-    + th(it ? 'Descrizione' : 'Description') + th(it ? 'Prezzo' : 'Price') + th('Foto') + '<th></th>'
+    + th(it ? 'Sito' : 'Site') + th('Account') + th(it ? 'Serie' : 'Series') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
+    // v7.187 (Franco: «il campo descrizione non mostrarlo nella tabella degli annunci; mostra invece la url») - la
+    //    descrizione resta nella finestra; in tabella al suo posto il link, scritto per intero
+    // v7.187 (Franco: «per ora togli il campo Foto dalla tabellina») - lo zip resta nella finestra
+    // v7.187 (Franco: «aggiungi un campo Costo nell'annuncio, mettilo prima di Prezzo»)
+    + th(it ? 'Costo' : 'Cost') + th(it ? 'Prezzo' : 'Price') + th('Link') + '<th></th>'
     + '</tr></thead><tbody>'
-    + _annRighe.map((r, i) => {
+    + righe.map(([r, i]) => {
         const s = serie.get(r.seriesId), f = figs.get(r.articoloId);
+        // v7.187 (Franco: «nella tabella degli annunci vorrei poter editare anche senza aprire il record») - Sito,
+        //    Account, Titolo, Prezzo e Link si cambiano nella riga e si salvano appena si esce dalla casella
+        //    (`_annCampo`). Serie e Articolo no: passano dalla tipologia, che sta solo nella finestra (✏️).
+        const sel = (campo, voci) => '<select class="ann-cella" onchange="_annCampo(' + i + ',\'' + campo + '\',this)">'
+          + (campo === 'account' ? '<option value="">—</option>' : '')
+          + voci.map(x => '<option' + (x === r[campo] ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select>';
+        const inp = (campo, tipo, val, st) => '<input class="ann-cella" type="' + tipo + '"' + (tipo === 'number' ? ' min="0" step="0.01"' : '')
+          + ' value="' + esc(val ?? '') + '" style="' + st + '" onchange="_annCampo(' + i + ',\'' + campo + '\',this)">';
         return '<tr>'
-          + '<td style="white-space:nowrap;">' + esc(r.sito || '') + '</td>'
-          + '<td style="white-space:nowrap;">' + esc(r.account || '') + '</td>'
-          + '<td style="white-space:nowrap;color:var(--nome-entita);">' + esc(s ? _nomeSerie(s) : '') + '</td>'
-          + '<td>' + (f ? '<a href="#" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;">' + esc(_annNomeArticolo(f)) + '</a>'
+          + '<td>' + sel('sito', _FA_SITI.map(x => x.nome)) + '</td>'
+          + '<td>' + sel('account', _ANN_ACCOUNT) + '</td>'
+          // v7.187 (Franco: «nel campo serie degli annunci mettiamo il valore corto del nome della serie») - il nome
+          //    breve, dove c'è (se no quello lungo)
+          + '<td style="white-space:nowrap;color:var(--nome-entita);">' + esc(s ? _nomeSerieCard(s, true) : '') + '</td>'
+          // v7.187 (Franco: «i 2 link non fanno leggere il testo, visto il blu scuro utilizzato; usiamo un azzurro»)
+          + '<td>' + (f ? '<a href="#" style="color:var(--info);" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;">' + esc(_annNomeArticolo(f)) + '</a>'
                        : (r.articoloId ? '<span style="color:var(--warn);">' + (it ? 'articolo non trovato' : 'item not found') + '</span>' : '')) + '</td>'
-          + '<td>' + esc(r.titolo || '') + '</td>'
-          + '<td style="white-space:pre-line;min-width:220px;">' + esc(r.descrizione || '') + '</td>'
-          + '<td style="white-space:nowrap;text-align:right;">' + (r.prezzo != null && r.prezzo !== '' ? esc(Number(r.prezzo).toFixed(2).replace('.', ',')) + ' €' : '') + '</td>'
-          + '<td style="white-space:nowrap;">' + (r.zip ? '<a href="' + esc(r.zip) + '" target="_blank" rel="noopener">📦 zip</a>' : '') + '</td>'
+          // v7.187 (Franco: «riduci larghezza colonne Prezzo e Costo; allarga colonna Titolo; riduci larghezza colonna N»)
+          + '<td>' + inp('n', 'text', r.n, 'width:2.6rem;') + '</td>'
+          + '<td>' + inp('titolo', 'text', r.titolo, 'min-width:340px;width:100%;') + '</td>'
+          + '<td style="white-space:nowrap;">' + inp('costo', 'number', r.costo, 'width:4.2rem;text-align:right;') + ' €</td>'
+          + '<td style="white-space:nowrap;">' + inp('prezzo', 'number', r.prezzo, 'width:4.2rem;text-align:right;') + ' €</td>'
+          // il 🔗 legge il link al clic: così vale anche quello appena cambiato nella casella
+          // v7.187 (Franco: «il campo "Link" accorcialo, tanto per aprirlo c'è il bottoncino affianco»)
+          + '<td style="white-space:nowrap;">' + inp('link', 'url', r.link, 'width:9rem;')
+            + ' <a href="#" style="color:var(--info);text-decoration:none;" title="' + (it ? 'Apri l\'annuncio' : 'Open the listing') + '" onclick="_annApriLink(' + i + ');return false;">🔗</a></td>'
           + '<td style="white-space:nowrap;">'
+            // v7.187 (Franco: «aggiungi un tasto per aprire annuncio in sola lettura; mettilo prima di Modifica») - l'occhio
+            //    della vista tabellare dell'Inventario
+            + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Apri in sola lettura' : 'Open read-only') + '" onclick="_annApriFinestra(' + i + ',true)">&#128065;</button> '
             + '<button type="button" class="tbl-btn tbl-btn-edit" title="' + (it ? 'Modifica' : 'Edit') + '" onclick="_annApriFinestra(' + i + ')">✏️</button> '
-            + '<button type="button" class="tbl-btn" title="' + (it ? 'Elimina' : 'Delete') + '" onclick="_annElimina(' + i + ')">🗑️</button>'
+            // v7.187 (Franco: «il tasto clona deve essere arancione come modifica e il tasto elimina deve avere il rosa
+            //    usato per le eliminazioni»)
+            //    l'icona è quella di sempre (Franco: «la icona del tasto Clona mi sembra diversa da quella solita»): ⧉
+            + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Clona' : 'Clone') + '" onclick="_annClona(' + i + ')">&#10697;</button> '
+            + '<button type="button" class="tbl-btn tbl-btn-del" title="' + (it ? 'Elimina' : 'Delete') + '" onclick="_annElimina(' + i + ')">🗑️</button>'
           + '</td></tr>';
       }).join('')
     + '</tbody></table></div>';
@@ -41116,10 +41252,43 @@ function _annZipTogli() {
   if (inp) inp.value = '';
   _annZipScelto();
 }
+// v7.187 - un campo cambiato nella riga della tabella: si salva tutta la lista, la tabella non si ridisegna (il cursore
+//    è già nella casella dopo). Il bordo dice com'è andata: verde salvato, rosso no (e il valore torna quello di prima).
+async function _annCampo(i, campo, el) {
+  const r = _annRighe[i];
+  if (!r) return;
+  let val = el.value.trim();
+  if (campo === 'prezzo' || campo === 'costo') { const n = parseFloat(val); val = Number.isFinite(n) ? n : null; }
+  else if (campo !== 'sito') val = val || null;
+  if (campo === 'titolo' && !val) { el.value = r.titolo || ''; el.style.borderColor = 'var(--danger)'; toast(currentLang === 'it' ? 'Il titolo non può restare vuoto.' : 'The title cannot be empty.', 'error'); return; }
+  const righe = _annRighe.slice();
+  righe[i] = { ...r, [campo]: val };
+  // v7.187 - per Vinted il titolo tutto maiuscolo si converte anche qui: cambiando il titolo, o il sito in Vinted
+  const tit = _annTitoloPerSito(righe[i].sito, righe[i].titolo), titCambia = tit !== righe[i].titolo;
+  righe[i].titolo = tit;
+  try {
+    await fsSave('settings', { id: 'annunci', righe });
+    _annRighe = righe;
+    el.style.borderColor = 'var(--success, #2ecc71)';
+    // sito e account cambiano i numeri delle pillole (e magari il titolo): si ridisegna. Gli altri no.
+    if (campo === 'sito' || campo === 'account') _annDisegna();
+    else if (titCambia) el.value = tit;
+  } catch (e) {
+    console.error('_annCampo', e);
+    el.value = r[campo] ?? '';
+    el.style.borderColor = 'var(--danger)';
+    toast((currentLang === 'it' ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error');
+  }
+}
+function _annApriLink(i) {
+  const l = (_annRighe[i] || {}).link || '';
+  if (/^https?:\/\//i.test(l)) window.open(l, '_blank', 'noopener');
+  else toast(currentLang === 'it' ? 'Nessun link da aprire.' : 'No link to open.', 'info');
+}
 // 🆕 v7.186 (Franco: «un campo che si chiama Account, con queste opzioni: Franco, Lendys, Fabio») - chi ha messo l'annuncio
 const _ANN_ACCOUNT = ['Franco', 'Lendys', 'Fabio'];
 // La finestra: `i` = la riga da modificare, null = annuncio nuovo. Annulla / Salva, come le finestre gemelle.
-function _annApriFinestra(i) {
+function _annApriFinestra(i, sola) {
   const it = currentLang === 'it';
   const r = (i !== null && _annRighe[i]) ? _annRighe[i] : {};
   // v7.186 - la tipologia di un annuncio già scritto: quella salvata, se no quella del suo articolo
@@ -41131,9 +41300,13 @@ function _annApriFinestra(i) {
   ov.className = 'modal-overlay';
   ov.id = 'annuncio-modal';
   const lab = t => '<label class="detail-label" style="display:block;margin:0.7rem 0 0.25rem;">' + t + '</label>';
-  ov.innerHTML = '<div class="modal" style="max-width:640px;">'
+  // 🔄 v7.187 (Franco: «la form deve essere più grande e mostrare la Descrizione da sola, nella parte dx della finestra,
+  //    bella lunga verso il basso») - DUE COLONNE: a sinistra i campi, a destra la sola Descrizione, alta quanto la
+  //    colonna dei campi. Sul telefono tornano una sotto l'altra (`.ann-griglia`, style.css).
+  ov.innerHTML = '<div class="modal" style="max-width:1100px;width:96vw;">'
     + '<div class="modal-header"><h2 class="modal-title">' + (r.id ? (it ? 'Modifica annuncio' : 'Edit listing') : (it ? 'Nuovo annuncio' : 'New listing')) + '</h2>'
     + '<button type="button" class="modal-close" onclick="document.getElementById(\'annuncio-modal\').remove()">✕</button></div>'
+    + '<div class="ann-griglia"><div>'
     + lab(it ? 'Sito' : 'Site')
     + '<select id="ann-sito" class="form-select">' + _FA_SITI.map(s => '<option' + (s.nome === r.sito ? ' selected' : '') + '>' + s.nome + '</option>').join('') + '</select>'
     + lab('Account')
@@ -41148,25 +41321,81 @@ function _annApriFinestra(i) {
     + '<select id="ann-tipo" class="form-select" onchange="_annCambiaTipo(this.value)">' + _annOpzioniTipologia(r.seriesId || '', tipoR) + '</select>'
     + lab(it ? 'Articolo' : 'Item')
     + '<select id="ann-articolo" class="form-select">' + _annOpzioniArticolo(r.seriesId || '', tipoR, r.articoloId) + '</select>'
+    // v7.187 (Franco: «aggiungere un campo all'annuncio, da esporre in tabella, chiamato N, da mettere dopo Articolo»)
+    + lab('N')
+    + '<input id="ann-n" class="form-input" type="text" value="' + esc(r.n ?? '') + '" style="max-width:8rem;">'
     + lab(it ? 'Titolo' : 'Title')
     + '<input id="ann-titolo" class="form-input" type="text" value="' + esc(r.titolo || '') + '">'
-    + lab(it ? 'Descrizione' : 'Description')
-    + '<textarea id="ann-descrizione" class="form-input" rows="5" style="resize:vertical;">' + esc(r.descrizione || '') + '</textarea>'
+    // v7.187 (Franco: «aggiungi un campo Costo nell'annuncio, mettilo prima di Prezzo»)
+    + lab(it ? 'Costo (€)' : 'Cost (€)')
+    + '<input id="ann-costo" class="form-input" type="number" min="0" step="0.01" value="' + (r.costo ?? '') + '" style="max-width:10rem;">'
     + lab(it ? 'Prezzo (€)' : 'Price (€)')
     + '<input id="ann-prezzo" class="form-input" type="number" min="0" step="0.01" value="' + (r.prezzo ?? '') + '" style="max-width:10rem;">'
+    // v7.187 (Franco) - il link dell'annuncio sul sito dove è pubblicato
+    + lab('Link')
+    + '<input id="ann-link" class="form-input" type="url" placeholder="https://…" value="' + esc(r.link || '') + '">'
     + lab('Foto (zip)')
-    + '<div style="font-size:0.8rem;margin-bottom:0.4rem;">' + (r.zip ? '<a href="' + esc(r.zip) + '" target="_blank" rel="noopener">📦 ' + (it ? 'lo zip caricato' : 'uploaded zip') + '</a>'
+    + '<div style="font-size:0.8rem;margin-bottom:0.4rem;">' + (r.zip ? '<a href="' + esc(r.zip) + '" target="_blank" rel="noopener" style="color:var(--info);">📦 ' + (it ? 'lo zip caricato' : 'uploaded zip') + '</a>'
         + ' <label style="margin-left:0.8rem;cursor:pointer;"><input type="checkbox" id="ann-zip-togli"> ' + (it ? 'toglilo' : 'remove it') + '</label>'
         : '<span>' + (it ? 'Nessuno zip.' : 'No zip.') + '</span>') + '</div>'
     + '<label class="btn-secondary" style="display:inline-block;cursor:pointer;">📦 ' + (r.zip ? (it ? 'Carica un altro zip' : 'Upload another zip') : (it ? 'Carica zip' : 'Upload zip'))
     + '<input type="file" id="ann-zip" accept=".zip,application/zip" style="display:none;" onchange="_annZipScelto()"></label>'
     + ' <span id="ann-zip-nome" style="font-size:0.8rem;"></span>'
+    + '</div><div class="ann-colonna-desc">'
+    // v7.187 (Franco: «al momento il campo Descrizione è metà in italiano e metà in inglese; forse tu vuoi due campi
+    //    diversi» - e poi «ok») - DUE CASELLE. L'italiana resta nel campo di sempre (`descrizione`), così gli annunci
+    //    già scritti non si perdono niente: la metà inglese la sposta Franco a mano in `descrizioneEn`.
+    + lab(it ? 'Descrizione IT' : 'Description IT')
+    + '<textarea id="ann-descrizione" class="form-input">' + esc(r.descrizione || '') + '</textarea>'
+    + lab(it ? 'Descrizione EN' : 'Description EN')
+    + '<textarea id="ann-descrizione-en" class="form-input">' + esc(r.descrizioneEn || '') + '</textarea>'
+    // v7.187 (Franco: «mi serve un campo Condizioni, testuale multiriga; mettilo sotto a Descrizione ma senza allungare
+    //    ulteriormente la finestra (accorcia Descrizione)») - le due caselle si dividono l'altezza della colonna
+    + lab(it ? 'Condizioni' : 'Condition')
+    + '<textarea id="ann-condizioni" class="form-input ann-condizioni">' + esc(r.condizioni || '') + '</textarea>'
+    + '</div></div>'
     + '<div id="ann-stato" style="font-size:0.8rem;color:var(--text);min-height:1.2em;margin-top:0.6rem;"></div>'
     + '<div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.8rem;">'
+      // v7.187 (Franco) - «Clona» solo su un annuncio che esiste già: a sinistra, lontano da Salva
+      // arancione come Modifica (Franco: «il tasto clona deve essere arancione come modifica»)
+      //    e vestito come «Clona» nella scheda dell'articolo: stessa classe, stessa icona ⧉
+      + (r.id ? '<button type="button" class="btn-barra-admin pieno" id="ann-clona" style="margin-right:auto;" onclick="_annClonaQui(' + i + ')">&#10697; ' + (it ? 'Clona' : 'Clone') + '</button>' : '')
       + '<button type="button" class="btn-secondary" onclick="document.getElementById(\'annuncio-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
       + '<button type="button" class="btn-primary" id="ann-salva" onclick="_annSalva(' + (i === null ? 'null' : i) + ')">' + (it ? 'Salva' : 'Save') + '</button>'
     + '</div></div>';
   document.body.appendChild(ov);
+  // v7.187 (Franco: «un tasto per aprire annuncio in sola lettura») - la stessa finestra, con tutto spento: niente
+  //    Salva, niente Clona, niente zip da caricare, e «Annulla» diventa «Chiudi». Il link dello zip resta cliccabile.
+  if (sola) {
+    ov.querySelector('.modal-title').textContent = it ? 'Annuncio' : 'Listing';
+    ov.querySelectorAll('input, select, textarea').forEach(el => { el.disabled = true; });
+    ['ann-salva', 'ann-clona'].forEach(id => document.getElementById(id)?.remove());
+    document.getElementById('ann-zip')?.closest('label')?.remove();
+    document.getElementById('ann-zip-togli')?.closest('label')?.remove();
+    const chiudi = [...ov.querySelectorAll('button.btn-secondary')].find(b => /Annulla|Cancel/.test(b.textContent));
+    if (chiudi) chiudi.textContent = it ? 'Chiudi' : 'Close';
+  }
+}
+// 🆕 v7.187 (Franco: «una funzione per clonare annuncio; sia dentro al form che con un pulsante posto accanto al pulsante
+//    di modifica») - LA FINESTRA APERTA DIVENTA UN ANNUNCIO NUOVO, con dentro quello che c'è scritto in quel momento
+//    (anche le modifiche non salvate) e lo stesso zip. L'originale resta com'è: Salva aggiunge una riga.
+function _annClonaQui(i) {
+  const it = currentLang === 'it';
+  const t = document.querySelector('#annuncio-modal .modal-title');
+  if (t) t.textContent = it ? 'Nuovo annuncio (copia)' : 'New listing (copy)';
+  // Franco: «quando clono un annuncio, nel nuovo annuncio il campo url deve già essere vuoto»
+  const l = document.getElementById('ann-link');
+  if (l) l.value = '';
+  document.getElementById('ann-clona')?.remove();
+  const b = document.getElementById('ann-salva');
+  if (b) b.setAttribute('onclick', '_annSalva(null,' + i + ')');
+  const st = document.getElementById('ann-stato');
+  if (st) { st.style.color = 'var(--info)'; st.textContent = it ? 'È una copia: con Salva diventa un annuncio in più.' : 'This is a copy: Save adds a new listing.'; }
+}
+// dalla tabella: apre la finestra dell'annuncio e la fa subito copia
+function _annClona(i) {
+  _annApriFinestra(i);
+  _annClonaQui(i);
 }
 // Lo zip va su Cloudinary come file «raw» (non è un'immagine): stessa cartella e stesso preset delle foto.
 async function _annCaricaZip(file) {
@@ -41183,11 +41412,13 @@ async function _annScrivi(righe) {
   _annRighe = righe;
   _annDisegna();
 }
-async function _annSalva(i) {
+async function _annSalva(i, da) {
   const it = currentLang === 'it';
   const v = id => document.getElementById(id);
+  const fonte = i !== null ? i : (da ?? null);   // v7.187: la riga da cui viene lo zip (la stessa, o quella clonata)
   const stato = v('ann-stato'), bott = v('ann-salva');
   const prezzo = parseFloat(v('ann-prezzo').value);
+  const costo = parseFloat(v('ann-costo').value);   // v7.187
   const riga = {
     id: (i !== null && _annRighe[i] && _annRighe[i].id) || ('ann' + Date.now().toString(36)),
     sito: v('ann-sito').value,
@@ -41195,10 +41426,16 @@ async function _annSalva(i) {
     seriesId: v('ann-serie').value || null,
     tipologia: v('ann-tipo').value || null,   // v7.186
     articoloId: v('ann-articolo').value || null,
-    titolo: v('ann-titolo').value.trim(),
+    titolo: _annTitoloPerSito(v('ann-sito').value, v('ann-titolo').value.trim()),   // v7.187: Vinted, niente tutto maiuscolo
     descrizione: v('ann-descrizione').value.trim(),
+    descrizioneEn: v('ann-descrizione-en').value.trim(),   // v7.187
+    costo: Number.isFinite(costo) ? costo : null,   // v7.187
     prezzo: Number.isFinite(prezzo) ? prezzo : null,
-    zip: (i !== null && _annRighe[i] && !v('ann-zip-togli')?.checked) ? (_annRighe[i].zip || null) : null,
+    link: v('ann-link').value.trim() || null,   // v7.187
+    n: v('ann-n').value.trim() || null,   // v7.187
+    condizioni: v('ann-condizioni').value.trim(),   // v7.187
+    // v7.187 - una copia (`da` = la riga copiata) si porta dietro lo zip dell'originale
+    zip: (fonte !== null && _annRighe[fonte] && !v('ann-zip-togli')?.checked) ? (_annRighe[fonte].zip || null) : null,
   };
   if (!riga.seriesId || !riga.titolo) {
     stato.style.color = 'var(--danger, #e5484d)';
@@ -41370,7 +41607,7 @@ h1 { font-size:22px; margin:6px 0 4px; }
 .scelte { display:flex; flex-wrap:wrap; gap:8px; }
 .scelte button, .btn { border:1px solid #ddd; background:#fafafa; border-radius:8px; padding:8px 14px; font:inherit; cursor:pointer; color:#222; }
 .scelte button.on, .btn.primario { background:#c0392b; border-color:#c0392b; color:#fff; }
-.scelte button:disabled, .btn:disabled { opacity:.45; cursor:not-allowed; }
+.scelte button:disabled, .btn:disabled, .btn.spento { opacity:.45; cursor:not-allowed; }
 .griglia { display:grid; grid-template-columns:repeat(auto-fill, minmax(var(--mini, 140px), 1fr)); gap:12px; }
 .zoom { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#777; margin:8px 0; }
 .zoom button { border:1px solid #ddd; background:#fff; border-radius:6px; padding:2px 10px; cursor:pointer; font-size:15px; }
@@ -41412,7 +41649,7 @@ h1 { font-size:22px; margin:6px 0 4px; }
 <section class="passo"><h2>1. Quale album?</h2><div class="scelte" id="scelta-album"></div></section>
 <section class="passo"><h2>2. Le foto delle pagine</h2>
   <div class="scelte">
-    <label class="btn primario">Carica le foto<input type="file" id="file" accept="image/*" multiple hidden></label>
+    <label class="btn primario" id="carica">Carica le foto<input type="file" id="file" accept="image/*" multiple hidden></label>
     <button class="btn" id="demo">Usa le foto del sito</button>
   </div>
   <div id="stato"></div><div id="avvisi"></div>
@@ -41423,7 +41660,7 @@ h1 { font-size:22px; margin:6px 0 4px; }
 <!-- v7.185 (Franco: «dovremmo invertire gli step 2 e 3; prima si caricano le foto e dopo si sceglie il sito») -->
 <section class="passo"><h2>3. Per quale sito servono le foto?</h2><div class="scelte" id="scelta-sito"></div><div class="piano" id="piano"></div></section>
 <section class="passo"><h2>4. Le foto per l'annuncio</h2>
-  <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte (un file .zip)</button></div>
+  <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte</button></div>
   <div class="piano" id="piano2"></div><div class="risultati" id="risultati"></div>
 </section></main>
 <div id="editor">
@@ -41497,6 +41734,14 @@ function _faDisegnaScelte() {
     : s ? 'Sito scelto: <b>' + s.nome + '</b>. Ora scegli l’album (passo 1).'
     : 'Scegli l’album e il sito.';
   _fa$('componi').disabled = !_fa.foto.length || !_fa.sito;
+  // v7.187 (Franco: «il tasto carica foto non deve essere premibile se prima non ho selezionato l'album allo step 1») -
+  //    «Carica le foto» è un'etichetta che apre la casella dei file: si spegne la casella (così il clic non apre niente)
+  //    e l'etichetta prende l'aspetto dei tasti spenti. Stessa regola per «Usa le foto del sito».
+  const senzaAlbum = !_fa.album;
+  _fa$('file').disabled = senzaAlbum;
+  _fa$('carica').classList.toggle('spento', senzaAlbum);
+  _fa$('carica').title = senzaAlbum ? 'Scegli prima l’album (passo 1)' : '';
+  _fa$('demo').disabled = senzaAlbum;
 }
 
 // ---- le tele ----
@@ -42069,52 +42314,55 @@ function _faVista(i) {
   _fa$('vi-succ').disabled = i === _fa.uscite.length - 1;
   _fa$('vista').classList.add('aperto');
 }
-// 🔄 v7.182 (Franco: «mettimi un tasto per scaricare tutte le foto in un colpo solo») - UN FILE SOLO, uno .zip con
-//    tutte le foto dentro. Prima «Scarica tutte» scaricava le foto una per una, e il browser al secondo file chiede
-//    se permettere i download multipli (o li ferma senza dirlo). Lo zip è «senza compressione»: i jpg sono già
-//    compressi, e così bastano poche righe invece di una libreria.
-function _faCrc32(b) {
-  let t = _faCrc32.t;
-  if (!t) {
-    t = _faCrc32.t = new Uint32Array(256);
-    for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
-  }
-  let c = 0xFFFFFFFF;
-  for (let i = 0; i < b.length; i++) c = t[(c ^ b[i]) & 0xFF] ^ (c >>> 8);
-  return (c ^ 0xFFFFFFFF) >>> 0;
-}
-async function _faZip(file) {
-  const parti = [], centrale = [], enc = new TextEncoder();
-  const ora = new Date();
-  const tempo = (ora.getHours() << 11) | (ora.getMinutes() << 5) | (ora.getSeconds() >> 1);
-  const data = ((ora.getFullYear() - 1980) << 9) | ((ora.getMonth() + 1) << 5) | ora.getDate();
-  let pos = 0;
-  for (const f of file) {
-    const nome = enc.encode(f.nome), dati = new Uint8Array(await f.blob.arrayBuffer()), crc = _faCrc32(dati);
-    const loc = new DataView(new ArrayBuffer(30));
-    [[0, 0x04034b50, 4], [4, 20, 2], [6, 0x0800, 2], [8, 0, 2], [10, tempo, 2], [12, data, 2], [14, crc, 4], [18, dati.length, 4], [22, dati.length, 4], [26, nome.length, 2], [28, 0, 2]]
-      .forEach(([o, v, n]) => n === 4 ? loc.setUint32(o, v, true) : loc.setUint16(o, v, true));
-    const cen = new DataView(new ArrayBuffer(46));
-    [[0, 0x02014b50, 4], [4, 20, 2], [6, 20, 2], [8, 0x0800, 2], [10, 0, 2], [12, tempo, 2], [14, data, 2], [16, crc, 4], [20, dati.length, 4], [24, dati.length, 4], [28, nome.length, 2], [30, 0, 2], [32, 0, 2], [34, 0, 2], [36, 0, 2], [38, 0, 4], [42, pos, 4]]
-      .forEach(([o, v, n]) => n === 4 ? cen.setUint32(o, v, true) : cen.setUint16(o, v, true));
-    parti.push(loc, nome, dati); centrale.push(cen, nome);
-    pos += 30 + nome.length + dati.length;
-  }
-  const lungCentrale = centrale.reduce((s, x) => s + x.byteLength, 0);
-  const fine = new DataView(new ArrayBuffer(22));
-  [[0, 0x06054b50, 4], [4, 0, 2], [6, 0, 2], [8, file.length, 2], [10, file.length, 2], [12, lungCentrale, 4], [16, pos, 4], [20, 0, 2]]
-    .forEach(([o, v, n]) => n === 4 ? fine.setUint32(o, v, true) : fine.setUint16(o, v, true));
-  return new Blob([...parti, ...centrale, fine], { type: 'application/zip' });
-}
+// 🗑️ v7.187 - QUI STAVANO `_faCrc32` e `_faZip`, lo zip «senza compressione» della v7.182 («mettimi un tasto per
+//    scaricare tutte le foto in un colpo solo»).
+// 🔄 v7.187 (Franco: «il tasto scarica potrebbe scaricarmi le foto senza zip, ma scaricandole tutte direttamente?») -
+//    LE FOTO UNA PER UNA, coi loro nomi, nella cartella dei download. ⚠️ Al secondo file il browser chiede se permettere
+//    i download multipli: va detto di sì una volta, poi se lo ricorda per il sito. Fra un file e l'altro 400 ms, se no
+//    Chrome ne tiene solo una parte.
+// 🔄 v7.187 (Franco: «potrebbe far aprire una finestra che chiede dove scaricare, invece che scaricare sempre il
+//    "downloads"?») - SI SCEGLIE LA CARTELLA, dove il browser lo sa fare (Chrome ed Edge sul computer:
+//    `showDirectoryPicker`), e le foto ci vengono scritte dentro tutte, senza la domanda dei download multipli. Dove non
+//    lo sa fare (Firefox, Safari, telefono) si torna alla cartella dei download, una per una.
+// ⚠️ La finestra della cartella va chiesta SUBITO, prima di qualunque altra attesa: il browser la apre solo se viene
+//    dal clic, e un `await` messo prima gliela farebbe rifiutare.
 async function _faScaricaTutte() {
   if (!_fa.uscite.length) return;
-  _faStato('Preparo lo zip…');
-  const zip = await _faZip(_fa.uscite);
-  const url = URL.createObjectURL(zip), d = _fa.w.document;
-  const a = d.createElement('a'); a.href = url; a.download = _fa.album.file + '-' + _fa.sito.nome.toLowerCase() + '.zip';
-  d.body.appendChild(a); a.click(); a.remove();
-  _fa.w.setTimeout(() => URL.revokeObjectURL(url), 60000);
-  _faStato('');
+  const d = _fa.w.document, n = _fa.uscite.length;
+  if (typeof _fa.w.showDirectoryPicker === 'function') {
+    let cartella;
+    try { cartella = await _fa.w.showDirectoryPicker({ mode: 'readwrite', id: 'foto-annuncio' }); }
+    catch (e) { if (e && e.name === 'AbortError') { _faStato('Nessuna cartella scelta: non ho scaricato niente.'); return; } cartella = null; }
+    if (cartella) {
+      _fa$('scarica').disabled = true;
+      try {
+        for (let i = 0; i < n; i++) {
+          const u = _fa.uscite[i];
+          _faStato('Salvo la foto ' + (i + 1) + ' di ' + n + '…');
+          const fh = await cartella.getFileHandle(u.nome, { create: true });
+          const w = await fh.createWritable();
+          await w.write(u.blob || await (await fetch(u.url)).blob());
+          await w.close();
+        }
+        _faStato(n + ' foto salvate nella cartella «' + cartella.name + '».');
+      } catch (e) {
+        console.error('_faScaricaTutte', e);
+        _faStato('⚠️ Non sono riuscito a salvare tutte le foto: ' + (e?.message || e));
+      }
+      _fa$('scarica').disabled = false;
+      return;
+    }
+  }
+  _fa$('scarica').disabled = true;
+  for (let i = 0; i < n; i++) {
+    const u = _fa.uscite[i];
+    _faStato('Scarico la foto ' + (i + 1) + ' di ' + n + '…');
+    const a = d.createElement('a'); a.href = u.url; a.download = u.nome;
+    d.body.appendChild(a); a.click(); a.remove();
+    await new Promise(ok => _fa.w.setTimeout(ok, 400));
+  }
+  _fa$('scarica').disabled = false;
+  _faStato(n + ' foto scaricate. Se ne vedi solo una, il browser ha chiesto di permettere i download multipli: rispondi sì e riprova.');
 }
 
 // 🆕 v7.170 (Franco: «un meccanismo di propagazione di aggiornamenti fatto da configurazione: un posto dove scrivere la
@@ -64447,9 +64695,20 @@ function buildLinkedFiguresTabsHTML(baseId) {
         // 🆕 v7.090 - il nome completo, e sotto serie e tipologia: lo stesso personaggio sta in serie e tipologie
         //    diverse, ed è quello che distingue le righe
         label = (item.fullName && item.fullName.trim()) ? item.fullName : computeFullName(item, allFigs);
+        // 🆕 v7.187 (Franco: «quando l'articolo è una figurina con retro, il nome completo spesso è così lungo da andare
+        //    a capo; spezziamolo: sulla prima riga il nome dell'articolo e sulla seconda il resto (che dovrebbe essere il
+        //    nome del retro)») - il Nome completo di una figurina è «nome - retro» (computeFullName): se comincia
+        //    proprio col nome seguito da « - », il resto va sotto. Se no (nome composto diversamente) resta intero.
+        let _resto = '';
+        const _nm = (item.name || '').trim();
+        if ((item.section || 'figurines') === 'figurines' && _nm && label.startsWith(_nm + ' - ')) {
+          _resto = label.slice(_nm.length + 3);
+          label = _nm;
+        }
         const _s = getData('series', []).find(x => x.id === item.seriesId);
         const _sotto = [_s ? _nomeSerieCard(_s, true) : '', _wzEtichetta(item.section || 'figurines')].filter(Boolean).join(' · ');
-        if (_sotto) labelExtra = `<div style="font-size:0.78rem;color:var(--info);margin-top:1px;">${esc(_sotto)}</div>`;
+        if (_resto) labelExtra = `<div style="margin-top:1px;">${esc(_resto)}</div>`;
+        if (_sotto) labelExtra += `<div style="font-size:0.78rem;color:var(--info);margin-top:1px;">${esc(_sotto)}</div>`;
       } else if (g.key === 'usaCartoncino') {
         // 🆕 v7.053 - il nome completo dell'album, e sotto la sua serie: gli album di serie diverse
         //    possono chiamarsi uguale («W gli Sgorbions» sta in tre serie)
