@@ -1816,8 +1816,9 @@ footer {
   .nav-links #nav-wantlist       { order: 7; }
   .nav-links #nav-classifica     { order: 8; }
   .nav-links #nav-newsletter-btn { order: 9; }
-  .nav-links a[data-page="contact"] { order: 10; }
-  .nav-links #nav-logout-link    { order: 11; }
+  .nav-links #nav-annunci        { order: 10; }
+  .nav-links a[data-page="contact"] { order: 11; }
+  .nav-links #nav-logout-link    { order: 12; }
 
   #navbar .nav-logo img { height: 30px; }
 }
