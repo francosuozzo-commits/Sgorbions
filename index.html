@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.186">
+<link rel="stylesheet" href="css/style.css?v=7.187">
 
 
 <style>
@@ -425,6 +425,14 @@
    sopra; adesso la casella sta a ridosso della bandiera. I margini della v6.855 restano. */
 #nav-search { position:relative; flex:1 1 auto; min-width:0; display:flex; justify-content:flex-end; margin:0 0.6rem 0 0.35rem; }
 #nav-search-input { width:230px; max-width:100%; min-width:0; }
+/* 🆕 v7.187 (Franco: «il tasto Annunci della navbar mettilo tutto a dx, prima della buca di ricerca») - lo spazio
+   libero passa da DENTRO la casella a PRIMA di «Annunci»: la casella non cresce più, e il margine automatico
+   spinge a destra Annunci con lei attaccata. Sotto i 1500px la casella non c'è e Annunci sta prima del 🔍.
+   Solo sul desktop: nel panino le voci vanno in colonna e un margine automatico le sposterebbe. */
+@media (min-width:861px) {
+  .nav-links #nav-annunci { margin-left:auto; }
+  #nav-annunci + #nav-search { flex:0 1 auto; }
+}
 /* ⬜ E SOTTO I 1500px LA CASELLA SPARISCE, AL SUO POSTO UN TASTO 🔍 che apre la finestrella del
    telefono. 📏 Misurato: da admin, a 1440px le voci da sole arrivano già dove comincia la bandiera,
    quindi una casella lì non ci sta comunque - stringerla a 26px non è «più stretta», è illeggibile.
@@ -2371,9 +2379,6 @@ button.back-btn { color:#ffffff; }
     <a onclick="showPage('wishlist')" data-page="wishlist" id="nav-wishlist" style="display:none;position:relative;"><span data-i18n="nav.wishlist">Ciò che cerco</span><span id="nav-wishlist-badge" style="display:none;position:absolute;top:-6px;right:-10px;background:var(--danger);color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span></a>
     <a onclick="showPage('classifica')" data-page="classifica" id="nav-classifica" style="display:none;" data-i18n="nav.classifica">🏆 Classifica</a>
     <a onclick="showPage('newsletter')" id="nav-newsletter-btn" style="display:none;">📧 Newsletter</a>
-    <!-- 🆕 v7.186 (Franco: «nella navbar metti una voce Annunci, admin visible, che porta alla pagina Annunci») -
-         apre la sezione «📢 Annunci» della console. Passa da `showAdminTab`, la porta che chiede chi sei (v6.914). -->
-    <a onclick="showAdminTab('fotoannuncio')" id="nav-annunci" style="display:none;">📢 Annunci</a>
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contatti</a>
     <!-- 🆕 v6.341 (Franco) — LA RICERCA GLOBALE IN NAVBAR, dopo Contatti. Solo admin, solo desktop.
          📌 NON È UNA SECONDA RICERCA: scrive nella casella dell'Inventario e chiama `renderCatalog()`,
@@ -2391,6 +2396,12 @@ button.back-btn { color:#ffffff; }
     <!-- 🔄 v6.852 (Franco: «nella versione mobile ... la voce di menu ... deve portare a una
          finestrella») - QUI STAVA LA CASELLA. Da telefono al suo posto c'è questa voce, fatta come
          le altre; la casella è passata in `.nav-right`, dove non può scavalcare la bandiera. -->
+    <!-- 🆕 v7.186 (Franco: «nella navbar metti una voce Annunci, admin visible, che porta alla pagina Annunci») -
+         apre la sezione «📢 Annunci» della console. Passa da `showAdminTab`, la porta che chiede chi sei (v6.914). -->
+    <!-- 🔄 v7.187 (Franco: «il tasto Annunci della navbar mettilo tutto a dx, prima della buca di ricerca») - sta
+         subito prima della casella, e sul desktop il `margin-left:auto` lo spinge a destra (regola in testa). Nel
+         panino del telefono il posto lo decide `order` (style.css): resta fra Newsletter e Contatti. -->
+    <a onclick="showAdminTab('fotoannuncio')" id="nav-annunci" style="display:none;">📢 Annunci</a>
     <div id="nav-search" style="display:none;">
       <!-- 🆕 v6.852 (Franco: «il messaggio da mostrare non deve starci tutto dentro; deve apparire
            facendo mouse over; mostralo sotto alla casella nera, cosi nn finisce sugli altri
@@ -6697,7 +6708,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.186"></script>
+<script src="js/app.js?v=7.187"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6721,7 +6732,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.186'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.187'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
