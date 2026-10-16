@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.186 - Modificati js/app.js e index.html (per la versione). Finestra «Nuovo annuncio» (Franco: «il campo "Articolo"
+//          mettilo dopo il campo "Tipologia di articolo"; e "Articolo" deve pescare solo articoli di quella tda; … in
+//          modo ordinato (numero, se presente, nome, se numero non presente)»): fra Serie e Articolo la tendina
+//          «Tipologia di articolo» (`_annOpzioniTipologia`, le tipologie degli Aggiornamenti massivi), l'Articolo solo di
+//          quella tipologia, prima per numero poi per nome, col numero nella voce (`_annOpzioniArticolo`). Salvata nella
+//          riga (`tipologia`); per gli annunci già scritti si ricava dall'articolo.
+//          Ricerca globale (Franco: «deve essere possibile collassare l'elenco dei risultati, per ogni blocco nel quale
+//          sono raggruppati (serie, sottoserie, tda)»): un triangolo ▾/▸ sulla card della serie (a destra) e davanti al
+//          titolo di ogni blocco di tipologia o sottoserie (`_rgTastoCollassa`, `_rgCollassa`). Ogni ricerca riparte aperta.
 // v7.185 - Modificati js/app.js e index.html (per la versione). Sulla foto della card di un album, solo per l'admin, una
 //          «A» in basso a sinistra quando il tab Ebay ha testi scritti (Franco: «sulla copertina degli album che hanno
 //          uno dei campi Ebay popolato … una "A" va benissimo»): titoli, descrizioni, piani delle foto annuncio,
@@ -31316,7 +31325,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.185';
+const JS_VERSION = 'v7.186';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -36721,7 +36730,7 @@ function updateNavUser() {
   // 📌 Ognuno di questi viene riacceso piu' sotto da chi ne ha il diritto - `nav-reply-btn` per
   //    l'utente NON admin, gli altri per l'admin - e `nav-quota-warning-btn` da
   //    `_checkReadQuotaWarning()`, che gira dopo.
-  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-quota-warning-btn',
+  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-quota-warning-btn',
    'admin-add-series-btn', 'nav-wantlist', 'nav-js-version-wrap'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
@@ -36772,6 +36781,9 @@ function updateNavUser() {
     const ccl = document.getElementById('cc-linguetta'); if (ccl) ccl.style.display = currentUser.isAdmin ? 'none' : '';
     const nlBtn = document.getElementById('nav-newsletter-btn');
     if (nlBtn) nlBtn.style.display = currentUser.isAdmin ? '' : 'none';
+    // v7.186 (Franco) - la voce «Annunci», solo all'admin
+    const annBtn = document.getElementById('nav-annunci');
+    if (annBtn) annBtn.style.display = currentUser.isAdmin ? '' : 'none';
     if (btnCollect) btnCollect.style.display = 'none';
     const homeContent = document.getElementById('home-logged-in-content');
     if (homeContent) homeContent.style.display = '';
@@ -41032,13 +41044,14 @@ function _annDisegna() {
   const th = t => '<th style="white-space:nowrap;">' + t + '</th>';
   box.innerHTML = '<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;">'
     + '<table class="data-table compact"><thead><tr>'
-    + th(it ? 'Sito' : 'Site') + th(it ? 'Serie' : 'Series') + th(it ? 'Articolo' : 'Item') + th(it ? 'Titolo' : 'Title')
+    + th(it ? 'Sito' : 'Site') + th('Account') + th(it ? 'Serie' : 'Series') + th(it ? 'Articolo' : 'Item') + th(it ? 'Titolo' : 'Title')
     + th(it ? 'Descrizione' : 'Description') + th(it ? 'Prezzo' : 'Price') + th('Foto') + '<th></th>'
     + '</tr></thead><tbody>'
     + _annRighe.map((r, i) => {
         const s = serie.get(r.seriesId), f = figs.get(r.articoloId);
         return '<tr>'
           + '<td style="white-space:nowrap;">' + esc(r.sito || '') + '</td>'
+          + '<td style="white-space:nowrap;">' + esc(r.account || '') + '</td>'
           + '<td style="white-space:nowrap;color:var(--nome-entita);">' + esc(s ? _nomeSerie(s) : '') + '</td>'
           + '<td>' + (f ? '<a href="#" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;">' + esc(_annNomeArticolo(f)) + '</a>'
                        : (r.articoloId ? '<span style="color:var(--warn);">' + (it ? 'articolo non trovato' : 'item not found') + '</span>' : '')) + '</td>'
@@ -41053,27 +41066,65 @@ function _annDisegna() {
       }).join('')
     + '</tbody></table></div>';
 }
-// Le voci della tendina Oggetto: gli articoli della serie, a gruppi per tipologia (l'ordine del descrittore).
-function _annOpzioniArticolo(seriesId, scelto) {
+// 🔄 v7.186 (Franco: «il campo "Articolo" mettilo dopo il campo "Tipologia di articolo"; e "Articolo" deve pescare solo
+//    articoli di quella tda; e gli articoli devono essere mostrati in modo ordinato (numero, se presente, nome, se numero
+//    non presente)») - LA TIPOLOGIA È UN CAMPO SUO, fra Serie e Articolo. Le tipologie sono quelle degli Aggiornamenti
+//    massivi (`_aggTipoDi`: il tipo se c'è, se no la sezione), nell'ordine del descrittore e poi per nome.
+function _annOpzioniTipologia(seriesId, scelto) {
   const it = currentLang === 'it';
   if (!seriesId) return '<option value="">' + (it ? '— scegli prima la serie —' : '— choose the series first —') + '</option>';
-  const ordine = Object.keys(ARTICOLI);
-  const perSez = new Map();
-  (getData('figurines', []) || []).filter(f => f.seriesId === seriesId).forEach(f => {
-    if (!perSez.has(f.section)) perSez.set(f.section, []);
-    perSez.get(f.section).push(f);
-  });
-  const sezDellaSerie = [...perSez.keys()].sort((a, b) => (ordine.indexOf(a) + 1 || 999) - (ordine.indexOf(b) + 1 || 999));
+  const ordine = Object.keys(ARTICOLI), posto = k => { const i = ordine.indexOf(k); return i < 0 ? 9999 : i; };
+  const tipi = [...new Set((getData('figurines', []) || []).filter(f => f.seriesId === seriesId).map(_aggTipoDi))]
+    .sort((a, b) => (posto(a) - posto(b)) || _aggNomeTipo(a).localeCompare(_aggNomeTipo(b), 'it'));
   return '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
-    + sezDellaSerie.map(sez => '<optgroup label="' + esc((ARTICOLI[sez] && (it ? ARTICOLI[sez].it : ARTICOLI[sez].en)) || sez) + '">'
-        + perSez.get(sez).sort((a, b) => ((+a.number || 99999) - (+b.number || 99999)) || _annNomeArticolo(a).localeCompare(_annNomeArticolo(b)))
-            .map(f => '<option value="' + esc(f.id) + '"' + (f.id === scelto ? ' selected' : '') + '>' + esc(_annNomeArticolo(f)) + '</option>').join('')
-        + '</optgroup>').join('');
+    + tipi.map(k => '<option value="' + esc(k) + '"' + (k === scelto ? ' selected' : '') + '>' + esc(_aggNomeTipo(k)) + '</option>').join('');
 }
+// Gli articoli della serie e della tipologia: prima quelli col numero, in ordine di numero; poi gli altri per nome.
+// Il numero si legge anche nella voce, se no l'ordine non si capisce.
+function _annOpzioniArticolo(seriesId, tipo, scelto) {
+  const it = currentLang === 'it';
+  if (!seriesId || !tipo) return '<option value="">' + (it ? '— scegli prima la tipologia —' : '— choose the item type first —') + '</option>';
+  const num = f => String(f.noNumber ? '' : (f.number ?? '')).trim();
+  const art = (getData('figurines', []) || []).filter(f => f.seriesId === seriesId && _aggTipoDi(f) === tipo)
+    .sort((a, b) => {
+      const na = num(a), nb = num(b);
+      if (na && nb) return (parseInt(na, 10) || 0) - (parseInt(nb, 10) || 0) || na.localeCompare(nb, 'it', { numeric: true }) || _annNomeArticolo(a).localeCompare(_annNomeArticolo(b), 'it');
+      if (na || nb) return na ? -1 : 1;
+      return _annNomeArticolo(a).localeCompare(_annNomeArticolo(b), 'it');
+    });
+  return '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+    + art.map(f => '<option value="' + esc(f.id) + '"' + (f.id === scelto ? ' selected' : '') + '>' + esc((num(f) ? num(f) + ' · ' : '') + _annNomeArticolo(f)) + '</option>').join('');
+}
+// i due cambi a cascata: la serie rifà le tipologie (e svuota gli articoli), la tipologia rifà gli articoli
+function _annCambiaSerie(sid) {
+  document.getElementById('ann-tipo').innerHTML = _annOpzioniTipologia(sid, null);
+  document.getElementById('ann-articolo').innerHTML = _annOpzioniArticolo(sid, null, null);
+}
+function _annCambiaTipo(tipo) {
+  document.getElementById('ann-articolo').innerHTML = _annOpzioniArticolo(document.getElementById('ann-serie').value, tipo, null);
+}
+// 🆕 v7.186 (Franco: «una volta selezionato un allegato zip non permette di toglierlo») - accanto al nome dello zip
+//    scelto c'è ✕, che lo toglie prima del Salva.
+function _annZipScelto() {
+  const inp = document.getElementById('ann-zip'), nome = document.getElementById('ann-zip-nome');
+  if (!inp || !nome) return;
+  const f = inp.files[0];
+  nome.innerHTML = f ? esc(f.name) + ' <button type="button" onclick="_annZipTogli()" title="' + (currentLang === 'it' ? 'Togli lo zip' : 'Remove the zip') + '" style="border:none;background:transparent;color:var(--danger);cursor:pointer;font-size:0.9rem;padding:0 0.3rem;">✕</button>' : '';
+}
+function _annZipTogli() {
+  const inp = document.getElementById('ann-zip');
+  if (inp) inp.value = '';
+  _annZipScelto();
+}
+// 🆕 v7.186 (Franco: «un campo che si chiama Account, con queste opzioni: Franco, Lendys, Fabio») - chi ha messo l'annuncio
+const _ANN_ACCOUNT = ['Franco', 'Lendys', 'Fabio'];
 // La finestra: `i` = la riga da modificare, null = annuncio nuovo. Annulla / Salva, come le finestre gemelle.
 function _annApriFinestra(i) {
   const it = currentLang === 'it';
   const r = (i !== null && _annRighe[i]) ? _annRighe[i] : {};
+  // v7.186 - la tipologia di un annuncio già scritto: quella salvata, se no quella del suo articolo
+  const artR = r.articoloId ? (getData('figurines', []) || []).find(f => f.id === r.articoloId) : null;
+  const tipoR = r.tipologia || (artR ? _aggTipoDi(artR) : '');
   const vecchia = document.getElementById('annuncio-modal');
   if (vecchia) vecchia.remove();
   const ov = document.createElement('div');
@@ -41085,13 +41136,18 @@ function _annApriFinestra(i) {
     + '<button type="button" class="modal-close" onclick="document.getElementById(\'annuncio-modal\').remove()">✕</button></div>'
     + lab(it ? 'Sito' : 'Site')
     + '<select id="ann-sito" class="form-select">' + _FA_SITI.map(s => '<option' + (s.nome === r.sito ? ' selected' : '') + '>' + s.nome + '</option>').join('') + '</select>'
+    + lab('Account')
+    + '<select id="ann-account" class="form-select"><option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+      + _ANN_ACCOUNT.map(a => '<option' + (a === r.account ? ' selected' : '') + '>' + a + '</option>').join('') + '</select>'
     + lab(it ? 'Serie' : 'Series')
-    + '<select id="ann-serie" class="form-select" onchange="document.getElementById(\'ann-articolo\').innerHTML = _annOpzioniArticolo(this.value, null)">'
+    + '<select id="ann-serie" class="form-select" onchange="_annCambiaSerie(this.value)">'
       + '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
       + _annSerie().map(s => '<option value="' + esc(s.id) + '"' + (s.id === r.seriesId ? ' selected' : '') + '>' + esc(_nomeSerie(s)) + '</option>').join('')
     + '</select>'
+    + lab(it ? 'Tipologia di articolo' : 'Item type')
+    + '<select id="ann-tipo" class="form-select" onchange="_annCambiaTipo(this.value)">' + _annOpzioniTipologia(r.seriesId || '', tipoR) + '</select>'
     + lab(it ? 'Articolo' : 'Item')
-    + '<select id="ann-articolo" class="form-select">' + _annOpzioniArticolo(r.seriesId || '', r.articoloId) + '</select>'
+    + '<select id="ann-articolo" class="form-select">' + _annOpzioniArticolo(r.seriesId || '', tipoR, r.articoloId) + '</select>'
     + lab(it ? 'Titolo' : 'Title')
     + '<input id="ann-titolo" class="form-input" type="text" value="' + esc(r.titolo || '') + '">'
     + lab(it ? 'Descrizione' : 'Description')
@@ -41103,7 +41159,7 @@ function _annApriFinestra(i) {
         + ' <label style="margin-left:0.8rem;cursor:pointer;"><input type="checkbox" id="ann-zip-togli"> ' + (it ? 'toglilo' : 'remove it') + '</label>'
         : '<span>' + (it ? 'Nessuno zip.' : 'No zip.') + '</span>') + '</div>'
     + '<label class="btn-secondary" style="display:inline-block;cursor:pointer;">📦 ' + (r.zip ? (it ? 'Carica un altro zip' : 'Upload another zip') : (it ? 'Carica zip' : 'Upload zip'))
-    + '<input type="file" id="ann-zip" accept=".zip,application/zip" style="display:none;" onchange="document.getElementById(\'ann-zip-nome\').textContent = this.files[0] ? this.files[0].name : \'\'"></label>'
+    + '<input type="file" id="ann-zip" accept=".zip,application/zip" style="display:none;" onchange="_annZipScelto()"></label>'
     + ' <span id="ann-zip-nome" style="font-size:0.8rem;"></span>'
     + '<div id="ann-stato" style="font-size:0.8rem;color:var(--text);min-height:1.2em;margin-top:0.6rem;"></div>'
     + '<div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.8rem;">'
@@ -41135,7 +41191,9 @@ async function _annSalva(i) {
   const riga = {
     id: (i !== null && _annRighe[i] && _annRighe[i].id) || ('ann' + Date.now().toString(36)),
     sito: v('ann-sito').value,
+    account: v('ann-account').value || null,   // v7.186
     seriesId: v('ann-serie').value || null,
+    tipologia: v('ann-tipo').value || null,   // v7.186
     articoloId: v('ann-articolo').value || null,
     titolo: v('ann-titolo').value.trim(),
     descrizione: v('ann-descrizione').value.trim(),
@@ -47943,8 +48001,33 @@ function _frasePerQuesta(n) {
     ? `${n} ${n === 1 ? 'articolo' : 'articoli'}`
     : `${n} item${n === 1 ? '' : 's'}`;
 }
+// 🆕 v7.186 (Franco: «Nei risultati della RG, deve essere possibile collassare l'elenco dei risultati, per ogni blocco
+//    nel quale sono raggruppati (serie, sottoserie, tda)») - UN TRIANGOLO PER BLOCCO. Il blocco è `[data-rg-blocco]`
+//    (la card della serie, o il blocco di una tipologia o di una sottoserie dentro di lei) e quello che si chiude è il
+//    suo corpo, `[data-rg-corpo]`, figlio diretto: chiudere la serie chiude tutti i suoi blocchi, il titolo resta.
+//    I due corpi sono `display:flex`, e lo si rimette scritto: `''` toglierebbe il flex scritto sull'elemento.
+// 📌 Ogni ricerca riparte tutta aperta: lo stato non si ricorda, i risultati si ridisegnano da capo.
+function _rgTastoCollassa() {
+  const it = currentLang === 'it';
+  return '<button type="button" class="rg-collassa" onclick="event.stopPropagation();_rgCollassa(this)" aria-expanded="true"'
+    + ' title="' + (it ? 'Chiudi questi risultati' : 'Collapse these results') + '"'
+    + ' style="background:none;border:none;color:var(--text);cursor:pointer;font-size:1rem;line-height:1;padding:0 0.2rem;flex-shrink:0;">▾</button>';
+}
+function _rgCollassa(btn) {
+  const blocco = btn.closest('[data-rg-blocco]');
+  const corpo = blocco && blocco.querySelector(':scope > [data-rg-corpo]');
+  if (!corpo) return;
+  const chiudi = corpo.style.display !== 'none';
+  corpo.style.display = chiudi ? 'none' : 'flex';
+  const it = currentLang === 'it';
+  btn.textContent = chiudi ? '▸' : '▾';
+  btn.setAttribute('aria-expanded', chiudi ? 'false' : 'true');
+  btn.title = chiudi ? (it ? 'Apri questi risultati' : 'Expand these results') : (it ? 'Chiudi questi risultati' : 'Collapse these results');
+}
 function renderCatalogSearch(q) {
   const opts = arguments[1];   // 🆕 v6.994 - il secondo argomento facoltativo (la firma resta quella di sempre)
+  // v7.186 - il triangolo dei blocchi; il `typeof` perché i banchi di prova eseguono questa funzione da sola
+  const _tastoRG = typeof _rgTastoCollassa === 'function' ? _rgTastoCollassa : () => '';
   // 🆕 v6.405 (Franco) - LE DUE MINIATURE, E IL RAPPORTO FRA LORO SCRITTO UNA VOLTA SOLA.
   // Franco: *"nella ricerca globale la miniatura della serie la vorrei piu grande della miniatura
   // dei risultati: di un fattore 2:1"*.
@@ -48155,7 +48238,7 @@ function renderCatalogSearch(q) {
           ${r.seriesMatch ? `<span style="font-size:0.8125rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 5px;flex-shrink:0;">${currentLang==='it'?'serie':'series'}</span>` : ''}
           <!-- 🆕 v6.395 - e il lime passa QUI, dove dice cio' che dice sempre: quanti risultati.
                Non e' uno scambio estetico: e' rimettere un colore sul suo mestiere. -->
-          ${r.figs.length ? `<span style="font-size:0.9375rem;color:var(--accent);white-space:nowrap;flex-shrink:0;">${_frasePerQuesta(r.figs.length)} ${_fraseTipologie(_nTipologie(r.figs))}</span>` : ''}
+          ${r.figs.length ? `<span style="font-size:0.9375rem;color:var(--accent);white-space:nowrap;flex-shrink:0;">${_frasePerQuesta(r.figs.length)} ${_fraseTipologie(_nTipologie(r.figs))}</span>${_tastoRG()}` : ''}
           </div>
           ${/* ⚠️ LA MINIATURA ENTRA IN UN CONTENITORE SUO, e le due dichiarazioni non sono
                  decorazione: `position:relative` perche' il timbro e' assoluto e senza un
@@ -48295,7 +48378,7 @@ function renderCatalogSearch(q) {
           // pillole fuori dallo schermo.
           // Lo stacco fra gruppi e' piu' largo di quello dentro un gruppo (0.7 contro 0.3): e' cosi'
           // che si vede DOVE finisce una figurina e ne comincia un'altra, senza cornici ne' righelli.
-          return `<div>
+          return `<div data-rg-blocco>
             <!-- 🆕 v6.394 (Franco) - BIANCO E FRA PARENTESI. L'arancione stava a ΔE 7 dal colore
                  della Variazione ufficiale: due cose diverse dette con lo stesso colore. Franco ha
                  guardato la tavolozza e ha deciso di NON prendere un altro colore — la tavola e'
@@ -48314,8 +48397,8 @@ function renderCatalogSearch(q) {
             <!-- 🆕 v6.610 - IL TITOLO DIVENTA UNA RIGA, per fare posto al pulsante senza
                  mandarlo a capo su schermi stretti. Il pulsante e' l'ULTIMO elemento e ha
                  «margin-left:auto»: sta a destra senza che nessuno debba misurare niente. -->
-            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(_b.eti)}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(_b.items.length)}</span>${_b.items.length > 1 ? `<button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',true)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" class="btn-primary rg-mostra-tabella" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u25A4</span>${currentLang === 'it' ? 'Mostra in tabella' : 'Show in table'}</button><button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',false)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista a griglia' : 'Open these results in the grid view'}" class="btn-primary" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u229E</span>${currentLang === 'it' ? 'Mostra in griglia' : 'Show in grid'}</button>` : ''}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:0.7rem;">
+            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(_b.eti)}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(_b.items.length)}</span>${_tastoRG()}${_b.items.length > 1 ? `<button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',true)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" class="btn-primary rg-mostra-tabella" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u25A4</span>${currentLang === 'it' ? 'Mostra in tabella' : 'Show in table'}</button><button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',false)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista a griglia' : 'Open these results in the grid view'}" class="btn-primary" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u229E</span>${currentLang === 'it' ? 'Mostra in griglia' : 'Show in grid'}</button>` : ''}</div>
+            <div data-rg-corpo style="display:flex;flex-wrap:wrap;gap:0.7rem;">
               ${gruppi.map(gruppo => '<div style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">' + gruppo.items.map(f => {
                 _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
                 // v6.103 (Franco) - GLI ERRORI DI STAMPA ENTRANO NEL CONTO. Prima restavano fuori e
@@ -48623,9 +48706,10 @@ function renderCatalogSearch(q) {
     // quindi «quale sia l'ultimo» dipende dai dati e non dall'indice del map.
     // ⚠️ Col `gap` sparisce anche il `margin-bottom` dell'INTESTAZIONE: sommato al gap sarebbe
     // stato uno spazio doppio nel punto piu' visibile della card.
-    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.6rem 0.75rem;margin-bottom:0.6rem;display:flex;flex-direction:column;gap:1rem;">
+    // v7.186 - il blocco della serie si chiude col suo triangolo (`_rgCollassa`): i risultati stanno nel suo corpo
+    return `<div data-rg-blocco style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.6rem 0.75rem;margin-bottom:0.6rem;display:flex;flex-direction:column;gap:1rem;">
       ${seriesHeader}
-      ${figsHTML}
+      ${figsHTML ? `<div data-rg-corpo style="display:flex;flex-direction:column;gap:1rem;">${figsHTML}</div>` : ''}
     </div>`;
   }).join('') + _rgPers;   // v7.112: i personaggi dopo tutti gli articoli
 }
