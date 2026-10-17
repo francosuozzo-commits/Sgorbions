@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.193 - Modificati js/app.js e index.html (per la versione). Admin console, tab Serie: le colonne sì/no scrivono
+//          tutte «Sì» (era «SI» o la ✗).
 // v7.192 - Modificati js/app.js e index.html (per la versione). Personaggi, il filtro «Senza figurine» si chiama
 //          «Personaggi senza figurine o card» e lascia fuori anche chi ha una Carta (`_haFigurineSue`). Griglia dei
 //          personaggi sul desktop: foto sdraiata su due colonne (`_persSdraiata`). Pagina del personaggio: prima gli
@@ -31384,7 +31386,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.192';
+const JS_VERSION = 'v7.193';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -49319,7 +49321,11 @@ function _rgPersonaggiHTML(q, qn) {
   // 🆕 v7.175 (Franco: «per me va bene») - «Spille · Spille»: quando la tipologia si chiama come la serie (maiuscole e
   //    spazi a parte), la seconda non dice niente di più e resta solo la serie
   const _soloLettere = t => String(t || '').trim().replace(/\s+/g, ' ').toLowerCase();
-  const tipologiaUguale = a => _soloLettere(tipologiaDi(a)) === _soloLettere(nomeS.get(a.seriesId));
+  // 🔄 v7.193 (Franco: «anche nei risultati della RG, quando una sottoserie ha una sola tda, non serve ripetere due volte lo
+  //    stesso termine: lasciamolo solo per la sottoserie»; «Sgorbions Holidays - tatuaggi - tatuaggi») - e quando la
+  //    sottoserie si chiama come la tipologia resta la sola sottoserie, come nelle numeriche della serie (v7.191).
+  //    ⚠️ Su una riga sola e senza `sottoserieDi`: prova-v7175 ritaglia questa riga e la esegue da sola.
+  const tipologiaUguale = a => _soloLettere(tipologiaDi(a)) === _soloLettere(nomeS.get(a.seriesId)) || (!!String(a.subseries || '').trim() && _soloLettere(tipologiaDi(a)) === _soloLettere(a.subseries));
   const ordina = l => l.slice().sort((a, b) => (ordSerie.get(a.seriesId) ?? 1e9) - (ordSerie.get(b.seriesId) ?? 1e9)
     || String(a.section || 'figurines').localeCompare(String(b.section || 'figurines')) || (parseInt(a.number, 10) || 0) - (parseInt(b.number, 10) || 0));
   // la misura della miniatura in un posto solo (prova-v6405 vieta le misure scritte a mano nella ricerca)
@@ -61010,9 +61016,11 @@ function renderAdminSeries() {
       // tabella era una parete di parole in cui i pochi SI non si trovavano: togliendo i NO, cio'
       // che resta scritto e' esattamente cio' che c'e'. Stessa idea del `#` tolto nella v6.115 —
       // un segno che non aggiunge niente toglie leggibilita' a quelli che aggiungono.
-      const siNoCell = v => v ? '<span style="color:var(--success);font-weight:600;">SI</span>' : '';
+      // 🔄 v7.193 (Franco: «per i campi booleani a volte abbiamo la "X" ed a volte "Si"; facciamo sempre "Sì"») - una
+      //    parola sola, con l'accento, per tutte le colonne sì/no
+      const siNoCell = v => v ? '<span style="color:var(--success);font-weight:600;">Sì</span>' : '';
       // v6.225 - lo stesso segno per le colonne scritte al negativo: c'e' quando la cosa E' vera.
-      const xCell = v => v ? '<span style="color:var(--success);font-weight:600;">&#10007;</span>' : '';
+      const xCell = siNoCell;   // v7.193: era la ✗
       return `<tr>
         <td style="white-space:nowrap;">
           ${(() => {
