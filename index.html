@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.191">
+<link rel="stylesheet" href="css/style.css?v=7.192">
 
 
 <style>
@@ -5655,6 +5655,17 @@ di tutte le serie</button>
       <summary class="series-sottotitolo" style="margin-top:1.1rem;">Retro</summary>
       <div class="form-hint" style="margin-bottom:0.35rem;">Le versioni che questa serie ha sui retro, e i tipi che le loro tendine offrono.</div>
       <div style="display:flex;flex-direction:column;gap:0.5rem;">
+        <!-- 🆕 v7.192 (Franco: «abilita le variazioni ai retro») - prima del change, come nelle figurine -->
+        <div class="series-flag-riga">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-retro-variations-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span style="color:var(--type-official);" data-versione="variation"></span>
+          </label>
+          <div class="form-group series-conteggio" id="series-count-retro-variations-group" style="display:none;">
+            <label class="form-label" style="font-size:0.78rem;margin:0;">N. variazioni</label>
+            <input class="form-input" type="number" id="series-count-retro-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i RETRO marcati «variazione ufficiale»">
+          </div>
+        </div>
         <div class="series-flag-riga">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-has-retro-change-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
@@ -6706,7 +6717,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.191"></script>
+<script src="js/app.js?v=7.192"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6730,7 +6741,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.191'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.192'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
