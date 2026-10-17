@@ -2425,6 +2425,11 @@ footer {
      foto (riga 2, colonna 1) valgono come sempre. Il pulsante prende una riga sua in fondo. */
   .cover-riga { display: contents; }
   #sfoglia-album-serie { grid-row: 5; grid-column: 1 / -1; justify-self: start; margin-top: 0.5rem; }
+  /* 🆕 v7.191 (Franco: «da mobile, nella pagina della serie, il bottone per sfogliare l'album mettilo in alto, a fianco
+     alla foto della serie») - nella pagina della serie (l'hub: le numeriche, `.meta-hub`, scendono a tutta larghezza
+     e lasciano libera la casella accanto alla foto) il pulsante sale lì, in alto. Nella pagina degli Album le numeriche
+     stanno accanto alla foto: lì resta in fondo. */
+  .series-title-area:has(#detail-meta.meta-hub) #sfoglia-album-serie { grid-row: 2; grid-column: 2; align-self: start; margin-top: 0; }
 
   /* 🆕 v6.953 (Franco, dal telefono: «non è possibile sfogliare l'album in quanto i tasti alla
      sinistra della finestra occupano molto spazio. Quei tasti vanno messi sopra alla finestra»)
