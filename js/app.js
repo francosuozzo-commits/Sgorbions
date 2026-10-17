@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.192 - Modificati js/app.js e index.html (per la versione). Personaggi, il filtro «Senza figurine» si chiama
+//          «Personaggi senza figurine o card» e lascia fuori anche chi ha una Carta (`_haFigurineSue`). Griglia dei
+//          personaggi sul desktop: foto sdraiata su due colonne (`_persSdraiata`). Pagina del personaggio: prima gli
+//          articoli diretti, poi quelli per il retro. I RETRO HANNO LA VARIAZIONE UFFICIALE (serie 4, due spessori):
+//          `VERSIONI_PER_TDA.retros`, casella e conteggio nella scheda della serie, spenta sulle serie che non la dichiarano.
 // v7.191 - Modificati js/app.js e index.html (per la versione). Home, numeroni, SOLO SUL TELEFONO (Franco: «lo score
 //          figurine per album rinominalo in "figurine album"; carte d'identità rinominalo in "Carte identità"»; «togli
 //          la sezione altri articoli sempre solo da mobile»): «Figurine album» e «Carte identità» (chiavi `tdaMob.*`,
@@ -31379,7 +31384,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.191';
+const JS_VERSION = 'v7.192';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -36955,6 +36960,8 @@ function updateSeriesVariationCounts(seriesId) {
   if (elUnoff) elUnoff.value = c.nonUfficiali;
   if (elChg) elChg.value = c.changeFigurine;
   if (elChgRetro) elChgRetro.value = c.changeRetro;
+  const elVarRetro = document.getElementById('series-count-retro-variations-input');   // v7.192
+  if (elVarRetro) elVarRetro.value = c.variazioniRetro;
   const elErr = document.getElementById('series-count-print-error-input');   // v6.219
   if (elErr) elErr.value = c.erroriStampaFigurine;                          // 🔄 v6.794
   const elErrR = document.getElementById('series-count-retro-print-error-input');   // 🆕 v6.794
@@ -37016,6 +37023,7 @@ function _conteggiSerie(items) {
     nonUfficiali:   items.filter(f => fig(f) && f.isUnofficialVariation).length,
     changeFigurine: items.filter(f => fig(f) && f.isChange).length,
     changeRetro:    items.filter(f => sez(f) === 'retros' && f.isChange).length,
+    variazioniRetro: items.filter(f => sez(f) === 'retros' && f.isVariation).length,   // v7.192
     // v6.211 (Franco) - i RETRO della serie. ⚠️ Sono i retro BASE, cioe' `_eBase`: senza change
     // ne' errori di stampa. Contarli TUTTI avrebbe fatto un numero che contiene dentro di se' i
     // CHANGE RETRO gia' mostrati nella colonna accanto - due numeri di cui uno comprende l'altro,
@@ -37118,6 +37126,8 @@ function toggleSeriesCountGroups() {
   if (gUnoff) gUnoff.style.display = hasUnoff ? '' : 'none';
   if (gChg) gChg.style.display = hasChg ? '' : 'none';
   if (gChgRetro) gChgRetro.style.display = hasChgRetro ? '' : 'none';
+  const gVarRetro = document.getElementById('series-count-retro-variations-group');   // v7.192
+  if (gVarRetro) gVarRetro.style.display = document.getElementById('series-has-retro-variations-input')?.checked ? '' : 'none';
   // v6.219 - la coppia degli errori di stampa
   // 🗑️ v6.794 - QUI STAVA «il numero si vede se e' accesa UNA QUALUNQUE delle due caselle»
   //    (v6.788), e la ragione era vera allora: il conteggio era UNO e contava tutte le sezioni,
@@ -38585,6 +38595,7 @@ function _ripristinaFlagSerie(s) {
   spunta('series-has-unofficial-variations-input', _spuntaVersioneSerie(s, 'figurines', 'unofficialVariation'));
   spunta('series-has-change-input',                _spuntaVersioneSerie(s, 'figurines', 'change'));
   spunta('series-has-retro-change-input',          _spuntaVersioneSerie(s, 'retros',    'change'));   // v6.170
+  spunta('series-has-retro-variations-input',      _spuntaVersioneSerie(s, 'retros',    'variation'));   // v7.192
   spunta('series-no-numbers-input',                s && s.noNumbers);
   // v6.216 - le due caselle singole sono diventate l'elenco.
   // 🗑️ v6.789 - E QUI SE NE VA LA v6.696, «alla creazione della prossima serie accendili tutti».
@@ -43340,7 +43351,9 @@ async function salvaVersioniArticolo() {
 //    `prova-v6787` conta che le chiavi di qui e quelle di `ARTICOLI` coincidano, e diventa rossa.
 const VERSIONI_PER_TDA = {
   figurines:   ['variation', 'unofficialVariation', 'change', 'free', 'printError'],
-  retros:      ['change', 'free', 'printError'],
+  // 🔄 v7.192 (Franco: «abilita le variazioni ai retro») - per i retro della serie 4 stampati in due spessori: la
+  //    variazione è lo stesso retro su un cartoncino diverso. Per serie la governa la casella dei retro nella scheda.
+  retros:      ['variation', 'change', 'free', 'printError'],
   bustine:     ['change', 'free', 'printError'],
   // 🆕 v6.787, a griglia gia' scritta - L'ALBUM HA LA VARIAZIONE. Franco: «mi e' venuto in
   //    mente che vi sono degli album che sono stati prodotti in piu' versioni». 🔴 E porta con
@@ -43627,6 +43640,10 @@ const VERSIONI_ARTICOLO = [
     idForm: 'fe-is-variation',
     flagSerie: 'hasVariations',   // v6.655
     idSpuntaSerie: 'series-has-variations-input',   // v6.788 - vedi il commento sopra la tabella
+    // 🆕 v7.192 - la casella dei retro. `flagSerieRetro` non sta su nessun record: una serie che non l'ha dichiarato in
+    //    `perTDA` risponde NO (`_ripiegoStorico`), cioè quello che faceva ieri. Si accende serie per serie.
+    flagSerieRetro: 'hasRetroVariations',
+    idSpuntaSerieRetro: 'series-has-retro-variations-input',
     // v6.284 - come si nomina questa versione dopo "Includi": articolo compreso, perche' le
     // cinque frasi non hanno lo stesso articolo e da `it` non ci si arriva.
     esportaIt: 'Variazioni ufficiali', esportaEn: 'official variations',
@@ -45850,10 +45867,29 @@ function articoliDelPersonaggio(pid, ix, soloLui) {   // v6.972: `soloLui` = sen
 //    articoli ci sono anche le figurine che USANO quel retro, cioè le facce di altri personaggi: la
 //    prima foto in ordine di serie sarebbe stata quella di qualcun altro. Se il retro non c'è (sta
 //    solo su spille o altri articoli) si torna a tutti i suoi articoli, che sono suoi.
+// 🆕 v7.192 (Franco: «se cerco "ciccioso" o "trippone" nella RG non esce il personaggio collegato al retro "CICCIOSO AL
+//    TRIPPONE"»; «sì, procedi») - I NOMI DEI SUOI ARTICOLI, per la ricerca: Nome e Sottonome di quelli di cui lui (o un suo
+//    alter ego) è il personaggio. Fuori le figurine che sono sue solo per il retro: hanno il nome di un altro personaggio.
+function _nomiArticoliDelPersonaggio(pid, ix) {
+  ix = ix || _indiciPersonaggi();
+  const suoi = _conAlterEgo(pid);
+  return articoliDelPersonaggio(pid, ix)
+    .filter(a => personaggiDiArticolo(a, ix).some(x => suoi.includes(x)))
+    .flatMap(a => [a.name, a.subname]).filter(Boolean);
+}
+// 🔄 v7.192 - LA DOMANDA È «HA UNA FIGURINA SUA?» (con retro o per album), e non più `_haFigurineSue`: da oggi quella
+//    conta anche le Carte (il filtro «Personaggi senza figurine o card»), e un personaggio con la sola carta avrebbe
+//    pescato fra TUTTI i suoi articoli, figurine col suo retro comprese, cioè la faccia di un altro. Senza figurina sua
+//    si sceglie fra ciò che è suo e non è una figurina (retro, carte, spille…), nell'ordine di sempre.
 function _fotoPersonaggio(arts, pid, ix) {
-  if (pid && !_haFigurineSue(pid, arts, ix || _indiciPersonaggi())) {
-    const retri = arts.filter(a => a.section === 'retros');
-    if (retri.length) arts = retri;
+  if (pid) {
+    ix = ix || _indiciPersonaggi();
+    const suoi = _conAlterEgo(pid);
+    const haFigurina = arts.some(a => ['figurines', 'attaccare'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).some(x => suoi.includes(x)));
+    if (!haFigurina) {
+      const nonFigurine = arts.filter(a => !['figurines', 'attaccare'].includes(a.section || 'figurines'));
+      if (nonFigurine.length) arts = nonFigurine;
+    }
   }
   const ordine = new Map((getData('series', []) || []).map(s => [s.id, s.order ?? 9999]));
   const pesoSez = f => ({ attaccare: 0, figurines: 1 }[f.section || 'figurines'] ?? 2);
@@ -45932,7 +45968,8 @@ function _personaggiTipoAggiungi(k) {
 }
 function _haFigurineSue(pid, arts, ix) {
   const suoi = _conAlterEgo(pid);   // v6.972 - anche la figurina di un suo alter ego è sua
-  return arts.some(a => ['figurines', 'attaccare'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).some(x => suoi.includes(x)));
+  // 🔄 v7.192 (Franco: «e deve escludere i personaggi legati ad una card») - contano anche le Carte
+  return arts.some(a => ['figurines', 'attaccare', 'carte'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).some(x => suoi.includes(x)));
 }
 
 function renderCatalogPersonaggi(grid) {
@@ -45963,7 +46000,8 @@ function renderCatalogPersonaggi(grid) {
   //    "tromba" deve uscire Livio Bivio»). Con l'interruttore acceso si vedono SOLO loro.
   const { principaleDi, alterEgoDi, perId } = _personaggiDati;
   const soloAlterEgo = !!currentUser?.isAdmin && _personaggiAlterEgo;
-  const nomiDi = p => [p.nome].concat((alterEgoDi.get(p.id) || []).map(a => perId.get(a).nome));
+  // 🔄 v7.192 - e i nomi dei suoi articoli (`_nomiArticoliDelPersonaggio`), solo quando si cerca qualcosa
+  const nomiDi = p => [p.nome].concat((alterEgoDi.get(p.id) || []).map(a => perId.get(a).nome), q ? _nomiArticoliDelPersonaggio(p.id, ix) : []);
   // 🔄 v6.980 - prima tutti gli altri filtri, poi le serie: i numeri delle pillole si contano sul
   //    primo elenco, così ogni pillola dice quanti ne troveresti accendendo lei.
   const senzaSerie = _personaggiDati.elenco.filter(p => (soloAlterEgo ? principaleDi.has(p.id) : !principaleDi.has(p.id))
@@ -46040,7 +46078,8 @@ function renderCatalogPersonaggi(grid) {
     + '<div style="' + _etichettaBordo + '">' + (it ? 'Filtri aggiuntivi' : 'More filters') + '</div>'
     + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);">'
     + '<button type="button" class="toggle-btn-blue ' + (_personaggiSenzaFigurine ? 'on' : '') + '" onclick="_personaggiSenzaFigurine=!_personaggiSenzaFigurine;_personaggiPagina=1;renderCatalog();"></button>'
-    + (it ? 'Senza figurine' : 'Without stickers') + '</label>'
+    // 🔄 v7.192 (Franco: «il filtro "senza figurine" chiamalo "Personaggi senza figurine o card"»)
+    + (it ? 'Personaggi senza figurine o card' : 'Characters without stickers or cards') + '</label>'
     + '</div>'
     // 🆕 v7.088 (Franco) - «Filtri admin», un riquadro suo, dopo quello dei filtri per tutti: dentro «Senza foto»
     //    e «Alter ego» (v6.972), che stava fra i filtri per tutti con la scritta «(admin)» accanto.
@@ -46094,7 +46133,8 @@ function renderCatalogPersonaggi(grid) {
     //    📌 Per questo il testo non si allunga più (`flex:0 0 auto` invece di `1 1 auto`): era lui a
     //    prendersi tutto lo spazio, e la foto restava incollata in cima. Il conto resta in fondo.
     return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="apriPersonaggio(\'' + p.id + '\')">'
-      + '<div class="card-img-placeholder" style="margin-top:auto;">' + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="' + esc(p.nome) + '" style="width:100%;height:100%;object-fit:contain;">' : '') + '</div>'
+      // 🆕 v7.192 - `_persSdraiata` al caricamento: una foto sdraiata sul desktop allarga la card a due colonne
+      + '<div class="card-img-placeholder" style="margin-top:auto;">' + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="' + esc(p.nome) + '" style="width:100%;height:100%;object-fit:contain;" onload="_persSdraiata(this)">' : '') + '</div>'
       // 🔄 v6.968 — card a un quarto: testo e margini scalati con lei (titolo 1,35 → 0,85rem).
       + '<div class="card-body" style="display:flex;flex-direction:column;flex:0 0 auto;margin-top:auto;padding:0.55rem 0.65rem 0.6rem;">'
       + '<div class="card-title" style="margin-bottom:0.2rem;font-size:0.85rem;line-height:1.2;color:var(--nome-entita);flex:1 1 auto;">' + esc(p.nome) + '</div>'
@@ -46113,6 +46153,28 @@ function renderCatalogPersonaggi(grid) {
   _bmApplica(document.getElementById('personaggi-filtro-serie'), 'pers-serie');
   _bmApplica(document.getElementById('personaggi-filtro-tipi'), 'pers-tipi');   // v7.189
   _bmApplica(document.getElementById('personaggi-filtri-agg'), 'pers-agg');
+}
+
+// 🆕 v7.192 (Franco: «nella versione desktop, nella griglia dei personaggi, quelli con una foto orizzontale si vedono troppo
+//    piccole; vorrei provare con la dimensione della foto identica a quella delle foto verticali, mantenendola orizzontale;
+//    la card la fai larga come 2 card verticali ma la foto va in centro alla card») - LA FOTO SDRAIATA È QUELLA IN PIEDI
+//    GIRATA: alta quanto è larga una foto in piedi (la colonna), larga quanto quella è alta. 📏 Misurato a 1536: in piedi
+//    152×212, sdraiata 152×114; da qui 212×152, centrata in una card di due colonne, nero ai lati.
+// 📌 L'orientamento si sa solo a foto caricata, quindi la card si allarga dopo. Il riquadro prende l'altezza di quello di
+//    una foto in piedi (la colonna × 1,4), così la riga resta alta uguale. Sul telefono niente: non è stato chiesto.
+function _persSdraiata(img) {
+  if (_isMobileViewport() || !(img.naturalWidth > img.naturalHeight)) return;
+  const card = img.closest('.card'), box = img.parentElement;
+  if (!card || !box || card.dataset.sdraiata) return;
+  const w = box.getBoundingClientRect().width;
+  if (!w) return;
+  card.dataset.sdraiata = '1';
+  card.style.gridColumn = 'span 2';
+  box.style.aspectRatio = 'auto';
+  box.style.height = Math.round(w * 1.4) + 'px';
+  img.style.width = 'auto';
+  img.style.maxWidth = '100%';
+  img.style.height = Math.round(w) + 'px';
 }
 
 function _paginazionePersonaggi(tot) {
@@ -46194,7 +46256,13 @@ function renderPaginaPersonaggio(grid, pid) {
     const i = l.indexOf(String(f.subseries || '').trim());
     return i < 0 ? l.length : i;
   };
+  // 🆕 v7.192 (Franco: «mi aspetto di vedere prima una figurina che è direttamente collegata a quel personaggio rispetto ad
+  //    una figurina avente il retro collegato a quel personaggio») - dentro il gruppo, prima gli articoli di cui lui (o un
+  //    suo alter ego) è il personaggio, poi quelli che ci sono per il retro. Viene prima dell'alter ego.
+  const _tuttiSuoi = _conAlterEgo(pid);
+  const _perIlRetro = f => personaggiDiArticolo(f, ix).some(x => _tuttiSuoi.includes(x)) ? 0 : 1;
   const ord = arts.slice().sort((a, b) => (_gruppoPersonaggio(a) - _gruppoPersonaggio(b))
+    || (_perIlRetro(a) - _perIlRetro(b))
     || (_dellAlterEgo(a) - _dellAlterEgo(b))
     || (ordSerie(a.seriesId) - ordSerie(b.seriesId))
     || (ordSez(a.section || 'figurines') - ordSez(b.section || 'figurines'))
@@ -49217,7 +49285,8 @@ function _rgPersonaggiHTML(q, qn) {
   const it = currentLang === 'it', admin = !!currentUser?.isAdmin, D = _personaggiDati, ix = _indiciPersonaggi();
   const visti = new Map();
   D.elenco.forEach(p => {
-    if (!_matchRicerca(p.nome, qn)) return;
+    // 🔄 v7.192 - anche dal nome di un suo articolo (`_nomiArticoliDelPersonaggio`), come nella pagina dei Personaggi
+    if (!_matchRicerca(p.nome, qn) && !_nomiArticoliDelPersonaggio(p.id, ix).some(n => _matchRicerca(n, qn))) return;
     const pid = (!admin && D.principaleDi.get(p.id)) || p.id;
     if (visti.has(pid)) return;
     // 🔄 v7.115 - gli articoli stessi, non solo il loro numero: servono all'elenco sotto la miniatura
@@ -62200,7 +62269,10 @@ function _daAttaccareFotoVietata(f) {
   //    foto deve essere sua; lo stesso una bustina o un album omaggio. Il «qualunque sezione» scritto
   //    qui sopra era sbagliato, e `_fotoFigurina` infatti fa ereditare solo alle figurine.
   const _omaggioFigurina = !!(f && f.isFreeVersion && (f.section || 'figurines') === 'figurines');
-  return !!f && (f.section === 'attaccare' || _omaggioFigurina || _erroreDietro);
+  // 🆕 v7.192 (Franco: «le variazioni di retro devono prevedere di non avere una propria foto; non serve una foto dato che
+  //    non hanno un cambio del disegno o nella grafica; cambia solo lo spessore») - la foto è quella del retro base
+  const _variazioneRetro = !!(f && f.section === 'retros' && f.isVariation);
+  return !!f && (f.section === 'attaccare' || _omaggioFigurina || _erroreDietro || _variazioneRetro);
 }
 function _daAttaccareModificaVietata(f) {
   if (!f || f.section !== 'attaccare') return false;
@@ -63892,7 +63964,8 @@ function _aggiornaCampiDiRetro() {
   // 📌 `prova-v6752` aveva piantato qui la sua trappola: «nell'index non esiste una spunta
   // errori di stampa DI RETRO → se un domani nascesse, questo controllo diventa rosso ed e' il
   // momento di aggiungerla sopra». E' diventato rosso, ed e' stato questo momento.
-  ['series-has-retro-change-input',
+  ['series-has-retro-variations-input',   // v7.192
+   'series-has-retro-change-input',
    'series-has-retro-free-version-input',
    'series-has-retro-print-error-input'].forEach(id => {
     const cb = document.getElementById(id);
@@ -64593,7 +64666,10 @@ function _fotoFigurina(f, allFigs, _salti) {
   // 📌 Il ripiego resta condizionato a `f.img` vuoto (riga in cima): il giorno che a una da
   // attaccare si desse una foto propria, quella vincerebbe. Non e' previsto, ma non e' vietato.
   const _daAttaccare = f.section === 'attaccare' && !!f.baseFigurineId;
-  if ((f.section === 'figurines' && _frontePariAllaBase || _daAttaccare) && f.baseFigurineId) {
+  // 🆕 v7.192 - LA VARIAZIONE DI UN RETRO HA LA FOTO DELLA SUA BASE: è lo stesso retro su un cartoncino diverso (serie 4,
+  //    due spessori; Franco). Una copia su Cloudinary sarebbe la stessa immagine pagata due volte.
+  const _retroVariazione = f.section === 'retros' && !!f.isVariation;
+  if ((f.section === 'figurines' && _frontePariAllaBase || _daAttaccare || _retroVariazione) && f.baseFigurineId) {
     const base = figs.find(x => x.id === f.baseFigurineId);
     // v6.129 (Franco) - SI RISALE LA CATENA, non un anello solo.
     // Qui c'era `if (base && base.img) return base.img`, e andava benissimo finche' dall'altro capo
@@ -66739,8 +66815,14 @@ function _slotFotoEdit(slot, url, f, stretto) {
     const pa = _linkModifica(_pId, currentLang === 'it' ? (_omg ? 'articolo di partenza' : 'figurina di partenza') : (_omg ? 'source item' : 'source sticker'));
     const re = _linkModifica(_rId, currentLang === 'it' ? (_errDietro ? 'quel retro è un altro articolo' : 'retro in versione omaggio collegato') : (_errDietro ? 'that back is another item' : 'linked free-version back'));
     const gem = _linkModifica(f.baseFigurineId || '', currentLang === 'it' ? 'figurina con retro collegata' : 'linked sticker');
-    const nota = currentLang === 'it'
-      ? (_errDietro ? 'Il difetto sta sul retro, e ' + re + ': la foto arriva da lì. Davanti la faccia è quella della ' + pa + '.'
+    // 🆕 v7.192 - il retro variazione: la foto è quella del retro base
+    const _varRetro = f.section === 'retros' && !!f.isVariation;
+    const rb = _linkModifica(_pId, currentLang === 'it' ? 'retro base' : 'base retro');
+    const nota = _varRetro
+      ? (currentLang === 'it' ? 'La foto arriva dal ' + rb + ': la variazione cambia solo lo spessore, qui non se ne attacca una propria.'
+                              : 'The photo comes from the ' + rb + ': the variation only changes the thickness, no photo of its own here.')
+      : currentLang === 'it'
+      ? (_errDietro ?'Il difetto sta sul retro, e ' + re + ': la foto arriva da lì. Davanti la faccia è quella della ' + pa + '.'
         : _omg ? 'La foto del fronte arriva dall\'' + pa + '; quella del retro dal ' + re + '.'
               : 'La foto arriva dalla ' + gem + ': qui non se ne attacca una propria.')
       : (_errDietro ? 'The defect is on the back, and ' + re + ': the photo comes from there. The front is the ' + pa + '\'s.'
@@ -66820,6 +66902,12 @@ function _slotFotoEdit(slot, url, f, stretto) {
 //    \u26A0\uFE0F I campi della scheda si leggono se ci sono (scelte non ancora salvate); al primo disegno
 //    non esistono ancora, e vale il record.
 function _fotoEreditataFronte(f) {
+  // 🆕 v7.192 - e il retro variazione, che ha la foto del suo retro base (`_fotoFigurina`)
+  if (f && f.section === 'retros' && f.isVariation) {
+    const bId = document.getElementById('fe-base-figurine')?.value || f.baseFigurineId || '';
+    const b = bId ? (getData('figurines', []) || []).find(x => x.id === bId) : null;
+    return (b && b.img) || '';
+  }
   if (!f || (f.section || 'figurines') !== 'figurines') return '';
   const figs = getData('figurines', []) || [];
   const baseId = document.getElementById('fe-base-figurine')?.value || f.baseFigurineId || '';
@@ -74772,6 +74860,32 @@ function renderAdminFunzioni() {
         '</div>' +
         '<div id="copia-esito" style="margin-top:1rem;"></div>' +
       '</div>' +
+      // 🆕 v7.192 (Franco: «mi serve uno script che mi duplichi ogni retro della serie 4, a parte quelli con il campo
+      //    sottocategoria popolato, creandomene uno di tipo variazione ufficiale») - LA FUNZIONE 7. Una funzione del sito e
+      //    non uno script da fuori: i dati nuovi nascono dal sito (regola del 27 settembre).
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1.25rem;">' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '7. Crea le variazioni dei retro' : '7. Create the retro variations') + '</h4>' +
+        '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
+          (it ? 'Crea una <b>Variazione ufficiale</b> per ogni <b>Retro base</b> della serie scelta che ha la <b>Sottocategoria vuota</b> e che ancora non ne ha una.<br><br>' +
+                '<b>Cosa si copia:</b> tutti i campi del retro (Nome, Numero, Sottonome, Categoria, Sottoserie, Famiglia, rarità, descrizione…).<br>' +
+                '<b>Cosa no:</b> foto (la variazione mostra quella della base, come collegamento), eBay, pagine.<br><br>' +
+                '<b>NOTE:</b><br>' +
+                'Si può <b>rilanciare</b>: un retro che ha già una variazione viene saltato.<br>' +
+                'Mostra l’anteprima e chiede conferma.'
+              : 'Creates an <b>Official variation</b> for every <b>base Retro</b> of the chosen series with an <b>empty Subcategory</b> that does not have one yet.<br><br>' +
+                '<b>Copied:</b> all the retro fields. <b>Not copied:</b> photos (the variation shows the base one, as a link), eBay, pages.<br><br>' +
+                '<b>NOTES:</b><br>It can be <b>re-run</b>: a retro that already has a variation is skipped.<br>It previews and asks for confirmation.') + '</p>' +
+        '<label class="form-label">' + (it ? 'Serie' : 'Series') + '</label>' +
+        '<select id="varretro-serie" class="form-select" style="margin-bottom:0.75rem;"><option value="">—</option>' +
+          serie.filter(x => getData('figurines', []).some(f => f.seriesId === x.id && f.section === 'retros'))
+            .map(x => '<option value="' + x.id + '">' + esc(x.name) + '</option>').join('') +
+        '</select>' +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
+          '<button class="btn-primary btn-admin" onclick="anteprimaVariazioniRetro()">&#128269; ' + (it ? 'Anteprima' : 'Preview') + '</button>' +
+          '<button class="btn-primary btn-admin" id="varretro-applica-btn" onclick="applicaVariazioniRetro()" style="display:none;">&#9989; ' + (it ? 'Crea' : 'Create') + '</button>' +
+        '</div>' +
+        '<div id="varretro-esito" style="margin-top:1rem;"></div>' +
+      '</div>' +
       // 🗄️ v6.980 - ARCHIVIATE LE FUNZIONI 6 E 7 (Franco: «per me puoi archiviare funzioni 6 e 7»).
       //    La 6 caricava i personaggi dai file (in pensione dal 26 settembre: i dati si toccano solo
       //    dal sito); la 7 trasformava in collegamenti i personaggi scritti nelle Note delle Mega,
@@ -74781,6 +74895,85 @@ function renderAdminFunzioni() {
   _pianoFixRetro = null; // v6.085
   _pianoAttacca = null;  // v6.358 - un piano calcolato su un elenco vecchio non si applica
   _pianoCopia = null;    // v7.087
+  _pianoVarRetro = null; // v7.192
+}
+
+// 🆕 v7.192 - LA FUNZIONE 7: una variazione ufficiale per ogni retro base con la Sottocategoria vuota.
+// 📌 «Ce l'ha già» = esiste un retro variazione col `baseFigurineId` che punta a lui: il legame stesso, come la funzione 5.
+// 📌 La copia è il retro intero (`{ ...r }`) meno ciò che è del pezzo fisico o unico: le foto (la variazione eredita quella
+//    della base, `_fotoFigurina`), eBay, le pagine. Le versioni si azzerano tutte e si accende la sola variazione.
+let _pianoVarRetro = null;
+function _pianoVariazioniRetro(seriesId) {
+  const tutte = getData('figurines', []);
+  const gia = new Set(tutte.filter(f => f.seriesId === seriesId && f.section === 'retros' && f.isVariation && f.baseFigurineId).map(f => f.baseFigurineId));
+  return tutte.filter(r => r.seriesId === seriesId && r.section === 'retros' && _eBase(r)
+      && !String(r.subcategory || '').trim() && !gia.has(r.id))
+    .sort((x, y) => ((+x.number || 1e9) - (+y.number || 1e9)) || String(x.name || '').localeCompare(String(y.name || ''), 'it'))
+    .map(r => {
+      const rec = { ...r, id: _generateFigurineId() };
+      _VERSIONI_VIVE.forEach(v => { rec[v.campo] = false; });
+      _VERSIONI_CON_TIPO.forEach(v => { rec[v.campoTipo] = null; });
+      rec.isVariation = true;
+      rec.baseFigurineId = r.id;
+      rec.img = null; rec.imgRetro = null; rec.ebayImg = null; rec.imgRuotato = null;
+      rec.ebay = null; rec.forSale = false;
+      rec.pagine = []; rec.sfogliabile = false;
+      rec.fullName = '';
+      return rec;
+    });
+}
+function anteprimaVariazioniRetro() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('varretro-esito'), btn = document.getElementById('varretro-applica-btn');
+  const sid = document.getElementById('varretro-serie')?.value || '';
+  _pianoVarRetro = null; if (btn) btn.style.display = 'none';
+  if (!esito) return;
+  if (!sid) { esito.innerHTML = '<div style="color:var(--warn);font-size:0.9rem;">' + (it ? 'Scegli la serie.' : 'Choose the series.') + '</div>'; return; }
+  const s = getData('series', []).find(x => x.id === sid);
+  const nuovi = _pianoVariazioniRetro(sid);
+  const saltati = getData('figurines', []).filter(r => r.seriesId === sid && r.section === 'retros' && _eBase(r) && String(r.subcategory || '').trim()).length;
+  // ⚠️ se la serie non dichiara la variazione dei retro le variazioni nascono e si vedono (la rete di `_versioneAmmessa`),
+  //    ma la scheda non permette di crearne altre a mano: lo si dice, e la spunta si mette dalla scheda della serie
+  const nonDichiarata = s && !_versioneAmmessa('variation', { section: 'retros' }, s);
+  esito.innerHTML = '<div style="font-size:0.9rem;margin-bottom:0.6rem;">'
+    + (it ? '<b>' + nuovi.length + '</b> variazioni di retro da creare in <b>' + esc(s?.name || '') + '</b>; <b>' + saltati + '</b> retro base saltati perché hanno la Sottocategoria.'
+          : '<b>' + nuovi.length + '</b> retro variations to create in <b>' + esc(s?.name || '') + '</b>; <b>' + saltati + '</b> base retros skipped (Subcategory set).')
+    + (nonDichiarata ? '<br><span style="color:var(--warn);">' + (it
+        ? '⚠️ La serie non ha ancora la casella «Variazione ufficiale» dei Retro accesa: accendila nella scheda della serie.'
+        : '⚠️ The series does not declare retro official variations yet: tick it in the series form.') + '</span>' : '')
+    + '</div>'
+    + (nuovi.length ? '<div style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.8rem;line-height:1.5;">'
+      + nuovi.map(n => esc((n.number != null && n.number !== '' ? n.number + ' ' : '— ') + (n.name || '') + (n.subname ? ' · ' + n.subname : ''))).join('<br>') + '</div>' : '');
+  if (nuovi.length) { _pianoVarRetro = { sid, nuovi }; if (btn) btn.style.display = ''; }
+}
+async function applicaVariazioniRetro() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('varretro-esito'), btn = document.getElementById('varretro-applica-btn');
+  if (!_pianoVarRetro || !_pianoVarRetro.nuovi.length) { toast(it ? 'Fai prima l’anteprima' : 'Run the preview first', 'error'); return; }
+  const { sid, nuovi } = _pianoVarRetro;
+  const s = getData('series', []).find(x => x.id === sid);
+  if (!s) return;
+  if (!confirm(it ? `Creare ${nuovi.length} variazioni di retro in ${s.name}?` : `Create ${nuovi.length} retro variations in ${s.name}?`)) return;
+  if (btn) btn.disabled = true;
+  // UNA scrittura per la serie, come le funzioni 5 e 6: gli articoli vivono dentro il suo documento
+  const conNuovi = getData('figurines', []).concat(nuovi);
+  nuovi.forEach(n => { try { n.fullName = computeFullName(n, conNuovi); } catch (e) { console.error('computeFullName (variazioni retro)', e); } });
+  s.items = s.items || [];
+  const prima = s.items.slice();
+  s.items = s.items.concat(nuovi);
+  let errore = '';
+  try {
+    await fsSave('series', s);
+    const figs = getData('figurines', []); nuovi.forEach(n => figs.push(n)); _cache.figurines = figs;
+  } catch (e) { s.items = prima; errore = e.message; }
+  if (btn) { btn.disabled = false; btn.style.display = 'none'; }
+  const restanti = errore ? nuovi.length : _pianoVariazioniRetro(sid).length;
+  _pianoVarRetro = null;
+  if (esito) esito.innerHTML = '<div style="font-size:0.9rem;color:' + (errore || restanti ? 'var(--warn)' : 'var(--success)') + ';">'
+    + (errore ? '❌ ' + esc(errore) : (it ? '✅ Create <b>' + nuovi.length + '</b> variazioni di retro in ' + esc(s.name) + '.' : '✅ Created <b>' + nuovi.length + '</b> retro variations in ' + esc(s.name) + '.'))
+    + '<br>' + (it ? 'Ricontate dopo la scrittura: ' : 'Recounted after writing: ') + '<b>' + restanti + '</b> ' + (it ? 'ancora da creare.' : 'still to create.') + '</div>';
+  if (!errore) toast(it ? `✅ ${nuovi.length} variazioni di retro create in ${s.name}` : `✅ ${nuovi.length} retro variations created`, 'success');
+  try { updateSectionCounts(); } catch (e) {}
 }
 
 // 🆕 v7.087 - LA FUNZIONE 6: copia gli articoli base di una tipologia da una serie a un'altra.
