@@ -1,7 +1,21 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.190 - Modificati js/app.js e index.html (per la versione). CLOUDINARY, UN FORMATO SOLO (Franco: «ok procedi con
+// v7.191 - Modificati js/app.js e index.html (per la versione). Home, numeroni, SOLO SUL TELEFONO (Franco: «lo score
+//          figurine per album rinominalo in "figurine album"; carte d'identità rinominalo in "Carte identità"»; «togli
+//          la sezione altri articoli sempre solo da mobile»): «Figurine album» e «Carte identità» (chiavi `tdaMob.*`,
+//          `HOME_ETICHETTE_MOBILE`; in inglese i nomi di sempre), «Altri articoli» spento. Sul desktop come prima.
+//          E, sempre solo sul telefono (Franco, dal telefono): il taglio «Tipologie di articoli» dell'Inventario si
+//          chiama «Articoli» (`catalog.byproductsTel`, `.wz-solo-tel`); nella ricerca dei personaggi «Imposta dei criteri
+//          di ricerca»; «Azzera filtri» su due righe (`items.resetFiltersHtml`, un `<br>` solo-telefono: sezioni e
+//          personaggi); nella pagina della serie «Sfoglia l'album» in alto accanto alla foto (css, `.meta-hub`); nei
+//          caroselli il punteggio rarità in una riga sua sotto l'ultima (`_monetaSotto`). Modificato anche css/style.css.
+//          E (desktop e telefono) le numeriche della pagina della serie: una tipologia con una sola sottoserie dello
+//          stesso nome dice il nome una volta sola («Tatuaggi | 60», non «Tatuaggi | 60 Tatuaggi»; in `_blocchiHub`).
+//          Annunci (Franco): colonna e campo «Voto» prima di Costo (`voto`, numero); Costo, Prezzo e Voto con le frecce di
+//          1 (`step="any"`); nella finestra ◀ ▶ per l'annuncio precedente e il successivo, nell'ordine e coi filtri della
+//          tabella (`_annPrecedente`, `_annProssimo`), senza salvare.
+// v7.190 -Modificati js/app.js e index.html (per la versione). CLOUDINARY, UN FORMATO SOLO (Franco: «ok procedi con
 //          A»): 41,7 crediti su 25 del piano gratuito, il 59% in trasformazioni; con `f_auto` ogni foto nasceva due
 //          volte, WebP per Chrome e JXL per Safari (7.430 versioni JXL su 40.162). `cloudinaryUrl` chiede sempre
 //          `f_webp,fl_awebp` (`_formatoUnico`): è il nome che Cloudinary dava alle versioni WebP di `f_auto`, quindi
@@ -31365,7 +31379,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.190';
+const JS_VERSION = 'v7.191';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34871,10 +34885,15 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs,
   //    della fila. Sull'ultima riga di ogni card resta a destra il posto della moneta, perché il testo non ci passi sotto.
   const _iCoda = _ordinate.findIndex(r => r.coda);
   const _moneta = _iCoda >= 0 ? _ordinate[_iCoda] : null;
+  // 🆕 v7.191 (Franco: «da mobile nei caroselli, il punteggio rarità deve stare in una riga sotto alla categoria, perché a
+  //    volte si sovrappongono») - SUL TELEFONO LA MONETA HA UNA RIGA SUA: la card si allunga in fondo di una riga (sotto
+  //    l'ultima, la categoria) e la moneta ci sta dentro, sempre nell'angolo in basso a destra. Le card di una fila restano
+  //    alte uguali, quindi le monete restano allineate (v7.151). Sul desktop come prima: il posto sull'ultima riga.
+  const _monetaSotto = !!_moneta && _isMobileViewport();
   if (_moneta) {
     _ordinate[_iCoda] = Object.assign({}, _moneta, { coda: '' });
     const _ult = _ordinate.length - 1;
-    _ordinate[_ult] = Object.assign({}, _ordinate[_ult], { spazioCoda: (String(f.score || '').length + 5) * 0.62 });
+    if (!_monetaSotto) _ordinate[_ult] = Object.assign({}, _ordinate[_ult], { spazioCoda: (String(f.score || '').length + 5) * 0.62 });
   }
   const _monetaHTML = _moneta
     ? '<div style="position:absolute;right:0.5rem;bottom:0.5rem;line-height:1.25;color:' + (_moneta.codaCol || _moneta.col) + ';font-size:' + (_moneta.codaDim || _moneta.dim) + ';">' + _moneta.coda + '</div>'
@@ -34925,7 +34944,8 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs,
   const _segnoCar = _segnoAnnuncio(f);
   return '<div onclick="_caroselloApri(\'' + f.id + '\',\'' + f.seriesId + '\')" ' +
     'title="' + esc(etichetta) + '" ' +
-    'style="position:relative;flex:0 0 auto;width:' + larghezza + ';scroll-snap-align:start;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">' +   /* v7.151: relative, per la moneta */
+    'style="position:relative;flex:0 0 auto;width:' + larghezza + ';scroll-snap-align:start;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;' +   /* v7.151: relative, per la moneta */
+    (_monetaSotto ? 'padding-bottom:calc(0.7rem + 1.25 * ' + (_moneta.codaDim || _moneta.dim) + ');' : '') + '">' +   /* v7.191: la riga della moneta */
     // v6.080 - altezzaFoto 0 vuol dire "quadrata rispetto alla card" (telefono): niente altezza
     // fissa sotto una card stretta, che e' cio' che allungava il box in verticale.
     // v7.113: nel carosello la scritta segue la colonna «anche nel carosello» della console (`_urlCarosello`)
@@ -41143,7 +41163,7 @@ function _annFiltriHTML() {
   }).join('');
 }
 // v7.187 - l'ordinamento della tabella: le chiavi delle colonne, in fila come i titoli, e la colonna scelta
-const _ANN_COLONNE = ['sito', 'account', 'serie', 'articolo', 'n', 'titolo', 'costo', 'prezzo', 'link'];
+const _ANN_COLONNE = ['sito', 'account', 'serie', 'articolo', 'n', 'titolo', 'voto', 'costo', 'prezzo', 'link'];   // v7.191: + voto
 let _annOrdine = { col: null, su: true };
 let _annVisti = [];   // v7.189: gli indici delle righe come la tabella li mostra adesso (per «Salva e next»)
 function _annOrdina(k) {
@@ -41198,7 +41218,8 @@ function _annDisegna() {
     //    descrizione resta nella finestra; in tabella al suo posto il link, scritto per intero
     // v7.187 (Franco: «per ora togli il campo Foto dalla tabellina») - lo zip resta nella finestra
     // v7.187 (Franco: «aggiungi un campo Costo nell'annuncio, mettilo prima di Prezzo»)
-    + th(it ? 'Costo' : 'Cost') + th(it ? 'Prezzo' : 'Price') + th('Link') + '<th></th>'
+    // v7.191 (Franco: «aggiungiamo una colonna alla tabella degli annunci: Voto; da mettere prima di costo»)
+    + th(it ? 'Voto' : 'Rating') + th(it ? 'Costo' : 'Cost') + th(it ? 'Prezzo' : 'Price') + th('Link') + '<th></th>'
     + '</tr></thead><tbody>'
     + righe.map(([r, i]) => {
         const s = serie.get(r.seriesId), f = figs.get(r.articoloId);
@@ -41208,7 +41229,10 @@ function _annDisegna() {
         const sel = (campo, voci) => '<select class="ann-cella" onchange="_annCampo(' + i + ',\'' + campo + '\',this)">'
           + (campo === 'account' ? '<option value="">—</option>' : '')
           + voci.map(x => '<option' + (x === r[campo] ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select>';
-        const inp = (campo, tipo, val, st) => '<input class="ann-cella" type="' + tipo + '"' + (tipo === 'number' ? ' min="0" step="0.01"' : '')
+        // 🔄 v7.191 (Franco: «le due colonne Costo e Prezzo, quando si premono i tasti con le frecce, devono salire e
+        //    scendere di 1 euro») - `step="any"`: le frecce vanno di 1 e i centesimi si possono ancora scrivere a mano
+        //    (con `step="1"` un 4,50 sarebbe un valore «non valido» per il browser)
+        const inp = (campo, tipo, val, st) => '<input class="ann-cella" type="' + tipo + '"' + (tipo === 'number' ? ' min="0" step="any"' : '')
           + ' value="' + esc(val ?? '') + '" style="' + st + '" onchange="_annCampo(' + i + ',\'' + campo + '\',this)">';
         return '<tr>'
           + '<td>' + sel('sito', _FA_SITI.map(x => x.nome)) + '</td>'
@@ -41222,6 +41246,7 @@ function _annDisegna() {
           // v7.187 (Franco: «riduci larghezza colonne Prezzo e Costo; allarga colonna Titolo; riduci larghezza colonna N»)
           + '<td>' + inp('n', 'text', r.n, 'width:2.6rem;') + '</td>'
           + '<td>' + inp('titolo', 'text', r.titolo, 'min-width:340px;width:100%;') + '</td>'
+          + '<td>' + inp('voto', 'number', r.voto, 'width:3.4rem;text-align:right;') + '</td>'   // v7.191
           + '<td style="white-space:nowrap;">' + inp('costo', 'number', r.costo, 'width:4.2rem;text-align:right;') + ' €</td>'
           + '<td style="white-space:nowrap;">' + inp('prezzo', 'number', r.prezzo, 'width:4.2rem;text-align:right;') + ' €</td>'
           // il 🔗 legge il link al clic: così vale anche quello appena cambiato nella casella
@@ -41298,7 +41323,7 @@ async function _annCampo(i, campo, el) {
   const r = _annRighe[i];
   if (!r) return;
   let val = el.value.trim();
-  if (campo === 'prezzo' || campo === 'costo') { const n = parseFloat(val); val = Number.isFinite(n) ? n : null; }
+  if (campo === 'prezzo' || campo === 'costo' || campo === 'voto') { const n = parseFloat(val); val = Number.isFinite(n) ? n : null; }   // v7.191: + voto
   else if (campo !== 'sito') val = val || null;
   if (campo === 'titolo' && !val) { el.value = r.titolo || ''; el.style.borderColor = 'var(--danger)'; toast(currentLang === 'it' ? 'Il titolo non può restare vuoto.' : 'The title cannot be empty.', 'error'); return; }
   const righe = _annRighe.slice();
@@ -41345,6 +41370,17 @@ function _annApriFinestra(i, sola) {
   //    colonna dei campi. Sul telefono tornano una sotto l'altra (`.ann-griglia`, style.css).
   ov.innerHTML = '<div class="modal" style="max-width:1100px;width:96vw;">'
     + '<div class="modal-header"><h2 class="modal-title">' + (r.id ? (it ? 'Modifica annuncio' : 'Edit listing') : (it ? 'Nuovo annuncio' : 'New listing')) + '</h2>'
+    // 🆕 v7.191 (Franco: «quando apro un annuncio vorrei vedere le frecce per andare al precedente ed al successivo») - ◀ ▶
+    //    nell'ordine e coi filtri della tabella (`_annVisti`), nello stesso modo (lettura o modifica); spente ai capi.
+    //    ⚠️ Non salvano: per salvare e andare avanti c'è «Salva e next».
+    + (i !== null ? (() => {
+        const p = _annPrecedente(i), s = _annProssimo(i);
+        const f = (dove, segno, tit) => '<button type="button" class="btn-secondary" id="ann-' + (segno === '◀' ? 'prec' : 'succ') + '"'
+          + (dove === null ? ' disabled style="opacity:0.3;padding:0.2rem 0.7rem;"' : ' style="padding:0.2rem 0.7rem;" onclick="_annApriFinestra(' + dove + (sola ? ',true' : '') + ')"')
+          + ' title="' + tit + '">' + segno + '</button>';
+        return '<div style="display:flex;gap:0.4rem;margin-left:auto;margin-right:0.8rem;">'
+          + f(p, '◀', it ? 'Annuncio precedente' : 'Previous listing') + f(s, '▶', it ? 'Annuncio successivo' : 'Next listing') + '</div>';
+      })() : '')
     + '<button type="button" class="modal-close" onclick="document.getElementById(\'annuncio-modal\').remove()">✕</button></div>'
     + '<div class="ann-griglia"><div>'
     + lab(it ? 'Sito' : 'Site')
@@ -41367,10 +41403,13 @@ function _annApriFinestra(i, sola) {
     + lab(it ? 'Titolo' : 'Title')
     + '<input id="ann-titolo" class="form-input" type="text" value="' + esc(r.titolo || '') + '">'
     // v7.187 (Franco: «aggiungi un campo Costo nell'annuncio, mettilo prima di Prezzo»)
+    // v7.191 (Franco) - Voto prima di Costo, come in tabella; frecce di 1 (`step="any"`, vedi `_annDisegna`)
+    + lab(it ? 'Voto' : 'Rating')
+    + '<input id="ann-voto" class="form-input" type="number" min="0" step="any" value="' + (r.voto ?? '') + '" style="max-width:10rem;">'
     + lab(it ? 'Costo (€)' : 'Cost (€)')
-    + '<input id="ann-costo" class="form-input" type="number" min="0" step="0.01" value="' + (r.costo ?? '') + '" style="max-width:10rem;">'
+    + '<input id="ann-costo" class="form-input" type="number" min="0" step="any" value="' + (r.costo ?? '') + '" style="max-width:10rem;">'
     + lab(it ? 'Prezzo (€)' : 'Price (€)')
-    + '<input id="ann-prezzo" class="form-input" type="number" min="0" step="0.01" value="' + (r.prezzo ?? '') + '" style="max-width:10rem;">'
+    + '<input id="ann-prezzo" class="form-input" type="number" min="0" step="any" value="' + (r.prezzo ?? '') + '" style="max-width:10rem;">'
     // v7.187 (Franco) - il link dell'annuncio sul sito dove è pubblicato
     + lab('Link')
     + '<input id="ann-link" class="form-input" type="url" placeholder="https://…" value="' + esc(r.link || '') + '">'
@@ -41445,6 +41484,7 @@ function _annClonaQui(i) {
   // v7.189 - una copia è un annuncio nuovo: «Salva e resta» la riapre (diventata l'ultima riga), «next» non ha senso
   document.getElementById('ann-salva-resta')?.setAttribute('onclick', '_annSalva(null,' + i + ',\'resta\')');
   document.getElementById('ann-salva-next')?.remove();
+  ['ann-prec', 'ann-succ'].forEach(id => document.getElementById(id)?.remove());   // v7.191: una copia non ha vicini
   const st = document.getElementById('ann-stato');
   if (st) { st.style.color = 'var(--info)'; st.textContent = it ? 'È una copia: con Salva diventa un annuncio in più.' : 'This is a copy: Save adds a new listing.'; }
 }
@@ -41475,6 +41515,7 @@ async function _annSalva(i, da, dopo) {
   const stato = v('ann-stato');
   const prezzo = parseFloat(v('ann-prezzo').value);
   const costo = parseFloat(v('ann-costo').value);   // v7.187
+  const voto = parseFloat(v('ann-voto').value);   // v7.191
   const riga = {
     id: (i !== null && _annRighe[i] && _annRighe[i].id) || ('ann' + Date.now().toString(36)),
     sito: v('ann-sito').value,
@@ -41485,6 +41526,7 @@ async function _annSalva(i, da, dopo) {
     titolo: _annTitoloPerSito(v('ann-sito').value, v('ann-titolo').value.trim()),   // v7.187: Vinted, niente tutto maiuscolo
     descrizione: v('ann-descrizione').value.trim(),
     descrizioneEn: v('ann-descrizione-en').value.trim(),   // v7.187
+    voto: Number.isFinite(voto) ? voto : null,   // v7.191
     costo: Number.isFinite(costo) ? costo : null,   // v7.187
     prezzo: Number.isFinite(prezzo) ? prezzo : null,
     link: v('ann-link').value.trim() || null,   // v7.187
@@ -41553,6 +41595,11 @@ async function _annCopiaDescrizioni() {
 function _annProssimo(i) {
   const k = i === null ? -1 : _annVisti.indexOf(i);
   return k >= 0 && k < _annVisti.length - 1 ? _annVisti[k + 1] : null;
+}
+// v7.191 - quello prima (per ◀ nella finestra); null se è il primo
+function _annPrecedente(i) {
+  const k = i === null ? -1 : _annVisti.indexOf(i);
+  return k > 0 ? _annVisti[k - 1] : null;
 }
 async function _annElimina(i) {
   const it = currentLang === 'it';
@@ -43361,6 +43408,23 @@ for (const _sez of Object.keys(ARTICOLI)) {
   i18n.it['tda.' + _sez] = ARTICOLI[_sez].it;
   i18n.en['tda.' + _sez] = ARTICOLI[_sez].en;
 }
+// 🆕 v7.191 (Franco: «nella versione mobile nella home page lo score figurine per album rinominalo in "figurine album";
+//    carte d'identità rinominalo in "Carte identità"») - I NOMI CORTI DEI NUMERONI SUL TELEFONO. Chiavi loro
+//    (`tdaMob.*`) e non un testo scritto sopra: `applyI18n` gira dopo chi disegna e rimetterebbe il nome lungo.
+//    In inglese restano quelli del descrittore. «Figurine album» è anche il nome corto del questionario (`_wzEtichetta`).
+const HOME_ETICHETTE_MOBILE = { attaccare: 'Figurine album', cartoncini: 'Carte identità' };
+for (const _sez of Object.keys(HOME_ETICHETTE_MOBILE)) {
+  i18n.it['tdaMob.' + _sez] = HOME_ETICHETTE_MOBILE[_sez];
+  i18n.en['tdaMob.' + _sez] = ARTICOLI[_sez].en;
+}
+// 🆕 v7.191 (Franco: «solo nella versione mobile il selettore "tipologie di articoli" chiamalo "articoli"») - il secondo
+//    taglio dell'Inventario ha due scritte, una per il telefono (`.wz-solo-tel`) e una per il desktop
+i18n.it['catalog.byproductsTel'] = 'Articoli';
+i18n.en['catalog.byproductsTel'] = 'Items';
+// 🆕 v7.191 (Franco: «da mobile, il bottone "Azzera filtri" prova a scriverlo su due righe ("Azzera" e sotto "filtri")»)
+//    - un a capo che c'è solo sul telefono (`.wz-solo-tel`); sul desktop lo spazio prima tiene le parole staccate
+i18n.it['items.resetFiltersHtml'] = 'Azzera <br class="wz-solo-tel">filtri';
+i18n.en['items.resetFiltersHtml'] = 'Reset <br class="wz-solo-tel">filters';
 
 // 🆕 v6.815 (Franco) — I NUMERONI DELLA HOME, UNO PER TIPOLOGIA. Parole sue: *«è ovviamente
 // sbagliato, questo secchio»*, e poi l'elenco, dettato in undici righe.
@@ -45950,8 +46014,10 @@ function renderCatalogPersonaggi(grid) {
   const cerca = '<div style="grid-column:1/-1;">'
     + '<div id="personaggi-search-box" style="background:var(--card);border:1px solid var(--action);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-bottom:0.9rem;">'
     + '<div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.75rem;">'
-    + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? 'Imposta i criteri per la tua ricerca' : 'Set your search criteria') + '</div>'
-    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiSenzaFoto=false;_personaggiSerie=new Set();_personaggiTipi=new Set();_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>'
+    // 🔄 v7.191 (Franco: «da mobile, "Imposta i criteri per la tua ricerca" diventa "Imposta dei criteri di ricerca"»;
+    //    «da mobile, il bottone "Azzera filtri" prova a scriverlo su due righe») - le due frasi del telefono
+    + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? (_isMobileViewport() ? 'Imposta dei criteri di ricerca' : 'Imposta i criteri per la tua ricerca') : 'Set your search criteria') + '</div>'
+    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiSenzaFoto=false;_personaggiSerie=new Set();_personaggiTipi=new Set();_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;line-height:1.15;">' + t('items.resetFiltersHtml') + '</button>'
     + '</div>'
     + '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;">'
     + '<span style="' + _etichettaBordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + t('items.searchHint')   /* v6.972 (Franco): la stessa etichetta delle form di serie e TDA */ + '</span>'
@@ -46166,7 +46232,10 @@ function renderPaginaPersonaggio(grid, pid) {
     //    «dal retro» della v6.966: serviva a spiegare perché sotto la foto di un altro stava il nome di
     //    lui, e adesso sotto ogni foto c'è il nome stampato su quell'articolo.
     const tipologia = _maiuscola(String(getSectionLabelSingular(sec) || '').toLowerCase());
-    const numNome = ((_haNumero(f) && f.number) ? f.number + ' - ' : '') + (f.name || '');
+    // 🆕 v7.191 (Franco: «nome mobile significa nome mobile; anche quelle sono card») - il Nome mobile, dove la console lo
+    //    accende per le card (`_postoCard`: sul telefono sì), prende il posto del nome, coi suoi punti di taglio. Già in HTML.
+    const _nomeMobP = _nomeRidotto(_postoCard(), f);
+    const numNome = esc((_haNumero(f) && f.number) ? f.number + ' - ' : '') + (_nomeMobP ? _nomeCaroselloHTML(_nomeMobP) : esc(f.name || ''));
     // la versione come nella RG: sulle figurine sempre (anche «Versione base»), altrove solo se c'è
     const _k = _chiaveTipo(f);
     const versione = (sec === 'figurines' || _k !== 'base')
@@ -46223,7 +46292,7 @@ function renderPaginaPersonaggio(grid, pid) {
       // 🔄 v6.980 (Franco: «prima della tda, scrivere: "Tipologia di articolo: "») - la parola nel
       //    colore del testo, la tipologia resta lime
       + riga('<span style="color:var(--text);">' + (it ? 'Tipologia di articolo: ' : 'Item type: ') + '</span>' + esc(tipologia), 'color:var(--accent);')
-      + riga(esc(numNome), 'font-size:0.95rem;font-weight:600;color:var(--nome-entita);margin:0.1rem 0;')
+      + riga(numNome, 'font-size:0.95rem;font-weight:600;color:var(--nome-entita);margin:0.1rem 0;')
       // Franco: «la tipologia di versione in minuscolo a parte l'iniziale» - come la tipologia sopra
       + (versione ? riga(esc(_maiuscola(versione.toLowerCase())), 'color:' + (_COLORE_TIPO[_k] || 'var(--text)') + ';') : '')
       + (nomeCompleto ? riga(esc(nomeCompleto), 'color:var(--text);') : '')
@@ -48127,6 +48196,13 @@ function _rigaCampoMobileEdit(f, campo, idInput, it, en, valRif) {
     : 'Where the console turns it on (Carousels → Short fields), when filled, replaces the field above. A bar | where a long word may break. Empty = the field above.';
   return '<div class="detail-row" id="riga-' + idInput + '"' + (_nascosta ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang === 'it' ? it : en) + '</span><span class="detail-value"><input class="form-input" type="text" id="' + idInput + '" value="' + esc(f[campo] || '') + '" placeholder="' + esc(ph) + '" title="' + esc(tit) + '"></span></div>';
 }
+// v7.191 - la tendina dei valori già usati scrive la scelta nella casella accanto, come se la si fosse digitata (l'evento
+//    `input` fa partire chi la segue, per esempio la riga del campo mobile); poi torna su «Scegli…».
+function _scegliValoreEsistente(sel, idInput) {
+  const c = document.getElementById(idInput);
+  if (c && sel.value) { c.value = sel.value; c.dispatchEvent(new Event('input', { bubbles: true })); }
+  sel.selectedIndex = 0;
+}
 // v7.149 - chi scrive in Categoria / Sottocategoria accende o spegne la riga del suo campo mobile
 function _seguiCampoMobile(el, idInput) {
   const riga = document.getElementById('riga-' + idInput);
@@ -49656,7 +49732,10 @@ function seriesCardHTML(s) {
         ${/* 🆕 v6.670 - LA FORMA E' QUELLA DI `_retroCatPanelHTML`: il gruppo e' una colonna,
                il padre sopra e i figli in una fila rientrata. 📌 Il gruppo va a capo INTERO,
                quindi un figlio non si stacca mai dal suo padre quando la fila si accoda. */''}
-        ${_conteggiSezione.map(([sez, n, sotto]) => `<div class="card-gruppo"><span class="card-badge">${n} ${_nomeSezioneCard(sez, n)}</span>${sotto.length ? `<div class="card-sotto">${sotto.map(([v, sn]) => `<span class="card-badge-sotto">${sn} ${esc(_etichettaSottoserie(v))}</span>`).join('')}</div>` : ''}</div>`).join('')}
+        ${/* 🆕 v7.191 (Franco: «nella versione mobile, nel caso di fpa e fcr, scrivi tutto il nome della tda sotto al
+               numero: invece che "256 Figurine" e poi "per album" a capo, abbiamo "256" e poi, a capo, "Figurine per
+               album"») - sul telefono il nome lungo andava a capo a metà; ora il numero ha la sua riga. */''}
+        ${_conteggiSezione.map(([sez, n, sotto]) => `<div class="card-gruppo"><span class="card-badge">${n}${(_isMobileViewport() && (sez === 'figurines' || sez === 'attaccare')) ? '<br><span style="white-space:nowrap;">' + _nomeSezioneCard(sez, n) + '</span>' : ' ' + _nomeSezioneCard(sez, n)}</span>${sotto.length ? `<div class="card-sotto">${sotto.map(([v, sn]) => `<span class="card-badge-sotto">${sn} ${esc(_etichettaSottoserie(v))}</span>`).join('')}</div>` : ''}</div>`).join('')}
       </div>
     </div>
   </div>`;
@@ -51374,7 +51453,21 @@ function _blocchiHub(cats, sezRows, _pfx, BULLET, colonna) {
     //    inutile perché la sottoserie è solo una; lascerei solo la numerica in verde») - UNA SOTTOSERIE SOLA NON SI
     //    SPACCHETTA: la sua riga direbbe lo stesso numero della tipologia. Resta la riga della tipologia, fra le
     //    «Numeriche per tipologia di articolo». Da due sottoserie in su (le Figurine: 30+30+1) tutto come prima.
-    if (gruppi.length <= 1) { tipologie.push(cella(_pfx(c), righe)); return; }
+    // 🔄 v7.191 (Franco: «quando per una sottoserie c'è solo una tda e il nome della tda coincide col nome della
+    //    sottoserie, diciamo solo il nome della sottoserie»; su Holidays «Tatuaggi | 60 Tatuaggi», «Carte d'identità |
+    //    36 Carte d'identità») - il nome resta una volta, nella prima colonna, e accanto il solo numero. Solo se la riga
+    //    è una (senza versioni: con le versioni la riga dice «set base», non il nome). La riga si rifà con `colonna` e
+    //    l'etichetta vuota (v6.778), come fa `sezRows`: `sezRows` non si tocca, la ritagliano sei banchi.
+    // 📌 I `typeof`: i banchi di prova-v6778 e v7149 fanno girare questa funzione senza il resto del sito.
+    if (gruppi.length <= 1) {
+      const _nomeTda = typeof getSectionLabel === 'function' ? String(getSectionLabel(c)) : '';
+      const _stesso = gruppi.length === 1 && righe.length === 1 && !!_nomeTda
+        && String(_etichettaSottoserie(gruppi[0])).trim().toLowerCase() === _nomeTda.trim().toLowerCase();
+      tipologie.push(cella(_pfx(c), _stesso
+        ? [colonna(BULLET, items, '', false, typeof _art === 'function' ? _art(c).genere === 'f' : true, 'var(--type-base)')]
+        : righe));
+      return;
+    }
     gruppi.forEach(v => {
       const qui = items.filter(f => String(f.subseries || '').trim() === v);
       if (!qui.length) return;
@@ -65676,7 +65769,21 @@ function switchToEditMode(figId) {
   // partenza.
   // I suggerimenti vengono dal MEDESIMO tipo, non da tutti: proporre a un Cartoncino le categorie
   // dei Poster sarebbe un elenco che cresce e non aiuta.
-    html += '<div class="detail-row" style="' + _eredStile('category') + '"' + _eredAttr('category') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category"' + (_catSuggerite ? ' list="fe-cat-list"' : '') + ' value="' + esc((f.category||'')) + '"' + _eredRO('category') + ' oninput="_seguiCampoMobile(this,\'fe-categoria-mobile\')" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    // 🆕 v7.191 (Franco: «il campo Categoria deve, oltre che prendere un valore nuovo, dare la possibilità di selezionare un
+    //    valore categoria esistente, mediante una tendina che le mostra in ordine alfabetico») - accanto alla casella una
+    //    tendina con le categorie già usate nello stesso gruppo (per i Retro: gli altri Retro). La scelta finisce nella
+    //    casella, che resta libera per un valore nuovo. Il `<datalist>` non bastava: filtra su ciò che è scritto, e con la
+    //    casella piena non propone le altre.
+    const _catTendina = [...new Set((getData('figurines', []) || [])
+      .filter(x => _catStessoGruppo(x) && (x.category || '').trim())
+      .map(x => x.category.trim()))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
+    html += '<div class="detail-row" style="' + _eredStile('category') + '"' + _eredAttr('category') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value" style="display:flex;align-items:center;gap:0.4rem;"><input class="form-input" type="text" id="fe-category"' + (_catSuggerite ? ' list="fe-cat-list"' : '') + ' value="' + esc((f.category||'')) + '"' + _eredRO('category') + ' oninput="_seguiCampoMobile(this,\'fe-categoria-mobile\')" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;flex:1 1 auto;min-width:0;">'
+      + (_catTendina.length && !_eredRO('category')
+        ? '<select id="fe-category-scegli" class="form-input" onchange="_scegliValoreEsistente(this,\'fe-category\')" style="flex:0 0 auto;width:auto;max-width:10rem;padding:0.25rem 0.4rem;font-size:0.85rem;">'
+          + '<option value="">' + (currentLang === 'it' ? 'Scegli…' : 'Choose…') + '</option>'
+          + _catTendina.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('') + '</select>'
+        : '')
+      + '</span></div>';
     // 🆕 v7.146 (Franco: «anche categoria mobile; sul form, posizionali sotto al campo di riferimento»)
     html += _rigaCampoMobileEdit(f, 'categoriaMobile', 'fe-categoria-mobile', 'Categoria mobile e Carosello', 'Mobile and carousel category', f.category);   // v7.149: il nome; solo con la Categoria
   if (_catSuggerite) {
@@ -70173,7 +70280,9 @@ function renderHomeStats() {
     { el: document.getElementById('hero-stats'), sez: _contatori.sx, serie: true },
     { el: document.getElementById('hero-stats-right'), sez: _contatori.dx, serie: false }
   ];
-  const _firma = _contatori.sx.join('|') + '#' + _contatori.dx.join('|') + '#' + currentLang;
+  // 🔄 v7.191 - e il telefono: lì due nomi sono corti e «Altri articoli» non c'è
+  const _mob = _isMobileViewport();
+  const _firma = _contatori.sx.join('|') + '#' + _contatori.dx.join('|') + '#' + currentLang + '#' + _mob;
   if (_firma !== _firmaNumeroniHero) {
     _firmaNumeroniHero = _firma;
     for (const g of _sponde) {
@@ -70187,7 +70296,9 @@ function renderHomeStats() {
         : '')
         + g.sez.map(sez =>
             '<div class="stat-item"><span class="stat-num" id="stat-' + sez + '">0</span>'
-            + '<span class="stat-label" data-i18n="tda.' + sez + '">' + esc(getSectionLabel(sez))
+            + ((_mob && HOME_ETICHETTE_MOBILE[sez])
+              ? '<span class="stat-label" data-i18n="tdaMob.' + sez + '">' + esc(t('tdaMob.' + sez))
+              : '<span class="stat-label" data-i18n="tda.' + sez + '">' + esc(getSectionLabel(sez)))
             + '</span></div>').join('');
     }
   }
@@ -70205,7 +70316,8 @@ function renderHomeStats() {
     const _el = document.getElementById('stat-' + sez);
     const _n = figs.filter(f => (f.section || 'figurines') === sez).length;
     const _voce = _el && _el.closest('.stat-item');
-    if (_voce) _voce.style.display = _n ? '' : 'none';
+    // 🔄 v7.191 (Franco: «togli la sezione altri articoli sempre solo da mobile») - sul telefono «Altri articoli» spento
+    if (_voce) _voce.style.display = (_n && !(_mob && sez === 'extras')) ? '' : 'none';
     animateCount(_el, _n);
   }
   animateCount(document.getElementById('stat-users'), users.length);
