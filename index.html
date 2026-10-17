@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.188">
+<link rel="stylesheet" href="css/style.css?v=7.189">
 
 
 <style>
@@ -2927,12 +2927,10 @@ button.back-btn { color:#ffffff; }
         <div id="admin-add-tipo-prodotto-btn" style="display:none;justify-self:end;">
           <button class="btn-primary btn-admin" onclick="openAddTipoProdottoModal()">+ Aggiungi tipologia di articolo</button><!-- v6.969 (Franco): «tipo» → «tipologia» -->
         </div>
-        <!-- 🆕 v6.972 (Franco: «metti questo tasto dove sta quello di creazione di altre entità… come per
-             figurine e tipologie di articolo») - terzo pulsante nello stesso posto, acceso nel taglio
-             Personaggi. Apre la sua finestra, come gli altri due. -->
-        <div id="admin-add-personaggio-btn" style="display:none;justify-self:end;">
-          <button class="btn-primary btn-admin" onclick="openAddPersonaggioModal()">+ Aggiungi personaggio</button>
-        </div>
+        <!-- 🔄 v7.189 (Franco: «il tasto "Aggiungi personaggio" deve stare dove stanno gli omologhi tasti di aggiunta,
+             ovvero alla numerica che espone il totale dei risultati della form ricerca») - QUI STAVA il terzo pulsante
+             della v6.972. Adesso lo disegna `renderCatalogPersonaggi` sotto «I risultati della tua ricerca», nel
+             riquadro grigio «Catalogo» come «+ Aggiungi» delle tipologie. -->
       </div>
       <!-- 🔄 v6.969 (Franco: «la buca della ricerca della pagina con i tre hub dovrebbe stare sopra
            al selettore delle 3 pagine, perché ne è indipendente») — LA RICERCA GLOBALE PRIMA DEL
@@ -6708,7 +6706,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.188"></script>
+<script src="js/app.js?v=7.189"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6732,7 +6730,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.188'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.189'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
