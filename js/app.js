@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.190 - Modificati js/app.js e index.html (per la versione). CLOUDINARY, UN FORMATO SOLO (Franco: «ok procedi con
+//          A»): 41,7 crediti su 25 del piano gratuito, il 59% in trasformazioni; con `f_auto` ogni foto nasceva due
+//          volte, WebP per Chrome e JXL per Safari (7.430 versioni JXL su 40.162). `cloudinaryUrl` chiede sempre
+//          `f_webp,fl_awebp` (`_formatoUnico`): è il nome che Cloudinary dava alle versioni WebP di `f_auto`, quindi
+//          le riusa (provato su una foto: nessuna versione nuova). Anche gli esempi della Protezione foto e le pagine
+//          statiche delle serie. Restano `f_auto` i due scaricamenti con `fetch` delle pagine da pulire
+//          (`_urlSenzaScritta`): lì `f_auto` dà il formato dell'originale, e la pagina pulita si ricarica.
 // v7.189 - Modificati js/app.js e index.html (per la versione). Annunci (Franco: «nella form di un annuncio voglio il
 //          tasto "Salva e resta"; voglio anche "Salva e next"»): i due tasti nella finestra (`ann-salva-resta`,
 //          `ann-salva-next`); «next» apre l'annuncio dopo nell'ordine e coi filtri della tabella (`_annVisti`,
@@ -31358,7 +31365,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.189';
+const JS_VERSION = 'v7.190';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31487,10 +31494,20 @@ function _scambiaFotoGrandi(radice) {
 }
 function cloudinaryUrl(url, opts = 'w_300,h_300,c_fit,q_auto,f_auto') {
   if (!url || !url.includes('cloudinary.com')) return url;
+  // 🆕 v7.190 - un formato solo, WebP (vedi `_formatoUnico`)
+  if (!_cuLasciaAuto) opts = _formatoUnico(opts);
   // Insert transformation parameters after /upload/
   // 🆕 v7.103 - e, sulle foto protette, la filigrana dopo il ridimensionamento (vedi `_filigrana`)
   return url.replace('/upload/', `/upload/${opts}/${_filigrana(url, opts)}`);
 }
+// 🆕 v7.190 (Franco: «ok procedi con A») - CLOUDINARY, UN FORMATO SOLO. Con `f_auto` Cloudinary faceva di ogni foto due
+//    versioni, WebP per Chrome e JXL per Safari: due trasformazioni, e sul piano gratuito le trasformazioni erano il 59%
+//    dei crediti. Il WebP lo leggono tutti i browser di oggi.
+// 📌 `fl_awebp` non è un vezzo: `f_auto` dava a Chrome versioni chiamate `f_webp,fl_awebp`, e con lo stesso nome
+//    Cloudinary riusa quelle già fatte invece di rifarle (provato il 17 ottobre su una foto: nessuna versione nuova).
+//    Scritto solo `f_webp`, tutte le foto del sito sarebbero rinate una volta.
+const _formatoUnico = o => String(o).replace(/(^|,)f_auto(?=,|\/|$)/g, '$1f_webp,fl_awebp');
+let _cuLasciaAuto = false;   // v7.190: vero solo dentro `_urlSenzaScritta`
 // 🆕 v7.103 (Franco: «macchiare le immagini di certi articoli, in modo tale che nessuno che visita il sito possa
 //    scaricare la foto così come la vede, apponendo delle scritte che ne rovinerebbero la stampa»; «un flag apposito»,
 //    «ovunque», «figurinesgorbions.it», fra quattro esempi «la B») - LA FILIGRANA. Sulle foto degli articoli con
@@ -31543,9 +31560,12 @@ function _urlCarosello(f, url, opts) {
 }
 // 🆕 v7.129 - la foto senza scritta, per chi la scarica per lavorarla e ricaricarla (la pulizia dello sfondo delle
 //    pagine): con la scritta, la macchia finirebbe dentro il file nuovo
+// 🔄 v7.190 - e col suo `f_auto`: chiesta con `fetch` (che non dice di volere immagini) dà il formato dell'originale, e
+//    la pagina pulita si ricarica su Cloudinary: non deve diventare WebP per strada
 function _urlSenzaScritta(url, opts) {
   _fpSenzaScritta = true;
-  try { return cloudinaryUrl(url, opts); } finally { _fpSenzaScritta = false; }
+  _cuLasciaAuto = true;
+  try { return cloudinaryUrl(url, opts); } finally { _fpSenzaScritta = false; _cuLasciaAuto = false; }
 }
 // 🆕 v7.121 (Franco: «possiamo operare la macchia anche nel carosello? magari lì un pochino meno forte; mi avevi
 //    proposto differenti alternative, rioffrimele in cfg; sarebbe carino vedere lì proprio gli effetti») - GLI STILI
@@ -43015,7 +43035,7 @@ function _stiliMacchiaHTML(it) {
   const fila = (nome, carosello) => '<div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:0.7rem;margin-bottom:1rem;">' +
     STILI_MACCHIA.map(s => {
       // la misura delle schede del sito (400): la scritta ha la grandezza che avrà davvero
-      const url = f => f ? f.img.replace('/upload/', '/upload/w_400,h_400,c_fit,q_auto,f_auto/' + _trasfMacchia(s.k, 400)) : '';
+      const url = f => f ? f.img.replace('/upload/', '/upload/' + _formatoUnico('w_400,h_400,c_fit,q_auto,f_auto') + '/' + _trasfMacchia(s.k, 400)) : '';   // v7.190: WebP
       const foto = f => f ? '<img src="' + esc(url(f)) + '" alt="" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:contain;background:#000;border-radius:6px;min-width:0;">' : '';
       // 🔄 v7.122 (Franco: «le anteprime sono piccole; potresti aumentarle un po'?») - la foto riempie la colonna
       return '<label style="display:flex;flex-direction:column;align-items:center;gap:0.35rem;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.5rem;min-width:0;">' +
@@ -43046,7 +43066,7 @@ function _filaPagineHTML(it, figs) {
   const scatola = (val, foto, testo) => '<label style="display:flex;flex-direction:column;align-items:center;gap:0.35rem;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.5rem;min-width:0;">' + foto +
     '<span style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--text);text-align:center;">' +
       '<input type="radio" name="prot-stilePag" value="' + val + '"' + (v === val ? ' checked' : '') + '>' + testo + '</span></label>';
-  const img = s => pag ? '<img src="' + esc(pag.replace('/upload/', '/upload/w_1600,h_1600,c_fit/' + _trasfMacchia(s, 1600) + 'w_700,q_auto,f_auto/')) + '" alt="" loading="lazy" style="width:100%;aspect-ratio:1.4;object-fit:contain;background:#000;border-radius:6px;min-width:0;">' : '';
+  const img = s => pag ? '<img src="' + esc(pag.replace('/upload/', '/upload/w_1600,h_1600,c_fit/' + _trasfMacchia(s, 1600) + _formatoUnico('w_700,q_auto,f_auto') + '/')) + '" alt="" loading="lazy" style="width:100%;aspect-ratio:1.4;object-fit:contain;background:#000;border-radius:6px;min-width:0;">' : '';
   return '<div style="font-size:0.9rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">' + (it ? 'Nelle pagine degli album' : 'In album pages') + '</div>' +
     '<p style="font-size:0.8rem;color:var(--text);margin:0 0 0.5rem;">' + (it ? 'Vale per le pagine degli album protetti, in «Sfoglia album» e dovunque compaiano.' : 'For the pages of protected albums, wherever they appear.') + '</p>' +
     '<div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:0.7rem;margin-bottom:1rem;">' +
@@ -74071,7 +74091,7 @@ function _gscPagina(s, L) {
     const alt = getSectionLabelSingular(sez) + ' ' + f.name
       + (num ? (L === 'it' ? ', n. ' : ', no. ') + f.number : '') + ' — ' + nome;
     return '<li class="c"><a href="' + _gscEsc(_gscIndirizzoScheda(s, f)) + '">'
-      + (foto ? '<img src="' + _gscEsc(foto.replace(_GSC_PRE, _GSC_PRE + 'w_240,q_auto,f_auto/'))
+      + (foto ? '<img src="' + _gscEsc(foto.replace(_GSC_PRE, _GSC_PRE + 'w_240,q_auto,f_webp,fl_awebp/'))
             + '" alt="' + _gscEsc(alt) + '" loading="lazy">' : '')
       + (num ? '<span class="n">' + _gscEsc(f.number) + '</span>' : '')
       + '<span class="nm">' + _gscEsc(f.name) + '</span></a></li>';
@@ -74121,7 +74141,7 @@ function _gscPagina(s, L) {
     //    /serie/<slug>/, e un percorso relativo cercherebbe le bandiere dentro quella cartella.
     + '<img src="/flags/' + (L === 'it' ? 'gb' : 'it') + '.png" alt="" width="20" height="15">'
     + (L === 'it' ? 'English version' : 'Versione italiana') + '</a></nav>\n\n<header>\n'
-    + (cop ? '  <img src="' + _gscEsc(cop.replace(_GSC_PRE, _GSC_PRE + 'w_380,q_auto,f_auto/'))
+    + (cop ? '  <img src="' + _gscEsc(cop.replace(_GSC_PRE, _GSC_PRE + 'w_380,q_auto,f_webp,fl_awebp/'))   // v7.190: WebP, come `_formatoUnico`
            + '" alt="' + (L === 'it' ? 'La copertina della ' : 'The cover of ') + _gscEsc(nome)
            + '" width="190" height="264">\n' : '')
     + '  <div>\n    <div class="titolo"><h1>' + _gscEsc(nome) + '</h1>'
