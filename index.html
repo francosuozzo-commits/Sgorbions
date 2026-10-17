@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.190">
+<link rel="stylesheet" href="css/style.css?v=7.191">
 
 
 <style>
@@ -2956,7 +2956,7 @@ button.back-btn { color:#ffffff; }
         <span style="font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);font-weight:700;" data-i18n="catalog.browseby">Browse by</span>
         <div style="display:inline-flex;background:var(--bg2);border:1px solid var(--border2);border-radius:999px;padding:4px;gap:4px;">
           <button type="button" id="taglio-serie" onclick="impostaTaglioInventario('serie')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:#ffffff;background:var(--action);border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.byseries">Series</button>
-          <button type="button" id="taglio-prodotti" onclick="impostaTaglioInventario('prodotti')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.byproducts">Item types</button>
+          <button type="button" id="taglio-prodotti" onclick="impostaTaglioInventario('prodotti')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;"><span class="wz-solo-desktop" data-i18n="catalog.byproducts">Item types</span><span class="wz-solo-tel" data-i18n="catalog.byproductsTel">Articoli</span></button><!-- v7.191 (Franco: «solo nella versione mobile il selettore "tipologie di articoli" chiamalo "articoli"») -->
           <!-- 🆕 v6.966 (Franco: «il selettore n. 3: dopo Serie e Tipologie di articoli, abbiamo
                Personaggi») — il terzo taglio. Stessa forma dei due di prima: lo stato acceso lo
                mette `_aggiornaBivioInventario`, che adesso conosce tre valori. -->
@@ -3423,7 +3423,7 @@ di tutte le serie</button>
              che "ci si perde una release, ogni volta". -->
         <div id="items-search-title" style="font-size:0.95rem;font-weight:600;color:var(--text);">Imposta i criteri per la tua ricerca</div>
         <button id="items-reset-filters" type="button" class="btn-primary" onclick="azzeraTuttiIFiltri()"
-                data-i18n="items.resetFilters" style="font-size:0.82rem;padding:0.3rem 1rem;">Azzera filtri</button>
+                data-i18n-html="items.resetFiltersHtml" style="font-size:0.82rem;padding:0.3rem 1rem;line-height:1.15;">Azzera <br class="wz-solo-tel">filtri</button><!-- v7.191: su due righe sul telefono -->
       </div>
       <!-- 🆕 v6.365 (Franco) — L'ETICHETTA A CAVALLO DEL BORDO DELLA BARRA DI RICERCA: *"la nuova
            frase va nella barra di ricerca, come overlay del suo tetto; un po' come facciamo per i
@@ -6706,7 +6706,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.190"></script>
+<script src="js/app.js?v=7.191"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6730,7 +6730,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.190'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.191'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
