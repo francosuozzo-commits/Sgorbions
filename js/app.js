@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.189 - Modificati js/app.js e index.html (per la versione). Annunci (Franco: «nella form di un annuncio voglio il
+//          tasto "Salva e resta"; voglio anche "Salva e next"»): i due tasti nella finestra (`ann-salva-resta`,
+//          `ann-salva-next`); «next» apre l'annuncio dopo nell'ordine e coi filtri della tabella (`_annVisti`,
+//          `_annProssimo`), spento sull'ultimo. «📋 Copia descrizioni» (IT, riga vuota, 10 trattini, riga vuota, EN)
+//          negli appunti (`_annCopiaDescrizioni`). Ricerca personaggi (Franco: «una nuova sezione "Filtra per tipologia
+//          di articolo"»): il riquadro dopo «Filtra per serie», una pillola per tipologia degli articoli dei
+//          personaggi (`_tipiPersonaggio`, `_personaggiTipi`); serie E tipologie. «+ Aggiungi personaggio» sotto il
+//          conteggio dei risultati, nel riquadro «Catalogo» come le tipologie (era in alto a destra). prova-v7189.
 // v7.188 - Modificati js/app.js e index.html (per la versione). Foto annuncio (Franco: «nella finestra di visualizzazione
 //          della pagina, i due tastini per ruotare di 90 gradi la foto, come ci sono nella vista delle foto tutte
 //          assieme»): ⟲ ⟳ nella barra della pagina aperta (`ed-sx`, `ed-dx`), con `_faGiraFoto`; e la tendina della
@@ -31350,7 +31358,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.188';
+const JS_VERSION = 'v7.189';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41117,6 +41125,7 @@ function _annFiltriHTML() {
 // v7.187 - l'ordinamento della tabella: le chiavi delle colonne, in fila come i titoli, e la colonna scelta
 const _ANN_COLONNE = ['sito', 'account', 'serie', 'articolo', 'n', 'titolo', 'costo', 'prezzo', 'link'];
 let _annOrdine = { col: null, su: true };
+let _annVisti = [];   // v7.189: gli indici delle righe come la tabella li mostra adesso (per «Salva e next»)
 function _annOrdina(k) {
   _annOrdine = _annOrdine.col === k ? { col: k, su: !_annOrdine.su } : { col: k, su: true };
   _annDisegna();
@@ -41150,6 +41159,7 @@ function _annDisegna() {
     return r[k] ?? '';
   };
   const righe = _annRighe.map((r, i) => [r, i]).filter(([r]) => _annPassa(r));   // v7.187: i filtri della ricerca
+  _annVisti = [];
   if (!righe.length) {
     box.innerHTML = '<p style="font-style:italic;margin:0;">' + (it ? 'Nessun annuncio con questi filtri.' : 'No listings match these filters.') + '</p>';
     return;
@@ -41160,6 +41170,7 @@ function _annDisegna() {
     const c = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'it', { numeric: true, sensitivity: 'base' });
     return _annOrdine.su ? c : -c;
   });
+  _annVisti = righe.map(([, i]) => i);
   box.innerHTML = '<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;">'
     + '<table class="data-table compact"><thead><tr>'
     + th(it ? 'Sito' : 'Site') + th('Account') + th(it ? 'Serie' : 'Series') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
@@ -41358,6 +41369,10 @@ function _annApriFinestra(i, sola) {
     + '<textarea id="ann-descrizione" class="form-input">' + esc(r.descrizione || '') + '</textarea>'
     + lab(it ? 'Descrizione EN' : 'Description EN')
     + '<textarea id="ann-descrizione-en" class="form-input">' + esc(r.descrizioneEn || '') + '</textarea>'
+    // v7.189 (Franco: «un tasto "Copia descrizioni" che mi mette nella memoria (CTRL+C) la concatenazione delle due
+    //    descrizioni (ITA-ENG) separate da una riga vuota, da una riga fatta da 10 "-" e ancora da una riga vuota»)
+    + '<div style="margin-top:0.4rem;"><button type="button" class="btn-secondary" id="ann-copia-desc" onclick="_annCopiaDescrizioni()" style="font-size:0.8rem;padding:0.25rem 0.8rem;">📋 '
+      + (it ? 'Copia descrizioni' : 'Copy descriptions') + '</button></div>'
     // v7.187 (Franco: «mi serve un campo Condizioni, testuale multiriga; mettilo sotto a Descrizione ma senza allungare
     //    ulteriormente la finestra (accorcia Descrizione)») - le due caselle si dividono l'altezza della colonna
     + lab(it ? 'Condizioni' : 'Condition')
@@ -41370,6 +41385,15 @@ function _annApriFinestra(i, sola) {
       //    e vestito come «Clona» nella scheda dell'articolo: stessa classe, stessa icona ⧉
       + (r.id ? '<button type="button" class="btn-barra-admin pieno" id="ann-clona" style="margin-right:auto;" onclick="_annClonaQui(' + i + ')">&#10697; ' + (it ? 'Clona' : 'Clone') + '</button>' : '')
       + '<button type="button" class="btn-secondary" onclick="document.getElementById(\'annuncio-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+      // v7.189 (Franco: «"Salva e resta"»; «"Salva e next"») - vestiti come nella scheda dell'articolo, e «next» si
+      //    spegne sull'ultimo annuncio della tabella (o su uno nuovo), come lì sull'ultimo articolo
+      + '<button type="button" class="btn-barra-admin pieno" id="ann-salva-resta" onclick="_annSalva(' + (i === null ? 'null' : i) + ',null,\'resta\')">💾 ' + (it ? 'Salva e resta' : 'Save and stay') + '</button>'
+      + (() => {
+          const fine = _annProssimo(i) === null;
+          return '<button type="button" class="btn-barra-admin pieno" id="ann-salva-next"' + (fine ? ' disabled style="opacity:0.3;"' : '')
+            + ' title="' + (fine ? (it ? 'Non c’è un annuncio dopo questo' : 'No listing after this one') : (it ? 'Salva e apri l’annuncio dopo' : 'Save and open the next listing')) + '"'
+            + ' onclick="_annSalva(' + (i === null ? 'null' : i) + ',null,\'next\')">💾 Salva e next</button>';
+        })()
       + '<button type="button" class="btn-primary" id="ann-salva" onclick="_annSalva(' + (i === null ? 'null' : i) + ')">' + (it ? 'Salva' : 'Save') + '</button>'
     + '</div></div>';
   document.body.appendChild(ov);
@@ -41378,7 +41402,7 @@ function _annApriFinestra(i, sola) {
   if (sola) {
     ov.querySelector('.modal-title').textContent = it ? 'Annuncio' : 'Listing';
     ov.querySelectorAll('input, select, textarea').forEach(el => { el.disabled = true; });
-    ['ann-salva', 'ann-clona'].forEach(id => document.getElementById(id)?.remove());
+    ['ann-salva', 'ann-salva-resta', 'ann-salva-next', 'ann-clona'].forEach(id => document.getElementById(id)?.remove());
     document.getElementById('ann-zip')?.closest('label')?.remove();
     document.getElementById('ann-zip-togli')?.closest('label')?.remove();
     const chiudi = [...ov.querySelectorAll('button.btn-secondary')].find(b => /Annulla|Cancel/.test(b.textContent));
@@ -41398,6 +41422,9 @@ function _annClonaQui(i) {
   document.getElementById('ann-clona')?.remove();
   const b = document.getElementById('ann-salva');
   if (b) b.setAttribute('onclick', '_annSalva(null,' + i + ')');
+  // v7.189 - una copia è un annuncio nuovo: «Salva e resta» la riapre (diventata l'ultima riga), «next» non ha senso
+  document.getElementById('ann-salva-resta')?.setAttribute('onclick', '_annSalva(null,' + i + ',\'resta\')');
+  document.getElementById('ann-salva-next')?.remove();
   const st = document.getElementById('ann-stato');
   if (st) { st.style.color = 'var(--info)'; st.textContent = it ? 'È una copia: con Salva diventa un annuncio in più.' : 'This is a copy: Save adds a new listing.'; }
 }
@@ -41421,11 +41448,11 @@ async function _annScrivi(righe) {
   _annRighe = righe;
   _annDisegna();
 }
-async function _annSalva(i, da) {
+async function _annSalva(i, da, dopo) {
   const it = currentLang === 'it';
   const v = id => document.getElementById(id);
   const fonte = i !== null ? i : (da ?? null);   // v7.187: la riga da cui viene lo zip (la stessa, o quella clonata)
-  const stato = v('ann-stato'), bott = v('ann-salva');
+  const stato = v('ann-stato');
   const prezzo = parseFloat(v('ann-prezzo').value);
   const costo = parseFloat(v('ann-costo').value);   // v7.187
   const riga = {
@@ -41451,7 +41478,9 @@ async function _annSalva(i, da) {
     stato.textContent = it ? 'Servono almeno la serie e il titolo.' : 'Series and title are required.';
     return;
   }
-  bott.disabled = true;
+  // v7.189 - durante il salvataggio si spengono tutti e tre i Salva, non solo quello premuto
+  const salvi = ['ann-salva', 'ann-salva-resta', 'ann-salva-next'].map(v).filter(Boolean);
+  salvi.forEach(b => { b.disabled = true; });
   try {
     const file = v('ann-zip').files[0];
     if (file) {
@@ -41461,15 +41490,49 @@ async function _annSalva(i, da) {
     }
     const righe = _annRighe.slice();
     if (i !== null && righe[i]) righe[i] = riga; else righe.push(riga);
+    // il prossimo nell'ordine della tabella, preso PRIMA di ridisegnarla (v7.189)
+    const prossimo = dopo === 'next' ? _annProssimo(i) : null;
     await _annScrivi(righe);
     document.getElementById('annuncio-modal')?.remove();
     toast(it ? '✅ Annuncio salvato.' : '✅ Listing saved.', 'success');
+    // 🆕 v7.189 (Franco: «nella form di un annuncio voglio il tasto "Salva e resta"; voglio anche "Salva e next"») -
+    //    «resta» riapre lo stesso annuncio (un annuncio nuovo, o una copia, è l'ultima riga); «next» apre quello che
+    //    nella tabella viene dopo, nell'ordine e coi filtri di adesso
+    if (dopo === 'resta') _annApriFinestra(i !== null ? i : righe.length - 1);
+    else if (dopo === 'next' && prossimo !== null) _annApriFinestra(prossimo);
   } catch (e) {
     console.error('_annSalva', e);
     stato.style.color = 'var(--danger, #e5484d)';
     stato.textContent = (it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e);
-    bott.disabled = false;
+    salvi.forEach(b => { b.disabled = b.id === 'ann-salva-next' && _annProssimo(i) === null; });
   }
+}
+// v7.189 - «Copia descrizioni»: IT, riga vuota, dieci trattini, riga vuota, EN. Si copia quello che c'è scritto nella
+//    finestra adesso (anche non salvato, e anche in sola lettura).
+function _annTestoDescrizioni(itTxt, enTxt) {
+  return (itTxt || '').trim() + '\n\n' + '-'.repeat(10) + '\n\n' + (enTxt || '').trim();
+}
+async function _annCopiaDescrizioni() {
+  const it = currentLang === 'it';
+  const t = _annTestoDescrizioni(document.getElementById('ann-descrizione')?.value, document.getElementById('ann-descrizione-en')?.value);
+  try {
+    await navigator.clipboard.writeText(t);
+  } catch (e) {
+    // ripiego: il vecchio «copia» del browser, da una casella nascosta
+    const ta = document.createElement('textarea');
+    ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    const fatto = document.execCommand('copy');
+    ta.remove();
+    if (!fatto) { toast(it ? '⚠️ Non riesco a copiare' : '⚠️ Cannot copy', 'error'); return; }
+  }
+  toast(it ? '📋 Descrizioni copiate.' : '📋 Descriptions copied.', 'success');
+}
+// v7.189 - l'annuncio che nella tabella viene dopo `i`, nell'ordine e coi filtri di adesso; null se è l'ultimo
+//    (o se `i` non si vede, o è un annuncio nuovo)
+function _annProssimo(i) {
+  const k = i === null ? -1 : _annVisti.indexOf(i);
+  return k >= 0 && k < _annVisti.length - 1 ? _annVisti[k + 1] : null;
 }
 async function _annElimina(i) {
   const it = currentLang === 'it';
@@ -45020,8 +45083,8 @@ function _aggiornaBivioInventario() {
   const _bTipo = document.getElementById('admin-add-tipo-prodotto-btn');
   if (_bSerie) _bSerie.style.display = (_admin && !_rg && _taglioInventario === 'serie') ? '' : 'none';   // 🔄 v6.966 - era «non prodotti»
   if (_bTipo)  _bTipo.style.display  = (_admin && !_rg && _taglioInventario === 'prodotti') ? '' : 'none';
-  const _bPers = document.getElementById('admin-add-personaggio-btn');   // 🆕 v6.972 - nell'hub, non nella pagina di uno
-  if (_bPers) _bPers.style.display = (_admin && !_rg && _taglioInventario === 'personaggi' && !_personaggioAperto) ? '' : 'none';
+  // 🗑️ v7.189 - qui si accendeva «+ Aggiungi personaggio» in alto a destra (v6.972): adesso lo disegna l'hub dei
+  //    personaggi sotto il conteggio, solo per l'admin, e fuori dall'hub non esiste
   // v6.174 - il riepilogo delle serie: solo nel taglio Serie, ma per CHIUNQUE. Non c'e' `_admin`
   // nella condizione, e non e' una dimenticanza: e' un riepilogo del catalogo, non uno strumento.
   const _bInfo = document.getElementById('btn-info-tutte-serie');
@@ -45759,6 +45822,30 @@ function _personaggiSerieAggiungi(id) {
   if (_personaggiSerie.has(id)) _personaggiSerie.delete(id); else _personaggiSerie.add(id);
   _personaggiPagina = 1; renderCatalog();
 }
+// 🆕 v7.189 (Franco: «nella form di ricerca personaggi metti una nuova sezione che si chiama "Filtra per tipologia di
+//    articolo" e dentro metti le pillole per ogni tipologia di articolo che è collegata a un personaggio») - LE
+//    TIPOLOGIE ACCESE, come le serie qui sopra: in OR fra loro (passa chi ha almeno un articolo di una di loro), e in E
+//    con le serie. La tipologia di un articolo è quella degli Aggiornamenti massivi e degli annunci (`_aggTipoDi`: il
+//    tipo se c'è, se no la sezione).
+let _personaggiTipi = new Set();
+let _tipiPersCache = null;
+function _tipiPersonaggio(pid, ix) {
+  const admin = !!currentUser?.isAdmin;
+  const c = _tipiPersCache;
+  if (!c || c.figs !== ix.figs || c.dati !== _personaggiDati || c.admin !== admin)
+    _tipiPersCache = { figs: ix.figs, dati: _personaggiDati, admin, m: new Map() };
+  const m = _tipiPersCache.m;
+  if (!m.has(pid)) m.set(pid, new Set(articoliDelPersonaggio(pid, ix).map(_aggTipoDi).filter(Boolean)));
+  return m.get(pid);
+}
+function _personaggiTipoSolo(k) {
+  _personaggiTipi = (_personaggiTipi.size === 1 && _personaggiTipi.has(k)) ? new Set() : new Set([k]);
+  _personaggiPagina = 1; renderCatalog();
+}
+function _personaggiTipoAggiungi(k) {
+  if (_personaggiTipi.has(k)) _personaggiTipi.delete(k); else _personaggiTipi.add(k);
+  _personaggiPagina = 1; renderCatalog();
+}
 function _haFigurineSue(pid, arts, ix) {
   const suoi = _conAlterEgo(pid);   // v6.972 - anche la figurina di un suo alter ego è sua
   return arts.some(a => ['figurines', 'attaccare'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).some(x => suoi.includes(x)));
@@ -45799,12 +45886,26 @@ function renderCatalogPersonaggi(grid) {
     && (!q || (soloAlterEgo ? [p.nome] : nomiDi(p)).some(n => _perRicerca(n).includes(q)))
     && (!_personaggiSenzaFigurine || !_haFigurineSue(p.id, articoliDelPersonaggio(p.id, ix), ix))
     && (!(currentUser?.isAdmin && _personaggiSenzaFoto) || !_fotoPersonaggio(articoliDelPersonaggio(p.id, ix), p.id, ix)));   // v7.088
-  const tutti = !_personaggiSerie.size ? senzaSerie
-    : senzaSerie.filter(p => [..._seriePersonaggio(p.id, ix)].some(s => _personaggiSerie.has(s)));
+  // 🔄 v7.189 - i riquadri delle pillole sono due (serie e tipologie): ognuno conta i suoi numeri sui personaggi che
+  //    passano TUTTO il resto, l'altro riquadro compreso - così ogni pillola dice quanti ne troveresti accendendo lei
+  const _passaSerie = p => !_personaggiSerie.size || [..._seriePersonaggio(p.id, ix)].some(s => _personaggiSerie.has(s));
+  const _passaTipi = p => !_personaggiTipi.size || [..._tipiPersonaggio(p.id, ix)].some(k => _personaggiTipi.has(k));
+  const tutti = senzaSerie.filter(p => _passaSerie(p) && _passaTipi(p));
   // Le pillole: una per serie che ha almeno un personaggio, nell'ordine delle serie. Una serie
   //    accesa resta anche se i filtri di adesso la portano a zero: deve potersi spegnere (v6.335).
   const _contoSerie = new Map();
-  senzaSerie.forEach(p => _seriePersonaggio(p.id, ix).forEach(s => _contoSerie.set(s, (_contoSerie.get(s) || 0) + 1)));
+  senzaSerie.filter(_passaTipi).forEach(p => _seriePersonaggio(p.id, ix).forEach(s => _contoSerie.set(s, (_contoSerie.get(s) || 0) + 1)));
+  // v7.189 - e una per tipologia che ha almeno un personaggio: nell'ordine del descrittore, poi i tipi per nome
+  const _contoTipi = new Map();
+  senzaSerie.filter(_passaSerie).forEach(p => _tipiPersonaggio(p.id, ix).forEach(k => _contoTipi.set(k, (_contoTipi.get(k) || 0) + 1)));
+  const _ordineTipi = Object.keys(ARTICOLI), _postoTipo = k => { const i = _ordineTipi.indexOf(k); return i < 0 ? 9999 : i; };
+  const _pilloleTipi = [...new Set(_personaggiDati.elenco.flatMap(p => [..._tipiPersonaggio(p.id, ix)]).concat([..._personaggiTipi]))]
+    .sort((a, b) => (_postoTipo(a) - _postoTipo(b)) || _aggNomeTipo(a).localeCompare(_aggNomeTipo(b), 'it'))
+    .map(k => _chipTipoHTML({
+      etichetta: _aggNomeTipo(k), n: _contoTipi.get(k) || 0, attiva: _personaggiTipi.has(k), it,
+      onSet: '_personaggiTipoSolo(\'' + esc(k) + '\')', onAdd: '_personaggiTipoAggiungi(\'' + esc(k) + '\')',
+      titolo: it ? 'Solo questa tipologia' : 'This item type only'
+    })).join('');
   const _conPersonaggi = new Set(_personaggiDati.elenco.flatMap(p => [..._seriePersonaggio(p.id, ix)]));
   const _pilloleSerie = (getData('series', []) || []).filter(s => _conPersonaggi.has(s.id) || _personaggiSerie.has(s.id))
     .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
@@ -45830,7 +45931,7 @@ function renderCatalogPersonaggi(grid) {
     + '<div id="personaggi-search-box" style="background:var(--card);border:1px solid var(--action);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-bottom:0.9rem;">'
     + '<div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.75rem;">'
     + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? 'Imposta i criteri per la tua ricerca' : 'Set your search criteria') + '</div>'
-    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiSenzaFoto=false;_personaggiSerie=new Set();_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>'
+    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiSenzaFoto=false;_personaggiSerie=new Set();_personaggiTipi=new Set();_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>'
     + '</div>'
     + '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;">'
     + '<span style="' + _etichettaBordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + t('items.searchHint')   /* v6.972 (Franco): la stessa etichetta delle form di serie e TDA */ + '</span>'
@@ -45843,6 +45944,10 @@ function renderCatalogPersonaggi(grid) {
     + (_pilloleSerie ? '<div id="personaggi-filtro-serie" style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
       + '<div style="' + _etichettaBordo + '">' + (it ? 'Filtra per serie' : 'Filter by series') + '</div>'
       + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + _pilloleSerie + '</div></div>' : '')
+    // 🆕 v7.189 (Franco) - «Filtra per tipologia di articolo», lo stesso riquadro, subito dopo quello delle serie
+    + (_pilloleTipi ? '<div id="personaggi-filtro-tipi" style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
+      + '<div style="' + _etichettaBordo + '">' + (it ? 'Filtra per tipologia di articolo' : 'Filter by item type') + '</div>'
+      + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + _pilloleTipi + '</div></div>' : '')
     // 🆕 v6.966 - «Senza figurine», per tutti (Franco: «user visible»). Lo stesso interruttore
     //    blu dei filtri della ricerca di sezione.
     + '<div id="personaggi-filtri-agg" style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'   // v7.000: id per la barra
@@ -45871,6 +45976,14 @@ function renderCatalogPersonaggi(grid) {
     + '<div style="font-size:0.95rem;color:var(--text);"><span style="font-size:1.5rem;font-weight:700;color:var(--accent);">' + tutti.length.toLocaleString(it ? 'it-IT' : 'en-US') + '</span> '
     + (it ? (tutti.length === 1 ? 'personaggio trovato' : 'personaggi trovati') : (tutti.length === 1 ? 'character found' : 'characters found')) + '</div>'
     + '</div>'
+    // 🔄 v7.189 (Franco: «il tasto "Aggiungi personaggio" deve stare dove stanno gli omologhi tasti di aggiunta, ovvero
+    //    alla numerica che espone il totale dei risultati») - sotto il conteggio, nel riquadro grigio «Catalogo» di
+    //    «+ Aggiungi» delle tipologie (`#admin-add-item-btn`, v6.931). Era in alto a destra, con serie e tipologie.
+    + (currentUser?.isAdmin ? '<div style="margin-bottom:1rem;">'
+      + '<div style="font-size:0.75rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Catalogo' : 'Catalogue') + '</div>'
+      + '<div id="admin-add-personaggio-btn" style="display:inline-flex;gap:0.75rem;flex-wrap:wrap;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">'
+      + '<button class="btn-primary btn-admin" onclick="openAddPersonaggioModal()">+ ' + (it ? 'Aggiungi personaggio' : 'Add character') + '</button>'
+      + '</div></div>' : '')
     + '</div>';
   if (!_personaggiDati.elenco.length) {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🧑‍🎤</div><p class="empty-title">' + (it ? 'I personaggi non sono ancora stati caricati.' : 'Characters have not been loaded yet.') + '</p></div>';
@@ -45912,6 +46025,7 @@ function renderCatalogPersonaggi(grid) {
     + _paginazionePersonaggi(pagine);
   // 🆕 v7.000 - «Filtra per serie» e «Filtri aggiuntivi» diventano barre
   _bmApplica(document.getElementById('personaggi-filtro-serie'), 'pers-serie');
+  _bmApplica(document.getElementById('personaggi-filtro-tipi'), 'pers-tipi');   // v7.189
   _bmApplica(document.getElementById('personaggi-filtri-agg'), 'pers-agg');
 }
 
