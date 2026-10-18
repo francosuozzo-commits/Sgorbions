@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.195 - Modificati js/app.js e index.html. Home, nota (Franco): «NOTE:» e testo nuovo, IT e EN. Card delle serie: via
+//          il punteggio ⭐ (desktop e telefono); sul telefono «Figurine album» e le numeriche sotto «Numeriche ▸», chiuse,
+//          che si aprono e chiudono tutte insieme (`_numericheCardAperte`, `_toggleNumericheCard`). SOTTOSERIE DI RETRO
+//          (Franco: «la ss normale ha un suo pulsantone; quello per i retro comanda solo un tab addizionale nella
+//          sezione»): nella scheda della serie, sezione Retro, «Ha sottoserie di retro» con il suo elenco
+//          (`hasRetroSubseries`, `sottoserieRetro`); i retro non leggono più l'elenco generale (`sottoserieInTab` nel
+//          descrittore, `_sottoserieDichiarate`); niente card di sottoserie per i retro, e dentro la sezione i tab «Retro»
+//          e uno per sottoserie (`_rendiTabSottoserie`, `#sottoserie-tab`); il tab non cambia la testata (`_sottoserieDiPagina`).
 // v7.194 - Modificati js/app.js e index.html (per la versione). Liste, EXPORT 1: le serie in cui la lista non ha
 //          nessun articolo nascono con «Escludi serie da export» spuntata (`_esclusaDaMancolista`); la scelta salvata vince.
 // v7.193 - Modificati js/app.js e index.html (per la versione). Admin console, tab Serie: le colonne sì/no scrivono
@@ -31388,7 +31396,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.194';
+const JS_VERSION = 'v7.195';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33195,7 +33203,7 @@ const i18n = {
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'<em>My list</em> / Total Inventory',
 'hero.challenge':'Challenge other collectors','hero.challengeDesc':'Who has the list with the highest rarity score? You can also appear anonymously.',
 'hero.desc':'The unofficial Inventory of the legendary \'90s series.','hero.descShort':'The Inventory of the legendary \'90s series.',
-'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among people.<br>The site wants to connect collectors from around the world, and let them search for items they do not own, through trades.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
+'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among people.<br>It aims to connect collectors with each other, and let them search for items they do not own, through trades.<br><br>The information here represents the knowledge of the administrator; it does not claim to be official information.',
 'hero.cta1':'Explore the Sgorbions Inventory !','home.figurine':'Carousel of the Sgorbions items on the site','home.figurineShort':'The Sgorbions items','hero.cta2':'Start collecting Sgorbions !',
 'hero.stat1':'Series','hero.stat3':'Collectors','hero.statLangs':'Site languages',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
@@ -33302,7 +33310,7 @@ const i18n = {
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','rc.title':'Ricarica il sito saltando la cache del browser','nav.mialista':'La mia lista Sgorbions',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'<em>Mia lista</em> / Totale Inventario','hero.challenge':'Sfida gli altri collezionisti','hero.challengeDesc':'Chi ha la lista con maggior punteggio rarità? Puoi anche apparire come anonimo.','hero.desc':'L\'Inventario non ufficiale della leggendaria serie anni \'90.','hero.descShort':'L\'Inventario della mitica serie anni \'90.',
-    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra persone.<br>Il sito vuole mettere i collezionisti di tutto il mondo in contatto tra loro, e consentirgli di cercare materiale non in loro possesso, tramite scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Carosello degli articoli Sgorbions del sito','home.figurineShort':'Gli articoli Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions !',
+    'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra persone.<br>Vuole mettere i collezionisti in contatto tra loro, e consentirgli di cercare materiale non in loro possesso, tramite scambi.<br><br>Le informazioni qui contenute rappresentano la conoscenza dell\'amministratore; non pretendono di essere informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','home.figurine':'Carosello degli articoli Sgorbions del sito','home.figurineShort':'Gli articoli Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions !',
     'hero.stat1':'Serie','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
@@ -38263,10 +38271,10 @@ function renderEbayOversizeTable() {
 //    `_opzioniTipoOmaggio`, `_opzioniTipoErrore`). Le tre esistenti hanno anche il
 //    raggruppamento per lato, che qui non serve: estrarre a meta' sarebbe peggio che non
 //    estrarre. Il debito si conta - QUATTRO - invece di sparire dentro la quarta copia.
-function _opzioniSottoserie(seriesId, sel) {
+function _opzioniSottoserie(seriesId, sel, sez) {
   const it = currentLang === 'it';
   const s = getData('series', []).find(x => x.id === seriesId);
-  const elenco = _sottoserieSerie(s);
+  const elenco = typeof _sottoserieDichiarate === 'function' ? _sottoserieDichiarate(s, sez) : _sottoserieSerie(s);   // v7.195: i retro hanno il loro elenco
   const scelto = String(sel || '').trim();
   if (!elenco.length) {
     return '<option value="">' + (it
@@ -38307,6 +38315,30 @@ function _sottoserieDef(s) {
 //    l'informazione, e un doppione va fatto VEDERE, non corretto in silenzio.
 function _sottoserieSerie(s) {
   return _sottoserieDef(s).map(v => v.nome);
+}
+
+// 🆕 v7.195 (Franco: «non possiamo rappresentare le ss nello stesso modo, tra figurine e retro»; «avremmo quindi il
+//    campo "Ha sottoserie" e "Ha sottoserie di retro"»; «la ss normale ha un suo pulsantone; quello per i retro comanda
+//    solo un tab addizionale nella sezione») - LE SOTTOSERIE DEI RETRO HANNO UN ELENCO LORO, e si vedono come TAB.
+// 🔴 I RETRO NON LEGGONO PIU' L'ELENCO GENERALE: una sottoserie dichiarata in «Ha sottoserie» non fa ne' card ne' tab
+//    per i retro. Le tipologie «in tab» le dice il descrittore (`sottoserieInTab`), come `sottoserieInGriglia`.
+// 📌 Niente foto: il tab non ne mostra. L'elenco e' testo, una per riga, come i tipi di versione della stessa sezione.
+function _sottoserieInTab(sez) {
+  return !!_art(sez).sottoserieInTab;
+}
+function _sottoserieRetroSerie(s) {
+  if (!s || !s.hasRetroSubseries || !Array.isArray(s.sottoserieRetro)) return [];
+  return s.sottoserieRetro.map(v => String(v || '').trim()).filter(Boolean);
+}
+// Le dichiarate per una tipologia: quelle in tab hanno il loro elenco, tutte le altre quello della serie.
+function _sottoserieDichiarate(s, sez) {
+  return (sez && _sottoserieInTab(sez)) ? _sottoserieRetroSerie(s) : _sottoserieSerie(s);
+}
+// La sottoserie che fa da PAGINA - testata, tasto indietro, card da cui si e' entrati. Il tab di una tipologia
+// «in tab» non lo e': si resta nella sezione, e la testata dice la sezione.
+function _sottoserieDiPagina() {
+  if (typeof _sottoserieAttiva !== 'string' || !_sottoserieAttiva) return '';
+  return _sottoserieInTab(currentSection) ? '' : _sottoserieAttiva;
 }
 
 // 🆕 v6.680 - LE RIGHE DELLA TABELLINA, mentre la scheda della serie e' aperta.
@@ -38480,7 +38512,13 @@ function _confermaSottoserieRinominate(seriesId) {
 // ritocco. 📌 Il ragionamento scritto qui sopra non cambia di una virgola: cambia solo da
 // dove arrivano i dati.
 function _sottoserieUsate(s, articoli) {
-  const dichiarate = _sottoserieSerie(s);
+  // 🔄 v7.195 - l'elenco dipende dalla tipologia: se gli articoli sono tutti di una tipologia «in tab» (i retro),
+  //    si legge il suo. Un mucchio misto resta sull'elenco della serie, come prima.
+  const _sezioni = new Set((articoli || []).map(f => f.section || 'figurines'));
+  const _sez = _sezioni.size === 1 ? [..._sezioni][0] : null;
+  // 📌 I `typeof`: decine di banchi di prova fanno girare questa funzione senza il resto del sito (come v7.149).
+  const _inTab = !!_sez && typeof _sottoserieInTab === 'function' && _sottoserieInTab(_sez);
+  const dichiarate = _inTab ? _sottoserieRetroSerie(s) : _sottoserieSerie(s);
   if (!dichiarate.length) return [];
   const presenti = new Set((articoli || []).map(f => String(f.subseries || '').trim()));
   const usate = dichiarate.filter(v => presenti.has(v));
@@ -38490,6 +38528,8 @@ function _sottoserieUsate(s, articoli) {
   //    in `presenti` per ogni articolo che non ne ha, quindi contarla vorrebbe dire
   //    mostrare un tab «Set principale» su tutte le sezioni del sito.
   if (!usate.length) return orfane.some(v => v) ? orfane : [];
+  // 🆕 v7.195 - nei tab il primo e' quello senza sottoserie, «Retro» (Franco: «dentro 2 tab: Retro e Retro non standard»)
+  if (_inTab && orfane.includes('')) return [''].concat(usate, orfane.filter(v => v));
   return usate.concat(orfane);
 }
 
@@ -38540,6 +38580,12 @@ function _etichettaSottoserie(v) {
   if (v) return v;
   return currentLang === 'it' ? 'Set principale' : 'Base set';
 }
+// 🆕 v7.195 - la stessa, sapendo la tipologia: dove le sottoserie stanno nei tab (i retro) il vuoto si chiama come la
+//    tipologia, «Retro» (Franco: «dentro 2 tab: Retro e Retro non standard»).
+function _etichettaSottoserieDi(v, sez) {
+  if (!v && sez && typeof _sottoserieInTab === 'function' && _sottoserieInTab(sez)) return getSectionLabel(sez);
+  return _etichettaSottoserie(v);
+}
 
 // 🗑️ v6.789 - QUI STAVA `_articoliNascostiDaRecord`, il gemello lato form di `_articoliNascosti`.
 // Se ne va perche' il verso e' cambiato E perche' erano DUE funzioni che rispondevano alla stessa
@@ -38559,6 +38605,12 @@ function _etichettaSottoserie(v) {
 //    promette un contenuto. E' il difetto della v6.325 in un'altra forma.
 // 📌 Un interruttore solo per due cose che devono comparire e sparire insieme: due punti
 //    con due regole sono il difetto che la v6.164 ha chiuso sui comandi della testata.
+// 🆕 v7.195 - l'elenco delle sottoserie di retro si vede solo con la sua spunta accesa.
+function _aggiornaCasellaSottoserieRetro() {
+  const on = !!document.getElementById('series-retro-subseries-flag')?.checked;
+  const g = document.getElementById('series-retro-subseries-group');
+  if (g) g.style.display = on ? '' : 'none';
+}
 function _aggiornaCasellaSottoserie() {
   const g = document.getElementById('series-sottoserie-group');
   const cb = document.getElementById('series-has-subseries-input');
@@ -38652,6 +38704,11 @@ function _ripristinaFlagSerie(s) {
   }
   spunta('series-has-subseries-input',             s && s.hasSubseries);     // v6.169
   _aggiornaCasellaSottoserie();   // v6.650 - dopo la spunta, o leggerebbe quella di prima
+  // 🆕 v7.195 - e quelle dei retro, spunta ed elenco: senza ripristino il salvataggio le azzererebbe (v6.219)
+  // 📌 l'id non comincia con `series-has-`: quelle sono le caselle delle VERSIONI, che prova-v6790 conta col loro conteggio
+  spunta('series-retro-subseries-flag',            s && s.hasRetroSubseries);
+  { const ssr = document.getElementById('series-retro-subseries-input'); if (ssr) ssr.value = ((s && s.sottoserieRetro) || []).join('\n'); }
+  try { _aggiornaCasellaSottoserieRetro(); } catch (e) { console.error('_aggiornaCasellaSottoserieRetro', e); }
   spunta('series-has-sizes-input',                 s && s.hasSizes);
   spunta('series-abilita-modifica-input',          s && s.abilitaModifica); // v6.366         // v6.169
   spunta('series-ha-ristampe-input',               s && s.haRistampe);      // v7.181
@@ -39299,6 +39356,10 @@ async function saveSeries() {
     colonne[sez] = { d: d || _colonneDefault(sez).d, m: m || _colonneDefault(sez).m };   // v6.197
   });
   const hasSubseries = document.getElementById('series-has-subseries-input').checked;
+  // 🆕 v7.195 - le sottoserie dei retro: la spunta e l'elenco, una per riga, senza righe vuote ne' doppioni
+  const hasRetroSubseries = !!document.getElementById('series-retro-subseries-flag')?.checked;
+  const sottoserieRetro = [...new Set((document.getElementById('series-retro-subseries-input')?.value || '')
+    .split('\n').map(x => x.trim()).filter(Boolean))];
   // 🗑️ v6.788 - QUI STAVANO LE SETTE LETTURE DEI CAMPI STORICI (`hasVariations`, `hasChange`,
   //    `hasRetroChange`, `hasPrintError`, `hasFreeVersion`, `hasRetroFreeVersion`,
   //    `hasUnofficialVariations`), e se ne vanno insieme alle sette scritture piu' sotto.
@@ -39531,7 +39592,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, haRistampe /* v7.181 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, haRistampe /* v7.181 */, hasSubseries, hasRetroSubseries, sottoserieRetro /* v7.195 */, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -39553,7 +39614,7 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, haRistampe /* v7.181 */, hasSubseries, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, haRistampe /* v7.181 */, hasSubseries, hasRetroSubseries, sottoserieRetro /* v7.195 */, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -40179,6 +40240,9 @@ const ARTICOLI = {
     //    scritta a mano in cinque punti come «section === 'retros'»; adesso e' un campo, come
     //    «riquadro» e «colonne». Qui vale true perche' e' cio' che il sito faceva gia'.
     sottonome: true,   // v6.667
+    // 🆕 v7.195 (Franco: «quello per i retro comanda solo un tab addizionale nella sezione») - le sottoserie dei retro
+    //    hanno un elenco loro sulla serie («Ha sottoserie di retro») e stanno nei TAB della sezione, non in card.
+    sottoserieInTab: true,
     it: 'Retro',   en: 'Retros',
     itSing: 'retro', enSing: 'retro',
     genere: 'm',
@@ -40318,6 +40382,7 @@ const _ETICHETTE_DESCRITTORE = {
   //    controllo poteva dirlo - il ripiego `|| k` non e' un errore, e' un ripiego.
   genere: 'Genere', carosello: 'Carosello',
   sottoserieInGriglia: 'Sottoserie nella griglia',   // v6.964
+  sottoserieInTab: 'Sottoserie nei tab',             // v7.195
   fotoRuotata: 'Fronte ruotato',                     // v7.132
   caroselloSenzaTipologia: 'Carosello senza tipologia',   // v7.149
   questionarioQuattro: 'Questionario a quattro carte',   // v7.156
@@ -46256,7 +46321,8 @@ function renderPaginaPersonaggio(grid, pid) {
   //    griglia (v6.964). Il comparatore della griglia non la guarda: lì si sta dentro una sottoserie
   //    sola. Senza sottoserie, o con una che la serie non dichiara, si va in fondo (`_sottoserieUsate`).
   const ordSs = f => {
-    const l = _sottoserieSerie(serieDi.get(f.seriesId));
+    const l = typeof _sottoserieDichiarate === 'function'
+      ? _sottoserieDichiarate(serieDi.get(f.seriesId), f.section || 'figurines') : _sottoserieSerie(serieDi.get(f.seriesId));   // v7.195
     const i = l.indexOf(String(f.subseries || '').trim());
     return i < 0 ? l.length : i;
   };
@@ -47354,6 +47420,8 @@ function _sezioneCoperta(sez) {
   //    sottoserie per lei non esistono, quindi la sua card è l'unica porta. Senza questa riga,
   //    misurato nella preview, la card «Figurine per album» di Holidays spariva dall'hub.
   if (_sottoserieInGriglia(sez)) return false;
+  // 🆕 v7.195 - nemmeno dove stanno nei tab (i retro): la card della sezione e' l'unica porta, anche se tutti hanno un gruppo
+  if (typeof _sottoserieInTab === 'function' && _sottoserieInTab(sez)) return false;
   const s = getData('series', []).find(x => x.id === currentSeriesId);
   const items = getData('figurines', [])
     .filter(f => f.seriesId === currentSeriesId && (f.section || 'figurines') === sez);
@@ -49694,6 +49762,19 @@ function _prefissoInvisibile(f) {
     + (currentLang === 'it' ? 'INVISIBILE' : 'HIDDEN') + ')</span> ';
 }
 
+// 🆕 v7.195 - le numeriche delle card delle serie sul telefono: uno stato per tutte, chiuso a ogni caricamento.
+// 📌 Il tocco le apre o chiude TUTTE senza ridisegnare la griglia, e non arriva alla card (che aprirebbe la serie).
+let _numericheCardAperte = false;
+function _toggleNumericheCard(ev) {
+  if (ev) ev.stopPropagation();
+  _numericheCardAperte = !_numericheCardAperte;
+  document.querySelectorAll('.card-numeriche-testa').forEach(testa => {
+    const meta = testa.nextElementSibling;
+    if (meta && meta.classList.contains('card-meta')) meta.style.display = _numericheCardAperte ? '' : 'none';
+    const freccia = testa.querySelector('.card-numeriche-freccia');
+    if (freccia) freccia.textContent = _numericheCardAperte ? '▾' : '▸';
+  });
+}
 function seriesCardHTML(s) {
   const allItems = getData('figurines', []).filter(f => f.seriesId === s.id);
   // 🆕 v6.506 (Franco: *"chi ha mai detto che figurine con retro e da attaccare andassero
@@ -49750,12 +49831,9 @@ function seriesCardHTML(s) {
       return [sez, _qui.length, _sotto];
     })
     .filter(([, n]) => n > 0);
-  const figs = allItems.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras' && f.section !== 'bustine');
-  // ⚠️ v6.506 — `figs` RESTA, e resta per esclusione, ma da adesso serve a UNA COSA SOLA:
-  // il punteggio modale della card (`scoredFigs`, qui sotto). Non è più un numero mostrato,
-  // quindi la sua definizione larga non dice più niente di sbagliato a chi legge la card.
-  // La v6.429 aveva già scritto che le due domande non devono condividere una variabile, e
-  // aveva ragione: è per questo che qui si toglie il conteggio e non `figs`.
+  // 🗑️ v7.195 (Franco: «Sia desktop che mobile : togliamo il punteggio sulle card delle serie») - VIA `figs`,
+  //    `scoredFigs` e `modeScoreHTML`: `figs` serviva solo al punteggio modale della card (v6.506), e con lui se ne va
+  //    anche `_puntSuAnno` (v6.433, il punteggio sulla riga dell'anno del telefono).
   // 🗑️ v6.506 — VIA `figsConteggio` (v6.429), e NON è una revoca: la sua regola resta, e
   // resta nella stessa funzione condivisa. Cambia che il conto non è più uno solo su un
   // mucchio unico, quindi lo scarto si applica dentro il giro, una volta per sezione.
@@ -49763,27 +49841,14 @@ function seriesCardHTML(s) {
   // ciò che chiude la v6.507 scrivendo accanto al numero «(+ M errori di stampa)» — negli
   // stessi due posti. Questa release spezza il conto, quella lo spiega.
   const desc = _descSerie(s);
-  // Calculate mode score (most common score > 0)
-  let modeScoreHTML = '';
-  const scoredFigs = figs.filter(f => f.score && f.score > 0);
-  if (scoredFigs.length) {
-    const freq = {};
-    scoredFigs.forEach(f => { freq[f.score] = (freq[f.score] || 0) + 1; });
-    const modeScore = Object.entries(freq).sort((a,b) => b[1]-a[1])[0][0];
-    modeScoreHTML = `<span style="font-size:0.78rem;color:var(--accent);font-family:var(--font-ui);">⭐ ${_codaPunti(modeScore)}</span>`;
-  }
-  // 🆕 v6.433 (Franco) - SU TELEFONO IL PUNTEGGIO STA SULLA RIGA DELL'ANNO, A DESTRA.
-  // Franco: *"nel mobile, sulla card della serie, il punteggio mettilo sulla riga dell'anno, a dx"*.
-  // Prima stava accanto al BLOCCO nome+anno, centrato sui due: su telefono, con `flex-wrap`, andava
-  // a capo per conto suo e la testata diventava di tre righe.
-  // 🔴 LE CONDIZIONI SONO TRE E STANNO IN UNA RIGA SOLA, perche' due delle tre sono ripieghi che
-  // non si vedono provando col telefono su una serie qualunque:
-  //   · `_isMobileViewport()` - sul desktop non cambia niente, non e' stato chiesto;
-  //   · `modeScoreHTML` - una serie senza punteggi non ha nessuna coda da mettere;
-  //   · `s.year` - 🔴 SENZA ANNO NON C'E' NESSUNA RIGA DELL'ANNO. In quel caso il punteggio resta
-  //     dov'era: far comparire una riga vuota solo per reggerlo sarebbe una riga che non dice
-  //     niente. Deciso prima di scrivere, non scoperto dopo.
-  const _puntSuAnno = _isMobileViewport() && !!modeScoreHTML && !!(s && s.year);
+  // 🆕 v7.195 (Franco: «Da mobile … è possibile collassare le numeriche con un collassatore? Lo terrei di default
+  //    chiuso, con la etichetta "Numeriche"»; «devono aprirsi tutte e chiudersi tutte quando ne si tocca anche solo
+  //    una») - SOLO SUL TELEFONO i contatori stanno sotto la riga «Numeriche ▸», chiusa. Lo stato e' uno per tutte
+  //    le card (`_numericheCardAperte`), e il tocco non apre la serie.
+  const _chiudibili = _isMobileViewport();
+  // 🆕 v7.195 (Franco: «Da mobile: nella card delle serie, "figurine per album" diventa "figurine album"»; «sempre
+  //    Figurine album», anche quando e' una) - il nome corto dei numeroni della home (`tdaMob.attaccare`).
+  const _nomeBadge = (sez, n) => (_chiudibili && sez === 'attaccare') ? t('tdaMob.attaccare') : _nomeSezioneCard(sez, n);
   // 🆕 v6.587 - se la serie e' in costruzione la card non si apre (per chi non e' admin).
   // ⚠️ Il `cursor:default` si scrive IN LINEA e non si tocca `.card` nel foglio: quella classe la
   // usano decine di card che devono restare cliccabili. Uno stile in linea vince senza rompere
@@ -49801,18 +49866,18 @@ function seriesCardHTML(s) {
     </div>
     <div class="card-body">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
-        <div class="card-title" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.15rem;flex-wrap:wrap;margin-bottom:0;${_puntSuAnno ? 'flex:1;min-width:0;' : ''}"><span style="color:var(--nome-entita);">${esc(_nomeSerieCard(s))}</span>${_annoSottoNome(s, _puntSuAnno ? modeScoreHTML : '')}</div>
-        ${_puntSuAnno ? '' : (modeScoreHTML || '')}
+        <div class="card-title" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.15rem;flex-wrap:wrap;margin-bottom:0;"><span style="color:var(--nome-entita);">${esc(_nomeSerieCard(s))}</span>${_annoSottoNome(s, '')}</div>
       </div>
       <div class="card-desc">${(desc||'').substring(0,90)}${(desc||'').length>90?'…':''}</div>
-      <div class="card-meta">
+      ${_chiudibili ? `<div class="card-numeriche-testa" onclick="_toggleNumericheCard(event)" style="cursor:pointer;font-family:var(--font-ui);font-size:0.82rem;color:var(--info);margin-top:0.4rem;user-select:none;">${currentLang === 'it' ? 'Numeriche' : 'Counts'} <span class="card-numeriche-freccia">${_numericheCardAperte ? '▾' : '▸'}</span></div>` : ''}
+      <div class="card-meta"${(_chiudibili && !_numericheCardAperte) ? ' style="display:none;"' : ''}>
         ${/* 🆕 v6.670 - LA FORMA E' QUELLA DI `_retroCatPanelHTML`: il gruppo e' una colonna,
                il padre sopra e i figli in una fila rientrata. 📌 Il gruppo va a capo INTERO,
                quindi un figlio non si stacca mai dal suo padre quando la fila si accoda. */''}
         ${/* 🆕 v7.191 (Franco: «nella versione mobile, nel caso di fpa e fcr, scrivi tutto il nome della tda sotto al
                numero: invece che "256 Figurine" e poi "per album" a capo, abbiamo "256" e poi, a capo, "Figurine per
                album"») - sul telefono il nome lungo andava a capo a metà; ora il numero ha la sua riga. */''}
-        ${_conteggiSezione.map(([sez, n, sotto]) => `<div class="card-gruppo"><span class="card-badge">${n}${(_isMobileViewport() && (sez === 'figurines' || sez === 'attaccare')) ? '<br><span style="white-space:nowrap;">' + _nomeSezioneCard(sez, n) + '</span>' : ' ' + _nomeSezioneCard(sez, n)}</span>${sotto.length ? `<div class="card-sotto">${sotto.map(([v, sn]) => `<span class="card-badge-sotto">${sn} ${esc(_etichettaSottoserie(v))}</span>`).join('')}</div>` : ''}</div>`).join('')}
+        ${_conteggiSezione.map(([sez, n, sotto]) => `<div class="card-gruppo"><span class="card-badge">${n}${(_isMobileViewport() && (sez === 'figurines' || sez === 'attaccare')) ? '<br><span style="white-space:nowrap;">' + _nomeBadge(sez, n) + '</span>' : ' ' + _nomeBadge(sez, n)}</span>${sotto.length ? `<div class="card-sotto">${sotto.map(([v, sn]) => `<span class="card-badge-sotto">${sn} ${esc(typeof _etichettaSottoserieDi === 'function' ? _etichettaSottoserieDi(v, sez) : _etichettaSottoserie(v))}</span>`).join('')}</div>` : ''}</div>`).join('')}
       </div>
     </div>
   </div>`;
@@ -51548,7 +51613,7 @@ function _blocchiHub(cats, sezRows, _pfx, BULLET, colonna) {
     gruppi.forEach(v => {
       const qui = items.filter(f => String(f.subseries || '').trim() === v);
       if (!qui.length) return;
-      sotto.push(cella(nome(_etichettaSottoserie(v)),
+      sotto.push(cella(nome(typeof _etichettaSottoserieDi === 'function' ? _etichettaSottoserieDi(v, c) : _etichettaSottoserie(v)),
         [colonna(BULLET, qui, '', false, true, COL_CATEGORIA)]));
     });
     // la riga della tipologia resta solo se dice qualcosa in piu' della somma delle sue sottoserie
@@ -52203,7 +52268,7 @@ function _disegnaNavSezione() {
       const img = (sub ? _fotoSottoserie(s, sub) : _fotoSezioneSerie(sez)) || '';
       return { sez, sub, img, nome: sub || getSectionLabel(sez) };
     }).filter(Boolean);
-  const qui = voci.findIndex(v => v.sez === currentSection && v.sub === ((typeof _sottoserieAttiva === 'string' && _sottoserieAttiva) || ''));
+  const qui = voci.findIndex(v => v.sez === currentSection && v.sub === (typeof _sottoserieDiPagina === 'function' ? _sottoserieDiPagina() : ((typeof _sottoserieAttiva === 'string' && _sottoserieAttiva) || '')));   // v7.195: il tab dei retro non e' una card
   if (qui < 0) return;
   const prec = voci[qui - 1] || null, succ = voci[qui + 1] || null;
   const it = currentLang === 'it';
@@ -52515,7 +52580,8 @@ function updateSectionCounts() {
     //    `_resto` e' `items`: la card non cambia di una virgola.
     // 🔄 v6.964 - dove le sottoserie stanno DENTRO la griglia (`_sottoserieInGriglia`), la card
     //    della sezione le conta tutte: non ci sono card di sottoserie a cui cederle.
-    const _gruppi = _sottoserieInGriglia(sec) ? [] : _sottoserieUsate(_serie, items).filter(v => v);
+    // 🔄 v7.195 - e nemmeno dove stanno nei TAB (i retro): la card della sezione e' una sola e le conta tutte.
+    const _gruppi = (_sottoserieInGriglia(sec) || (typeof _sottoserieInTab === 'function' && _sottoserieInTab(sec))) ? [] : _sottoserieUsate(_serie, items).filter(v => v);
     const _resto = _gruppi.length
       ? items.filter(f => !_gruppi.includes(String(f.subseries || '').trim()))
       : items;
@@ -52607,6 +52673,8 @@ function _rendiCardSottoserie() {
     if (!_tipologiaAmmessa(sec, currentSeriesId)) return;
     // 🔄 v6.964 - niente card di sottoserie per le tipologie che le mostrano nella griglia.
     if (_sottoserieInGriglia(sec)) return;
+    // 🔄 v7.195 (Franco: «mai detto di si ad un altro bottone a quel livello») - e nemmeno per quelle che stanno nei tab.
+    if (typeof _sottoserieInTab === 'function' && _sottoserieInTab(sec)) return;
     const items = tutti.filter(f => (f.section || 'figurines') === sec);
     const gruppi = _sottoserieUsate(s, items).filter(v => v);
     if (!gruppi.length) return;
@@ -52870,6 +52938,33 @@ function _scriviTitoloSezione(testo) {
   el.style.display = 'none';
 }
 
+// 🆕 v7.195 (Franco: «un solo bottone, Retro / e dentro 2 tab: Retro e Retro non standard») - I TAB DELLE SOTTOSERIE
+//    DI RETRO, sopra la griglia. Il vuoto non e' il «Set principale», e' la tipologia stessa: «Retro».
+// 🔴 Il nome viaggia in un `data-`, non dentro l'onclick: una sottoserie puo' avere un apostrofo (v6.682).
+function _rendiTabSottoserie() {
+  const el = document.getElementById('sottoserie-tab');
+  if (!el) return;
+  const gruppi = (currentSection && _sottoserieInTab(currentSection)) ? _sottoserieDellaSezione() : [];
+  if (gruppi.length < 2) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = 'flex';
+  el.innerHTML = gruppi.map(v => {
+    const attivo = (_sottoserieAttiva || '') === v;
+    return '<button type="button" data-sottoserie="' + esc(v) + '" onclick="scegliTabSottoserie(this)" style="font-family:var(--font-ui);font-size:0.9rem;padding:0.35rem 1rem;border-radius:10px;cursor:pointer;border:1px solid '
+      + (attivo ? 'var(--accent)' : 'var(--border)') + ';background:' + (attivo ? 'var(--accent)' : 'var(--card)') + ';color:'
+      + (attivo ? 'var(--bg)' : 'var(--text)') + ';font-weight:' + (attivo ? '700' : '400') + ';">' + esc(_etichettaSottoserieDi(v, currentSection)) + '</button>';
+  }).join('');
+}
+function scegliTabSottoserie(btn) {
+  if (!btn) return;
+  _sottoserieAttiva = btn.getAttribute('data-sottoserie') || '';
+  currentItemPage = 1;
+  const _s = getData('series', []).find(x => x.id === currentSeriesId);
+  if (_s) renderSeriesMeta(_s);
+  _rendiTabSottoserie();
+  renderItems();
+  try { renderCaroselloSezione(); } catch (e) { console.error('renderCaroselloSezione', e); }
+}
+
 // 🔄 v6.869 - entrando in una sezione il pulsante cambia lato (vedi `_mostraSfogliaAlbum`), quindi
 // si ridisegna anche qui: la testata resta a schermo, ma la domanda «in che sezione sono» cambia.
 function openSeriesSection(section, sottoserie) {
@@ -52985,7 +53080,7 @@ function openSeriesSection(section, sottoserie) {
     if (_tipoProdottoCorrente) {
       _btnIndietro.removeAttribute('data-i18n');
       _btnIndietro.textContent = _it ? 'Inventario' : 'Inventory';
-    } else if (_sottoserieAttiva) {
+    } else if (typeof _sottoserieDiPagina === 'function' ? _sottoserieDiPagina() : _sottoserieAttiva) {   // v7.195: dentro un tab dei retro si torna alle Sezioni
       _btnIndietro.setAttribute('data-i18n', 'catalog.backToSeries');
       _btnIndietro.textContent = _it ? 'Serie' : 'Series';
     } else {
@@ -53064,6 +53159,7 @@ function openSeriesSection(section, sottoserie) {
   //    non l'ha visto. Un'ancora posizionale nasconde tanto quanto raccoglie.
   // ✅ Adesso scrive solo `aggiornaTestiRicercaSezione`, e sa fare tutti e due i casi:
   //    dentro un box il singolare del TIPO (v6.164), fuori il singolare dell'ARTICOLO.
+  try { _rendiTabSottoserie(); } catch (e) { console.error('_rendiTabSottoserie', e); }   // v7.195 - i tab dei retro
   renderItems();
   try { renderCaroselloSezione(); } catch (e) { console.error('renderCaroselloSezione', e); }   // v6.984
   // Show WIP banner if less than 50% of stickers have photos
@@ -53239,7 +53335,7 @@ function _vestiTestataPerSezione(s) {
   _vestiTitoloTestata(s, tda);
   const foto = tda
     ? _fotoBoxUrl(tda.id)
-    : (_sottoserieAttiva ? _fotoSottoserie(s, _sottoserieAttiva) : _fotoSezioneSerie(currentSection));
+    : ((typeof _sottoserieDiPagina === 'function' ? _sottoserieDiPagina() : _sottoserieAttiva) ? _fotoSottoserie(s, _sottoserieAttiva) : _fotoSezioneSerie(currentSection));   // v7.195
   // 🆕 v6.720 - la foto di una sottoserie si vede INTERA, come sulla card da cui si e' entrati
   //    (Franco: «e' tagliata»). La classe si toglie uscendo, qui sopra: e' lo stesso gesto che
   //    rimette la copertina della serie, che invece il ritaglio lo vuole.
@@ -53285,7 +53381,7 @@ function _vestiTestataPerSezione(s) {
     // 📌 La stringa vuota non e' una sottoserie (v6.729): li' la riga resta il nome della
     //    tipologia, com'e' sempre stata. E `_codaSottoserie()` non se ne va - la usa ancora il
     //    sottotitolo della ricerca di sezione, che quella coda la vuole attaccata alla tipologia.
-    if (_sottoserieAttiva) {
+    if (typeof _sottoserieDiPagina === 'function' ? _sottoserieDiPagina() : _sottoserieAttiva) {   // v7.195: il tab dei retro non cambia la testata
       const etichetta = _parolaSottoserie();   // v6.781 - la parola sta in un posto solo
       const coda = _sottoserieInUnaSolaTDA(currentSeriesId)
         ? _sottoserieAttiva
@@ -65808,7 +65904,11 @@ function switchToEditMode(figId) {
   // Sottoserie (solo se la serie ha hasSubseries)
   // 🔄 v7.082 (Franco: «togli il campo Sottoserie dalla form dell'album; non ha senso») - mai sugli
   //    album. Nessun album oggi ne ha una (misurato), quindi il salvataggio senza il campo non perde niente.
-  if (figSeries?.hasSubseries && f.section !== 'albums') {
+  // 🔄 v7.195 - per i retro decide «Ha sottoserie di retro», e la tendina offre il loro elenco.
+  // 🔴 Senza questa riga, spenta «Ha sottoserie», un retro salvato perderebbe la sua: il salvataggio scrive '' dove la
+  //    tendina non c'e'.
+  const _ssCampo = _sottoserieInTab(f.section || 'figurines') ? figSeries?.hasRetroSubseries : figSeries?.hasSubseries;
+  if (_ssCampo && f.section !== 'albums') {
     // 🔄 v6.656 - DA CASELLA DI TESTO A TENDINA. Il testo libero faceva tre danni in uno:
     //    non diceva quali sottoserie esistono, accettava un refuso che diventa un tab
     //    fantasma, e - il sospetto di Franco - si lasciava riempire dal browser.
@@ -65829,7 +65929,7 @@ function switchToEditMode(figId) {
           ? 'La copia resta nella sottoserie dell\'articolo di partenza.'
           : 'The copy stays in the source item\'s subseries.') + '" ' : '')
       + 'style="padding:0.3rem 0.5rem;font-size:0.9rem;' + (_ssBloc ? 'opacity:0.55;' : '') + '">'
-      + _opzioniSottoserie(f.seriesId || currentSeriesId, f.subseries) + '</select></span></div>';
+      + _opzioniSottoserie(f.seriesId || currentSeriesId, f.subseries, f.section || 'figurines') + '</select></span></div>';
   }
 
 
@@ -77561,7 +77661,7 @@ function _massivoAggiornaValori() {
   //    e' un'altra: «a quale sottoserie voglio spostarli?», e la risposta puo' essere una che
   //    oggi e' vuota. E' proprio il caso del 9 settembre.
   if (c.sottoserie) {
-    const _dich = _sottoserieSerie(getData('series', []).find(x => x.id === currentSeriesId));
+    const _dich = _sottoserieDichiarate(getData('series', []).find(x => x.id === currentSeriesId), currentSection);   // v7.195: nei retro il loro elenco
     box.innerHTML = _dich.length
       ? '<select id="massivo-valore" class="form-input" style="min-width:200px;">'
         + _dich.map(x => '<option value="' + esc(x) + '">' + esc(x) + '</option>').join('')
