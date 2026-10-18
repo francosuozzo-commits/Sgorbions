@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.196 - Modificati js/app.js e index.html (per la versione). Numeriche della sezione, «Numeri per sottoserie»: nei
+//          retro il gruppo senza sottoserie si chiama «Retro», come il suo tab, e non «Set principale».
 // v7.195 - Modificati js/app.js e index.html. Home, nota (Franco): «NOTE:» e testo nuovo, IT e EN. Card delle serie: via
 //          il punteggio ⭐ (desktop e telefono); sul telefono «Figurine album» e le numeriche sotto «Numeriche ▸», chiuse,
 //          che si aprono e chiudono tutte insieme (`_numericheCardAperte`, `_toggleNumericheCard`). SOTTOSERIE DI RETRO
@@ -31396,7 +31398,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.195';
+const JS_VERSION = 'v7.196';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -51947,6 +51949,9 @@ function renderSeriesMeta(s) {
     //    somma dei figli che non torna col totale, nella stessa riga, e' il §12-bis.
     // 🔄 v6.676 - LE SOTTOSERIE SONO USCITE DA QUI e sono diventate un blocco suo, dopo il
     //    totale. Vedi in fondo a questa funzione: la riga di sopra torna quella classica.
+    // 🆕 v7.196 - nei retro il gruppo senza sottoserie si chiama «Retro», come il suo tab (non «Set principale»)
+    const _sezG = (g.items[0] && g.items[0].section) || 'figurines';
+    const _etiG = v => typeof _etichettaSottoserieDi === 'function' ? _etichettaSottoserieDi(v, _sezG) : _etichettaSottoserie(v);
     const _righeSotto = _sottoserieUsate(s, g.items).map(v => {
       const _qui = g.items.filter(f => String(f.subseries || '').trim() === v);
       // 🔄 v6.675 (Franco) - «sottoserie <nome>: <n>», e ognuna su una riga sua.
@@ -51968,7 +51973,7 @@ function renderSeriesMeta(s) {
       //    sopravviveva proprio perche' le sottoserie non spacchettavano. Adesso e' la somma di
       //    quelle che le stanno sotto, e se ne va da se'. Era scritto allora.
       if (_qui.length) {
-        const _capo = colonna(BULLET, _qui, _etichettaSottoserie(v),
+        const _capo = colonna(BULLET, _qui, _etiG(v),
           false, nm.f, COL_CATEGORIA, true, true);
         const _gv = _dividiPerVersione(_qui);
         const _altre = _gv.variation.length + _gv.unofficial.length + _gv.change.length
@@ -51992,7 +51997,7 @@ function renderSeriesMeta(s) {
         return _capo + '<div style="display:flex;flex-wrap:wrap;gap:0.2rem 1rem;'
           + 'padding-left:1.1rem;flex-basis:100%;">' + _pezzi.join('') + '</div>';
       }
-      return _qui.length ? colonna(BULLET, _qui, _etichettaSottoserie(v),
+      return _qui.length ? colonna(BULLET, _qui, _etiG(v),
         false, nm.f, COL_CATEGORIA, true, true) : '';
     }).filter(Boolean);
     // 🔄 v6.671 (Franco: *"non mostrare una etichetta se il suo contatore e' zero"*) - VIA
