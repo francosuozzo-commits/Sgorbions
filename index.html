@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.194">
+<link rel="stylesheet" href="css/style.css?v=7.195">
 
 
 <style>
@@ -2879,7 +2879,7 @@ button.back-btn { color:#ffffff; }
          apposta, e il grigio delle note a margine lo trattava come una postilla da saltare. Il
          «NOTA:» resta lime, che e' il richiamo, e il testo diventa leggibile come il resto. -->
     <div style="font-size:0.88rem;font-family:var(--font-body);color:var(--text);text-align:left;background:rgba(255,255,255,0.04);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:1rem 1.25rem;">
-      <span data-i18n-html="hero.nota"><strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra persone.<br>Il sito vuole mettere i collezionisti di tutto il mondo in contatto tra loro, e consentirgli di cercare materiale non in loro possesso, tramite scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell'amministratore, e non pretendono di essere un'informazione ufficiale.</span>
+      <span data-i18n-html="hero.nota"><strong style="color:var(--accent);">NOTE:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra persone.<br>Vuole mettere i collezionisti in contatto tra loro, e consentirgli di cercare materiale non in loro possesso, tramite scambi.<br><br>Le informazioni qui contenute rappresentano la conoscenza dell'amministratore; non pretendono di essere informazione ufficiale.</span>
     </div>
   </div>
   </div><!-- end home-logged-in-content -->
@@ -3601,6 +3601,8 @@ di tutte le serie</button>
         </select>
       </div>
     </div>
+    <!-- 🆕 v7.195 - i tab delle sottoserie di retro («Retro» / «Retro non standard»): li disegna `_rendiTabSottoserie` -->
+    <div id="sottoserie-tab" style="display:none;flex-wrap:wrap;gap:0.5rem;margin:0.4rem 0 0.8rem;"></div>
     <div id="items-pagination-top"></div>
     <div class="grid-6" id="items-grid">
       <div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora !</p></div>
@@ -5654,6 +5656,16 @@ di tutte le serie</button>
       <details class="series-sezione">
       <summary class="series-sottotitolo" style="margin-top:1.1rem;">Retro</summary>
       <div class="form-hint" style="margin-bottom:0.35rem;">Le versioni che questa serie ha sui retro, e i tipi che le loro tendine offrono.</div>
+      <!-- 🆕 v7.195 (Franco: «avremmo quindi il campo "Ha sottoserie" e "Ha sottoserie di retro"; quest'ultimo campo lo
+           metti nella sezione Retro») - le sottoserie dei retro: un tab ciascuna dentro la sezione Retro, nessuna card. -->
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;margin-bottom:0.4rem;" class="form-label">
+        <input type="checkbox" id="series-retro-subseries-flag" onchange="_aggiornaCasellaSottoserieRetro()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+        <span>Ha sottoserie di retro</span>
+      </label>
+      <div class="form-group" id="series-retro-subseries-group" style="display:none;margin-bottom:0.6rem;">
+        <label class="form-label">Sottoserie di retro (una per riga)</label>
+        <textarea class="form-input" id="series-retro-subseries-input" rows="3" style="resize:vertical;font-family:inherit;"></textarea>
+      </div>
       <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <!-- 🆕 v7.192 (Franco: «abilita le variazioni ai retro») - prima del change, come nelle figurine -->
         <div class="series-flag-riga">
@@ -6717,7 +6729,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.194"></script>
+<script src="js/app.js?v=7.195"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6741,7 +6753,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.194'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.195'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
