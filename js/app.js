@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.194 - Modificati js/app.js e index.html (per la versione). Liste, EXPORT 1: le serie in cui la lista non ha
+//          nessun articolo nascono con «Escludi serie da export» spuntata (`_esclusaDaMancolista`); la scelta salvata vince.
 // v7.193 - Modificati js/app.js e index.html (per la versione). Admin console, tab Serie: le colonne sì/no scrivono
 //          tutte «Sì» (era «SI» o la ✗).
 // v7.192 - Modificati js/app.js e index.html (per la versione). Personaggi, il filtro «Senza figurine» si chiama
@@ -31386,7 +31388,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.193';
+const JS_VERSION = 'v7.194';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -78825,6 +78827,22 @@ function _articoliCompletezza(s) {
 // ⚠️ `s` e' la SERIE dell'articolo, non una serie qualsiasi: chi chiama deve passarla, o la
 // domanda torna a essere globale ed e' come non aver fatto niente.
 function _contaPerCompletezza(f, s) { return _articoliCompletezza(s).includes(f.section || 'figurines'); }
+
+// 🆕 v7.194 (Franco: «le serie delle quali non ho nulla - nemmeno un articolo - siano automaticamente escluse
+//    dall'export, ovvero che sia gia spuntata la spunta "Escludi serie da export"») - EXPORT 1, LA SPUNTA HA UN
+//    DEFAULT. Le serie in cui la lista non ha nessun articolo (nessuna tipologia, nessuna versione) nascono escluse.
+// 📌 LA SCELTA SALVATA VINCE: `excludeMissing` scritto true o false resta quello. Solo chi non l'ha mai toccata
+//    segue la regola, e quindi rientra da sola appena mette in lista un articolo di quella serie.
+// ⚠️ La domanda la fanno in due, la pagina e il file: stanno qui insieme perche' non rispondano diversamente.
+function _serieConArticoliInLista(allFigs, owned) {
+  const ids = new Set(owned);
+  return new Set(allFigs.filter(f => ids.has(f.id)).map(f => f.seriesId));
+}
+function _esclusaDaMancolista(seriesId, conArticoli) {
+  const p = getWantlistPrefs()[seriesId];
+  if (p && typeof p.excludeMissing === 'boolean') return p.excludeMissing;
+  return !conArticoli.has(seriesId);
+}
 function renderWantlist() {
   if (!currentUser) { showPage('home'); return; }
   const el = document.getElementById('wantlist-content');
@@ -78837,6 +78855,7 @@ function renderWantlist() {
   // che le Liste avevano per se' era diventata identica a quella, cioe' la seconda copia.
   const allFigs = _articoliDaContareSito();
   const owned = getOwned();
+  const _conArticoli = _serieConArticoliInLista(allFigs, owned);   // v7.194
   // Le numeriche di default considerano solo le figurine base (non variazioni/change);
   // le variazioni/change sono incluse nell'export solo se l'utente attiva l'opzione dedicata
   const isBaseItem = isBaseFigurine;
@@ -78964,7 +78983,7 @@ function renderWantlist() {
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;">
       ${(() => {
         const prefs = getWantlistPrefs();
-        const excMissing = prefs[sId]?.excludeMissing || false;
+        const excMissing = _esclusaDaMancolista(sId, _conArticoli);   // v7.194: prima solo la scelta salvata
         const _verExp = _versioniExport(sId);   // v6.284 - cinque, non una
         return `
         <!-- v5.962 — RIGA 1: solo freccia, nome e badge. Le due spunte sono scese alla riga 2,
@@ -78997,7 +79016,7 @@ function renderWantlist() {
         </div>
         `;
       })()}
-      ${(() => { if (_wantlistCollapsed[sId] !== false) return ''; const prefs = getWantlistPrefs(); if (prefs[sId]?.excludeMissing) return '<p style="color:var(--muted);font-size:0.82rem;font-style:italic;">' + (currentLang === 'it' ? 'Esclusa dalla mancolista.' : 'Excluded from missing list.') + '</p>'; const sectionOrder = PRODOTTI_INVENTARIO /* v6.801: era un TERZO elenco a cinque nomi, nella stessa funzione dell'altro */; return Object.entries(bySection).sort(([secA], [secB]) => sectionOrder.indexOf(secA) - sectionOrder.indexOf(secB)).map(([sec, items]) => {
+      ${(() => { if (_wantlistCollapsed[sId] !== false) return ''; if (_esclusaDaMancolista(sId, _conArticoli)) return '<p style="color:var(--muted);font-size:0.82rem;font-style:italic;">' + (currentLang === 'it' ? 'Esclusa dalla mancolista.' : 'Excluded from missing list.') + '</p>'; const sectionOrder = PRODOTTI_INVENTARIO /* v6.801: era un TERZO elenco a cinque nomi, nella stessa funzione dell'altro */; return Object.entries(bySection).sort(([secA], [secB]) => sectionOrder.indexOf(secA) - sectionOrder.indexOf(secB)).map(([sec, items]) => {
         const groupKey = sId + '_' + sec;
         const mode = wantlistMode[groupKey] || 'both';
         const hasNumbers = items.some(f => f.number);
@@ -79187,8 +79206,10 @@ function _prefSerie(prefs, seriesId) {
 async function toggleWantlistExclude(seriesId) {
   if (!currentUser) return;
   const prefs = getWantlistPrefs();
+  // 🔄 v7.194 - si parte da cio' che si VEDE: una spunta accesa dal default, cliccata, va spenta.
+  const vista = _esclusaDaMancolista(seriesId, _serieConArticoliInLista(_articoliDaContareSito(), getOwned()));
   const p = _prefSerie(prefs, seriesId);
-  p.excludeMissing = !p.excludeMissing;
+  p.excludeMissing = !vista;
   await _salvaWantlistPrefs(prefs);
 }
 
@@ -79405,10 +79426,10 @@ async function _exportWantlistImpl() {
 
   const rows = [_INTESTAZIONE_EXPORT()];   // v6.285 - era la stessa riga scritta in tre export
 
-  const prefs2 = getWantlistPrefs();
+  const _conArticoli = _serieConArticoliInLista(allFigs, owned);   // v7.194
   const bySeries = {};
   missing.forEach(f => {
-    if (prefs2[f.seriesId]?.excludeMissing) return; // excluded
+    if (_esclusaDaMancolista(f.seriesId, _conArticoli)) return; // excluded
     // 🔴 v6.284 - QUI STAVA UNA TERNA. Diceva `isVariation || isUnofficialVariation || isChange`,
     // quindi errori di stampa e omaggi non erano "variant" e passavano SEMPRE, spunta o no. Adesso
     // si chiede all'elenco quale versione ha questo oggetto e si guarda la SUA spunta: cinque
