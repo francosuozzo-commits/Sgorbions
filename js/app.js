@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.197 - Modificati js/app.js e index.html (per la versione). Cloudinary sospeso: se il logo non arriva (sonda con
+//          `?sonda=`, che salta la memoria del browser), striscia «foto temporaneamente non disponibili» sotto la navbar e
+//          ogni foto di Cloudinary rotta diventa il riquadro «Foto non disponibile» (`_cldAccendiAvviso`). Si spegne da sola.
 // v7.196 - Modificati js/app.js e index.html (per la versione). Numeriche della sezione, «Numeri per sottoserie»: nei
 //          retro il gruppo senza sottoserie si chiama «Retro», come il suo tab, e non «Set principale».
 // v7.195 - Modificati js/app.js e index.html. Home, nota (Franco): «NOTE:» e testo nuovo, IT e EN. Card delle serie: via
@@ -31398,7 +31401,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.196';
+const JS_VERSION = 'v7.197';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33179,6 +33182,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
+'cld.down':'⚠️ Photos are temporarily unavailable due to technical maintenance. The catalogue is still available.','cld.fotoNo':'Photo unavailable',
     'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Export lists','nav.questionarioBreve':'Questionnaire<br>and <em>my list</em>','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory !','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','sfoglia.prima':'First page','sfoglia.ultima':'Last page','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
@@ -33268,6 +33272,7 @@ const i18n = {
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with backs) and cards in your list (complete series)','wantlist.pageTitle':'Export lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in your list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in your list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
+'cld.down':'⚠️ Le foto sono temporaneamente non disponibili per un intervento tecnico. Il catalogo resta consultabile.','cld.fotoNo':'Foto non disponibile',
 'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Export liste','nav.questionarioBreve':'Questionario<br>e <em>mia lista</em>','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions !','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca nel sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','sfoglia.prima':'Prima pagina','sfoglia.ultima':'Ultima pagina','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
@@ -79612,6 +79617,57 @@ if (appVerMobEl) appVerMobEl.textContent = JS_VERSION;
 });
 const cssVerEl = document.getElementById('nav-css-version');
 if (cssVerEl) cssVerEl.textContent = CSS_VERSION;
+
+// 🆕 v7.197 (Franco, 19 ottobre: «possiamo mettere il sito under maintenance nel mentre che
+//    risolviamo il pb?», poi la strada A: avviso, sito aperto) - QUANDO CLOUDINARY NON RISPONDE,
+//    LO DICE IL SITO. Account sospeso dal 19 ottobre: ogni foto risponde 401.
+// 📌 SI ACCENDE E SI SPEGNE DA SOLA, senza interruttore: all'apertura si chiede il logo della
+//    navbar (h_72, in WebP come tutto il sito dalla v7.190: una versione sola, fatta una volta). Se non arriva,
+//    sotto la navbar compare la striscia e ogni foto di Cloudinary rotta diventa il riquadro
+//    «Foto non disponibile». Quando Cloudinary torna, il logo arriva e non succede niente.
+// 🔴 LA MEMORIA DEL BROWSER INGANNA: chi ha gia' visto una foto la vede ancora (19 ottobre, home
+//    di Franco: 23 foto su 31 dalla memoria, Cloudinary spento). Per questo la sonda porta un
+//    `?sonda=` sempre diverso, che Cloudinary ignora ma che il browser non trova in memoria.
+// ⚠️ La striscia sta dentro #construction-banner (sticky sotto la navbar): app.js ne legge
+//    l'offsetHeight per gli scroll, quindi la sua altezza entra nel calcolo da sola.
+let _cldGiu = false;
+function _riquadroFotoNo() {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">' +
+    '<rect width="400" height="400" fill="#2a2438"/>' +
+    '<text x="200" y="208" font-family="sans-serif" font-size="30" fill="#c8c0d8" text-anchor="middle">' +
+    t('cld.fotoNo') + '</text></svg>';
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+function _cldSostituisci(img) {
+  if (!img || img.dataset.cldNo || !/res\.cloudinary\.com/.test(img.currentSrc || img.src || '')) return;
+  img.dataset.cldNo = '1';
+  img.removeAttribute('srcset');
+  img.src = _riquadroFotoNo();
+}
+function _cldAccendiAvviso() {
+  if (_cldGiu) return;
+  _cldGiu = true;
+  const cont = document.getElementById('construction-banner');
+  if (cont && !document.getElementById('cld-avviso')) {
+    const d = document.createElement('div');
+    d.id = 'cld-avviso';
+    d.dataset.i18n = 'cld.down';
+    d.textContent = t('cld.down');
+    d.style.cssText = 'background:#ffcc33;color:#1a1a1a;text-align:center;padding:6px 12px;font-size:0.9rem;font-weight:600;line-height:1.35;';
+    cont.appendChild(d);
+  }
+  document.querySelectorAll('img').forEach(img => { if (img.complete && img.naturalWidth === 0) _cldSostituisci(img); });
+}
+// le foto che si rompono DOPO la sonda: l'errore di un <img> non sale, si prende in cattura
+document.addEventListener('error', e => {
+  if (_cldGiu && e.target && e.target.tagName === 'IMG') _cldSostituisci(e.target);
+}, true);
+(function _sondaCloudinary() {
+  const s = new Image();
+  s.onerror = _cldAccendiAvviso;
+  s.src = 'https://res.cloudinary.com/ddpsge9d8/image/upload/' + _formatoUnico('h_72,q_auto,f_auto') + '/sgorbions_xwmoig?sonda=' + Date.now();
+})();
+
 initFirebase().catch(e => {
   // v6.108 - niente piu' dati demo, e niente `renderAll()` su un catalogo vuoto: disegnare la
   // pagina senza dati la fa sembrare una collezione che non c'e'.
