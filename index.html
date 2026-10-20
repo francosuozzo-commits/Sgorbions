@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.199">
+<link rel="stylesheet" href="css/style.css?v=7.200">
 
 
 <style>
@@ -5113,6 +5113,12 @@ di tutte le serie</button>
             <label class="form-label">Nome album</label>
             <input class="form-input" type="text" id="series-nome-album-input" placeholder="es. Sgorbions Album 1990">
           </div>
+          <!-- 🆕 v7.200 (Franco: «aggiungi un campo, da mettere sotto ai vari campi nome, chiamato "Acronimo nome"») -
+               FACOLTATIVO come «Nome album». Su Firestore `acronimo`. Lo usa la colonna Serie degli Annunci. -->
+          <div style="margin-top:0.6rem;">
+            <label class="form-label">Acronimo nome</label>
+            <input class="form-input" type="text" id="series-acronimo-input" placeholder="es. S1">
+          </div>
         </div>
         <!-- LA COPERTINA, arrivata qui dal fondo del tab. I due pulsanti sono `display:block` e
              larghi uguali: la label del caricamento era `inline-block`, cioe' larga quanto il suo
@@ -6729,7 +6735,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.199"></script>
+<script src="js/app.js?v=7.200"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6753,7 +6759,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.199'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.200'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
