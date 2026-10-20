@@ -1,6 +1,31 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.199 - Modificati js/app.js e index.html (per la versione). ANNUNCI, IL RIQUADRO «SERIE» (Franco: «aggiungiamo un
+//          box filtri chiamato "Serie", che contiene una pillola per ogni serie del sito; usa i nomi brevi»): terzo
+//          riquadro dopo sito e account, una pillola per serie nell'ordine del sito, col nome breve; guarda `seriesId`.
+//          Solo le serie con almeno un album con le foto sue (Franco: niente Mega 1 e 2, che usano quello di Holidays).
+//          GRIGLIA (Franco: «entra in gioco la relazione con altri articoli solo se sono dello stesso tipo»):
+//          `_familyKey` non fa gruppo con un articolo di un'altra tipologia. Le fpa della serie 4 tornano in ordine di
+//          numero loro, senza buchi a fine riga.
+//          E CARD DELLE FCR CON PIÙ FPA (Franco: «i nomi delle fpa associate incolonnali (1 riga per ogni nome)»):
+//          `_nomeCardIncolonnato`, nella riga del nome della card della griglia, desktop e telefono.
+//          TAB EBAY DELL'ALBUM (Franco: «i campi ebay e Vinted devono essere read only se le foto dell'album sono meno
+//          di 25 (ebay) e 21 (vinted)»): se le pagine sono al massimo il limite del sito (`_FA_SITI`), la casella è
+//          `readonly` e dice che ci stanno tutte. TAB PAGINE (Franco: «togli quelle tendine della pagina dell'album»):
+//          via le tre tendine dello sfondo (v7.185), mai lette; il Salva svuota `sfondiFoto` dove è rimasto.
+//          SERIE 4 (Franco: «andiamo avanti con le cose che servono per la serie 4»): la Taglia delle fpa è una tendina
+//          Piccola / Media / Grande (`_TAGLIE_FPA`), nella scheda e nella vista tabellare; la tendina della tabella
+//          porta `data-id` (senza, `saveBulkCell` non salvava: valeva anche per i prodotti extra serie). Campo
+//          «N. stampato (se diverso)» sulle fpa (`numeroStampato`): scritto, la fpa e la sua fcr mostrano una «E» nel
+//          colore degli errori di stampa, col tooltip «Errore: su questa figurina è stampato il numero 8 invece del 247.»
+//          TAB EBAY DEGLI ALBUM (Franco: «aggiungere questi campi: Titolo Franco - ITA … Descrizione Lendys - ENG»): un
+//          riquadro con 6 titoli e 6 descrizioni (Franco, Fabio, Lendys × ITA, ENG), in `testiAccount`.
+//          FINESTRA DELL'ANNUNCIO (Franco: «un campo Titolo - ENG, da mettere dopo al campo Titolo, che vorrei
+//          rinominare in Titolo - ITA»): `titoloEn`, con la regola di Vinted del titolo italiano. E un pulsantino
+//          «Prendi valore» accanto a Titolo ITA/ENG e Descrizione IT/EN (`_annPrendiValore`): copia il campo omonimo
+//          di `testiAccount` dell'album scelto, per l'account dell'annuncio. In sola lettura via «Chiudi»: resta la ✕.
+//          Via il campo «Foto (zip)» dalla finestra (Franco: «cancella pure il campo»): lo zip già salvato resta nel dato.
 // v7.198 - Modificati js/app.js e index.html (per la versione). FCR DA 1, 2 O 4 FPA (serie 4; Franco: «2.B»): la fcr
 //          tiene il numero più basso, a schermo «2 - 16» dalle fpa collegate (`_numeroAschermo`: card, scheda, titolo,
 //          caroselli, RG, VT in lettura, liste ed export, eBay, questionario); la ricerca trova anche la 16. Griglia e VT:
@@ -31407,7 +31432,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.198';
+const JS_VERSION = 'v7.199';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41220,13 +41245,22 @@ function _annTitoloPerSito(sito, t) {
 //    riquadro ha la loro veste (titolo azzurro sul bordo, profilo bianco). Anche i gesti sono quelli: clic sul nome =
 //    solo questo (ripremuto, toglie il filtro), «+» = aggiungi, «−» = togli. Il numero conta gli annunci che passano
 //    l'ALTRO riquadro; a zero la pillola si spegne. Fra i due riquadri vale «e».
-const _annFiltro = { sito: new Set(), account: new Set() };
+// 🆕 v7.199 (Franco: «aggiungiamo un box filtri chiamato "Serie", che contiene una pillola per ogni serie del sito;
+//    usa i nomi brevi») - il terzo riquadro. La voce è l'id della serie (`campo` = il campo della riga da guardare,
+//    se non è la chiave del riquadro), e a schermo va il nome breve (`etichetta`), come nella colonna Serie.
+const _annFiltro = { sito: new Set(), account: new Set(), serie: new Set() };
 const _ANN_RIQUADRI = [
   { k: 'sito', it: 'Filtra per sito', en: 'Filter by site', voci: () => _FA_SITI.map(s => s.nome) },
   { k: 'account', it: 'Filtra per account', en: 'Filter by account', voci: () => _ANN_ACCOUNT },
+  // 🔄 v7.199 (Franco: «deve contare solo le serie che hanno almeno un album; per Mega 1 e 2 la pillola non dovrebbe
+  //    esserci, in quanto quelle 2 serie condividono l'album con la serie Holidays») - solo le serie con almeno un album
+  //    con le foto sue: quello di Mega 1 e Mega 2 le prende da «W gli Sgorbions» (`fotoDaAlbumId`)
+  { k: 'serie', campo: 'seriesId', it: 'Serie', en: 'Series',
+    voci: () => _annSerie().filter(s => (s.items || []).some(f => f.section === 'albums' && !f.fotoDaAlbumId)).map(s => s.id),
+    etichetta: id => { const s = _annSerie().find(x => x.id === id); return s ? _nomeSerieCard(s, true) : id; } },
 ];
 function _annPassa(r, salta) {
-  return _ANN_RIQUADRI.every(q => q.k === salta || !_annFiltro[q.k].size || _annFiltro[q.k].has(r[q.k]));
+  return _ANN_RIQUADRI.every(q => q.k === salta || !_annFiltro[q.k].size || _annFiltro[q.k].has(r[q.campo || q.k]));
 }
 function _annFiltra(k, j, aggiungi) {
   const f = _annFiltro[k], v = _ANN_RIQUADRI.find(q => q.k === k).voci()[j];   // la voce per posizione: niente apici nell'onclick
@@ -41247,7 +41281,7 @@ function _annFiltriHTML() {
     + _ANN_RIQUADRI.map(q => {
     const voci = q.voci();
     const chips = voci.map((v, j) => _chipTipoHTML({
-      etichetta: v, n: _annRighe.filter(r => _annPassa(r, q.k) && r[q.k] === v).length,
+      etichetta: q.etichetta ? q.etichetta(v) : v, n: _annRighe.filter(r => _annPassa(r, q.k) && r[q.campo || q.k] === v).length,
       attiva: _annFiltro[q.k].has(v), it,
       onSet: "_annFiltra('" + q.k + "'," + j + ",false)", onAdd: "_annFiltra('" + q.k + "'," + j + ",true)",
       titolo: it ? 'Solo questo' : 'Only this',
@@ -41448,6 +41482,22 @@ function _annApriLink(i) {
 }
 // 🆕 v7.186 (Franco: «un campo che si chiama Account, con queste opzioni: Franco, Lendys, Fabio») - chi ha messo l'annuncio
 const _ANN_ACCOUNT = ['Franco', 'Lendys', 'Fabio'];
+// 🆕 v7.199 - «Prendi valore»: il campo omonimo dell'album scelto come Articolo, per l'Account dell'annuncio (i testi
+//    del tab Ebay dell'album, `testiAccount`). Su una versione vuota si guarda la sua partenza. Se manca qualcosa non
+//    si tocca la casella: si dice cosa manca nella riga di stato della finestra.
+function _annPrendiValore(chiave, id) {
+  const it = currentLang === 'it', v = x => document.getElementById(x);
+  const stato = v('ann-stato'), dire = t => { if (stato) stato.textContent = t; };
+  const account = v('ann-account')?.value, artId = v('ann-articolo')?.value;
+  if (!account) return dire(it ? '⚠️ Scegli prima l’account.' : '⚠️ Choose the account first.');
+  const idx = _indiceArticoli(), art = artId ? idx.get(artId) : null;
+  if (!art || art.section !== 'albums') return dire(it ? '⚠️ Scegli prima l’album nel campo Articolo.' : '⚠️ Choose the album in the Item field first.');
+  const di = a => ((a && a.testiAccount || {})[account] || {})[chiave] || '';
+  const val = di(art) || (art.baseFigurineId ? di(idx.get(art.baseFigurineId)) : '');
+  if (!val) return dire(it ? '⚠️ L’album non ha questo campo scritto per ' + account + '.' : '⚠️ The album has no such field for ' + account + '.');
+  v(id).value = val;
+  dire('');
+}
 // La finestra: `i` = la riga da modificare, null = annuncio nuovo. Annulla / Salva, come le finestre gemelle.
 function _annApriFinestra(i, sola) {
   const it = currentLang === 'it';
@@ -41461,6 +41511,14 @@ function _annApriFinestra(i, sola) {
   ov.className = 'modal-overlay';
   ov.id = 'annuncio-modal';
   const lab = t => '<label class="detail-label" style="display:block;margin:0.7rem 0 0.25rem;">' + t + '</label>';
+  // 🆕 v7.199 (Franco: «accanto ai campi Titolo ITA, Titolo ENG, Descrizione ITA, Descrizione ENG, vorrei un pulsante,
+  //    piccolo, chiamato "Prendi valore" che … prende il valore nel campo omonimo dell'album collegato all'annuncio») -
+  //    l'etichetta con il pulsante a destra (`_annPrendiValore`); in sola lettura il pulsante non c'è
+  const labP = (t, chiave, id) => sola ? lab(t)
+    : '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin:0.7rem 0 0.25rem;">'
+      + '<label class="detail-label" style="display:block;margin:0;">' + t + '</label>'
+      + '<button type="button" class="btn-secondary ann-prendi" onclick="_annPrendiValore(\'' + chiave + '\',\'' + id + '\')"'
+      + ' style="font-size:0.72rem;padding:0.1rem 0.55rem;">' + (it ? 'Prendi valore' : 'Get value') + '</button></div>';
   // 🔄 v7.187 (Franco: «la form deve essere più grande e mostrare la Descrizione da sola, nella parte dx della finestra,
   //    bella lunga verso il basso») - DUE COLONNE: a sinistra i campi, a destra la sola Descrizione, alta quanto la
   //    colonna dei campi. Sul telefono tornano una sotto l'altra (`.ann-griglia`, style.css).
@@ -41496,8 +41554,11 @@ function _annApriFinestra(i, sola) {
     // v7.187 (Franco: «aggiungere un campo all'annuncio, da esporre in tabella, chiamato N, da mettere dopo Articolo»)
     + lab('N')
     + '<input id="ann-n" class="form-input" type="text" value="' + esc(r.n ?? '') + '" style="max-width:8rem;">'
-    + lab(it ? 'Titolo' : 'Title')
+    // v7.199 (Franco: «vorrei un campo Titolo - ENG, da mettere dopo al campo Titolo, che vorrei rinominare in Titolo - ITA»)
+    + labP(it ? 'Titolo - ITA' : 'Title - ITA', 'titoloIt', 'ann-titolo')
     + '<input id="ann-titolo" class="form-input" type="text" value="' + esc(r.titolo || '') + '">'
+    + labP(it ? 'Titolo - ENG' : 'Title - ENG', 'titoloEn', 'ann-titolo-en')
+    + '<input id="ann-titolo-en" class="form-input" type="text" value="' + esc(r.titoloEn || '') + '">'
     // v7.187 (Franco: «aggiungi un campo Costo nell'annuncio, mettilo prima di Prezzo»)
     // v7.191 (Franco) - Voto prima di Costo, come in tabella; frecce di 1 (`step="any"`, vedi `_annDisegna`)
     + lab(it ? 'Voto' : 'Rating')
@@ -41509,20 +41570,15 @@ function _annApriFinestra(i, sola) {
     // v7.187 (Franco) - il link dell'annuncio sul sito dove è pubblicato
     + lab('Link')
     + '<input id="ann-link" class="form-input" type="url" placeholder="https://…" value="' + esc(r.link || '') + '">'
-    + lab('Foto (zip)')
-    + '<div style="font-size:0.8rem;margin-bottom:0.4rem;">' + (r.zip ? '<a href="' + esc(r.zip) + '" target="_blank" rel="noopener" style="color:var(--info);">📦 ' + (it ? 'lo zip caricato' : 'uploaded zip') + '</a>'
-        + ' <label style="margin-left:0.8rem;cursor:pointer;"><input type="checkbox" id="ann-zip-togli"> ' + (it ? 'toglilo' : 'remove it') + '</label>'
-        : '<span>' + (it ? 'Nessuno zip.' : 'No zip.') + '</span>') + '</div>'
-    + '<label class="btn-secondary" style="display:inline-block;cursor:pointer;">📦 ' + (r.zip ? (it ? 'Carica un altro zip' : 'Upload another zip') : (it ? 'Carica zip' : 'Upload zip'))
-    + '<input type="file" id="ann-zip" accept=".zip,application/zip" style="display:none;" onchange="_annZipScelto()"></label>'
-    + ' <span id="ann-zip-nome" style="font-size:0.8rem;"></span>'
+    // 🗑️ v7.199 (Franco: «cancella pure il campo "Foto (zip)" dalla form dell'annuncio») - qui stavano il link allo zip,
+    //    «toglilo» e «Carica zip». Lo zip già salvato su un annuncio resta nel dato (il Salva se lo porta dietro).
     + '</div><div class="ann-colonna-desc">'
     // v7.187 (Franco: «al momento il campo Descrizione è metà in italiano e metà in inglese; forse tu vuoi due campi
     //    diversi» - e poi «ok») - DUE CASELLE. L'italiana resta nel campo di sempre (`descrizione`), così gli annunci
     //    già scritti non si perdono niente: la metà inglese la sposta Franco a mano in `descrizioneEn`.
-    + lab(it ? 'Descrizione IT' : 'Description IT')
+    + labP(it ? 'Descrizione IT' : 'Description IT', 'descIt', 'ann-descrizione')
     + '<textarea id="ann-descrizione" class="form-input">' + esc(r.descrizione || '') + '</textarea>'
-    + lab(it ? 'Descrizione EN' : 'Description EN')
+    + labP(it ? 'Descrizione EN' : 'Description EN', 'descEn', 'ann-descrizione-en')
     + '<textarea id="ann-descrizione-en" class="form-input">' + esc(r.descrizioneEn || '') + '</textarea>'
     // v7.189 (Franco: «un tasto "Copia descrizioni" che mi mette nella memoria (CTRL+C) la concatenazione delle due
     //    descrizioni (ITA-ENG) separate da una riga vuota, da una riga fatta da 10 "-" e ancora da una riga vuota»)
@@ -41560,8 +41616,10 @@ function _annApriFinestra(i, sola) {
     ['ann-salva', 'ann-salva-resta', 'ann-salva-next', 'ann-clona'].forEach(id => document.getElementById(id)?.remove());
     document.getElementById('ann-zip')?.closest('label')?.remove();
     document.getElementById('ann-zip-togli')?.closest('label')?.remove();
+    // 🔄 v7.199 (Franco: «perché abbiamo 2 tasti che fanno la stessa cosa (X e Chiudi)? Io terrei solo "X"») - via
+    //    «Chiudi» (era «Annulla»): resta la ✕ in alto
     const chiudi = [...ov.querySelectorAll('button.btn-secondary')].find(b => /Annulla|Cancel/.test(b.textContent));
-    if (chiudi) chiudi.textContent = it ? 'Chiudi' : 'Close';
+    if (chiudi) chiudi.remove();
   }
 }
 // 🆕 v7.187 (Franco: «una funzione per clonare annuncio; sia dentro al form che con un pulsante posto accanto al pulsante
@@ -41620,6 +41678,7 @@ async function _annSalva(i, da, dopo) {
     tipologia: v('ann-tipo').value || null,   // v7.186
     articoloId: v('ann-articolo').value || null,
     titolo: _annTitoloPerSito(v('ann-sito').value, v('ann-titolo').value.trim()),   // v7.187: Vinted, niente tutto maiuscolo
+    titoloEn: _annTitoloPerSito(v('ann-sito').value, v('ann-titolo-en').value.trim()),   // v7.199: la stessa regola
     descrizione: v('ann-descrizione').value.trim(),
     descrizioneEn: v('ann-descrizione-en').value.trim(),   // v7.187
     voto: Number.isFinite(voto) ? voto : null,   // v7.191
@@ -41640,7 +41699,7 @@ async function _annSalva(i, da, dopo) {
   const salvi = ['ann-salva', 'ann-salva-resta', 'ann-salva-next'].map(v).filter(Boolean);
   salvi.forEach(b => { b.disabled = true; });
   try {
-    const file = v('ann-zip').files[0];
+    const file = v('ann-zip')?.files?.[0];   // v7.199: la casella non c'è più (resta il caricamento, se un giorno torna)
     if (file) {
       stato.style.color = 'var(--text)';
       stato.textContent = (it ? 'Carico lo zip (' : 'Uploading the zip (') + (file.size / 1048576).toFixed(1).replace('.', ',') + ' MB)…';
@@ -41727,10 +41786,8 @@ function _faAlbum() {
       visti.add(chiave);
       const nome = s.name + ' — ' + (f.name || '');
       // v7.184: `piani` = le caselle del tab Ebay dell'album (`fotoAnnuncio`)
-      // v7.185: `sfondi` = lo sfondo di ogni foto, scelto nel tab Pagine (`sfondiFoto`, per nome del file originale)
-      const sf = f.sfondiFoto || {};
-      out.push({ nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, piani: f.fotoAnnuncio || {},
-        sfondi: pag.map(p => _sfondoLati(sf[_nomeFileFoto(p.orig)])) });
+      // 🗑️ v7.199 - qui c'era `sfondi` (le tendine del tab Pagine, v7.185): non lo leggeva nessuno
+      out.push({ nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, piani: f.fotoAnnuncio || {} });
     });
   });
   return out;
@@ -50466,12 +50523,17 @@ function _familyKey(f, idx) {
   const b = idx ? idx.get(f.baseFigurineId)
                 : getData('figurines', []).find(x => x.id === f.baseFigurineId);
   if (!b) return f.id;   // base sparita: e' un gruppo suo, non un orfano senza collocazione
+  // 🆕 v7.199 (Franco: «entra in gioco la relazione con altri articoli solo se sono dello stesso tipo») - un collegamento
+  //    verso un'ALTRA tipologia non fa gruppo. Era la fpa collegata alla sua fcr: la fcr diventava il capo, le fpa si
+  //    ordinavano col numero di lei (16 dopo 2, nella serie 4) e, gruppo da non spezzare (v6.767), lasciavano buchi a
+  //    fine riga. Fcr, retro e album si collegano dentro la loro tipologia: per loro non cambia niente.
   const g = x => String(x.subseries || '').trim();
   // 🆕 v7.082 (Franco: «un capo gruppo [...] è sempre una versione base»; «per ora applicala agli
   //    album») - per gli ALBUM si risale fino alla base, non di un gradino: un errore di stampa nato da
   //    una sigillata sta nel gruppo della base della sigillata. Stessa regola della sottoserie a ogni
   //    gradino. Le altre tipologie restano come prima.
   if (f.section === 'albums') return (_catenaAlbero(f, idx)[0] || f).id;
+  if ((b.section || 'figurines') !== (f.section || 'figurines')) return f.id;   // v7.199, vedi sopra
   return g(f) === g(b) ? b.id : f.id;
 }
 
@@ -59554,15 +59616,17 @@ function renderItems() {
     // 🔄 v7.180 (Franco: «il commento fisso … non è in riga 1; vedo che a volte c'è il numero della versione … spostiamolo
     //    sulla (fine) della riga dove c'è il numero della figurina (o dove c'è il nome, per le serie senza numero)») - il
     //    pallino della versione non ha più una riga sua sotto la foto: chiude la riga del numero, o quella del nome
-    const _pv = _contrassegnoVariazioneHTML(f);
+    const _pv = _contrassegnoVariazioneHTML(f) + _contrassegnoNumeroStampatoHTML(f);   // v7.199: + la «E»
     const _pvSulNumero = !!figLabel;
+    // v7.199 - una fcr con più fpa: i loro nomi, uno per riga (prima del Nome mobile)
+    const _nomeInc = isRetroCard ? '' : _nomeCardIncolonnato(f);
     const figNameInner = isRetroCard
       // 🔄 v7.145 (Franco: «ora usiamo solo quello, nel mobile, se popolato; lascia perdere il sottonome; tanto ora lo
       //    popolo io col sottonome, nel caso») - vuoto il Nome mobile, il nome: la regola del sottonome (v7.135) se ne va
       ? `<span style="color:${_COL_NOME};">${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : esc(f.name || '')}</span>${_pv}` /* v6.037 - riga 1 = il Nome */
       : (_mobileFigCard
           ? `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>${scoreInlineHTML}${(_pvSulNumero || _figLabelOnlyNumber()) ? _pv : ''}` +
-            (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : f.name}${_pvSulNumero ? '' : _pv}</div>`)
+            (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${_nomeInc || (_nomeMob ? _nomeCaroselloHTML(_nomeMob) : f.name)}${_pvSulNumero ? '' : _pv}</div>`)
           // 🔧 v6.416 (Franco) - NUMERO E NOME SU DUE RIGHE ANCHE SU DESKTOP.
           // Franco: *"secondo me aiuta anche mettere sempre il numero e il nome delle figurine su
           // due righe separate; a volte il nome e' lungo e la riga unica potrebbe andare a capo"*.
@@ -59574,7 +59638,7 @@ function renderItems() {
           // pochissimo spazio il nome puo' essere gia' dentro l'etichetta. Su desktop il nome si
           // scrive sempre, ed e' la decisione che quel ramo prende da sempre.
           : `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>${_pvSulNumero ? _pv : ''}`
-            + `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${_nomeMob ? _nomeCaroselloHTML(_nomeMob) : f.name}${_pvSulNumero ? '' : _pv}</div>`);   // v7.150: se la console lo accende sul desktop
+            + `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${_nomeInc || (_nomeMob ? _nomeCaroselloHTML(_nomeMob) : f.name)}${_pvSulNumero ? '' : _pv}</div>`);   // v7.150: se la console lo accende sul desktop
     // 🔄 v6.654 - QUI C'ERA UN `if` A DUE RAMI: «i retro, e tutti gli altri». Ha retto
     //    finche' gli articoli erano due famiglie; adesso sono OTTO, e ognuno ha una forma
     //    sua. E' la stessa famiglia delle quattro liste di sezioni scritte a mano trovate
@@ -62519,6 +62583,15 @@ function _numeroAschermo(f) {
   if (fpa.length < 2) return f.number;
   return fpa.map(x => x.number).filter(n => n != null && n !== '').join(' - ');
 }
+// 🆕 v7.199 (Franco: «nella card delle fcr della sg4, i nomi delle fpa associate incolonnali (1 riga per ogni nome)») - il
+//    nome di una fcr con più fpa, sulla card della griglia: i nomi delle fpa in ordine di numero, uno per riga (HTML già
+//    protetto). Vuoto per tutti gli altri: la card scrive il nome come sempre.
+function _nomeCardIncolonnato(f) {
+  if (!f || (f.section || 'figurines') !== 'figurines') return '';
+  const base = _fcrDiPartenza(f);
+  const fpa = base ? _fpaDellaFcr(base.id) : [];
+  return fpa.length < 2 ? '' : fpa.map(x => esc(x.name || '')).join('<br>');
+}
 // 🗑️ v6.366 - `_daAttaccareSoloLettura` non c'e' piu': rispondeva a due domande con una risposta
 // sola. Le due funzioni qui sopra la sostituiscono, e il nome vecchio e' stato tolto invece di
 // lasciato come alias - un alias avrebbe permesso a un punto di continuare a fare la domanda
@@ -63901,11 +63974,16 @@ function _taglieDelTipo(idTipo) {
 // 🔄 v6.758 - IL TIPO E' UN ARGOMENTO, non piu' una costante letta qui dentro. I due
 // chiamanti (la scheda e la cella della vista tabellare) hanno il record in mano e passano il suo
 // `tipoProdotto`: cosi' la tendina di un Cartoncino non propone le taglie dei Poster.
+// 🆕 v7.199 (Franco: Taglia a tendina Piccola/Media/Grande sulle fpa) - `idTipo` può essere direttamente l'elenco
+//    (`_TAGLIE_FPA`). E la cella della vista tabellare porta `data-id`: senza, `saveBulkCell` non trovava l'articolo
+//    e la tendina della tabella non salvava niente (anche quella dei prodotti extra serie, da quando c'è).
+const _TAGLIE_FPA = ['Piccola', 'Media', 'Grande'];
 function _selectTagliaHTML(valore, id, onchange, stile, idTipo) {
   const v = (valore || '').trim();
-  const taglie = _taglieDelTipo(idTipo);
+  const taglie = Array.isArray(idTipo) ? idTipo : _taglieDelTipo(idTipo);
   const fuori = v && !taglie.some(o => o.toLowerCase() === v.toLowerCase());
   return '<select id="' + id + '" data-field="size" class="form-input"' +
+    (id.indexOf('bulk-size-') === 0 ? ' data-id="' + esc(id.slice(10)) + '"' : '') +
     (onchange ? ' onchange="' + onchange + '"' : '') +
     ' style="' + (stile || 'padding:0.3rem 0.5rem;font-size:0.9rem;') + '">' +
     '<option value=""' + (v ? '' : ' selected') + '>&mdash;</option>' +
@@ -64557,6 +64635,26 @@ function _contrassegnoVariazioneHTML(f) {
     + 'border-radius:999px;background:var(--action-hover);color:var(--num-versione);'
     + 'font-family:var(--font-ui);font-size:0.72rem;font-weight:800;letter-spacing:0.02em;">'
     + n + '</span>';
+}
+
+// 🆕 v7.199 (Franco: «"E" su Pino Occhio e sulla sua fcr»; tooltip approvato «Errore: su questa figurina è stampato il
+//    numero 8 invece del 247.») - IL NUMERO STAMPATO SBAGLIATO. Il dato sta sulla fpa (`numeroStampato`); la fcr lo
+//    mostra se una delle sue fpa ce l'ha. Stessa pastiglia del numero della versione, nel colore degli errori di stampa.
+function _contrassegnoNumeroStampatoHTML(f) {
+  if (!f) return '';
+  const sez = f.section || 'figurines';
+  let con = [];
+  if (sez === 'attaccare') con = f.numeroStampato ? [f] : [];
+  else if (sez === 'figurines') { const b = _fcrDiPartenza(f); con = b ? _fpaDellaFcr(b.id).filter(x => x.numeroStampato) : []; }
+  if (!con.length) return '';
+  const it = currentLang === 'it';
+  const titolo = con.map(x => it ? 'Errore: su questa figurina è stampato il numero ' + x.numeroStampato + ' invece del ' + x.number + '.'
+    : 'Error: this sticker is printed with number ' + x.numeroStampato + ' instead of ' + x.number + '.').join(' ');
+  return '<span class="fig-num-stampato" title="' + esc(titolo) + '"'
+    + ' style="display:inline-flex;align-items:center;justify-content:center;float:right;margin:0.15rem 0 0 0.4rem;'
+    + 'min-width:1.15rem;height:1.15rem;padding:0 0.3rem;box-sizing:border-box;'
+    + 'border-radius:999px;background:var(--type-printerror);color:#1a1030;'
+    + 'font-family:var(--font-ui);font-size:0.72rem;font-weight:800;cursor:help;">E</span>';
 }
 
 // 🔄 v6.618 (Franco: *«la variazione base la numeri come 1, quelle ufficiali proseguono la
@@ -66222,7 +66320,13 @@ function switchToEditMode(figId) {
   // e' la copia che al trasloco della v6.362 sarebbe rimasta indietro, lasciando il campo Taglia
   // modificabile sulle figurine con velina e assente su quelle da incollare.
   } else if (_mostraTaglia(f, figSeries)) {
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-size" value="' + esc((f.size||'')) + '" placeholder="S/M/L/XL" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;border:none;background:transparent;"></span></div>';
+    // 🔄 v7.199 - sulle fpa la Taglia è una tendina: Piccola, Media, Grande (`_TAGLIE_FPA`)
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span>' +
+      '<span class="detail-value">' + _selectTagliaHTML(f.size, 'fe-size', '', '', _TAGLIE_FPA) + '</span></div>';
+    // 🆕 v7.199 (Franco: la «E» su Pino Occhio, che porta stampato l'8 invece del 247) - il numero stampato, se è
+    //    diverso dal numero: scritto, la fpa e la sua fcr mostrano la «E» (`_contrassegnoNumeroStampatoHTML`)
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'N. stampato (se diverso)':'Printed no. (if different)') + '</span>' +
+      '<span class="detail-value"><input class="form-input" type="number" min="1" id="fe-numero-stampato" value="' + esc(f.numeroStampato || '') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
   }
 
   // v6.146 (Franco) - le quattro caselle del TIPO non si mostrano su un prodotto extra serie:
@@ -66371,7 +66475,6 @@ function switchToEditMode(figId) {
   // dalla catena, o si infila fra `getData()` e `.filter()` e spezza l'espressione — `node --check`
   // lo vede, ma vale la pena scriverlo: e' il punto in cui il commento lungo invita a sbagliare.
   _feRecord = f;   // v6.321 - il toggle ne ha bisogno per rifare l'elenco
-  _feSfondiBozza = null;   // v7.185 - gli sfondi delle foto ripartono da quelli salvati
   const _partenzeAmmesse = _costruisciPartenze(f, _chiaveTipo(f));
   // 🗑️ v6.321 - QUI STAVA LA COSTRUZIONE DELL'ELENCO, scritta in linea. E' diventata
   // `_costruisciPartenze()` perche' serve DUE volte: qui e nel toggle delle caselle del tipo.
@@ -66578,6 +66681,7 @@ function switchToEditMode(figId) {
     + '<input class="form-input" type="text" id="fe-disponibilita" value="' + esc(f.disponibilita || '') + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>';
   // 🆕 v7.184 - le pagine per le foto annuncio, solo sull'album base con le pagine sue (vedi `_FA_SITI`)
   html += _bloccoFotoAnnuncioEdit(f);
+  html += _bloccoTestiAccountEdit(f);   // v7.199
   html += '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">' +
     '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;font-weight:600;margin-bottom:' + (f.forSale ? '0.6rem' : '0') + ';">' +
     '<input type="checkbox" id="fe-for-sale" onchange="toggleFeForSaleFields()" ' + (f.forSale ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
@@ -67703,11 +67807,50 @@ function _bloccoFotoAnnuncioEdit(f) {
           + 'Vuota: eBay e Vinted dividono le foto delle pagine da soli, Subito per questo album resta spento.'
         : 'Page numbers from the Pages tab (1 = cover, ' + N + ' = back). A comma separates the photos; pages in the same photo (2 or 4) go in square brackets, joined by +; pages not written are skipped. Example: 1, 2, [3+4], [5+6+7+8], ' + N + '.<br>'
           + 'Empty: eBay and Vinted split the pages by themselves, Subito stays off for this album.') + '</div>'
-    + _FA_SITI.map(s => '<div style="margin-bottom:0.5rem;"><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">'
-        + s.nome + ' (' + (it ? 'massimo ' : 'max ') + s.limite + ' foto) <span id="fe-fa-esito-' + s.chiave + '" style="font-size:0.7rem;"></span></label>'
+    // 🆕 v7.199 (Franco: «i campi ebay e Vinted devono essere read only se le foto dell'album sono meno di 25 (ebay) e 21
+    //    (vinted), in quanto non serve fare compressioni»; «sai già quante pagine hanno») - il limite è quello del sito
+    //    (`s.limite`): se le pagine ci stanno tutte, la casella non si scrive. Subito no (`soloScritto`): non nominato.
+    + _FA_SITI.map(s => {
+        const ciStanno = !s.soloScritto && N <= s.limite;
+        return '<div style="margin-bottom:0.5rem;"><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">'
+        + s.nome + ' (' + (it ? 'massimo ' : 'max ') + s.limite + ' foto) <span id="fe-fa-esito-' + s.chiave + '" style="font-size:0.7rem;">'
+        + (ciStanno ? '— ' + (it ? 'le ' + N + ' pagine ci stanno tutte: niente da unire' : 'all ' + N + ' pages fit: nothing to join') : '') + '</span></label>'
         + '<input class="form-input" type="text" id="fe-fa-' + s.chiave + '" value="' + esc(p[s.chiave] || '') + '" oninput="_feFaControlla(\'' + s.chiave + '\')"'
-        + ' style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>').join('')
+        + (ciStanno ? ' readonly' : '')
+        + ' style="padding:0.3rem 0.5rem;font-size:0.85rem;' + (ciStanno ? 'opacity:0.5;cursor:not-allowed;' : '') + '"></div>';
+      }).join('')
     + '</div>';
+}
+// 🆕 v7.199 (Franco: «Nella scheda Ebay di un Album, aggiungere questi campi: Titolo Franco - ITA … Descrizione Lendys -
+//    ENG») - TITOLO E DESCRIZIONE PER ACCOUNT, sugli album. Nell'ordine dettato: prima i sei titoli, poi le sei
+//    descrizioni; Franco, Fabio, Lendys; ITA e ENG. Stanno in `testiAccount` = { Franco: { titoloIt, titoloEn, descIt,
+//    descEn }, … }; si scrive solo quello che è scritto, tutto vuoto = null. Indipendenti da «Ebay» e dai titoli eBay
+//    di sempre (`ebayTitleIt` …), che restano dove sono.
+const _TESTI_ACCOUNT = ['Franco', 'Fabio', 'Lendys'];
+const _TESTI_CAMPI = [['titolo', 'Titolo', 'Title'], ['desc', 'Descrizione', 'Description']];
+function _bloccoTestiAccountEdit(f) {
+  if (!f || f.section !== 'albums') return '';
+  const it = currentLang === 'it', t = f.testiAccount || {};
+  return '<div id="fe-testi-account" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
+    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.6rem;">✍️ ' + (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account') + '</div>'
+    + _TESTI_CAMPI.map(([k, nIt, nEn]) => _TESTI_ACCOUNT.map(a => ['It', 'En'].map(l => {
+        const id = 'fe-ta-' + a + '-' + k + l, v = (t[a] || {})[k + l] || '';
+        const etichetta = (it ? nIt : nEn) + ' ' + a + ' - ' + (l === 'It' ? 'ITA' : 'ENG');
+        return '<div style="margin-bottom:0.5rem;"><label for="' + id + '" style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' + etichetta + '</label>'
+          + (k === 'titolo'
+            ? '<input class="form-input" type="text" id="' + id + '" value="' + esc(v) + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;">'
+            : '<textarea class="form-input" id="' + id + '" rows="3" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc(v) + '</textarea>')
+          + '</div>';
+      }).join('')).join('')).join('')
+    + '</div>';
+}
+function _feTestiAccount() {
+  const out = {};
+  _TESTI_ACCOUNT.forEach(a => _TESTI_CAMPI.forEach(([k]) => ['It', 'En'].forEach(l => {
+    const v = (document.getElementById('fe-ta-' + a + '-' + k + l)?.value || '').trim();
+    if (v) (out[a] = out[a] || {})[k + l] = v;
+  })));
+  return Object.keys(out).length ? out : null;
 }
 // La riga accanto al nome del sito: quante foto escono, o cosa non va. Restituisce l'errore (o '').
 function _feFaControlla(chiave) {
@@ -67835,60 +67978,9 @@ function _bloccoPagineLettura(f) {
   //    volta. Chi cerca qui la riga della v6.888 la trova spiegata, invece di non trovarla.
 }
 
-// 🆕 v7.185 (Franco: «potremmo avere dei tip scritti nell'inventario, foto per foto»; «la tua proposta mi piace») - LO
-//    SFONDO DI OGNI FOTO, una tendina sotto il numero. Serve alla procedura annunci (`_faSfondoVieta`): una tua foto
-//    non va mai al posto di una foto del sito con uno sfondo diverso. Si scrive solo dove serve.
-// 📌 La chiave è il nome del file ORIGINALE su Cloudinary, non la posizione: le foto si spostano, si puliscono (la
-//    `url` cambia, l'`orig` no), e lo sfondo deve restare attaccato alla sua foto.
-// 📌 Le scelte non ancora salvate stanno in `_feSfondiBozza`: il tab si ridisegna a ogni spostamento di foto, e
-//    senza la bozza una tendina toccata tornerebbe com'era. Si salvano col «Salva» della scheda.
-// 🔄 v7.185 (Franco: «la tendina … vorrei li elencasse in modo ordinato»; «come facciamo con le foto che hanno le due
-//    pagine di colore diverso? … 3 tendine: Sfondo, Sfondo pagina sx, Sfondo pagina dx; se sono diverse ti popolo
-//    due tendine, se sono uguali una sola») - in ordine alfabetico, e per ogni foto { t, sx, dx }: `t` vale per tutte e
-//    due le pagine, `sx` e `dx` per una sola (e vincono su `t` dal loro lato). Si salvano solo le tendine scritte.
-const _SFONDI_FOTO = ['Giallo', 'Verde', 'Rosa', 'Azzurro', 'Blu', 'Arancione', 'Rosso', 'Viola', 'Bianco', 'Grigio', 'Marrone', 'Nero']
-  .sort((a, b) => a.localeCompare(b, 'it'));
-// lo sfondo salvato di una foto come { t, sx, dx } (anche da una stringa sola)
-const _sfondoComeOggetto = v => (typeof v === 'string' ? { t: v } : Object.assign({}, v || {}));
-// lo sfondo di ciascun lato, per la procedura annunci: { sx, dx } con '' dove non è scritto
-const _sfondoLati = v => { const o = _sfondoComeOggetto(v); return { sx: o.sx || o.t || '', dx: o.dx || o.t || '' }; };
-let _feSfondiBozza = null;   // { id, mappa } dell'album aperto in modifica
-function _sfondiDellaScheda(f) {
-  if (!_feSfondiBozza || _feSfondiBozza.id !== f.id) {
-    const m = {};
-    Object.entries(f.sfondiFoto || {}).forEach(([k, v]) => { m[k] = _sfondoComeOggetto(v); });
-    _feSfondiBozza = { id: f.id, mappa: m };
-  }
-  return _feSfondiBozza.mappa;
-}
-function _feSfondoScelto(chiave, lato, valore) {
-  const m = _feSfondiBozza.mappa;
-  m[chiave] = Object.assign(m[chiave] || {}, { [lato]: valore });
-}
-function _sceltaSfondoFoto(f, p, it) {
-  const chiave = _nomeFileFoto(p.orig), ora = _sfondiDellaScheda(f)[chiave] || {};
-  const tendina = (lato, nome) => '<select class="form-input fe-sfondo-foto" title="' + nome + (it ? ' (per la procedura annunci)' : ' (for the listing procedure)') + '"'
-    + ' onchange="_feSfondoScelto(\'' + esc(chiave) + '\',\'' + lato + '\',this.value)"'
-    + ' style="padding:0.15rem 0.3rem;font-size:0.75rem;margin-bottom:0.2rem;width:100%;">'
-    + '<option value="">' + nome + ': —</option>'
-    + _SFONDI_FOTO.map(c => '<option value="' + c + '"' + (c === ora[lato] ? ' selected' : '') + '>' + c + '</option>').join('')
-    + '</select>';
-  return '<div style="margin-bottom:0.2rem;">'
-    + tendina('t', it ? 'Sfondo' : 'Background')
-    + tendina('sx', it ? 'Sfondo pagina sx' : 'Left page background')
-    + tendina('dx', it ? 'Sfondo pagina dx' : 'Right page background')
-    + '</div>';
-}
-// al salvataggio: solo le tendine scritte, e solo delle foto che l'album ha ancora; null se nessuna
-function _feSfondiFoto(f) {
-  const m = _sfondiDellaScheda(f), out = {};
-  _pagineDi(f).forEach(p => {
-    const k = _nomeFileFoto(p.orig), o = {};
-    ['t', 'sx', 'dx'].forEach(l => { if (m[k] && m[k][l]) o[l] = m[k][l]; });
-    if (Object.keys(o).length) out[k] = o;
-  });
-  return Object.keys(out).length ? out : null;
-}
+// 🗑️ v7.199 (Franco: «togli quelle tendine della pagina dell'album») - qui stavano le tre tendine dello sfondo di ogni
+//    foto del tab Pagine (v7.185, `sfondiFoto`). Il riconoscimento della procedura annunci non le leggeva più dalla
+//    v7.185 stessa (misura la tinta da sé): erano scritte e mai usate. Il campo, dove c'è, si svuota al Salva.
 function _bloccoPagineEdit(f) {
   const it = currentLang === 'it';
   if (!f || !_haPagine(f.section) || !currentUser || !currentUser.isAdmin || !_pagineVisibili(f)) {
@@ -67934,7 +68026,6 @@ function _bloccoPagineEdit(f) {
     '<div style="border:1px solid var(--border);border-radius:8px;padding:0.4rem;text-align:center;">'
     + '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.2rem;">' + (i + 1)
     + (p.url !== p.orig ? ' · ' + (it ? 'pulita' : 'cleaned') : '') + '</div>'
-    + _sceltaSfondoFoto(f, p, it)
     // 🆕 v6.862 (Franco: «cliccando su una foto delle pagine, vorrei la foto si aprisse - foto piu'
     //    grande in una piccola finestra») - LA MINIATURA SI APRE. 96px bastano per riconoscere una
     //    pagina, non per vedere se la pulizia l'ha rovinata: e' la domanda che si fa qui dentro.
@@ -69641,6 +69732,8 @@ async function saveFigFromDetail(figId, opzioni) {
         : (existingForCheck?.note || ''),
       score: +(document.getElementById('fe-score')?.value || 0),
       size: document.getElementById('fe-size')?.value.trim() || '',
+      // 🆕 v7.199 - il numero stampato per errore (fpa delle serie `hasSizes`): solo se la casella c'era; vuota = null
+      ...(document.getElementById('fe-numero-stampato') ? { numeroStampato: parseInt(document.getElementById('fe-numero-stampato').value, 10) || null } : {}),
       // 🆕 v6.366 - i due campi delle da-attaccare. `?.` e il ripiego a stringa vuota come tutti gli
       // altri: fuori da quella sezione gli id non esistono e il campo resta vuoto, non `undefined`
       // (che `_sanificaPerFirestore` toglierebbe, ma dicendolo in console a ogni salvataggio).
@@ -69692,8 +69785,8 @@ async function saveFigFromDetail(figId, opzioni) {
       disponibilita: (document.getElementById('fe-disponibilita')?.value || '').trim() || null,
       // 🆕 v7.184 - le caselle delle foto annuncio. Solo se c'erano: altrove la chiave non si scrive
       ...(document.getElementById('fe-foto-annuncio') ? { fotoAnnuncio: _feFotoAnnuncio() } : {}),
-      // 🆕 v7.185 - gli sfondi delle foto del tab Pagine. Solo se le tendine c'erano: altrove la chiave non si scrive
-      ...(document.querySelector('.fe-sfondo-foto') && _figSlotF ? { sfondiFoto: _feSfondiFoto(_figSlotF) } : {}),
+      // 🗑️ v7.199 - gli sfondi delle foto (v7.185) non ci sono più: dove il campo è rimasto, il Salva lo svuota
+      ...(_figSlotF && _figSlotF.sfondiFoto ? { sfondiFoto: null } : {}),
       // 🆕 v7.103 - vedi `_fotoProtette`. 🔄 v7.104: si scrive solo l'ECCEZIONE alla tipologia; uguale = null
       fotoProtetta: (() => { const el = document.getElementById('fe-foto-protetta'); if (!el) return null;
         const rec = (typeof _recordInModifica === 'function' && _recordInModifica(figId)) || _bozzaCorrente || {};
@@ -69719,6 +69812,8 @@ async function saveFigFromDetail(figId, opzioni) {
       ebayTitleEn: _feTestoEbay('fe-ebay-title-en'),
       ebayDescIt:  _feTestoEbay('fe-ebay-desc-it'),
       ebayDescEn:  _feTestoEbay('fe-ebay-desc-en'),
+      // 🆕 v7.199 - titoli e descrizioni per account (album). Solo se il riquadro c'era: altrove la chiave non si scrive
+      ...(document.getElementById('fe-testi-account') ? { testiAccount: _feTestiAccount() } : {}),
       // v6.103 - su quali account. null = "quello predefinito", che e' il caso normale: e' cio' che
       // permette alle migliaia di figurine gia' marcate Ebay di restare come sono.
       ebayAccounts: _feVendita ? leggiEbayAccountScelta(_impostazioniEbay, 'fe') : null,
@@ -77440,7 +77535,7 @@ function renderBulkEditView() {
           ${_cTaglia ? (isAdmin
             ? '<td style="padding:4px;">' + (!_mostraTaglia(f, currentSeries) ? '' : _eProdottoExtraSerie(f)
                 ? _selectTagliaHTML(f.size, 'bulk-size-'+f.id, 'saveBulkCell(this)', 'width:96px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;', f.tipoProdotto)
-                : '<input data-field="size" data-id="'+f.id+'" value="'+esc(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)">')
+                : _selectTagliaHTML(f.size, 'bulk-size-'+f.id, 'saveBulkCell(this)', 'width:96px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;', _TAGLIE_FPA))   // v7.199
               + '</td>'
             : readCell(f.size)) : ''}
           ${_ordinaPerCreazione ? `<td style="padding:4px 8px;color:${_dataCreazione(f) ? 'var(--text)' : 'var(--muted)'};white-space:nowrap;font-size:0.78rem;${_dataCreazione(f) ? '' : 'font-style:italic;'}">${esc(_dataCreazioneTesto(f))}</td>` : ''}
