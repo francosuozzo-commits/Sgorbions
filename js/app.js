@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.198 - Modificati js/app.js e index.html (per la versione). FCR DA 1, 2 O 4 FPA (serie 4; Franco: «2.B»): la fcr
+//          tiene il numero più basso, a schermo «2 - 16» dalle fpa collegate (`_numeroAschermo`: card, scheda, titolo,
+//          caroselli, RG, VT in lettura, liste ed export, eBay, questionario); la ricerca trova anche la 16. Griglia e VT:
+//          prima le fcr da 1 fpa, poi da 2, poi da 4 (`_quanteFpaDellaFcr`). Commento album solo sulle fcr da 1 fpa.
+//          Scheda della fcr, tab «Figurine per album associate» (serie `hasSizes`). Nelle serie `hasSizes` la fpa non
+//          eredita dalla fcr né nome, numero, famiglia, sottoserie né foto (`_eFiglioCollegato`, `_fotoFigurina`).
 // v7.197 - Modificati js/app.js e index.html (per la versione). Cloudinary sospeso: se il logo non arriva (sonda con
 //          `?sonda=`, che salta la memoria del browser), striscia «foto temporaneamente non disponibili» sotto la navbar e
 //          ogni foto di Cloudinary rotta diventa il riquadro «Foto non disponibile» (`_cldAccendiAvviso`). Si spegne da sola.
@@ -31401,7 +31407,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.197';
+const JS_VERSION = 'v7.198';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34575,7 +34581,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     // 🔄 v7.133 (Franco: «se l'informazione non c'è non mostriamo la riga relativa, ma solo se nella stessa riga non ci
     //    sono altre card che la hanno») - la riga del numero c'è, vuota, se qualcuno nella fila il numero ce l'ha
     //    (`conNumero`, come sul desktop); prima mancava sulla sola card senza numero e il nome saliva.
-    if (_haNumero(f) && (f.number || conNumero)) righe.push({ t: f.number ? esc(String(f.number)) : '', col: COL_IDENTITA, dim: '0.66rem', alt: '1.2em', k: 'numero' });
+    if (_haNumero(f) && (f.number || conNumero)) righe.push({ t: f.number ? esc(String(_numeroAschermo(f))) : '', col: COL_IDENTITA, dim: '0.66rem', alt: '1.2em', k: 'numero' });
     righe.push({ t: parole, col: COL_IDENTITA, dim: '0.72rem', alt: 'auto', k: 'nome' });
     return righe;
   }
@@ -34624,7 +34630,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     ...rigaSottoserie('0.66rem'),
     // v6.277 (Franco) - numero e nome in azzurro, come sulle card. v6.080 - senza cancelletto.
     // 🔄 v7.124 - e solo dove qualcuno il numero ce l'ha (`_caroselloConNumero`), come la sottoserie
-    ...(conNumero === false ? [] : [{ t: f.number ? esc(String(f.number)) : '', col: COL_IDENTITA, dim: '0.7rem', alt: '1.2em', k: 'numero' }]),
+    ...(conNumero === false ? [] : [{ t: f.number ? esc(String(_numeroAschermo(f))) : '', col: COL_IDENTITA, dim: '0.7rem', alt: '1.2em', k: 'numero' }]),
     { t: _nomeD, col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em', k: 'nome',   // v7.149: _nomeD
       coda: _monetaPunti(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }
   ];
@@ -34885,7 +34891,7 @@ function _caroselloConNumero(elenco, serie) {
 function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs, conSottoserie, conNumero, retroOpz) {
   const etichetta = ((f.section || '') === 'retros')
     ? _retroNomeCompleto(f)
-    : (f.number ? f.number + ' ' : '') + (f.name || '');
+    : (f.number ? _numeroAschermo(f) + ' ' : '') + (f.name || '');
   // v6.080 - alt 'auto' vuol dire "niente altezza fissa": serve alle righe che possono essere una o
   // tre (il nome spezzato parola per parola su telefono). Le altre continuano ad avere la loro
   // misura, che e' cio' che tiene allineate le card fra loro sul desktop.
@@ -37259,6 +37265,9 @@ function cmpVistaTabellare(sezione) {
     if (sezione === 'figurines') {
       const subCmp = (a.subseries||'').localeCompare(b.subseries||'', 'it');
       if (subCmp !== 0) return subCmp;
+      // v7.198 - prima le fcr da 1 fpa, poi da 2, poi da 4 (come la griglia)
+      const fpaCmp = _quanteFpaDellaFcr(a) - _quanteFpaDellaFcr(b);
+      if (fpaCmp !== 0) return fpaCmp;
       if (!a.number && !b.number) {
         const nameCmp = (a.name||'').localeCompare(b.name||'', 'it');
         if (nameCmp !== 0) return nameCmp;
@@ -37469,7 +37478,7 @@ function ebayTitleCorpo(f, mercato, tieniSottonomi) {
   const tr = x => en ? ebayTraduci(x) : (x || '');
   const serie = getData('series', []).find(s => s.id === f.seriesId);
   const testa = ['Sgorbions', tr(serie ? serie.name : ''), tr(f.subseries || ''),
-                 (f.noNumber || !f.number) ? '' : ('#' + f.number)].filter(Boolean).join(' ');
+                 (f.noNumber || !f.number) ? '' : ('#' + _numeroAschermo(f))].filter(Boolean).join(' ');
   const grezzo = f.fullName || computeFullName(f, getData('figurines', [])) || f.name || '';
   const nome = tieniSottonomi ? grezzo : ebayTogliSottonomi(grezzo);
   const marc = ebayMarcatore(f);
@@ -46380,7 +46389,7 @@ function renderPaginaPersonaggio(grid, pid) {
     // 🆕 v7.191 (Franco: «nome mobile significa nome mobile; anche quelle sono card») - il Nome mobile, dove la console lo
     //    accende per le card (`_postoCard`: sul telefono sì), prende il posto del nome, coi suoi punti di taglio. Già in HTML.
     const _nomeMobP = _nomeRidotto(_postoCard(), f);
-    const numNome = esc((_haNumero(f) && f.number) ? f.number + ' - ' : '') + (_nomeMobP ? _nomeCaroselloHTML(_nomeMobP) : esc(f.name || ''));
+    const numNome = esc((_haNumero(f) && f.number) ? _numeroAschermo(f) + ' - ' : '') + (_nomeMobP ? _nomeCaroselloHTML(_nomeMobP) : esc(f.name || ''));
     // la versione come nella RG: sulle figurine sempre (anche «Versione base»), altrove solo se c'è
     const _k = _chiaveTipo(f);
     const versione = (sec === 'figurines' || _k !== 'base')
@@ -48516,7 +48525,7 @@ function _campiRicercaFigurina(f) {
 //    pillola, un change di 340 trovato solo per il suo retro finirebbe lontano dalla sua base.
 function _attinenzaFcrRG(f, qn) {
   if (!qn) return 0;
-  if (String(f.number || '').includes(qn)) return 0;
+  if (String(_numeroAschermo(f) || '').includes(qn)) return 0;   // v7.198 - anche la 16 di «2 - 16»
   return (_matchRicerca(f.name, qn) || _matchRicerca(f.subname, qn)
     || _nomiAlternativi(f).some(v => _matchRicerca(v, qn))) ? 0 : 1;   // v6.986 - e' il suo nome
 }
@@ -48529,7 +48538,7 @@ function _ordinaPerAttinenzaRG(items, qn, chiaveGruppo) {
 
 function _figMatchRicerca(f, qn) {
   if (!qn) return true;
-  if (String(f.number || '').includes(qn)) return true;
+  if (String(_numeroAschermo(f) || '').includes(qn)) return true;   // v7.198 - anche la 16 di «2 - 16»
   return _campiRicercaFigurina(f).some(v => _matchRicerca(v, qn));   // v6.264
 }
 
@@ -49283,7 +49292,7 @@ function renderCatalogSearch(q) {
                 //    facciamo nel nome completo degli articoli aventi un numero») - la forma del
                 //    titolo della scheda (`numero - nome`). Il trattino è `_sep`: bianco, perché la
                 //    punteggiatura non porta il colore dei valori (v6.404).
-                const _riga1 = (f.number ? '<span style="color:' + COL_IDENTITA + ';font-size:0.85rem;">' + f.number + '</span>' + _sep : '')
+                const _riga1 = (f.number ? '<span style="color:' + COL_IDENTITA + ';font-size:0.85rem;">' + esc(String(_numeroAschermo(f))) + '</span>' + _sep : '')
                   + _prefissoInvisibile(f)
                   + '<span style="color:' + COL_IDENTITA + ';">'
                   + (sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name) + '</span>'
@@ -49414,7 +49423,7 @@ function _rgPersonaggiHTML(q, qn) {
       : '<span style="' + _dimMini + 'border-radius:6px;background:var(--card2);border:1px dashed var(--border);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">🧑‍🎤</span>';
     const elenco = ordina(arts).map(a => '<li><a href="javascript:void(0)" onclick="openFigFromSearch(\'' + a.id + '\',\'' + a.seriesId + '\',\'' + (a.section || 'figurines') + '\')" style="color:var(--text);text-decoration:none;">'
       // v7.116 (Franco: «usa un colore che non sia bianco per il nome della serie») - l'azzurro dei titoli di serie (`--info`)
-      + '<span style="color:var(--info);">' + esc(nomeS.get(a.seriesId) || '') + '</span>' + (tipologiaUguale(a) ? '' : ' · ' + esc(tipologiaDi(a))) + (sottoserieDi(a) ? ' · <span style="color:' + COL_CATEGORIA + ';">' + esc(sottoserieDi(a)) + '</span>' : '') + ' · ' + esc(a.name || '') + ((a.number != null && a.number !== '' && !a.noNumber) ? ' · n.' + esc(String(a.number)) : '') + '</a></li>').join('');
+      + '<span style="color:var(--info);">' + esc(nomeS.get(a.seriesId) || '') + '</span>' + (tipologiaUguale(a) ? '' : ' · ' + esc(tipologiaDi(a))) + (sottoserieDi(a) ? ' · <span style="color:' + COL_CATEGORIA + ';">' + esc(sottoserieDi(a)) + '</span>' : '') + ' · ' + esc(a.name || '') + ((a.number != null && a.number !== '' && !a.noNumber) ? ' · n.' + esc(String(_numeroAschermo(a))) : '') + '</a></li>').join('');
     return '<div style="display:flex;gap:0.8rem;align-items:flex-start;padding:0.5rem 0;border-top:1px solid var(--border);">'
       + '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + pid + '\')" title="' + esc(D.perId.get(pid).nome) + '">' + mini + '</a>'
       + '<div style="min-width:0;">'
@@ -50019,7 +50028,7 @@ function _vetrinaFigCard(f, sfumata, figs) {
     // 🔄 v6.953 — due righe e un riquadro interno alto quanto la FOTO: vedi `.vetrina-velo-t`.
     + (sfumata ? '<span class="vetrina-velo"><span class="vetrina-velo-t">'
         + VETRINA_VELO[it ? 'it' : 'en'].map(esc).join('<br>') + '</span></span>' : '')
-    + (num ? '<span class="vetrina-n">' + esc(f.number) + '</span>' : '')
+    + (num ? '<span class="vetrina-n">' + esc(String(_numeroAschermo(f))) + '</span>' : '')
     + '<span class="vetrina-nm">' + esc(f.name || '') + '</span></li>';
 }
 
@@ -55120,7 +55129,7 @@ function _wzDisegna(tieni) {
             + '<div class="wz-griglia">' + m.fuori.map(id => perId.get(id)).filter(Boolean).map(f =>
                 '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
                 + _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, '')
-                + '<div class="wz-num">' + esc(String(f.number || '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>' : '');
+                + '<div class="wz-num">' + esc(String(f.number ? _numeroAschermo(f) : '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>' : '');
         // la pagina dopo si scarica mentre si tocca questa
         if (m.pagine[pg + 1]) { const im = new Image(); im.src = cloudinaryUrl(m.pagine[pg + 1].url, 'w_1600,c_limit,q_auto,f_auto'); }
         // v7.130: e quella prima, per chi torna indietro
@@ -55153,7 +55162,7 @@ function _wzDisegna(tieni) {
               '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
               + (mie.has(f.id) ? '<span class="wz-mia">' + (it ? 'già tua' : 'yours') + '</span>' : '')
               + _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, '')
-              + '<div class="wz-num">' + esc(String(f.number || '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
+              + '<div class="wz-num">' + esc(String(f.number ? _numeroAschermo(f) : '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
         // v7.168: fra le sottoserie «Indietro» e «Prosegui» passano dall'una all'altra; ai due capi fanno quello di sempre
         piede = (sub && sub.i > 0 ? indietro.replace('onclick="_wzIndietro()"', 'onclick="_wzSottoseriePasso(\'' + p + '\',-1)"') : indietro)
           + '<span class="wz-conto-testo"><b id="wz-conto">' + c.sel.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(c.sel.size, p) + '</span></span>'
@@ -58644,6 +58653,9 @@ function _comparatoreGriglia(sez, elenco, _idx, _allFigs) {
         return f.baseFigurineId ? allFigsForSort.get(f.baseFigurineId) : null;
       };
       const refA = refFig(a), refB = refFig(b);
+      // v7.198 - prima le fcr da 1 fpa, poi da 2, poi da 4
+      const fpaA = _quanteFpaDellaFcr(refA), fpaB = _quanteFpaDellaFcr(refB);
+      if (fpaA !== fpaB) return fpaA - fpaB;
       const numA = refA?.number, numB = refB?.number;
       if (numA && numB) {
         if (numA !== numB) return numA - numB;
@@ -59332,7 +59344,8 @@ function renderItems() {
     // v5.804 — Franco: la sottoserie NON sostituisce più il numero sulla card. Il numero resta in
     // etichetta (#N) e la sottoserie va su una riga a parte, nello stesso punto/stile in cui i Retro
     // mostrano la loro categoria (vedi subseriesHTML poco sotto).
-    const figLabel = (_haNumero(f) && f.number) ? `${f.number}` : ''; // v6.077 - solo dove il numero si puo' scrivere
+    // v6.077 - solo dove il numero si puo' scrivere; v7.198 - «2 - 16» per le fcr con più fpa
+    const figLabel = (_haNumero(f) && f.number) ? `${_numeroAschermo(f)}` : '';
     const catParts = [f.category, f.subcategory].map(v => (v||'').trim()).filter(Boolean);
     // Prima riga (nome): se la serie NON dichiara che il nome del retro contiene già la
     // categoria, anteponiamo "Categoria - ". Seconda riga: la Categoria (col Sottocategoria
@@ -61009,7 +61022,7 @@ function renderAdminFigurineInvisibili() {
         td(esc(nomeSerie(f.seriesId)), 'color:var(--text);white-space:nowrap;') +
         td(esc(f.subseries || ''), 'color:var(--text);') +
         td(esc(getSectionLabelSingular(f.section || 'figurines')), 'color:var(--accent2);white-space:nowrap;') +
-        td(_haNumero(f) && f.number ? esc(String(f.number)) : '', 'white-space:nowrap;') +
+        td(_haNumero(f) && f.number ? esc(String(_numeroAschermo(f))) : '', 'white-space:nowrap;') +
         td(esc((f.fullName && f.fullName.trim()) ? f.fullName : (f.name || '')), '') +
         td('<button class="tbl-btn tbl-btn-edit" onclick="openFigDetail(\'' + f.id + '\')">' + (it ? 'Apri' : 'Open') + '</button>', 'white-space:nowrap;') +
       '</tr>').join('') +
@@ -62437,11 +62450,15 @@ async function salvaCommentoCard() {
   }
 }
 function _lettoreCommentoAlbum(allFigs) {
-  const perFcr = new Map(), perId = new Map();
+  const perFcr = new Map(), perId = new Map(), quanteFpa = new Map();
   allFigs.forEach(x => {
     perId.set(x.id, x);
+    if (x.section === 'attaccare' && x.baseFigurineId) quanteFpa.set(x.baseFigurineId, (quanteFpa.get(x.baseFigurineId) || 0) + 1);
     if (x.section === 'attaccare' && x.baseFigurineId && (x.commentoAlbum || '').trim()) perFcr.set(x.baseFigurineId, x.commentoAlbum.trim());
   });
+  // 🆕 v7.198 (Franco: «possiamo metterlo solo sulle figurine singole … su quelle doppie e quadruple prenderebbe troppo
+  //    spazio») - una fcr con 2 o 4 fpa non mostra nessun commento
+  quanteFpa.forEach((n, id) => { if (n > 1) perFcr.delete(id); });
   return f => {
     if (!f) return '';
     if (f.section === 'attaccare') return (f.commentoAlbum || '').trim();
@@ -62453,6 +62470,54 @@ function _lettoreCommentoAlbum(allFigs) {
     }
     return '';
   };
+}
+// 🆕 v7.198 (Franco: fcr della serie 4 da 1, 2 o 4 fpa; «2.B») - IL NUMERO DI UNA FCR CON PIÙ FPA SI COMPONE A SCHERMO.
+//    Nel dato la fcr tiene il numero più basso delle sue fpa (ordina e conta come prima); dove il numero si mostra si
+//    legge «2 - 16» o «7 - 8 - 21 - 27» dalle fpa collegate (`baseFigurineId`), in ordine di numero. Con una fpa sola,
+//    o nessuna, resta il numero del campo. Le versioni della fcr mostrano quello della loro base.
+// ⚠️ L'indice si rifà se cambia l'elenco o la sua lunghezza, come `_indiceArticoli`: i numeri si leggono freschi dagli
+//    oggetti, un legame cambiato sul posto si vede al ridisegno dopo il ricaricamento.
+function _fpaDiverseNellaSerie(seriesId) {
+  const s = getData('series', []).find(x => x.id === seriesId);
+  return !!(s && s.hasSizes);
+}
+let _fpaPerFcrDi = null, _fpaPerFcrLung = -1, _fpaPerFcrMap = null;
+function _indiceFpaPerFcr() {
+  const a = getData('figurines', []) || [];
+  if (a !== _fpaPerFcrDi || a.length !== _fpaPerFcrLung || !_fpaPerFcrMap) {
+    _fpaPerFcrDi = a; _fpaPerFcrLung = a.length; _fpaPerFcrMap = new Map();
+    a.forEach(x => {
+      if (x.section !== 'attaccare' || !x.baseFigurineId) return;
+      if (!_fpaPerFcrMap.has(x.baseFigurineId)) _fpaPerFcrMap.set(x.baseFigurineId, []);
+      _fpaPerFcrMap.get(x.baseFigurineId).push(x);
+    });
+  }
+  return _fpaPerFcrMap;
+}
+function _fpaDellaFcr(fcrId) {
+  return (_indiceFpaPerFcr().get(fcrId) || []).slice()
+    .sort((x, y) => ((+x.number || 1e9) - (+y.number || 1e9)) || String(x.name || '').localeCompare(String(y.name || ''), 'it'));
+}
+// la fcr da cui parte un articolo delle figurine con retro: lui se è base, se no risalendo `baseFigurineId`
+function _fcrDiPartenza(f) {
+  let base = f;
+  for (let i = 0; i < 4 && base && !_eBase(base) && base.baseFigurineId; i++) base = _indiceArticoli().get(base.baseFigurineId);
+  return base || null;
+}
+// 🆕 v7.198 (Franco: «prima da 1 fpa, poi da 2, poi da 4, ognuna per numero più basso») - il primo criterio della
+//    griglia e della vista tabellare delle fcr. Senza fpa vale 1: nelle serie 1:1 non cambia niente.
+function _quanteFpaDellaFcr(f) {
+  if (!f || (f.section || 'figurines') !== 'figurines') return 1;
+  const base = _fcrDiPartenza(f);
+  return Math.max(1, base ? (_indiceFpaPerFcr().get(base.id) || []).length : 0);
+}
+function _numeroAschermo(f) {
+  if (!f) return '';
+  if ((f.section || 'figurines') !== 'figurines') return f.number;
+  const base = _fcrDiPartenza(f);
+  const fpa = base ? _fpaDellaFcr(base.id) : [];
+  if (fpa.length < 2) return f.number;
+  return fpa.map(x => x.number).filter(n => n != null && n !== '').join(' - ');
 }
 // 🗑️ v6.366 - `_daAttaccareSoloLettura` non c'e' piu': rispondeva a due domande con una risposta
 // sola. Le due funzioni qui sopra la sostituiscono, e il nome vecchio e' stato tolto invece di
@@ -63015,7 +63080,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   }
   // Nome — tutte le sezioni, quando presente (hide-empty).
   if (_haNumero(f) && f.number) { // v6.077 - la riga esiste dove il campo esiste, vedi _haNumero()
-    const _rowNumero = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Numero' : 'Number')}</span><span class="detail-value">${f.number}</span></div>`;
+    const _rowNumero = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Numero' : 'Number')}</span><span class="detail-value">${esc(String(_numeroAschermo(f)))}</span></div>`;
     (_mobileDetail ? rowsTop : rows).push(_rowNumero);   // v7.177: qui, subito prima del Nome
   }
   if (f.name) {
@@ -64661,7 +64726,7 @@ function _corniceErroreStampaHTML(dentro, tipo) {
 
 function _titoloSchedaHTML(f, nomeVisualizzato) {
   const tipo = _titoloTipoScheda(f);
-  const nome = (_haNumero(f) && f.number) ? (f.number + ' - ' + nomeVisualizzato) : nomeVisualizzato;
+  const nome = (_haNumero(f) && f.number) ? (_numeroAschermo(f) + ' - ' + nomeVisualizzato) : nomeVisualizzato;   // v7.198
   const _v = _eBase(f) ? null : _versioneDiChiave(_chiaveTipo(f));
   const _coda = _v
     ? ' - <span style="color:' + (_v.colore || 'var(--text)') + ';">'
@@ -64781,7 +64846,10 @@ function _fotoFigurina(f, allFigs, _salti) {
   // mancanza di un flag, e' scattato per la SEZIONE. Era il primo dei due ostacoli.
   // 📌 Il ripiego resta condizionato a `f.img` vuoto (riga in cima): il giorno che a una da
   // attaccare si desse una foto propria, quella vincerebbe. Non e' previsto, ma non e' vietato.
-  const _daAttaccare = f.section === 'attaccare' && !!f.baseFigurineId;
+  // v7.198 (Franco: «per questa serie le regole di ereditarietà da fcr a fpa ovviamente non vanno utilizzate») - dove le
+  //    fpa sono diverse dalle fcr (`hasSizes`) la foto non si prende dalla fcr
+  const _daAttaccare = f.section === 'attaccare' && !!f.baseFigurineId
+    && !(getData('series', []).find(x => x.id === f.seriesId) || {}).hasSizes;
   // 🆕 v7.192 - LA VARIAZIONE DI UN RETRO HA LA FOTO DELLA SUA BASE: è lo stesso retro su un cartoncino diverso (serie 4,
   //    due spessori; Franco). Una copia su Cloudinary sarebbe la stessa immagine pagata due volte.
   const _retroVariazione = f.section === 'retros' && !!f.isVariation;
@@ -64988,6 +65056,10 @@ function buildLinkedFiguresTabsHTML(baseId) {
   //    - la fcr da cui la figurina per album prende fronte e personaggio (`baseFigurineId`)
   const _fcrDellaFpa = (_self && _self.section === 'attaccare' && _self.baseFigurineId)
     ? allFigs.filter(x => x.id === _self.baseFigurineId) : [];
+  // 🆕 v7.198 (Franco: «nella scheda della fcr si devono vedere 1, 2 o 4 fpa») - l'altro verso del legame; solo dove le
+  //    fpa sono diverse (`hasSizes`), come la regola della v7.100: altrove la fpa ha la stessa faccia della fcr
+  const _fpaDellaFcrTab = (_self && (_self.section || 'figurines') === 'figurines' && _eBase(_self) && _fpaDiverseNellaSerie(_self.seriesId))
+    ? _fpaDellaFcr(baseId) : [];
   const _vuoto = '<div id="linked-fig-tabs" data-base="' + esc(baseId) + '"></div>';
   if (!linked.length && !_usano.items.length && !_albumDelCartoncino.length && !_stessoPers.length && !_fcrDellaFpa.length) return _vuoto;
 
@@ -65029,6 +65101,7 @@ function buildLinkedFiguresTabsHTML(baseId) {
   const groups = [
     // v7.113 - il primo: è la domanda che si fa aprendo una figurina per album
     { key: 'fcrDellaFpa', label: currentLang === 'it' ? 'Figurina con retro associata' : 'Linked sticker with back', icon: '🎴', items: _fcrDellaFpa },
+    { key: 'fpaDellaFcr', label: currentLang === 'it' ? 'Figurine per album associate' : 'Linked album stickers', icon: '📌', items: _fpaDellaFcrTab },   // v7.198
     { key: 'usaRetro', label: currentLang === 'it' ? 'Figurine con questo retro' : 'Figurines with this back', icon: '🎴', items: _usano.items, ereditati: _usano.ereditati },
     // 🆕 v7.053 (Franco: «N -> tab») - il conto sta nel titolo del tab, come per gli altri
     { key: 'usaCartoncino', label: currentLang === 'it' ? 'Album con questo cartoncino' : 'Albums with this card', icon: '📒', items: _albumDelCartoncino },
@@ -65135,7 +65208,7 @@ function buildLinkedFiguresTabsHTML(baseId) {
         const nome = (_isVar || _eBase(item))
           ? (item.name || item.fullName || '')
           : ((item.fullName && item.fullName.trim()) ? item.fullName : computeFullName(item, allFigs));
-        const num = (!item.noNumber && item.number) ? item.number + ' \u2014 ' : '';
+        const num = (!item.noNumber && item.number) ? _numeroAschermo(item) + ' \u2014 ' : '';
         label = num + (nome || item.name || '');
         // Il "(dalla base)" non e' un dettaglio estetico: dice che quella riga viene da un dato che
         // sul record NON c'e', e che quindi cambia da sola se si cambia il retro della base.
@@ -65158,6 +65231,9 @@ function buildLinkedFiguresTabsHTML(baseId) {
         const _sotto = [_s ? _nomeSerieCard(_s, true) : '', _wzEtichetta(item.section || 'figurines')].filter(Boolean).join(' · ');
         if (_resto) labelExtra = `<div style="margin-top:1px;">${esc(_resto)}</div>`;
         if (_sotto) labelExtra += `<div style="font-size:0.78rem;color:var(--info);margin-top:1px;">${esc(_sotto)}</div>`;
+      } else if (g.key === 'fpaDellaFcr') {
+        // v7.198 - numero e nome della fpa: sono quello che le distingue
+        label = ((item.number != null && item.number !== '' && !item.noNumber) ? item.number + ' - ' : '') + (item.name || '');
       } else if (g.key === 'usaCartoncino') {
         // 🆕 v7.053 - il nome completo dell'album, e sotto la sua serie: gli album di serie diverse
         //    possono chiamarsi uguale («W gli Sgorbions» sta in tre serie)
@@ -69000,6 +69076,11 @@ function _messaggioIncongruenzaNumero(numeroScritto, noNumber) {
 // da questa funzione dipendono la scheda (quali campi si mostrano modificabili), la vista tabellare,
 // la propagazione al salvataggio e la funzione «Allinea item figlio correlati».
 function _eFiglioCollegato(f) {
+  // 🆕 v7.198 (Franco: le fcr della serie 4 valgono 1, 2 o 4 fpa) - dove la serie ha «Figurine per album diverse da
+  //    figurine con retro» (`hasSizes`) la fpa NON prende nome, numero, famiglia e sottoserie dalla fcr: la fpa 16 di
+  //    una fcr «2 - 16» diventerebbe la 2, e al salvataggio della fcr la propagazione glielo riscriverebbe.
+  if (!!f && f.section === 'attaccare' && f.baseFigurineId
+      && (getData('series', []).find(x => x.id === f.seriesId) || {}).hasSizes) return false;
   if (!!f && f.section === 'attaccare' && f.baseFigurineId) return true;
   // 🔴 v6.314 - ERA UNA QUATERNA SCRITTA A MANO, E L'OMAGGIO NON C'ERA. Conseguenze, tutte
   // silenziose: il Nome di un omaggio restava scrivibile nella scheda e il primo salvataggio lo
@@ -73267,7 +73348,7 @@ function renderAdminErrori() {
   // Il taglio a 200 righe vale per gruppo-foglia, non per l'intero elenco: cosi' un gruppo grosso
   // non mangia le righe dei gruppi che vengono dopo.
   const _linkOggetto = f => {
-    const num = _haNumero(f) && f.number ? f.number + ' ' : '';
+    const num = _haNumero(f) && f.number ? _numeroAschermo(f) + ' ' : '';
     return `<a href="#" onclick="openFigDetail('${f.id}');return false;" style="display:block;padding:0.25rem 0.45rem;border-radius:6px;text-decoration:none;color:var(--text);font-size:0.82rem;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='transparent'">${num}${esc(_nomeOggetto(f))}</a>`;
   };
   // v6.082 (Franco) - "l'elenco non mi sembra in ordine alfabetico". Lo era, ma si ordinava per il
@@ -73349,7 +73430,7 @@ function renderAdminErrori() {
           .sort((a, b) => String(a.fig.number ?? '').localeCompare(String(b.fig.number ?? ''), 'it', { numeric: true })
                        || String(_nomeOggetto(a.fig)).localeCompare(String(_nomeOggetto(b.fig)), 'it', { numeric: true }))
           .map(v => {
-            const num = _haNumero(v.fig) && v.fig.number ? v.fig.number + ' ' : '';
+            const num = _haNumero(v.fig) && v.fig.number ? _numeroAschermo(v.fig) + ' ' : '';
             const proposta = v.corretto
               ? `<span style="color:var(--text);">${currentLang==='it'?'da':'from'}</span> <span style="color:var(--danger);">${esc(v.retroAttuale.name||'')}</span>`
                 + ` <span style="color:var(--text);">${currentLang==='it'?'a':'to'}</span> <span style="color:var(--success);">${esc(v.corretto.name||'')} · ${esc(v.corretto.changeType||'')}</span>`
@@ -77265,7 +77346,7 @@ function renderBulkEditView() {
             : '<td style="padding:4px;font-size:0.8rem;color:var(--muted);">'+esc(f.subcategory||'')+'</td>') : ''}
           ${currentSection === 'retros' ? (isAdmin && !_campoComandatoDalGenitore(f, 'category') ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
           ${_cCommentoFcr ? `<td style="padding:4px 8px;color:#ffd84d;font-size:0.8rem;line-height:1.3;min-width:220px;max-width:340px;">${esc(_commentoFcr(f))}</td>` : ''}
-          ${_cMostraNumero ? (isAdmin ? '<td style="padding:4px;text-align:center;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? f.number : '', null, 'center')) : ''}
+          ${_cMostraNumero ? (isAdmin ? '<td style="padding:4px;text-align:center;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? _numeroAschermo(f) : '', null, 'center')) : ''}
           ${(() => {
             // v6.184 (Franco) - IL NOME, e non piu' il Nome completo. Nelle Figurine questa cella
             // mostrava `fullName` in sola lettura e il Nome non c'era da nessuna parte: da qui non
@@ -79183,9 +79264,9 @@ function renderWantlist() {
             });
             const subChips = subItems.map(f => {
               let label = '';
-              if (mode === 'numbers') label = f.number ? f.number : f.name;
+              if (mode === 'numbers') label = f.number ? _numeroAschermo(f) : f.name;
               else if (mode === 'names') label = f.name;
-              else label = (f.number ? f.number + ' ' : '') + f.name;
+              else label = (f.number ? _numeroAschermo(f) + ' ' : '') + f.name;
               return `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:0.64rem;padding:1px 5px;border-radius:8px;">${label}</span>`;
             }).join('');
             return `<div style="margin-bottom:0.3rem;"><span style="font-size:0.72rem;font-weight:700;color:var(--accent3);margin-right:0.4rem;">(${(currentLang === 'it') ? 'Sottoserie' : 'Subseries'}: ${sub}):</span><span style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">${subChips}</span></div>`;
@@ -79193,9 +79274,9 @@ function renderWantlist() {
         } else {
           const chips = sorted.map(f => {
             let label = '';
-            if (mode === 'numbers') label = f.number ? f.number : f.name;
+            if (mode === 'numbers') label = f.number ? _numeroAschermo(f) : f.name;
             else if (mode === 'names') label = f.name;
-            else label = (f.number ? f.number + ' ' : '') + f.name;
+            else label = (f.number ? _numeroAschermo(f) + ' ' : '') + f.name;
             return `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:0.64rem;padding:1px 5px;border-radius:8px;">${label}</span>`;
           }).join('');
           chipsHtml = `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;">${chips}</div>`;
@@ -79400,7 +79481,7 @@ function _rigaExport(nomeSerie, f) {
   return [ nomeSerie,
            _etichettaArticoloSing(f.section || 'figurines'),
            f.subseries || '',
-           f.number ? String(f.number) : '',
+           f.number ? String(_numeroAschermo(f)) : '',   // v7.198 - «2 - 16»
            f.name || '',
            (f.category || '').trim(),
            (f.subcategory || '').trim(),
