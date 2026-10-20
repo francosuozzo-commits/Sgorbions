@@ -1,6 +1,23 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.200 - Modificati js/app.js e index.html (per la versione). RICERCA DELLE FPA, IL RIQUADRO DELLA TAGLIA (Franco:
+//          «se la serie ha le taglie per le fpa, vorrei un altro filtro, chiamato "Taglie", che mostra le 3 pillole
+//          Grandi, Medie, Piccole»): `_RAGGR_TAGLIA`, un raggruppamento come la famiglia (dopo di lei), indipendente.
+//          Titolo con la formula di tutti i riquadri: «Filtra per taglia».
+//          TABELLA DEGLI ANNUNCI (Franco, cinque punti): «Subito.it» si legge «Subito» (il valore resta); colonna
+//          «Tipologia / articolo» prima di Articolo (quella dell'annuncio o del suo articolo, ordinabile); Titolo più
+//          corto del 20% (340 → 272px); Costo e Prezzo più strette (4,2 → 3,4rem); titoli delle colonne come scritti,
+//          non in maiuscolo. Nella finestra, la tendina Articolo propone solo le basi (Franco: «solo articoli base»).
+//          TAB EBAY DELL'ALBUM: i 12 campi per account su tre linguette Franco / Fabio / Lendys (`_feTaTab`), quattro
+//          campi per linguetta («Titolo - ITA» … «Descrizione - ENG»).
+//          TABELLA DEGLI ANNUNCI: titoli delle colonne centrati; righe spuntabili (prima colonna, per id; in testa la
+//          spunta di tutte quelle visibili); sopra i quattro tasti «Applica valori da album» (`_annApplicaDaAlbum`):
+//          conferma, poi agli spuntati i quattro campi di «Prendi valore» presi dall'album per il loro account.
+//          SCHEDA DELLA SERIE: campo «Acronimo nome» sotto «Nome album» (`acronimo`, facoltativo; modificato anche
+//          index.html). La colonna Serie degli annunci lo usa (vuoto: il nome breve).
+//          TAB EBAY DELL'ALBUM: sotto il flag Ebay due linguette, «Foto annuncio» e «Descrizione» (`_sottoTabEbay`);
+//          le descrizioni per account da 3 a 12 righe.
 // v7.199 - Modificati js/app.js e index.html (per la versione). ANNUNCI, IL RIQUADRO «SERIE» (Franco: «aggiungiamo un
 //          box filtri chiamato "Serie", che contiene una pillola per ogni serie del sito; usa i nomi brevi»): terzo
 //          riquadro dopo sito e account, una pillola per serie nell'ordine del sito, col nome breve; guarda `seriesId`.
@@ -31432,7 +31449,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.199';
+const JS_VERSION = 'v7.200';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -38783,6 +38800,8 @@ function _ripristinaFlagSerie(s) {
   // salvataggio lo azzera.
   const na = document.getElementById('series-nome-album-input');
   if (na) na.value = (s && s.nomeAlbum) || '';                               // v6.480
+  const acr = document.getElementById('series-acronimo-input');
+  if (acr) acr.value = (s && s.acronimo) || '';                              // v7.200 - stesso avvertimento
   // 🆕 v6.645 - i due nomi inglesi. Stesso avvertimento della riga qui sopra, e vale
   //    doppio per un campo FACOLTATIVO: se la form non lo ripristina, il primo
   //    salvataggio lo scrive vuoto e la traduzione sparisce mentre si cambia altro.
@@ -39450,6 +39469,7 @@ async function saveSeries() {
   // ⚠️ NON entra nel controllo degli obbligatori due schermate piu' giu': vedi il commento
   // nell'index. Il vuoto e' ammesso, ed e' una decisione.
   const nomeAlbum = (document.getElementById('series-nome-album-input')?.value || '').trim(); // v6.480
+  const acronimo = (document.getElementById('series-acronimo-input')?.value || '').trim(); // v7.200 - «Acronimo nome»
   const nameEn = (document.getElementById('series-name-en-input')?.value || '').trim();       // v6.645
   const nomeCortoEn = (document.getElementById('series-nome-corto-en-input')?.value || '').trim(); // v6.645
   const countVariations = parseInt(document.getElementById('series-count-variations-input').value) || null;
@@ -39633,7 +39653,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, haRistampe /* v7.181 */, hasSubseries, hasRetroSubseries, sottoserieRetro /* v7.195 */, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, haRistampe /* v7.181 */, hasSubseries, hasRetroSubseries, sottoserieRetro /* v7.195 */, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(series[idx].perTDA) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, acronimo /* v7.200 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? series[idx].countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -39655,7 +39675,7 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, haRistampe /* v7.181 */, hasSubseries, hasRetroSubseries, sottoserieRetro /* v7.195 */, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, haRistampe /* v7.181 */, hasSubseries, hasRetroSubseries, sottoserieRetro /* v7.195 */, famiglie /* v6.837 */, /* v6.788 - le sette spunte non si scrivono piu' qui: vivono in `perTDA` */ perTDA: _perTDAForm(null) /* v6.784 */, nomeCorto, nomeAlbum /* v6.480 */, acronimo /* v7.200 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, /* v6.789 - via noRetro e noAlbums: passo 4 della v6.216 */ serieContenitore /* v6.204 */, unicoRetro /* v6.814 */, personaggioInCard /* v6.966 */, serieGemellaId /* v7.101 */, retroCondivisiId /* v7.123 */, tipologieAmmesse /* v6.789 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countRetroPrintError: countRetroPrintError ?? null /* v6.794 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -41293,7 +41313,7 @@ function _annFiltriHTML() {
   }).join('');
 }
 // v7.187 - l'ordinamento della tabella: le chiavi delle colonne, in fila come i titoli, e la colonna scelta
-const _ANN_COLONNE = ['sito', 'account', 'serie', 'articolo', 'n', 'titolo', 'voto', 'costo', 'prezzo', 'link'];   // v7.191: + voto
+const _ANN_COLONNE = ['sito', 'account', 'serie', 'tipologia', 'articolo', 'n', 'titolo', 'voto', 'costo', 'prezzo', 'link'];   // v7.191: + voto; v7.200: + tipologia
 let _annOrdine = { col: null, su: true };
 let _annVisti = [];   // v7.189: gli indici delle righe come la tabella li mostra adesso (per «Salva e next»)
 function _annOrdina(k) {
@@ -41319,15 +41339,24 @@ function _annDisegna() {
   let _col = 0;
   const th = t => {
     const k = _ANN_COLONNE[_col++], su = _annOrdine.col === k;
-    return '<th style="white-space:nowrap;cursor:pointer;user-select:none;" onclick="_annOrdina(\'' + k + '\')" title="' + (it ? 'Ordina' : 'Sort') + '">'
+    // v7.200 (Franco: «i titoli scrivili in camel case») - come sono scritti, non nel maiuscolo di `.data-table th`
+    // v7.200 (Franco: «centra il nome delle colonne rispetto alla larghezza della cella») - `text-align:center`
+    return '<th style="white-space:nowrap;cursor:pointer;user-select:none;text-transform:none;letter-spacing:0;text-align:center;" onclick="_annOrdina(\'' + k + '\')" title="' + (it ? 'Ordina' : 'Sort') + '">'
       + t + (su ? (_annOrdine.su ? ' ▲' : ' ▼') : '') + '</th>';
   };
   const valore = r => {
     const k = _annOrdine.col;
-    if (k === 'serie') { const s = serie.get(r.seriesId); return s ? _nomeSerieCard(s, true) : ''; }
+    if (k === 'serie') return nomeSerie(serie.get(r.seriesId));
     if (k === 'articolo') { const f = figs.get(r.articoloId); return f ? _annNomeArticolo(f) : ''; }
+    if (k === 'tipologia') return tipoDi(r);   // v7.200
     return r[k] ?? '';
   };
+  // 🆕 v7.200 (Franco: «prima di articolo, metti una colonna chiamata "Tipologia di articolo"») - quella salvata
+  //    nell'annuncio, se no quella del suo articolo (come la finestra, v7.186), col nome a schermo della tipologia
+  // 🔄 v7.200 (Franco: «nella tabella degli annunci, nella colonna Serie, usare questo campo» - l'«Acronimo nome»
+  //    della serie) - dove l'acronimo non è ancora scritto, il nome breve di prima: la cella non resta vuota
+  const nomeSerie = s => s ? ((s.acronimo || '').trim() || _nomeSerieCard(s, true)) : '';
+  const tipoDi = r => { const k = r.tipologia || (figs.get(r.articoloId) ? _aggTipoDi(figs.get(r.articoloId)) : ''); return k ? _aggNomeTipo(k) : ''; };
   const righe = _annRighe.map((r, i) => [r, i]).filter(([r]) => _annPassa(r));   // v7.187: i filtri della ricerca
   _annVisti = [];
   if (!righe.length) {
@@ -41343,13 +41372,20 @@ function _annDisegna() {
   _annVisti = righe.map(([, i]) => i);
   box.innerHTML = '<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;">'
     + '<table class="data-table compact"><thead><tr>'
-    + th(it ? 'Sito' : 'Site') + th('Account') + th(it ? 'Serie' : 'Series') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
+    // v7.200 - la spunta di tutte le righe che si vedono (coi filtri di adesso)
+    + '<th style="text-align:center;"><input type="checkbox" title="' + (it ? 'Spunta tutte quelle che vedi' : 'Tick all visible') + '"'
+      + (righe.every(([r]) => _annSpuntati.has(r.id)) ? ' checked' : '') + ' onchange="_annSpuntaTutti(this.checked)"></th>'
+    // v7.200 (Franco: «"Tipologia" su una riga e "articolo" sulla riga dopo (senza "di")»)
+    + th(it ? 'Sito' : 'Site') + th('Account') + th(it ? 'Serie' : 'Series') + th(it ? 'Tipologia<br>articolo' : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
     // v7.187 (Franco: «il campo descrizione non mostrarlo nella tabella degli annunci; mostra invece la url») - la
     //    descrizione resta nella finestra; in tabella al suo posto il link, scritto per intero
     // v7.187 (Franco: «per ora togli il campo Foto dalla tabellina») - lo zip resta nella finestra
     // v7.187 (Franco: «aggiungi un campo Costo nell'annuncio, mettilo prima di Prezzo»)
     // v7.191 (Franco: «aggiungiamo una colonna alla tabella degli annunci: Voto; da mettere prima di costo»)
-    + th(it ? 'Voto' : 'Rating') + th(it ? 'Costo' : 'Cost') + th(it ? 'Prezzo' : 'Price') + th('Link') + '<th></th>'
+    + th(it ? 'Voto' : 'Rating') + th(it ? 'Costo' : 'Cost') + th(it ? 'Prezzo' : 'Price') + th('Link')
+    // v7.200 - sopra i quattro tasti della riga, «Applica valori da album» (agli annunci spuntati)
+    + '<th style="text-align:center;text-transform:none;letter-spacing:0;"><button type="button" class="btn-barra-admin pieno" id="ann-applica-album" onclick="_annApplicaDaAlbum()"'
+      + ' style="font-size:0.75rem;padding:0.2rem 0.6rem;white-space:nowrap;">📥 ' + (it ? 'Applica valori da album' : 'Apply values from album') + '</button></th>'
     + '</tr></thead><tbody>'
     + righe.map(([r, i]) => {
         const s = serie.get(r.seriesId), f = figs.get(r.articoloId);
@@ -41358,27 +41394,31 @@ function _annDisegna() {
         //    (`_annCampo`). Serie e Articolo no: passano dalla tipologia, che sta solo nella finestra (✏️).
         const sel = (campo, voci) => '<select class="ann-cella" onchange="_annCampo(' + i + ',\'' + campo + '\',this)">'
           + (campo === 'account' ? '<option value="">—</option>' : '')
-          + voci.map(x => '<option' + (x === r[campo] ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select>';
+          // v7.200 (Franco: «Subito.it scrivilo come Subito») - in tabella si legge «Subito»; il valore resta «Subito.it»
+          + voci.map(x => '<option value="' + esc(x) + '"' + (x === r[campo] ? ' selected' : '') + '>' + esc(x === 'Subito.it' ? 'Subito' : x) + '</option>').join('') + '</select>';
         // 🔄 v7.191 (Franco: «le due colonne Costo e Prezzo, quando si premono i tasti con le frecce, devono salire e
         //    scendere di 1 euro») - `step="any"`: le frecce vanno di 1 e i centesimi si possono ancora scrivere a mano
         //    (con `step="1"` un 4,50 sarebbe un valore «non valido» per il browser)
         const inp = (campo, tipo, val, st) => '<input class="ann-cella" type="' + tipo + '"' + (tipo === 'number' ? ' min="0" step="any"' : '')
           + ' value="' + esc(val ?? '') + '" style="' + st + '" onchange="_annCampo(' + i + ',\'' + campo + '\',this)">';
         return '<tr>'
+          + '<td style="text-align:center;"><input type="checkbox"' + (_annSpuntati.has(r.id) ? ' checked' : '') + ' onchange="_annSpunta(\'' + esc(r.id || '') + '\',this.checked)"></td>'   // v7.200
           + '<td>' + sel('sito', _FA_SITI.map(x => x.nome)) + '</td>'
           + '<td>' + sel('account', _ANN_ACCOUNT) + '</td>'
           // v7.187 (Franco: «nel campo serie degli annunci mettiamo il valore corto del nome della serie») - il nome
           //    breve, dove c'è (se no quello lungo)
-          + '<td style="white-space:nowrap;color:var(--nome-entita);">' + esc(s ? _nomeSerieCard(s, true) : '') + '</td>'
+          + '<td style="white-space:nowrap;color:var(--nome-entita);">' + esc(nomeSerie(s)) + '</td>'
+          + '<td style="white-space:nowrap;">' + esc(tipoDi(r)) + '</td>'   // v7.200
           // v7.187 (Franco: «i 2 link non fanno leggere il testo, visto il blu scuro utilizzato; usiamo un azzurro»)
           + '<td>' + (f ? '<a href="#" style="color:var(--info);" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;">' + esc(_annNomeArticolo(f)) + '</a>'
                        : (r.articoloId ? '<span style="color:var(--warn);">' + (it ? 'articolo non trovato' : 'item not found') + '</span>' : '')) + '</td>'
           // v7.187 (Franco: «riduci larghezza colonne Prezzo e Costo; allarga colonna Titolo; riduci larghezza colonna N»)
           + '<td>' + inp('n', 'text', r.n, 'width:2.6rem;') + '</td>'
-          + '<td>' + inp('titolo', 'text', r.titolo, 'min-width:340px;width:100%;') + '</td>'
+          // v7.200 (Franco: «accorcia il campo "Titolo" di un 20%»; «riduci la larghezza della colonna Costo e Prezzo»)
+          + '<td>' + inp('titolo', 'text', r.titolo, 'min-width:272px;width:100%;') + '</td>'
           + '<td>' + inp('voto', 'number', r.voto, 'width:3.4rem;text-align:right;') + '</td>'   // v7.191
-          + '<td style="white-space:nowrap;">' + inp('costo', 'number', r.costo, 'width:4.2rem;text-align:right;') + ' €</td>'
-          + '<td style="white-space:nowrap;">' + inp('prezzo', 'number', r.prezzo, 'width:4.2rem;text-align:right;') + ' €</td>'
+          + '<td style="white-space:nowrap;">' + inp('costo', 'number', r.costo, 'width:3.4rem;text-align:right;') + ' €</td>'
+          + '<td style="white-space:nowrap;">' + inp('prezzo', 'number', r.prezzo, 'width:3.4rem;text-align:right;') + ' €</td>'
           // il 🔗 legge il link al clic: così vale anche quello appena cambiato nella casella
           // v7.187 (Franco: «il campo "Link" accorcialo, tanto per aprirlo c'è il bottoncino affianco»)
           + '<td style="white-space:nowrap;">' + inp('link', 'url', r.link, 'width:9rem;')
@@ -41416,7 +41456,9 @@ function _annOpzioniArticolo(seriesId, tipo, scelto) {
   const it = currentLang === 'it';
   if (!seriesId || !tipo) return '<option value="">' + (it ? '— scegli prima la tipologia —' : '— choose the item type first —') + '</option>';
   const num = f => String(f.noNumber ? '' : (f.number ?? '')).trim();
-  const art = (getData('figurines', []) || []).filter(f => f.seriesId === seriesId && _aggTipoDi(f) === tipo)
+  // 🔄 v7.200 (Franco: «nella tendina "Articolo" della maschera di un annuncio, devono apparire solo articoli base») -
+  //    solo le basi (`_eBase`); un annuncio già salvato su una versione la tiene in elenco, se no la scelta sparirebbe
+  const art = (getData('figurines', []) || []).filter(f => f.seriesId === seriesId && _aggTipoDi(f) === tipo && (_eBase(f) || f.id === scelto))
     .sort((a, b) => {
       const na = num(a), nb = num(b);
       if (na && nb) return (parseInt(na, 10) || 0) - (parseInt(nb, 10) || 0) || na.localeCompare(nb, 'it', { numeric: true }) || _annNomeArticolo(a).localeCompare(_annNomeArticolo(b), 'it');
@@ -41485,6 +41527,70 @@ const _ANN_ACCOUNT = ['Franco', 'Lendys', 'Fabio'];
 // 🆕 v7.199 - «Prendi valore»: il campo omonimo dell'album scelto come Articolo, per l'Account dell'annuncio (i testi
 //    del tab Ebay dell'album, `testiAccount`). Su una versione vuota si guarda la sua partenza. Se manca qualcosa non
 //    si tocca la casella: si dice cosa manca nella riga di stato della finestra.
+// v7.200 - il valore dell'album per un account (quello della sua base, se l'album è una versione senza): lo usano
+//    «Prendi valore» e «Applica valori da album»
+function _annValoreDaAlbum(art, account, chiave, idx) {
+  const di = a => ((a && a.testiAccount || {})[account] || {})[chiave] || '';
+  return di(art) || (art && art.baseFigurineId ? di(idx.get(art.baseFigurineId)) : '');
+}
+// 🆕 v7.200 (Franco: «le righe della tabella devono essere spuntabili»; «sopra alle 4 colonne coi tasti … un tasto
+//    etichettato "Applica valori da album"»; «deve far apparire un pulsante di conferma che chiede di confermare il fatto
+//    di aggiornare tutti gli annunci selezionati sulla base dei campi che hanno il bottone di copia associato») - LE
+//    SPUNTE E L'APPLICAZIONE DI MASSA. Le spunte stanno per id (non per posizione), così reggono ordinamento e filtri.
+//    Si applica a ogni annuncio spuntato quello che fa «Prendi valore» sui quattro campi: Titolo ITA/ENG, Descrizione
+//    ITA/ENG; un campo che l'album non ha scritto resta com'è. Un annuncio senza account o senza album si salta, e lo si dice.
+const _annSpuntati = new Set();
+const _ANN_DA_ALBUM = [['titoloIt', 'titolo'], ['titoloEn', 'titoloEn'], ['descIt', 'descrizione'], ['descEn', 'descrizioneEn']];
+function _annSpunta(id, on) {
+  if (on) _annSpuntati.add(id); else _annSpuntati.delete(id);
+  _annDisegna();
+}
+function _annSpuntaTutti(on) {
+  _annVisti.forEach(i => { const id = _annRighe[i] && _annRighe[i].id; if (id) { if (on) _annSpuntati.add(id); else _annSpuntati.delete(id); } });
+  _annDisegna();
+}
+// le righe nuove a partire da quelle di adesso: { righe, cambiati, saltati }
+function _annApplicaDaAlbumRighe(righe, spuntati, idx) {
+  let cambiati = 0; const saltati = [];
+  const nuove = righe.map(r => {
+    if (!spuntati.has(r.id)) return r;
+    const art = r.articoloId ? idx.get(r.articoloId) : null;
+    if (!r.account || !art || art.section !== 'albums') { saltati.push(r); return r; }
+    const n = Object.assign({}, r);
+    let tocca = false;
+    _ANN_DA_ALBUM.forEach(([chiave, campo]) => {
+      let v = _annValoreDaAlbum(art, r.account, chiave, idx);
+      if (!v) return;
+      if (campo === 'titolo' || campo === 'titoloEn') v = _annTitoloPerSito(r.sito, v);   // la regola di Vinted, come al Salva
+      if (n[campo] !== v) { n[campo] = v; tocca = true; }
+    });
+    if (tocca) cambiati++;
+    return n;
+  });
+  return { righe: nuove, cambiati, saltati };
+}
+async function _annApplicaDaAlbum() {
+  const it = currentLang === 'it';
+  const scelti = _annRighe.filter(r => _annSpuntati.has(r.id));
+  if (!scelti.length) { toast(it ? 'Spunta prima gli annunci da aggiornare.' : 'Tick the listings to update first.', 'error'); return; }
+  const ok = await _finestraConferma({
+    titolo: '📥 ' + (it ? 'Applica valori da album' : 'Apply values from album'),
+    testo: it ? 'Aggiornare ' + (scelti.length === 1 ? 'l’annuncio selezionato' : 'tutti i ' + scelti.length + ' annunci selezionati')
+        + ' con Titolo ITA, Titolo ENG, Descrizione ITA e Descrizione ENG del loro album, per il loro account? I campi che l’album non ha scritto restano come sono.'
+      : 'Update ' + scelti.length + ' selected listing(s) with the album’s Title ITA/ENG and Description ITA/ENG for their account? Fields the album has not written stay as they are.',
+    ok: it ? 'Aggiorna' : 'Update', annulla: it ? 'Annulla' : 'Cancel'
+  });
+  if (!ok) return;
+  const esito = _annApplicaDaAlbumRighe(_annRighe, _annSpuntati, _indiceArticoli());
+  try {
+    if (esito.cambiati) await _annScrivi(esito.righe);
+    toast((it ? '✅ Annunci aggiornati: ' : '✅ Listings updated: ') + esito.cambiati
+      + (esito.saltati.length ? (it ? ' · saltati (senza account o senza album): ' : ' · skipped (no account or album): ') + esito.saltati.length : ''), 'success');
+  } catch (e) {
+    console.error('_annApplicaDaAlbum', e);
+    toast((it ? '⚠️ NON aggiornati: ' : '⚠️ NOT updated: ') + (e?.message || e), 'error');
+  }
+}
 function _annPrendiValore(chiave, id) {
   const it = currentLang === 'it', v = x => document.getElementById(x);
   const stato = v('ann-stato'), dire = t => { if (stato) stato.textContent = t; };
@@ -41492,8 +41598,7 @@ function _annPrendiValore(chiave, id) {
   if (!account) return dire(it ? '⚠️ Scegli prima l’account.' : '⚠️ Choose the account first.');
   const idx = _indiceArticoli(), art = artId ? idx.get(artId) : null;
   if (!art || art.section !== 'albums') return dire(it ? '⚠️ Scegli prima l’album nel campo Articolo.' : '⚠️ Choose the album in the Item field first.');
-  const di = a => ((a && a.testiAccount || {})[account] || {})[chiave] || '';
-  const val = di(art) || (art.baseFigurineId ? di(idx.get(art.baseFigurineId)) : '');
+  const val = _annValoreDaAlbum(art, account, chiave, idx);
   if (!val) return dire(it ? '⚠️ L’album non ha questo campo scritto per ' + account + '.' : '⚠️ The album has no such field for ' + account + '.');
   v(id).value = val;
   dire('');
@@ -44522,7 +44627,26 @@ const _RAGGR_FAMIGLIA = {
   //    `_soloQuestoRaggr`. L'AND c'era già: il setaccio vuole che passino tutti i riquadri accesi.
   indipendente: true,
 };
-const _RAGGRUPPAMENTI = [_RAGGR_VERSIONE, _RAGGR_FAMIGLIA, ..._VERSIONI_CON_TIPO];
+// 🆕 v7.200 (Franco: «nella form della ricerca delle fpa, se la serie ha le taglie per le fpa, vorrei un altro filtro,
+//    chiamato "Taglie", che mostra le 3 pillole Grandi, Medie, Piccole») - LA TAGLIA DELLE FPA, un raggruppamento come
+//    la famiglia: il valore è la Taglia salvata (`_TAGLIE_FPA`), a schermo al plurale e in quell'ordine.
+// 📌 «Se la serie ha le taglie» viene da sé, come per la famiglia: `valoreDi` è `undefined` fuori dalle fpa e dove la
+//    Taglia non è una delle tre, e un riquadro senza pillole non si disegna. Le taglie le hanno solo le fpa delle serie
+//    `hasSizes` (`_mostraTaglia`).
+const _RAGGR_TAGLIA = {
+  chiave: 'taglia',
+  it: 'Taglia', en: 'Size',
+  codaRaggrIt: 'taglia', codaRaggrEn: 'size',
+  titoloFissoIt: 'Articoli per taglia', titoloFissoEn: 'Items by size',
+  chipMinIt: 'taglia', chipMinEn: 'size',
+  colore: 'var(--nome-entita)',
+  raggrParolaIt: 'taglia', raggrParolaEn: 'size',
+  valoreDi: f => (f.section === 'attaccare' && _TAGLIE_FPA.includes(f.size)) ? f.size : undefined,
+  etichettaDi: t => (currentLang === 'it' ? { Grande: 'Grandi', Media: 'Medie', Piccola: 'Piccole' } : { Grande: 'Large', Media: 'Medium', Piccola: 'Small' })[t] || t,
+  ordina: (a, b) => _TAGLIE_FPA.indexOf(b[0]) - _TAGLIE_FPA.indexOf(a[0]),   // Grandi, Medie, Piccole
+  indipendente: true,   // come la famiglia: un dato in più, trasversale alle versioni
+};
+const _RAGGRUPPAMENTI = [_RAGGR_VERSIONE, _RAGGR_FAMIGLIA, _RAGGR_TAGLIA, ..._VERSIONI_CON_TIPO];
 
 // 🆕 v6.329 (Franco) - L'ORDINE DEI RIQUADRI DEI RISULTATI, dichiarato in un posto solo:
 // versioni, categorie, change, omaggio, errori di stampa.
@@ -44539,7 +44663,7 @@ const _RAGGRUPPAMENTI = [_RAGGR_VERSIONE, _RAGGR_FAMIGLIA, ..._VERSIONI_CON_TIPO
 //    articoli («di che famiglia sono»), come la versione, mentre i tre riquadri che seguono
 //    tagliano dentro una versione sola. Sta prima della categoria perché quella vive nei soli
 //    Retro, dove famiglie non ce ne sono: i due non si incontrano mai.
-const _ORDINE_RIQUADRI = ['versione', 'famiglia', 'categoria', ..._VERSIONI_CON_TIPO.map(v => v.chiave)];
+const _ORDINE_RIQUADRI = ['versione', 'famiglia', 'taglia', 'categoria', ..._VERSIONI_CON_TIPO.map(v => v.chiave)];   // v7.200: + taglia
 
 // 🆕 v6.234 — I DUE LIVELLI DELL'ORDINAMENTO DELLE FIGURINE, ricavati dall'elenco.
 //
@@ -66680,8 +66804,7 @@ function switchToEditMode(figId) {
   html += '<div style="margin-bottom:0.75rem;"><label class="detail-label" style="display:block;margin-bottom:0.3rem;">📦 ' + (currentLang==='it'?'Disponibilità':'Availability') + '</label>'
     + '<input class="form-input" type="text" id="fe-disponibilita" value="' + esc(f.disponibilita || '') + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>';
   // 🆕 v7.184 - le pagine per le foto annuncio, solo sull'album base con le pagine sue (vedi `_FA_SITI`)
-  html += _bloccoFotoAnnuncioEdit(f);
-  html += _bloccoTestiAccountEdit(f);   // v7.199
+  // 🔄 v7.200 - le foto annuncio e i testi per account scendono sotto il flag Ebay, in due linguette (`_sottoTabEbay`)
   html += '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">' +
     '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;font-weight:600;margin-bottom:' + (f.forSale ? '0.6rem' : '0') + ';">' +
     '<input type="checkbox" id="fe-for-sale" onchange="toggleFeForSaleFields()" ' + (f.forSale ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
@@ -66741,6 +66864,7 @@ function switchToEditMode(figId) {
         '<textarea class="form-input" id="fe-ebay-desc-en" rows="3" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc(f.ebayDescEn || '') + '</textarea></div>' +
     '</div>' +
     '</div>';
+  html += _sottoTabEbay(f);   // v7.200
   html += '<div style="margin-bottom:0.75rem;' + ((f.section === 'figurines' || f.section === 'retros') ? '' : 'display:none;') + '">' +
     '<label class="detail-label" style="display:block;margin-bottom:0.4rem;">📷 ' + (currentLang==='it'?'Foto per Ebay':'Ebay photo') + '</label>' +
     '<div style="font-size:0.72rem;color:var(--text);margin-bottom:0.5rem;">' + (currentLang==='it'?'Foto dedicata da usare per l\'annuncio Ebay, indipendente da quella dell\u2019Inventario':'Dedicated photo for the Ebay listing, separate from the catalog one') + '</div>' +
@@ -67831,18 +67955,64 @@ const _TESTI_CAMPI = [['titolo', 'Titolo', 'Title'], ['desc', 'Descrizione', 'De
 function _bloccoTestiAccountEdit(f) {
   if (!f || f.section !== 'albums') return '';
   const it = currentLang === 'it', t = f.testiAccount || {};
+  // 🔄 v7.200 (Franco: «organizziamoli su 3 tab (Franco, Fabio, Lendys), mettendoli negli omonimi tab») - una linguetta
+  //    per account; in ognuna Titolo ITA, Titolo ENG, Descrizione ITA, Descrizione ENG. I tre pannelli restano tutti
+  //    nella pagina (nascosti gli altri due): il Salva li legge tutti e tre, come prima.
+  const linguetta = (a, i) => '<button type="button" class="fe-ta-tab" data-account="' + a + '" onclick="_feTaTab(\'' + a + '\')"'
+    + ' style="padding:0.35rem 0.9rem;border:none;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;font-family:var(--font-ui);'
+    + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + a + '</button>';
   return '<div id="fe-testi-account" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
-    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.6rem;">✍️ ' + (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account') + '</div>'
-    + _TESTI_CAMPI.map(([k, nIt, nEn]) => _TESTI_ACCOUNT.map(a => ['It', 'En'].map(l => {
+    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;">✍️ ' + (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account') + '</div>'
+    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + _TESTI_ACCOUNT.map(linguetta).join('') + '</div>'
+    + _TESTI_ACCOUNT.map((a, i) => '<div class="fe-ta-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
+      + _TESTI_CAMPI.map(([k, nIt, nEn]) => ['It', 'En'].map(l => {
         const id = 'fe-ta-' + a + '-' + k + l, v = (t[a] || {})[k + l] || '';
-        const etichetta = (it ? nIt : nEn) + ' ' + a + ' - ' + (l === 'It' ? 'ITA' : 'ENG');
+        const etichetta = (it ? nIt : nEn) + ' - ' + (l === 'It' ? 'ITA' : 'ENG');
         return '<div style="margin-bottom:0.5rem;"><label for="' + id + '" style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' + etichetta + '</label>'
           + (k === 'titolo'
             ? '<input class="form-input" type="text" id="' + id + '" value="' + esc(v) + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;">'
-            : '<textarea class="form-input" id="' + id + '" rows="3" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc(v) + '</textarea>')
+            // v7.200 (Franco: «i campi Descrizione ITA e Descrizione ENG … devono essere più lunghi») - 3 → 12 righe
+            : '<textarea class="form-input" id="' + id + '" rows="12" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc(v) + '</textarea>')
           + '</div>';
-      }).join('')).join('')).join('')
+      }).join('')).join('')
+      + '</div>').join('')
     + '</div>';
+}
+// 🆕 v7.200 (Franco: «per evitare che la lunghezza della form diventi eccessiva, potremmo dividere il tab "Ebay" in due
+//    tab "Foto annuncio" e "Descrizione"; il flag ebay … lo metti prima dell'inizio dei 2 tab») - SOTTO IL FLAG EBAY,
+//    DUE LINGUETTE: «Foto annuncio» (`_bloccoFotoAnnuncioEdit`) e «Descrizione» (`_bloccoTestiAccountEdit`). Tutte e due
+//    restano nella pagina (una nascosta): il Salva legge le caselle di entrambe. Se ne esiste una sola (un album senza
+//    pagine sue non ha le foto annuncio) la linguetta non serve: il blocco si mostra e basta.
+function _sottoTabEbay(f) {
+  const it = currentLang === 'it';
+  const parti = [['foto', it ? 'Foto annuncio' : 'Listing photos', _bloccoFotoAnnuncioEdit(f)], ['desc', it ? 'Descrizione' : 'Description', _bloccoTestiAccountEdit(f)]]
+    .filter(p => p[2]);
+  if (parti.length < 2) return parti.map(p => p[2]).join('');
+  return '<div id="fe-ebay-sottotab" style="margin-top:0.25rem;">'
+    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem;">'
+    + parti.map((p, i) => '<button type="button" class="fe-eb-tab" data-parte="' + p[0] + '" onclick="_feEbTab(\'' + p[0] + '\')"'
+      + ' style="padding:0.4rem 0.9rem;border:none;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;font-family:var(--font-ui);'
+      + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + p[1] + '</button>').join('')
+    + '</div>'
+    + parti.map((p, i) => '<div class="fe-eb-pannello" data-parte="' + p[0] + '"' + (i === 0 ? '' : ' style="display:none;"') + '>' + p[2] + '</div>').join('')
+    + '</div>';
+}
+function _feEbTab(k) {
+  document.querySelectorAll('#fe-ebay-sottotab .fe-eb-tab').forEach(b => {
+    const su = b.dataset.parte === k;
+    b.style.borderBottomColor = su ? 'var(--accent)' : 'transparent';
+    b.style.fontWeight = su ? '700' : '400';
+  });
+  document.querySelectorAll('#fe-ebay-sottotab .fe-eb-pannello').forEach(p => { p.style.display = p.dataset.parte === k ? '' : 'none'; });
+}
+// v7.200 - la linguetta scelta si accende, il suo pannello si vede, gli altri due si nascondono
+function _feTaTab(a) {
+  document.querySelectorAll('#fe-testi-account .fe-ta-tab').forEach(b => {
+    const su = b.dataset.account === a;
+    b.style.borderBottomColor = su ? 'var(--accent)' : 'transparent';
+    b.style.fontWeight = su ? '700' : '400';
+  });
+  document.querySelectorAll('#fe-testi-account .fe-ta-pannello').forEach(p => { p.style.display = p.dataset.account === a ? '' : 'none'; });
 }
 function _feTestiAccount() {
   const out = {};
