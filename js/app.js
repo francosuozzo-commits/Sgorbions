@@ -1,7 +1,45 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.201 - Modificati js/app.js e index.html (per la versione). Il riquadro della taglia si chiama «Filtra per taglie»
+// v7.202 - Modificati js/app.js e index.html (per la versione). CLOUDINARY, LE MISURE DELLE FOTO (Franco, sulla tabella
+//          di `Claude outputs\misura\proposta-misure-foto.md`: «tutte sì tranne la 11»). Tutte `c_fit`: due posti che
+//          chiedono la stessa misura usano la stessa copia, fatta una volta. Caroselli 400 → 300 (la copia della
+//          griglia); copertina della serie e testata della sezione 200 → 400; fotina della serie nella testata
+//          120 → 200; frecce serie/sezione 96 → 120; scheda, retro a una faccia 640 → 800 (come la scheda);
+//          linguette degli articoli collegati 60 → 120; finestra di modifica (ebay, retro, anteprime) 640 → 800;
+//          *Mia lista*, locandine 240 → 200; questionario: copertina piccola 160 → 200, foto grande della tipologia
+//          900×500 → 800×800, carte delle tipologie e degli album 400×300 → 400×400. Le grandezze a schermo non
+//          cambiano: le decide lo stile (`.series-cover` 160/288 px fissi; `.wz-grande-foto img` con max-width e
+//          max-height sotto la foto arrivata). Restano fuori: la 2 (griglia a 400 nelle tipologie larghe: va prima
+//          misurato quali), la 11 (Sfoglia, Franco: no). La 19 (questionario, foto grande della serie) 900×600 → 600×600
+//          e non 400 come proposto: sul telefono servono 540 (Franco: «19 a 600 e 8 resta 800»).
+//          ANNUNCI, RIQUADRO «Serie» (Franco: «il contatore della pillola sia più lontano dall'etichetta … il nome
+//          della pillola è già un numero»): `_chipTipoHTML` accetta `stacco` (lo spazio fra nome e numero, se no
+//          0.35rem come sempre); il riquadro delle serie lo chiede a 1rem. E (Franco: «prima serie, poi account e poi
+//          sito; account rinominalo "Venditore"») i riquadri in quell'ordine, «Filtra per venditore» (EN «Filter by
+//          seller»; la chiave e il campo restano `account`). Poi (Franco: «procedi con colonna e campo degli
+//          Annunci») «Venditore» anche nella colonna della tabella, nel campo della finestra e nei tre messaggi degli
+//          annunci (conferma di «Applica valori da album», saltati, «Scegli prima il venditore»). Il tab Ebay
+//          dell'album («Titoli e descrizioni per account») e la console eBay restano «account»: altre schermate.
+//          E il tasto (Franco: «chiamalo "Applica valori da album e venditore" (vai pure su due righe)»): a capo dopo
+//          «album», via il `nowrap`; lo stesso nome nel titolo della conferma.
+//          E un quarto riquadro (Franco: «aggiungi un filtro … chiamato numero, con una pillola per ogni numero
+//          esistente, tra gli annunci in corso»): «Filtra per numero», in fondo, voci = i valori del campo N di tutti
+//          gli annunci (senza vuoti né doppioni, in ordine di numero), numero della pillola staccato come nelle serie.
+//          Tabella degli annunci (Franco: «colora il selettore Sito: ebay rosso, vinted verde, … azzurro»; «non volevo
+//          la scritta colorata ma lo sfondo della tendina»; «la testata della tabella falla in color azzurro serie»):
+//          `_annStileSito` (poi Franco: «ebay era azzurro; Subito … un rosso più scuro; vinted … un verde più scuro»),
+//          sfondo eBay `--info` (scritta `--bg`), Subito #a8233a, Vinted #1e7a46 (scritta bianca), sul selettore e
+//          sulle sue voci, rifatto al cambio; titoli delle colonne in `--info`. E il Voto
+//          (Franco: «dagli una approssimazione di 0,5 (ora è 1)»): `step="0.5"` in tabella e nella finestra, e salvato
+//          arrotondato al mezzo punto (`_annMezzo`). Costo e Prezzo restano `step="any"`. E nella finestra, sulla riga
+//          di Articolo (Franco: «un tasto "Applica valori da coppia Venditore - Articolo"; se premuto, il tasto deve
+//          prendere tutti e 4 campi dall'articolo»): `_annApplicaCoppia`, i quattro «Prendi valore» in un colpo; un
+//          campo che l'album non ha resta com'è, la riga di stato dice quanti ne ha presi; non salva. Pillole del
+//          numero: stacco 1.6rem e «#» davanti al conteggio (`prima` di `_chipTipoHTML`). Tabella: Voto 2,6rem, Costo e
+//          Prezzo 2,9rem, celle col margine stretto, € attaccato alla casella. Link in rosso se non contiene la parola
+//          del suo sito (Franco: Vinted «vinted», eBay «ebay», Subito «subito»; `_annLinkSbagliato`), rifatto al cambio.
+// v7.201 -Modificati js/app.js e index.html (per la versione). Il riquadro della taglia si chiama «Filtra per taglie»
 //          (Franco: «se gli altri cominciano con "filtra per" allora lo deve fare anche questo e avremmo quindi
 //          "filtra per taglie"»): `codaRaggrIt` 'taglia' → 'taglie', in inglese 'size' → 'sizes'.
 //          ANNUNCI, VIA LO ZIP (Franco: «il campo foto zip ti dico di cancellarlo perché … le foto degli annunci sono
@@ -31456,7 +31494,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.201';
+const JS_VERSION = 'v7.202';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35031,7 +35069,7 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs,
     // 🆕 v7.185 (Franco: «fai apparire questa A anche nel carosello della pagina della serie») - la «A» degli album con
     //    testi per gli annunci sta sulla foto: solo quando c'è, la foto entra in un riquadro suo che le fa da riferimento.
     (_segnoCar ? '<div style="position:relative;line-height:0;">' : '') +
-    '<img src="' + _urlCarosello(f, _fotoFigurina(f, figs) || f.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" ' +
+    '<img src="' + _urlCarosello(f, _fotoFigurina(f, figs) || f.img, 'w_300,h_300,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" ' +
       'style="width:100%;' + (altezzaFoto ? 'height:' + altezzaFoto + 'px;' : 'aspect-ratio:1;height:auto;') + 'object-fit:contain;border-radius:6px;background:var(--card);">' +
     (_segnoCar ? _segnoCar + '</div>' : '') +
     righe + _monetaHTML +
@@ -41275,16 +41313,30 @@ function _annTitoloPerSito(sito, t) {
 // 🆕 v7.199 (Franco: «aggiungiamo un box filtri chiamato "Serie", che contiene una pillola per ogni serie del sito;
 //    usa i nomi brevi») - il terzo riquadro. La voce è l'id della serie (`campo` = il campo della riga da guardare,
 //    se non è la chiave del riquadro), e a schermo va il nome breve (`etichetta`), come nella colonna Serie.
-const _annFiltro = { sito: new Set(), account: new Set(), serie: new Set() };
+const _annFiltro = { sito: new Set(), account: new Set(), serie: new Set(), n: new Set() };
+// 🔄 v7.202 (Franco: «mettere prima serie, poi account e poi sito; account rinominalo "Venditore"») - l'ordine dei
+//    riquadri è quello dell'elenco; il titolo segue la formula degli altri, «Filtra per venditore» (la chiave resta
+//    `account`, come il campo della riga)
 const _ANN_RIQUADRI = [
-  { k: 'sito', it: 'Filtra per sito', en: 'Filter by site', voci: () => _FA_SITI.map(s => s.nome) },
-  { k: 'account', it: 'Filtra per account', en: 'Filter by account', voci: () => _ANN_ACCOUNT },
   // 🔄 v7.199 (Franco: «deve contare solo le serie che hanno almeno un album; per Mega 1 e 2 la pillola non dovrebbe
   //    esserci, in quanto quelle 2 serie condividono l'album con la serie Holidays») - solo le serie con almeno un album
   //    con le foto sue: quello di Mega 1 e Mega 2 le prende da «W gli Sgorbions» (`fotoDaAlbumId`)
-  { k: 'serie', campo: 'seriesId', it: 'Serie', en: 'Series',
+  // 🔄 v7.202 (Franco: «il contatore della pillola sia più lontano dall'etichetta … il nome della pillola è già un
+  //    numero, e quindi vedo due numeri vicini») - `stacco`: lo spazio fra nome e conteggio («Serie 2   5»)
+  { k: 'serie', campo: 'seriesId', it: 'Serie', en: 'Series', stacco: '1rem',
     voci: () => _annSerie().filter(s => (s.items || []).some(f => f.section === 'albums' && !f.fotoDaAlbumId)).map(s => s.id),
     etichetta: id => { const s = _annSerie().find(x => x.id === id); return s ? _nomeSerieCard(s, true) : id; } },
+  { k: 'account', it: 'Filtra per venditore', en: 'Filter by seller', voci: () => _ANN_ACCOUNT },
+  { k: 'sito', it: 'Filtra per sito', en: 'Filter by site', voci: () => _FA_SITI.map(s => s.nome) },
+  // 🆕 v7.202 (Franco: «un filtro … chiamato numero, con una pillola per ogni numero esistente tra gli annunci in corso
+  //    (indipendentemente da altri attributi degli annunci)») - le voci sono i valori del campo N di tutti gli annunci,
+  //    senza doppioni e senza i vuoti, in ordine di numero («2» prima di «10»); il conteggio segue gli altri riquadri.
+  //    Il nome è già un numero: lo stesso `stacco` delle serie
+  // 🔄 v7.202 (Franco: «anche nelle pillole dei filtri per numero, aumenta lo spazio tra l'etichetta e il valore») - più
+  //    delle serie: qui l'etichetta è solo un numero. E (Franco: «prima del numero (il valore della pillola) mettici un
+  //    #») il conteggio si legge «#3» (`prima`, in `_chipTipoHTML`)
+  { k: 'n', it: 'Filtra per numero', en: 'Filter by number', stacco: '1.6rem', prima: '#',
+    voci: () => [...new Set(_annRighe.map(r => String(r.n ?? '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true })) },
 ];
 function _annPassa(r, salta) {
   return _ANN_RIQUADRI.every(q => q.k === salta || !_annFiltro[q.k].size || _annFiltro[q.k].has(r[q.campo || q.k]));
@@ -41312,12 +41364,35 @@ function _annFiltriHTML() {
       attiva: _annFiltro[q.k].has(v), it,
       onSet: "_annFiltra('" + q.k + "'," + j + ",false)", onAdd: "_annFiltra('" + q.k + "'," + j + ",true)",
       titolo: it ? 'Solo questo' : 'Only this',
+      stacco: q.stacco, prima: q.prima,
     })).join('');
     return '<div style="position:relative;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:1.05rem 0.9rem 0.7rem;">'
       + '<div style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;white-space:nowrap;">'
       + '<span style="font-size:0.78rem;font-weight:600;color:var(--info);">' + (it ? q.it : q.en) + '</span></div>'
       + '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">' + chips + '</div></div>';
   }).join('');
+}
+// 🆕 v7.202 (Franco: «ebay -> rosso, vinted -> verde, ebay -> azzurro» - il terzo è Subito, l'unico sito rimasto) - il
+//    colore del selettore Sito nella tabella degli annunci
+// 🆕 v7.202 (Franco: «il campo voto: dagli una approssimazione di 0,5») - il voto arrotondato al mezzo punto più vicino
+//    (frecce di 0,5, e un 3,3 scritto a mano diventa 3,5)
+function _annMezzo(v) {
+  return Math.round(v * 2) / 2;
+}
+// 🆕 v7.202 (Franco: «se il campo Sito è Vinted, il campo url deve contenere la parola "vinted"; … Ebay … "ebay";
+//    … Subito … "subito"; se uno di questi controlli è violato, metti la url in rosso») - vero se il link c'è e non
+//    contiene la parola del suo sito (maiuscole e minuscole uguali). Link vuoto o sito senza parola: niente da dire.
+function _annLinkSbagliato(sito, link) {
+  const parola = ({ eBay: 'ebay', Vinted: 'vinted', 'Subito.it': 'subito' })[sito];
+  return !!(parola && link && !String(link).toLowerCase().includes(parola));
+}
+// 🔄 v7.202 (Franco: «non volevo la scritta colorata ma lo sfondo della tendina»; «ebay era azzurro; Subito era rosso
+//    (ma fai un rosso più scuro); e vinted era verde (ma fai un verde più scuro)») - il colore del sito fa lo SFONDO:
+//    eBay l'azzurro serie con la scritta scura (`--bg`), Subito un rosso scuro e Vinted un verde scuro, tutti e due con
+//    la scritta bianca (tinte mie). Senza sito: come prima.
+function _annStileSito(sito) {
+  const sf = ({ eBay: 'var(--info)', Vinted: '#1e7a46', 'Subito.it': '#a8233a' })[sito];
+  return sf ? 'background:' + sf + ';color:' + (sito === 'eBay' ? 'var(--bg)' : '#fff') + ';' : '';
 }
 // v7.187 - l'ordinamento della tabella: le chiavi delle colonne, in fila come i titoli, e la colonna scelta
 const _ANN_COLONNE = ['sito', 'account', 'serie', 'tipologia', 'articolo', 'n', 'titolo', 'voto', 'costo', 'prezzo', 'link'];   // v7.191: + voto; v7.200: + tipologia
@@ -41348,7 +41423,8 @@ function _annDisegna() {
     const k = _ANN_COLONNE[_col++], su = _annOrdine.col === k;
     // v7.200 (Franco: «i titoli scrivili in camel case») - come sono scritti, non nel maiuscolo di `.data-table th`
     // v7.200 (Franco: «centra il nome delle colonne rispetto alla larghezza della cella») - `text-align:center`
-    return '<th style="white-space:nowrap;cursor:pointer;user-select:none;text-transform:none;letter-spacing:0;text-align:center;" onclick="_annOrdina(\'' + k + '\')" title="' + (it ? 'Ordina' : 'Sort') + '">'
+    // v7.202 (Franco: «la testata della tabella falla in color azzurro serie») - `--info`
+    return '<th style="white-space:nowrap;cursor:pointer;user-select:none;text-transform:none;letter-spacing:0;text-align:center;color:var(--info);" onclick="_annOrdina(\'' + k + '\')" title="' + (it ? 'Ordina' : 'Sort') + '">'
       + t + (su ? (_annOrdine.su ? ' ▲' : ' ▼') : '') + '</th>';
   };
   const valore = r => {
@@ -41383,7 +41459,7 @@ function _annDisegna() {
     + '<th style="text-align:center;"><input type="checkbox" title="' + (it ? 'Spunta tutte quelle che vedi' : 'Tick all visible') + '"'
       + (righe.every(([r]) => _annSpuntati.has(r.id)) ? ' checked' : '') + ' onchange="_annSpuntaTutti(this.checked)"></th>'
     // v7.200 (Franco: «"Tipologia" su una riga e "articolo" sulla riga dopo (senza "di")»)
-    + th(it ? 'Sito' : 'Site') + th('Account') + th(it ? 'Serie' : 'Series') + th(it ? 'Tipologia<br>articolo' : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
+    + th(it ? 'Sito' : 'Site') + th(it ? 'Venditore' : 'Seller') + th(it ? 'Serie' : 'Series') + th(it ? 'Tipologia<br>articolo' : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
     // v7.187 (Franco: «il campo descrizione non mostrarlo nella tabella degli annunci; mostra invece la url») - la
     //    descrizione resta nella finestra; in tabella al suo posto il link, scritto per intero
     // v7.187 (Franco: «per ora togli il campo Foto dalla tabellina») - lo zip resta nella finestra
@@ -41391,22 +41467,27 @@ function _annDisegna() {
     // v7.191 (Franco: «aggiungiamo una colonna alla tabella degli annunci: Voto; da mettere prima di costo»)
     + th(it ? 'Voto' : 'Rating') + th(it ? 'Costo' : 'Cost') + th(it ? 'Prezzo' : 'Price') + th('Link')
     // v7.200 - sopra i quattro tasti della riga, «Applica valori da album» (agli annunci spuntati)
+    // 🔄 v7.202 (Franco: «chiamalo "Applica valori da album e venditore" (vai pure su due righe)») - a capo dopo «album»
     + '<th style="text-align:center;text-transform:none;letter-spacing:0;"><button type="button" class="btn-barra-admin pieno" id="ann-applica-album" onclick="_annApplicaDaAlbum()"'
-      + ' style="font-size:0.75rem;padding:0.2rem 0.6rem;white-space:nowrap;">📥 ' + (it ? 'Applica valori da album' : 'Apply values from album') + '</button></th>'
+      + ' style="font-size:0.75rem;padding:0.2rem 0.6rem;line-height:1.25;">📥 ' + (it ? 'Applica valori da album<br>e venditore' : 'Apply values from album<br>and seller') + '</button></th>'
     + '</tr></thead><tbody>'
     + righe.map(([r, i]) => {
         const s = serie.get(r.seriesId), f = figs.get(r.articoloId);
         // v7.187 (Franco: «nella tabella degli annunci vorrei poter editare anche senza aprire il record») - Sito,
         //    Account, Titolo, Prezzo e Link si cambiano nella riga e si salvano appena si esce dalla casella
         //    (`_annCampo`). Serie e Articolo no: passano dalla tipologia, che sta solo nella finestra (✏️).
-        const sel = (campo, voci) => '<select class="ann-cella" onchange="_annCampo(' + i + ',\'' + campo + '\',this)">'
+        // 🆕 v7.202 (Franco: «colora il selettore Sito: ebay rosso, vinted verde, … azzurro») - il colore del sito scelto,
+        //    rifatto anche al cambio (la riga non si ridisegna)
+        const sel = (campo, voci) => '<select class="ann-cella"' + (campo === 'sito' ? ' style="' + _annStileSito(r.sito) + 'font-weight:600;"' : '')
+          + ' onchange="' + (campo === 'sito' ? 'this.style.cssText=_annStileSito(this.value)+\'font-weight:600;\';' : '') + '_annCampo(' + i + ',\'' + campo + '\',this)">'
           + (campo === 'account' ? '<option value="">—</option>' : '')
           // v7.200 (Franco: «Subito.it scrivilo come Subito») - in tabella si legge «Subito»; il valore resta «Subito.it»
-          + voci.map(x => '<option value="' + esc(x) + '"' + (x === r[campo] ? ' selected' : '') + '>' + esc(x === 'Subito.it' ? 'Subito' : x) + '</option>').join('') + '</select>';
+          + voci.map(x => '<option value="' + esc(x) + '"' + (campo === 'sito' ? ' style="' + _annStileSito(x) + '"' : '') + (x === r[campo] ? ' selected' : '') + '>' + esc(x === 'Subito.it' ? 'Subito' : x) + '</option>').join('') + '</select>';
         // 🔄 v7.191 (Franco: «le due colonne Costo e Prezzo, quando si premono i tasti con le frecce, devono salire e
         //    scendere di 1 euro») - `step="any"`: le frecce vanno di 1 e i centesimi si possono ancora scrivere a mano
         //    (con `step="1"` un 4,50 sarebbe un valore «non valido» per il browser)
-        const inp = (campo, tipo, val, st) => '<input class="ann-cella" type="' + tipo + '"' + (tipo === 'number' ? ' min="0" step="any"' : '')
+        // 🔄 v7.202 (Franco: «il campo voto: dagli una approssimazione di 0,5 (ora è 1)») - il voto va di mezzo in mezzo
+        const inp = (campo, tipo, val, st) => '<input class="ann-cella" type="' + tipo + '"' + (tipo === 'number' ? ' min="0" step="' + (campo === 'voto' ? '0.5' : 'any') + '"' : '')
           + ' value="' + esc(val ?? '') + '" style="' + st + '" onchange="_annCampo(' + i + ',\'' + campo + '\',this)">';
         return '<tr>'
           + '<td style="text-align:center;"><input type="checkbox"' + (_annSpuntati.has(r.id) ? ' checked' : '') + ' onchange="_annSpunta(\'' + esc(r.id || '') + '\',this.checked)"></td>'   // v7.200
@@ -41423,12 +41504,17 @@ function _annDisegna() {
           + '<td>' + inp('n', 'text', r.n, 'width:2.6rem;') + '</td>'
           // v7.200 (Franco: «accorcia il campo "Titolo" di un 20%»; «riduci la larghezza della colonna Costo e Prezzo»)
           + '<td>' + inp('titolo', 'text', r.titolo, 'min-width:272px;width:100%;') + '</td>'
-          + '<td>' + inp('voto', 'number', r.voto, 'width:3.4rem;text-align:right;') + '</td>'   // v7.191
-          + '<td style="white-space:nowrap;">' + inp('costo', 'number', r.costo, 'width:3.4rem;text-align:right;') + ' €</td>'
-          + '<td style="white-space:nowrap;">' + inp('prezzo', 'number', r.prezzo, 'width:3.4rem;text-align:right;') + ' €</td>'
+          // 🔄 v7.202 (Franco: «le colonne Costo e Prezzo sono ancora troppo larghe; avvicina il simbolo dell'Euro al
+          //    valore»; «stringi anche la colonna Voto») - caselle più strette (3,4 → 2,9 e 2,6rem), celle senza il
+          //    margine largo della tabella, € attaccato alla casella
+          + '<td style="padding-left:0.25rem;padding-right:0.25rem;">' + inp('voto', 'number', r.voto, 'width:2.6rem;text-align:right;') + '</td>'   // v7.191
+          + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('costo', 'number', r.costo, 'width:2.9rem;text-align:right;') + '<span style="margin-left:2px;">€</span></td>'
+          + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('prezzo', 'number', r.prezzo, 'width:2.9rem;text-align:right;') + '<span style="margin-left:2px;">€</span></td>'
           // il 🔗 legge il link al clic: così vale anche quello appena cambiato nella casella
           // v7.187 (Franco: «il campo "Link" accorcialo, tanto per aprirlo c'è il bottoncino affianco»)
-          + '<td style="white-space:nowrap;">' + inp('link', 'url', r.link, 'width:9rem;')
+          // 🆕 v7.202 (Franco: «se il campo Sito è Vinted, il campo url deve contenere la parola "vinted"» - e così eBay e
+          //    Subito) - un link che non nomina il suo sito si scrive in rosso (`_annLinkSbagliato`)
+          + '<td style="white-space:nowrap;">' + inp('link', 'url', r.link, 'width:9rem;' + (_annLinkSbagliato(r.sito, r.link) ? 'color:var(--danger);' : ''))
             + ' <a href="#" style="color:var(--info);text-decoration:none;" title="' + (it ? 'Apri l\'annuncio' : 'Open the listing') + '" onclick="_annApriLink(' + i + ');return false;">🔗</a></td>'
           + '<td style="white-space:nowrap;">'
             // v7.187 (Franco: «aggiungi un tasto per aprire annuncio in sola lettura; mettilo prima di Modifica») - l'occhio
@@ -41490,7 +41576,10 @@ async function _annCampo(i, campo, el) {
   const r = _annRighe[i];
   if (!r) return;
   let val = el.value.trim();
-  if (campo === 'prezzo' || campo === 'costo' || campo === 'voto') { const n = parseFloat(val); val = Number.isFinite(n) ? n : null; }   // v7.191: + voto
+  if (campo === 'prezzo' || campo === 'costo' || campo === 'voto') {   // v7.191: + voto
+    const n = parseFloat(val); val = Number.isFinite(n) ? n : null;
+    if (campo === 'voto' && val !== null) { val = _annMezzo(val); el.value = val; }   // v7.202: al mezzo punto
+  }
   else if (campo !== 'sito') val = val || null;
   if (campo === 'titolo' && !val) { el.value = r.titolo || ''; el.style.borderColor = 'var(--danger)'; toast(currentLang === 'it' ? 'Il titolo non può restare vuoto.' : 'The title cannot be empty.', 'error'); return; }
   const righe = _annRighe.slice();
@@ -41505,6 +41594,7 @@ async function _annCampo(i, campo, el) {
     // sito e account cambiano i numeri delle pillole (e magari il titolo): si ridisegna. Gli altri no.
     if (campo === 'sito' || campo === 'account') _annDisegna();
     else if (titCambia) el.value = tit;
+    if (campo === 'link') el.style.color = _annLinkSbagliato(righe[i].sito, val) ? 'var(--danger)' : '';   // v7.202
   } catch (e) {
     console.error('_annCampo', e);
     el.value = r[campo] ?? '';
@@ -41569,10 +41659,10 @@ async function _annApplicaDaAlbum() {
   const scelti = _annRighe.filter(r => _annSpuntati.has(r.id));
   if (!scelti.length) { toast(it ? 'Spunta prima gli annunci da aggiornare.' : 'Tick the listings to update first.', 'error'); return; }
   const ok = await _finestraConferma({
-    titolo: '📥 ' + (it ? 'Applica valori da album' : 'Apply values from album'),
+    titolo: '📥 ' + (it ? 'Applica valori da album e venditore' : 'Apply values from album and seller'),   // v7.202
     testo: it ? 'Aggiornare ' + (scelti.length === 1 ? 'l’annuncio selezionato' : 'tutti i ' + scelti.length + ' annunci selezionati')
-        + ' con Titolo ITA, Titolo ENG, Descrizione ITA e Descrizione ENG del loro album, per il loro account? I campi che l’album non ha scritto restano come sono.'
-      : 'Update ' + scelti.length + ' selected listing(s) with the album’s Title ITA/ENG and Description ITA/ENG for their account? Fields the album has not written stay as they are.',
+        + ' con Titolo ITA, Titolo ENG, Descrizione ITA e Descrizione ENG del loro album, per il loro venditore? I campi che l’album non ha scritto restano come sono.'
+      : 'Update ' + scelti.length + ' selected listing(s) with the album’s Title ITA/ENG and Description ITA/ENG for their seller? Fields the album has not written stay as they are.',
     ok: it ? 'Aggiorna' : 'Update', annulla: it ? 'Annulla' : 'Cancel'
   });
   if (!ok) return;
@@ -41580,7 +41670,7 @@ async function _annApplicaDaAlbum() {
   try {
     if (esito.cambiati) await _annScrivi(esito.righe);
     toast((it ? '✅ Annunci aggiornati: ' : '✅ Listings updated: ') + esito.cambiati
-      + (esito.saltati.length ? (it ? ' · saltati (senza account o senza album): ' : ' · skipped (no account or album): ') + esito.saltati.length : ''), 'success');
+      + (esito.saltati.length ? (it ? ' · saltati (senza venditore o senza album): ' : ' · skipped (no seller or album): ') + esito.saltati.length : ''), 'success');
   } catch (e) {
     console.error('_annApplicaDaAlbum', e);
     toast((it ? '⚠️ NON aggiornati: ' : '⚠️ NOT updated: ') + (e?.message || e), 'error');
@@ -41590,13 +41680,33 @@ function _annPrendiValore(chiave, id) {
   const it = currentLang === 'it', v = x => document.getElementById(x);
   const stato = v('ann-stato'), dire = t => { if (stato) stato.textContent = t; };
   const account = v('ann-account')?.value, artId = v('ann-articolo')?.value;
-  if (!account) return dire(it ? '⚠️ Scegli prima l’account.' : '⚠️ Choose the account first.');
+  if (!account) return dire(it ? '⚠️ Scegli prima il venditore.' : '⚠️ Choose the seller first.');
   const idx = _indiceArticoli(), art = artId ? idx.get(artId) : null;
   if (!art || art.section !== 'albums') return dire(it ? '⚠️ Scegli prima l’album nel campo Articolo.' : '⚠️ Choose the album in the Item field first.');
   const val = _annValoreDaAlbum(art, account, chiave, idx);
   if (!val) return dire(it ? '⚠️ L’album non ha questo campo scritto per ' + account + '.' : '⚠️ The album has no such field for ' + account + '.');
   v(id).value = val;
   dire('');
+}
+// 🆕 v7.202 - i quattro «Prendi valore» in un colpo (Titolo ITA/ENG, Descrizione ITA/ENG), per il venditore e l'album
+//    scelti nella finestra. Un campo che l'album non ha scritto resta com'è, e la riga di stato dice quanti ne ha presi.
+//    Non salva: si vede il risultato e si preme Salva.
+const _ANN_CASELLE = [['titoloIt', 'ann-titolo'], ['titoloEn', 'ann-titolo-en'], ['descIt', 'ann-descrizione'], ['descEn', 'ann-descrizione-en']];
+function _annApplicaCoppia() {
+  const it = currentLang === 'it', v = x => document.getElementById(x);
+  const stato = v('ann-stato'), dire = t => { if (stato) { stato.style.color = 'var(--info)'; stato.textContent = t; } };
+  const account = v('ann-account')?.value, artId = v('ann-articolo')?.value;
+  if (!account) return dire(it ? '⚠️ Scegli prima il venditore.' : '⚠️ Choose the seller first.');
+  const idx = _indiceArticoli(), art = artId ? idx.get(artId) : null;
+  if (!art || art.section !== 'albums') return dire(it ? '⚠️ Scegli prima l’album nel campo Articolo.' : '⚠️ Choose the album in the Item field first.');
+  let presi = 0;
+  _ANN_CASELLE.forEach(([chiave, id]) => {
+    const val = _annValoreDaAlbum(art, account, chiave, idx);
+    if (val && v(id)) { v(id).value = val; presi++; }
+  });
+  dire(presi
+    ? (it ? '✅ Presi ' + presi + ' campi su 4 dall’album per ' + account + '. Premi Salva per tenerli.' : '✅ Took ' + presi + ' of 4 fields from the album for ' + account + '. Press Save to keep them.')
+    : (it ? '⚠️ L’album non ha nessuno dei 4 campi scritto per ' + account + '.' : '⚠️ The album has none of the 4 fields for ' + account + '.'));
 }
 // La finestra: `i` = la riga da modificare, null = annuncio nuovo. Annulla / Salva, come le finestre gemelle.
 function _annApriFinestra(i, sola) {
@@ -41639,7 +41749,7 @@ function _annApriFinestra(i, sola) {
     + '<div class="ann-griglia"><div>'
     + lab(it ? 'Sito' : 'Site')
     + '<select id="ann-sito" class="form-select">' + _FA_SITI.map(s => '<option' + (s.nome === r.sito ? ' selected' : '') + '>' + s.nome + '</option>').join('') + '</select>'
-    + lab('Account')
+    + lab(it ? 'Venditore' : 'Seller')
     + '<select id="ann-account" class="form-select"><option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
       + _ANN_ACCOUNT.map(a => '<option' + (a === r.account ? ' selected' : '') + '>' + a + '</option>').join('') + '</select>'
     + lab(it ? 'Serie' : 'Series')
@@ -41650,7 +41760,14 @@ function _annApriFinestra(i, sola) {
     + lab(it ? 'Tipologia di articolo' : 'Item type')
     + '<select id="ann-tipo" class="form-select" onchange="_annCambiaTipo(this.value)">' + _annOpzioniTipologia(r.seriesId || '', tipoR) + '</select>'
     + lab(it ? 'Articolo' : 'Item')
-    + '<select id="ann-articolo" class="form-select">' + _annOpzioniArticolo(r.seriesId || '', tipoR, r.articoloId) + '</select>'
+    // 🆕 v7.202 (Franco: «accanto al campo Articolo (sulla stessa riga) metti un tasto "Applica valori da coppia
+    //    Venditore - Articolo"; se premuto, il tasto deve prendere tutti e 4 campi dall'articolo») - `_annApplicaCoppia`;
+    //    in sola lettura il tasto non c'è
+    + (sola ? '<select id="ann-articolo" class="form-select">' + _annOpzioniArticolo(r.seriesId || '', tipoR, r.articoloId) + '</select>'
+      : '<div style="display:flex;align-items:center;gap:0.5rem;">'
+        + '<select id="ann-articolo" class="form-select" style="flex:1;min-width:0;">' + _annOpzioniArticolo(r.seriesId || '', tipoR, r.articoloId) + '</select>'
+        + '<button type="button" class="btn-secondary ann-prendi" id="ann-applica-coppia" onclick="_annApplicaCoppia()" style="font-size:0.72rem;padding:0.25rem 0.6rem;flex-shrink:0;">'
+        + (it ? 'Applica valori da coppia<br>Venditore - Articolo' : 'Apply values from<br>Seller - Item pair') + '</button></div>')
     // v7.187 (Franco: «aggiungere un campo all'annuncio, da esporre in tabella, chiamato N, da mettere dopo Articolo»)
     + lab('N')
     + '<input id="ann-n" class="form-input" type="text" value="' + esc(r.n ?? '') + '" style="max-width:8rem;">'
@@ -41662,7 +41779,7 @@ function _annApriFinestra(i, sola) {
     // v7.187 (Franco: «aggiungi un campo Costo nell'annuncio, mettilo prima di Prezzo»)
     // v7.191 (Franco) - Voto prima di Costo, come in tabella; frecce di 1 (`step="any"`, vedi `_annDisegna`)
     + lab(it ? 'Voto' : 'Rating')
-    + '<input id="ann-voto" class="form-input" type="number" min="0" step="any" value="' + (r.voto ?? '') + '" style="max-width:10rem;">'
+    + '<input id="ann-voto" class="form-input" type="number" min="0" step="0.5" value="' + (r.voto ?? '') + '" style="max-width:10rem;">'
     + lab(it ? 'Costo (€)' : 'Cost (€)')
     + '<input id="ann-costo" class="form-input" type="number" min="0" step="any" value="' + (r.costo ?? '') + '" style="max-width:10rem;">'
     + lab(it ? 'Prezzo (€)' : 'Price (€)')
@@ -41769,7 +41886,7 @@ async function _annSalva(i, da, dopo) {
     titoloEn: _annTitoloPerSito(v('ann-sito').value, v('ann-titolo-en').value.trim()),   // v7.199: la stessa regola
     descrizione: v('ann-descrizione').value.trim(),
     descrizioneEn: v('ann-descrizione-en').value.trim(),   // v7.187
-    voto: Number.isFinite(voto) ? voto : null,   // v7.191
+    voto: Number.isFinite(voto) ? _annMezzo(voto) : null,   // v7.191; v7.202: al mezzo punto
     costo: Number.isFinite(costo) ? costo : null,   // v7.187
     prezzo: Number.isFinite(prezzo) ? prezzo : null,
     link: v('ann-link').value.trim() || null,   // v7.187
@@ -52405,7 +52522,7 @@ function _disegnaNavSerie() {
     b.type = 'button';
     b.className = 'serie-nav-btn serie-nav-' + verso;
     b.title = (verso === 'prec' ? (it ? 'Serie precedente: ' : 'Previous series: ') : (it ? 'Serie successiva: ' : 'Next series: ')) + (s.name || '');
-    b.innerHTML = (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_96,h_96,c_fit,q_auto,f_auto') + '" alt="">' : '<span class="serie-nav-vuota">🎴</span>')
+    b.innerHTML = (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_120,h_120,c_fit,q_auto,f_auto') + '" alt="">' : '<span class="serie-nav-vuota">🎴</span>')
       // v7.042 (Franco) - la scritta su due righe; sul telefono il foglio la spegne
       // 🔄 v7.126 (Franco: «quell'etichetta scrivila pure su una riga sola») - via il <br>, e `nowrap` nel foglio
       + '<span class="serie-nav-scritta">' + (verso === 'prec' ? (it ? 'serie precedente' : 'previous series') : (it ? 'prossima serie' : 'next series')) + '</span>'
@@ -52459,7 +52576,7 @@ function _disegnaNavSezione() {
     b.type = 'button';
     b.className = 'serie-nav-btn sez-nav-btn sez-nav-' + verso;
     b.title = (verso === 'prec' ? (it ? 'Sezione precedente: ' : 'Previous section: ') : (it ? 'Sezione successiva: ' : 'Next section: ')) + v.nome;
-    b.innerHTML = (v.img ? '<img src="' + esc(cloudinaryUrl(v.img, 'w_96,h_96,c_fit,q_auto,f_auto')) + '" alt="">' : '<span class="serie-nav-vuota">🗂️</span>')
+    b.innerHTML = (v.img ? '<img src="' + esc(cloudinaryUrl(v.img, 'w_120,h_120,c_fit,q_auto,f_auto')) + '" alt="">' : '<span class="serie-nav-vuota">🗂️</span>')
       + '<span class="serie-nav-scritta">' + (verso === 'prec' ? (it ? 'sezione precedente' : 'previous section') : (it ? 'prossima sezione' : 'next section')) + '</span>'
       + '<span class="serie-nav-freccia">' + (verso === 'prec' ? '←' : '→') + '</span>';
     b.onclick = () => { openSeriesSection(v.sez, v.sub || undefined); try { window.scrollTo(0, 0); } catch (e) {} };
@@ -53448,7 +53565,7 @@ function _applicaChiusuraTestata() {
 function _disegnaCopertinaSerie(s) {
   const cover = document.getElementById('detail-cover');
   if (!cover || !s) return;
-  cover.innerHTML = (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_200,h_200,c_fit,q_auto,f_auto') + '">' : '<span>&#127924;</span>')
+  cover.innerHTML = (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '">' : '<span>&#127924;</span>')
     + _timbroStatoSerie(s);
 }
 
@@ -53528,13 +53645,13 @@ function _vestiTestataPerSezione(s) {
   // il posto grande: la foto della sottoserie, senza timbro. Il timbro dice lo stato della
   // SERIE (v6.689) e qui la serie non e' piu' il soggetto di quell'immagine.
   cover.innerHTML = foto
-    ? '<img src="' + cloudinaryUrl(foto, 'w_200,h_200,c_fit,q_auto,f_auto') + '">'
+    ? '<img src="' + cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto') + '">'
     : '<span>&#127924;</span>';
   // la fotina a destra: la serie. Senza timbro anche qui - a 56px non si leggerebbe.
   // 🆕 v6.737 - e in una TDA senza serie la fotina NON c'e': direbbe «questo appartiene
   //    alla serie X», e quella serie e' l'attrezzo che non si deve vedere.
   mini.innerHTML = (!tda && s && s.img)
-    ? '<img src="' + cloudinaryUrl(s.img, 'w_120,h_120,c_fit,q_auto,f_auto') + '" alt="">'
+    ? '<img src="' + cloudinaryUrl(s.img, 'w_200,h_200,c_fit,q_auto,f_auto') + '" alt="">'
     : '';
   // 🔄 v6.721 - dentro una tipologia il nome e' quello della tipologia, senza coda.
   // 🆕 v6.737 - e in una TDA senza serie TACE: il titolo della pagina dice gia' quella
@@ -54798,7 +54915,7 @@ function renderMiaLista() {
       const piena = piene.includes(s);
       return '<button type="button" class="ml-locandina' + (piena ? '' : ' ml-grigia') + (s.id === _mlSerie ? ' on' : '') + '"'
         + (piena ? ' onclick="_mlApriSerie(\'' + s.id + '\')"' : ' disabled') + ' title="' + esc(_nomeSerieCard(s)) + '">'
-        + _wzImg(s.img, 240, 240, '') + '<span>' + esc(_nomeSerieCard(s, true)) + '</span></button>';
+        + _wzImg(s.img, 200, 200, '') + '<span>' + esc(_nomeSerieCard(s, true)) + '</span></button>';
     }).join('') + '</div>';
   if (!piene.length) {
     box.innerHTML = locandine + '<p class="ml-vuota">' + (it ? 'La tua lista è ancora vuota.' : 'Your list is still empty.') + '</p>';
@@ -54850,7 +54967,7 @@ function _wzTesta(s) {
   //    destri coincidono. Solo nella schermata della serie, e il foglio lo accende solo sul desktop (`.wz-salta-alto`).
   const salta = w.passo === 'serie'
     ? '<button type="button" class="btn-secondary wz-scritta-rossa wz-salta-alto" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta serie' : 'Skip series') + '</button>' : '';
-  return '<div class="wz-testa">' + _wzImg(s.img, 160, 160, 'wz-copertina-piccola')
+  return '<div class="wz-testa">' + _wzImg(s.img, 200, 200, 'wz-copertina-piccola')
     + '<div style="flex:1;min-width:0;"><div class="wz-serie-riga"><div class="wz-serie-nome">' + esc(_nomeSerieCard(s)) + '</div>' + salta + '</div>'
     + '<div class="wz-avanzamento">' + (it ? 'Serie ' + (w.i + 1) + ' di ' + w.serie.length : 'Series ' + (w.i + 1) + ' of ' + w.serie.length) + '</div>'
     + '<div class="wz-barra"><span style="width:' + pct + '%;"></span></div></div></div>';
@@ -55010,7 +55127,7 @@ function _wzDisegna(tieni) {
         //    solo sotto gli 861px (regola nell'index).
         // 🔄 v7.089 (Franco: «il tasto "Salta serie" mettilo sopra alla foto della serie, centrato») - prima della foto
         + '<div class="wz-salta-foto"><button type="button" class="btn-secondary wz-scritta-rossa" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta serie' : 'Skip series') + '</button></div>'
-        + '<div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div>'
+        + '<div class="wz-grande-foto">' + _wzImg(s.img, 600, 600, '') + '</div>'
         + '</div><div class="wz-due-dx">'
         + '<div class="wz-domanda wz-rosa">' + (it ? 'Cosa hai di questa serie?' : 'What do you have from this series?') + '</div>'
         // 🔄 v7.089 (Franco, telefono e desktop) - la frase nuova; l'inglese è mio
@@ -55035,7 +55152,7 @@ function _wzDisegna(tieni) {
         + '<div class="wz-scelte wz-scelte-tda">' + w.sezSerie.map(z => {   // v7.080: classe per lo spazio foto-titolo
             const grigia = z === 'attaccare' && !_wzFpaLibera();
             return '<button type="button" class="wz-carta' + (w.accese.has(z) ? ' on' : '') + (grigia ? ' wz-grigia' : '') + '"' + (grigia ? ' disabled' : '') + ' onclick="_wzToccaTda(\'' + z + '\')">'
-              + _wzImg(_wzFotoSez(z, s.id), 400, 300, '') + '<div class="wz-carta-titolo">' + esc(_wzEtichetta(z)) + '</div>'
+              + _wzImg(_wzFotoSez(z, s.id), 400, 400, '') + '<div class="wz-carta-titolo">' + esc(_wzEtichetta(z)) + '</div>'
               // v7.031 - niente numero (Franco: «a quel punto è presto per mostrarlo»): resta solo l'avviso delle fpa
               + (grigia ? '<div class="wz-carta-sotto">' + (it ? 'prima accendi l\'album' : 'light the album first') + '</div>' : '') + '</button>';
           }).join('') + '</div>';
@@ -55101,7 +55218,7 @@ function _wzDisegna(tieni) {
         const n = c.nGia;
         const cartaG = (v, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (c.pConf === v ? ' on' : '') + '" onclick="_wzProponiGia(\'' + p + '\',\'' + v + '\')">'
           + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
-        corpo += intest + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div></div></div>'
+        corpo += intest + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 800, 800, '') + '</div></div></div>'
           + '<p class="wz-testo wz-sopra-carte wz-centro wz-quante">' + (it
               ? (n === 1 ? 'Ci risulta che nella tua lista c\'è <b>1</b> ' : 'Ci risulta che nella tua lista ci sono <b>' + nfmtWz(n) + '</b> ') + esc(_wzNomeQuanti(p, n)) + '. Confermi?'
               : 'We see that your list has <b>' + nfmtWz(n) + '</b> ' + esc(_wzNomeQuanti(p, n)) + '. Do you confirm?') + '</p>'
@@ -55122,7 +55239,7 @@ function _wzDisegna(tieni) {
         // 🔄 v7.132 (Franco: «nella pagina Figurine per album, centra anche la foto e le due frasi»; «la domanda "Delle 160
         //    figurine per album di questa serie, quante ne hai?" va gialla come le altre domande») - `wz-centro` sulla
         //    foto e sulle due frasi (regole nell'index), `wz-quante` gialla sulla domanda
-        corpo += intest + azzerata + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div></div></div>'
+        corpo += intest + azzerata + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 800, 800, '') + '</div></div></div>'
           + '<p class="wz-testo wz-sopra-carte wz-centro wz-quante">' + (it
               ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
               : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>' + giaFrase('wz-sopra-carte wz-centro wz-gia-mie')
@@ -55152,7 +55269,7 @@ function _wzDisegna(tieni) {
         //    frase esce dalla colonna di destra: sotto la foto, sopra le carte, a sinistra (`.wz-sopra-carte`)
         // v7.132: sulle figurine con retro immagine e frasi al centro, domanda gialla (come le figurine per album)
         // v7.152: per tutte le tipologie
-        corpo += intest + azzerata + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 900, 500, '') + '</div></div></div>'
+        corpo += intest + azzerata + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 800, 800, '') + '</div></div></div>'
           + '<p class="wz-testo wz-sopra-carte wz-centro wz-quante">' + (it
               ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
               : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>' + giaFrase('wz-sopra-carte wz-centro wz-gia-mie')
@@ -55187,7 +55304,7 @@ function _wzDisegna(tieni) {
         const figura = v => {
           if (v === 'album') {
             const u = _fotoSezioneSerie('attaccare', s.id) || _wzFotoSez(p, s.id);
-            return u ? '<div class="wz-carta-foto">' + _wzImg(u, 400, 300, '') + '</div>' : '<div class="wz-emoji">📖</div>';
+            return u ? '<div class="wz-carta-foto">' + _wzImg(u, 400, 400, '') + '</div>' : '<div class="wz-emoji">📖</div>';
           }
           const figs = getData('figurines', []);
           const quattro = _wzArticoli(s.id, p).map(f => _fotoFigurina(f, figs) || f.img).filter(Boolean).slice(0, 4);
@@ -55350,7 +55467,7 @@ function _wzDisegna(tieni) {
           + (conN ? '<th>' + (it ? 'Da aggiungere' : 'To add') + '</th>' : '') + (conT ? '<th>' + (it ? 'Da togliere' : 'To remove') + '</th>' : '') + '</tr></thead><tbody>'
           + righe.map(r => '<tr><td>' + esc(r.nome) + '</td>' + (conN ? '<td class="wz-uscita-nuovi">' + cifra(r.nuovi) + '</td>' : '') + (conT ? '<td class="wz-fine-tolti">' + cifra(r.tolti) + '</td>' : '') + '</tr>').join('')
           + '</tbody></table>' : '';
-      corpo += '<div class="wz-due"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(s.img, 900, 600, '') + '</div></div><div class="wz-due-dx">'
+      corpo += '<div class="wz-due"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(s.img, 600, 600, '') + '</div></div><div class="wz-due-dx">'
         // v7.061: col punto (Franco). v7.075: dentro uno <span>, perché `.wz-domanda` è flex e ogni <b> diventava un blocco a sé
         + (tab
           ? '<div class="wz-domanda"><span>' + (it ? 'Ecco cosa cambia nella tua lista:' : 'Here is what changes in your list:') + '</span></div>' + tab
@@ -57436,9 +57553,9 @@ function _chipTipoHTML(o) {
         // pillola - cioe' il riquadro tornerebbe alto, per un'altra strada. E' la stessa trappola di
         // flexbox della v6.348, dall'altro verso.
         return `<span style="display:inline-flex;align-items:center;flex-shrink:0;white-space:nowrap;background:${bg};border:1px solid var(--border);border-radius:999px;font-size:0.82rem;line-height:1.4;overflow:hidden;${_inib ? 'opacity:0.45;' : ''}">`
-          + `<span ${_inib ? '' : `onclick="${o.onSet}"`} title="${_inib ? (it ? 'Nessun risultato con i filtri accesi adesso' : 'No results with the filters currently on') : (o.titolo || '')}" style="cursor:${_inib ? 'default' : 'pointer'};display:inline-flex;align-items:center;gap:0.35rem;padding:0.15rem 0.5rem 0.15rem 0.6rem;">`
+          + `<span ${_inib ? '' : `onclick="${o.onSet}"`} title="${_inib ? (it ? 'Nessun risultato con i filtri accesi adesso' : 'No results with the filters currently on') : (o.titolo || '')}" style="cursor:${_inib ? 'default' : 'pointer'};display:inline-flex;align-items:center;gap:${o.stacco || '0.35rem'};padding:0.15rem 0.5rem 0.15rem 0.6rem;">`
           + `<span style="color:${fgEtichetta};${o.maiuscole ? 'text-transform:uppercase;letter-spacing:0.03em;' : ''}">${esc(o.etichetta)}</span>`
-          + `<span style="color:${nf};font-weight:700;">${n}</span></span>`
+          + `<span style="color:${nf};font-weight:700;">${o.prima || ''}${n}</span></span>`
           + `<span ${_inib ? '' : `onclick="event.stopPropagation();${o.onAdd}"`} title="${_inib ? '' : titoloPiu}" style="cursor:${_inib ? 'default' : 'pointer'};padding:0.15rem 0.5rem;border-left:1px solid ${active ? 'rgba(0,0,0,0.28)' : 'var(--border)'};color:${fg};font-weight:700;">${segno}</span>`
           + `</span>`;
 }
@@ -63664,7 +63781,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       //    `_fotoFigurina` risponde `f.img` alla prima riga, quindi per loro non cambia niente.
       const _unaFaccia = _fotoFigurina(f, getData('figurines', []));
       photoEl.innerHTML = _unaFaccia
-        ? `${_fotoInDueTempi(_unaFaccia,'w_640,h_640,c_fit,q_auto,f_auto', 'width:100%;height:' + _altezzaFotoRetro + 'px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
+        ? `${_fotoInDueTempi(_unaFaccia,'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;height:' + _altezzaFotoRetro + 'px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
         // 🔄 v6.977 - il riquadro unico (`_senzaFotoHTML`): era un terzo testo, «Foto non ancora disponibile»
         : _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:' + _altezzaFotoRetro + 'px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;');
     }
@@ -65488,7 +65605,7 @@ function buildLinkedFiguresTabsHTML(baseId) {
         _foto = _fotoFigurina(item, allFigs); // v6.024 - foto propria, o della base
       }
       html += `<a href="#" onclick="openFigDetail('${item.id}', ${_idsGruppo});return false;" style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;border-radius:8px;background:var(--card2);text-decoration:none;color:var(--text);font-size:0.85rem;">
-        ${_foto ? `<img src="${cloudinaryUrl(_foto,'w_60,h_60,c_fit,q_auto,f_auto')}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;background:var(--card);">` : '<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">🖼️</span>'}
+        ${_foto ? `<img src="${cloudinaryUrl(_foto,'w_120,h_120,c_fit,q_auto,f_auto')}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;background:var(--card);">` : '<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">🖼️</span>'}
         <span>${esc(label)}${labelExtra}</span>
       </a>`;
     });
@@ -66846,7 +66963,7 @@ function switchToEditMode(figId) {
     '<label class="detail-label" style="display:block;margin-bottom:0.4rem;">📷 ' + (currentLang==='it'?'Foto per Ebay':'Ebay photo') + '</label>' +
     '<div style="font-size:0.72rem;color:var(--text);margin-bottom:0.5rem;">' + (currentLang==='it'?'Foto dedicata da usare per l\'annuncio Ebay, indipendente da quella dell\u2019Inventario':'Dedicated photo for the Ebay listing, separate from the catalog one') + '</div>' +
     (f.ebayImg
-      ? '<img id="fe-ebay-img-preview" src="' + cloudinaryUrl(f.ebayImg,'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
+      ? '<img id="fe-ebay-img-preview" src="' + cloudinaryUrl(f.ebayImg,'w_800,h_800,c_fit,q_auto,f_auto') + '" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
       : '<div id="fe-ebay-img-preview" style="width:100%;height:240px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + (currentLang==='it'?'Nessuna foto':'No photo') + '</div>') +
     '<label style="cursor:pointer;display:inline-block;">' +
     '<span class="btn-foto" style="display:inline-block;">📷 ' + (currentLang==='it'?'Carica foto':'Upload photo') + '</span>' +
@@ -67184,7 +67301,7 @@ function _slotFotoEdit(slot, url, f, stretto) {
     ? '<div>'   // v6.993 - accanto al fronte, non sotto: niente stacco sopra
       + '<div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? 'Retro associato' : 'Linked back') + '</div>'
       + (_retroAss.img
-          ? '<img src="' + cloudinaryUrl(_retroAss.img, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;">'   // v6.993: 200 come il fronte
+          ? '<img src="' + cloudinaryUrl(_retroAss.img, 'w_800,h_800,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;">'   // v6.993: 200 come il fronte
           : _senzaFotoHTML(!!_retroAss.fotoNonDisponibile, 'position:relative;width:100%;height:200px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;'))   // v6.977, v6.993
       // v6.976 - «da lì» è un link al retro, aperto in modifica (Franco: «con un click arrivo a poterli modificare»)
       + '<div style="font-size:0.72rem;color:var(--text);margin-top:0.3rem;">' + (currentLang === 'it' ? 'È la foto dell\'articolo retro: si cambia ' + _linkModifica(_retroAss.id, 'da lì') + '.' : 'This is the back item\'s photo: change it ' + _linkModifica(_retroAss.id, 'there') + '.') + '</div>'
@@ -67234,7 +67351,7 @@ function _slotFotoEdit(slot, url, f, stretto) {
     const _vista = url || _ered;   // v6.975: la foto che arriva davvero, non il riquadro vuoto
     return _apriSlotFoto(slot, _cls, _flex, titolo, _riqRetro) +
       (_vista
-        ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(_vista, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0;">'
+        ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(_vista, 'w_800,h_800,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0;">'
         : _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:200px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;', s.preview)) +   // v6.977
       '<div style="font-size:0.72rem;color:var(--text);margin-top:0.4rem;">' + nota + '</div>' +
       _chiudiSlotFoto(_riqRetro);
@@ -67252,9 +67369,9 @@ function _slotFotoEdit(slot, url, f, stretto) {
   // 🆕 v6.599 - stesso id dell'altro ramo: chi ridisegna non deve sapere quale dei due e'.
   return _apriSlotFoto(slot, _cls, _flex, titolo, _riqRetro) +
     (url
-      ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(url, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
+      ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(url, 'w_800,h_800,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
       : _ered
-      ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(_ered, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.3rem;">'
+      ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(_ered, 'w_800,h_800,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.3rem;">'
         + '<div style="font-size:0.72rem;color:var(--text);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Foto della figurina di partenza: questa non ne ha una propria.' : 'Photo of the source sticker: this one has none of its own.') + '</div>'
       : _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:200px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;margin-bottom:0.5rem;', s.preview)) +   // v6.977
     '<div class="fig-cmd" style="display:flex;gap:0.4rem;margin-top:0.3rem;">' +
