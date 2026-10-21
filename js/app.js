@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.201 - Modificati js/app.js e index.html (per la versione). Il riquadro della taglia si chiama «Filtra per taglie»
+//          (Franco: «se gli altri cominciano con "filtra per" allora lo deve fare anche questo e avremmo quindi
+//          "filtra per taglie"»): `codaRaggrIt` 'taglia' → 'taglie', in inglese 'size' → 'sizes'.
+//          ANNUNCI, VIA LO ZIP (Franco: «il campo foto zip ti dico di cancellarlo perché … le foto degli annunci sono
+//          molto grosse e visto che stiamo andando a cercare di ridurre lo spazio di Cloudinary è meglio non farla»):
+//          tolti `_annZipScelto`, `_annZipTogli`, `_annCaricaZip` e il campo `zip` della riga salvata (una copia non
+//          se lo porta più dietro: `fonte` di `_annSalva` serviva solo a quello).
 // v7.200 - Modificati js/app.js e index.html (per la versione). RICERCA DELLE FPA, IL RIQUADRO DELLA TAGLIA (Franco:
 //          «se la serie ha le taglie per le fpa, vorrei un altro filtro, chiamato "Taglie", che mostra le 3 pillole
 //          Grandi, Medie, Piccole»): `_RAGGR_TAGLIA`, un raggruppamento come la famiglia (dopo di lei), indipendente.
@@ -31449,7 +31456,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.200';
+const JS_VERSION = 'v7.201';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41476,19 +41483,7 @@ function _annCambiaSerie(sid) {
 function _annCambiaTipo(tipo) {
   document.getElementById('ann-articolo').innerHTML = _annOpzioniArticolo(document.getElementById('ann-serie').value, tipo, null);
 }
-// 🆕 v7.186 (Franco: «una volta selezionato un allegato zip non permette di toglierlo») - accanto al nome dello zip
-//    scelto c'è ✕, che lo toglie prima del Salva.
-function _annZipScelto() {
-  const inp = document.getElementById('ann-zip'), nome = document.getElementById('ann-zip-nome');
-  if (!inp || !nome) return;
-  const f = inp.files[0];
-  nome.innerHTML = f ? esc(f.name) + ' <button type="button" onclick="_annZipTogli()" title="' + (currentLang === 'it' ? 'Togli lo zip' : 'Remove the zip') + '" style="border:none;background:transparent;color:var(--danger);cursor:pointer;font-size:0.9rem;padding:0 0.3rem;">✕</button>' : '';
-}
-function _annZipTogli() {
-  const inp = document.getElementById('ann-zip');
-  if (inp) inp.value = '';
-  _annZipScelto();
-}
+// 🗑️ v7.201 - via `_annZipScelto` e `_annZipTogli` (v7.186): lo zip degli annunci non c'è più (vedi `_annSalva`).
 // v7.187 - un campo cambiato nella riga della tabella: si salva tutta la lista, la tabella non si ridisegna (il cursore
 //    è già nella casella dopo). Il bordo dice com'è andata: verde salvato, rosso no (e il valore torna quello di prima).
 async function _annCampo(i, campo, el) {
@@ -41714,13 +41709,11 @@ function _annApriFinestra(i, sola) {
     + '</div></div>';
   document.body.appendChild(ov);
   // v7.187 (Franco: «un tasto per aprire annuncio in sola lettura») - la stessa finestra, con tutto spento: niente
-  //    Salva, niente Clona, niente zip da caricare, e «Annulla» diventa «Chiudi». Il link dello zip resta cliccabile.
+  //    Salva, niente Clona, e «Annulla» diventa «Chiudi» (v7.201: lo zip non c'è più).
   if (sola) {
     ov.querySelector('.modal-title').textContent = it ? 'Annuncio' : 'Listing';
     ov.querySelectorAll('input, select, textarea').forEach(el => { el.disabled = true; });
     ['ann-salva', 'ann-salva-resta', 'ann-salva-next', 'ann-clona'].forEach(id => document.getElementById(id)?.remove());
-    document.getElementById('ann-zip')?.closest('label')?.remove();
-    document.getElementById('ann-zip-togli')?.closest('label')?.remove();
     // 🔄 v7.199 (Franco: «perché abbiamo 2 tasti che fanno la stessa cosa (X e Chiudi)? Io terrei solo "X"») - via
     //    «Chiudi» (era «Annulla»): resta la ✕ in alto
     const chiudi = [...ov.querySelectorAll('button.btn-secondary')].find(b => /Annulla|Cancel/.test(b.textContent));
@@ -41752,16 +41745,7 @@ function _annClona(i) {
   _annApriFinestra(i);
   _annClonaQui(i);
 }
-// Lo zip va su Cloudinary come file «raw» (non è un'immagine): stessa cartella e stesso preset delle foto.
-async function _annCaricaZip(file) {
-  const fd = new FormData();
-  fd.append('file', file);
-  fd.append('upload_preset', CLOUDINARY_PRESET);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/raw/upload`, { method: 'POST', body: fd });
-  const data = await res.json();
-  if (data.secure_url) { _trackCloudinaryUpload(); return data.secure_url; }
-  throw new Error((data.error && data.error.message) || ('HTTP ' + res.status));
-}
+// 🗑️ v7.201 - via `_annCaricaZip` (lo zip su Cloudinary come file «raw»): vedi `_annSalva`.
 async function _annScrivi(righe) {
   await fsSave('settings', { id: 'annunci', righe });
   _annRighe = righe;
@@ -41770,7 +41754,6 @@ async function _annScrivi(righe) {
 async function _annSalva(i, da, dopo) {
   const it = currentLang === 'it';
   const v = id => document.getElementById(id);
-  const fonte = i !== null ? i : (da ?? null);   // v7.187: la riga da cui viene lo zip (la stessa, o quella clonata)
   const stato = v('ann-stato');
   const prezzo = parseFloat(v('ann-prezzo').value);
   const costo = parseFloat(v('ann-costo').value);   // v7.187
@@ -41792,8 +41775,8 @@ async function _annSalva(i, da, dopo) {
     link: v('ann-link').value.trim() || null,   // v7.187
     n: v('ann-n').value.trim() || null,   // v7.187
     condizioni: v('ann-condizioni').value.trim(),   // v7.187
-    // v7.187 - una copia (`da` = la riga copiata) si porta dietro lo zip dell'originale
-    zip: (fonte !== null && _annRighe[fonte] && !v('ann-zip-togli')?.checked) ? (_annRighe[fonte].zip || null) : null,
+    // 🗑️ v7.201 (Franco: «il campo foto zip ti dico di cancellarlo … le foto degli annunci sono molto grosse e … stiamo
+    //    andando a cercare di ridurre lo spazio di Cloudinary») - niente più `zip`: la riga salvata non se lo porta dietro
   };
   if (!riga.seriesId || !riga.titolo) {
     stato.style.color = 'var(--danger, #e5484d)';
@@ -41804,12 +41787,6 @@ async function _annSalva(i, da, dopo) {
   const salvi = ['ann-salva', 'ann-salva-resta', 'ann-salva-next'].map(v).filter(Boolean);
   salvi.forEach(b => { b.disabled = true; });
   try {
-    const file = v('ann-zip')?.files?.[0];   // v7.199: la casella non c'è più (resta il caricamento, se un giorno torna)
-    if (file) {
-      stato.style.color = 'var(--text)';
-      stato.textContent = (it ? 'Carico lo zip (' : 'Uploading the zip (') + (file.size / 1048576).toFixed(1).replace('.', ',') + ' MB)…';
-      riga.zip = await _annCaricaZip(file);
-    }
     const righe = _annRighe.slice();
     if (i !== null && righe[i]) righe[i] = riga; else righe.push(riga);
     // il prossimo nell'ordine della tabella, preso PRIMA di ridisegnarla (v7.189)
@@ -44636,7 +44613,7 @@ const _RAGGR_FAMIGLIA = {
 const _RAGGR_TAGLIA = {
   chiave: 'taglia',
   it: 'Taglia', en: 'Size',
-  codaRaggrIt: 'taglia', codaRaggrEn: 'size',
+  codaRaggrIt: 'taglie', codaRaggrEn: 'sizes',   // v7.201: al plurale (Franco: «filtra per taglie»)
   titoloFissoIt: 'Articoli per taglia', titoloFissoEn: 'Items by size',
   chipMinIt: 'taglia', chipMinEn: 'size',
   colore: 'var(--nome-entita)',
