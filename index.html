@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.204">
+<link rel="stylesheet" href="css/style.css?v=7.205">
 
 
 <style>
@@ -4088,6 +4088,8 @@ di tutte le serie</button>
           <div class="admin-subtabs" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin:0.8rem 0 1rem;">
             <button class="admin-subtab active" onclick="tdaSubTab('tipi')">🧩 Tipi senza serie</button>
             <button class="admin-subtab" onclick="tdaSubTab('versioni')">🧬 Versioni possibili</button>
+            <!-- 🆕 v7.205 (Franco: «la chiamerei "Informazioni ereditate dalla base"») -->
+            <button class="admin-subtab" onclick="tdaSubTab('eredita')">🧬 Informazioni ereditate dalla base</button>
             <button class="admin-subtab" onclick="tdaSubTab('legende')">📖 Definizioni delle legende</button>
             <button class="admin-subtab" onclick="tdaSubTab('partenze')">🔀 Da chi nasce una versione</button>
             <button class="admin-subtab" onclick="tdaSubTab('massivi')">✏️ Campi dell'aggiornamento massivo</button>
@@ -4104,6 +4106,11 @@ di tutte le serie</button>
                Righe e colonne si ricavano da `PRODOTTI_INVENTARIO` e `VERSIONI_ARTICOLO`. -->
           <div class="tda-sub" id="tda-sub-versioni" style="display:none;">
           <div id="admin-versioni-articolo"></div>
+          </div>
+          <!-- 🆕 v7.205 - quali campi le versioni prendono dalla base: tipologie in colonna, campi in riga.
+               La disegna `renderAdminEreditaBase()`, la legge `_campiEreditatiDaBase`. -->
+          <div class="tda-sub" id="tda-sub-eredita" style="display:none;">
+          <div id="admin-eredita-base"></div>
           </div>
           <!-- 🆕 v6.918 (Franco: «rendimi autonomo. Crea un campo dove io possa mettere il valore
                delle definizioni da usare nelle legende [...] mi devi dare la possibilita' di farlo
@@ -6739,7 +6746,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.204"></script>
+<script src="js/app.js?v=7.205"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6763,7 +6770,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.204'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.205'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
