@@ -1,7 +1,22 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.207 - Modificati index.html e js/app.js. LE COLONNE DELLA VISTA TABELLARE DALLA CONSOLE, seconda delle due release
+// v7.208 - Modificati index.html e js/app.js. In console (Franco): il sotto-tab «Colonne della vista tabellare» si
+//          chiama «Colonne vista tabellare», il testo sotto il titolo è quello dettato da Franco, e l'intestazione
+//          «Colonna» delle due tabelle è azzurra come le altre. E al Salva delle tabelle della console (Protezione
+//          foto, Informazioni ereditate, Colonne vista tabellare, Versioni) la frase «Le modifiche valgono da subito,
+//          per tutti» diventa (Franco: «tutti chi?») «… per chiunque apra il sito, non solo su questo browser».
+//          In «Ordinamento in griglia» le intestazioni «Tipologia di articolo» e «Ordinamento» sono azzurre, i nomi
+//          delle tipologie bianchi. «Da chi nasce una versione» non ha più un sotto-tab: sta nel tab «Versioni», sotto
+//          la sua tabella (Franco). Il sotto-tab «Campi dell'aggiornamento massivo» si chiama «Campi aggiornamento
+//          massivo». E la regola di Franco per tutto il tab delle tipologie («i nomi dei paragrafi in azzurro; i titoli
+//          delle tabelle, in azzurro; i valori di riga della prima colonna delle tabelle, in bianco»): azzurri i titoli di
+//          Definizioni delle legende, Campi dell'aggiornamento massivo, Da chi nasce una versione, Posizione e Larghezza;
+//          azzurre le intestazioni di Tipi senza serie, Da chi nasce una versione, Campi dell'aggiornamento massivo
+//          (che prende l'intestazione «Campo») e «Campo» delle Informazioni ereditate; bianche le versioni nella prima
+//          colonna di Da chi nasce una versione. 🗑️ E (Franco: «togli i campi "foto non disponibile" e "versione"»)
+//          quei due campi escono dalla tabella dei Campi aggiornamento massivo e dal suo menu (`CAMPI_MASSIVI_TOLTI`).
+// v7.207 -Modificati index.html e js/app.js. LE COLONNE DELLA VISTA TABELLARE DALLA CONSOLE, seconda delle due release
 //          (Franco: «indicando la posizione indichiamo, indirettamente, la presenza»; «ok per le colonne fisse»; «ok
 //          sulle condizioni di visibilità da usare on top a quello che dice la nuova tabella»; «le due colonne da te
 //          menzionate lasciale dove sono ora»; «oltre alla posizione … allargare o stringere la larghezza, con un
@@ -31568,7 +31583,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.207';
+const JS_VERSION = 'v7.208';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40674,7 +40689,8 @@ function renderAdminTipoArticolo() {
       return cmp * _tipoArtSort.dir;
     });
   }
-  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  // 🔄 v7.208 (Franco) - le intestazioni azzurre, come in tutte le tabelle delle tipologie (la colonna ordinata resta `--accent`)
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
   box.innerHTML =
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
@@ -40928,7 +40944,7 @@ function renderAdminLegendeDefinizioni() {
   };
 
   box.innerHTML =
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">📖 '
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">📖 '
       + (it ? 'Definizioni delle legende' : 'Glossary definitions') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
@@ -43317,7 +43333,8 @@ function renderAdminOrdinamentiTDA() {
     // 🔄 v7.082 (Franco: «il nome della tda mettilo azzurro serie») - `--info`, l'azzurro del titolo di una serie.
     // Con la nota sotto, la riga della casella non ha filo: lo porta la nota, cosi' le due si leggono insieme.
     const filo = _ordineConfigurabile(sez) ? 'border-bottom:none;' : '';
-    const nome = '<td style="' + td + filo + 'white-space:nowrap;color:var(--info);font-weight:600;">' + esc(getSectionLabel(sez)) + '</td>';
+    // 🔄 v7.208 (Franco: «i nomi articolo lasciali in bianco») - l'azzurro va alle intestazioni, i nomi tornano bianchi
+    const nome = '<td style="' + td + filo + 'white-space:nowrap;color:var(--text);font-weight:600;">' + esc(getSectionLabel(sez)) + '</td>';
     if (!_ordineConfigurabile(sez)) return '<tr>' + nome + '<td style="' + td + '">' +
       (it ? 'Numero; dentro lo stesso numero la figurina base e poi le sue versioni, in fila per Categoria, Sottocategoria e Nome del loro retro. Non si cambia da qui.'
           : 'Number; within a number the base sticker, then its versions by their back’s Category, Subcategory and Name. Not editable here.') + '</td></tr>';
@@ -43340,13 +43357,14 @@ function renderAdminOrdinamentiTDA() {
           'Allowed keys: <code>' + esc(nomi) + '</code>. Empty: the usual rule, shown in grey.') +
     '</p>' +
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:100%;">' +
-    '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
-      '<th style="' + th + '">' + (it ? 'Ordinamento' : 'Sorting') + '</th></tr>' +
+    // 🔄 v7.208 (Franco: «"Tipologia di articolo" e "Ordinamento" mettili azzurro»)
+    '<tr><th style="' + th + 'color:var(--info);">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
+      '<th style="' + th + 'color:var(--info);">' + (it ? 'Ordinamento' : 'Sorting') + '</th></tr>' +
     // 🔄 v7.207 (Franco: «togliamo la riga dedicata ad "Altri articoli" e inseriamo una riga per ognuna delle tda senza
     //    serie») - le tipologie senza serie, ognuna con il suo ordinamento (`ordina` sul tipo, lo stesso campo della sua
     //    scheda): è quello che comanda nella sua pagina
     PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez] && sez !== 'extras').map(sez => riga(sez) + nota(sez)).join('') +
-    _tipiProdotto().map(tp => '<tr><td style="' + td + 'white-space:nowrap;color:var(--info);font-weight:600;">' + esc(_nomeTipo(tp) || tp.id) +
+    _tipiProdotto().map(tp => '<tr><td style="' + td + 'white-space:nowrap;color:var(--text);font-weight:600;">' + esc(_nomeTipo(tp) || tp.id) +
       ' <span style="font-size:0.72rem;font-weight:400;color:var(--text);opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span></td>' +
       '<td style="' + td + '"><input class="form-input" type="text" data-ord-tipo="' + esc(tp.id) + '"' +
       ' value="' + esc(tp.ordina || '') + '" placeholder="' + esc(it ? 'obbligatorio' : 'required') + '"' +
@@ -43604,7 +43622,7 @@ async function salvaProtezioneTDA() {
     // 🔄 v7.129 (Franco: «quando premo salva vorrei un messaggio di conferma», «un avviso che resta finché premo OK»)
     //    - il toast passava inosservato, soprattutto dal telefono
     _finestraConferma({ titolo: it ? '✅ Protezione foto salvata' : '✅ Photo protection saved',
-      testo: it ? 'Le modifiche valgono da subito, per tutti.' : 'The changes apply right away, for everyone.', ok: 'OK', soloOk: true });
+      testo: it ? 'Le modifiche valgono da subito per chiunque apra il sito, non solo su questo browser.' : 'The changes apply right away for anyone opening the site, not just on this browser.', ok: 'OK', soloOk: true });
   } catch (e) {
     console.error('salvaProtezioneTDA', e);
     toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
@@ -43664,7 +43682,7 @@ function renderAdminEreditaBase() {
         : 'For each item type, <strong>which fields the versions take from their base</strong>. Ticked: read-only in the version, updated when the base is saved.') +
     '</p>' +
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
-    '<tr><th style="' + th + 'text-align:left;color:var(--text);">' + (it ? 'Campo' : 'Field') + '</th>' +
+    '<tr><th style="' + th + 'text-align:left;">' + (it ? 'Campo' : 'Field') + '</th>' +
       col.map(c => '<th style="' + th + '">' + esc(c.nome) + (c.tipo ? '<br><span style="font-size:0.68rem;font-weight:400;color:var(--text);opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span>' : '') + '</th>').join('') +
     '</tr>' +
     CAMPI_EREDITABILI.map(c =>
@@ -43739,7 +43757,7 @@ async function salvaEreditaBase() {
     if (piano.length) await _salvaFigurineInBlocco(piano.map(p => p.nuovo));
     renderAdminEreditaBase();
     _finestraConferma({ titolo: it ? '✅ Informazioni ereditate salvate' : '✅ Inherited information saved',
-      testo: it ? 'Le modifiche valgono da subito, per tutti.' + (piano.length ? ' Versioni riallineate: ' + piano.length + '.' : '') : 'The changes apply right away, for everyone.',
+      testo: it ? 'Le modifiche valgono da subito per chiunque apra il sito, non solo su questo browser.' + (piano.length ? ' Versioni riallineate: ' + piano.length + '.' : '') : 'The changes apply right away for anyone opening the site, not just on this browser.',
       ok: 'OK', soloOk: true });
   } catch (e) {
     console.error('salvaEreditaBase', e);
@@ -43842,7 +43860,8 @@ function renderAdminColonneVT() {
   const cfg = {};
   col.forEach(c => { cfg[c.k] = _vtCfgDi(c.k); });
   const tasto = '<button class="btn-primary btn-admin" onclick="salvaColonneVT()">' + (it ? 'Salva le colonne' : 'Save the columns') + '</button>';
-  const testata = '<tr><th style="' + th + 'text-align:left;color:var(--text);">' + (it ? 'Colonna' : 'Column') + '</th>' +
+  // 🔄 v7.208 (Franco: «Colonna, va in azzurro»)
+  const testata = '<tr><th style="' + th + 'text-align:left;">' + (it ? 'Colonna' : 'Column') + '</th>' +
     col.map(c => '<th style="' + th + '">' + esc(c.nome) + (c.tipo ? '<br><span style="font-size:0.68rem;font-weight:400;color:var(--text);opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span>' : '') + '</th>').join('') + '</tr>';
   const fissa = testo => '<tr><td style="' + td + 'font-style:italic;opacity:0.75;">' + testo + '</td>' +
     col.map(() => '<td style="' + td + 'text-align:center;opacity:0.6;">' + (it ? 'fissa' : 'fixed') + '</td>').join('') + '</tr>';
@@ -43866,17 +43885,17 @@ function renderAdminColonneVT() {
     '</div>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
-        ? 'Per ogni tipologia di articolo, <strong>in che ordine</strong> e <strong>quanto larghe</strong> sono le colonne della vista tabellare. ' +
-          'Le tabelle partono dai valori di oggi. Il trattino vuol dire che in quella tipologia la colonna non c\'è.'
+        // 🔄 v7.208 - il testo di Franco
+        ? 'In tabella trovi l\'ordine e la larghezza delle colonne a disposizione di ogni tipologia di articolo.'
         : 'For each item type, <strong>the order</strong> and <strong>the width</strong> of the table view columns.') +
     '</p>' +
-    '<h5 style="font-family:var(--font-ui);margin:1rem 0 0.4rem;color:var(--text);font-size:0.95rem;">↔️ ' + (it ? 'Posizione' : 'Position') + '</h5>' +
+    '<h5 style="font-family:var(--font-ui);margin:1rem 0 0.4rem;color:var(--info);font-size:0.95rem;">↔️ ' + (it ? 'Posizione' : 'Position') + '</h5>' +
     '<p style="font-size:0.8rem;color:var(--text);margin:0 0 0.6rem;line-height:1.5;">' +
       (it ? '1 = la prima colonna dopo la Foto. <strong>Vuota = la colonna non si mostra.</strong> A parità di numero vale l\'ordine di oggi. ' +
             'Una colonna resta comunque fuori dove non ha niente da mostrare (per esempio N. in una serie senza numeri).'
           : '1 = first column after the Photo. Empty = column not shown.') +
     '</p>' + tabella('pos') +
-    '<h5 style="font-family:var(--font-ui);margin:1.4rem 0 0.4rem;color:var(--text);font-size:0.95rem;">📏 ' + (it ? 'Larghezza (px)' : 'Width (px)') + '</h5>' +
+    '<h5 style="font-family:var(--font-ui);margin:1.4rem 0 0.4rem;color:var(--info);font-size:0.95rem;">📏 ' + (it ? 'Larghezza (px)' : 'Width (px)') + '</h5>' +
     '<p style="font-size:0.8rem;color:var(--text);margin:0 0 0.6rem;line-height:1.5;">' +
       (it ? '<strong>Vuota = come oggi</strong>; il numero grigio è la misura di oggi. Con un numero la colonna è larga esattamente così, e i campi dentro la riempiono. ' +
             'Nome, Commento album e Retro oggi si allargano per prendere lo spazio che avanza: con un numero smettono di farlo.'
@@ -43909,7 +43928,7 @@ async function salvaColonneVT() {
     _impostaColonneVT({ voci });
     renderAdminColonneVT();
     _finestraConferma({ titolo: it ? '✅ Colonne della vista tabellare salvate' : '✅ Table view columns saved',
-      testo: it ? 'Le modifiche valgono da subito, per tutti.' : 'The changes apply right away, for everyone.', ok: 'OK', soloOk: true });
+      testo: it ? 'Le modifiche valgono da subito per chiunque apra il sito, non solo su questo browser.' : 'The changes apply right away for anyone opening the site, not just on this browser.', ok: 'OK', soloOk: true });
   } catch (e) {
     console.error('salvaColonneVT', e);
     toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
@@ -43995,7 +44014,9 @@ function renderAdminPartenzeVersione() {
   const foglie = VERSIONI_ARTICOLO.filter(v => !_puoEsserePartenza(v.chiave));
 
   box.innerHTML =
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">\uD83D\uDD17 ' +
+    // \uD83D\uDD04 v7.208 (Franco: \u00ABi nomi dei paragrafi in azzurro; i titoli delle tabelle, in azzurro; i valori di riga della
+    //    prima colonna delle tabelle, in bianco\u00BB) - ora sta nel sotto-tab Versioni, sotto la loro tabella
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">\uD83D\uDD17 ' +
       (it ? 'Da chi pu\u00F2 nascere ogni versione' : 'Allowed starting points') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
@@ -44005,12 +44026,12 @@ function renderAdminPartenzeVersione() {
         : 'Each version is linked to a <strong>starting item</strong>. Read-only: this describes the model.') +
     '</p>' +
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:100%;">' +
-    '<tr><th style="' + th + '">' + (it ? 'Versione' : 'Version') + '</th>' +
-      colonne.map(c => '<th style="' + th + 'text-align:center;">' + esc(_etichettaChiaveTipo(c)) + '</th>').join('') +
+    '<tr><th style="' + th + 'color:var(--info);">' + (it ? 'Versione' : 'Version') + '</th>' +
+      colonne.map(c => '<th style="' + th + 'text-align:center;color:var(--info);">' + esc(_etichettaChiaveTipo(c)) + '</th>').join('') +
     '</tr>' +
     VERSIONI_ARTICOLO.map(v => {
       const amm = _partenzeDi(v.chiave);
-      return '<tr><td style="' + td + 'white-space:nowrap;"><span style="color:' + (v.colore || 'var(--text)') + ';font-weight:600;">' +
+      return '<tr><td style="' + td + 'white-space:nowrap;"><span style="color:var(--text);font-weight:600;">' +
         esc(it ? v.it : v.en) + '</span></td>' +
         colonne.map(c => '<td style="' + td + 'text-align:center;">' +
           (amm.includes(c) ? '<span style="color:var(--success);">\u2713</span>' : '<span style="color:var(--text);">\u2014</span>') +
@@ -44047,7 +44068,7 @@ async function salvaVersioniArticolo() {
     _impostaVersioniTDA({ voci });
     renderAdminVersioniArticolo();
     _finestraConferma({ titolo: it ? '✅ Versioni salvate' : '✅ Versions saved',
-      testo: it ? 'Le modifiche valgono da subito, per tutti.' : 'The changes apply right away, for everyone.', ok: 'OK', soloOk: true });
+      testo: it ? 'Le modifiche valgono da subito per chiunque apra il sito, non solo su questo browser.' : 'The changes apply right away for anyone opening the site, not just on this browser.', ok: 'OK', soloOk: true });
   } catch (e) {
     console.error('salvaVersioniArticolo', e);
     toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
@@ -78486,15 +78507,19 @@ async function _aggiornaCampiMassiviDaConfigurazione() {
     }
   } catch (e) { /* silenzio voluto: resta la configurazione di prima */ }
 }
+// 🗑️ v7.208 (Franco: «in quella tabella, togli i campi "foto non disponibile" e "versione"») - fuori dalla tabella della
+//    console e dal menu dell'aggiornamento massivo. Le voci restano in `CAMPI_MASSIVI`: per riaverle basta toglierle da qui.
+const CAMPI_MASSIVI_TOLTI = ['fotoNonDisponibile', '_versione'];
 function renderCampiMassiviConfig() {
   const box = document.getElementById('campi-massivi-tabella');
   if (!box) return;
   const it = currentLang === 'it';
-  const campi = CAMPI_MASSIVI.slice().sort((a, b) => (it ? a.it : a.en).localeCompare(it ? b.it : b.en, it ? 'it' : 'en'));
+  const campi = CAMPI_MASSIVI.filter(c => !CAMPI_MASSIVI_TOLTI.includes(c.id)).sort((a, b) => (it ? a.it : a.en).localeCompare(it ? b.it : b.en, it ? 'it' : 'en'));
   const tda = _colonneTDA();   // v7.205: una colonna per tipologia, senza serie comprese, e niente «Altri articoli»
-  const th = 'padding:4px 6px;font-size:0.72rem;color:var(--text);text-align:center;vertical-align:middle;border-bottom:1px solid var(--border);';
+  // 🔄 v7.208 (Franco: «i titoli delle tabelle, in azzurro; i valori di riga della prima colonna, in bianco»)
+  const th = 'padding:4px 6px;font-size:0.72rem;color:var(--info);text-align:center;vertical-align:middle;border-bottom:1px solid var(--border);';
   box.innerHTML = '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:100%;">'
-    + '<tr><th style="' + th + 'text-align:left;"></th>' + tda.map(k => '<th style="' + th + '">' + esc(k.nome)
+    + '<tr><th style="' + th + 'text-align:left;">' + (it ? 'Campo' : 'Field') + '</th>' + tda.map(k => '<th style="' + th + '">' + esc(k.nome)
       + (k.tipo ? '<br><span style="font-size:0.66rem;opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span>' : '') + '</th>').join('') + '</tr>'
     + campi.map(c => '<tr><td style="padding:4px 6px;font-size:0.85rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);">' + esc(it ? c.it : c.en) + '</td>'
       + tda.map(k => '<td style="text-align:center;border-bottom:1px solid var(--border);">'
@@ -78528,6 +78553,7 @@ function _campiMassiviDisponibili() {
   return CAMPI_MASSIVI
     // v6.841: compatibile E spuntato; v7.205: nella pagina di una tipologia senza serie, la sua colonna
     .filter(c => _campoMassivoAttivo(c, currentSection, _tipoProdottoCorrente ? 'tipo:' + _tipoProdottoCorrente : currentSection))
+    .filter(c => !CAMPI_MASSIVI_TOLTI.includes(c.id))   // v7.208
     .slice()
     .sort((a, b) => (it ? a.it : a.en).localeCompare(it ? b.it : b.en, it ? 'it' : 'en', { numeric: true }));
 }
