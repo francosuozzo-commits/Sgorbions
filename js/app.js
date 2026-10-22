@@ -1,6 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.207 - Modificati index.html e js/app.js. LE COLONNE DELLA VISTA TABELLARE DALLA CONSOLE, seconda delle due release
+//          (Franco: «indicando la posizione indichiamo, indirettamente, la presenza»; «ok per le colonne fisse»; «ok
+//          sulle condizioni di visibilità da usare on top a quello che dice la nuova tabella»; «le due colonne da te
+//          menzionate lasciale dove sono ora»; «oltre alla posizione … allargare o stringere la larghezza, con un
+//          parametro numerico»). Console → Tipologie di articolo, sotto-tab «📊 Colonne della vista tabellare»: due
+//          tabelle, una colonna per tipologia (anche senza serie), una riga per colonna della VT. Posizione: 1 = la prima
+//          dopo la Foto, vuota = la colonna non si mostra, a parità vale l'ordine di oggi. Larghezza (px): vuota = come
+//          oggi (in grigio la misura di oggi); con un numero la cella è larga così e i campi dentro la riempiono →
+//          `settings/colonneVT` {voci: {chiave: {pos, larg}}}. In `renderBulkEditView` l'elenco `_vtColonne` passa da
+//          `_vtDisponi`; le condizioni di oggi valgono sempre. Selezione, # e Foto fisse in testa, Mia lista e Ciò che
+//          cerco in fondo. Mai salvata = tutto come prima.
+//          E in console (Franco): il tab «Tipo di articolo» si chiama «Tipologie di articoli», il sotto-tab «Versioni
+//          possibili» si chiama «Versioni»; nella sua tabella il testo sotto il titolo è quello dettato da Franco, il
+//          titolo «Tipologia di articolo» prende il colore che avevano i nomi, e i nomi diventano bianchi. Anche
+//          «Informazioni ereditate dalla base» ha il testo dettato da Franco, riga per riga. Il sotto-tab «Ordinamento
+//          delle griglie» si chiama «Ordinamento in griglia»; il suo titolo è azzurro e il testo è quello di Franco.
+//          Nella sua tabella (Franco: «togliamo la riga dedicata ad "Altri articoli" e inseriamo una riga per ognuna
+//          delle tda senza serie») una riga per tipologia senza serie, che scrive il suo `ordina` (lo stesso campo della
+//          scheda del tipo, obbligatorio); il valore salvato per «Altri articoli» resta. E una chiave nuova, `versione`:
+//          la base, poi le versioni (per i Fumetti sigillati, Franco: «nome, versione»).
 // v7.206 - Modificati index.html e js/app.js (per la versione). LA VISTA TABELLARE COME ELENCO DI COLONNE, prima delle
 //          due release decise con Franco («perché non portiamo in tabella di cfg anche le colonne da mostrare nella VT
 //          delle singole tda?»; «sì, vai con la prima release»). In `renderBulkEditView` le intestazioni
@@ -31548,7 +31568,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.206';
+const JS_VERSION = 'v7.207';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40814,6 +40834,7 @@ async function _caricaLegendeDefinizioni() {
     _impostaQuestionario(docs.find(x => x.id === 'questionario'));   // v7.156 - idem
     _impostaVersioniTDA(docs.find(x => x.id === 'versioniTDA'));   // v7.203 - idem
     _impostaEreditaBase(docs.find(x => x.id === 'ereditaBase'));   // v7.205 - idem
+    _impostaColonneVT(docs.find(x => x.id === 'colonneVT'));   // v7.207 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -43305,19 +43326,31 @@ function renderAdminOrdinamentiTDA() {
       ' style="width:100%;min-width:16rem;padding:0.3rem 0.5rem;font-size:0.85rem;"></td></tr>';
   };
   box.innerHTML =
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">↕️ ' + (it ? 'Ordinamento delle griglie' : 'Grid sorting') + '</h4>' +
+    // 🔄 v7.207 (Franco) - il titolo in azzurro, come le altre tabelle delle tipologie, e il suo testo riga per riga
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">↕️ ' + (it ? 'Ordinamento delle griglie' : 'Grid sorting') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
-        ? 'Le chiavi con cui si ordina la griglia di ogni tipologia, separate da virgola; il <strong>-</strong> davanti inverte. ' +
-          'Esempio: <code>categoria, sottocategoria, nome</code>. Chiavi ammesse: <code>' + esc(nomi) + '</code>.<br>' +
-          'Casella vuota: vale la regola di sempre, scritta in grigio. Sotto ogni casella, la NOTA dice quello che comanda oltre alle chiavi.'
+        ? 'A seguire, le chiavi con cui si ordina la griglia di ogni tipologia, separate da virgola.<br>' +
+          'Il <strong>-</strong> davanti inverte.<br>' +
+          'Esempio: <code>categoria, sottocategoria, nome</code>.<br>' +
+          'Chiavi ammesse: <code>' + esc(nomi) + '</code>.<br>' +
+          'Casella vuota: vale la regola di sempre, scritta in grigio.<br>' +
+          'Sotto ogni casella, la NOTA dice quello che comanda oltre alle chiavi.'
         : 'The keys each item type’s grid is sorted by, comma separated; a leading <strong>-</strong> reverses. ' +
           'Allowed keys: <code>' + esc(nomi) + '</code>. Empty: the usual rule, shown in grey.') +
     '</p>' +
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:100%;">' +
     '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
       '<th style="' + th + '">' + (it ? 'Ordinamento' : 'Sorting') + '</th></tr>' +
-    PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).map(sez => riga(sez) + nota(sez)).join('') +
+    // 🔄 v7.207 (Franco: «togliamo la riga dedicata ad "Altri articoli" e inseriamo una riga per ognuna delle tda senza
+    //    serie») - le tipologie senza serie, ognuna con il suo ordinamento (`ordina` sul tipo, lo stesso campo della sua
+    //    scheda): è quello che comanda nella sua pagina
+    PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez] && sez !== 'extras').map(sez => riga(sez) + nota(sez)).join('') +
+    _tipiProdotto().map(tp => '<tr><td style="' + td + 'white-space:nowrap;color:var(--info);font-weight:600;">' + esc(_nomeTipo(tp) || tp.id) +
+      ' <span style="font-size:0.72rem;font-weight:400;color:var(--text);opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span></td>' +
+      '<td style="' + td + '"><input class="form-input" type="text" data-ord-tipo="' + esc(tp.id) + '"' +
+      ' value="' + esc(tp.ordina || '') + '" placeholder="' + esc(it ? 'obbligatorio' : 'required') + '"' +
+      ' style="width:100%;min-width:16rem;padding:0.3rem 0.5rem;font-size:0.85rem;"></td></tr>').join('') +
     '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaOrdinamentiTDA()">' + (it ? 'Salva gli ordinamenti' : 'Save sorting') + '</button>' +
@@ -43339,12 +43372,30 @@ async function salvaOrdinamentiTDA() {
     if (sconosciuti.length) errori.push(getSectionLabel(sez) + ': ' + sconosciuti.join(', '));
     if (passi.length) voci[sez] = passi.map(p => (p.desc ? '-' : '') + p.nome).join(', ');
   });
+  // 🆕 v7.207 - la riga di «Altri articoli» non c'è più: quello che aveva resta com'era
+  if (!document.getElementById('ord-extras') && _ORDINAMENTI_CFG.extras) voci.extras = _ORDINAMENTI_CFG.extras;
+  // 🆕 v7.207 - le tipologie senza serie: il loro `ordina`, lo stesso della scheda del tipo
+  const tipi = _tipiProdotto();
+  const nuoviOrdina = {};
+  document.querySelectorAll('#admin-ordinamenti-tda input[data-ord-tipo]').forEach(el => {
+    const tp = tipi.find(t => t.id === el.dataset.ordTipo);
+    if (!tp) return;
+    const { passi, sconosciuti } = _passiOrdinamento(el.value.trim());
+    if (sconosciuti.length) errori.push((_nomeTipo(tp) || tp.id) + ': ' + sconosciuti.join(', '));
+    // obbligatorio, come nella scheda del tipo (v6.167)
+    else if (!passi.length) errori.push((_nomeTipo(tp) || tp.id) + ': ' + (it ? 'vuoto, serve almeno una chiave' : 'empty, at least one key needed'));
+    const testo = passi.map(p => (p.desc ? '-' : '') + p.nome).join(', ');
+    if (testo !== (tp.ordina || '')) nuoviOrdina[tp.id] = testo;
+  });
   if (errori.length) {
     toast((it ? '❌ Chiavi che non conosco — ' : '❌ Unknown keys — ') + errori.join(' · '), 'error');
     return;
   }
   try {
     await fsSave('settings', { id: 'ordinamenti', voci });
+    if (Object.keys(nuoviOrdina).length) {
+      await _salvaTipiProdotto(tipi.map(t => nuoviOrdina[t.id] !== undefined ? Object.assign({}, t, { ordina: nuoviOrdina[t.id] }) : t));
+    }
     _impostaOrdinamenti({ voci });
     renderAdminOrdinamentiTDA();
     toast(it ? '✅ Ordinamenti salvati. Valgono da subito.' : '✅ Sorting saved.', 'success');
@@ -43604,8 +43655,11 @@ function renderAdminEreditaBase() {
     '</div>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
-        ? 'Per ogni tipologia di articolo, <strong>quali campi le versioni prendono dalla loro base</strong>. Spuntato: nella scheda della versione il campo è in sola lettura e, quando si salva la base, si aggiorna da solo. ' +
-          'Nelle Figurine per album la base è la figurina con retro collegata. Il trattino vuol dire che in quella tipologia il campo non esiste. ' +
+        // 🔄 v7.207 - il testo di Franco, riga per riga
+        ? 'La tabella indica quali sono i campi ereditati dalla base, per ogni tipologia di articolo.<br>' +
+          'Spuntato: nella scheda della versione il campo è in sola lettura e, quando si salva la base, si aggiorna da solo.<br>' +
+          'Nelle Figurine per album la base è la figurina con retro collegata.<br>' +
+          'Il trattino vuol dire che in quella tipologia il campo non esiste.<br>' +
           'Al Salva, se ci sono versioni con un valore diverso dalla base, si vede quante sono e si riallineano dopo la conferma.'
         : 'For each item type, <strong>which fields the versions take from their base</strong>. Ticked: read-only in the version, updated when the base is saved.') +
     '</p>' +
@@ -43693,6 +43747,175 @@ async function salvaEreditaBase() {
   }
 }
 
+// 🆕 v7.207 (Franco: «perché non portiamo in tabella di cfg anche le colonne da mostrare nella VT delle singole tda?
+//    … indicando la posizione indichiamo, indirettamente, la presenza»; «ok per le colonne fisse»; «ok sulle condizioni di
+//    visibilità da usare on top a quello che dice la nuova tabella»; «le due colonne da te menzionate lasciale dove sono
+//    ora»; «oltre alla posizione … allargare o stringere la larghezza, con un parametro numerico») - LE COLONNE DELLA
+//    VISTA TABELLARE, tipologia per tipologia: due tabelle in console, Posizione (vuota = colonna non mostrata) e
+//    Larghezza in px (vuota = come oggi). `settings/colonneVT` = { voci: { <chiave TDA>: { pos: {col: n|null}, larg: {col: px} } } }.
+//    Una tipologia mai salvata, o una colonna che la sua riga non nomina (una colonna nata dopo), prende la posizione di oggi.
+// 📌 Le condizioni scritte nella VT (`_vtColonne`, campo `c`) valgono sempre, sopra la tabella: una colonna senza niente
+//    da mostrare resta fuori anche se ha un numero. Selezione, # e Foto restano in testa; Mia lista e Ciò che cerco in fondo.
+let _VT_COLONNE_CFG = null;
+function _impostaColonneVT(d) {
+  const prima = JSON.stringify(_VT_COLONNE_CFG);
+  _VT_COLONNE_CFG = (d && d.voci && typeof d.voci === 'object') ? d.voci : null;
+  // se la VT è già aperta coi valori di prima, si ridisegna una volta
+  if (prima !== JSON.stringify(_VT_COLONNE_CFG) && typeof bulkEditActive !== 'undefined' && bulkEditActive) {
+    try { renderBulkEditView(); } catch (e) { console.error('renderBulkEditView (colonneVT)', e); }
+  }
+}
+const VT_COLONNE_FISSE_TESTA = ['_seleziona', '_numeroRiga', '_foto'];
+const VT_COLONNE_FISSE_CODA = ['_miaLista', '_cercato'];
+// Le colonne che si possono spostare, nell'ordine di oggi. `dove(sez)`: in quali tipologie la colonna può esserci (altrove
+// un trattino). `oggi(sez)`: la larghezza di oggi in px, scritta in grigio nella casella (la misura del campo o il minimo
+// della cella); vuota dove oggi decide il contenuto.
+const VT_COLONNE_CONFIGURABILI = [
+  { k: '_modifica',       it: 'Modifica (solo admin)', en: 'Edit (admin only)', dove: () => true,                                  oggi: () => '' },
+  { k: 'subseries',       it: 'Sottoserie',            en: 'Subseries',         dove: sez => sez !== 'extras',                     oggi: () => 150 },
+  { k: 'category',        it: 'Categoria',             en: 'Category',          dove: sez => sez === 'extras' || sez === 'retros', oggi: sez => sez === 'extras' ? 230 : 120 },
+  { k: 'subcategory',     it: 'Sottocategoria',        en: 'Subcategory',       dove: sez => sez === 'extras' || sez === 'retros', oggi: sez => sez === 'extras' ? 200 : 120 },
+  { k: '_commentoFcr',    it: 'Commento album (fcr)',  en: 'Album note (fcr)',  dove: sez => sez === 'figurines',                  oggi: () => 220 },
+  { k: 'number',          it: 'N.',                    en: 'No.',               dove: sez => sez !== 'retros' && sez !== 'extras', oggi: () => 60 },
+  { k: 'name',            it: 'Nome',                  en: 'Name',              dove: () => true,                                  oggi: sez => sez === 'attaccare' ? 180 : sez === 'figurines' ? 150 : 280 },
+  { k: 'year',            it: 'Anno',                  en: 'Year',              dove: sez => sez === 'extras',                     oggi: () => 80 },
+  { k: 'famiglia',        it: 'Famiglia',              en: 'Family',            dove: sez => TDA_CON_FAMIGLIA.includes(sez),       oggi: () => 120 },
+  { k: 'commentoAlbum',   it: 'Commento album',        en: 'Album note',        dove: sez => sez === 'attaccare',                  oggi: () => 360 },
+  { k: '_retro',          it: 'Retro',                 en: 'Retro',             dove: sez => sez === 'figurines',                  oggi: () => 320 },
+  { k: 'subname',         it: 'Sottonome',             en: 'Subname',           dove: sez => _haSottonome(sez),                    oggi: () => 200 },
+  { k: '_versione',       it: 'Versione',              en: 'Version',           dove: sez => sez !== 'attaccare',                  oggi: () => 160 },
+  { k: '_tipologia',      it: 'Tipologia',             en: 'Type',              dove: sez => sez !== 'attaccare',                  oggi: () => 150 },
+  { k: 'score',           it: 'Rarità',                en: 'Rarity',            dove: () => true,                                  oggi: () => 60 },
+  { k: '_partenza',       it: 'Di partenza (solo admin)', en: 'Starting item (admin only)', dove: sez => sez !== 'attaccare' && sez !== 'extras', oggi: () => 420 },
+  { k: 'size',            it: 'Taglia',                en: 'Size',              dove: () => true,                                  oggi: () => 96 },
+  { k: '_dataCreazione',  it: 'Data creazione (con «Ordina per creazione»)', en: 'Created on (with «Sort by creation»)', dove: () => true, oggi: () => '' },
+  { k: '_personaggio',    it: 'Personaggio',           en: 'Character',         dove: sez => !['figurines', 'attaccare'].includes(sez), oggi: () => 160 },
+];
+const _vtSezioneDiChiave = chiave => String(chiave || '').startsWith('tipo:') ? 'extras' : chiave;
+// La posizione di oggi di ogni colonna spostabile in quella tipologia: 1 = la prima dopo la Foto. Una colonna che lì non
+// è prevista (il trattino della console) prende il mezzo posto dopo quella che oggi la precede: se una riga la mostra lo
+// stesso, sta dove sta oggi e non in fondo.
+function _vtPosizioniDiOggi(sez) {
+  const m = {};
+  let n = 0;
+  VT_COLONNE_CONFIGURABILI.forEach(c => { if (c.dove(sez)) m[c.k] = ++n; else m[c.k] = n + 0.5; });
+  return m;
+}
+// La riga di una tipologia: quella salvata, o quella di oggi
+function _vtCfgDi(chiave) {
+  const oggi = _vtPosizioniDiOggi(_vtSezioneDiChiave(chiave));
+  const c = _VT_COLONNE_CFG && _VT_COLONNE_CFG[chiave];
+  const pos = Object.assign({}, oggi, (c && c.pos) || {});
+  return { pos, larg: (c && c.larg) || {}, oggi };
+}
+// La larghezza scelta: sulla cella (in fondo allo stile, così vince sui minimi scritti prima) e sui campi dentro, che la
+// riempiono invece di avere la loro misura
+function _vtLargo(html, w) {
+  const s = 'width:' + w + 'px;min-width:' + w + 'px;max-width:' + w + 'px;';
+  const out = /^<t[hd] style="/.test(html)
+    ? html.replace(/^(<t[hd] style="[^"]*)"/, (m, a) => a + (/[;"]$/.test(a) ? '' : ';') + s + '"')
+    : html.replace(/^<(t[hd])/, '<$1 style="' + s + '"');
+  return out.replace(/(<(?:input|select)\b[^>]*?\bstyle="[^"]*)"/g, (m, a) => a + ';width:100%;min-width:0;box-sizing:border-box;"');
+}
+// Le colonne della VT (già passate dalle condizioni) nell'ordine e con le larghezze della tipologia `chiave`
+function _vtDisponi(cols, chiave) {
+  const cfg = _vtCfgDi(chiave);
+  const testa = cols.filter(c => VT_COLONNE_FISSE_TESTA.includes(c.k));
+  const coda = cols.filter(c => VT_COLONNE_FISSE_CODA.includes(c.k));
+  const mezzo = cols.map((c, i) => ({ c, i, p: cfg.pos[c.k] }))
+    .filter(o => !VT_COLONNE_FISSE_TESTA.includes(o.c.k) && !VT_COLONNE_FISSE_CODA.includes(o.c.k) && o.p !== null)
+    .sort((a, b) => ((a.p ?? 999) - (b.p ?? 999)) || (a.i - b.i))
+    .map(o => o.c);
+  return testa.concat(mezzo, coda).map(c => {
+    const w = Number(cfg.larg[c.k]);
+    if (!(w > 0) || VT_COLONNE_FISSE_TESTA.includes(c.k) || VT_COLONNE_FISSE_CODA.includes(c.k)) return c;
+    return Object.assign({}, c, { th: _vtLargo(c.th, w), td: (f, i) => _vtLargo(c.td(f, i), w) });
+  });
+}
+function renderAdminColonneVT() {
+  const box = document.getElementById('admin-colonne-vt');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);font-weight:600;text-align:center;vertical-align:bottom;border-bottom:1px solid var(--border);';
+  const td = 'padding:4px 6px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
+  const col = _colonneTDA();
+  const cfg = {};
+  col.forEach(c => { cfg[c.k] = _vtCfgDi(c.k); });
+  const tasto = '<button class="btn-primary btn-admin" onclick="salvaColonneVT()">' + (it ? 'Salva le colonne' : 'Save the columns') + '</button>';
+  const testata = '<tr><th style="' + th + 'text-align:left;color:var(--text);">' + (it ? 'Colonna' : 'Column') + '</th>' +
+    col.map(c => '<th style="' + th + '">' + esc(c.nome) + (c.tipo ? '<br><span style="font-size:0.68rem;font-weight:400;color:var(--text);opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span>' : '') + '</th>').join('') + '</tr>';
+  const fissa = testo => '<tr><td style="' + td + 'font-style:italic;opacity:0.75;">' + testo + '</td>' +
+    col.map(() => '<td style="' + td + 'text-align:center;opacity:0.6;">' + (it ? 'fissa' : 'fixed') + '</td>').join('') + '</tr>';
+  const tabella = tipo => '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' + testata +
+    (tipo === 'pos' ? fissa(it ? 'Selezione, #, Foto (in testa)' : 'Selection, #, Photo (first)') : '') +
+    VT_COLONNE_CONFIGURABILI.map(v =>
+      '<tr><td style="' + td + 'font-weight:600;">' + esc(it ? v.it : v.en) + '</td>' +
+      col.map(c => {
+        if (!v.dove(c.sez)) return '<td style="' + td + 'text-align:center;"><span style="opacity:0.6;" title="' + (it ? 'In questa tipologia la colonna non c\'è' : 'This column does not exist for this type') + '">—</span></td>';
+        const val = tipo === 'pos' ? cfg[c.k].pos[v.k] : cfg[c.k].larg[v.k];
+        const segnaposto = tipo === 'pos' ? '' : String(v.oggi(c.sez));
+        return '<td style="' + td + 'text-align:center;"><input type="number" min="1" step="1" data-vt-tda="' + esc(c.k) + '" data-vt-col="' + v.k + '" data-vt-tipo="' + tipo + '"' +
+          ' value="' + (val == null ? '' : esc(String(val))) + '" placeholder="' + esc(segnaposto) + '"' +
+          ' style="width:' + (tipo === 'pos' ? 52 : 62) + 'px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 4px;border-radius:4px;font-size:0.8rem;"></td>';
+      }).join('') + '</tr>').join('') +
+    (tipo === 'pos' ? fissa(it ? '<em>Mia lista</em>, Ciò che cerco (in fondo, solo visitatori)' : '<em>My list</em>, What I\'m looking for (last, visitors only)') : '') +
+    '</table></div>';
+  box.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.9rem;flex-wrap:wrap;margin:1.6rem 0 0.5rem;">' +
+      '<h4 style="font-family:var(--font-ui);margin:0;color:var(--info);">📊 ' + (it ? 'Colonne della vista tabellare' : 'Table view columns') + '</h4>' + tasto +
+    '</div>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it
+        ? 'Per ogni tipologia di articolo, <strong>in che ordine</strong> e <strong>quanto larghe</strong> sono le colonne della vista tabellare. ' +
+          'Le tabelle partono dai valori di oggi. Il trattino vuol dire che in quella tipologia la colonna non c\'è.'
+        : 'For each item type, <strong>the order</strong> and <strong>the width</strong> of the table view columns.') +
+    '</p>' +
+    '<h5 style="font-family:var(--font-ui);margin:1rem 0 0.4rem;color:var(--text);font-size:0.95rem;">↔️ ' + (it ? 'Posizione' : 'Position') + '</h5>' +
+    '<p style="font-size:0.8rem;color:var(--text);margin:0 0 0.6rem;line-height:1.5;">' +
+      (it ? '1 = la prima colonna dopo la Foto. <strong>Vuota = la colonna non si mostra.</strong> A parità di numero vale l\'ordine di oggi. ' +
+            'Una colonna resta comunque fuori dove non ha niente da mostrare (per esempio N. in una serie senza numeri).'
+          : '1 = first column after the Photo. Empty = column not shown.') +
+    '</p>' + tabella('pos') +
+    '<h5 style="font-family:var(--font-ui);margin:1.4rem 0 0.4rem;color:var(--text);font-size:0.95rem;">📏 ' + (it ? 'Larghezza (px)' : 'Width (px)') + '</h5>' +
+    '<p style="font-size:0.8rem;color:var(--text);margin:0 0 0.6rem;line-height:1.5;">' +
+      (it ? '<strong>Vuota = come oggi</strong>; il numero grigio è la misura di oggi. Con un numero la colonna è larga esattamente così, e i campi dentro la riempiono. ' +
+            'Nome, Commento album e Retro oggi si allargano per prendere lo spazio che avanza: con un numero smettono di farlo.'
+          : 'Empty = as today; the grey number is today\'s size.') +
+    '</p>' + tabella('larg') +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' + tasto + '</div>';
+}
+async function salvaColonneVT() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const voci = {};
+  _colonneTDA().forEach(c => { voci[c.k] = { pos: {}, larg: {} }; });
+  const sbagliate = [];
+  document.querySelectorAll('#admin-colonne-vt input[data-vt-tda]').forEach(el => {
+    const v = voci[el.dataset.vtTda];
+    if (!v) return;
+    const testo = String(el.value || '').trim();
+    const n = Number(testo);
+    if (testo && !(Number.isInteger(n) && n >= 1)) { sbagliate.push(el); return; }
+    if (el.dataset.vtTipo === 'pos') v.pos[el.dataset.vtCol] = testo ? n : null;
+    else if (testo) v.larg[el.dataset.vtCol] = n;
+  });
+  document.querySelectorAll('#admin-colonne-vt input[data-vt-tda]').forEach(el => { el.style.borderColor = sbagliate.includes(el) ? 'var(--danger)' : ''; });
+  if (sbagliate.length) {
+    toast(it ? '❌ Nelle caselle in rosso serve un numero intero da 1 in su (o niente)' : '❌ The red boxes need a whole number from 1 up (or nothing)', 'error');
+    return;
+  }
+  try {
+    await fsSave('settings', { id: 'colonneVT', voci });
+    _impostaColonneVT({ voci });
+    renderAdminColonneVT();
+    _finestraConferma({ titolo: it ? '✅ Colonne della vista tabellare salvate' : '✅ Table view columns saved',
+      testo: it ? 'Le modifiche valgono da subito, per tutti.' : 'The changes apply right away, for everyone.', ok: 'OK', soloOk: true });
+  } catch (e) {
+    console.error('salvaColonneVT', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
+}
+
 function renderAdminVersioniArticolo() {
   const box = document.getElementById('admin-versioni-articolo');
   if (!box) return;
@@ -43720,18 +43943,21 @@ function renderAdminVersioniArticolo() {
     '</div>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
-        ? 'Per ogni tipologia di articolo, <strong>quali versioni possono esistere</strong>. Spenta vuol dire <em>non può esistere</em>: ' +
-          'nella scheda degli articoli la casella di quella versione non compare. ' +
-          'Per le tipologie con serie, ogni serie dice poi quali ha davvero (scheda della serie, tab «Versioni non base»). ' +
-          'Il numero accanto a una casella dice quanti articoli di quella versione ci sono già: spegnendola restano, ma non se ne possono creare altri.'
+        // 🔄 v7.207 - il testo di Franco, riga per riga
+        ? 'La tabella indica le versioni esistenti per ogni tipologia di articolo.<br>' +
+          'Spenta vuol dire non può esistere (nella scheda degli articoli la casella di quella versione non compare).<br>' +
+          'Per le tipologie con serie, ogni serie dice poi quali ha davvero (scheda della serie, tab «Versioni non base»).<br>' +
+          'Il numero accanto a una casella dice quanti articoli di quella versione ci sono già (spegnendola restano, ma non se ne possono creare altri).'
         : 'For each item type, <strong>which versions can exist</strong>. Unchecked means <em>cannot exist</em>. The number counts the items of that version already there.') +
     '</p>' +
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
-    '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
+    // 🔄 v7.207 (Franco: «scrivere "Tipologia di articolo" col colore usato per i valori di quella colonna; i valori, invece,
+    //    falli bianchi») - il titolo della colonna prende il colore che avevano i nomi, i nomi il colore del testo
+    '<tr><th style="' + th + 'color:var(--info);">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
       vers.map(v => '<th style="' + th + 'text-align:center;color:' + (v.colore || 'var(--text)') + ';">' + esc(it ? v.it : v.en) + '</th>').join('') +
     '</tr>' +
     righe.map(r =>
-      '<tr><td style="' + td + 'color:var(--info);font-weight:600;">' + esc(r.nome)
+      '<tr><td style="' + td + 'color:var(--text);font-weight:600;">' + esc(r.nome)
         + (r.tipo ? ' <span style="font-size:0.72rem;font-weight:400;color:var(--text);opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span>' : '') + '</td>' +
       vers.map(v => {
         const n = r.conta(v), acceso = r.versioni.includes(v.chiave);
@@ -61430,7 +61656,7 @@ function adminTab(tab) {
   const tabEl = document.getElementById('admin-' + tab);
   if (tabEl) { tabEl.classList.add('active'); }
   if (tab === 'series') renderAdminSeries();
-  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminEreditaBase();renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminOrdinamentiTDA();   // v7.082
+  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminEreditaBase(); renderAdminColonneVT(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminOrdinamentiTDA();   // v7.082
     renderCampiMassiviConfig(); _aggiornaCampiMassiviDaConfigurazione().then(renderCampiMassiviConfig); }   // v6.842: qui, non in Impostazioni   // v6.221, v6.233, v6.234
   if (tab === 'figurines') renderAdminFigs();
   if (tab === 'contacts') { renderAdminContacts(); updateMsgBadge(); }
@@ -64441,7 +64667,10 @@ const CAMPI_ORDINAMENTO_TIPO = {
   sottocategoria: { etichetta: 'Sottocategoria', num: false, val: f => (f.subcategory || '') },   // v6.160
   taglia:      { etichetta: 'Taglia',      num: false, val: f => (f.size || '') },
   punteggio:   { etichetta: 'Rarità',   /* v6.482 - solo l'ETICHETTA: la chiave `punteggio` e' un valore SALVATO (ordinamento della serie) */   num: true,  val: f => (f.score ?? 0) },
-  creazione:   { etichetta: 'Creazione',   num: true,  val: f => (_dataCreazione(f) || 0) }
+  creazione:   { etichetta: 'Creazione',   num: true,  val: f => (_dataCreazione(f) || 0) },
+  // 🆕 v7.207 (Franco: per i Fumetti sigillati «nome, versione (prima le base, poi le sigillate)») - la base, poi le
+  //    versioni nell'ordine in cui le elenca il sito (`_ordineVersione`, lo stesso dei filtri per versione)
+  versione:    { etichetta: 'Versione',    num: true,  val: f => _ordineVersione(_chiaveTipo(f)) + 1 }
 };
 
 // Spezza la stringa in passi. Torna anche gli SCONOSCIUTI, invece di scartarli: chi salva deve
@@ -77957,7 +78186,9 @@ function renderBulkEditView() {
       td: f => { const inWishlist = _wishlist.includes(f.id);
         return `<td style="padding:4px;text-align:center;"><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" onclick="toggleWishlist('${f.id}')" title="${currentLang==='it'?(inWishlist?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(inWishlist?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${inWishlist?'var(--danger)':'rgba(255,255,255,0.15)'};color:${inWishlist?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;">${inWishlist?'❤️':'♡'}</button></td>`; } },
   ].filter(col => col.c);
-  const _RIGA_INTESTAZIONI = _vtColonne.map(col => col.th).join('');
+  // 🆕 v7.207 - ordine e larghezze della tipologia, dalla tabella della console (`_vtDisponi`), sopra le condizioni qui sopra
+  const _vtMostrate = _vtDisponi(_vtColonne, _tipoProdottoCorrente ? 'tipo:' + _tipoProdottoCorrente : currentSection);
+  const _RIGA_INTESTAZIONI = _vtMostrate.map(col => col.th).join('');
 
   bulkView.innerHTML = _barraTabella + _datalist + `
     ${isAdmin ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
@@ -78009,7 +78240,7 @@ function renderBulkEditView() {
       </thead>
       <tbody>
         ${allItems.map((f, rowIdx) => {
-          return `<tr id="bulk-row-${f.id}" data-nat="${rowIdx}" style="border-bottom:1px solid var(--border);">${_vtColonne.map(col => col.td(f, rowIdx)).join('')}</tr>`;
+          return `<tr id="bulk-row-${f.id}" data-nat="${rowIdx}" style="border-bottom:1px solid var(--border);">${_vtMostrate.map(col => col.td(f, rowIdx)).join('')}</tr>`;
         }).join('')}
       </tbody>
       <!-- v6.243 - le stesse intestazioni, in fondo. Il tag TFOOT sta DOPO il TBODY nel markup:
