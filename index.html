@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.208">
+<link rel="stylesheet" href="css/style.css?v=7.209">
 
 
 <style>
@@ -4041,6 +4041,8 @@ di tutte le serie</button>
                «Annunci» (Franco), e in ordine alfabetico viene subito dopo Aggiornamenti massivi -->
           <button class="admin-tab" onclick="adminTab('fotoannuncio')">📢 Annunci</button>
           <button class="admin-tab" onclick="adminTab('caroselli')">🎠 Caroselli</button>
+          <!-- 🆕 v7.209 (Franco: «una nuova funzionalità admin, chiamata "Collage foto"») - in ordine alfabetico, dopo Caroselli -->
+          <button class="admin-tab" onclick="adminTab('collage')">🖼️ Collage foto</button>
           <button class="admin-tab" onclick="adminTab('email')" data-i18n="admin.email.tab">✉️ Comunicazioni</button>
           <button class="admin-tab" onclick="adminTab('foto')" data-i18n="admin.foto">📥 Data import</button>
           <button class="admin-tab" onclick="adminTab('ebay')">🏷️ Ebay</button>
@@ -4409,6 +4411,10 @@ di tutte le serie</button>
         <!-- 🆕 v7.182 - LA SEZIONE «FOTO ANNUNCIO»: la disegna `renderAdminFotoAnnuncio`, lo strumento si apre in una finestra sua -->
         <div id="admin-fotoannuncio" class="admin-section">
           <div><div id="admin-fotoannuncio-box"></div></div>
+        </div>
+        <!-- 🆕 v7.209 - LA SEZIONE «COLLAGE FOTO»: la disegna `renderAdminCollage` -->
+        <div id="admin-collage" class="admin-section">
+          <div><div id="admin-collage-box"></div></div>
         </div>
         <div id="admin-caroselli" class="admin-section">
           <div><div id="admin-caroselli-tda"></div></div>
@@ -6750,7 +6756,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.208"></script>
+<script src="js/app.js?v=7.209"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6774,7 +6780,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.208'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.209'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
