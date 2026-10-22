@@ -1,7 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.208 - Modificati index.html e js/app.js. In console (Franco): il sotto-tab «Colonne della vista tabellare» si
+// v7.209 - Modificati index.html e js/app.js. IL COLLAGE FOTO (Franco: «una nuova funzionalità admin, chiamata "Collage
+//          foto"»), tab nuovo della console dopo Caroselli. Tre domande: quante foto (2-8), da dove (dal sito: spenta, si
+//          fa dopo; «me le passi tu»: si apre la scelta dei file), che collage (a ruota 2-8, a mazzo di carte 2-7, a 4
+//          quadranti esattamente 4). «Crea il collage» disegna in un canvas una foto 1200×675 (16:9 come i box degli
+//          hub) con lo sfondo trasparente, anteprima su scacchi e «Scarica» (PNG). Niente Cloudinary, niente salvato.
+//          Ruota: in cerchio, la base di ogni foto verso il centro. Mazzo: ventaglio che gira attorno a un punto sotto le
+//          carte, senza mano (Franco: «basta il ventaglio»). Quadranti: 2×2 senza tagli.
+// v7.208 -Modificati index.html e js/app.js. In console (Franco): il sotto-tab «Colonne della vista tabellare» si
 //          chiama «Colonne vista tabellare», il testo sotto il titolo è quello dettato da Franco, e l'intestazione
 //          «Colonna» delle due tabelle è azzurra come le altre. E al Salva delle tabelle della console (Protezione
 //          foto, Informazioni ereditate, Colonne vista tabellare, Versioni) la frase «Le modifiche valgono da subito,
@@ -31583,7 +31590,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.208';
+const JS_VERSION = 'v7.209';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41353,6 +41360,198 @@ function renderAdminFotoAnnuncio() {
     '<div id="annunci-filtri" style="display:flex;flex-direction:column;gap:1rem;margin:0.4rem 0 0.9rem;"></div>' +   // v7.187
     '<div id="annunci-tabella" style="font-size:0.85rem;color:var(--text);">' + (it ? 'Carico gli annunci…' : 'Loading…') + '</div>';
   _annCarica();
+}
+
+// ============================================================
+// 🆕 v7.209 (Franco: «una nuova funzionalità admin, chiamata "Collage foto"»; «"Quante foto devi unire?"»; «"Da dove le
+//    prendo?"; con 2 risposte: 1- dal sito; 2- me le passi tu»; «"Che tipo di collage vuoi?" opzione 1: a ruota; opzione 2:
+//    a mazzo di carte; opzione 3: a 4 quadranti»; «la opzione a 4 quadranti deve pretendere che siano caricate 4 foto»; «la
+//    modalità "1- dal sito" la esploriamo poi») - IL COLLAGE FOTO. Scelte di Franco: da 2 a 8 foto (ruota) e da 2 a 7
+//    (mazzo); sfondo trasparente; la misura dei box degli hub (16:9, `--hub-box-ratio`); il mazzo è un ventaglio, senza mano.
+// 📌 Tutto nel browser, con un canvas: niente Cloudinary, quindi nessuna trasformazione pagata, e sul sito non si salva
+//    niente. Il PNG si scarica.
+// 📌 Il disegno: ogni collage è un elenco di foto piazzate (centro, misura, rotazione) in unità sue; il riquadro che le
+//    contiene tutte si porta poi dentro la foto finale, col margine. Così nessuna disposizione esce dai bordi, qualunque
+//    sia il numero di foto o la loro forma.
+const COLLAGE_W = 1200, COLLAGE_H = 675;   // 16:9 come i box degli hub, il doppio dei 600 px con cui il sito li chiede
+const COLLAGE_TIPI = [
+  { k: 'ruota',     it: 'A ruota',          en: 'Wheel',          min: 2, max: 8 },
+  { k: 'mazzo',     it: 'A mazzo di carte', en: 'Hand of cards',  min: 2, max: 7 },
+  { k: 'quadranti', it: 'A 4 quadranti',    en: 'Four quadrants', min: 4, max: 4 },
+];
+let _collageFoto = [];   // le immagini scelte: { nome, img }
+function renderAdminCollage() {
+  const box = document.getElementById('admin-collage-box');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const dom = 'font-size:0.92rem;font-weight:700;color:var(--info);margin:1.2rem 0 0.45rem;';
+  const scelta = (nome, val, testo, extra) => '<label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.88rem;color:var(--text);margin:0.25rem 0;">' +
+    '<input type="radio" name="' + nome + '" value="' + val + '"' + (extra || '') + '>' + testo + '</label>';
+  box.innerHTML =
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">🖼️ ' + (it ? 'Collage foto' : 'Photo collage') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;line-height:1.5;">' +
+      (it ? 'Unisce più foto in una foto sola, con lo sfondo trasparente e la forma dei box degli hub (' + COLLAGE_W + '×' + COLLAGE_H + ' px).<br>' +
+            'La foto si scarica e basta: sul sito non si salva niente.'
+          : 'Joins several photos into one, transparent background, hub box shape. Nothing is saved on the site.') +
+    '</p>' +
+    '<div style="' + dom + '">1. ' + (it ? 'Quante foto devi unire?' : 'How many photos?') + '</div>' +
+    '<input type="number" id="collage-n" class="form-input" min="2" max="8" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
+    '<div style="' + dom + '">2. ' + (it ? 'Da dove le prendo?' : 'Where do I get them?') + '</div>' +
+    scelta('collage-da', 'sito', (it ? 'Dal sito' : 'From the site') + ' <span style="font-size:0.75rem;opacity:0.7;">(' + (it ? 'in arrivo' : 'coming') + ')</span>', ' disabled') +
+    scelta('collage-da', 'pc', it ? 'Me le passi tu' : 'You give them to me', ' onchange="_collageScegli()"') +
+    '<input type="file" id="collage-file" accept="image/*" multiple style="display:none;" onchange="_collageCarica(this.files)">' +
+    '<div id="collage-scelte" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-top:0.4rem;"></div>' +
+    '<div style="' + dom + '">3. ' + (it ? 'Che tipo di collage vuoi?' : 'Which collage?') + '</div>' +
+    COLLAGE_TIPI.map((t, i) => scelta('collage-tipo', t.k, esc(it ? t.it : t.en) + ' <span style="font-size:0.75rem;opacity:0.7;">(' +
+      (t.min === t.max ? (it ? 'esattamente ' : 'exactly ') + t.min : t.min + '–' + t.max) + (it ? ' foto' : ' photos') + ')</span>',
+      (i === 0 ? ' checked' : '') + ' onchange="_collageStato()"')).join('') +
+    '<div id="collage-avviso" style="font-size:0.82rem;color:var(--warn);min-height:1.2rem;margin:0.7rem 0 0.4rem;"></div>' +
+    '<div style="display:flex;gap:0.7rem;flex-wrap:wrap;align-items:center;">' +
+      '<button type="button" id="collage-crea" class="btn-primary" onclick="_collageCrea()">' + (it ? '🖼️ Crea il collage' : '🖼️ Create collage') + '</button>' +
+      '<a id="collage-scarica" class="btn-primary" style="display:none;text-decoration:none;" download="collage.png">⬇️ ' + (it ? 'Scarica' : 'Download') + '</a>' +
+    '</div>' +
+    // a scacchi dietro l'anteprima: è così che si vede che lo sfondo è trasparente
+    '<div id="collage-anteprima" style="display:none;margin-top:0.9rem;max-width:' + COLLAGE_W + 'px;border:1px solid var(--border);border-radius:8px;overflow:hidden;' +
+      'background:repeating-conic-gradient(#3a3a3a 0% 25%, #555 0% 50%) 50% / 24px 24px;"></div>';
+  _collageMostraScelte();
+  _collageStato();
+}
+function _collageScegli() {
+  const f = document.getElementById('collage-file');
+  if (f) { f.value = ''; f.click(); }
+}
+async function _collageCarica(files) {
+  const it = currentLang === 'it';
+  const elenco = [...(files || [])].filter(f => /^image\//.test(f.type));
+  const lette = await Promise.all(elenco.map(f => new Promise(ok => {
+    const img = new Image();
+    const url = URL.createObjectURL(f);
+    img.onload = () => ok({ nome: f.name, img, url });
+    img.onerror = () => { URL.revokeObjectURL(url); ok(null); };
+    img.src = url;
+  })));
+  _collageFoto.forEach(x => URL.revokeObjectURL(x.url));
+  _collageFoto = lette.filter(Boolean);
+  if (lette.length !== _collageFoto.length) toast(it ? '⚠️ Alcuni file non si leggono come immagini: li ho lasciati fuori' : '⚠️ Some files are not readable images', 'error');
+  _collageMostraScelte();
+  _collageStato();
+}
+function _collageMostraScelte() {
+  const box = document.getElementById('collage-scelte');
+  if (!box) return;
+  const it = currentLang === 'it';
+  box.innerHTML = _collageFoto.map(x => '<img src="' + x.url + '" alt="" title="' + esc(x.nome) + '" style="height:52px;width:auto;max-width:6rem;object-fit:contain;border:1px solid var(--border);border-radius:4px;background:var(--card2);">').join('') +
+    (_collageFoto.length ? '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;" onclick="_collageScegli()">' + (it ? 'Cambia le foto' : 'Change photos') + '</button>' : '');
+}
+// Che cosa manca per poter creare: il primo problema, a parole, oppure ''
+function _collageProblema() {
+  const it = currentLang === 'it';
+  const n = Number((document.getElementById('collage-n') || {}).value);
+  const tipo = COLLAGE_TIPI.find(t => t.k === (document.querySelector('input[name="collage-tipo"]:checked') || {}).value);
+  if (!tipo) return it ? 'Scegli il tipo di collage.' : 'Choose a collage type.';
+  if (!Number.isInteger(n) || n < 2) return it ? 'Le foto da unire sono almeno 2.' : 'At least 2 photos.';
+  if (n < tipo.min || n > tipo.max) return it
+    ? (tipo.min === tipo.max ? 'Il collage ' + tipo.it.toLowerCase() + ' vuole esattamente ' + tipo.min + ' foto.' : 'Il collage ' + tipo.it.toLowerCase() + ' va da ' + tipo.min + ' a ' + tipo.max + ' foto.')
+    : 'This collage takes ' + tipo.min + '–' + tipo.max + ' photos.';
+  if (!_collageFoto.length) return it ? 'Scegli le foto (domanda 2).' : 'Choose the photos (question 2).';
+  if (_collageFoto.length !== n) return it ? 'Hai scelto ' + _collageFoto.length + ' foto, ma ne devi unire ' + n + '.' : 'You chose ' + _collageFoto.length + ' photos, not ' + n + '.';
+  return '';
+}
+function _collageStato() {
+  const p = _collageProblema();
+  const av = document.getElementById('collage-avviso');
+  if (av) av.textContent = p;
+  const b = document.getElementById('collage-crea');
+  if (b) { b.disabled = !!p; b.style.opacity = p ? '0.5' : ''; }
+}
+// Le disposizioni. Ogni foto: { img, x, y, w, h, rot } in unità del collage (centro, misura, rotazione in radianti).
+function _collageDisponi(tipo, foto) {
+  const forma = img => { const r = img.naturalWidth / img.naturalHeight || 1; return r >= 1 ? { w: 1, h: 1 / r } : { w: r, h: 1 }; };
+  const n = foto.length;
+  if (tipo === 'quadranti') {
+    // 2×2, ogni cella con la forma della foto finale; la foto sta dentro la sua cella senza tagli, accostata al centro
+    // del collage (misurato: centrate nelle celle, due foto verticali lasciavano un corridoio vuoto in mezzo). I bordi si
+    // prendono poi sulle foto, non sulle celle: così il gruppo resta al centro anche con foto di forme diverse.
+    const cw = 16, ch = 9, gap = 0.4;
+    return foto.map((img, i) => {
+      const r = img.naturalWidth / img.naturalHeight || 1;
+      const w = Math.min(cw - gap, (ch - gap) * r), h = w / r;
+      const col = i % 2, riga = Math.floor(i / 2);
+      const x = col ? cw + gap / 2 + w / 2 : cw - gap / 2 - w / 2;
+      const y = riga ? ch + gap / 2 + h / 2 : ch - gap / 2 - h / 2;
+      return { img, x, y, w, h, rot: 0 };
+    });
+  }
+  if (tipo === 'ruota') {
+    // in cerchio, ogni foto con la base verso il centro; il raggio fa appena toccare le vicine
+    const R = Math.max(0.75, 0.62 / Math.sin(Math.PI / n));
+    return foto.map((img, i) => {
+      const a = -Math.PI / 2 + i * 2 * Math.PI / n;
+      const f = forma(img);
+      return { img, x: R * Math.cos(a), y: R * Math.sin(a), w: f.w, h: f.h, rot: a + Math.PI / 2 };
+    });
+  }
+  // mazzo: un ventaglio di carte della stessa altezza che girano attorno a un punto sotto il mazzo, come tenute in mano;
+  // da sinistra a destra, così ogni carta copre un po' quella prima
+  // misurato a occhio: con 16° fra le carte e il perno vicino, tre foto orizzontali si coprivano quasi del tutto
+  const apertura = Math.min(80, (n - 1) * 22) * Math.PI / 180;
+  const d = 0.9;
+  return foto.map((img, i) => {
+    const r = Math.min(1.2, img.naturalWidth / img.naturalHeight || 0.7);
+    const rot = n === 1 ? 0 : -apertura / 2 + i * apertura / (n - 1);
+    const dist = d + 0.5;
+    return { img, x: Math.sin(rot) * dist, y: -Math.cos(rot) * dist, w: r, h: 1, rot };
+  });
+}
+// Il riquadro che contiene tutte le foto girate
+function _collageBordi(pezzi) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  pezzi.forEach(p => {
+    const c = Math.cos(p.rot), s = Math.sin(p.rot);
+    [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([sx, sy]) => {
+      const dx = sx * p.w / 2, dy = sy * p.h / 2;
+      const X = p.x + dx * c - dy * s, Y = p.y + dx * s + dy * c;
+      x0 = Math.min(x0, X); x1 = Math.max(x1, X); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y);
+    });
+  });
+  return { x0, y0, x1, y1 };
+}
+function _collageDisegna(tipo, foto) {
+  const c = document.createElement('canvas');
+  c.width = COLLAGE_W; c.height = COLLAGE_H;
+  const ctx = c.getContext('2d');
+  const pezzi = _collageDisponi(tipo, foto);
+  const b = _collageBordi(pezzi);
+  const margine = tipo === 'quadranti' ? 0.02 : 0.05;
+  const k = Math.min(COLLAGE_W * (1 - 2 * margine) / (b.x1 - b.x0), COLLAGE_H * (1 - 2 * margine) / (b.y1 - b.y0));
+  const ox = COLLAGE_W / 2 - k * (b.x0 + b.x1) / 2, oy = COLLAGE_H / 2 - k * (b.y0 + b.y1) / 2;
+  ctx.imageSmoothingQuality = 'high';
+  pezzi.forEach(p => {
+    ctx.save();
+    ctx.translate(ox + k * p.x, oy + k * p.y);
+    ctx.rotate(p.rot);
+    // un'ombra leggera dove le foto si sovrappongono o girano: sul trasparente è ciò che le stacca una dall'altra
+    if (tipo !== 'quadranti') { ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; }
+    ctx.drawImage(p.img, -k * p.w / 2, -k * p.h / 2, k * p.w, k * p.h);
+    ctx.restore();
+  });
+  return c;
+}
+async function _collageCrea() {
+  const it = currentLang === 'it';
+  if (_collageProblema()) { _collageStato(); return; }
+  const tipo = document.querySelector('input[name="collage-tipo"]:checked').value;
+  const c = _collageDisegna(tipo, _collageFoto.map(x => x.img));
+  const blob = await new Promise(ok => c.toBlob(ok, 'image/png'));
+  if (!blob) { toast(it ? '❌ Non riesco a creare la foto' : '❌ Could not create the photo', 'error'); return; }
+  const url = URL.createObjectURL(blob);
+  const a = document.getElementById('collage-scarica');
+  if (a) {
+    if (a.dataset.url) URL.revokeObjectURL(a.dataset.url);
+    a.href = url; a.dataset.url = url; a.download = 'collage-' + tipo + '-' + _collageFoto.length + '.png'; a.style.display = '';
+  }
+  const ant = document.getElementById('collage-anteprima');
+  if (ant) { ant.innerHTML = '<img src="' + url + '" alt="" style="display:block;width:100%;height:auto;">'; ant.style.display = ''; }
 }
 
 // ============================================================
@@ -61701,6 +61900,7 @@ function adminTab(tab) {
   if (tab === 'questionario') renderAdminQuestionario();  // v7.156 (Franco)
   if (tab === 'aggiornamenti') renderAdminAggiornamenti();   // v7.170 (Franco)
   if (tab === 'fotoannuncio') renderAdminFotoAnnuncio();     // v7.182 (Franco)
+  if (tab === 'collage') renderAdminCollage();     // v7.209 (Franco)
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
