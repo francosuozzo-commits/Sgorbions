@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.206 - Modificati index.html e js/app.js (per la versione). LA VISTA TABELLARE COME ELENCO DI COLONNE, prima delle
+//          due release decise con Franco («perché non portiamo in tabella di cfg anche le colonne da mostrare nella VT
+//          delle singole tda?»; «sì, vai con la prima release»). In `renderBulkEditView` le intestazioni
+//          (`_RIGA_INTESTAZIONI`) e le celle della riga erano due elenchi scritti a mano, tenuti allineati da un
+//          commento; ora un elenco solo, `_vtColonne`: ogni colonna ha nome (`k`), condizione di oggi (`c`),
+//          intestazione (`th`) e cella (`td`). Categoria e Sottocategoria degli articoli senza serie e dei Retro sono
+//          una colonna ciascuna (le due sezioni non convivono). NESSUNA DIFFERENZA A SCHERMO, misurata: sul sito vivo,
+//          la funzione vecchia e la nuova a confronto in ogni serie e tipologia (anche senza serie), da admin e da
+//          visitatore, 108 casi e 10.574 righe, HTML identico (a meno di spazi e commenti); con «Ordina per creazione»
+//          acceso, 54 su 54. La seconda release darà a `_vtColonne` posizione e larghezza dalla console.
 // v7.205 - Modificati index.html e js/app.js. INFORMAZIONI EREDITATE DALLA BASE (Franco: «nella admin console, nella
 //          sezione delle tda, mettere una nuova tabella … "Informazioni ereditate dalla base"»; «le tda per colonne …
 //          nomi campo per riga»; «meglio elencare i campi che si ereditano»; al Salva «la A»). Nasceva da: «categoria e
@@ -31538,7 +31548,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.205';
+const JS_VERSION = 'v7.206';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -77799,77 +77809,155 @@ function renderBulkEditView() {
   const _datalist = !isAdmin ? '' :
     [..._gruppiPartenza.entries()].map(([k, arr]) => '<datalist id="' + _idGruppo.get(k) + '">' + _opz(arr) + '</datalist>').join('')
     + '<datalist id="dl-part-tutti">' + _opz(_candidatiPartenza) + '</datalist>';
-  // 🆕 v6.243 (Franco: "andando in fondo si perde il nome delle colonne") — LE INTESTAZIONI IN UN
-  // POSTO SOLO, usate in cima E in fondo alla tabella.
-  //
-  // 📌 PERCHE' RIPETERLE IN FONDO E NON RENDERLE "APPICCICOSE" (che sarebbe meglio): questa tabella
-  // scorre con la PAGINA, non dentro un riquadro suo, e il div che la contiene ha `overflow-x:auto`
-  // per la larghezza. Un antenato con `overflow` diverso da `visible` e' un contenitore di
-  // scorrimento, e uno `position:sticky` si ancora a LUI — cioe' a un box alto quanto tutta la
-  // tabella, dove non si stacca mai. Per farlo funzionare bisognerebbe dare al contenitore
-  // un'altezza fissa e uno scorrimento verticale proprio: cambierebbe come si comporta la pagina e
-  // come si scorre in orizzontale, che e' la cosa che li' serve davvero.
-  // Ripeterle in fondo costa una riga, non puo' rompere niente, e su una tabella che si legge
-  // scorrendo fa lo stesso lavoro.
-  //
-  // 🔴 LA COSA CHE CONTA: la riga e' UNA SOLA, in una costante. Scriverla due volte avrebbe creato
-  // due elenchi di colonne da tenere allineati — e questa tabella ha appena cambiato colonne tre
-  // volte in tre release (v6.237, v6.242 e lo scambio Versione/Tipologia). Il secondo elenco
-  // sarebbe rimasto indietro al primo ritocco, e sfalsato in fondo: cioe' proprio dove serve.
-  const _RIGA_INTESTAZIONI = `
-          ${isAdmin ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);width:30px;"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>' : ''}
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);width:36px;">#</th>
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);width:${currentSection === 'retros' ? 48 : 92}px;">${(currentLang === 'it') ? 'Foto' : 'Photo'}</th>
-          ${isAdmin ? `<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>` : ''}
-          ${currentSeriesHasSubseries ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Sottoserie</th>' : ''}
-          ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Categoria</th>' : ''}
-          ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Sottocategoria</th>' : ''}
-          ${currentSection === 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Categoria</th><th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Sottocategoria</th>' : ''}
-          ${_cCommentoFcr ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Commento album' : 'Album note'}</th>` : ''}
-          ${_cMostraNumero ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">N.</th>' : ''}
-          <!-- v6.184 (Franco) - nelle Figurine qui c'era "Nome Completo" in sola lettura, e il Nome
-               non c'era affatto. Ora c'e' il NOME, modificabile come nelle altre sezioni, e il Nome
-               completo esce dalla tabella: e' un valore calcolato, e questa e' una vista di modifica. -->
-          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Nome' : 'Name'}</th>
-          ${_cAnno ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">' + (currentLang === 'it' ? 'Anno' : 'Year') + '</th>' : ''}
-          <!-- v6.844: Famiglia dopo l'Anno. Le due colonne non convivono mai (l'Anno e' degli articoli senza serie). -->
-          ${_cFamiglia ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Famiglia' : 'Family'}</th>` : ''}
-          <!-- 🗑️ v6.837 - via la colonna Famiglia a testo libero: la famiglia si sceglie nella scheda. -->
-          ${_cAttaccare ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Commento album' : 'Album note'}</th>` : ''}
-          ${currentSection === 'figurines' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Retro</th>` : ''}
-          ${_haSottonome(currentSection) ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Sottonome' : 'Subname'}</th>` : ''}
-          <!-- v6.237 (Franco) - LA COLONNA C'E' SU TUTTE E SETTE LE SEZIONI, e si chiama VERSIONE.
-               Era limitata alle figurine, quindi sui retro non compariva: e gli unici due articoli
-               su cui Franco deve spostare da change a omaggio sono proprio figurine e retro.
-               Il nome "Tipo" era ambiguo proprio dove serviva di piu': sui retro esiste gia' una
-               colonna "Tipo di change", e due colonne che cominciano con la stessa parola nella
-               stessa tabella si leggono male. "Versione" e' la parola che Franco ha scelto per
-               l'insieme delle cinque, ed e' quella che usano l'elenco, la console e la scheda.
-               ATTENZIONE, e' un commento HTML dentro un template literal: niente backtick qui
-               dentro, chiuderebbero la stringa. Costato un giro. -->
-          ${_cVersione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Versione' : 'Version'}</th>` : ''}
-          <!-- v6.242 (Franco) - UNA COLONNA SOLA, "TIPOLOGIA", SU TUTTE E SETTE LE SEZIONI.
-               Prima qui c'era "Tipo di change", e solo sui retro. Il Tipo di errore di stampa non
-               era esposto da nessuna parte, e con la v6.241 se ne e' aggiunto un terzo.
-               I tre campi sono mutuamente esclusivi per costruzione: su una riga al massimo uno e'
-               pieno. Tre colonne sarebbero state tre colonne di cui due sempre vuote.
-               Si legge in coppia con quella accanto: VERSIONE dice quale versione, TIPOLOGIA quale
-               tipo dentro quella versione. -->
-          ${_cVersione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Tipologia' : 'Type'}</th>` : ''}
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${(currentLang === 'it') ? 'Rarità' : 'Rarity'}</th>
-          ${_cPartenza ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);min-width:420px;">${_etichettaDiPartenza(currentSection)}</th>` : ''}
-          ${_cTaglia ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Taglia</th>' : ''}
-          ${_ordinaPerCreazione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;">${currentLang === 'it' ? 'Data creazione' : 'Created on'}</th>` : ''}
-          <!-- 🆕 v6.969 (Franco: «aggiungi il campo Note alla VT delle fcr, visibile solo per admin;
-               come ultima colonna») - lo stesso campo note della scheda, che anche lì in lettura
-               vede solo l'admin. Ultima: dopo la Data creazione, e le due di Mia lista / Ciò che
-               cerco qui sotto sono solo per chi non è admin, quindi non convivono mai. -->
-          <!-- 🆕 v6.971 (Franco) - Personaggio, per tutti, a destra: vedi _cellaPersonaggio. -->
-          ${_cPersonaggio ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Personaggio' : 'Character'}</th>` : ''}
-          ${!isAdmin ? `
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);"><em>${currentLang === 'it' ? 'Mia lista' : 'My list'}</em></th>
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</th>` : ''}
-`;
+  // 🔄 v7.206 (Franco: «perché non portiamo in tabella di cfg anche le colonne da mostrare nella VT delle singole tda?»;
+  //    «sì, vai con la prima release») - LE COLONNE IN UN ELENCO SOLO. Ogni colonna porta insieme la sua condizione,
+  //    l'intestazione e la cella: prima erano due elenchi scritti a mano (le intestazioni qui, le celle nella riga),
+  //    tenuti allineati da un commento (v6.237: «toglierne una sola non da' errore: sfalsa le colonne»). Adesso non
+  //    possono più sfalsarsi, e l'elenco è quello che la tabella della console potrà ordinare e allargare (seconda
+  //    release). Nessuna differenza a schermo: intestazioni e celle sono le stesse stringhe di prima, nello stesso ordine.
+  // 📌 `k` è il nome della colonna (il campo, dove c'è). `c` è la condizione di oggi: resta anche quando la tabella della
+  //    console deciderà posizione e presenza (Franco: «condizioni di visibilità da usare on top»).
+  // 🆕 v6.243 (Franco: "andando in fondo si perde il nome delle colonne") - le intestazioni si ripetono in fondo
+  //    (`tfoot`): la tabella scorre con la PAGINA, e uno `position:sticky` si ancorerebbe al contenitore con
+  //    `overflow-x:auto`, dove non si stacca mai. Stessa riga sopra e sotto, quindi non possono divergere.
+  const _vtColonne = [
+    { k: '_seleziona', c: isAdmin,
+      th: '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);width:30px;"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>',
+      td: f => `<td style="padding:4px;text-align:center;"><input type="checkbox" class="bulk-select-row" data-id="${f.id}" onchange="updateBulkDeleteCount()"></td>` },
+    { k: '_numeroRiga', c: true,
+      th: '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);width:36px;">#</th>',
+      td: (f, rowIdx) => `<td style="padding:4px 8px;text-align:center;color:var(--muted);font-size:0.78rem;">${rowIdx + 1}</td>` },
+    // v6.079 (Franco) - due miniature, fronte e retro (`_dueFacce`); nei Retro una faccia sola
+    { k: '_foto', c: true,
+      th: `<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);width:${currentSection === 'retros' ? 48 : 92}px;">${(currentLang === 'it') ? 'Foto' : 'Photo'}</th>`,
+      td: f => `<td style="padding:4px;text-align:center;white-space:nowrap;">${(() => {
+            const _ff = _dueFacce(f, _tutteLeFig);
+            return _miniaturaTabella(_ff.fronte, true) + (_schedaDueFoto(f) ? ' ' + _miniaturaTabella(_ff.retro, false) : '');
+          })()}</td>` },
+    { k: '_modifica', c: isAdmin,
+      th: `<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>`,
+      td: f => `<td style="padding:4px;white-space:nowrap;text-align:center;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Apri la scheda' : 'Open the card'}" onclick="openFigDetail('${f.id}')">&#128065;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="apriModificaItem('${f.id}')">&#9998;</button> ${_daAttaccareCreazioneVietata(f) ? '' : `<button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button>`}</td>` },
+    { k: 'subseries', c: currentSeriesHasSubseries,
+      th: '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Sottoserie</th>',
+      td: f => isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:150px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries) },
+    // Categoria e Sottocategoria: degli articoli senza serie (v6.151, coi suggerimenti per tipo) e dei Retro, dove su un
+    // figlio le comanda la base (v6.143). Le due sezioni non convivono mai nella stessa tabella: una colonna sola.
+    { k: 'category', c: _cExtra || currentSection === 'retros',
+      th: '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Categoria</th>',
+      td: f => _cExtra
+        ? (_eProdottoExtraSerie(f) && isAdmin
+          ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" list="bulk-cat-'+f.tipoProdotto+'" value="'+esc(f.category||'')+'" style="width:230px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
+          : '<td style="padding:4px;font-size:0.8rem;color:var(--muted);">'+esc(f.category||'')+'</td>')
+        : (isAdmin && !_campoComandatoDalGenitore(f, 'category')
+          ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
+          : readCell(f.category)) },
+    { k: 'subcategory', c: _cExtra || currentSection === 'retros',
+      th: '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Sottocategoria</th>',
+      td: f => _cExtra
+        ? (_eProdottoExtraSerie(f) && isAdmin
+          ? '<td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" list="bulk-sub-'+f.tipoProdotto+'" value="'+esc(f.subcategory||'')+'" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
+          : '<td style="padding:4px;font-size:0.8rem;color:var(--muted);">'+esc(f.subcategory||'')+'</td>')
+        : (isAdmin && !_campoComandatoDalGenitore(f, 'category')
+          ? '<td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
+          : readCell(f.subcategory)) },
+    { k: '_commentoFcr', c: _cCommentoFcr,
+      th: `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Commento album' : 'Album note'}</th>`,
+      td: f => `<td style="padding:4px 8px;color:#ffd84d;font-size:0.8rem;line-height:1.3;min-width:220px;max-width:340px;">${esc(_commentoFcr(f))}</td>` },
+    { k: 'number', c: _cMostraNumero,
+      th: '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">N.</th>',
+      td: f => isAdmin ? '<td style="padding:4px;text-align:center;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? _numeroAschermo(f) : '', null, 'center') },
+    // v6.184 (Franco) - il NOME, modificabile in tutte le sezioni (il Nome completo è calcolato e non sta qui); su un
+    // figlio lo comanda il genitore (v6.143). 🔄 v7.178 - dove c'è il Commento album lo spazio libero va a lui.
+    { k: 'name', c: true,
+      th: `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Nome' : 'Name'}</th>`,
+      td: f => {
+        const _nomeLargo = currentSection !== 'figurines' && !_cAttaccare;
+        return (isAdmin && !_campoComandatoDalGenitore(f, 'name'))
+          ? `<td style="padding:4px;${_nomeLargo ? 'width:99%;' : ''}"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:${_nomeLargo ? 280 : (_cAttaccare ? 180 : 150)}px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`
+          : readCell(f.name, _cAttaccare ? 180 : 300);
+      } },
+    // v6.755 (Franco: «mettere l'anno dopo il campo Nome»)
+    { k: 'year', c: _cAnno,
+      th: '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">' + (currentLang === 'it' ? 'Anno' : 'Year') + '</th>',
+      td: f => _articoloSenzaSerie(f) && isAdmin
+        ? '<td style="padding:4px;text-align:center;"><input data-field="year" data-id="'+f.id+'" value="'+(f.year||'')+'" type="number" style="width:80px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
+        : readCell(f.year || '', null, 'center') },
+    // v6.844: Famiglia dopo l'Anno (non convivono mai); 🗑️ v6.837 - a testo libero non c'è più: si sceglie nella scheda
+    { k: 'famiglia', c: _cFamiglia,
+      th: `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Famiglia' : 'Family'}</th>`,
+      td: f => readCell(esc(_famigliaASchermo(f)), 120) },
+    { k: 'commentoAlbum', c: _cAttaccare,
+      th: `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Commento album' : 'Album note'}</th>`,
+      td: f => isAdmin && _cAttaccareModifica
+        ? `<td style="padding:4px;width:99%;"><input data-field="commentoAlbum" data-id="${f.id}" value="${esc(f.commentoAlbum || '')}" style="width:100%;min-width:360px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:0.85rem;" onchange="saveBulkCell(this)"></td>`
+        : readCell(f.commentoAlbum, 360) },
+    // v6.184 (Franco) - il RETRO associato, col suo Nome completo (`_dueFacce`); 🔄 v6.185 - lo spazio che avanza è suo
+    { k: '_retro', c: currentSection === 'figurines',
+      th: `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Retro</th>`,
+      td: f => {
+        const rec = _dueFacce(f, _tutteLeFig).retroRec;
+        return `<td style="padding:4px 8px;color:var(--text);width:99%;min-width:320px;">${rec ? (rec.fullName || computeFullName(rec, _tutteLeFig)) : ''}</td>`;
+      } },
+    { k: 'subname', c: _haSottonome(currentSection),
+      th: `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Sottonome' : 'Subname'}</th>`,
+      td: f => isAdmin && !_campoComandatoDalGenitore(f, 'subname') ? `<td style="padding:4px;"><input data-field="subname" data-id="${f.id}" value="${(f.subname||'').replace(/"/g,'&quot;')}" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.subname, 200) },
+    // v6.237 (Franco) - VERSIONE, su tutte le sezioni che ne ammettono (v6.370, v6.658); la parola colorata da
+    // `_tipoColorato` (v6.227), con l'errore di stampa fra i tipi (v6.184)
+    { k: '_versione', c: _cVersione,
+      th: `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Versione' : 'Version'}</th>`,
+      td: f => readCell(_tipoColorato(f, true), 160) },
+    // v6.242 (Franco) - TIPOLOGIA, una colonna sola per i tre campi mutuamente esclusivi; il campo e il controllo si
+    // ricavano dalla versione della riga. Elenco chiuso -> tendina (come nella scheda)
+    { k: '_tipologia', c: _cVersione,
+      th: `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Tipologia' : 'Type'}</th>`,
+      td: f => {
+        const _cT = _campoTipoDi(f);
+        if (!_cT) return readCell('', 140);            // base e variazioni non hanno tipologia
+        const _val = f[_cT] || '';
+        if (!isAdmin) return readCell(_val, 140);
+        const _v = _versioneDiChiave(_chiaveTipo(f));
+        const _fnOpz = _v && _v.opzioniTipo ? _FUNZIONI_OPZIONI_TIPO[_v.opzioniTipo] : null;
+        const _sezRiga = f.section || 'figurines';   // v6.253
+        if (_fnOpz) {
+          return `<td style="padding:4px;"><select data-field="${_cT}" data-id="${f.id}" style="width:150px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)">${_fnOpz(f.seriesId, _val, _sezRiga)}</select></td>`;
+        }
+        // ♻️ v6.350 - nessuna versione di oggi ha il tipo a elenco aperto: il ramo resta per una futura
+        return `<td style="padding:4px;"><input data-field="${_cT}" data-id="${f.id}" value="${esc(_val)}" style="width:140px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`;
+      } },
+    { k: 'score', c: true,
+      th: `<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${(currentLang === 'it') ? 'Rarità' : 'Rarity'}</th>`,
+      td: f => isAdmin ? `<td style="padding:4px;text-align:center;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0, null, 'center') },
+    // 🗑️ v6.909 - non nelle fpa (non sono versioni di niente, v6.370), né dove sono tutti articoli senza serie (v6.152)
+    { k: '_partenza', c: _cPartenza,
+      th: `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);min-width:420px;">${_etichettaDiPartenza(currentSection)}</th>`,
+      td: f => _eProdottoExtraSerie(f) ? '<td></td>' : _eBase(f) ? readCell('', 420) :  `<td style="padding:4px;min-width:420px;"><input data-field="_figPartenza" data-id="${f.id}" list="${_idListaPartenza(f)}" value="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? '— nessuna —' : '— none —'}" title="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;font-size:0.72rem;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;" onfocus="this.select()" onchange="saveBulkCell(this)"></td>` },
+    { k: 'size', c: _cTaglia,
+      th: '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Taglia</th>',
+      td: f => isAdmin
+        ? '<td style="padding:4px;">' + (!_mostraTaglia(f, currentSeries) ? '' : _eProdottoExtraSerie(f)
+            ? _selectTagliaHTML(f.size, 'bulk-size-'+f.id, 'saveBulkCell(this)', 'width:96px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;', f.tipoProdotto)
+            : _selectTagliaHTML(f.size, 'bulk-size-'+f.id, 'saveBulkCell(this)', 'width:96px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;', _TAGLIE_FPA))   // v7.199
+          + '</td>'
+        : readCell(f.size) },
+    { k: '_dataCreazione', c: _ordinaPerCreazione,
+      th: `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;">${currentLang === 'it' ? 'Data creazione' : 'Created on'}</th>`,
+      td: f => `<td style="padding:4px 8px;color:${_dataCreazione(f) ? 'var(--text)' : 'var(--muted)'};white-space:nowrap;font-size:0.78rem;${_dataCreazione(f) ? '' : 'font-style:italic;'}">${esc(_dataCreazioneTesto(f))}</td>` },
+    // 🆕 v6.971 (Franco) - Personaggio, per tutti, a destra (vedi `_cellaPersonaggio`)
+    { k: '_personaggio', c: _cPersonaggio,
+      th: `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Personaggio' : 'Character'}</th>`,
+      td: f => _cellaPersonaggio(f) },
+    // Mia lista e Ciò che cerco: comandi, non dati, e solo per chi non è admin. Restano in fondo (Franco: «le due colonne
+    // da te menzionate lasciale dove sono ora»)
+    { k: '_miaLista', c: !isAdmin,
+      th: `<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);"><em>${currentLang === 'it' ? 'Mia lista' : 'My list'}</em></th>`,
+      td: f => { const isOwned = owned.includes(f.id);
+        return `<td style="padding:4px;text-align:center;"><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'È nella tua lista':'In your list') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="toggleOwned('${f.id}')">✓</button></td>`; } },
+    { k: '_cercato', c: !isAdmin,
+      th: `<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</th>`,
+      td: f => { const inWishlist = _wishlist.includes(f.id);
+        return `<td style="padding:4px;text-align:center;"><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" onclick="toggleWishlist('${f.id}')" title="${currentLang==='it'?(inWishlist?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(inWishlist?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${inWishlist?'var(--danger)':'rgba(255,255,255,0.15)'};color:${inWishlist?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;">${inWishlist?'❤️':'♡'}</button></td>`; } },
+  ].filter(col => col.c);
+  const _RIGA_INTESTAZIONI = _vtColonne.map(col => col.th).join('');
 
   bulkView.innerHTML = _barraTabella + _datalist + `
     ${isAdmin ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
@@ -77921,128 +78009,7 @@ function renderBulkEditView() {
       </thead>
       <tbody>
         ${allItems.map((f, rowIdx) => {
-          const isOwned = owned.includes(f.id);
-          const inWishlist = _wishlist.includes(f.id);
-          return `<tr id="bulk-row-${f.id}" data-nat="${rowIdx}" style="border-bottom:1px solid var(--border);">
-          ${isAdmin ? `<td style="padding:4px;text-align:center;"><input type="checkbox" class="bulk-select-row" data-id="${f.id}" onchange="updateBulkDeleteCount()"></td>` : ''}
-          <td style="padding:4px 8px;text-align:center;color:var(--muted);font-size:0.78rem;">${rowIdx + 1}</td>
-          <td style="padding:4px;text-align:center;white-space:nowrap;">${(() => {
-            const _ff = _dueFacce(f, _tutteLeFig);
-            return _miniaturaTabella(_ff.fronte, true) + (_schedaDueFoto(f) ? ' ' + _miniaturaTabella(_ff.retro, false) : '');
-          })()}</td>
-          ${isAdmin ? `<td style="padding:4px;white-space:nowrap;text-align:center;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Apri la scheda' : 'Open the card'}" onclick="openFigDetail('${f.id}')">&#128065;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="apriModificaItem('${f.id}')">&#9998;</button> ${_daAttaccareCreazioneVietata(f) ? '' : `<button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button>`}</td>` : ''}
-          ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:150px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
-          ${_cExtra ? (_eProdottoExtraSerie(f) && isAdmin
-            ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" list="bulk-cat-'+f.tipoProdotto+'" value="'+esc(f.category||'')+'" style="width:230px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
-            : '<td style="padding:4px;font-size:0.8rem;color:var(--muted);">'+esc(f.category||'')+'</td>') : ''}
-          ${_cExtra ? (_eProdottoExtraSerie(f) && isAdmin
-            ? '<td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" list="bulk-sub-'+f.tipoProdotto+'" value="'+esc(f.subcategory||'')+'" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
-            : '<td style="padding:4px;font-size:0.8rem;color:var(--muted);">'+esc(f.subcategory||'')+'</td>') : ''}
-          ${currentSection === 'retros' ? (isAdmin && !_campoComandatoDalGenitore(f, 'category') ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
-          ${_cCommentoFcr ? `<td style="padding:4px 8px;color:#ffd84d;font-size:0.8rem;line-height:1.3;min-width:220px;max-width:340px;">${esc(_commentoFcr(f))}</td>` : ''}
-          ${_cMostraNumero ? (isAdmin ? '<td style="padding:4px;text-align:center;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? _numeroAschermo(f) : '', null, 'center')) : ''}
-          ${(() => {
-            // v6.184 (Franco) - IL NOME, e non piu' il Nome completo. Nelle Figurine questa cella
-            // mostrava `fullName` in sola lettura e il Nome non c'era da nessuna parte: da qui non
-            // si poteva correggere un nome, che e' il campo da cui il Nome completo NASCE.
-            // Ora la regola e' una sola per tutte le sezioni, cioe' quella che le altre avevano gia'.
-            // v6.143 - su un FIGLIO il Nome lo comanda il genitore: cella di sola lettura, come
-            // nella scheda, dove il campo e' nascosto dalla v6.038.
-            // 🔄 v7.178 (Franco: «nella VT fpa la colonna NOME è enorme mentre la colonna Commento album è
-            //    piccolissima») - dove c'è il Commento album lo spazio libero va a lui, non al Nome
-            const _nomeLargo = currentSection !== 'figurines' && !_cAttaccare;
-            return (isAdmin && !_campoComandatoDalGenitore(f, 'name'))
-              ? `<td style="padding:4px;${_nomeLargo ? 'width:99%;' : ''}"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:${_nomeLargo ? 280 : (_cAttaccare ? 180 : 150)}px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`
-              : readCell(f.name, _cAttaccare ? 180 : 300);
-          })()}
-          ${_cAnno ? (_articoloSenzaSerie(f) && isAdmin
-            ? '<td style="padding:4px;text-align:center;"><input data-field="year" data-id="'+f.id+'" value="'+(f.year||'')+'" type="number" style="width:80px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
-            : readCell(f.year || '', null, 'center')) : ''}
-          ${_cFamiglia ? readCell(esc(_famigliaASchermo(f)), 120) : ''}
-          ${!_cAttaccare ? '' : (isAdmin && _cAttaccareModifica
-            ? `<td style="padding:4px;width:99%;"><input data-field="commentoAlbum" data-id="${f.id}" value="${esc(f.commentoAlbum || '')}" style="width:100%;min-width:360px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:0.85rem;" onchange="saveBulkCell(this)"></td>`
-            : readCell(f.commentoAlbum, 360))}
-          ${currentSection === 'figurines' ? (() => {
-            // v6.184 (Franco) - IL RETRO ASSOCIATO, col suo Nome completo. Non c'e' logica nuova:
-            // `_dueFacce` sa gia' quale retro il sito associa a questa figurina, e segue la regola
-            // che Franco ha ripetuto — un change di RETRO ha un `retroId` suo e vince quello, un
-            // change di FRONTE non ce l'ha e prende quello della base.
-            // ⚠️ Quel `|| base?.retroId` dentro `_dueFacce` si legge come un ripiego e NON lo e': e'
-            // la regola, e a renderla esatta e' la v6.102, dove un change ha cominciato a dichiarare
-            // se e' frontale o di retro. Letto senza quella release sembra un'approssimazione.
-            // v6.185 (Franco) - LE LARGHEZZE ERANO INVERTITE. Al Nome erano rimasti `width:99%` e
-            // `min-width:280px`, ereditati dal ramo dei Retro — dove quel campo E' il piu' lungo.
-            // Nelle Figurine e' il contrario: un nome e' "ADAM BOMB", un Nome completo di retro e'
-            // "RICERCATA PER ABUSO DI POTERE MATERNO - MAMMA - ROSSO".
-            // ⚠️ Copiare un ramo di codice si porta dietro anche le sue MISURE, e le misure sono
-            // tarate su dati che altrove sono diversi. E' la stessa forma dell'errore della v6.174,
-            // dove avevo copiato sul desktop le etichette brevi della console admin: si copia la
-            // conseguenza e si lascia indietro la causa.
-            // Qui lo spazio che avanza lo prende il RETRO (`width:99%`), non il Nome.
-            const rec = _dueFacce(f, _tutteLeFig).retroRec;
-            return `<td style="padding:4px 8px;color:var(--text);width:99%;min-width:320px;">${rec ? (rec.fullName || computeFullName(rec, _tutteLeFig)) : ''}</td>`;
-          })() : ''}
-          ${_haSottonome(currentSection) ? (isAdmin && !_campoComandatoDalGenitore(f, 'subname') ? `<td style="padding:4px;"><input data-field="subname" data-id="${f.id}" value="${(f.subname||'').replace(/"/g,'&quot;')}" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.subname, 200)) : ''}
-          ${!_cVersione ? '' : (() => {
-            // ⚠️ v6.237 - la condizione e' stata tolta QUI e nell'intestazione NELLA STESSA PASSATA.
-            // Toglierne una sola non da' errore: sfalsa le colonne di una posizione per tutte le
-            // righe, e la tabella continua a sembrare giusta finche' non si legge cosa c'e' scritto
-            // in una cella. E' la ragione per cui piu' su intestazioni e celle nascono dallo stesso
-            // array — qui non era possibile, quindi lo dice un commento.
-            // 🔴 v6.184 (Franco) - "Errore di stampa" ENTRA fra i tipi. Prima la catena guardava
-            // TRE contrassegni e un errore di stampa finiva nell'ultimo `else`, cioe' veniva
-            // etichettato **Base** — che non e'. Su Serie 3 sono 79 record.
-            // ⚠️ E' lo STESSO difetto che il 16 agosto faceva contare 336 figurine base invece di
-            // 256 (corretto nella v6.175 agganciando il conteggio a `_eBase`): due sintomi della
-            // stessa causa, cioe' la v5.711 che ha reso `isPrintError` un tipo a se' mentre il
-            // codice scritto prima ha continuato a contarne tre. Franco ha collegato le due cose.
-            // 📌 Il controllo va DOPO `isChange` di proposito: se un record vecchio portasse
-            // entrambi i contrassegni, l'ordine di precedenza resta quello di prima e a spostarsi
-            // sono solo i record che sono SOLTANTO errori di stampa — quelli che vogliamo spostare.
-            // v6.227 - la parola arriva colorata da `_tipoColorato`, che tiene ordine di
-            // precedenza, etichette e colori. `readCell` inserisce il valore cosi' com'e' (nessun
-            // escape), quindi lo <span> passa: verificato prima di scriverlo, perche' se avesse
-            // fatto escape si sarebbe visto il tag scritto per esteso dentro la cella.
-            return readCell(_tipoColorato(f, true), 160);
-          })()}
-          ${!_cVersione ? '' : (() => {
-            // v6.242 - la cella della TIPOLOGIA. Il campo da scrivere e il controllo da mostrare
-            // si ricavano dalla VERSIONE della riga, non da un `if` sulla sezione.
-            const _cT = _campoTipoDi(f);
-            if (!_cT) return readCell('', 140);            // base e variazioni non hanno tipologia
-            const _val = f[_cT] || '';
-            if (!isAdmin) return readCell(_val, 140);
-            const _v = _versioneDiChiave(_chiaveTipo(f));
-            const _fnOpz = _v && _v.opzioniTipo ? _FUNZIONI_OPZIONI_TIPO[_v.opzioniTipo] : null;
-            const _sezRiga = f.section || 'figurines';   // v6.253
-            // 🔴 ELENCO CHIUSO -> TENDINA, e chiude un buco che c'era da sempre: fino alla v6.241 il
-            // Tipo di change si scriveva QUI a testo libero mentre nella scheda oggetto era una
-            // tendina. Si poteva digitare un tipo che non esiste nella serie, e nessuno lo diceva —
-            // la stessa doppia verita' che l'elenco chiuso serve a impedire.
-            if (_fnOpz) {
-              return `<td style="padding:4px;"><select data-field="${_cT}" data-id="${f.id}" style="width:150px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)">${_fnOpz(f.seriesId, _val, _sezRiga)}</select></td>`;
-            }
-            // ♻️ v6.350 - qui c'era scritto «elenco APERTO (oggi solo l'errore di stampa)»: da
-            // questa release nessuna delle tre versioni con tipo e' piu' a elenco aperto, quindi
-            // questo ramo non lo imbocca piu' nessuno. Resta perche' `opzioniTipo` puo' tornare
-            // `null` per una versione futura, e allora servira' - ma non nomina piu' un caso che
-            // non esiste: un esempio sbagliato in un commento e' peggio di nessun esempio.
-            return `<td style="padding:4px;"><input data-field="${_cT}" data-id="${f.id}" value="${esc(_val)}" style="width:140px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`;
-          })()}
-          ${isAdmin ? `<td style="padding:4px;text-align:center;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0, null, 'center')}
-          ${_cPartenza ? (_eProdottoExtraSerie(f) ? '<td></td>' : _eBase(f) ? readCell('', 420) :  `<td style="padding:4px;min-width:420px;"><input data-field="_figPartenza" data-id="${f.id}" list="${_idListaPartenza(f)}" value="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? '— nessuna —' : '— none —'}" title="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;font-size:0.72rem;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;" onfocus="this.select()" onchange="saveBulkCell(this)"></td>`) : ''}
-          ${_cTaglia ? (isAdmin
-            ? '<td style="padding:4px;">' + (!_mostraTaglia(f, currentSeries) ? '' : _eProdottoExtraSerie(f)
-                ? _selectTagliaHTML(f.size, 'bulk-size-'+f.id, 'saveBulkCell(this)', 'width:96px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;', f.tipoProdotto)
-                : _selectTagliaHTML(f.size, 'bulk-size-'+f.id, 'saveBulkCell(this)', 'width:96px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;', _TAGLIE_FPA))   // v7.199
-              + '</td>'
-            : readCell(f.size)) : ''}
-          ${_ordinaPerCreazione ? `<td style="padding:4px 8px;color:${_dataCreazione(f) ? 'var(--text)' : 'var(--muted)'};white-space:nowrap;font-size:0.78rem;${_dataCreazione(f) ? '' : 'font-style:italic;'}">${esc(_dataCreazioneTesto(f))}</td>` : ''}
-          ${_cPersonaggio ? _cellaPersonaggio(f) : ''}
-          ${!isAdmin ? `
-          <td style="padding:4px;text-align:center;"><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista':'In your list') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="toggleOwned('${f.id}')">\u2713</button></td>
-          <td style="padding:4px;text-align:center;"><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" onclick="toggleWishlist('${f.id}')" title="${currentLang==='it'?(inWishlist?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(inWishlist?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${inWishlist?'var(--danger)':'rgba(255,255,255,0.15)'};color:${inWishlist?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;">${inWishlist?'❤️':'♡'}</button></td>` : ''}
-        </tr>`;
+          return `<tr id="bulk-row-${f.id}" data-nat="${rowIdx}" style="border-bottom:1px solid var(--border);">${_vtColonne.map(col => col.td(f, rowIdx)).join('')}</tr>`;
         }).join('')}
       </tbody>
       <!-- v6.243 - le stesse intestazioni, in fondo. Il tag TFOOT sta DOPO il TBODY nel markup:
