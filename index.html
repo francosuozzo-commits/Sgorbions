@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.202">
+<link rel="stylesheet" href="css/style.css?v=7.203">
 
 
 <style>
@@ -3076,7 +3076,8 @@ di tutte le serie</button>
                    «Opzioni» della serie qui sopra. -->
               <button id="detail-tipo-admin-btn" onclick="openAddTipoProdottoModal(_tipoProdottoCorrente)"
                       class="btn-primary btn-admin admin-anche-telefono"
-                      style="display:none;">⚙️ Modifica tipo di articolo</button>
+                      style="display:none;">⚙️ Modifica tipologia di articolo</button>
+              <!-- 🔄 v7.203 (Franco: «il tasto "Modifica tipo di articolo" rinominalo in "Modifica tipologia di articolo"») -->
               <!-- 📌 Il pannello si chiude da se' su QUALUNQUE clic che ci passi dentro:
                    un solo `onclick` sul contenitore invece di quattro sulle voci, e una
                    voce nuova domani non se ne puo' dimenticare. Il gesto della voce
@@ -4908,6 +4909,9 @@ di tutte le serie</button>
       </label>
       <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Spento, la scheda mostra un riquadro foto solo (il fronte).</div>
     </div>
+    <!-- 🔄 v7.203 - le versioni che possono esistere per QUESTA tipologia si decidono in Console → Tipologie di articolo,
+         tabella «Versioni di articolo possibili» (Franco: «la B»): una riga per ogni tipologia senza serie. -->
+    <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Le versioni che possono esistere per questa tipologia (per esempio la versione sigillata) si scelgono in Console → Tipologie di articolo, tabella «Versioni di articolo possibili».</div>
     </div><!-- fine del tab «Versioni» -->
 
     <div class="tipo-tab-panel" data-tab="visualizzazione" style="display:none;">
@@ -6735,7 +6739,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.202"></script>
+<script src="js/app.js?v=7.203"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6759,7 +6763,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.202'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.203'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
