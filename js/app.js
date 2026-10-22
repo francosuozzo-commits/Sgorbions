@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.204 - Modificati index.html e js/app.js (per la versione). 🐛 IL SITO SI BLOCCAVA DA ADMIN (Franco: «non riesco
+//          a cliccare nessuna card di nessuna pagina»). Trovato col debugger su un Chrome sorvegliato: tre fermate, tutte
+//          in `_ridisegnaBox` → `_applicaFotoSezioni` → `_matitaBox`. Due difetti insieme: (1) `_immaginiBox`, finché
+//          `settings/immagini_box` non era arrivato, a OGNI chiamata lanciava una lettura col suo `_ridisegnaBox`:
+//          ~1.360 chiamate nel primo disegno, ~1.360 ridisegni all'arrivo; ora una lettura sola in corso
+//          (`_immaginiBoxInArrivo`) e un ridisegno solo. (2) In `_applicaFotoSezioni` l'attributo `data-matita-box`
+//          stava sul `div` contenitore e nella card finiva il bottone: la matita vecchia non si trovava mai, ogni giro
+//          ne aggiungeva 12 (misurate 16.332 su 12 card), e il `getComputedStyle` di ogni giro diventava sempre più
+//          lento. Ora l'attributo sta sul bottone. Solo admin, perché le matite le vede solo l'admin.
 // v7.203 - Modificati index.html e js/app.js (per la versione). Il tasto della pagina di una tipologia si chiama
 //          «⚙️ Modifica tipologia di articolo» (Franco: «il tasto "Modifica tipo di articolo" rinominalo in "Modifica
 //          tipologia di articolo"»), come il titolo della finestra che apre (v6.969).
@@ -31512,7 +31521,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.203';
+const JS_VERSION = 'v7.204';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -47360,9 +47369,15 @@ async function getImmaginiBox() {
 
 // Lettura sincrona per chi disegna, con la stessa regola di `_tipiProdotto`: se la cache non c'e'
 // ancora la carica e poi ridisegna, invece di far aspettare la prima pittura.
+// 🐛 v7.204 - UNA LETTURA SOLA IN CORSO. Prima ogni chiamata fatta mentre la lettura viaggiava ne lanciava un'altra,
+//    ognuna col suo `_ridisegnaBox`: il primo disegno chiama qui ~1.360 volte, e all'arrivo partivano ~1.360 ridisegni
+//    di fila. Era metà del blocco da admin (l'altra metà sta in `_applicaFotoSezioni`).
+let _immaginiBoxInArrivo = null;
 function _immaginiBox() {
   if (_cache.immaginiBox === undefined) {
-    getImmaginiBox().then(() => { try { _ridisegnaBox(); } catch (e) {} });
+    if (!_immaginiBoxInArrivo) {
+      _immaginiBoxInArrivo = getImmaginiBox().then(() => { try { _ridisegnaBox(); } catch (e) {} });
+    }
     return {};
   }
   return _cache.immaginiBox;
@@ -47865,13 +47880,14 @@ function _applicaFotoSezioni() {
     if (!currentUser?.isAdmin) return;
     if (getComputedStyle(card).position === 'static') card.style.position = 'relative';
     const holder = document.createElement('div');
-    holder.setAttribute('data-matita-box', sec);
     // 🔄 v6.686 - `true`: siamo nella pagina della serie, quindi questa matita cambia la
     //    foto DI QUESTA SERIE. Le altre due chiamate (hub Articoli, tipi di prodotto) restano
     //    senza argomento e continuano a cambiare quella di tutto il sito.
     holder.innerHTML = _matitaBox(sec, true);
     const b = holder.firstElementChild;
-    if (b) card.appendChild(b);
+    // 🐛 v7.204 - il segno va sul BOTTONE, che è quello che entra nella card. Stava sul `div`, che non ci entrava mai:
+    //    la ricerca di `vecchia` qui sopra non trovava niente e ogni giro aggiungeva una matita (16.332 su 12 card).
+    if (b) { b.setAttribute('data-matita-box', sec); card.appendChild(b); }
   });
 }
 
