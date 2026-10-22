@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.207">
+<link rel="stylesheet" href="css/style.css?v=7.208">
 
 
 <style>
@@ -4091,10 +4091,9 @@ di tutte le serie</button>
             <!-- 🆕 v7.205 (Franco: «la chiamerei "Informazioni ereditate dalla base"») -->
             <button class="admin-subtab" onclick="tdaSubTab('eredita')">🧬 Informazioni ereditate dalla base</button>
             <!-- 🆕 v7.207 (Franco: «perché non portiamo in tabella di cfg anche le colonne da mostrare nella VT») -->
-            <button class="admin-subtab" onclick="tdaSubTab('colonnevt')">📊 Colonne della vista tabellare</button>
+            <button class="admin-subtab" onclick="tdaSubTab('colonnevt')">📊 Colonne vista tabellare</button>
             <button class="admin-subtab" onclick="tdaSubTab('legende')">📖 Definizioni delle legende</button>
-            <button class="admin-subtab" onclick="tdaSubTab('partenze')">🔀 Da chi nasce una versione</button>
-            <button class="admin-subtab" onclick="tdaSubTab('massivi')">✏️ Campi dell'aggiornamento massivo</button>
+            <button class="admin-subtab" onclick="tdaSubTab('massivi')">✏️ Campi aggiornamento massivo</button>
             <!-- 🔄 v7.151 - qui c'era «🎠 Caroselli» (v6.982): ora è il tab «🎠 Caroselli» della console -->
             <!-- 🆕 v7.082 (Franco: «rendere anche questo aspetto configurabile da me») -->
             <button class="admin-subtab" onclick="tdaSubTab('ordinamenti')">↕️ Ordinamento in griglia</button>
@@ -4108,6 +4107,10 @@ di tutte le serie</button>
                Righe e colonne si ricavano da `PRODOTTI_INVENTARIO` e `VERSIONI_ARTICOLO`. -->
           <div class="tda-sub" id="tda-sub-versioni" style="display:none;">
           <div id="admin-versioni-articolo"></div>
+          <!-- 🔄 v7.208 (Franco: «La tabella "Da chi nasce una versione" mettiamola come secondo paragrafo del tab
+               "versioni"») - era un sotto-tab suo. 🆕 v6.234 — da chi può nascere ogni versione. SOLA LETTURA:
+               descrive com'è fatto il modello, non cosa contiene questa collezione. -->
+          <div id="admin-partenze-versione"></div>
           </div>
           <!-- 🆕 v7.205 - quali campi le versioni prendono dalla base: tipologie in colonna, campi in riga.
                La disegna `renderAdminEreditaBase()`, la legge `_campiEreditatiDaBase`. -->
@@ -4135,17 +4138,11 @@ di tutte le serie</button>
           <div class="tda-sub" id="tda-sub-ordinamenti" style="display:none;">
           <div id="admin-ordinamenti-tda"></div>
           </div>
-          <!-- 🆕 v6.234 — da chi può nascere ogni versione. SOLA LETTURA: descrive com'è
-               fatto il modello, non cosa contiene questa collezione. È il descrittore
-               stampato, come la prima tabella. -->
-          <div class="tda-sub" id="tda-sub-partenze" style="display:none;">
-          <div id="admin-partenze-versione"></div>
-          </div>
           <!-- 🔄 v6.842 (Franco: «riguarda la TDA quindi andava nel tab delle TDA») — I CAMPI DELL'AGGIORNAMENTO
                MASSIVO, PER TIPOLOGIA. Nati nella scheda Impostazioni con la v6.841, spostati qui accanto alle
                altre tabelle per tipologia. La griglia la disegna `renderCampiMassiviConfig()`. -->
           <div class="tda-sub" id="tda-sub-massivi" style="display:none;">
-          <h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">✏️ Campi dell'aggiornamento massivo</h4>
+          <h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">✏️ Campi dell'aggiornamento massivo</h4>
           <div id="campi-massivi-tabella"></div>
           <div class="form-hint" style="margin-top:0.6rem;">Una spunta per tipologia: i campi spuntati compaiono nell'aggiornamento massivo della vista tabellare di quella tipologia. Ogni spunta si salva da sola. Il trattino vuol dire che in quella tipologia il campo non esiste.</div>
           <div id="campi-massivi-feedback" style="font-size:0.85rem;margin-top:0.4rem;"></div>
@@ -6753,7 +6750,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.207"></script>
+<script src="js/app.js?v=7.208"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6777,7 +6774,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.207'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.208'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
