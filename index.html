@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.206">
+<link rel="stylesheet" href="css/style.css?v=7.207">
 
 
 <style>
@@ -4062,7 +4062,7 @@ di tutte le serie</button>
           <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
           <button class="admin-tab" onclick="adminTab('segnalazioni')" data-i18n="admin.segnalazioni">🔔 Segnalazioni</button>
           <button class="admin-tab" onclick="adminTab('series')" data-i18n="admin.series">Series</button>
-          <button class="admin-tab" onclick="adminTab('tipoarticolo')">🧩 Tipo di articolo</button>
+          <button class="admin-tab" onclick="adminTab('tipoarticolo')">🧩 Tipologie di articoli</button>
           <button class="admin-tab active" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
         </div>
         <!-- 🆕 v6.221 (Franco: "devi creare la tabella del tipo di articolo") — LA SEZIONE
@@ -4073,7 +4073,7 @@ di tutte le serie</button>
              da `ARTICOLI`: un articolo nuovo compare da sé, e un campo nuovo del descrittore si
              porta dietro la sua colonna senza che nessuno debba ricordarsene. -->
         <div id="admin-tipoarticolo" class="admin-section">
-          <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🧩 Tipo di articolo</h3>
+          <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🧩 Tipologie di articoli</h3>
           <!-- 🆕 v6.921 (Franco: «non mi piace come e diventato il pannello TDA; c'e troppa roba.
                non possiamo organizzarlo a sotto tab? uno per TDA e, se serve, uno generale?
                oppure uno per argomento? cosi sembra un lenzuolo sempre piu lungo»).
@@ -4087,15 +4087,17 @@ di tutte le serie</button>
                tendina. Il resto sono tabelle compatte che stanno in una schermata. -->
           <div class="admin-subtabs" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin:0.8rem 0 1rem;">
             <button class="admin-subtab active" onclick="tdaSubTab('tipi')">🧩 Tipi senza serie</button>
-            <button class="admin-subtab" onclick="tdaSubTab('versioni')">🧬 Versioni possibili</button>
+            <button class="admin-subtab" onclick="tdaSubTab('versioni')">🧬 Versioni</button>
             <!-- 🆕 v7.205 (Franco: «la chiamerei "Informazioni ereditate dalla base"») -->
             <button class="admin-subtab" onclick="tdaSubTab('eredita')">🧬 Informazioni ereditate dalla base</button>
+            <!-- 🆕 v7.207 (Franco: «perché non portiamo in tabella di cfg anche le colonne da mostrare nella VT») -->
+            <button class="admin-subtab" onclick="tdaSubTab('colonnevt')">📊 Colonne della vista tabellare</button>
             <button class="admin-subtab" onclick="tdaSubTab('legende')">📖 Definizioni delle legende</button>
             <button class="admin-subtab" onclick="tdaSubTab('partenze')">🔀 Da chi nasce una versione</button>
             <button class="admin-subtab" onclick="tdaSubTab('massivi')">✏️ Campi dell'aggiornamento massivo</button>
             <!-- 🔄 v7.151 - qui c'era «🎠 Caroselli» (v6.982): ora è il tab «🎠 Caroselli» della console -->
             <!-- 🆕 v7.082 (Franco: «rendere anche questo aspetto configurabile da me») -->
-            <button class="admin-subtab" onclick="tdaSubTab('ordinamenti')">↕️ Ordinamento delle griglie</button>
+            <button class="admin-subtab" onclick="tdaSubTab('ordinamenti')">↕️ Ordinamento in griglia</button>
             <!-- 🔄 v7.121 - qui c'era «🔒 Foto protette» (v7.104): ora è il tab «🔒 Protezione foto» della console -->
           </div>
           <div class="tda-sub" id="tda-sub-tipi">
@@ -4111,6 +4113,11 @@ di tutte le serie</button>
                La disegna `renderAdminEreditaBase()`, la legge `_campiEreditatiDaBase`. -->
           <div class="tda-sub" id="tda-sub-eredita" style="display:none;">
           <div id="admin-eredita-base"></div>
+          </div>
+          <!-- 🆕 v7.207 - posizione e larghezza delle colonne della VT: tipologie in colonna, colonne della VT in riga.
+               La disegna `renderAdminColonneVT()`, la legge `_vtDisponi`. -->
+          <div class="tda-sub" id="tda-sub-colonnevt" style="display:none;">
+          <div id="admin-colonne-vt"></div>
           </div>
           <!-- 🆕 v6.918 (Franco: «rendimi autonomo. Crea un campo dove io possa mettere il valore
                delle definizioni da usare nelle legende [...] mi devi dare la possibilita' di farlo
@@ -6746,7 +6753,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.206"></script>
+<script src="js/app.js?v=7.207"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6770,7 +6777,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.206'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.207'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
