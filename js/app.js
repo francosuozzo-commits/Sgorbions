@@ -1,6 +1,23 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.205 - Modificati index.html e js/app.js. INFORMAZIONI EREDITATE DALLA BASE (Franco: «nella admin console, nella
+//          sezione delle tda, mettere una nuova tabella … "Informazioni ereditate dalla base"»; «le tda per colonne …
+//          nomi campo per riga»; «meglio elencare i campi che si ereditano»; al Salva «la A»). Nasceva da: «categoria e
+//          sottocategoria del fumetto base non si sono propagati alla variante sigillata. baco?» — no: la regola
+//          (`_campiEreditatiDaBase`) li dava solo ai Retro. Console → Tipologie di articolo, sotto-tab «🧬 Informazioni
+//          ereditate dalla base»: una colonna per tipologia (anche senza serie), una riga per campo (Nome, Sottonome,
+//          Numero, Famiglia, Sottoserie, Categoria, Sottocategoria, Anno, Descrizione; trattino dove il campo non
+//          esiste) → `settings/ereditaBase` {voci}. `_campiEreditatiDaBase(sezione, tipo)` legge la tabella; mai salvata
+//          = le regole di prima, tranne le tipologie senza serie, che non ereditano niente (ereditavano il Nome alla
+//          propagazione: due varianti dei Fumetti hanno un nome loro). `_nomeVieneDallaBase` non filtra più per sezione:
+//          decide l'elenco (gli album e le spille col Nome ereditato lo vedono ora in sola lettura anche nella scheda:
+//          misurato, 0 versioni col nome diverso dalla base). Anno e Descrizione seguono la base anche dalla scheda. Al
+//          Salva, le versioni che non tornano si contano per tipologia e campo e si riallineano dopo la conferma
+//          (`_pianoEreditaBase`, con `_discendenzaDaAggiornare`). E (Franco: «nella tabella degli aggiornamenti
+//          massivi, non userei una colonna "Altri articoli" ma metterei una colonna per ogni TDA») i campi
+//          dell'aggiornamento massivo hanno una colonna per tipologia senza serie (`tipo:<id>`, `_colonneTDA`); una mai
+//          salvata segue la vecchia colonna «Altri articoli».
 // v7.204 - Modificati index.html e js/app.js (per la versione). 🐛 IL SITO SI BLOCCAVA DA ADMIN (Franco: «non riesco
 //          a cliccare nessuna card di nessuna pagina»). Trovato col debugger su un Chrome sorvegliato: tre fermate, tutte
 //          in `_ridisegnaBox` → `_applicaFotoSezioni` → `_matitaBox`. Due difetti insieme: (1) `_immaginiBox`, finché
@@ -31521,7 +31538,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.204';
+const JS_VERSION = 'v7.205';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40786,6 +40803,7 @@ async function _caricaLegendeDefinizioni() {
     _impostaModoCaroselli(docs.find(x => x.id === 'caroselliModo'));   // v7.152 - idem
     _impostaQuestionario(docs.find(x => x.id === 'questionario'));   // v7.156 - idem
     _impostaVersioniTDA(docs.find(x => x.id === 'versioniTDA'));   // v7.203 - idem
+    _impostaEreditaBase(docs.find(x => x.id === 'ereditaBase'));   // v7.205 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -43528,6 +43546,139 @@ async function salvaProtezioneTDA() {
       testo: it ? 'Le modifiche valgono da subito, per tutti.' : 'The changes apply right away, for everyone.', ok: 'OK', soloOk: true });
   } catch (e) {
     console.error('salvaProtezioneTDA', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
+}
+
+// 🆕 v7.205 (Franco: «nella admin console, nella sezione delle tda, mettere una nuova tabella … "Informazioni ereditate
+//    dalla base"»; «le tda per colonne … e coi nomi campo per riga; così quando avremo nuovi campi, la tabella li allunga
+//    verso il basso»; «meglio elencare i campi che si ereditano»; al Salva «la A»: si riallinea subito, dopo la conferma)
+//    - QUALI CAMPI UNA VERSIONE PRENDE DALLA SUA BASE, tipologia per tipologia. Nelle Figurine per album la «base» è la
+//    figurina con retro collegata. La legge `_campiEreditatiDaBase`, quindi la scheda (campi in sola lettura), la vista
+//    tabellare, l'aggiornamento massivo e la propagazione al salvataggio della base. `null` = mai salvata: valgono le
+//    regole scritte in `_campiEreditatiDaBase`, che sono anche le spunte con cui la tabella si apre.
+let _EREDITA_CFG = null;
+function _impostaEreditaBase(d) {
+  _EREDITA_CFG = (d && d.voci && typeof d.voci === 'object') ? d.voci : null;
+}
+// Le righe. `dove`: in quali tipologie il campo esiste (altrove la casella è un trattino). Le versioni «mobile» di
+// Categoria e Sottocategoria non hanno una riga: seguono il loro campo. Il Numero delle versioni non c'è: una versione ha
+// sempre il numero della sua base (regola v6.261, nel salvataggio); qui c'è quello delle Figurine per album.
+const CAMPI_EREDITABILI = [
+  { k: 'name',        it: 'Nome',           en: 'Name',        dove: () => true },
+  { k: 'subname',     it: 'Sottonome',      en: 'Subname',     dove: sez => _haSottonome(sez) },
+  { k: 'number',      it: 'Numero',         en: 'Number',      dove: sez => sez === 'attaccare' },
+  { k: 'famiglia',    it: 'Famiglia',       en: 'Family',      dove: sez => TDA_CON_FAMIGLIA.includes(sez) },
+  { k: 'subseries',   it: 'Sottoserie',     en: 'Subseries',   dove: sez => sez === 'attaccare' },
+  { k: 'category',    it: 'Categoria',      en: 'Category',    dove: sez => SEZIONI_CON_CATEGORIA.includes(sez) },
+  { k: 'subcategory', it: 'Sottocategoria', en: 'Subcategory', dove: sez => SEZIONI_CON_CATEGORIA.includes(sez) },
+  { k: 'year',        it: 'Anno',           en: 'Year',        dove: sez => sez === 'extras' },
+  { k: 'desc',        it: 'Descrizione',    en: 'Description', dove: () => true },
+];
+// Le colonne: le tipologie di serie (senza «Altri articoli») e poi le tipologie senza serie, come le altre tabelle
+function _colonneTDA() {
+  return PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez] && sez !== 'extras').map(sez => ({ k: sez, sez, nome: getSectionLabel(sez) }))
+    .concat(_tipiProdotto().map(tp => ({ k: 'tipo:' + tp.id, sez: 'extras', tipo: tp.id, nome: _nomeTipo(tp) || tp.id })));
+}
+function renderAdminEreditaBase() {
+  const box = document.getElementById('admin-eredita-base');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);font-weight:600;text-align:center;vertical-align:bottom;border-bottom:1px solid var(--border);';
+  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
+  const col = _colonneTDA();
+  const tasto = '<button class="btn-primary btn-admin" onclick="salvaEreditaBase()">' + (it ? 'Salva le informazioni ereditate' : 'Save inherited information') + '</button>';
+  box.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.9rem;flex-wrap:wrap;margin:1.6rem 0 0.5rem;">' +
+      '<h4 style="font-family:var(--font-ui);margin:0;color:var(--info);">🧬 ' + (it ? 'Informazioni ereditate dalla base' : 'Information inherited from the base') + '</h4>' + tasto +
+    '</div>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it
+        ? 'Per ogni tipologia di articolo, <strong>quali campi le versioni prendono dalla loro base</strong>. Spuntato: nella scheda della versione il campo è in sola lettura e, quando si salva la base, si aggiorna da solo. ' +
+          'Nelle Figurine per album la base è la figurina con retro collegata. Il trattino vuol dire che in quella tipologia il campo non esiste. ' +
+          'Al Salva, se ci sono versioni con un valore diverso dalla base, si vede quante sono e si riallineano dopo la conferma.'
+        : 'For each item type, <strong>which fields the versions take from their base</strong>. Ticked: read-only in the version, updated when the base is saved.') +
+    '</p>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
+    '<tr><th style="' + th + 'text-align:left;color:var(--text);">' + (it ? 'Campo' : 'Field') + '</th>' +
+      col.map(c => '<th style="' + th + '">' + esc(c.nome) + (c.tipo ? '<br><span style="font-size:0.68rem;font-weight:400;color:var(--text);opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span>' : '') + '</th>').join('') +
+    '</tr>' +
+    CAMPI_EREDITABILI.map(c =>
+      '<tr><td style="' + td + 'font-weight:600;">' + esc(it ? c.it : c.en) + '</td>' +
+      col.map(k => '<td style="' + td + 'text-align:center;">' + (c.dove(k.sez)
+        ? '<input type="checkbox" data-eredita-tda="' + esc(k.k) + '" data-campo="' + c.k + '"' + (_campiEreditatiDaBase(k.sez, k.tipo).includes(c.k) ? ' checked' : '') + '>'
+        : '<span style="opacity:0.6;" title="' + (it ? 'In questa tipologia il campo non esiste' : 'This field does not exist for this type') + '">—</span>') + '</td>').join('') +
+      '</tr>').join('') +
+    '</table></div>' +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' + tasto + '</div>';
+}
+// Il piano del riallineamento con le spunte `voci`, senza scrivere niente: per ogni capo d'albero, la sua discendenza
+// allineata (`_discendenzaDaAggiornare`, la stessa del salvataggio della base: nipoti compresi, Nome completo ricalcolato).
+function _pianoEreditaBase(voci) {
+  const prima = _EREDITA_CFG;
+  _EREDITA_CFG = voci;
+  try {
+    const figs = getData('figurines', []) || [];
+    const ids = new Set(figs.map(f => f.id));
+    const radici = new Set();
+    figs.forEach(f => {
+      if (!f.baseFigurineId || !_eFiglioCollegato(f) || !ids.has(f.baseFigurineId)) return;
+      let r = f, giri = 0;
+      while (r.baseFigurineId && _eFiglioCollegato(r) && ids.has(r.baseFigurineId) && giri++ < 20) r = figs.find(x => x.id === r.baseFigurineId);
+      radici.add(r);
+    });
+    const piano = [];
+    radici.forEach(r => piano.push(..._discendenzaDaAggiornare(r, figs)));
+    return piano;
+  } finally { _EREDITA_CFG = prima; }
+}
+async function salvaEreditaBase() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const voci = {};
+  _colonneTDA().forEach(c => { voci[c.k] = []; });
+  document.querySelectorAll('#admin-eredita-base input[data-eredita-tda]').forEach(el => {
+    if (!el.checked) return;
+    const k = el.dataset.ereditaTda;
+    if (!voci[k]) voci[k] = [];
+    voci[k].push(el.dataset.campo);
+  });
+  const piano = _pianoEreditaBase(voci);
+  if (piano.length) {
+    // 🔄 v7.205 (Franco: «mostrerei una tabellina coi valori che si andrebbero a sovrascrivere, articolo per articolo») -
+    //    una riga per articolo e campo: il valore di oggi, che si perde, e quello della base, che lo sostituisce
+    const colonne = _colonneTDA();
+    const vuoto = it ? '(vuoto)' : '(empty)';
+    const mostra = v => { const s = String(v == null ? '' : v).trim(); return s || vuoto; };
+    const righe = [];
+    piano.forEach(p => p.campi.forEach(c => {
+      const col = colonne.find(x => x.k === (p.figlio.tipoProdotto ? 'tipo:' + p.figlio.tipoProdotto : (p.figlio.section || 'figurines')));
+      const campo = CAMPI_EREDITABILI.find(x => x.k === c);
+      righe.push([p.figlio.fullName || p.figlio.name || p.figlio.id, col ? col.nome : '?', campo ? (it ? campo.it : campo.en) : c,
+        [{ t: mostra(p.figlio[c]), spento: true }], [{ t: mostra(p.genitore[c]), warn: true }]]);
+    }));
+    const ok = await _finestraConferma({
+      titolo: it ? 'Informazioni ereditate dalla base' : 'Information inherited from the base',
+      testo: it
+        ? (piano.length === 1 ? '1 versione ha' : piano.length + ' versioni hanno') + ' un valore diverso dalla sua base. Salvando, ' + (piano.length === 1 ? 'sarà riallineata' : 'saranno riallineate') + ' subito, e il valore di prima andrà perso.'
+        : piano.length + ' versions differ from their base. Saving will realign them now.',
+      colonne: it ? ['Articolo', 'Tipologia', 'Campo', 'Valore di oggi', 'Diventa (dalla base)'] : ['Item', 'Type', 'Field', 'Current value', 'Becomes (from the base)'],
+      righe,
+      larghezza: '1100px',
+      ok: it ? 'Salva e riallinea' : 'Save and realign',
+    });
+    if (!ok) return;
+  }
+  try {
+    await fsSave('settings', { id: 'ereditaBase', voci });
+    _impostaEreditaBase({ voci });
+    if (piano.length) await _salvaFigurineInBlocco(piano.map(p => p.nuovo));
+    renderAdminEreditaBase();
+    _finestraConferma({ titolo: it ? '✅ Informazioni ereditate salvate' : '✅ Inherited information saved',
+      testo: it ? 'Le modifiche valgono da subito, per tutti.' + (piano.length ? ' Versioni riallineate: ' + piano.length + '.' : '') : 'The changes apply right away, for everyone.',
+      ok: 'OK', soloOk: true });
+  } catch (e) {
+    console.error('salvaEreditaBase', e);
     toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
   }
 }
@@ -61269,7 +61420,7 @@ function adminTab(tab) {
   const tabEl = document.getElementById('admin-' + tab);
   if (tabEl) { tabEl.classList.add('active'); }
   if (tab === 'series') renderAdminSeries();
-  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminOrdinamentiTDA();   // v7.082
+  if (tab === 'tipoarticolo') { renderAdminTipoArticolo(); renderAdminVersioniArticolo(); renderAdminEreditaBase();renderAdminLegendeDefinizioni(); renderAdminPartenzeVersione(); renderAdminOrdinamentiTDA();   // v7.082
     renderCampiMassiviConfig(); _aggiornaCampiMassiviDaConfigurazione().then(renderCampiMassiviConfig); }   // v6.842: qui, non in Impostazioni   // v6.221, v6.233, v6.234
   if (tab === 'figurines') renderAdminFigs();
   if (tab === 'contacts') { renderAdminContacts(); updateMsgBadge(); }
@@ -63089,6 +63240,9 @@ function _famigliaASchermo(f) {
 //    Retro (che le hanno da sempre, con regole loro) e agli articoli senza serie.
 // 📌 Su queste i due campi sono testo libero dell'articolo: nessuna eredità dalla base, nessun Nome completo.
 const TDA_CON_CATEGORIA = ['albums'];
+// 🆕 v7.205 - dove esistono Categoria e Sottocategoria: i Retro, gli Album e le tipologie senza serie (`extras`). Lo
+//    chiedono i campi dell'aggiornamento massivo e la tabella «Informazioni ereditate dalla base».
+const SEZIONI_CON_CATEGORIA = ['retros', 'extras'].concat(TDA_CON_CATEGORIA);
 
 function _aggiornaCampiNumeriSerie() {
   const gF = document.getElementById('series-first-number-group');
@@ -65866,9 +66020,11 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
   // 🆕 E non si nascondono piu': si sfumano e diventano di sola lettura (vedi la scheda).
   // ⚠️ E il vuoto EREDITATO si nasconde, qui come alla costruzione della scheda: il valore si legge
   // dalla casella e non dal record, perche' e' la casella lo stato vero mentre la scheda e' aperta.
-  const _eredAttivi = _nomeVieneDallaBase(_feSezione, _v) ? _campiEreditatiDaBase(_feSezione) : [];
+  // 🔄 v7.205 - e il tipo senza serie (colonna sua nella tabella della console); la Descrizione è un'area di testo
+  const _tipoFe = _feRecord && _feRecord.tipoProdotto;
+  const _eredAttivi = _nomeVieneDallaBase(_feSezione, _v, _tipoFe) ? _campiEreditatiDaBase(_feSezione, _tipoFe) : [];
   document.querySelectorAll('[data-campo-ereditato]').forEach(riga => {
-    const campo = riga.querySelector('input');
+    const campo = riga.querySelector('input, textarea');
     const st = _statoCampoEreditato(_eredAttivi.includes(riga.dataset.campoEreditato), campo && campo.value);
     riga.style.display = st.nascosto ? 'none' : '';
     riga.style.opacity = st.sfumato ? '0.55' : '';
@@ -66298,7 +66454,7 @@ function switchToEditMode(figId) {
   // v6.038 - un campo che al salvataggio viene sovrascritto dalla base non si mostra modificabile:
   // scriverci dentro e vedere il proprio testo sparire e' peggio che non poterlo scrivere. Vale per
   // Nome, Sottonome, Categoria e Sottocategoria di un Change/errore di stampa.
-  const _feNameHidden = _nomeVieneDallaBase(f.section, f); // v6.078; v6.314 - il record intero, non quattro booleani
+  const _feNameHidden = _nomeVieneDallaBase(f.section, f, f.tipoProdotto); // v6.078; v6.314 - il record intero, non quattro booleani; v7.205 - e il tipo
   // 🔴 v6.314 (Franco) - I CAMPI COMANDATI DALLA PARTENZA NON SI NASCONDONO PIU': SI MOSTRANO
   // SFUMATI, IN SOLA LETTURA. La v6.038 aveva scritto la regola giusta - *"un campo che al
   // salvataggio viene sovrascritto non si mostra MODIFICABILE"* - e poi ne aveva fatto piu' del
@@ -66321,7 +66477,7 @@ function switchToEditMode(figId) {
   // diverse e vanno trattate diversamente - quindi il vuoto si nasconde solo quando e' ereditato.
   // E' lo stesso criterio dei riquadri eBay della v6.103 (`dataset.vuoto`): si mostrano solo se
   // hanno qualcosa da mostrare.
-  const _feEreditati = _feNameHidden ? _campiEreditatiDaBase(f.section) : [];
+  const _feEreditati = _feNameHidden ? _campiEreditatiDaBase(f.section, f.tipoProdotto) : [];
   const _eredAttr  = campo => ' data-campo-ereditato="' + campo + '"';
   const _eredStato = campo => _statoCampoEreditato(_feEreditati.includes(campo), f[campo]);
   const _eredStile = campo => { const st = _eredStato(campo);
@@ -66446,7 +66602,7 @@ function switchToEditMode(figId) {
   //    scheda in LETTURA: vista e modifica devono mostrare le stesse righe nello stesso ordine
   //    (regola di Franco, v5.782), e la v6.158 quella lezione l'ha gia' pagata.
   if (_articoloSenzaSerie(f)) {
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Anno':'Year') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-year" value="' + (f.year || '') + '" placeholder="' + (currentLang==='it'?'es. 1991':'e.g. 1991') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;border:none;background:transparent;"></span></div>';
+    html += '<div class="detail-row" style="' + _eredStile('year') + '"' + _eredAttr('year') + '><span class="detail-label">' + (currentLang==='it'?'Anno':'Year') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-year"' + _eredRO('year') + ' value="' + (f.year || '') + '" placeholder="' + (currentLang==='it'?'es. 1991':'e.g. 1991') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;border:none;background:transparent;"></span></div>';
   }
 
   // 🆕 v6.366 - i due campi delle figurine da attaccare, modificabili. Stessa condizione della
@@ -66897,7 +67053,8 @@ function switchToEditMode(figId) {
     '</label></span></div>';
 
   // Descrizione (in fondo, campo più grande)
-  html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">' + (currentLang==='it'?'Descrizione':'Description') + '</span><span class="detail-value"><textarea id="fe-desc" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + (f.desc||'') + '</textarea></span></div>';
+  // v7.205: anche la Descrizione può venire dalla base (tabella «Informazioni ereditate dalla base»)
+  html += '<div class="detail-row" style="align-items:flex-start;' + _eredStile('desc') + '"' + _eredAttr('desc') + '><span class="detail-label">' + (currentLang==='it'?'Descrizione':'Description') + '</span><span class="detail-value"><textarea id="fe-desc"' + _eredRO('desc') + ' class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + (f.desc||'') + '</textarea></span></div>';
 
   // v6.096 (Franco) - NOTE, sotto la Descrizione e solo per admin. Questa form la apre gia' solo
   // l'admin, ma la riga si disegna comunque dietro il controllo: e' l'unico campo del sito che non
@@ -69384,7 +69541,11 @@ function toggleFeRetroBianco() {
 // un dietro non ce l'ha), quindi il ramo li' e' inerte - resta perche' la regola vale per sezione.
 // Quattro punti la interrogavano con quattro condizioni copiate: due nascondimenti del campo (uno
 // per form), due ereditarieta' al salvataggio. Ora e' una.
-function _nomeVieneDallaBase(sezione, rec) {
+// 🔄 v7.205 (Franco: «una nuova tabella … "Informazioni ereditate dalla base" … tda per tda, i campi che si ereditano»)
+//    - la sezione non fa più da cancello: decide l'elenco di `_campiEreditatiDaBase`, che ora legge la tabella della
+//    console. Un figlio i cui campi non vengono dalla base ha l'elenco vuoto, e qui torna falso come prima. `tipo` è il
+//    `tipoProdotto` dell'articolo: le tipologie senza serie hanno una colonna loro.
+function _nomeVieneDallaBase(sezione, rec, tipo) {
   // 🔴 v6.314 - LA FIRMA CAMBIA: quattro booleani -> un oggetto con i flag. I quattro booleani
   // obbligavano OGNI chiamante a nominare le versioni una per una, cioe' a riscrivere la quaterna:
   // e' il motivo per cui l'omaggio non e' mai entrato qui, e non si sarebbe potuto farlo entrare
@@ -69394,8 +69555,8 @@ function _nomeVieneDallaBase(sezione, rec) {
   // figurina con velina di partenza, quindi la scheda deve mostrarli come comandati e non
   // modificabili. Senza questa riga i campi restavano scrivibili e il primo salvataggio della base
   // li disfaceva - parola per parola il difetto che la v6.314 aveva chiuso per l'omaggio.
-  if (sezione !== 'retros' && sezione !== 'figurines' && sezione !== 'attaccare') return false;
-  return _eFiglioCollegato(rec);
+  if (!_eFiglioCollegato(rec)) return false;
+  return _campiEreditatiDaBase(sezione, tipo).length > 0;
 }
 
 // 🆕 v6.314 - COME SI PRESENTA UN CAMPO COMANDATO DALLA PARTENZA. Tre stati, una funzione: la
@@ -69410,7 +69571,19 @@ function _statoCampoEreditato(comandato, valore) {
   return { nascosto: !!comandato && vuoto, sfumato: !!comandato && !vuoto, solaLettura: !!comandato };
 }
 
-function _campiEreditatiDaBase(section) {
+// 🔄 v7.205 (Franco: «con questa tabella andiamo a spuntare, tda per tda, i campi che si ereditano dalla base») - PRIMA
+//    LA TABELLA DELLA CONSOLE (`settings/ereditaBase`, { voci: { <tipologia> | 'tipo:<id>': [campi] } }), una colonna
+//    per tipologia; una colonna mai salvata segue le regole qui sotto, che sono quelle di sempre e la partenza della
+//    tabella. Unica differenza: un articolo di una tipologia senza serie, mai salvata, non eredita niente. Prima
+//    ereditava il Nome (ramo finale), ma solo alla propagazione dal salvataggio della base: misurato il 22 ottobre, due
+//    varianti dei Fumetti avevano un nome loro («N° 3 - variante 1» e «2») che il primo salvataggio del «N° 3»
+//    avrebbe cancellato.
+// 📌 `_EREDITA_CFG` si legge con `typeof`: le prove estraggono questa funzione da sola.
+function _campiEreditatiDaBase(section, tipo) {
+  const _cfg = typeof _EREDITA_CFG !== 'undefined' ? _EREDITA_CFG : null;
+  const _k = tipo ? 'tipo:' + tipo : (section || 'figurines');
+  if (_cfg && Array.isArray(_cfg[_k])) return _cfg[_k].slice();
+  if (tipo) return [];
   // Il Nome lo ereditano Change ed errori di stampa in ENTRAMBE le sezioni (v5.774/779/790);
   // Sottonome, Categoria e Sottocategoria esistono solo per i Retro (v6.038).
   // 🆕 v6.358 - le FIGURINE DA ATTACCARE ereditano anche il NUMERO, e sono le uniche: negli altri
@@ -69508,7 +69681,7 @@ function _eFiglioCollegato(f) {
 // stesso campo si comportavano diversamente" — e allora si era corretta una strada sola.
 function _campoComandatoDalGenitore(f, campo) {
   if (!_eFiglioCollegato(f)) return false;
-  return _campiEreditatiDaBase(f.section).includes(campo);
+  return _campiEreditatiDaBase(f.section, f.tipoProdotto).includes(campo);   // v7.205: e il tipo senza serie
 }
 
 // I campi in cui un figlio si e' allontanato dalla base. Elenco vuoto = allineato.
@@ -69518,7 +69691,7 @@ function _divergenzeDaBase(figlio, base) {
   // e' un `TypeError` che ferma la propagazione a meta'. Il vecchio codice non poteva incontrarlo
   // perche' ereditava solo campi di testo.
   const t = v => String(v == null ? '' : v).trim();
-  return _campiEreditatiDaBase(figlio.section).filter(k => t(figlio[k]) !== t(base[k]));
+  return _campiEreditatiDaBase(figlio.section, figlio.tipoProdotto).filter(k => t(figlio[k]) !== t(base[k]));   // v7.205
 }
 
 // v6.116 - I FIGLI DA RIALLINEARE, CALCOLATI SENZA SCRIVERE NIENTE.
@@ -69841,7 +70014,11 @@ async function saveFigFromDetail(figId, opzioni) {
     // domanda all'elenco, e l'elenco le versioni le conosce tutte e cinque. `_vScheda` si legge
     // QUI una volta sola: piu' sotto la rileggevano altri tre punti, ognuno col suo elenco.
     const _vScheda = _versioniDallaScheda();
-    const _nameInherited = _nomeVieneDallaBase(existingForCheck?.section, _vScheda);
+    // 🔄 v7.205 - col tipo senza serie, e un elenco che può non contenere il Nome (tabella della console)
+    const _tipoScheda = existingForCheck?.tipoProdotto;
+    const _nameInherited = _nomeVieneDallaBase(existingForCheck?.section, _vScheda, _tipoScheda);
+    const _campiDallaBase = _nameInherited ? _campiEreditatiDaBase(existingForCheck?.section, _tipoScheda) : [];
+    const _baseScheda = _nameInherited ? getData('figurines', []).find(x => x.id === (document.getElementById('fe-base-figurine')?.value || null)) : null;
     // v6.038 - i tre campi che, per un Change/errore di stampa di RETRO, comandano dalla base.
     // Letti qui una volta sola: li usano sia il controllo di chiave duplicata sia `updates`, e
     // leggerli due volte in due punti e' il modo in cui i due finiscono per non coincidere.
@@ -69871,12 +70048,12 @@ async function saveFigFromDetail(figId, opzioni) {
         const _scriviCampo = { name: v => { name = v; }, subname: v => { _subnameEff = v; },
                                category: v => { _catEff = v; }, subcategory: v => { _subcatEff = v; },
                                famiglia: v => { _famigliaEff = v; } };
-        _campiEreditatiDaBase(existingForCheck?.section).forEach(k => {
+        _campiDallaBase.forEach(k => {
           if (_scriviCampo[k]) _scriviCampo[k](_bR[k] || '');
         });
       }
     }
-    if (!name && !_nameInherited) { toast(currentLang==='it'?'Il nome è obbligatorio':'Name is required','error'); return; }
+    if (!name && !(_nameInherited && _campiDallaBase.includes('name'))) { toast(currentLang==='it'?'Il nome è obbligatorio':'Name is required','error'); return; }
     // v6.101 (§12.1) - NUMERO OBBLIGATORIO, la validazione che finora aveva solo l'altra form
     // (li' dalla v5.880). Il numero ha senso solo per le FIGURINE, e solo per quelle che non lo
     // ereditano: variazioni, change ed errori di stampa lo prendono dalla base poco piu' sotto.
@@ -70152,6 +70329,11 @@ async function saveFigFromDetail(figId, opzioni) {
         const _v = (_feYear.value || '').trim();
         updates.year = _v ? +_v : null;
       }
+    }
+    // 🆕 v7.205 - Anno e Descrizione, se la tabella della console li fa ereditare: valgono quelli della base
+    if (_baseScheda) {
+      if (_campiDallaBase.includes('desc')) updates.desc = _baseScheda.desc || '';
+      if (_campiDallaBase.includes('year')) updates.year = _baseScheda.year ?? null;
     }
 
     // v6.235 - cinque, non quattro. ⚠️ Se l'omaggio non entrasse in questo controllo, si
@@ -78021,8 +78203,11 @@ const CAMPI_MASSIVI = [
   { id: 'subseries',   it: 'Sottoserie',     en: 'Subseries',   tipo: 'scelta', sottoserie: true, opzioni: [] },
   // 🆕 v6.841 (Franco) - la Famiglia, fra le Famiglie della serie; `cascata` perche' sulle fpa la comanda la fcr (v6.840).
   { id: 'famiglia',    it: 'Famiglia',       en: 'Family',      tipo: 'scelta', famiglia: true, soloSezioni: ['figurines', 'attaccare'], cascata: true, opzioni: [] },
-  { id: 'category',    it: 'Categoria',      en: 'Category',    tipo: 'testo', soloSezione: 'retros', nelNomeCompleto: true },
-  { id: 'subcategory', it: 'Sottocategoria', en: 'Subcategory', tipo: 'testo', soloSezione: 'retros', nelNomeCompleto: true },
+  // 🔄 v7.205 (Franco: «sì, li voglio anche lì») - Categoria e Sottocategoria anche dove la scheda le ha già: Album
+  //    (`TDA_CON_CATEGORIA`) e tipologie senza serie (sezione `extras`, colonna `tipo:<id>`). Il Nome completo si
+  //    ricalcola anche lì: dove quei campi non lo compongono, torna uguale.
+  { id: 'category',    it: 'Categoria',      en: 'Category',    tipo: 'testo', soloSezioni: SEZIONI_CON_CATEGORIA, nelNomeCompleto: true },
+  { id: 'subcategory', it: 'Sottocategoria', en: 'Subcategory', tipo: 'testo', soloSezioni: SEZIONI_CON_CATEGORIA, nelNomeCompleto: true },
   // 🆕 v6.235 (Franco: "mettilo in via definitiva") — IL TIPO, cioe' la VERSIONE.
   //
   // 🔴 NON E' UN CAMPO COME GLI ALTRI, ed e' il motivo per cui ha un ramo suo in
@@ -78082,9 +78267,15 @@ let _campiMassiviConfig = (() => { try { return JSON.parse(LOCAL.get('campiMassi
 function _campoMassivoCompatibile(c, sez) {
   return (!c.soloSezione || c.soloSezione === sez) && (!c.soloSezioni || c.soloSezioni.includes(sez));
 }
-function _campoMassivoAttivo(c, sez) {
+// 🔄 v7.205 (Franco: «non userei una colonna "Altri articoli" ma metterei una colonna per ogni TDA; quindi anche per le
+//    tda senza serie») - `chiave` è la colonna: la tipologia, o `tipo:<id>` per una tipologia senza serie (che come
+//    sezione resta `extras`, ed è con quella che si chiede se il campo esiste). Una tipologia senza serie mai salvata
+//    segue la vecchia colonna «Altri articoli», che finché c'era valeva per lei.
+function _campoMassivoAttivo(c, sez, chiave) {
   if (!_campoMassivoCompatibile(c, sez)) return false;
-  const lista = _campiMassiviConfig && _campiMassiviConfig[sez];
+  const k = chiave || sez;
+  const cfg = _campiMassiviConfig || {};
+  const lista = Array.isArray(cfg[k]) ? cfg[k] : (k !== sez ? cfg[sez] : null);
   return Array.isArray(lista) ? lista.includes(c.id) : true;
 }
 async function _aggiornaCampiMassiviDaConfigurazione() {
@@ -78102,25 +78293,26 @@ function renderCampiMassiviConfig() {
   if (!box) return;
   const it = currentLang === 'it';
   const campi = CAMPI_MASSIVI.slice().sort((a, b) => (it ? a.it : a.en).localeCompare(it ? b.it : b.en, it ? 'it' : 'en'));
-  const tda = PRODOTTI_INVENTARIO.filter(k => ARTICOLI[k]);
+  const tda = _colonneTDA();   // v7.205: una colonna per tipologia, senza serie comprese, e niente «Altri articoli»
   const th = 'padding:4px 6px;font-size:0.72rem;color:var(--text);text-align:center;vertical-align:middle;border-bottom:1px solid var(--border);';
   box.innerHTML = '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:100%;">'
-    + '<tr><th style="' + th + 'text-align:left;"></th>' + tda.map(k => '<th style="' + th + '">' + esc(getSectionLabel(k)) + '</th>').join('') + '</tr>'
+    + '<tr><th style="' + th + 'text-align:left;"></th>' + tda.map(k => '<th style="' + th + '">' + esc(k.nome)
+      + (k.tipo ? '<br><span style="font-size:0.66rem;opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span>' : '') + '</th>').join('') + '</tr>'
     + campi.map(c => '<tr><td style="padding:4px 6px;font-size:0.85rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);">' + esc(it ? c.it : c.en) + '</td>'
       + tda.map(k => '<td style="text-align:center;border-bottom:1px solid var(--border);">'
-        + (_campoMassivoCompatibile(c, k)
-          ? '<input type="checkbox" style="width:16px;height:16px;cursor:pointer;"' + (_campoMassivoAttivo(c, k) ? ' checked' : '')
-            + ' onchange="salvaCampoMassivo(\'' + k + '\', \'' + c.id + '\', this.checked)">'
+        + (_campoMassivoCompatibile(c, k.sez)
+          ? '<input type="checkbox" style="width:16px;height:16px;cursor:pointer;"' + (_campoMassivoAttivo(c, k.sez, k.k) ? ' checked' : '')
+            + ' onchange="salvaCampoMassivo(\'' + k.k + '\', \'' + c.id + '\', this.checked)">'
           : '<span style="color:var(--muted);" title="' + (it ? 'In questa tipologia il campo non esiste' : 'This field does not exist for this type') + '">—</span>')
         + '</td>').join('') + '</tr>').join('')
     + '</table></div>';
 }
-async function salvaCampoMassivo(sez, id, acceso) {
+async function salvaCampoMassivo(chiave, id, acceso) {
   const it = currentLang === 'it';
   const prima = _campiMassiviConfig;
   const conf = {};
-  PRODOTTI_INVENTARIO.forEach(k => { conf[k] = CAMPI_MASSIVI.filter(c => _campoMassivoAttivo(c, k)).map(c => c.id); });
-  conf[sez] = (conf[sez] || []).filter(x => x !== id).concat(acceso ? [id] : []);
+  _colonneTDA().forEach(k => { conf[k.k] = CAMPI_MASSIVI.filter(c => _campoMassivoAttivo(c, k.sez, k.k)).map(c => c.id); });   // v7.205
+  conf[chiave] = (conf[chiave] || []).filter(x => x !== id).concat(acceso ? [id] : []);
   _campiMassiviConfig = conf;
   const fb = document.getElementById('campi-massivi-feedback');
   try {
@@ -78136,7 +78328,8 @@ async function salvaCampoMassivo(sez, id, acceso) {
 function _campiMassiviDisponibili() {
   const it = currentLang === 'it';
   return CAMPI_MASSIVI
-    .filter(c => _campoMassivoAttivo(c, currentSection))   // v6.841: compatibile E spuntato
+    // v6.841: compatibile E spuntato; v7.205: nella pagina di una tipologia senza serie, la sua colonna
+    .filter(c => _campoMassivoAttivo(c, currentSection, _tipoProdottoCorrente ? 'tipo:' + _tipoProdottoCorrente : currentSection))
     .slice()
     .sort((a, b) => (it ? a.it : a.en).localeCompare(it ? b.it : b.en, it ? 'it' : 'en', { numeric: true }));
 }
