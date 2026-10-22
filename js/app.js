@@ -1,7 +1,25 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.202 - Modificati js/app.js e index.html (per la versione). CLOUDINARY, LE MISURE DELLE FOTO (Franco, sulla tabella
+// v7.203 - Modificati index.html e js/app.js (per la versione). Il tasto della pagina di una tipologia si chiama
+//          «⚙️ Modifica tipologia di articolo» (Franco: «il tasto "Modifica tipo di articolo" rinominalo in "Modifica
+//          tipologia di articolo"»), come il titolo della finestra che apre (v6.969).
+//          VERSIONI PER LE TIPOLOGIE SENZA SERIE (Franco: «sono in grado di definire la esistenza di versioni, per
+//          una tipologia di articolo senza serie?»; «al momento direi solo la versione Sigillato»; «vai, lascia pure
+//          Sigillata»; poi «come mai la abilitiamo da qui se abbiamo la tabella della admin console?» → «la B»): LA
+//          TABELLA «Versioni di articolo possibili» DELLA CONSOLE (tab Tipologie di articolo) COMANDA. Era una bozza
+//          della v6.233 mai collegata; ora ha una riga per tipologia di serie e una per tipologia senza serie, una
+//          colonna per versione (sigillata compresa), il numero degli articoli già presenti accanto alla casella, e
+//          salva `settings/versioniTDA` (`_impostaVersioniTDA`, letta all'avvio con le altre configurazioni).
+//          `_versioniDellaTDA` legge lì e ripiega sulla griglia di settembre (`VERSIONI_PER_TDA`) finché una
+//          tipologia non è mai stata salvata; `_versioniDelTipo` legge la riga «tipo:<id>» (mai salvata = nessuna).
+//          `_versioneAmmessa` per un articolo con `tipoProdotto` chiede solo al suo tipo; la scheda in modifica mostra
+//          le caselle delle versioni dichiarate (la regola v6.146 resta per le altre); la partenza si cerca nella
+//          stessa tipologia (`_stessoTipoDi`, nell'elenco e in `_validaBaseId`). La spunta messa per un'ora nella
+//          finestra della tipologia è tolta: lì resta una riga che manda alla console. E in Console → Protezione foto
+//          (Franco: «il tasto "Salva la protezione foto", mettilo anche in cima alla pagina») il tasto anche in alto a
+//          destra, accanto al titolo (`#prot-salva-alto`).
+// v7.202 -Modificati js/app.js e index.html (per la versione). CLOUDINARY, LE MISURE DELLE FOTO (Franco, sulla tabella
 //          di `Claude outputs\misura\proposta-misure-foto.md`: «tutte sì tranne la 11»). Tutte `c_fit`: due posti che
 //          chiedono la stessa misura usano la stessa copia, fatta una volta. Caroselli 400 → 300 (la copia della
 //          griglia); copertina della serie e testata della sezione 200 → 400; fotina della serie nella testata
@@ -31494,7 +31512,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.202';
+const JS_VERSION = 'v7.203';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -40758,6 +40776,7 @@ async function _caricaLegendeDefinizioni() {
     _impostaPosizioni(docs.find(x => x.id === 'posizioniCampi'));   // v7.151 - idem
     _impostaModoCaroselli(docs.find(x => x.id === 'caroselliModo'));   // v7.152 - idem
     _impostaQuestionario(docs.find(x => x.id === 'questionario'));   // v7.156 - idem
+    _impostaVersioniTDA(docs.find(x => x.id === 'versioniTDA'));   // v7.203 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -43212,7 +43231,7 @@ function renderAdminOrdinamentiTDA() {
     //    campi specificati sopra; quindi... prima una base, che fa da capo gruppo, ecc»; e «parli di
     //    sottoserie quando negli album non ce ne sono») - la nota dice in ordine cosa conta PRIMA delle
     //    chiavi, e la sottoserie solo dove la tipologia ne ha davvero.
-    const tipi = _VERSIONI_VIVE.filter(v => (VERSIONI_PER_TDA[sez] || []).includes(v.chiave)).map(v => (v.pluraleIt || v.it).toLowerCase());
+    const tipi = _VERSIONI_VIVE.filter(v => _versioniDellaTDA(sez).includes(v.chiave)).map(v => (v.pluraleIt || v.it).toLowerCase());   // v7.203: dalla console
     const pezzi = [];
     const conSs = sezConSottoserie.has(sez);
     if (conSs) pezzi.push('prima di tutto la sottoserie;');
@@ -43371,7 +43390,12 @@ function renderAdminProtezioneTDA() {
     // 🔄 v7.121 - tab suo, col nome scelto da Franco
     // 🔄 v7.176 (Franco: «il nome della sezione è scritto in bianco, come il suo contenuto … usiamo l'azzurro serie») -
     //    i tre titoli e i due sottotitoli degli stili in `--info`
-    '<h4 style="font-family:var(--font-ui);margin:0 0 0.5rem;color:var(--info);">🔒 ' + (it ? 'Protezione foto' : 'Photo protection') + '</h4>' +
+    // 🔄 v7.203 (Franco: «il tasto "Salva la protezione foto", mettilo anche in cima alla pagina») - lo stesso tasto
+    //    in alto a destra, accanto al titolo; quello in fondo resta
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.9rem;flex-wrap:wrap;margin:0 0 0.5rem;">' +
+      '<h4 style="font-family:var(--font-ui);margin:0;color:var(--info);">🔒 ' + (it ? 'Protezione foto' : 'Photo protection') + '</h4>' +
+      '<button class="btn-primary btn-admin admin-anche-telefono" id="prot-salva-alto" onclick="salvaProtezioneTDA()">' + (it ? 'Salva la protezione foto' : 'Save photo protection') + '</button>' +
+    '</div>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Accesa: gli articoli di quella tipologia hanno <strong>«Foto protetta» d’ufficio</strong>, e chi visita il sito vede le loro foto con la scritta «figurinesgorbions.it». ' +
@@ -43505,66 +43529,50 @@ function renderAdminVersioniArticolo() {
   const it = currentLang === 'it';
   const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
-  const seminato = _versioniArticoloSalvate();
-
+  // 🔄 v7.203 (Franco: «come mai la versione sigillata la abilitiamo da qui se abbiamo la tabella della admin console?»;
+  //    «la B») - LA TABELLA COMANDA. Era nata con la v6.233 come bozza mai collegata («queste spunte non comandano ancora
+  //    niente»), e dalla v6.787 il livello 1 lo diceva il codice (`VERSIONI_PER_TDA`). Adesso: una riga per tipologia di
+  //    serie e una per ogni tipologia senza serie, una colonna per versione, e il Salva scrive `settings/versioniTDA`
+  //    (vedi `_versioniDellaTDA`). Accanto a ogni casella quanti articoli di quella versione ci sono già: spegnerla non
+  //    li cancella (la rete di `_versioneAmmessa`), ma non se ne possono creare altri.
+  const vers = VERSIONI_ARTICOLO.filter(v => !v.nuova);
+  const figs = getData('figurines', []);
+  const righe = Object.keys(ARTICOLI).filter(sez => sez !== 'extras')
+    .map(sez => ({ k: sez, nome: getSectionLabel(sez), versioni: _versioniDellaTDA(sez),
+      conta: v => figs.filter(f => (f.section || 'figurines') === sez && !f.tipoProdotto && f[v.campo]).length }))
+    .concat(_tipiProdotto().map(tp => ({ k: 'tipo:' + tp.id, nome: _nomeTipo(tp) || tp.id, tipo: true, versioni: _versioniDelTipo(tp.id),
+      conta: v => figs.filter(f => f.tipoProdotto === tp.id && f[v.campo]).length })));
+  const idCasella = (k, v) => 'ver-' + k.replace(/[^a-zA-Z0-9_-]/g, '_') + '-' + v.chiave;
   box.innerHTML =
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">\uD83E\uDDEC ' + (it ? 'Versioni di articolo possibili' : 'Possible article versions') + '</h4>' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.9rem;flex-wrap:wrap;margin:1.6rem 0 0.5rem;">' +
+      '<h4 style="font-family:var(--font-ui);margin:0;color:var(--info);">🧬 ' + (it ? 'Versioni di articolo possibili' : 'Possible article versions') + '</h4>' +
+      '<button class="btn-primary btn-admin" onclick="salvaVersioniArticolo()">' + (it ? 'Salva le versioni' : 'Save versions') + '</button>' +
+    '</div>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
-        ? 'Le <strong>cinque versioni</strong> sono alternative alla base. Qui si dice, per ogni articolo, ' +
-          '<strong>quali possono esistere</strong> — la logica è positiva: la casella spenta vuol dire ' +
-          '<em>non può esistere</em>, non <em>non ce ne sono</em>. ' +
-          'Le caselle sono nate accese dove i dati avevano già articoli di quel tipo.'
-        : 'The <strong>five versions</strong> are alternatives to the base. Here you declare, per article, ' +
-          '<strong>which ones can exist</strong>. Positive logic: unchecked means <em>cannot exist</em>.') +
+        ? 'Per ogni tipologia di articolo, <strong>quali versioni possono esistere</strong>. Spenta vuol dire <em>non può esistere</em>: ' +
+          'nella scheda degli articoli la casella di quella versione non compare. ' +
+          'Per le tipologie con serie, ogni serie dice poi quali ha davvero (scheda della serie, tab «Versioni non base»). ' +
+          'Il numero accanto a una casella dice quanti articoli di quella versione ci sono già: spegnendola restano, ma non se ne possono creare altri.'
+        : 'For each item type, <strong>which versions can exist</strong>. Unchecked means <em>cannot exist</em>. The number counts the items of that version already there.') +
     '</p>' +
-    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:100%;">' +
-    // 🆕 v6.251 (Franco) - UNA RIGA DI INTESTAZIONE SOPRA LE CINQUE, "Versioni speciali".
-    // 📌 Le cinque colonne dicono una cosa sola in cinque modi, e senza un cappello sopra si
-    // leggono come cinque attributi indipendenti dell'articolo — allo stesso livello del suo nome.
-    // Un titolo di gruppo dice che appartengono insieme, e il rientro lo mostra prima ancora che si
-    // legga. `colspan` sul numero VERO delle versioni, non su un 5 scritto a mano: una sesta
-    // versione allargherebbe il cappello da se'.
-    '<tr><th style="' + th + 'border-bottom:none;"></th>' +
-      '<th colspan="' + VERSIONI_ARTICOLO.length + '" style="' + th + 'border-bottom:none;padding-left:1.4rem;'
-      + 'border-left:1px solid var(--border);font-size:0.72rem;letter-spacing:0.04em;">'
-      + (it ? 'VERSIONI SPECIALI' : 'SPECIAL VERSIONS') + '</th></tr>' +
-    '<tr><th style="' + th + '">' + (it ? 'Articolo' : 'Article') + '</th>' +
-      // v6.234 (Franco: "non e' applicato il color code") - le intestazioni portano il colore
-      // della loro versione, come ogni altro posto del sito che nomina un tipo. Il colore viene
-      // da `v.colore`, cioe' dallo stesso elenco: non e' una seconda mappa da tenere allineata.
-      // ⚠️ `th` dichiara gia' `color:var(--muted)`; questa arriva DOPO nella stessa stringa,
-      // quindi vince — e' l'ordine, non la specificita'.
-      VERSIONI_ARTICOLO.map((v, iv) =>
-        // v6.251 - il bordo e il rientro solo sulla PRIMA: e' li' che comincia il gruppo, e
-        // ripeterli su tutte e cinque avrebbe disegnato una griglia invece di un raggruppamento.
-        '<th style="' + th + 'text-align:center;color:' + (v.colore || 'var(--text)') + ';'
-        + (iv === 0 ? 'padding-left:1.4rem;border-left:1px solid var(--border);' : '') + '">' + esc(it ? v.it : v.en) +
-        '</th>').join('') +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
+      vers.map(v => '<th style="' + th + 'text-align:center;color:' + (v.colore || 'var(--text)') + ';">' + esc(it ? v.it : v.en) + '</th>').join('') +
     '</tr>' +
-    PRODOTTI_INVENTARIO.map(sez => {
-      const attive = _versioniDi(sez);
-      return '<tr><td style="' + td + '">' + esc(getSectionLabel(sez)) + '</td>' +
-        VERSIONI_ARTICOLO.map((v, iv) =>
-          '<td style="' + td + 'text-align:center;'
-          + (iv === 0 ? 'padding-left:1.4rem;border-left:1px solid var(--border);' : '') + '">' +
-          '<input type="checkbox" id="ver-' + sez + '-' + v.campo + '"' +
-          (attive.includes(v.campo) ? ' checked' : '') + '>' +
-          '</td>').join('') + '</tr>';
-    }).join('') +
+    righe.map(r =>
+      '<tr><td style="' + td + 'color:var(--info);font-weight:600;">' + esc(r.nome)
+        + (r.tipo ? ' <span style="font-size:0.72rem;font-weight:400;color:var(--text);opacity:0.75;">' + (it ? 'senza serie' : 'no series') + '</span>' : '') + '</td>' +
+      vers.map(v => {
+        const n = r.conta(v), acceso = r.versioni.includes(v.chiave);
+        return '<td style="' + td + 'text-align:center;"><input type="checkbox" id="' + idCasella(r.k, v) + '" data-tda="' + esc(r.k) + '" data-ver="' + v.chiave + '"' + (acceso ? ' checked' : '') + '>'
+          + (n ? ' <span style="font-size:0.72rem;' + (acceso ? 'opacity:0.75;' : 'color:var(--warn);font-weight:600;') + '" title="' + (it ? 'Articoli di questa versione già nell\'Inventario' : 'Items of this version already in the Inventory') + '">' + n + '</span>' : '')
+          + '</td>';
+      }).join('') + '</tr>').join('') +
     '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin" onclick="salvaVersioniArticolo()">' + (it ? 'Salva le versioni' : 'Save versions') + '</button>' +
-      '<span id="versioni-articolo-feedback" style="font-size:0.85rem;color:var(--text);"></span>' +
-    '</div>' +
-    '<p style="font-size:0.8rem;color:var(--text);margin-top:0.9rem;line-height:1.5;">' +
-      (it
-        ? '⚠️ <strong>In questa versione del sito queste spunte non comandano ancora niente</strong>: ' +
-          'la scheda articolo continua a decidere come prima. Servono a essere compilate e controllate ora, ' +
-          'così quando comanderanno (v6.234) partiranno già giuste.' +
-          (seminato ? '' : ' <strong>Non risultano ancora seminate</strong>: riapri la pagina da admin.')
-        : '⚠️ <strong>These checkboxes do not drive anything yet</strong> in this release.') +
-    '</p>';
+    '</div>';
 }
 
 // 🆕 v6.234 — DA CHI PUO' NASCERE OGNI VERSIONE, IN SOLA LETTURA (chiesta da Franco).
@@ -43627,26 +43635,26 @@ function renderAdminPartenzeVersione() {
     '</p>';
 }
 
-// Salva le spunte. Legge TUTTE le caselle prima di scrivere: un salvataggio a meta' su una tabella
-// che dice "cosa puo' esistere" lascerebbe il sito in uno stato che nessuno ha voluto.
+// 🔄 v7.203 - il Salva scrive TUTTE le righe (`settings/versioniTDA`): da quel momento ogni tipologia segue la tabella e
+//    non più la griglia scritta nel codice. Legge tutte le caselle prima di scrivere: un salvataggio a metà su una tabella
+//    che dice «cosa può esistere» lascerebbe il sito in uno stato che nessuno ha voluto.
 async function salvaVersioniArticolo() {
+  if (!currentUser?.isAdmin) return;
   const it = currentLang === 'it';
-  const fb = document.getElementById('versioni-articolo-feedback');
-  const per = {};
-  for (const sez of PRODOTTI_INVENTARIO) {
-    per[sez] = VERSIONI_ARTICOLO
-      .filter(v => document.getElementById('ver-' + sez + '-' + v.campo)?.checked)
-      .map(v => v.campo);
-  }
-  if (fb) { fb.style.color = 'var(--muted)'; fb.textContent = it ? 'Salvataggio\u2026' : 'Saving\u2026'; }
+  const voci = {};
+  document.querySelectorAll('#admin-versioni-articolo input[data-tda]').forEach(el => {
+    if (!voci[el.dataset.tda]) voci[el.dataset.tda] = [];
+    if (el.checked) voci[el.dataset.tda].push(el.dataset.ver);
+  });
   try {
-    await fsSave('settings', { id: 'versioni_articolo', perArticolo: per });
-    LOCAL.set('versioniArticolo', JSON.stringify(per));
-    if (fb) { fb.style.color = 'var(--success)'; fb.textContent = it ? '\u2705 Versioni salvate !' : '\u2705 Versions saved !'; }
+    await fsSave('settings', { id: 'versioniTDA', voci });
+    _impostaVersioniTDA({ voci });
+    renderAdminVersioniArticolo();
+    _finestraConferma({ titolo: it ? '✅ Versioni salvate' : '✅ Versions saved',
+      testo: it ? 'Le modifiche valgono da subito, per tutti.' : 'The changes apply right away, for everyone.', ok: 'OK', soloOk: true });
   } catch (e) {
-    // v6.232 - adesso un salvataggio che non puo' scrivere FALLISCE, e questo ramo lo mostra.
     console.error('salvaVersioniArticolo', e);
-    if (fb) { fb.style.color = 'var(--danger)'; fb.textContent = (it ? '\u274C Salvataggio fallito: ' : '\u274C Save failed: ') + (e?.code || e?.name || 'errore'); }
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
   }
 }
 
@@ -43729,8 +43737,19 @@ const VERSIONI_PER_TDA = {
 };
 
 // 🆕 v6.787 - LE DUE DOMANDE DEL LIVELLO 1, e sono due funzioni perche' sono due domande.
+// 🔄 v7.203 (Franco: «come mai la versione sigillata la abilitiamo da qui se abbiamo la tabella della admin console?»;
+//    scelta «la B») - IL LIVELLO 1 SI DECIDE IN CONSOLE. La tabella «Versioni di articolo possibili» (tab Tipologie di
+//    articolo) scrive `settings/versioniTDA` = { voci: { <tipologia>: [chiavi], 'tipo:<id>': [chiavi] } }; letta
+//    all'avvio con le altre configurazioni (`_impostaVersioniTDA`). Una tipologia che lì non è mai stata salvata usa
+//    ancora la griglia di settembre (`VERSIONI_PER_TDA`, che resta il ripiego e la partenza della tabella); un tipo senza
+//    serie mai salvato non ha versioni (la regola v6.146).
+let _VERSIONI_TDA_CFG = {};
+function _impostaVersioniTDA(d) {
+  _VERSIONI_TDA_CFG = (d && d.voci && typeof d.voci === 'object') ? d.voci : {};
+}
 function _versioniDellaTDA(sezione) {
-  return VERSIONI_PER_TDA[sezione || 'figurines'] || [];
+  const k = sezione || 'figurines';
+  return Array.isArray(_VERSIONI_TDA_CFG[k]) ? _VERSIONI_TDA_CFG[k] : (VERSIONI_PER_TDA[k] || []);
 }
 function _versioneEsistePerTDA(chiave, sezione) {
   return _versioniDellaTDA(sezione).indexOf(chiave) >= 0;
@@ -44355,6 +44374,9 @@ function _versioneAmmessa(chiave, f, serie) {
   const v = VERSIONI_ARTICOLO.find(x => x.chiave === chiave);
   if (!v) return true;                       // una versione sconosciuta non si nasconde
   if (f && v.campo && f[v.campo]) return true;   // la rete
+  // 🆕 v7.203 - un articolo di una tipologia senza serie: decide la sua tipologia (`versioni`), non la griglia delle
+  //    tipologie né la serie contenitore. Senza spunte, nessuna versione (la regola v6.146).
+  if (f && f.tipoProdotto) return _versioniDelTipo(f.tipoProdotto).includes(chiave);
   const sez = (f && f.section) || 'figurines';
   if (!_versioneEsistePerTDA(chiave, sez)) return false;   // livello 1: non esiste
   if (v.sempre) return true;   // v7.078: la versione sigillata non ha spunta per serie
@@ -48051,8 +48073,7 @@ function openAddTipoProdottoModal(idDaModificare) {
   //    sito sta gia' facendo, invece di proporre un valore diverso da quello in uso.
   if (g('tipo-prodotto-genere')) g('tipo-prodotto-genere').value = (t && t.genere) || 'm';
 
-  if (g('tipo-prodotto-haretro')) g('tipo-prodotto-haretro').checked = !!(t && t.haRetro);
-  if (g('tipo-prodotto-ordina')) g('tipo-prodotto-ordina').value = t ? (t.ordina || '') : '';   // v6.155
+  if (g('tipo-prodotto-haretro')) g('tipo-prodotto-haretro').checked = !!(t && t.haRetro);  if (g('tipo-prodotto-ordina')) g('tipo-prodotto-ordina').value = t ? (t.ordina || '') : '';   // v6.155
   if (g('tipo-prodotto-hataglia')) g('tipo-prodotto-hataglia').checked = !!(t && t.haTaglia);  // v6.160
   // 🆕 v6.758 - l'elenco delle taglie di QUESTO tipo. Il ramo `t ? ... : ''` non e' una
   // formalita': senza, un tipo NUOVO nascerebbe con le taglie di quello aperto prima e nessuno lo
@@ -48166,8 +48187,7 @@ async function salvaTipoProdotto() {
   }
   const idEsistente = (document.getElementById('tipo-prodotto-id')?.value || '').trim();   // v6.149
   const haRetro = !!document.getElementById('tipo-prodotto-haretro')?.checked;             // v6.149
-  const haTaglia = !!document.getElementById('tipo-prodotto-hataglia')?.checked;           // v6.160
-  // 🆕 v6.758 - l'elenco, letto come lo legge la form della serie per i suoi: una riga, un
+  const haTaglia = !!document.getElementById('tipo-prodotto-hataglia')?.checked;           // v6.160  // 🆕 v6.758 - l'elenco, letto come lo legge la form della serie per i suoi: una riga, un
   // valore, via i vuoti. ⚠️ Si legge ANCHE a spunta spenta, e non e' una svista: il campo e'
   // nascosto ma il testo c'e', e cancellarlo sarebbe la cancellazione silenziosa che la v6.750 ha
   // deciso di non fare sugli elenchi.
@@ -54006,6 +54026,8 @@ function _validaBaseId(rec, id, figs) {
   if (!_stessaSottoserieDi(rec, b)) return it
     ? 'Quell\'articolo e\' di un\'altra sottoserie (' + ((b.subseries || '').trim() || 'Set principale') + ').'
     : 'That item belongs to another subseries (' + ((b.subseries || '').trim() || 'main set') + ').';
+  // 🆕 v7.203 - e stessa tipologia senza serie, come l'elenco della scheda (`_stessoTipoDi`)
+  if (!_stessoTipoDi(rec, b)) return it ? 'Quell\'articolo e\' di un\'altra tipologia di articolo.' : 'That item belongs to another item type.';
   // v6.133 - stesso gruppo: il numero di un figlio si eredita dalla figurina di partenza, quindi
   // sceglierne una di un altro numero rinumererebbe il record senza dirlo.
   if (!_stessoGruppoDi(rec, b)) return it
@@ -64135,6 +64157,19 @@ function _chiaviOrdinamentoFigurine(items, idx, sez = currentSection) {
 function _eProdottoExtraSerie(f) {
   return !!(f && f.tipoProdotto);
 }
+// 🆕 v7.203 (Franco: «sono in grado di definire la esistenza di versioni, per una tipologia di articolo senza serie?»;
+//    «al momento direi solo la versione Sigillato»; «vai») - LA REGOLA v6.146 HA UN'ECCEZIONE DICHIARATA: le versioni
+//    spuntate nel tab «Versioni» della tipologia (`versioni`, chiavi del descrittore). Le altre restano spente.
+// 🔄 v7.203, stessa release - la spunta stava nella finestra della tipologia; per scelta di Franco («la B») sta nella
+//    tabella della console, riga «tipo:<id>» di `settings/versioniTDA`
+function _versioniDelTipo(idTipo) {
+  const v = _VERSIONI_TDA_CFG['tipo:' + idTipo];
+  return Array.isArray(v) ? v : [];
+}
+// e la partenza di una versione si cerca fra gli articoli della stessa tipologia senza serie (vuoto = nessuna)
+function _stessoTipoDi(figlio, candidato) {
+  return ((figlio && figlio.tipoProdotto) || '') === ((candidato && candidato.tipoProdotto) || '');
+}
 
 // 🆕 v6.753 (Franco: «nelle TDA che non hanno una serie di riferimento mi serve il campo Anno,
 //    sull'articolo») - CHI HA L'ANNO, IN UN POSTO SOLO. Lo chiedono in cinque: la scheda in
@@ -65873,6 +65908,7 @@ function _costruisciPartenze(f, chiaveVersione) {
     .filter(x => x.seriesId === rec.seriesId && x.section === rec.section && x.id !== rec.id
                  && amm.includes(_chiaveTipo(x))
                  && _stessaSottoserieDi(rec, x)   // 🆕 v6.759
+                 && _stessoTipoDi(rec, x)   // 🆕 v7.203
                  && _stessoGruppoDi(rec, x))
     .sort(_baseFigurineLinkSort);
   return amm;
@@ -66557,7 +66593,8 @@ function switchToEditMode(figId) {
     if (_versioneAmmessa('unofficialVariation', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('unofficialVariation') + '<span class="detail-value"><input type="checkbox" id="fe-is-unofficial-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-unofficial-variation\')" ' + (f.isUnofficialVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   }
-  if (!_extraSerie) {   // v6.146 - Change ed Errore di stampa: stessa ragione
+  // 🔄 v7.203 - per una tipologia senza serie, le sole versioni che la tipologia dichiara (`_versioneAmmessa`)
+  if (!_extraSerie || _versioniDelTipo(f.tipoProdotto).length) {   // v6.146 - Change ed Errore di stampa: stessa ragione
     if (_versioneAmmessa('change', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('change') + '<span class="detail-value"><input type="checkbox" id="fe-is-change" onchange="toggleFeBaseFigurineGroup(\'fe-is-change\')" ' + (f.isChange?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
     // ERRORE DI STAMPA (v5.714): la quinta casella, in TUTTE E QUATTRO le sezioni, come
