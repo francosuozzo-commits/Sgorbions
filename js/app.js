@@ -1,6 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.210 - Modificati index.html, js/app.js e css/style.css. LA BARRA DELLE TIPOLOGIE (Franco: «una barra di pulsanti
+//          in alto nella pagina di una TDA per passare alle altre TDA, comprese quelle senza serie, nello stile del
+//          tasto con la miniatura serie precedente/successiva»). In cima alla pagina di una tipologia, un tasto per ogni
+//          card dell'hub «Tipologie di articoli» e nello stesso ordine: prima quelle con serie, un filo, poi quelle senza.
+//          Ogni tasto ha la foto della card e il nome; quello della pagina in cui si è ha il bordo lime e non si clicca.
+//          Le pagine sono tre: l'hub di una tipologia con serie, la pagina di un tipo senza serie, e la sezione in cui la
+//          card entra dritta quando la tipologia ha una serie sola. Sul telefono niente nomi, e la barra scorre di lato.
+//          `_disegnaNavTDA`, `_tdaDellaPagina`, `_vaiAllaTDA`. La foto usa la trasformazione della card (w_400): nessuna
+//          copia nuova su Cloudinary.
+//          E nel profilo (Franco: «nella pagina utente, mettiamo le etichette dei campi in azzurro»): i titoli dei
+//          riquadri (Impersona un utente, I tuoi numeri Sgorbions, Preferenze e-mail, I miei messaggi con lo staff) e le
+//          etichette sotto i due numeri passano a `--info`.
+//          E (Franco: «un campo - admin visible - da mettere nella tabella degli utenti; chiamalo "Chi è ?"; fallo di
+//          tipo stringa, e mettilo sotto al campo nome»): campo `chiE` del documento dell'utente, nella finestra
+//          dell'utente della console sotto «Nome utente», e colonna «Chi è ?» (ordinabile) dopo «Nome utente» nella
+//          tabella Utenti. Vuoto = null. Non va in `public_profiles` (lì si scrivono solo i campi elencati).
+//          E nella barra del desktop (Franco: «aggiungi una voce nella navbar, chiamata "La mia lista", dopo
+//          Questionario e rinomina "Questionario e mia lista" in "Questionario"»): «Questionario» su una riga, e dopo
+//          «La *mia lista*» (`nav-mialista-dsk`), che porta dritta alla pagina «La mia lista Sgorbions»; c'è con
+//          l'accesso fatto, sul telefono no (lì c'è la voce del panino).
 // v7.209 - Modificati index.html e js/app.js. IL COLLAGE FOTO (Franco: «una nuova funzionalità admin, chiamata "Collage
 //          foto"»), tab nuovo della console dopo Caroselli. Tre domande: quante foto (2-8), da dove (dal sito: spenta, si
 //          fa dopo; «me le passi tu»: si apre la scelta dei file), che collage (a ruota 2-8, a mazzo di carte 2-7, a 4
@@ -31590,7 +31610,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.209';
+const JS_VERSION = 'v7.210';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33372,7 +33392,7 @@ const i18n = {
   en: {
 
 'cld.down':'⚠️ Photos are temporarily unavailable due to technical maintenance. The catalogue is still available.','cld.fotoNo':'Photo unavailable',
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Export lists','nav.questionarioBreve':'Questionnaire<br>and <em>my list</em>','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory !','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','sfoglia.prima':'First page','sfoglia.ultima':'Last page','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Export lists','nav.questionarioBreve':'Questionnaire','nav.miaListaDsk':'My <em>list</em>','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory !','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','sfoglia.prima':'First page','sfoglia.ultima':'Last page','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your <em>My list</em> and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -33462,7 +33482,7 @@ const i18n = {
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
 'cld.down':'⚠️ Le foto sono temporaneamente non disponibili per un intervento tecnico. Il catalogo resta consultabile.','cld.fotoNo':'Foto non disponibile',
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Export liste','nav.questionarioBreve':'Questionario<br>e <em>mia lista</em>','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions !','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca nel sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','sfoglia.prima':'Prima pagina','sfoglia.ultima':'Ultima pagina','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Export liste','nav.questionarioBreve':'Questionario','nav.miaListaDsk':'La <em>mia lista</em>','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions !','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca nel sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','sfoglia.prima':'Prima pagina','sfoglia.ultima':'Ultima pagina','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
@@ -37055,7 +37075,7 @@ function updateNavUser() {
     guestNav.style.display = 'none';
     userNav.style.display = 'flex';
     if (wantlistLink) wantlistLink.style.display = '';
-    ['nav-catalog','nav-blog','nav-classifica','nav-mialista-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+    ['nav-catalog','nav-blog','nav-classifica','nav-mialista-link','nav-mialista-dsk' /* v7.210 */,'nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
     const navBlogEl = document.getElementById('nav-blog');
     // 🔄 v6.834 - admin e visitatori leggono la stessa voce: «Blog / D&R» è diventato «Blog» per tutti.
     if (navBlogEl) navBlogEl.textContent = t('nav.blog');
@@ -37118,7 +37138,7 @@ function updateNavUser() {
     if (bellBtn2) bellBtn2.style.display = 'none';
     const quotaBtn2 = document.getElementById('nav-quota-warning-btn');
     if (quotaBtn2) quotaBtn2.style.display = 'none';
-    ['nav-catalog','nav-blog','nav-classifica','nav-wishlist','nav-mialista-link','nav-logout-link','cc-linguetta' /* v7.110 */].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    ['nav-catalog','nav-blog','nav-classifica','nav-wishlist','nav-mialista-link','nav-mialista-dsk' /* v7.210 */,'nav-logout-link','cc-linguetta' /* v7.110 */].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     // 🔴 v6.913 — QUI C'ERA `mostraNumeroniHero(false)`, ed è la riga che questa release toglie:
     //    era l'unico motivo per cui un ospite non vedeva i dodici numeri. Non è stata sostituita
     //    da un `true` — la decisione sta fuori dall'`if`, dove non dipende più da chi guarda.
@@ -48668,6 +48688,7 @@ function openTipoProdotto(id) {
   //    domanda ora e' una sola (`_titoloSezioneAtteso`). Lasciarlo sarebbe stato il quinto punto che
   //    dice la stessa cosa - cioe' esattamente il difetto che questa release chiude.
   openSeriesSection('extras');  // e questa ridisegna la griglia, quindi il filtro e' gia' acceso
+  try { _disegnaNavTDA(); } catch (e) { console.error('barra delle tipologie', e); }   // v7.210
 }
 
 // ---- LA FORM DEL TIPO: due campi, e non e' una form di prodotti ----
@@ -48999,6 +49020,7 @@ function openProdottoDetail(sec) {
   if (_rtSez !== sec) { _rtSez = sec; _rt = _rtNuovo(); }
   try { renderRicercaTipologia(); } catch (e) { console.error('renderRicercaTipologia', e); }
   try { _aggiornaLogoNavbar(); } catch (e) {}
+  try { _disegnaNavTDA(); } catch (e) { console.error('barra delle tipologie', e); }   // v7.210
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -49025,6 +49047,7 @@ function apriSerieDaProdotto(seriesId, sec) {
   openSeriesDetail(seriesId);
   openSeriesSection(sec);
   _sezioneApertaDaProdotto = sec;  // dopo openSeriesSection, che non lo sa
+  try { _disegnaNavTDA(); } catch (e) { console.error('barra delle tipologie', e); }   // v7.210: dopo, per la stessa ragione
 }
 
 // 🆕 v6.770 (Franco) - LA PORTA DELLE CARD DELL'HUB DELLE TIPOLOGIE.
@@ -53251,6 +53274,81 @@ function _disegnaNavSezione() {
   colonna('prec', prec);
   colonna('succ', succ);
 }
+// 🆕 v7.210 (Franco: «una barra di pulsanti in alto nella pagina di una TDA per passare alle altre TDA, comprese quelle
+//    senza serie, nello stile del tasto con la miniatura serie precedente/successiva») - LA BARRA DELLE TIPOLOGIE.
+//    Un tasto per ogni card dell'hub «Tipologie di articoli», nello stesso ordine e con la stessa foto: prima le
+//    tipologie con serie (`PRODOTTI_INVENTARIO`), un filo, poi i tipi senza serie (`_tipiProdotto()`) - i due gruppi
+//    con i loro due ordinamenti, come nell'hub (v6.773). Il tasto della pagina in cui si è ha il bordo lime e non si clicca.
+// 📌 La foto passa con la trasformazione della card (w_400) e non con quella delle frecce delle serie (w_120): così è la
+//    stessa copia che Cloudinary ha già, e la barra non chiede nessuna trasformazione nuova.
+// 📌 LE PAGINE DI UNA TIPOLOGIA SONO TRE, e `_tdaDellaPagina` le riconosce dallo stato, non dal titolo: l'hub di una
+//    tipologia con serie (`#prodotto-detail`), la pagina di un tipo senza serie (`_tipoProdottoCorrente`), e la sezione
+//    in cui `apriTDA` entra dritta quando la tipologia sta in una serie sola (v6.770). In una sezione aperta da una serie
+//    la barra non c'è: lì si sta guardando la serie, e ci sono già le sue frecce.
+function _tdaDellaPagina() {
+  const pd = document.getElementById('prodotto-detail');
+  if (pd && pd.style.display === 'block' && _prodottoCorrente) return { dove: pd, chiave: _prodottoCorrente };
+  const sd = document.getElementById('series-detail');
+  if (!sd || sd.style.display === 'none') return null;
+  if (_tipoProdottoCorrente && currentSection) return { dove: sd, chiave: _tipoProdottoCorrente };
+  const sec = _sezioneApertaDaProdotto;
+  if (sec && currentSection === sec && currentSeriesId && _serieUnicaDiTDA(sec) === currentSeriesId) return { dove: sd, chiave: sec };
+  return null;
+}
+function _disegnaNavTDA() {
+  document.querySelectorAll('.tda-nav').forEach(b => b.remove());
+  const qui = _tdaDellaPagina();
+  if (!qui) return;
+  const inner = qui.dove.querySelector('.series-hero-inner');
+  if (!inner) return;
+  const tasto = (chiave, eTipo, nome, url, fabbrica) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    const acceso = chiave === qui.chiave;
+    b.className = 'serie-nav-btn tda-nav-btn' + (acceso ? ' tda-nav-qui' : '');
+    b.title = nome;
+    const src = url ? cloudinaryUrl(url, 'w_400,h_400,c_fit,q_auto,f_auto') : (fabbrica || '');
+    b.innerHTML = (src ? '<img src="' + esc(src) + '" alt="">' : '<span class="serie-nav-vuota">📦</span>')
+      + '<span class="serie-nav-scritta">' + esc(nome) + '</span>';
+    if (acceso) b.setAttribute('aria-current', 'page');
+    else b.onclick = () => _vaiAllaTDA(chiave, eTipo);
+    return b;
+  };
+  const barra = document.createElement('div');
+  barra.className = 'tda-nav';
+  PRODOTTI_INVENTARIO.forEach(sec => barra.appendChild(tasto(sec, false, getSectionLabel(sec), _fotoBoxUrl(sec), SECTION_IMAGES[sec])));
+  const tipi = _tipiProdotto();
+  if (tipi.length) {
+    const filo = document.createElement('span');
+    filo.className = 'tda-nav-filo';
+    barra.appendChild(filo);
+    tipi.forEach(t => barra.appendChild(tasto(t.id, true, _nomeTipo(t), _fotoBoxUrl(t.id), '')));
+  }
+  // subito dopo «← Inventario», prima del titolo
+  const indietro = inner.querySelector(':scope > .back-btn');
+  inner.insertBefore(barra, indietro ? indietro.nextSibling : inner.firstChild);
+}
+// Si lascia la pagina di adesso come la lascia il tasto indietro, ma senza fermarsi da nessuna parte: dalla sezione
+// `closeSeriesDetail` azzera la vista tabellare e lo stato della serie (la provenienza si spegne prima, se no tornerebbe
+// all'hub); dall'hub si spegne il suo carosello. Poi si entra dalla stessa porta delle card dell'hub.
+function _vaiAllaTDA(chiave, eTipo) {
+  const sd = document.getElementById('series-detail');
+  if (sd && sd.style.display !== 'none') {
+    _sezioneApertaDaProdotto = null;
+    _tipoProdottoCorrente = null;
+    try { _caroselloSpegni('sezione'); } catch (e) {}
+    closeSeriesDetail();
+  }
+  const pd = document.getElementById('prodotto-detail');
+  if (pd && pd.style.display !== 'none') {
+    try { _caroselloSpegni('prodotto'); } catch (e) {}
+    pd.style.display = 'none';
+    _prodottoCorrente = null;
+  }
+  if (eTipo) openTipoProdotto(chiave);
+  else apriTDA(chiave);
+  try { window.scrollTo(0, 0); } catch (e) {}
+}
 // 🐛 v7.115 (Franco: «il tasto Opzioni, admin visibile, si sovrappone alla foto della serie nella pagina della serie;
 //    abbassiamolo mettendolo sotto alla serie») - nelle pagine di sezione e di sottoserie in alto a destra c'è la
 //    copertina piccola della serie (`#detail-cover-serie`), e sotto i ~1600px cade sopra «Opzioni». Quando le due si
@@ -54348,6 +54446,9 @@ function _vestiTestataPerSezione(s) {
   }
   // v7.126 - le frecce delle sezioni: ci sono dentro una sezione e spariscono uscendone
   try { _disegnaNavSezione(); } catch (e) { console.error('frecce delle sezioni', e); }
+  // v7.210 - e la barra delle tipologie, un attimo dopo: chi apre la pagina di una tipologia ne scrive lo stato
+  //    (`_tipoProdottoCorrente`, `_sezioneApertaDaProdotto`) DOPO questa funzione
+  if (typeof _disegnaNavTDA === 'function') setTimeout(() => { try { _disegnaNavTDA(); } catch (e) {} }, 0);
   // v7.115 - la copertina piccola adesso c'è (o non c'è più): «Opzioni» si rimette al suo posto, anche quando la
   //    copertina avrà preso la sua altezza (la decide la misura della riga del titolo, un attimo dopo)
   //    (`typeof`: prova-v6719 esegue questa funzione in un banco che non ha il resto del sito)
@@ -62406,6 +62507,7 @@ function renderAdminUsers() {
   users.sort((a, b) => {
     let va, vb;
     if (col === 'username') { va = (a.username || '').toLowerCase(); vb = (b.username || '').toLowerCase(); }
+    else if (col === 'chiE') { va = (a.chiE || '').toLowerCase(); vb = (b.chiE || '').toLowerCase(); }   // v7.210
     else if (col === 'email') { va = (a.email || '').toLowerCase(); vb = (b.email || '').toLowerCase(); }
     else if (col === 'lastLogin') { va = a.lastLogin || ''; vb = b.lastLogin || ''; }
     else if (col === 'joined') { va = a.joined || ''; vb = b.joined || ''; }
@@ -62416,6 +62518,7 @@ function renderAdminUsers() {
   el.innerHTML = `<table class="data-table compact"><thead><tr>
     <th>${(currentLang === 'it') ? 'Azioni' : 'Actions'}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('username')">${(currentLang === 'it') ? 'Nome utente' : 'Nickname'}${arrow('username')}</th>
+    <th style="cursor:pointer;" onclick="sortAdminUsers('chiE')">${(currentLang === 'it') ? 'Chi è ?' : 'Who is it?'}${arrow('chiE')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('email')">E-mail${arrow('email')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('lastLogin')">${(currentLang === 'it') ? 'Ultima login' : 'Last login'}${arrow('lastLogin')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('joined')">${(currentLang === 'it') ? 'Iscritto dal' : 'Member since'}${arrow('joined')}</th></tr></thead><tbody>
@@ -62427,6 +62530,7 @@ function renderAdminUsers() {
           ${u.username || '(senza nickname)'}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}${u.nationalityCode ? '<img src="'+flagUrl(u.nationalityCode)+'" title="'+(u.nationalityName||'')+'" style="width:18px;height:12px;object-fit:cover;border-radius:2px;margin-left:4px;">' : ''}
         </div>
       </td>
+      <td>${esc(u.chiE || '')}</td>
       <td>${u.email}</td>
       <td style="font-size:0.82rem;">${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(u.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '<span style="color:var(--text);font-style:italic;">mai</span>'}</td>
       <td>${new Date(u.joined).toLocaleDateString()}</td>
@@ -71269,6 +71373,7 @@ function openEditUserModal(userId) {
   if (!user) return;
   document.getElementById('edit-user-id').value = userId;
   document.getElementById('edit-user-username').value = user.username;
+  document.getElementById('edit-user-chie').value = user.chiE || '';   // v7.210
   document.getElementById('edit-user-email').value = user.email;
   document.getElementById('edit-user-role').value = user.isAdmin ? 'admin' : 'collector';
   // Update modal title
@@ -71343,6 +71448,7 @@ async function saveEditUser() {
   if (idx < 0) return;
   users[idx].username = username;
   users[idx].email = email;
+  users[idx].chiE = (document.getElementById('edit-user-chie')?.value || '').trim() || null;   // v7.210: vuoto = null
   await fsSave('users', users[idx]);
   _cache.users = users;
   closeModal('edit-user-modal');
