@@ -1,6 +1,21 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.212 - Modificati index.html, js/app.js e css/style.css. LA BARRA DELLE TIPOLOGIE SU UNA RIGA (Franco: «la barra
+//          delle miniature in alto, allargarla, così che ci stanno tutte le miniature su di una sola riga»): sul desktop
+//          `.tda-nav` esce dalla colonna della testata, larga quanto le serve e centrata sulla finestra (al massimo la
+//          finestra meno 48px). Misurato sul sito a 2560px: 17 tasti, una riga, 1358px, niente scroll orizzontale.
+//          E (Franco: «sì, toglilo») via il box «Altri articoli» dall'hub «Tipologie di articoli» e dalla barra
+//          (`_tdaDellHub`, `TDA_FUORI_DALL_HUB`): 51 dei suoi 55 articoli erano dei tipi senza serie, già nelle loro card;
+//          gli altri 4 restano nella card «Altri articoli» della pagina della loro serie.
+//          E il COLLAGE FOTO «DAL SITO» (Franco: «da serie o tipologia di articolo? … se c'è un numero particolare da
+//          considerare oppure no; se no, N articoli base random; se sì, n articoli aventi quel numero»; «va bene anche la
+//          tua proposta»): serie o tipologia (anche senza serie), numero sì/no, «🎲 Prendi le foto» e «🔀 Rimescola».
+//          Solo articoli base con la foto, fra quelli che il sito conta; da una serie, niente retro; il numero è quello a
+//          schermo (lettera delle olo, «2 - 16» delle fcr). Meno di N: si dice quanti e non si crea. Foto w_400 con
+//          `crossOrigin` (provato sul sito: il canvas resta pulito e il PNG si scarica). `_collageDa`, `_collageSitoHTML`,
+//          `_collageSitoAggiorna`, `_collageCandidati`, `_collagePesca`. E (Franco: «arriva a 10 articoli per ogni
+//          tipologia di collage») ruota e mazzo fino a 10 foto; i 4 quadranti restano 4.
 // v7.211 - Modificati index.html e js/app.js. LA LETTERA AL POSTO DEL NUMERO (Franco: «le olo hanno sia la lettera che il
 //          nome»; «mi serve che si veda al posto del numero; non ci sono mai entrambi»; «ordine delle lettere:
 //          ovviamente alfabetico»; dove: «a)», cioè solo le Olografiche). Campo `lettera` (testo, maiuscolo), acceso
@@ -31621,7 +31636,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.211';
+const JS_VERSION = 'v7.212';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41411,8 +41426,10 @@ function renderAdminFotoAnnuncio() {
 //    sia il numero di foto o la loro forma.
 const COLLAGE_W = 1200, COLLAGE_H = 675;   // 16:9 come i box degli hub, il doppio dei 600 px con cui il sito li chiede
 const COLLAGE_TIPI = [
-  { k: 'ruota',     it: 'A ruota',          en: 'Wheel',          min: 2, max: 8 },
-  { k: 'mazzo',     it: 'A mazzo di carte', en: 'Hand of cards',  min: 2, max: 7 },
+  // 🔄 v7.212 (Franco: «arriva a 10 articoli per ogni tipologia di collage») - ruota e mazzo fino a 10; i quadranti
+  //    restano 4, come aveva chiesto lui («deve pretendere che siano caricate 4 foto»)
+  { k: 'ruota',     it: 'A ruota',          en: 'Wheel',          min: 2, max: 10 },
+  { k: 'mazzo',     it: 'A mazzo di carte', en: 'Hand of cards',  min: 2, max: 10 },
   { k: 'quadranti', it: 'A 4 quadranti',    en: 'Four quadrants', min: 4, max: 4 },
 ];
 let _collageFoto = [];   // le immagini scelte: { nome, img }
@@ -41431,11 +41448,13 @@ function renderAdminCollage() {
           : 'Joins several photos into one, transparent background, hub box shape. Nothing is saved on the site.') +
     '</p>' +
     '<div style="' + dom + '">1. ' + (it ? 'Quante foto devi unire?' : 'How many photos?') + '</div>' +
-    '<input type="number" id="collage-n" class="form-input" min="2" max="8" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
+    '<input type="number" id="collage-n" class="form-input" min="2" max="10" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
     '<div style="' + dom + '">2. ' + (it ? 'Da dove le prendo?' : 'Where do I get them?') + '</div>' +
-    scelta('collage-da', 'sito', (it ? 'Dal sito' : 'From the site') + ' <span style="font-size:0.75rem;opacity:0.7;">(' + (it ? 'in arrivo' : 'coming') + ')</span>', ' disabled') +
-    scelta('collage-da', 'pc', it ? 'Me le passi tu' : 'You give them to me', ' onchange="_collageScegli()"') +
+    // 🔄 v7.212 - «Dal sito» si accende: le sue domande stanno in `#collage-sito` (`_collageSitoHTML`)
+    scelta('collage-da', 'sito', it ? 'Dal sito' : 'From the site', ' onchange="_collageDa()"') +
+    scelta('collage-da', 'pc', it ? 'Me le passi tu' : 'You give them to me', ' onchange="_collageDa();_collageScegli()"') +
     '<input type="file" id="collage-file" accept="image/*" multiple style="display:none;" onchange="_collageCarica(this.files)">' +
+    '<div id="collage-sito" style="display:none;margin:0.5rem 0 0 1.4rem;padding:0.6rem 0.9rem;border-left:2px solid var(--border);">' + _collageSitoHTML() + '</div>' +
     '<div id="collage-scelte" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-top:0.4rem;"></div>' +
     '<div style="' + dom + '">3. ' + (it ? 'Che tipo di collage vuoi?' : 'Which collage?') + '</div>' +
     COLLAGE_TIPI.map((t, i) => scelta('collage-tipo', t.k, esc(it ? t.it : t.en) + ' <span style="font-size:0.75rem;opacity:0.7;">(' +
@@ -41456,6 +41475,109 @@ function _collageScegli() {
   const f = document.getElementById('collage-file');
   if (f) { f.value = ''; f.click(); }
 }
+// 🆕 v7.212 (Franco: «nella opzione "Dal sito", se selezionata chiedi: da serie o tipologia di articolo? se serie, chiedi la
+//    serie; se tda chiedi la tda. Poi chiedi se c'è un numero particolare da considerare oppure no; se no, seleziona N
+//    articoli base random; se sì, chiedi il numero e seleziona n articoli aventi quel numero»; poi «va bene anche la tua
+//    proposta») - LE FOTO DAL SITO. Regole proposte e accettate:
+//    · solo articoli BASE e con la foto, fra quelli che il sito conta (`_articoliDaContareSito`: niente IN ARRIVO né
+//      invisibili); da una serie, tutte le sue tipologie tranne i retro (sono i dorsi: in un collage non dicono niente);
+//    · col numero, quelli il cui numero a schermo è quello (`_numeroAschermo`: vale anche la lettera delle olografiche, e
+//      il «2 - 16» delle fcr con più fpa conta per il 2 e per il 16);
+//    · più di N: N a caso, e «🔀 Rimescola» ne pesca altri; meno di N: si dice quanti sono e il collage non si crea;
+//    · la foto è quella della card (`_fotoFigurina`) alla misura w_400 che il sito chiede già: al più N copie nuove su
+//      Cloudinary per collage, di solito nessuna.
+let _collageModo = '';   // 'sito' | 'pc'
+function _collageDa() {
+  _collageModo = (document.querySelector('input[name="collage-da"]:checked') || {}).value || '';
+  const box = document.getElementById('collage-sito');
+  if (box) box.style.display = _collageModo === 'sito' ? '' : 'none';
+  _collageFoto = [];
+  _collageMostraScelte();
+  _collageStato();
+}
+function _collageSitoHTML() {
+  const it = currentLang === 'it';
+  const dom = 'font-size:0.86rem;font-weight:700;color:var(--info);margin:0.6rem 0 0.3rem;';
+  const radio = (nome, val, testo, chk) => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
+    '<input type="radio" name="' + nome + '" value="' + val + '"' + (chk ? ' checked' : '') + ' onchange="_collageSitoAggiorna()">' + testo + '</label>';
+  const sel = 'background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:0.35rem 0.5rem;font-size:0.86rem;max-width:100%;';
+  const cont = (typeof _serieSenzaSerie === 'function' && _serieSenzaSerie()) || null;
+  const contate = new Set(_articoliDaContareSito().map(f => f.seriesId));
+  const serie = _serieOrdinate(getData('series', []) || []).filter(s => (!cont || s.id !== cont.id) && contate.has(s.id));
+  const tipi = (typeof _tipiProdotto === 'function') ? _tipiProdotto() : [];
+  return '<div style="' + dom + 'margin-top:0;">' + (it ? 'Da una serie o da una tipologia di articolo?' : 'From a series or an item type?') + '</div>' +
+    radio('collage-sito-da', 'serie', it ? 'Serie' : 'Series', true) + radio('collage-sito-da', 'tda', it ? 'Tipologia di articolo' : 'Item type') +
+    '<div style="margin-top:0.35rem;">' +
+      '<select id="collage-sito-serie" style="' + sel + '" onchange="_collageSitoAggiorna()">' + serie.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name || '') + '</option>').join('') + '</select>' +
+      '<select id="collage-sito-tda" style="' + sel + 'display:none;" onchange="_collageSitoAggiorna()">' +
+        _tdaDellHub().map(sec => '<option value="' + esc(sec) + '">' + esc(getSectionLabel(sec)) + '</option>').join('') +
+        tipi.map(t => '<option value="tipo:' + esc(t.id) + '">' + esc(_nomeTipo(t)) + '</option>').join('') +
+      '</select>' +
+    '</div>' +
+    '<div style="' + dom + '">' + (it ? 'C\'è un numero particolare da considerare?' : 'Any particular number?') + '</div>' +
+    radio('collage-sito-num', 'no', it ? 'No' : 'No', true) + radio('collage-sito-num', 'si', it ? 'Sì' : 'Yes') +
+    '<input type="text" id="collage-sito-numero" class="form-input" placeholder="' + (it ? 'numero' : 'number') + '" maxlength="6" style="display:none;width:6rem;margin-left:0.3rem;" oninput="_collageSitoAggiorna()">' +
+    '<div style="margin-top:0.6rem;"><button type="button" class="btn-primary" onclick="_collagePesca()">🎲 ' + (it ? 'Prendi le foto' : 'Pick the photos') + '</button></div>';
+}
+function _collageSitoAggiorna() {
+  const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
+  const num = (document.querySelector('input[name="collage-sito-num"]:checked') || {}).value;
+  const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-tda'), n = document.getElementById('collage-sito-numero');
+  if (s) s.style.display = da === 'serie' ? '' : 'none';
+  if (t) t.style.display = da === 'tda' ? '' : 'none';
+  if (n) n.style.display = num === 'si' ? '' : 'none';
+}
+// I candidati: base, con la foto, della serie o della tipologia scelta, col numero se chiesto
+function _collageCandidati() {
+  const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
+  const conNum = (document.querySelector('input[name="collage-sito-num"]:checked') || {}).value === 'si';
+  const numero = String((document.getElementById('collage-sito-numero') || {}).value || '').trim().toUpperCase();
+  const tutti = getData('figurines', []);
+  let el = _articoliDaContareSito().filter(f => _eBase(f) && _fotoFigurina(f, tutti));
+  if (da === 'serie') {
+    const sid = (document.getElementById('collage-sito-serie') || {}).value;
+    el = el.filter(f => String(f.seriesId) === String(sid) && (f.section || 'figurines') !== 'retros');
+  } else {
+    const v = String((document.getElementById('collage-sito-tda') || {}).value || '');
+    el = v.startsWith('tipo:') ? el.filter(f => f.tipoProdotto === v.slice(5))
+                               : el.filter(f => (f.section || 'figurines') === v && !f.tipoProdotto);
+  }
+  if (conNum) el = el.filter(f => String(_numeroAschermo(f) ?? '').split(' - ').some(x => x.trim().toUpperCase() === numero));
+  return { el, conNum, numero };
+}
+async function _collagePesca() {
+  const it = currentLang === 'it';
+  const n = Number((document.getElementById('collage-n') || {}).value);
+  const { el, conNum, numero } = _collageCandidati();
+  if (conNum && !numero) { toast(it ? 'Scrivi il numero' : 'Type the number', 'error'); return; }
+  if (!Number.isInteger(n) || n < 2) { _collageStato(); return; }
+  if (el.length < n) {
+    _collageFoto = [];
+    _collageMostraScelte();
+    _collageStato();
+    const av = document.getElementById('collage-avviso');
+    if (av) av.textContent = it
+      ? (el.length ? 'Ho trovato solo ' + el.length + ' articol' + (el.length === 1 ? 'o' : 'i') : 'Non ho trovato nessun articolo') + (conNum ? ' col numero ' + numero : '') + ' con la foto: ne servono ' + n + '.'
+      : 'Found only ' + el.length + ' items with a photo: ' + n + ' needed.';
+    return;
+  }
+  // N a caso (Fisher–Yates sulle prime N posizioni)
+  const a = el.slice();
+  for (let i = 0; i < n; i++) { const j = i + Math.floor(Math.random() * (a.length - i)); [a[i], a[j]] = [a[j], a[i]]; }
+  const tutti = getData('figurines', []);
+  const lette = await Promise.all(a.slice(0, n).map(f => new Promise(ok => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';   // se no il canvas resta «sporco» e il PNG non si scarica
+    const url = cloudinaryUrl(_fotoFigurina(f, tutti), 'w_400,h_400,c_fit,q_auto,f_auto');
+    img.onload = () => ok({ nome: (_numeroAschermo(f) ? _numeroAschermo(f) + ' ' : '') + (f.name || ''), img, url });
+    img.onerror = () => ok(null);
+    img.src = url;
+  })));
+  _collageFoto = lette.filter(Boolean);
+  if (_collageFoto.length !== n) toast(it ? '⚠️ Alcune foto non si sono caricate: riprova con «Rimescola»' : '⚠️ Some photos did not load', 'error');
+  _collageMostraScelte();
+  _collageStato();
+}
 async function _collageCarica(files) {
   const it = currentLang === 'it';
   const elenco = [...(files || [])].filter(f => /^image\//.test(f.type));
@@ -41466,7 +41588,7 @@ async function _collageCarica(files) {
     img.onerror = () => { URL.revokeObjectURL(url); ok(null); };
     img.src = url;
   })));
-  _collageFoto.forEach(x => URL.revokeObjectURL(x.url));
+  _collageFoto.forEach(x => { if (String(x.url).startsWith('blob:')) URL.revokeObjectURL(x.url); });   // v7.212: dal sito sono indirizzi veri
   _collageFoto = lette.filter(Boolean);
   if (lette.length !== _collageFoto.length) toast(it ? '⚠️ Alcuni file non si leggono come immagini: li ho lasciati fuori' : '⚠️ Some files are not readable images', 'error');
   _collageMostraScelte();
@@ -41477,7 +41599,9 @@ function _collageMostraScelte() {
   if (!box) return;
   const it = currentLang === 'it';
   box.innerHTML = _collageFoto.map(x => '<img src="' + x.url + '" alt="" title="' + esc(x.nome) + '" style="height:52px;width:auto;max-width:6rem;object-fit:contain;border:1px solid var(--border);border-radius:4px;background:var(--card2);">').join('') +
-    (_collageFoto.length ? '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;" onclick="_collageScegli()">' + (it ? 'Cambia le foto' : 'Change photos') + '</button>' : '');
+    (_collageFoto.length ? (_collageModo === 'sito'   // v7.212: dal sito si ripesca, dal PC si riscelgono i file
+      ? '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;" onclick="_collagePesca()">🔀 ' + (it ? 'Rimescola' : 'Shuffle') + '</button>'
+      : '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;" onclick="_collageScegli()">' + (it ? 'Cambia le foto' : 'Change photos') + '</button>') : '');
 }
 // Che cosa manca per poter creare: il primo problema, a parole, oppure ''
 function _collageProblema() {
@@ -47913,6 +48037,15 @@ async function _eliminaPersonaggio(pid) {
   chiudiPersonaggio();
 }
 
+// 🆕 v7.212 (Franco: «A cosa serve il box "Altri articoli" della vista per TDA? … ora come ora non ci serve più»; «sì,
+//    toglilo») - LE TIPOLOGIE CON SERIE DELL'HUB «TIPOLOGIE DI ARTICOLI», e della barra delle miniature che lo segue.
+//    Misurato il 24 ottobre: il box contava 55 articoli, 51 dei quali sono dei tipi senza serie (che hanno già le loro
+//    card, più sotto) e 4 veri altri articoli dentro una serie (Istruzioni di gioco, Busta standard e la sua variante,
+//    Libriccino), raggiungibili dalla pagina della loro serie.
+// 📌 Si filtra qui e non `PRODOTTI_INVENTARIO`: quello lo leggono decine di punti, fra cui le card della pagina di
+//    ogni serie, dove «Altri articoli» resta.
+const TDA_FUORI_DALL_HUB = ['extras'];
+function _tdaDellHub() { return PRODOTTI_INVENTARIO.filter(s => !TDA_FUORI_DALL_HUB.includes(s)); }
 function renderCatalogProdotti(grid) {
   // v6.080 (Franco) - anche il PRIMO livello dell'hub va a due colonne su telefono. Usa la stessa
   // griglia dell'Inventario (#catalog-grid), che di colonne ne ha tre per via della media query
@@ -47943,7 +48076,7 @@ function renderCatalogProdotti(grid) {
   //    `_tipiProdotto()` torna `[]` finche' la cache non e' arrivata e poi fa ridisegnare - senza
   //    questa riga, per un istante si vedrebbe il secondo titolo sopra il vuoto.
   const it = currentLang === 'it';
-  const conSerie   = PRODOTTI_INVENTARIO.map(sec => prodottoCardHTML(sec, tutti, serieOrdinate)).join('');
+  const conSerie   = _tdaDellHub().map(sec => prodottoCardHTML(sec, tutti, serieOrdinate)).join('');   // v7.212
   const senzaSerie = _tipiProdotto().map(t => tipoProdottoCardHTML(t, tutti)).join('');
   grid.innerHTML =
       (conSerie   ? _rigaTitoloHub(it ? 'ARTICOLI CORRELATI A SERIE'   : 'ITEMS LINKED TO A SERIES')       + conSerie   : '')
@@ -53332,7 +53465,7 @@ function _disegnaNavTDA() {
   };
   const barra = document.createElement('div');
   barra.className = 'tda-nav';
-  PRODOTTI_INVENTARIO.forEach(sec => barra.appendChild(tasto(sec, false, getSectionLabel(sec), _fotoBoxUrl(sec), SECTION_IMAGES[sec])));
+  _tdaDellHub().forEach(sec => barra.appendChild(tasto(sec, false, getSectionLabel(sec), _fotoBoxUrl(sec), SECTION_IMAGES[sec])));   // v7.212
   const tipi = _tipiProdotto();
   if (tipi.length) {
     const filo = document.createElement('span');
