@@ -1639,7 +1639,7 @@ body {
 .profile-info p { color: var(--muted); font-size: 0.9rem; }
 .profile-stats { display: flex; gap: 2rem; margin-top: 1rem; flex-wrap: wrap; }
 .profile-stat-num { font-family: var(--font-display); font-size: 1.8rem; color: var(--accent); }
-.profile-stat-label { font-size: 0.95rem; color: var(--muted); }
+.profile-stat-label { font-size: 0.95rem; color: var(--info); }   /* v7.210 (Franco): era --muted */
 
 /* ===== ADMIN BADGE ===== */
 .admin-badge {
@@ -2763,6 +2763,17 @@ footer {
 @media (max-width: 860px) { .serie-nav-col { display: contents; } .sez-nav-btn { display: none !important; } }
 @media (min-width: 861px) { .serie-nav-btn.serie-nav-prec { margin-right: 1.5rem; } .serie-nav-btn.serie-nav-succ { margin-left: 1.5rem; } }
 @media (max-width: 860px) { .serie-nav-btn .serie-nav-scritta { display: none; } }
+/* 🆕 v7.210 (Franco: «una barra di pulsanti in alto nella pagina di una TDA per passare alle altre TDA, comprese quelle
+   senza serie, nello stile del tasto con la miniatura serie precedente/successiva») - `_disegnaNavTDA`. Il tasto è lo
+   stesso `.serie-nav-btn`, senza freccia; il nome può andare su due righe. Sul desktop la barra va a capo, sul telefono
+   (dove le scritte dei tasti sono spente, regola qui sopra) scorre di lato. Il tasto della pagina in cui si è ha il
+   bordo lime e non si clicca. */
+.tda-nav { display: flex; flex-wrap: wrap; justify-content: center; align-items: stretch; gap: 6px; margin: 0 0 0.8rem; }
+.tda-nav .serie-nav-btn { align-self: stretch; justify-content: flex-start; }
+.tda-nav .serie-nav-scritta { white-space: normal; max-width: 7.5rem; }
+.serie-nav-btn.tda-nav-qui { border-color: var(--accent); background: rgba(181,255,46,0.10); cursor: default; }
+.tda-nav-filo { width: 1px; align-self: stretch; background: var(--border2); margin: 0 4px; }
+@media (max-width: 860px) { .tda-nav { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding-bottom: 4px; } }
 
 /* 🆕 v7.039 (Franco: «il vuoto avevo chiesto di toglierlo dalla desktop») - ANCHE SUL DESKTOP la barra è
    `relative` (index, v6.947): i 56px di `.page` e i 64px in linea di serie e tipologia sono solo nero.
