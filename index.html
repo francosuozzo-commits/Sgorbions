@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.210">
+<link rel="stylesheet" href="css/style.css?v=7.211">
 
 
 <style>
@@ -5231,7 +5231,8 @@ di tutte le serie</button>
                "ci si perde una release, ogni volta"). -->
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-no-numbers-input" onchange="_aggiornaCampiNumeriSerie()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span data-i18n="form.series.noNumbers">Senza numeri</span>
+            <!-- 🔄 v7.211 (Franco) - «Senza numeri» → «Senza numeri/lettere»: vale anche per la Lettera -->
+            <span data-i18n="form.series.noNumbers">Senza numeri/lettere</span>
           </label>
           <!-- v6.204 (Franco) — QUESTA serie fa da contenitore agli articoli senza serie. Prima il
                contenitore si riconosceva dal NOME ("Extra serie"), e rinominarlo rompeva il click sui
@@ -6769,7 +6770,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.210"></script>
+<script src="js/app.js?v=7.211"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6793,7 +6794,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.210'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.211'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
