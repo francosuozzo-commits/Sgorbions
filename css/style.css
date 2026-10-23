@@ -2774,6 +2774,12 @@ footer {
 .serie-nav-btn.tda-nav-qui { border-color: var(--accent); background: rgba(181,255,46,0.10); cursor: default; }
 .tda-nav-filo { width: 1px; align-self: stretch; background: var(--border2); margin: 0 4px; }
 @media (max-width: 860px) { .tda-nav { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding-bottom: 4px; } }
+/* 🔄 v7.212 (Franco: «la barra delle miniature in alto, allargarla, così che ci stanno tutte le miniature su di una sola
+   riga») - sul desktop la barra esce dalla colonna della testata (~1100px): larga quanto le serve, centrata sulla
+   finestra, al massimo la finestra meno i margini. Va a capo solo se la finestra è più stretta delle miniature. */
+@media (min-width: 861px) {
+  .tda-nav { width: max-content; max-width: calc(100vw - 48px); position: relative; left: 50%; transform: translateX(-50%); }
+}
 
 /* 🆕 v7.039 (Franco: «il vuoto avevo chiesto di toglierlo dalla desktop») - ANCHE SUL DESKTOP la barra è
    `relative` (index, v6.947): i 56px di `.page` e i 64px in linea di serie e tipologia sono solo nero.
