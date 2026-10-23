@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.211 - Modificati index.html e js/app.js. LA LETTERA AL POSTO DEL NUMERO (Franco: «le olo hanno sia la lettera che il
+//          nome»; «mi serve che si veda al posto del numero; non ci sono mai entrambi»; «ordine delle lettere:
+//          ovviamente alfabetico»; dove: «a)», cioè solo le Olografiche). Campo `lettera` (testo, maiuscolo), acceso
+//          dal descrittore (`lettera: true` sulle olografiche, `_haLettera`). Il Numero resta numerico e vuoto: lo usano
+//          come numero ordinamenti, conti e confronti (Franco: «non si rompe nulla?»). Nella scheda in modifica la
+//          casella «Lettera» sta al posto del N.; nella vista tabellare la colonna si chiama «Lettera» e la cella
+//          dell'admin la scrive. Dove il sito mostra il numero (card, carosello, scheda, VT, questionario, liste,
+//          export, ricerca globale) per le olografiche mostra la lettera: `_numeroAschermo` la scrive, e i punti che
+//          chiedevano «c'è un numero?» chiedono `(f.number || f.lettera)`. Griglia e VT le ordinano in ordine alfabetico
+//          (`_letteraDi`), dopo chi ha il numero. Una versione riceve la lettera dalla base al salvataggio. La lettera segue i due
+//          flag del numero, che si chiamano ora «Senza numero/lettera» (articolo) e «Senza numeri/lettere» (serie).
 // v7.210 - Modificati index.html, js/app.js e css/style.css. LA BARRA DELLE TIPOLOGIE (Franco: «una barra di pulsanti
 //          in alto nella pagina di una TDA per passare alle altre TDA, comprese quelle senza serie, nello stile del
 //          tasto con la miniatura serie precedente/successiva»). In cima alla pagina di una tipologia, un tasto per ogni
@@ -31610,7 +31621,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.210';
+const JS_VERSION = 'v7.211';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33455,7 +33466,7 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
 'form.series.hasSizes':'Album stickers differ from the ones with backs','form.series.abilitaModifica':'Enable editing of album stickers','form.series.haRistampe':'Has reprints','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Official variations','form.series.hasUnofficialVariations':'Unofficial variations','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.countRetroChange':'No. of Change','form.series.descPlaceholder':'Describe this series...','form.series.sottoserie':'Subseries','form.series.sottoserieHint':'One row per subseries, with its photo. The ORDER matters: it is the order the subseries will appear in. A subseries written on an item but not listed here does not disappear: it shows up last.',
+'form.series.hasVariations':'Official variations','form.series.hasUnofficialVariations':'Unofficial variations','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'No numbers/letters','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.countRetroChange':'No. of Change','form.series.descPlaceholder':'Describe this series...','form.series.sottoserie':'Subseries','form.series.sottoserieHint':'One row per subseries, with its photo. The ORDER matters: it is the order the subseries will appear in. A subseries written on an item but not listed here does not disappear: it shows up last.',
 'form.fig.subseries':'Subseries',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -33479,7 +33490,7 @@ const i18n = {
 'contact.q3':'Or do you just want to compliment the administrator?',
 'contact.cta':'For any of these things, send us a message !',
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with backs) and cards in your list (complete series)','wantlist.pageTitle':'Export lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in your list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in your list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
-  ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
+  ,'form.fig.noNumber':'No number/letter','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
 'cld.down':'⚠️ Le foto sono temporaneamente non disponibili per un intervento tecnico. Il catalogo resta consultabile.','cld.fotoNo':'Foto non disponibile',
 'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Export liste','nav.questionarioBreve':'Questionario','nav.miaListaDsk':'La <em>mia lista</em>','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions !','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca nel sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','sfoglia.prima':'Prima pagina','sfoglia.ultima':'Ultima pagina','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
@@ -33550,7 +33561,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità ai risultati','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Export liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli articoli non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista articoli non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista articoli non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine per album diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine per album','form.series.haRistampe':'Ha ristampe','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Variazioni ufficiali','form.series.hasUnofficialVariations':'Variazioni non ufficiali','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change','form.series.countRetroChange':'N. change','form.series.descPlaceholder':'Descrivi questa serie...','form.series.sottoserie':'Sottoserie','form.series.sottoserieHint':'Una riga per sottoserie, con la sua foto. L\'ORDINE conta: è l\'ordine con cui le sottoserie si vedranno. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','admin.catalogo':'Catalogo','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine per album diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine per album','form.series.haRistampe':'Ha ristampe','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Variazioni ufficiali','form.series.hasUnofficialVariations':'Variazioni non ufficiali','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'Senza numeri/lettere','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change','form.series.countRetroChange':'N. change','form.series.descPlaceholder':'Descrivi questa serie...','form.series.sottoserie':'Sottoserie','form.series.sottoserieHint':'Una riga per sottoserie, con la sua foto. L\'ORDINE conta: è l\'ordine con cui le sottoserie si vedranno. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','admin.catalogo':'Catalogo','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -33561,7 +33572,7 @@ const i18n = {
     'footer.nav':'Navigazione','footer.account':'Account','footer.copy':'© 2026 figurinesgorbions.it — Sito fan non ufficiale.',
     'owned.toggle':'<em>Mia lista</em>','owned.yes':'✓ <em>Mia lista</em>'
   
-  ,'form.fig.noNumber':'Non ha numero','auth.googleBtn':'Accedi con Google','auth.or':'oppure'}
+  ,'form.fig.noNumber':'Senza numero/lettera','auth.googleBtn':'Accedi con Google','auth.or':'oppure'}
 };
 
 // Lingua del browser (navigator.language: informazione già presente nel
@@ -34784,7 +34795,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     // 🔄 v7.133 (Franco: «se l'informazione non c'è non mostriamo la riga relativa, ma solo se nella stessa riga non ci
     //    sono altre card che la hanno») - la riga del numero c'è, vuota, se qualcuno nella fila il numero ce l'ha
     //    (`conNumero`, come sul desktop); prima mancava sulla sola card senza numero e il nome saliva.
-    if (_haNumero(f) && (f.number || conNumero)) righe.push({ t: f.number ? esc(String(_numeroAschermo(f))) : '', col: COL_IDENTITA, dim: '0.66rem', alt: '1.2em', k: 'numero' });
+    if (_haNumero(f) && ((f.number || f.lettera) || conNumero)) righe.push({ t: (f.number || f.lettera) ? esc(String(_numeroAschermo(f))) : '', col: COL_IDENTITA, dim: '0.66rem', alt: '1.2em', k: 'numero' });
     righe.push({ t: parole, col: COL_IDENTITA, dim: '0.72rem', alt: 'auto', k: 'nome' });
     return righe;
   }
@@ -34833,7 +34844,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     ...rigaSottoserie('0.66rem'),
     // v6.277 (Franco) - numero e nome in azzurro, come sulle card. v6.080 - senza cancelletto.
     // 🔄 v7.124 - e solo dove qualcuno il numero ce l'ha (`_caroselloConNumero`), come la sottoserie
-    ...(conNumero === false ? [] : [{ t: f.number ? esc(String(_numeroAschermo(f))) : '', col: COL_IDENTITA, dim: '0.7rem', alt: '1.2em', k: 'numero' }]),
+    ...(conNumero === false ? [] : [{ t: (f.number || f.lettera) ? esc(String(_numeroAschermo(f))) : '', col: COL_IDENTITA, dim: '0.7rem', alt: '1.2em', k: 'numero' }]),
     { t: _nomeD, col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em', k: 'nome',   // v7.149: _nomeD
       coda: _monetaPunti(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }
   ];
@@ -35073,7 +35084,7 @@ function _caroselloRetroOpz(elenco, px) {
 // 🆕 v7.124 (Franco: «sì, vorrei che usassi la stessa regola» per la riga del NUMERO)
 function _caroselloConNumero(elenco, serie) {
   if (serie) return !serie.noNumbers;
-  return (elenco || []).some(f => f.number);
+  return (elenco || []).some(f => (f.number || f.lettera));   // v7.211: anche la lettera
 }
 
 // 🆕 v6.463 (Franco) - IL CAROSELLO CHIEDE LA FOTO A `_fotoFigurina`, COME FANNO GIA' TUTTI GLI
@@ -35094,7 +35105,7 @@ function _caroselloConNumero(elenco, serie) {
 function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs, conSottoserie, conNumero, retroOpz) {
   const etichetta = ((f.section || '') === 'retros')
     ? _retroNomeCompleto(f)
-    : (f.number ? _numeroAschermo(f) + ' ' : '') + (f.name || '');
+    : ((f.number || f.lettera) ? _numeroAschermo(f) + ' ' : '') + (f.name || '');   // v7.211
   // v6.080 - alt 'auto' vuol dire "niente altezza fissa": serve alle righe che possono essere una o
   // tre (il nome spezzato parola per parola su telefono). Le altre continuano ad avere la loro
   // misura, che e' cio' che tiene allineate le card fra loro sul desktop.
@@ -37507,6 +37518,9 @@ function cmpVistaTabellare(sezione) {
     if (subCmpAltre !== 0) return subCmpAltre;
     if (a.number && b.number && a.number !== b.number) return a.number - b.number;
     if (!a.number !== !b.number) return a.number ? -1 : 1;
+    // v7.211 - senza numero, la lettera in ordine alfabetico (prima chi ce l'ha), come la griglia
+    const _letA = a.lettera ? _letteraDi(a) : '', _letB = b.lettera ? _letteraDi(b) : '';
+    if (_letA !== _letB) return (_letA && _letB) ? _letA.localeCompare(_letB, 'it', { numeric: true }) : (_letA ? -1 : 1);
     const _tutteAltre = getData('figurines', []);
     const _nomeA = a.fullName || computeFullName(a, _tutteAltre) || a.name || '';
     const _nomeB = b.fullName || computeFullName(b, _tutteAltre) || b.name || '';
@@ -37681,7 +37695,7 @@ function ebayTitleCorpo(f, mercato, tieniSottonomi) {
   const tr = x => en ? ebayTraduci(x) : (x || '');
   const serie = getData('series', []).find(s => s.id === f.seriesId);
   const testa = ['Sgorbions', tr(serie ? serie.name : ''), tr(f.subseries || ''),
-                 (f.noNumber || !f.number) ? '' : ('#' + _numeroAschermo(f))].filter(Boolean).join(' ');
+                 (f.noNumber || !(f.number || f.lettera)) ? '' : ('#' + _numeroAschermo(f))].filter(Boolean).join(' ');
   const grezzo = f.fullName || computeFullName(f, getData('figurines', [])) || f.name || '';
   const nome = tieniSottonomi ? grezzo : ebayTogliSottonomi(grezzo);
   const marc = ebayMarcatore(f);
@@ -40441,6 +40455,7 @@ const ARTICOLI = {
   //    riflette») - LA TERZA FOTO, «Fronte ruotato», sul record in `imgRuotato`. Chi la legge chiede `_haFotoRuotata`.
   olografiche: {
     fotoRuotata: true,   // v7.132
+    lettera: true,   // v7.211 - la Lettera al posto del Numero (`_haLettera`)
     riquadro: 1,
     it: 'Olografiche',   en: 'Holographic',
     itSing: 'olografica', enSing: 'holographic',
@@ -40608,6 +40623,7 @@ const _ETICHETTE_DESCRITTORE = {
   fotoRuotata: 'Fronte ruotato',                     // v7.132
   caroselloSenzaTipologia: 'Carosello senza tipologia',   // v7.149
   questionarioQuattro: 'Questionario a quattro carte',   // v7.156
+  lettera: 'Lettera al posto del numero',                // v7.211
   numero: 'Numero', ordina: 'Ordinamento',
   ordinaDove: 'Ordina dove', nomeCompleto: 'Nome completo', nomeCompletoDove: 'Nome completo dove'
 };
@@ -47322,7 +47338,7 @@ function renderPaginaPersonaggio(grid, pid) {
     // 🆕 v7.191 (Franco: «nome mobile significa nome mobile; anche quelle sono card») - il Nome mobile, dove la console lo
     //    accende per le card (`_postoCard`: sul telefono sì), prende il posto del nome, coi suoi punti di taglio. Già in HTML.
     const _nomeMobP = _nomeRidotto(_postoCard(), f);
-    const numNome = esc((_haNumero(f) && f.number) ? _numeroAschermo(f) + ' - ' : '') + (_nomeMobP ? _nomeCaroselloHTML(_nomeMobP) : esc(f.name || ''));
+    const numNome = esc((_haNumero(f) && (f.number || f.lettera)) ? _numeroAschermo(f) + ' - ' : '') + (_nomeMobP ? _nomeCaroselloHTML(_nomeMobP) : esc(f.name || ''));
     // la versione come nella RG: sulle figurine sempre (anche «Versione base»), altrove solo se c'è
     const _k = _chiaveTipo(f);
     const versione = (sec === 'figurines' || _k !== 'base')
@@ -50233,7 +50249,7 @@ function renderCatalogSearch(q) {
                 //    facciamo nel nome completo degli articoli aventi un numero») - la forma del
                 //    titolo della scheda (`numero - nome`). Il trattino è `_sep`: bianco, perché la
                 //    punteggiatura non porta il colore dei valori (v6.404).
-                const _riga1 = (f.number ? '<span style="color:' + COL_IDENTITA + ';font-size:0.85rem;">' + esc(String(_numeroAschermo(f))) + '</span>' + _sep : '')
+                const _riga1 = ((f.number || f.lettera) ? '<span style="color:' + COL_IDENTITA + ';font-size:0.85rem;">' + esc(String(_numeroAschermo(f))) + '</span>' + _sep : '')
                   + _prefissoInvisibile(f)
                   + '<span style="color:' + COL_IDENTITA + ';">'
                   + (sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name) + '</span>'
@@ -50364,7 +50380,7 @@ function _rgPersonaggiHTML(q, qn) {
       : '<span style="' + _dimMini + 'border-radius:6px;background:var(--card2);border:1px dashed var(--border);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">🧑‍🎤</span>';
     const elenco = ordina(arts).map(a => '<li><a href="javascript:void(0)" onclick="openFigFromSearch(\'' + a.id + '\',\'' + a.seriesId + '\',\'' + (a.section || 'figurines') + '\')" style="color:var(--text);text-decoration:none;">'
       // v7.116 (Franco: «usa un colore che non sia bianco per il nome della serie») - l'azzurro dei titoli di serie (`--info`)
-      + '<span style="color:var(--info);">' + esc(nomeS.get(a.seriesId) || '') + '</span>' + (tipologiaUguale(a) ? '' : ' · ' + esc(tipologiaDi(a))) + (sottoserieDi(a) ? ' · <span style="color:' + COL_CATEGORIA + ';">' + esc(sottoserieDi(a)) + '</span>' : '') + ' · ' + esc(a.name || '') + ((a.number != null && a.number !== '' && !a.noNumber) ? ' · n.' + esc(String(_numeroAschermo(a))) : '') + '</a></li>').join('');
+      + '<span style="color:var(--info);">' + esc(nomeS.get(a.seriesId) || '') + '</span>' + (tipologiaUguale(a) ? '' : ' · ' + esc(tipologiaDi(a))) + (sottoserieDi(a) ? ' · <span style="color:' + COL_CATEGORIA + ';">' + esc(sottoserieDi(a)) + '</span>' : '') + ' · ' + esc(a.name || '') + (((a.number || a.lettera) && !a.noNumber) ? ' · n.' + esc(String(_numeroAschermo(a))) : '') + '</a></li>').join('');
     return '<div style="display:flex;gap:0.8rem;align-items:flex-start;padding:0.5rem 0;border-top:1px solid var(--border);">'
       + '<a href="javascript:void(0)" onclick="apriPersonaggio(\'' + pid + '\')" title="' + esc(D.perId.get(pid).nome) + '">' + mini + '</a>'
       + '<div style="min-width:0;">'
@@ -56155,7 +56171,7 @@ function _wzDisegna(tieni) {
             + '<div class="wz-griglia">' + m.fuori.map(id => perId.get(id)).filter(Boolean).map(f =>
                 '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
                 + _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, '')
-                + '<div class="wz-num">' + esc(String(f.number ? _numeroAschermo(f) : '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>' : '');
+                + '<div class="wz-num">' + esc(String((f.number || f.lettera) ? _numeroAschermo(f) : '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>' : '');
         // la pagina dopo si scarica mentre si tocca questa
         if (m.pagine[pg + 1]) { const im = new Image(); im.src = cloudinaryUrl(m.pagine[pg + 1].url, 'w_1600,c_limit,q_auto,f_auto'); }
         // v7.130: e quella prima, per chi torna indietro
@@ -56188,7 +56204,7 @@ function _wzDisegna(tieni) {
               '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
               + (mie.has(f.id) ? '<span class="wz-mia">' + (it ? 'già tua' : 'yours') + '</span>' : '')
               + _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, '')
-              + '<div class="wz-num">' + esc(String(f.number ? _numeroAschermo(f) : '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
+              + '<div class="wz-num">' + esc(String((f.number || f.lettera) ? _numeroAschermo(f) : '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
         // v7.168: fra le sottoserie «Indietro» e «Prosegui» passano dall'una all'altra; ai due capi fanno quello di sempre
         piede = (sub && sub.i > 0 ? indietro.replace('onclick="_wzIndietro()"', 'onclick="_wzSottoseriePasso(\'' + p + '\',-1)"') : indietro)
           + '<span class="wz-conto-testo"><b id="wz-conto">' + c.sel.size + '</b> <span id="wz-conto-parola">' + _wzParolaConto(c.sel.size, p) + '</span></span>'
@@ -59777,6 +59793,9 @@ function _comparatoreGriglia(sez, elenco, _idx, _allFigs) {
       if (ordA && ordB && ordA !== ordB) return ordA - ordB;
       if (ordA && !ordB) return -1;
       if (!ordA && ordB) return 1;
+      // v7.211 - senza numero, la lettera in ordine alfabetico (prima chi ce l'ha)
+      const letA = capoA.lettera ? _letteraDi(capoA) : '', letB = capoB.lettera ? _letteraDi(capoB) : '';
+      if (letA !== letB) return (letA && letB) ? letA.localeCompare(letB, 'it', { numeric: true }) : (letA ? -1 : 1);
       const nomeCmp = (capoA.name || '').localeCompare(capoB.name || '', 'it', { numeric: true, sensitivity: 'base' });
       if (nomeCmp !== 0) return nomeCmp;
       // ⚠️ due famiglie con lo stesso nome e nessun numero esistono: senza questa riga
@@ -60371,7 +60390,7 @@ function renderItems() {
     // etichetta (#N) e la sottoserie va su una riga a parte, nello stesso punto/stile in cui i Retro
     // mostrano la loro categoria (vedi subseriesHTML poco sotto).
     // v6.077 - solo dove il numero si puo' scrivere; v7.198 - «2 - 16» per le fcr con più fpa
-    const figLabel = (_haNumero(f) && f.number) ? `${_numeroAschermo(f)}` : '';
+    const figLabel = (_haNumero(f) && (f.number || f.lettera)) ? `${_numeroAschermo(f)}` : '';
     const catParts = [f.category, f.subcategory].map(v => (v||'').trim()).filter(Boolean);
     // Prima riga (nome): se la serie NON dichiara che il nome del retro contiene già la
     // categoria, anteponiamo "Categoria - ". Seconda riga: la Categoria (col Sottocategoria
@@ -62051,7 +62070,7 @@ function renderAdminFigurineInvisibili() {
         td(esc(nomeSerie(f.seriesId)), 'color:var(--text);white-space:nowrap;') +
         td(esc(f.subseries || ''), 'color:var(--text);') +
         td(esc(getSectionLabelSingular(f.section || 'figurines')), 'color:var(--accent2);white-space:nowrap;') +
-        td(_haNumero(f) && f.number ? esc(String(_numeroAschermo(f))) : '', 'white-space:nowrap;') +
+        td(_haNumero(f) && (f.number || f.lettera) ? esc(String(_numeroAschermo(f))) : '', 'white-space:nowrap;') +
         td(esc((f.fullName && f.fullName.trim()) ? f.fullName : (f.name || '')), '') +
         td('<button class="tbl-btn tbl-btn-edit" onclick="openFigDetail(\'' + f.id + '\')">' + (it ? 'Apri' : 'Open') + '</button>', 'white-space:nowrap;') +
       '</tr>').join('') +
@@ -63543,8 +63562,25 @@ function _quanteFpaDellaFcr(f) {
   const base = _fcrDiPartenza(f);
   return Math.max(1, base ? (_indiceFpaPerFcr().get(base.id) || []).length : 0);
 }
+// 🆕 v7.211 (Franco: «le olo hanno sia la lettera che il nome»; «mi serve che si veda al posto del numero; non ci sono
+//    mai entrambi»; «al momento le lettere le hanno solo le olografiche») - LA LETTERA AL POSTO DEL NUMERO.
+//    Un campo suo, `lettera` (testo), e non il Numero reso testo: il Numero lo usano come numero ordinamenti, conti e
+//    confronti in decine di punti, e lì una «A» andrebbe controllata uno per uno (Franco: «non si rompe nulla?»).
+//    La tipologia che ha la lettera lo dice nel descrittore (`lettera: true`, oggi le sole Olografiche). Il Numero delle
+//    olografiche resta vuoto: un punto che mostra il numero e non conosce la lettera, al peggio, non mostra niente.
+//    · `_letteraDi` - la lettera da mostrare ('' se la tipologia non ne ha o il campo è vuoto);
+//    · `_numeroAschermo` - scrive la lettera, se c'è, al posto del numero;
+//    · dove si chiedeva «c'è un numero?» (`f.number`) si chiede `(f.number || f.lettera)`. Scritto lì e non in una
+//      funzione: quei punti li ricostruiscono a pezzi decine di prove, e un nome nuovo andava finto in ognuna. La regola
+//      «solo dove la tipologia ha la lettera» la tengono la scheda e la VT, le sole che scrivono il campo.
+//    📌 `_letteraDi` si chiama solo se il record ha `lettera` (le versioni la ricevono dalla base al salvataggio).
+function _haLettera(sez) { return !!(sez && _art(sez).lettera); }
+function _letteraDi(f) {
+  return (f && f.lettera && _haLettera(f.section || 'figurines')) ? String(f.lettera) : '';
+}
 function _numeroAschermo(f) {
   if (!f) return '';
+  if (f.lettera) { const _l = _letteraDi(f); if (_l) return _l; }   // v7.211
   if ((f.section || 'figurines') !== 'figurines') return f.number;
   const base = _fcrDiPartenza(f);
   const fpa = base ? _fpaDellaFcr(base.id) : [];
@@ -64123,8 +64159,9 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Anno' : 'Year')}</span><span class="detail-value">${esc(String(f.year))}</span></div>`);
   }
   // Nome — tutte le sezioni, quando presente (hide-empty).
-  if (_haNumero(f) && f.number) { // v6.077 - la riga esiste dove il campo esiste, vedi _haNumero()
-    const _rowNumero = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Numero' : 'Number')}</span><span class="detail-value">${esc(String(_numeroAschermo(f)))}</span></div>`;
+  // v7.211 - con la lettera, la riga si chiama «Lettera» e scrive lei
+  if (_haNumero(f) && (f.number || f.lettera)) { // v6.077 - la riga esiste dove il campo esiste, vedi _haNumero()
+    const _rowNumero = `<div class="detail-row"><span class="detail-label">${_letteraDi(f) ? (currentLang === 'it' ? 'Lettera' : 'Letter') : (currentLang === 'it' ? 'Numero' : 'Number')}</span><span class="detail-value">${esc(String(_numeroAschermo(f)))}</span></div>`;
     (_mobileDetail ? rowsTop : rows).push(_rowNumero);   // v7.177: qui, subito prima del Nome
   }
   if (f.name) {
@@ -65811,7 +65848,7 @@ function _corniceErroreStampaHTML(dentro, tipo) {
 
 function _titoloSchedaHTML(f, nomeVisualizzato) {
   const tipo = _titoloTipoScheda(f);
-  const nome = (_haNumero(f) && f.number) ? (_numeroAschermo(f) + ' - ' + nomeVisualizzato) : nomeVisualizzato;   // v7.198
+  const nome = (_haNumero(f) && (f.number || f.lettera)) ? (_numeroAschermo(f) + ' - ' + nomeVisualizzato) : nomeVisualizzato;   // v7.198
   const _v = _eBase(f) ? null : _versioneDiChiave(_chiaveTipo(f));
   const _coda = _v
     ? ' - <span style="color:' + (_v.colore || 'var(--text)') + ';">'
@@ -66293,7 +66330,7 @@ function buildLinkedFiguresTabsHTML(baseId) {
         const nome = (_isVar || _eBase(item))
           ? (item.name || item.fullName || '')
           : ((item.fullName && item.fullName.trim()) ? item.fullName : computeFullName(item, allFigs));
-        const num = (!item.noNumber && item.number) ? _numeroAschermo(item) + ' \u2014 ' : '';
+        const num = (!item.noNumber && (item.number || item.lettera)) ? _numeroAschermo(item) + ' \u2014 ' : '';
         label = num + (nome || item.name || '');
         // Il "(dalla base)" non e' un dettaglio estetico: dice che quella riga viene da un dato che
         // sul record NON c'e', e che quindi cambia da sola se si cambia il retro della base.
@@ -67277,7 +67314,12 @@ function switchToEditMode(figId) {
   // la sua ragione d'essere (v6.311).
   const _mostraNumero  = _mostraCampoNumero(f.section, _eFiglioCollegato(f));
   const _numeroEOrdine = _numeroEOrdinamento(f.section);
-  html += '<div class="detail-row" id="fe-number-group" style="' + (_mostraNumero ? '' : 'display:none;') + '"><span class="detail-label">' + (_numeroEOrdine ? (currentLang==='it'?'Ordinamento':'Sort order') : 'N.') + '</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="' + (_numeroEOrdine ? (currentLang==='it' ? 'Inserire un numero' : 'Enter a number') : '01') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:' + (_numeroEOrdine ? '10rem' : '80px') + ';border:none;background:transparent;">' + (_numeroEOrdine ? '<span style="font-size:0.75rem;color:var(--text);">' + // 🔄 v6.660 (Franco: «scrivici davanti "NOTA: "») — accanto a una casella un testo si
+  // 🆕 v7.211 - nelle tipologie con la lettera (`_haLettera`, oggi le Olografiche) la casella è «Lettera», di testo, al
+  //    posto del Numero: la casella del Numero resta nel DOM, nascosta, perché il salvataggio la legge
+  const _conLettera = _haLettera(f.section);
+  html += '<div class="detail-row" id="fe-number-group" style="' + (_mostraNumero ? '' : 'display:none;') + '"><span class="detail-label">' + (_conLettera ? (currentLang==='it'?'Lettera':'Letter') : _numeroEOrdine ? (currentLang==='it'?'Ordinamento':'Sort order') : 'N.') + '</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;">'
+    + (_conLettera ? '<input class="form-input" type="text" id="fe-lettera" value="' + esc(f.lettera || '') + '" placeholder="A" maxlength="4" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;">' : '')
+    + '<input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="' + (_numeroEOrdine ? (currentLang==='it' ? 'Inserire un numero' : 'Enter a number') : '01') + '" style="' + (_conLettera ? 'display:none;' : '') + 'padding:0.3rem 0.5rem;font-size:0.9rem;width:' + (_numeroEOrdine ? '10rem' : '80px') + ';border:none;background:transparent;">' + (_numeroEOrdine ? '<span style="font-size:0.75rem;color:var(--text);">' + // 🔄 v6.660 (Franco: «scrivici davanti "NOTA: "») — accanto a una casella un testo si
         //    legge come un'istruzione su cosa scriverci; questo invece dice cosa quel numero FA
         //    e cosa NON e'. «NOTA:» lo dichiara prima che lo si legga col piede sbagliato.
         //    ⚠️ In inglese «NOTE:»: «NOTA» in mezzo a una frase inglese sarebbe un refuso, e i
@@ -67286,7 +67328,7 @@ function switchToEditMode(figId) {
     // La casella "Non ha numero" resta SEMPRE nel DOM, anche dove non si mostra: il salvataggio la
     // legge (`fe-no-number`), e se non la trova scrive `false`. Toglierla avrebbe azzerato il flag
     // in silenzio al primo salvataggio, che e' il modo peggiore di perdere un dato.
-    '<label style="' + (_numeroEOrdine ? 'display:none;' : 'display:flex;') + 'align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--text);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Non ha numero':'Does not have a number') + '</label></span></div>';
+    '<label style="' + (_numeroEOrdine ? 'display:none;' : 'display:flex;') + 'align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--text);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Senza numero/lettera':'No number/letter') + '</label></span></div>';   // v7.211 (Franco): era «Non ha numero»
   // 🆕 v6.965 (Franco, con due foto: clonando la variazione della 560 «nella 2 non c'è campo
   //    numero») — IL NUMERO EREDITATO SI VEDE, COME IL NOME. Il campo modificabile resta nascosto
   //    dove il numero viene dalla partenza (variazioni, change, errori, omaggi): era giusto non
@@ -70759,6 +70801,8 @@ async function saveFigFromDetail(figId, opzioni) {
       name,
       number: document.getElementById('fe-number')?.value ? +document.getElementById('fe-number').value : null,
       noNumber: document.getElementById('fe-no-number')?.checked || false,
+      // v7.211 - la Lettera, dove la scheda ce l'ha (`_haLettera`); vuota = null
+      ...(document.getElementById('fe-lettera') ? { lettera: (document.getElementById('fe-lettera').value || '').trim().toUpperCase() || null } : {}),
       fotoNonDisponibile: document.getElementById('fe-foto-non-disponibile')?.checked || false, // v6.079
       // v6.979 - la spunta c'è solo sugli errori col retro errore: dove non c'è, il doppio non esiste
       erroreAncheFronte: !!document.getElementById('fe-errore-anche-fronte')?.checked,
@@ -71003,6 +71047,8 @@ async function saveFigFromDetail(figId, opzioni) {
       const baseFigForNum = getData('figurines', []).find(x => x.id === updates.baseFigurineId);
       updates.number   = baseFigForNum ? baseFigForNum.number : null;
       updates.noNumber = baseFigForNum ? !!baseFigForNum.noNumber : false;
+      // v7.211 - e la lettera, dove la tipologia ce l'ha: una versione di un'olografica è la stessa lettera
+      if (_haLettera(updates.section || (baseFigForNum && baseFigForNum.section) || 'figurines')) updates.lettera = (baseFigForNum && baseFigForNum.lettera) || null;
     }
 
     // v6.261 - e per l'omaggio la partenza e' obbligatoria come per gli altri: Franco, *"un
@@ -74508,7 +74554,7 @@ function renderAdminErrori() {
   // Il taglio a 200 righe vale per gruppo-foglia, non per l'intero elenco: cosi' un gruppo grosso
   // non mangia le righe dei gruppi che vengono dopo.
   const _linkOggetto = f => {
-    const num = _haNumero(f) && f.number ? _numeroAschermo(f) + ' ' : '';
+    const num = _haNumero(f) && (f.number || f.lettera) ? _numeroAschermo(f) + ' ' : '';
     return `<a href="#" onclick="openFigDetail('${f.id}');return false;" style="display:block;padding:0.25rem 0.45rem;border-radius:6px;text-decoration:none;color:var(--text);font-size:0.82rem;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='transparent'">${num}${esc(_nomeOggetto(f))}</a>`;
   };
   // v6.082 (Franco) - "l'elenco non mi sembra in ordine alfabetico". Lo era, ma si ordinava per il
@@ -74590,7 +74636,7 @@ function renderAdminErrori() {
           .sort((a, b) => String(a.fig.number ?? '').localeCompare(String(b.fig.number ?? ''), 'it', { numeric: true })
                        || String(_nomeOggetto(a.fig)).localeCompare(String(_nomeOggetto(b.fig)), 'it', { numeric: true }))
           .map(v => {
-            const num = _haNumero(v.fig) && v.fig.number ? _numeroAschermo(v.fig) + ' ' : '';
+            const num = _haNumero(v.fig) && (v.fig.number || v.fig.lettera) ? _numeroAschermo(v.fig) + ' ' : '';
             const proposta = v.corretto
               ? `<span style="color:var(--text);">${currentLang==='it'?'da':'from'}</span> <span style="color:var(--danger);">${esc(v.retroAttuale.name||'')}</span>`
                 + ` <span style="color:var(--text);">${currentLang==='it'?'a':'to'}</span> <span style="color:var(--success);">${esc(v.corretto.name||'')} · ${esc(v.corretto.changeType||'')}</span>`
@@ -74609,8 +74655,8 @@ function renderAdminErrori() {
       <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">⚠️ ${currentLang==='it'?'Errori':'Errors'}</h3>
       <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'Contatori per individuare possibili incoerenze nei dati. Una serie marcata "Non ha numeri" (nella form di modifica serie) viene esclusa da questo conteggio; lo stesso vale per una singola figurina marcata "Non ha numero" (nella form di modifica figurina), utile per le eccezioni all\'interno di una serie altrimenti numerata.'
-          : 'Counters to spot possible data inconsistencies. A series marked "Does not have numbers" (in the series edit form) is excluded from this count; the same applies to a single sticker marked "Does not have a number" (in the sticker edit form), useful for exceptions within an otherwise numbered series.'}
+          ? 'Contatori per individuare possibili incoerenze nei dati. Una serie marcata "Senza numeri/lettere" (nella form di modifica serie) viene esclusa da questo conteggio; lo stesso vale per una singola figurina marcata "Senza numero/lettera" (nella form di modifica figurina), utile per le eccezioni all\'interno di una serie altrimenti numerata.'
+          : 'Counters to spot possible data inconsistencies. A series marked "No numbers/letters" (in the series edit form) is excluded from this count; the same applies to a single sticker marked "No number/letter" (in the sticker edit form), useful for exceptions within an otherwise numbered series.'}
       </p>
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
@@ -78420,8 +78466,10 @@ function renderBulkEditView() {
       th: `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Commento album' : 'Album note'}</th>`,
       td: f => `<td style="padding:4px 8px;color:#ffd84d;font-size:0.8rem;line-height:1.3;min-width:220px;max-width:340px;">${esc(_commentoFcr(f))}</td>` },
     { k: 'number', c: _cMostraNumero,
-      th: '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">N.</th>',
-      td: f => isAdmin ? '<td style="padding:4px;text-align:center;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? _numeroAschermo(f) : '', null, 'center') },
+      th: '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">' + (_haLettera(currentSection) ? (currentLang === 'it' ? 'Lettera' : 'Letter') : 'N.') + '</th>',   // v7.211
+      // v7.211 - nelle tipologie con la lettera la cella dell'admin scrive la Lettera (testo), non il Numero
+      td: f => (isAdmin && _haLettera(f.section || 'figurines')) ? '<td style="padding:4px;text-align:center;"><input data-field="lettera" data-id="'+f.id+'" value="'+esc(f.lettera||'')+'" type="text" maxlength="4" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
+        : isAdmin ? '<td style="padding:4px;text-align:center;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell((f.number || f.lettera) ? _numeroAschermo(f) : '', null, 'center') },
     // v6.184 (Franco) - il NOME, modificabile in tutte le sezioni (il Nome completo è calcolato e non sta qui); su un
     // figlio lo comanda il genitore (v6.143). 🔄 v7.178 - dove c'è il Commento album lo spazio libero va a lui.
     { k: 'name', c: true,
@@ -79282,6 +79330,7 @@ async function saveBulkCell(input) {
   // 🆕 v6.753 - come `number` e non come `score`: il vuoto e' null («non l'ho scritto»),
   // non 0. Un anno 0 sarebbe un dato falso scritto al posto di un dato mancante.
   if (field === 'year') value = value ? parseInt(value) : null;
+  if (field === 'lettera') value = value.toUpperCase() || null;   // v7.211 - come nella scheda
 
   const figs = getData('figurines', []);
   const idx = figs.findIndex(f => f.id === figId);
@@ -80399,9 +80448,9 @@ function renderWantlist() {
             });
             const subChips = subItems.map(f => {
               let label = '';
-              if (mode === 'numbers') label = f.number ? _numeroAschermo(f) : f.name;
+              if (mode === 'numbers') label = (f.number || f.lettera) ? _numeroAschermo(f) : f.name;
               else if (mode === 'names') label = f.name;
-              else label = (f.number ? _numeroAschermo(f) + ' ' : '') + f.name;
+              else label = ((f.number || f.lettera) ? _numeroAschermo(f) + ' ' : '') + f.name;
               return `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:0.64rem;padding:1px 5px;border-radius:8px;">${label}</span>`;
             }).join('');
             return `<div style="margin-bottom:0.3rem;"><span style="font-size:0.72rem;font-weight:700;color:var(--accent3);margin-right:0.4rem;">(${(currentLang === 'it') ? 'Sottoserie' : 'Subseries'}: ${sub}):</span><span style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">${subChips}</span></div>`;
@@ -80409,9 +80458,9 @@ function renderWantlist() {
         } else {
           const chips = sorted.map(f => {
             let label = '';
-            if (mode === 'numbers') label = f.number ? _numeroAschermo(f) : f.name;
+            if (mode === 'numbers') label = (f.number || f.lettera) ? _numeroAschermo(f) : f.name;
             else if (mode === 'names') label = f.name;
-            else label = (f.number ? _numeroAschermo(f) + ' ' : '') + f.name;
+            else label = ((f.number || f.lettera) ? _numeroAschermo(f) + ' ' : '') + f.name;
             return `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:0.64rem;padding:1px 5px;border-radius:8px;">${label}</span>`;
           }).join('');
           chipsHtml = `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;">${chips}</div>`;
@@ -80616,7 +80665,7 @@ function _rigaExport(nomeSerie, f) {
   return [ nomeSerie,
            _etichettaArticoloSing(f.section || 'figurines'),
            f.subseries || '',
-           f.number ? String(_numeroAschermo(f)) : '',   // v7.198 - «2 - 16»
+           (f.number || f.lettera) ? String(_numeroAschermo(f)) : '',   // v7.198 - «2 - 16»
            f.name || '',
            (f.category || '').trim(),
            (f.subcategory || '').trim(),
