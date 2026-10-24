@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.213 - Modificati index.html e js/app.js. COLLAGE FOTO, LO SFONDO DELLE FOTO DAL PC (Franco: la spunta «Rimuovo
+//          sfondo foto selezionate», solo per le foto dal PC; «vai con la (a)»): con la spunta, al «Crea» ogni foto
+//          perde lo sfondo di un colore unito che tocca i suoi bordi (`_collageSenzaSfondo`, `_collageMascheraSfondo`),
+//          tutto nel browser, niente Cloudinary. Fondo non unito = la foto resta com'è, e si dice quale.
+//          E il mazzo di carte (Franco: «vai con la 2»): da 7 carte in su mai meno di 15° fra due carte, fino a 135°.
 // v7.212 - Modificati index.html, js/app.js e css/style.css. LA BARRA DELLE TIPOLOGIE SU UNA RIGA (Franco: «la barra
 //          delle miniature in alto, allargarla, così che ci stanno tutte le miniature su di una sola riga»): sul desktop
 //          `.tda-nav` esce dalla colonna della testata, larga quanto le serve e centrata sulla finestra (al massimo la
@@ -31636,7 +31641,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.212';
+const JS_VERSION = 'v7.213';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41454,6 +41459,10 @@ function renderAdminCollage() {
     scelta('collage-da', 'sito', it ? 'Dal sito' : 'From the site', ' onchange="_collageDa()"') +
     scelta('collage-da', 'pc', it ? 'Me le passi tu' : 'You give them to me', ' onchange="_collageDa();_collageScegli()"') +
     '<input type="file" id="collage-file" accept="image/*" multiple style="display:none;" onchange="_collageCarica(this.files)">' +
+    // 🆕 v7.213 - la spunta dello sfondo, solo per le foto dal PC (`_collageSenzaSfondo`)
+    '<label id="collage-pc-opz" style="display:none;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.4rem 0 0 1.4rem;">' +
+      '<input type="checkbox" id="collage-sfondo">' + (it ? 'Rimuovo sfondo foto selezionate' : 'Remove background of selected photos') +
+      ' <span style="font-size:0.75rem;opacity:0.7;">(' + (it ? 'solo sfondi di un colore unito, che toccano i bordi della foto' : 'plain one-colour backgrounds only') + ')</span></label>' +
     '<div id="collage-sito" style="display:none;margin:0.5rem 0 0 1.4rem;padding:0.6rem 0.9rem;border-left:2px solid var(--border);">' + _collageSitoHTML() + '</div>' +
     '<div id="collage-scelte" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-top:0.4rem;"></div>' +
     '<div style="' + dom + '">3. ' + (it ? 'Che tipo di collage vuoi?' : 'Which collage?') + '</div>' +
@@ -41491,6 +41500,8 @@ function _collageDa() {
   _collageModo = (document.querySelector('input[name="collage-da"]:checked') || {}).value || '';
   const box = document.getElementById('collage-sito');
   if (box) box.style.display = _collageModo === 'sito' ? '' : 'none';
+  const opz = document.getElementById('collage-pc-opz');   // v7.213
+  if (opz) opz.style.display = _collageModo === 'pc' ? 'flex' : 'none';
   _collageFoto = [];
   _collageMostraScelte();
   _collageStato();
@@ -41654,7 +41665,10 @@ function _collageDisponi(tipo, foto) {
   // mazzo: un ventaglio di carte della stessa altezza che girano attorno a un punto sotto il mazzo, come tenute in mano;
   // da sinistra a destra, così ogni carta copre un po' quella prima
   // misurato a occhio: con 16° fra le carte e il perno vicino, tre foto orizzontali si coprivano quasi del tutto
-  const apertura = Math.min(80, (n - 1) * 22) * Math.PI / 180;
+  // 🔄 v7.213 (Franco: «vai con la 2») - fino a 6 carte come prima (al più 80°); da 7 in su mai meno di 15° fra due carte,
+  //    quindi il ventaglio si apre fino a 135° con 10. 📏 Misurato (parte visibile della carta più coperta, carte
+  //    verticali 0,7): con 10 carte dal 32% al 53%; le carte si abbassano da 363 a 286 px nella foto da 1200×675.
+  const apertura = Math.min(Math.max(80, (n - 1) * 15), (n - 1) * 22) * Math.PI / 180;
   const d = 0.9;
   return foto.map((img, i) => {
     const r = Math.min(1.2, img.naturalWidth / img.naturalHeight || 0.7);
@@ -41701,7 +41715,20 @@ async function _collageCrea() {
   const it = currentLang === 'it';
   if (_collageProblema()) { _collageStato(); return; }
   const tipo = document.querySelector('input[name="collage-tipo"]:checked').value;
-  const c = _collageDisegna(tipo, _collageFoto.map(x => x.img));
+  let imgs = _collageFoto.map(x => x.img);
+  // v7.213 - dal PC, con la spunta: le foto senza lo sfondo (fatte una volta e tenute sulla foto, `x.ss`)
+  if (_collageModo === 'pc' && (document.getElementById('collage-sfondo') || {}).checked) {
+    const restate = [];
+    imgs = await Promise.all(_collageFoto.map(async x => {
+      if (x.ss === undefined) x.ss = await _collageSenzaSfondo(x.img);
+      if (!x.ss) restate.push(x.nome);
+      return x.ss || x.img;
+    }));
+    if (restate.length) toast(it
+      ? '⚠️ Sfondo non di un colore unito, lasciato com\'è: ' + restate.join(', ')
+      : '⚠️ Background not plain, left as it is: ' + restate.join(', '), 'error');
+  }
+  const c = _collageDisegna(tipo, imgs);
   const blob = await new Promise(ok => c.toBlob(ok, 'image/png'));
   if (!blob) { toast(it ? '❌ Non riesco a creare la foto' : '❌ Could not create the photo', 'error'); return; }
   const url = URL.createObjectURL(blob);
@@ -41712,6 +41739,80 @@ async function _collageCrea() {
   }
   const ant = document.getElementById('collage-anteprima');
   if (ant) { ant.innerHTML = '<img src="' + url + '" alt="" style="display:block;width:100%;height:auto;">'; ant.style.display = ''; }
+}
+// 🆕 v7.213 (Franco: la spunta «Rimuovo sfondo foto selezionate», solo per le foto dal PC; «vai con la (a)») - LO SFONDO
+//    DI UN COLORE UNITO, TOLTO NEL BROWSER. Niente Cloudinary (il suo scontorno è un componente a pagamento) e niente
+//    modelli scaricati: lo sfondo è il colore dei bordi della foto, e si toglie solo la parte che dai bordi si raggiunge
+//    restando in quel colore. Così una zona bianca DENTRO la figurina resta, anche se è dello stesso bianco del fondo.
+// 📌 Il fondo è la mediana del bordo, canale per canale; se meno del 60% del bordo gli somiglia, il fondo non è unito
+//    (disegni, ombre, un tavolo venato) e la foto resta com'è: lo si dice, invece di mangiare un pezzo di figurina.
+// 📌 Il contorno: i punti appena fuori dalla tolleranza e accanto al fondo tolto diventano semitrasparenti, se no il
+//    bordo della figurina resta seghettato. Poi la foto si taglia su quello che è rimasto, perché nel collage conta la
+//    forma della figurina, non quella della foto.
+// ⚠️ I punti si leggono in `_collageMascheraSfondo`, che non conosce il canvas: è quella che la prova esegue.
+const COLLAGE_SFONDO_TOLL = 42;     // distanza di colore (RGB) entro cui un punto è sfondo: regge la grana dei JPEG
+const COLLAGE_SFONDO_UNITO = 0.6;   // la parte del bordo che deve somigliare al fondo
+const COLLAGE_SFONDO_LATO = 1600;   // il lato più lungo su cui si lavora: il collage è largo 1200
+function _collageMascheraSfondo(p, w, h) {
+  const bordo = [];
+  for (let x = 0; x < w; x++) { bordo.push(x); if (h > 1) bordo.push((h - 1) * w + x); }
+  for (let y = 1; y < h - 1; y++) { bordo.push(y * w); if (w > 1) bordo.push(y * w + w - 1); }
+  const med = ch => { const v = bordo.map(i => p[i * 4 + ch]).sort((a, b) => a - b); return v[v.length >> 1]; };
+  const f0 = med(0), f1 = med(1), f2 = med(2);
+  const d2 = i => { const r = p[i * 4] - f0, g = p[i * 4 + 1] - f1, b = p[i * 4 + 2] - f2; return r * r + g * g + b * b; };
+  const T2 = COLLAGE_SFONDO_TOLL * COLLAGE_SFONDO_TOLL;
+  if (bordo.filter(i => d2(i) <= T2).length < bordo.length * COLLAGE_SFONDO_UNITO) return null;
+  // il fondo raggiungibile dai bordi, a macchia d'olio
+  const via = new Uint8Array(w * h), coda = new Int32Array(w * h);
+  let n = 0;
+  const prova = j => { if (!via[j] && d2(j) <= T2) { via[j] = 1; coda[n++] = j; } };
+  bordo.forEach(prova);
+  for (let q = 0; q < n; q++) {
+    const i = coda[q], x = i % w;
+    if (x > 0) prova(i - 1);
+    if (x < w - 1) prova(i + 1);
+    if (i >= w) prova(i - w);
+    if (i < (h - 1) * w) prova(i + w);
+  }
+  // il contorno sfumato, poi il fondo trasparente, poi il riquadro di ciò che resta
+  const T = COLLAGE_SFONDO_TOLL, M = 1.8 * T;
+  for (let i = 0; i < w * h; i++) {
+    if (via[i]) continue;
+    const x = i % w;
+    if (!((x > 0 && via[i - 1]) || (x < w - 1 && via[i + 1]) || (i >= w && via[i - w]) || (i < (h - 1) * w && via[i + w]))) continue;
+    const d = Math.sqrt(d2(i));
+    if (d < M) p[i * 4 + 3] = Math.round(p[i * 4 + 3] * (d - T) / (M - T));
+  }
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let i = 0; i < w * h; i++) {
+    if (via[i]) { p[i * 4 + 3] = 0; continue; }
+    if (!p[i * 4 + 3]) continue;
+    const x = i % w, y = (i - x) / w;
+    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  return x1 < 0 ? null : { x0, y0, x1, y1 };
+}
+// La foto senza sfondo, come immagine (il collage ne legge `naturalWidth`), oppure null se il fondo non è unito
+function _collageSenzaSfondo(img) {
+  const k = Math.min(1, COLLAGE_SFONDO_LATO / Math.max(img.naturalWidth, img.naturalHeight));
+  const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, w, h);
+  const dati = ctx.getImageData(0, 0, w, h);
+  const r = _collageMascheraSfondo(dati.data, w, h);
+  if (!r) return Promise.resolve(null);
+  ctx.putImageData(dati, 0, 0);
+  const t = document.createElement('canvas');
+  t.width = r.x1 - r.x0 + 1; t.height = r.y1 - r.y0 + 1;
+  t.getContext('2d').drawImage(c, r.x0, r.y0, t.width, t.height, 0, 0, t.width, t.height);
+  return new Promise(ok => {
+    const out = new Image();
+    out.onload = () => ok(out);
+    out.onerror = () => ok(null);
+    out.src = t.toDataURL('image/png');
+  });
 }
 
 // ============================================================
