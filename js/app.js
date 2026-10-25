@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.216 - Modificati index.html (per la versione) e js/app.js. COLLAGE «DAL SITO», CON O SENZA MACCHIE (Franco: «le
+//          foto deve chiedermi se voglio generarle con o senza macchie; il default è con le macchie»): «Con le macchie o
+//          senza?», prima di «Prendi le foto»; «Con» anche se la linguetta «Togli macchie» è spenta; cambiando risposta
+//          le stesse foto si rileggono (`_collageUrlFoto`, `_collageLeggiFoto`, `_collageMacchieScelta`).
 // v7.215 - Modificati index.html (per la versione) e js/app.js. COLLAGE «DAL SITO», LA FAMIGLIA DOPO LA VERSIONE (Franco:
 //          «dopo la domanda sulla versione, metti una altra domanda facoltativa, Famiglia, dove mostri l'elenco delle
 //          famiglie degli articoli, se presente»): «Quale famiglia? (facoltativa)» con le famiglie degli articoli di quella
@@ -31667,7 +31671,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.215';
+const JS_VERSION = 'v7.216';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41673,6 +41677,11 @@ function _collageSitoHTML() {
     '<div style="' + dom + '">' + (it ? 'C\'è un numero particolare da considerare?' : 'Any particular number?') + '</div>' +
     radio('collage-sito-num', 'no', it ? 'No' : 'No', true) + radio('collage-sito-num', 'si', it ? 'Sì' : 'Yes') +
     '<input type="text" id="collage-sito-numero" class="form-input" placeholder="' + (it ? 'numero' : 'number') + '" maxlength="6" style="display:none;width:6rem;margin-left:0.3rem;" oninput="_collageSitoAggiorna()">' +
+    // v7.216 - con o senza le macchie (`_collageUrlFoto`); cambiando, le foto già prese si rileggono
+    '<div style="' + dom + '">' + (it ? 'Con le macchie o senza?' : 'With or without watermark?') + '</div>' +
+    ['con', 'senza'].map(v => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
+      '<input type="radio" name="collage-sito-macchie" value="' + v + '"' + (v === 'con' ? ' checked' : '') + ' onchange="_collageMacchieScelta()">' +
+      (v === 'con' ? (it ? 'Con le macchie' : 'With watermark') : (it ? 'Senza macchie' : 'Without watermark')) + '</label>').join('') +
     '<div style="margin-top:0.6rem;"><button type="button" class="btn-primary" onclick="_collagePesca()">🎲 ' + (it ? 'Prendi le foto' : 'Pick the photos') + '</button></div>';
 }
 function _collageSitoAggiorna() {
@@ -41817,16 +41826,43 @@ async function _collagePesca() {
   const a = el.slice();
   for (let i = 0; i < n; i++) { const j = i + Math.floor(Math.random() * (a.length - i)); [a[i], a[j]] = [a[j], a[i]]; }
   const tutti = getData('figurines', []);
-  const lette = await Promise.all(a.slice(0, n).map(f => new Promise(ok => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';   // se no il canvas resta «sporco» e il PNG non si scarica
-    const url = cloudinaryUrl(_collageFotoCandidato(f, tutti, lato), 'w_400,h_400,c_fit,q_auto,f_auto');
-    img.onload = () => ok({ nome: (_numeroAschermo(f) ? _numeroAschermo(f) + ' ' : '') + (f.name || ''), img, url });
-    img.onerror = () => ok(null);
-    img.src = url;
-  })));
+  const lette = await Promise.all(a.slice(0, n).map(f =>
+    _collageLeggiFoto(_collageFotoCandidato(f, tutti, lato), (_numeroAschermo(f) ? _numeroAschermo(f) + ' ' : '') + (f.name || ''))));
   _collageFoto = lette.filter(Boolean);
   if (_collageFoto.length !== n) toast(it ? '⚠️ Alcune foto non si sono caricate: riprova con «Rimescola»' : '⚠️ Some photos did not load', 'error');
+  _collageMostraScelte();
+  _collageStato();
+}
+// 🆕 v7.216 (Franco: «le foto deve chiedermi se voglio generarle con o senza macchie; il default è con le macchie») - LE
+//    MACCHIE NEL COLLAGE. Valgono per le foto protette (`_filigrana`), come nel sito: un articolo senza protezione non ne
+//    ha in nessun caso. «Con» le chiede anche se l'admin le ha spente con la linguetta «Togli macchie»; «Senza» le toglie
+//    come `_urlSenzaScritta`, ma col formato WebP di sempre. Misura w_400, quella di prima.
+// 📌 Senza macchie, una foto protetta mai chiesta pulita a 400 è una trasformazione nuova su Cloudinary: al più una per
+//    foto del collage.
+function _collageUrlFoto(src) {
+  const con = (document.querySelector('input[name="collage-sito-macchie"]:checked') || {}).value !== 'senza';
+  const prima = _adminSenzaMacchie;
+  _fpSenzaScritta = !con;
+  if (con) _adminSenzaMacchie = false;
+  try { return cloudinaryUrl(src, 'w_400,h_400,c_fit,q_auto,f_auto'); }
+  finally { _fpSenzaScritta = false; _adminSenzaMacchie = prima; }
+}
+function _collageLeggiFoto(src, nome) {
+  return new Promise(ok => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';   // se no il canvas resta «sporco» e il PNG non si scarica
+    const url = _collageUrlFoto(src);
+    img.onload = () => ok({ nome, img, url, src });
+    img.onerror = () => ok(null);
+    img.src = url;
+  });
+}
+// cambiando la risposta, le foto già prese restano le stesse e si rileggono con o senza macchie
+async function _collageMacchieScelta() {
+  if (_collageModo !== 'sito' || !_collageFoto.length) return;
+  const lette = await Promise.all(_collageFoto.map(x => x.src ? _collageLeggiFoto(x.src, x.nome) : Promise.resolve(x)));
+  _collageFoto = lette.filter(Boolean);
+  _collageBlob = null;
   _collageMostraScelte();
   _collageStato();
 }
