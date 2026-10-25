@@ -1,7 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.216 - Modificati index.html (per la versione) e js/app.js. COLLAGE «DAL SITO», CON O SENZA MACCHIE (Franco: «le
+// v7.217 - Modificati index.html, css/style.css e js/app.js. «🖼️ COLLAGE FOTO» ANCHE DAL TELEFONO (Franco: «La funzione
+//          Collage foto mettila anche da mobile solo admin»): la voce `#nav-collage` nel panino, dopo Annunci, solo
+//          all'admin; apre la sezione dalla porta che chiede chi sei (`showAdminTab('collage')`). Sul desktop è spenta:
+//          lì c'è la console.
+// v7.216 -Modificati index.html (per la versione) e js/app.js. COLLAGE «DAL SITO», CON O SENZA MACCHIE (Franco: «le
 //          foto deve chiedermi se voglio generarle con o senza macchie; il default è con le macchie»): «Con le macchie o
 //          senza?», prima di «Prendi le foto»; «Con» anche se la linguetta «Togli macchie» è spenta; cambiando risposta
 //          le stesse foto si rileggono (`_collageUrlFoto`, `_collageLeggiFoto`, `_collageMacchieScelta`).
@@ -31671,7 +31675,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.216';
+const JS_VERSION = 'v7.217';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -37097,7 +37101,7 @@ function updateNavUser() {
   // 📌 Ognuno di questi viene riacceso piu' sotto da chi ne ha il diritto - `nav-reply-btn` per
   //    l'utente NON admin, gli altri per l'admin - e `nav-quota-warning-btn` da
   //    `_checkReadQuotaWarning()`, che gira dopo.
-  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-quota-warning-btn',
+  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-collage', 'nav-quota-warning-btn',
    'admin-add-series-btn', 'nav-wantlist', 'nav-js-version-wrap'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
@@ -37151,6 +37155,9 @@ function updateNavUser() {
     // v7.186 (Franco) - la voce «Annunci», solo all'admin
     const annBtn = document.getElementById('nav-annunci');
     if (annBtn) annBtn.style.display = currentUser.isAdmin ? '' : 'none';
+    // v7.217 (Franco) - e «Collage foto», solo all'admin: sul desktop la spegne comunque la regola dell'index
+    const colBtn = document.getElementById('nav-collage');
+    if (colBtn) colBtn.style.display = currentUser.isAdmin ? '' : 'none';
     if (btnCollect) btnCollect.style.display = 'none';
     const homeContent = document.getElementById('home-logged-in-content');
     if (homeContent) homeContent.style.display = '';
