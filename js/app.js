@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.215 - Modificati index.html (per la versione) e js/app.js. COLLAGE «DAL SITO», LA FAMIGLIA DOPO LA VERSIONE (Franco:
+//          «dopo la domanda sulla versione, metti una altra domanda facoltativa, Famiglia, dove mostri l'elenco delle
+//          famiglie degli articoli, se presente»): «Quale famiglia? (facoltativa)» con le famiglie degli articoli di quella
+//          serie, tipologia e versione, in ordine alfabetico e col numero; «Tutte» non filtra; senza famiglie la domanda
+//          non c'è (`_collageFamiglieDellaSerie`, `_collageVerScelta`).
+//          E (Franco: «il massimo vedo che è ancora 10; passiamo a 20») ruota, mazzo e griglia fino a 20 foto; il mazzo
+//          si apre al più di 180° (con 20 carte, 9,5° fra due). I «4 quadranti» diventano «A griglia» (Franco: «possono
+//          essere più di quattro … usiamo la parola griglia»), da 2 a 20: righe di foto accostate e centrate, con le
+//          colonne che fanno le foto più grandi nei 16:9.
+//          E il «Cambia foto» dei box dell'hub Articoli parte da «Serie» (Franco): la prima serie che ha quella
+//          tipologia; i tipi senza serie restano su «Tipologia di articolo».
 // v7.214 - Modificati index.html e js/app.js. COLLAGE «DAL SITO», LA TIPOLOGIA DOPO LA SERIE (Franco: «nel collage, dopo
 //          che scelgo la serie, deve chiedermi la tda; solo dopo deve cercare gli articoli»): scelta la serie, la
 //          tendina «Quale tipologia di articolo?» con le sue tipologie che hanno articoli base con la foto, e il loro
@@ -31656,7 +31667,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.214';
+const JS_VERSION = 'v7.215';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41448,9 +41459,12 @@ const COLLAGE_W = 1200, COLLAGE_H = 675;   // 16:9 come i box degli hub, il dopp
 const COLLAGE_TIPI = [
   // 🔄 v7.212 (Franco: «arriva a 10 articoli per ogni tipologia di collage») - ruota e mazzo fino a 10; i quadranti
   //    restano 4, come aveva chiesto lui («deve pretendere che siano caricate 4 foto»)
-  { k: 'ruota',     it: 'A ruota',          en: 'Wheel',          min: 2, max: 10 },
-  { k: 'mazzo',     it: 'A mazzo di carte', en: 'Hand of cards',  min: 2, max: 10 },
-  { k: 'quadranti', it: 'A 4 quadranti',    en: 'Four quadrants', min: 4, max: 4 },
+  // 🔄 v7.215 (Franco: «il massimo vedo che è ancora 10; passiamo a 20»; e «la parola quadrante non è più la più adatta;
+  //    usiamo la parola griglia», perché «possono essere più di quattro») - tutti e tre fino a 20; i 4 quadranti diventano
+  //    la griglia, da 2 a 20 (`_collageDisponi`)
+  { k: 'ruota',   it: 'A ruota',          en: 'Wheel',         min: 2, max: 20 },
+  { k: 'mazzo',   it: 'A mazzo di carte', en: 'Hand of cards', min: 2, max: 20 },
+  { k: 'griglia', it: 'A griglia',        en: 'Grid',          min: 2, max: 20 },
 ];
 let _collageFoto = [];   // le immagini scelte: { nome, img }
 function renderAdminCollage() {
@@ -41475,7 +41489,7 @@ function _collageHTML(perBox) {
           : 'Joins several photos into one, transparent background, hub box shape.' + (perBox ? '' : ' Nothing is saved on the site.')) +
     '</p>' +
     '<div style="' + dom + '">1. ' + (it ? 'Quante foto devi unire?' : 'How many photos?') + '</div>' +
-    '<input type="number" id="collage-n" class="form-input" min="2" max="10" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
+    '<input type="number" id="collage-n" class="form-input" min="2" max="20" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
     '<div style="' + dom + '">2. ' + (it ? 'Da dove le prendo?' : 'Where do I get them?') + '</div>' +
     // 🔄 v7.212 - «Dal sito» si accende: le sue domande stanno in `#collage-sito` (`_collageSitoHTML`)
     scelta('collage-da', 'sito', it ? 'Dal sito' : 'From the site', ' onchange="_collageDa()"') +
@@ -41543,11 +41557,17 @@ function apriCollageBox(chiave, perSerie) {
   if (da) da.checked = true;
   _collageDa();
   const s = document.getElementById('collage-sito-serie');
-  const inSerie = perSerie && s && [...s.options].some(o => String(o.value) === String(currentSeriesId));
+  // 🔄 v7.215 (Franco: dal «Cambia foto» dell'hub «anche lì voglio che parta su Serie») - fuori dalla pagina di una serie
+  //    si parte dalla prima serie dell'elenco che ha quella tipologia (se nessuna, dalla prima); i tipi senza serie non
+  //    stanno in nessuna serie e restano su «Tipologia di articolo»
+  const opz = s ? [...s.options].map(o => String(o.value)) : [];
+  const sid = perSerie ? (opz.includes(String(currentSeriesId)) ? String(currentSeriesId) : null)
+    : (PRODOTTI_INVENTARIO.includes(chiave) ? (opz.find(v => _collageSezioniDellaSerie(v).some(([x]) => x === chiave)) || opz[0] || null) : null);
+  const inSerie = !!sid;
   const via = ov.querySelector('input[name="collage-sito-da"][value="' + (inSerie ? 'serie' : 'tda') + '"]');
   if (via) via.checked = true;
   if (inSerie) {
-    s.value = currentSeriesId;
+    s.value = sid;
     _collageSerieScelta();
     const t = document.getElementById('collage-sito-serie-tda');
     if (t && [...t.options].some(o => o.value === chiave)) { t.value = chiave; _collageTdaScelta(); }
@@ -41624,6 +41644,7 @@ function _collageSitoHTML() {
   const serie = _serieOrdinate(getData('series', []) || []).filter(s => (!cont || s.id !== cont.id) && contate.has(s.id));
   const tipi = (typeof _tipiProdotto === 'function') ? _tipiProdotto() : [];
   const sid0 = serie[0] && serie[0].id, sez0 = (_collageSezioniDellaSerie(sid0)[0] || [])[0];
+  const ver0 = (_collageVersioniDellaSerie(sid0, sez0).match(/value="([^"]*)"/) || [])[1];   // v7.215 - la prima versione, per le famiglie
   return '<div style="' + dom + 'margin-top:0;">' + (it ? 'Da una serie o da una tipologia di articolo?' : 'From a series or an item type?') + '</div>' +
     radio('collage-sito-da', 'serie', it ? 'Serie' : 'Series', true) + radio('collage-sito-da', 'tda', it ? 'Tipologia di articolo' : 'Item type') +
     '<div style="margin-top:0.35rem;">' +
@@ -41633,7 +41654,12 @@ function _collageSitoHTML() {
         '<div style="' + dom + '">' + (it ? 'Quale tipologia di articolo?' : 'Which item type?') + '</div>' +
         '<select id="collage-sito-serie-tda" style="' + sel + '" onchange="_collageTdaScelta()">' + _collageTdaDellaSerie(sid0) + '</select>' +
         '<div style="' + dom + '">' + (it ? 'Quale tipologia di versione?' : 'Which version type?') + '</div>' +
-        '<select id="collage-sito-serie-ver" style="' + sel + '" onchange="_collageSitoAggiorna()">' + _collageVersioniDellaSerie(sid0, sez0) + '</select>' +
+        '<select id="collage-sito-serie-ver" style="' + sel + '" onchange="_collageVerScelta()">' + _collageVersioniDellaSerie(sid0, sez0) + '</select>' +
+        // v7.215 - e la famiglia, facoltativa, se gli articoli scelti ne hanno (`_collageFamiglieDellaSerie`)
+        '<div id="collage-sito-fam-box" style="display:none;">' +
+          '<div style="' + dom + '">' + (it ? 'Quale famiglia? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which family? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
+          '<select id="collage-sito-serie-fam" style="' + sel + '">' + _collageFamiglieDellaSerie(sid0, sez0, ver0) + '</select>' +
+        '</div>' +
         '<div id="collage-sito-lato-box" style="display:none;">' +
           '<div style="' + dom + '">' + (it ? 'Il fronte o il retro?' : 'Front or back?') + '</div>' +
           radio('collage-sito-lato', 'fronte', it ? 'Fronte' : 'Front', true) + radio('collage-sito-lato', 'retro', it ? 'Retro' : 'Back') +
@@ -41658,6 +41684,8 @@ function _collageSitoAggiorna() {
   if (st) st.style.display = da === 'serie' ? '' : 'none';
   const lb = document.getElementById('collage-sito-lato-box'), ver = document.getElementById('collage-sito-serie-ver');   // v7.214
   if (lb) lb.style.display = da === 'serie' && ver && ver.value && ver.value !== 'base' ? '' : 'none';
+  const fb = document.getElementById('collage-sito-fam-box'), fam = document.getElementById('collage-sito-serie-fam');   // v7.215
+  if (fb) fb.style.display = da === 'serie' && fam && fam.options.length > 1 ? '' : 'none';
   if (t) t.style.display = da === 'tda' ? '' : 'none';
   if (n) n.style.display = num === 'si' ? '' : 'none';
 }
@@ -41703,6 +41731,29 @@ function _collageSerieScelta() {
 function _collageTdaScelta() {
   const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-serie-tda'), v = document.getElementById('collage-sito-serie-ver');
   if (s && t && v) v.innerHTML = _collageVersioniDellaSerie(s.value, t.value);
+  _collageVerScelta();
+}
+// 🆕 v7.215 (Franco: «dopo la domanda sulla versione, metti una altra domanda facoltativa, Famiglia, dove mostri l'elenco
+//    delle famiglie degli articoli, se presente») - LA FAMIGLIA DENTRO LA VERSIONE. Le voci sono le famiglie degli articoli
+//    di quella serie, tipologia e versione con la foto, come si leggono a schermo (`_famigliaASchermo`), in ordine
+//    alfabetico e col numero; la prima voce, «Tutte», non filtra. Senza nessuna famiglia la domanda non compare.
+function _collageFamiglieDellaSerie(sid, sez, ver) {
+  const it = currentLang === 'it';
+  const conti = {};
+  _collageArticoliDellaSerie(sid).forEach(f => {
+    if ((f.section || 'figurines') !== sez || _chiaveTipo(f) !== ver) return;
+    const fam = _famigliaASchermo(f);
+    if (fam) conti[fam] = (conti[fam] || 0) + 1;
+  });
+  const voci = Object.keys(conti).sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+  if (!voci.length) return '';
+  return '<option value="">' + (it ? 'Tutte' : 'All') + '</option>' +
+    voci.map(fam => '<option value="' + esc(fam) + '">' + esc(fam) + ' (' + conti[fam] + ')</option>').join('');
+}
+function _collageVerScelta() {
+  const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-serie-tda'),
+        v = document.getElementById('collage-sito-serie-ver'), fam = document.getElementById('collage-sito-serie-fam');
+  if (s && t && v && fam) fam.innerHTML = _collageFamiglieDellaSerie(s.value, t.value, v.value);
   _collageSitoAggiorna();
 }
 // 🆕 v7.214 (Franco: «se seleziono una versione non base, chiedimi se voglio estrarre il fronte, o il retro; se seleziono
@@ -41727,6 +41778,8 @@ function _collageCandidati() {
     const sez = (document.getElementById('collage-sito-serie-tda') || {}).value;   // v7.214 - la tipologia scelta nella serie
     const ver = (document.getElementById('collage-sito-serie-ver') || {}).value;   // v7.214 - e la versione
     el = el.filter(f => String(f.seriesId) === String(sid) && (f.section || 'figurines') !== 'retros' && (f.section || 'figurines') === sez && _chiaveTipo(f) === ver);
+    const fam = (document.getElementById('collage-sito-serie-fam') || {}).value;   // v7.215 - la famiglia, se scelta
+    if (fam) el = el.filter(f => _famigliaASchermo(f) === fam);
   } else {
     el = el.filter(f => _eBase(f));
     const v = String((document.getElementById('collage-sito-tda') || {}).value || '');
@@ -41741,12 +41794,13 @@ function _collageCandidati() {
     const viste = new Set();
     el = el.filter(f => { const u = _collageFotoCandidato(f, tutti, lato); if (!u || viste.has(u)) return false; viste.add(u); return true; });
   }
-  return { el, conNum, numero, lato };
+  const fam = da === 'serie' ? ((document.getElementById('collage-sito-serie-fam') || {}).value || '') : '';   // v7.215
+  return { el, conNum, numero, lato, fam };
 }
 async function _collagePesca() {
   const it = currentLang === 'it';
   const n = Number((document.getElementById('collage-n') || {}).value);
-  const { el, conNum, numero, lato } = _collageCandidati();
+  const { el, conNum, numero, lato, fam } = _collageCandidati();
   if (conNum && !numero) { toast(it ? 'Scrivi il numero' : 'Type the number', 'error'); return; }
   if (!Number.isInteger(n) || n < 2) { _collageStato(); return; }
   if (el.length < n) {
@@ -41755,7 +41809,7 @@ async function _collagePesca() {
     _collageStato();
     const av = document.getElementById('collage-avviso');
     if (av) av.textContent = it
-      ? (el.length ? 'Ho trovato solo ' + el.length + ' articol' + (el.length === 1 ? 'o' : 'i') : 'Non ho trovato nessun articolo') + (conNum ? ' col numero ' + numero : '') + (lato === 'retro' ? ' con la foto del retro' : ' con la foto') + ': ne servono ' + n + '.'
+      ? (el.length ? 'Ho trovato solo ' + el.length + ' articol' + (el.length === 1 ? 'o' : 'i') : 'Non ho trovato nessun articolo') + (conNum ? ' col numero ' + numero : '') + (fam ? ' della famiglia ' + fam : '') + (lato === 'retro' ? ' con la foto del retro' : ' con la foto') + ': ne servono ' + n + '.'
       : 'Found only ' + el.length + ' items with a photo: ' + n + ' needed.';
     return;
   }
@@ -41826,19 +41880,30 @@ function _collageStato() {
 function _collageDisponi(tipo, foto) {
   const forma = img => { const r = img.naturalWidth / img.naturalHeight || 1; return r >= 1 ? { w: 1, h: 1 / r } : { w: r, h: 1 }; };
   const n = foto.length;
-  if (tipo === 'quadranti') {
-    // 2×2, ogni cella con la forma della foto finale; la foto sta dentro la sua cella senza tagli, accostata al centro
-    // del collage (misurato: centrate nelle celle, due foto verticali lasciavano un corridoio vuoto in mezzo). I bordi si
-    // prendono poi sulle foto, non sulle celle: così il gruppo resta al centro anche con foto di forme diverse.
-    const cw = 16, ch = 9, gap = 0.4;
-    return foto.map((img, i) => {
-      const r = img.naturalWidth / img.naturalHeight || 1;
-      const w = Math.min(cw - gap, (ch - gap) * r), h = w / r;
-      const col = i % 2, riga = Math.floor(i / 2);
-      const x = col ? cw + gap / 2 + w / 2 : cw - gap / 2 - w / 2;
-      const y = riga ? ch + gap / 2 + h / 2 : ch - gap / 2 - h / 2;
-      return { img, x, y, w, h, rot: 0 };
-    });
+  if (tipo === 'griglia') {
+    // 🔄 v7.215 - LA GRIGLIA, da 2 a 20 foto (prima 2×2 fisso). Celle alte 1 e larghe quanto la foto di forma mediana;
+    //    ogni foto sta nella sua cella senza tagli né rotazioni. Le colonne sono quelle che fanno le foto più grandi
+    //    dentro i 16:9 del collage (4 foto verticali vanno su una riga, 4 orizzontali su due). Nella riga le foto sono
+    //    accostate una all'altra e la riga è centrata, anche l'ultima se è più corta: niente corridoi vuoti in mezzo,
+    //    la stessa ragione per cui i 4 quadranti erano accostati al centro.
+    const gap = 0.04;
+    const rapp = foto.map(img => img.naturalWidth / img.naturalHeight || 1);
+    const cw = rapp.slice().sort((a, b) => a - b)[Math.floor(n / 2)];
+    let col = 1, meglio = -1;
+    for (let c = 1; c <= n; c++) {
+      const righe = Math.ceil(n / c);
+      const k = Math.min(16 / (c * cw + (c - 1) * gap), 9 / (righe + (righe - 1) * gap));
+      if (k > meglio + 1e-9) { meglio = k; col = c; }
+    }
+    const pezzi = foto.map((img, i) => { const r = rapp[i], w = Math.min(cw, r); return { img, w, h: w / r, rot: 0, riga: Math.floor(i / col) }; });
+    const righe = Math.ceil(n / col);
+    for (let rg = 0; rg < righe; rg++) {
+      const inRiga = pezzi.filter(p => p.riga === rg);
+      const largo = inRiga.reduce((s, p) => s + p.w, 0) + gap * (inRiga.length - 1);
+      let x = -largo / 2;
+      inRiga.forEach(p => { p.x = x + p.w / 2; p.y = rg * (1 + gap); x += p.w + gap; });
+    }
+    return pezzi.map(({ img, x, y, w, h, rot }) => ({ img, x, y, w, h, rot }));
   }
   if (tipo === 'ruota') {
     // in cerchio, ogni foto con la base verso il centro; il raggio fa appena toccare le vicine
@@ -41855,7 +41920,9 @@ function _collageDisponi(tipo, foto) {
   // 🔄 v7.213 (Franco: «vai con la 2») - fino a 6 carte come prima (al più 80°); da 7 in su mai meno di 15° fra due carte,
   //    quindi il ventaglio si apre fino a 135° con 10. 📏 Misurato (parte visibile della carta più coperta, carte
   //    verticali 0,7): con 10 carte dal 32% al 53%; le carte si abbassano da 363 a 286 px nella foto da 1200×675.
-  const apertura = Math.min(Math.max(80, (n - 1) * 15), (n - 1) * 22) * Math.PI / 180;
+  // 🔄 v7.215 - con 20 carte i 15° farebbero 285°: il ventaglio si ferma a mezzo giro (180°), quindi da 14 carte in su
+  //    il passo scende sotto i 15° (con 20, 9,5°)
+  const apertura = Math.min(180, Math.max(80, (n - 1) * 15), (n - 1) * 22) * Math.PI / 180;
   const d = 0.9;
   return foto.map((img, i) => {
     const r = Math.min(1.2, img.naturalWidth / img.naturalHeight || 0.7);
@@ -41883,7 +41950,7 @@ function _collageDisegna(tipo, foto) {
   const ctx = c.getContext('2d');
   const pezzi = _collageDisponi(tipo, foto);
   const b = _collageBordi(pezzi);
-  const margine = tipo === 'quadranti' ? 0.02 : 0.05;
+  const margine = tipo === 'griglia' ? 0.02 : 0.05;
   const k = Math.min(COLLAGE_W * (1 - 2 * margine) / (b.x1 - b.x0), COLLAGE_H * (1 - 2 * margine) / (b.y1 - b.y0));
   const ox = COLLAGE_W / 2 - k * (b.x0 + b.x1) / 2, oy = COLLAGE_H / 2 - k * (b.y0 + b.y1) / 2;
   ctx.imageSmoothingQuality = 'high';
@@ -41892,7 +41959,7 @@ function _collageDisegna(tipo, foto) {
     ctx.translate(ox + k * p.x, oy + k * p.y);
     ctx.rotate(p.rot);
     // un'ombra leggera dove le foto si sovrappongono o girano: sul trasparente è ciò che le stacca una dall'altra
-    if (tipo !== 'quadranti') { ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; }
+    if (tipo !== 'griglia') { ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; }
     ctx.drawImage(p.img, -k * p.w / 2, -k * p.h / 2, k * p.w, k * p.h);
     ctx.restore();
   });
