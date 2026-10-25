@@ -1,7 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.217 - Modificati index.html, css/style.css e js/app.js. «🖼️ COLLAGE FOTO» ANCHE DAL TELEFONO (Franco: «La funzione
+// v7.218 - Modificati index.html (per la versione) e js/app.js. COLLAGE FINO A 40 FOTO (Franco: «il numero di articoli
+//          per il collage fallo arrivare a 40»): ruota, mazzo e griglia da 2 a 40 (`COLLAGE_TIPI`, la casella del
+//          numero). Il mazzo resta al più mezzo giro: con 40 carte, 4,6° fra due.
+//          E LA FAMIGLIA ANCHE DALLA TIPOLOGIA (Franco: «manca il campo Famiglia … va chiesto dopo il campo "Quale
+//          tipologia da considerare?"»): scelta la tipologia, «Quale famiglia? (facoltativa)» con le famiglie dei suoi
+//          articoli base con la foto; senza famiglie non compare (`_collageFamiglieDellaTda`, `_collageTdaHubScelta`).
+//          E LA FAMIGLIA DELLE FPA (Franco: «me la chiedi solo per le fcr; ma esiste anche per le fpa»): una fpa senza
+//          famiglia scritta prende quella della fcr collegata, che la comanda (`_collageFamiglia`).
+//          E «IN CHE ORDINE LE PRENDO?» (Franco): «Alfabetico» (i primi N per nome) o «Casuale», di serie casuale.
+// v7.217 -Modificati index.html, css/style.css e js/app.js. «🖼️ COLLAGE FOTO» ANCHE DAL TELEFONO (Franco: «La funzione
 //          Collage foto mettila anche da mobile solo admin»): la voce `#nav-collage` nel panino, dopo Annunci, solo
 //          all'admin; apre la sezione dalla porta che chiede chi sei (`showAdminTab('collage')`). Sul desktop è spenta:
 //          lì c'è la console.
@@ -31675,7 +31684,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.217';
+const JS_VERSION = 'v7.218';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41473,9 +41482,10 @@ const COLLAGE_TIPI = [
   // 🔄 v7.215 (Franco: «il massimo vedo che è ancora 10; passiamo a 20»; e «la parola quadrante non è più la più adatta;
   //    usiamo la parola griglia», perché «possono essere più di quattro») - tutti e tre fino a 20; i 4 quadranti diventano
   //    la griglia, da 2 a 20 (`_collageDisponi`)
-  { k: 'ruota',   it: 'A ruota',          en: 'Wheel',         min: 2, max: 20 },
-  { k: 'mazzo',   it: 'A mazzo di carte', en: 'Hand of cards', min: 2, max: 20 },
-  { k: 'griglia', it: 'A griglia',        en: 'Grid',          min: 2, max: 20 },
+  // 🔄 v7.218 (Franco: «il numero di articoli per il collage fallo arrivare a 40») - tutti e tre fino a 40
+  { k: 'ruota',   it: 'A ruota',          en: 'Wheel',         min: 2, max: 40 },
+  { k: 'mazzo',   it: 'A mazzo di carte', en: 'Hand of cards', min: 2, max: 40 },
+  { k: 'griglia', it: 'A griglia',        en: 'Grid',          min: 2, max: 40 },
 ];
 let _collageFoto = [];   // le immagini scelte: { nome, img }
 function renderAdminCollage() {
@@ -41500,7 +41510,7 @@ function _collageHTML(perBox) {
           : 'Joins several photos into one, transparent background, hub box shape.' + (perBox ? '' : ' Nothing is saved on the site.')) +
     '</p>' +
     '<div style="' + dom + '">1. ' + (it ? 'Quante foto devi unire?' : 'How many photos?') + '</div>' +
-    '<input type="number" id="collage-n" class="form-input" min="2" max="20" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
+    '<input type="number" id="collage-n" class="form-input" min="2" max="40" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
     '<div style="' + dom + '">2. ' + (it ? 'Da dove le prendo?' : 'Where do I get them?') + '</div>' +
     // 🔄 v7.212 - «Dal sito» si accende: le sue domande stanno in `#collage-sito` (`_collageSitoHTML`)
     scelta('collage-da', 'sito', it ? 'Dal sito' : 'From the site', ' onchange="_collageDa()"') +
@@ -41587,7 +41597,7 @@ function apriCollageBox(chiave, perSerie) {
     const t = document.getElementById('collage-sito-tda');
     const v = PRODOTTI_INVENTARIO.includes(chiave) ? chiave : 'tipo:' + chiave;
     if (t && [...t.options].some(o => o.value === v)) t.value = v;
-    _collageSitoAggiorna();
+    _collageTdaHubScelta();   // v7.218 - rifà anche le famiglie della tipologia
   }
   _collageMostraScelte();
   _collageStato();
@@ -41676,14 +41686,24 @@ function _collageSitoHTML() {
           radio('collage-sito-lato', 'fronte', it ? 'Fronte' : 'Front', true) + radio('collage-sito-lato', 'retro', it ? 'Retro' : 'Back') +
         '</div>' +
       '</div>' +
-      '<select id="collage-sito-tda" style="' + sel + 'display:none;" onchange="_collageSitoAggiorna()">' +
+      '<select id="collage-sito-tda" style="' + sel + 'display:none;" onchange="_collageTdaHubScelta()">' +
         _tdaDellHub().map(sec => '<option value="' + esc(sec) + '">' + esc(getSectionLabel(sec)) + '</option>').join('') +
         tipi.map(t => '<option value="tipo:' + esc(t.id) + '">' + esc(_nomeTipo(t)) + '</option>').join('') +
       '</select>' +
+      // v7.218 - la famiglia anche dalla tipologia, subito dopo (`_collageFamiglieDellaTda`)
+      '<div id="collage-sito-tda-fam-box" style="display:none;">' +
+        '<div style="' + dom + '">' + (it ? 'Quale famiglia? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which family? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
+        '<select id="collage-sito-tda-fam" style="' + sel + '">' + _collageFamiglieDellaTda(_tdaDellHub()[0] || (tipi[0] ? 'tipo:' + tipi[0].id : '')) + '</select>' +
+      '</div>' +
     '</div>' +
     '<div style="' + dom + '">' + (it ? 'C\'è un numero particolare da considerare?' : 'Any particular number?') + '</div>' +
     radio('collage-sito-num', 'no', it ? 'No' : 'No', true) + radio('collage-sito-num', 'si', it ? 'Sì' : 'Yes') +
     '<input type="text" id="collage-sito-numero" class="form-input" placeholder="' + (it ? 'numero' : 'number') + '" maxlength="6" style="display:none;width:6rem;margin-left:0.3rem;" oninput="_collageSitoAggiorna()">' +
+    // v7.218 - in che ordine si prendono: in ordine alfabetico i primi N, o N a caso (`_collagePesca`)
+    '<div style="' + dom + '">' + (it ? 'In che ordine le prendo?' : 'In which order do I pick them?') + '</div>' +
+    ['alfabetico', 'casuale'].map(v => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
+      '<input type="radio" name="collage-sito-ordine" value="' + v + '"' + (v === 'casuale' ? ' checked' : '') + '>' +
+      (v === 'alfabetico' ? (it ? 'Alfabetico' : 'Alphabetical') : (it ? 'Casuale' : 'Random')) + '</label>').join('') +
     // v7.216 - con o senza le macchie (`_collageUrlFoto`); cambiando, le foto già prese si rileggono
     '<div style="' + dom + '">' + (it ? 'Con le macchie o senza?' : 'With or without watermark?') + '</div>' +
     ['con', 'senza'].map(v => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
@@ -41703,6 +41723,8 @@ function _collageSitoAggiorna() {
   const fb = document.getElementById('collage-sito-fam-box'), fam = document.getElementById('collage-sito-serie-fam');   // v7.215
   if (fb) fb.style.display = da === 'serie' && fam && fam.options.length > 1 ? '' : 'none';
   if (t) t.style.display = da === 'tda' ? '' : 'none';
+  const tfb = document.getElementById('collage-sito-tda-fam-box'), tfam = document.getElementById('collage-sito-tda-fam');   // v7.218
+  if (tfb) tfb.style.display = da === 'tda' && tfam && tfam.options.length > 1 ? '' : 'none';
   if (n) n.style.display = num === 'si' ? '' : 'none';
 }
 // 🆕 v7.214 (Franco: «nel collage, dopo che scelgo la serie, deve chiedermi la tda; solo dopo deve cercare gli articoli»)
@@ -41758,13 +41780,53 @@ function _collageFamiglieDellaSerie(sid, sez, ver) {
   const conti = {};
   _collageArticoliDellaSerie(sid).forEach(f => {
     if ((f.section || 'figurines') !== sez || _chiaveTipo(f) !== ver) return;
-    const fam = _famigliaASchermo(f);
+    const fam = _collageFamiglia(f);   // v7.218 - anche la fpa senza famiglia scritta
     if (fam) conti[fam] = (conti[fam] || 0) + 1;
   });
   const voci = Object.keys(conti).sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
   if (!voci.length) return '';
   return '<option value="">' + (it ? 'Tutte' : 'All') + '</option>' +
     voci.map(fam => '<option value="' + esc(fam) + '">' + esc(fam) + ' (' + conti[fam] + ')</option>').join('');
+}
+// 🆕 v7.218 (Franco: «manca il campo Famiglia, nella procedura per il collage; va chiesto dopo il campo "Quale tipologia
+//    da considerare?"») - LA FAMIGLIA ANCHE DALLA TIPOLOGIA. Stesse voci di `_collageFamiglieDellaSerie`, ma sugli articoli
+//    che quella strada prende già: base, con la foto, della tipologia (o del tipo senza serie) scelta.
+// 🆕 v7.218 (Franco: «vedo che la famiglia me la chiedi solo per le fcr; ma esiste anche per le fpa») - LA FAMIGLIA DI UN
+//    ARTICOLO, PER IL COLLAGE. Quella a schermo (`_famigliaASchermo`); una fpa che non l'ha scritta prende quella della fcr
+//    collegata (`baseFigurineId`), che è chi la comanda (v6.840): la riporta solo salvando la fcr, quindi una fpa mai
+//    riallineata resterebbe senza. La mappa si rifà quando cambia l'elenco delle figurine.
+let _collageFamFpa = { da: null, m: null };
+function _collageFamiglia(f) {
+  const sua = _famigliaASchermo(f);
+  if (sua || (f && f.section) !== 'attaccare') return sua;
+  const tutti = getData('figurines', []);
+  if (_collageFamFpa.da !== tutti) {
+    const m = new Map();
+    tutti.forEach(x => { if (x.baseFigurineId && String(x.famiglia || '').trim() && !m.has(x.baseFigurineId)) m.set(x.baseFigurineId, x.famiglia); });
+    _collageFamFpa = { da: tutti, m };
+  }
+  const fam = _collageFamFpa.m.get(f.id);
+  return fam ? _famigliaASchermo({ section: 'attaccare', famiglia: fam }) : '';
+}
+function _collageArticoliDellaTda(v) {
+  const tutti = getData('figurines', []);
+  v = String(v || '');
+  return _articoliDaContareSito().filter(f => _fotoFigurina(f, tutti) && _eBase(f) &&
+    (v.startsWith('tipo:') ? f.tipoProdotto === v.slice(5) : (f.section || 'figurines') === v && !f.tipoProdotto));
+}
+function _collageFamiglieDellaTda(v) {
+  const it = currentLang === 'it';
+  const conti = {};
+  _collageArticoliDellaTda(v).forEach(f => { const fam = _collageFamiglia(f); if (fam) conti[fam] = (conti[fam] || 0) + 1; });
+  const voci = Object.keys(conti).sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+  if (!voci.length) return '';
+  return '<option value="">' + (it ? 'Tutte' : 'All') + '</option>' +
+    voci.map(fam => '<option value="' + esc(fam) + '">' + esc(fam) + ' (' + conti[fam] + ')</option>').join('');
+}
+function _collageTdaHubScelta() {
+  const t = document.getElementById('collage-sito-tda'), fam = document.getElementById('collage-sito-tda-fam');
+  if (t && fam) fam.innerHTML = _collageFamiglieDellaTda(t.value);
+  _collageSitoAggiorna();
 }
 function _collageVerScelta() {
   const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-serie-tda'),
@@ -41795,12 +41857,14 @@ function _collageCandidati() {
     const ver = (document.getElementById('collage-sito-serie-ver') || {}).value;   // v7.214 - e la versione
     el = el.filter(f => String(f.seriesId) === String(sid) && (f.section || 'figurines') !== 'retros' && (f.section || 'figurines') === sez && _chiaveTipo(f) === ver);
     const fam = (document.getElementById('collage-sito-serie-fam') || {}).value;   // v7.215 - la famiglia, se scelta
-    if (fam) el = el.filter(f => _famigliaASchermo(f) === fam);
+    if (fam) el = el.filter(f => _collageFamiglia(f) === fam);
   } else {
     el = el.filter(f => _eBase(f));
     const v = String((document.getElementById('collage-sito-tda') || {}).value || '');
     el = v.startsWith('tipo:') ? el.filter(f => f.tipoProdotto === v.slice(5))
                                : el.filter(f => (f.section || 'figurines') === v && !f.tipoProdotto);
+    const fam = (document.getElementById('collage-sito-tda-fam') || {}).value;   // v7.218 - la famiglia, se scelta
+    if (fam) el = el.filter(f => _collageFamiglia(f) === fam);
   }
   if (conNum) el = el.filter(f => String(_numeroAschermo(f) ?? '').split(' - ').some(x => x.trim().toUpperCase() === numero));
   // v7.214 - il retro, se chiesto (solo da una serie e per una versione non base): uno per foto
@@ -41810,7 +41874,7 @@ function _collageCandidati() {
     const viste = new Set();
     el = el.filter(f => { const u = _collageFotoCandidato(f, tutti, lato); if (!u || viste.has(u)) return false; viste.add(u); return true; });
   }
-  const fam = da === 'serie' ? ((document.getElementById('collage-sito-serie-fam') || {}).value || '') : '';   // v7.215
+  const fam = (document.getElementById(da === 'serie' ? 'collage-sito-serie-fam' : 'collage-sito-tda-fam') || {}).value || '';   // v7.215, v7.218
   return { el, conNum, numero, lato, fam };
 }
 async function _collagePesca() {
@@ -41831,7 +41895,12 @@ async function _collagePesca() {
   }
   // N a caso (Fisher–Yates sulle prime N posizioni)
   const a = el.slice();
-  for (let i = 0; i < n; i++) { const j = i + Math.floor(Math.random() * (a.length - i)); [a[i], a[j]] = [a[j], a[i]]; }
+  // 🆕 v7.218 (Franco: «Aggiungi la domanda "In che ordine le prendo?"; valori: alfabetico; casuale; default: casuale») -
+  //    con «Alfabetico» i primi N per nome (a pari nome, per numero a schermo), e nel collage in quell'ordine
+  const alfa = (document.querySelector('input[name="collage-sito-ordine"]:checked') || {}).value === 'alfabetico';
+  if (alfa) a.sort((x, y) => String(x.name || '').localeCompare(String(y.name || ''), 'it', { sensitivity: 'base', numeric: true })
+    || String(_numeroAschermo(x) ?? '').localeCompare(String(_numeroAschermo(y) ?? ''), 'it', { numeric: true }));
+  else for (let i = 0; i < n; i++) { const j = i + Math.floor(Math.random() * (a.length - i)); [a[i], a[j]] = [a[j], a[i]]; }
   const tutti = getData('figurines', []);
   const lette = await Promise.all(a.slice(0, n).map(f =>
     _collageLeggiFoto(_collageFotoCandidato(f, tutti, lato), (_numeroAschermo(f) ? _numeroAschermo(f) + ' ' : '') + (f.name || ''))));
