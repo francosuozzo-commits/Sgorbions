@@ -1,6 +1,21 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.214 - Modificati index.html e js/app.js. COLLAGE «DAL SITO», LA TIPOLOGIA DOPO LA SERIE (Franco: «nel collage, dopo
+//          che scelgo la serie, deve chiedermi la tda; solo dopo deve cercare gli articoli»): scelta la serie, la
+//          tendina «Quale tipologia di articolo?» con le sue tipologie che hanno articoli base con la foto, e il loro
+//          numero (`_collageTdaDellaSerie`, `_collageSerieScelta`); le foto si prendono solo da quella tipologia.
+//          E poi la versione (Franco: «dopo la domanda "Quale tipologia di articolo?" mettiamo una altra domanda:
+//          "Quale tipologia di versione ?"»): la tendina con le versioni che in quella serie e tipologia hanno la
+//          foto, base compresa, col numero (`_collageVersioniDellaSerie`, `_collageTdaScelta`). Per una versione non
+//          base, «Il fronte o il retro?» (Franco: «se seleziono retro, sono i retro che vanno estratti»): col retro le
+//          carte sono i retro, uno per foto (`_collageFotoCandidato`).
+//          «🖼️ Cambia foto» SUI BOX DELLE TIPOLOGIE (Franco: «sempre admin visibile»; «deve lanciare questa procedura
+//          nuova, e il suo risultato lo mette nella foto di quel box, direttamente»): la finestra del collage già puntata
+//          sul box (`apriCollageBox`), e «✅ Usa come foto della card» la salva come la matita (`_scriviFotoBox`,
+//          `_scriviFotoSezioneSerie`, estratte da `_caricaFotoBox` e `_caricaFotoSezioneSerie`).
+//          «Mostra composizione varianti» SULLA CARD DELLA FIGURINA CON PIÙ RETRO (Franco; per tutti, griglia di foto):
+//          la finestra coi retro della famiglia (`_retriDelleFamiglie`, `apriComposizioneVarianti`).
 // v7.213 - Modificati index.html e js/app.js. COLLAGE FOTO, LO SFONDO DELLE FOTO DAL PC (Franco: la spunta «Rimuovo
 //          sfondo foto selezionate», solo per le foto dal PC; «vai con la (a)»): con la spunta, al «Crea» ogni foto
 //          perde lo sfondo di un colore unito che tocca i suoi bordi (`_collageSenzaSfondo`, `_collageMascheraSfondo`),
@@ -31641,7 +31656,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.213';
+const JS_VERSION = 'v7.214';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41441,16 +41456,23 @@ let _collageFoto = [];   // le immagini scelte: { nome, img }
 function renderAdminCollage() {
   const box = document.getElementById('admin-collage-box');
   if (!box) return;
+  _collageBoxDest = null;
+  box.innerHTML = _collageHTML(false);
+  _collageMostraScelte();
+  _collageStato();
+}
+// 🔄 v7.214 - le domande del collage in una funzione sola: le usano la console (`renderAdminCollage`) e la finestra del
+//    «Cambia foto» di un box (`apriCollageBox`). `perBox` cambia solo il titolo, la riga che spiega e il tasto «Usa».
+function _collageHTML(perBox) {
   const it = currentLang === 'it';
   const dom = 'font-size:0.92rem;font-weight:700;color:var(--info);margin:1.2rem 0 0.45rem;';
   const scelta = (nome, val, testo, extra) => '<label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.88rem;color:var(--text);margin:0.25rem 0;">' +
     '<input type="radio" name="' + nome + '" value="' + val + '"' + (extra || '') + '>' + testo + '</label>';
-  box.innerHTML =
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">🖼️ ' + (it ? 'Collage foto' : 'Photo collage') + '</h4>' +
+  return (perBox ? '' : '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">🖼️ ' + (it ? 'Collage foto' : 'Photo collage') + '</h4>') +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;line-height:1.5;">' +
       (it ? 'Unisce più foto in una foto sola, con lo sfondo trasparente e la forma dei box degli hub (' + COLLAGE_W + '×' + COLLAGE_H + ' px).<br>' +
-            'La foto si scarica e basta: sul sito non si salva niente.'
-          : 'Joins several photos into one, transparent background, hub box shape. Nothing is saved on the site.') +
+            (perBox ? 'Con «Usa come foto della card» il collage diventa la foto di questa card.' : 'La foto si scarica e basta: sul sito non si salva niente.')
+          : 'Joins several photos into one, transparent background, hub box shape.' + (perBox ? '' : ' Nothing is saved on the site.')) +
     '</p>' +
     '<div style="' + dom + '">1. ' + (it ? 'Quante foto devi unire?' : 'How many photos?') + '</div>' +
     '<input type="number" id="collage-n" class="form-input" min="2" max="10" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
@@ -41473,12 +41495,97 @@ function renderAdminCollage() {
     '<div style="display:flex;gap:0.7rem;flex-wrap:wrap;align-items:center;">' +
       '<button type="button" id="collage-crea" class="btn-primary" onclick="_collageCrea()">' + (it ? '🖼️ Crea il collage' : '🖼️ Create collage') + '</button>' +
       '<a id="collage-scarica" class="btn-primary" style="display:none;text-decoration:none;" download="collage.png">⬇️ ' + (it ? 'Scarica' : 'Download') + '</a>' +
+      (perBox ? '<button type="button" id="collage-usa" class="btn-primary" style="display:none;" onclick="_collageUsaPerBox()">✅ ' + (it ? 'Usa come foto della card' : 'Use as card photo') + '</button>' : '') +
     '</div>' +
     // a scacchi dietro l'anteprima: è così che si vede che lo sfondo è trasparente
     '<div id="collage-anteprima" style="display:none;margin-top:0.9rem;max-width:' + COLLAGE_W + 'px;border:1px solid var(--border);border-radius:8px;overflow:hidden;' +
       'background:repeating-conic-gradient(#3a3a3a 0% 25%, #555 0% 50%) 50% / 24px 24px;"></div>';
+}
+// 🆕 v7.214 (Franco: «nel box che rappresenta una tipologia di articolo, metti un pulsante (Anche da mobile) sempre admin
+//    visibile, che si chiama "Cambia foto"; se premuto, deve lanciare questa procedura nuova, e il suo risultato lo mette
+//    nella foto di quel box, direttamente») - IL COLLAGE DA UN BOX. La stessa finestra delle domande della console, già
+//    puntata sul box: nella pagina di una serie, «Dal sito» → quella serie e quella tipologia; nell'hub Articoli e nei
+//    tipi di prodotto, la tipologia (la foto lì vale per tutto il sito, come quella della matita).
+// 📌 Il risultato si salva come quello della matita (`_scriviFotoBox`, `_scriviFotoSezioneSerie`): un caricamento su
+//    Cloudinary, nessuna trasformazione.
+// ⚠️ Gli id delle domande sono quelli della console: aprendo la finestra il collage della console si svuota (lo si
+//    ridisegna chiudendola), se no le domande sarebbero due e `getElementById` leggerebbe le prime.
+let _collageBoxDest = null;   // { chiave, perSerie, seriesId } del box che riceve il collage, o null nella console
+let _collageBlob = null;      // l'ultimo collage creato
+function _tastoCollageBox(chiave, perSerie) {
+  if (!currentUser?.isAdmin) return '';
+  return '<button type="button" title="' + (perSerie ? 'Un collage per la foto di questa card, PER QUESTA SERIE' : 'Un collage per la foto di questa card (vale per tutte le serie)') + '" ' +
+    'onclick="event.stopPropagation();apriCollageBox(\'' + chiave + '\',' + (perSerie ? 'true' : 'false') + ')" ' +
+    'style="position:absolute;top:6px;left:6px;z-index:3;border:none;border-radius:999px;padding:0.3rem 0.7rem;cursor:pointer;' +
+    'font-size:0.75rem;font-weight:700;background:rgba(0,0,0,0.6);color:#fff;">🖼️ Cambia foto</button>';
+}
+function apriCollageBox(chiave, perSerie) {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const console_ = document.getElementById('admin-collage-box');
+  const daRifare = !!(console_ && console_.innerHTML);
+  if (console_) console_.innerHTML = '';
+  document.getElementById('collage-box-modal')?.remove();
+  _collageBoxDest = { chiave, perSerie: !!perSerie, seriesId: perSerie ? currentSeriesId : null, daRifare };
+  _collageFoto = []; _collageBlob = null; _collageModo = 'sito';
+  const tipo = PRODOTTI_INVENTARIO.includes(chiave) ? null : ((typeof _tipiProdotto === 'function' ? _tipiProdotto() : []) || []).find(t => t.id === chiave);
+  const nome = tipo ? _nomeTipo(tipo) : getSectionLabel(chiave);
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'collage-box-modal';
+  ov.innerHTML = '<div class="modal" style="max-width:900px;width:96vw;">' +
+    '<div class="modal-header"><h2 class="modal-title">🖼️ ' + (it ? 'Foto della card «' : 'Card photo «') + esc(nome) + '»' + (perSerie ? (it ? ' di questa serie' : ' for this series') : '') + '</h2>' +
+    '<button type="button" class="modal-close" onclick="chiudiCollageBox()">✕</button></div>' +
+    '<div id="collage-box-corpo" style="padding:0 1.2rem 1.2rem;">' + _collageHTML(true) + '</div></div>';
+  document.body.appendChild(ov);
+  // già puntato sul box: «Dal sito», poi la serie e la tipologia (o la sola tipologia)
+  const da = ov.querySelector('input[name="collage-da"][value="sito"]');
+  if (da) da.checked = true;
+  _collageDa();
+  const s = document.getElementById('collage-sito-serie');
+  const inSerie = perSerie && s && [...s.options].some(o => String(o.value) === String(currentSeriesId));
+  const via = ov.querySelector('input[name="collage-sito-da"][value="' + (inSerie ? 'serie' : 'tda') + '"]');
+  if (via) via.checked = true;
+  if (inSerie) {
+    s.value = currentSeriesId;
+    _collageSerieScelta();
+    const t = document.getElementById('collage-sito-serie-tda');
+    if (t && [...t.options].some(o => o.value === chiave)) { t.value = chiave; _collageTdaScelta(); }
+    else toast(it ? '⚠️ In questa serie «' + nome + '» non ha articoli con la foto: scegli tu da dove prenderle' : '⚠️ No items with a photo here: choose the source', 'error');
+  } else {
+    const t = document.getElementById('collage-sito-tda');
+    const v = PRODOTTI_INVENTARIO.includes(chiave) ? chiave : 'tipo:' + chiave;
+    if (t && [...t.options].some(o => o.value === v)) t.value = v;
+    _collageSitoAggiorna();
+  }
   _collageMostraScelte();
   _collageStato();
+}
+function chiudiCollageBox() {
+  document.getElementById('collage-box-modal')?.remove();
+  const rifai = _collageBoxDest && _collageBoxDest.daRifare;
+  _collageBoxDest = null; _collageFoto = []; _collageBlob = null;
+  if (rifai) renderAdminCollage();
+}
+async function _collageUsaPerBox() {
+  const it = currentLang === 'it';
+  const d = _collageBoxDest;
+  if (!d || !_collageBlob || !currentUser?.isAdmin) return;
+  const b = document.getElementById('collage-usa');
+  if (b) b.disabled = true;
+  toast(it ? 'Carico la foto…' : 'Uploading…', 'info');
+  let url;
+  try { url = await uploadToCloudinary(_collageBlob); }
+  catch (e) {
+    console.error('_collageUsaPerBox/upload', e);
+    toast(it ? '❌ Caricamento fallito — riprova' : '❌ Upload failed — retry', 'error');
+    if (b) b.disabled = false;
+    return;
+  }
+  const serie = d.perSerie ? getData('series', []).find(x => x.id === d.seriesId) : null;
+  const ok = d.perSerie ? (serie && await _scriviFotoSezioneSerie(serie, d.chiave, url)) : await _scriviFotoBox(d.chiave, url);
+  if (!ok) { if (b) b.disabled = false; return; }
+  chiudiCollageBox();
 }
 function _collageScegli() {
   const f = document.getElementById('collage-file');
@@ -41516,10 +41623,22 @@ function _collageSitoHTML() {
   const contate = new Set(_articoliDaContareSito().map(f => f.seriesId));
   const serie = _serieOrdinate(getData('series', []) || []).filter(s => (!cont || s.id !== cont.id) && contate.has(s.id));
   const tipi = (typeof _tipiProdotto === 'function') ? _tipiProdotto() : [];
+  const sid0 = serie[0] && serie[0].id, sez0 = (_collageSezioniDellaSerie(sid0)[0] || [])[0];
   return '<div style="' + dom + 'margin-top:0;">' + (it ? 'Da una serie o da una tipologia di articolo?' : 'From a series or an item type?') + '</div>' +
     radio('collage-sito-da', 'serie', it ? 'Serie' : 'Series', true) + radio('collage-sito-da', 'tda', it ? 'Tipologia di articolo' : 'Item type') +
     '<div style="margin-top:0.35rem;">' +
-      '<select id="collage-sito-serie" style="' + sel + '" onchange="_collageSitoAggiorna()">' + serie.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name || '') + '</option>').join('') + '</select>' +
+      '<select id="collage-sito-serie" style="' + sel + '" onchange="_collageSerieScelta()">' + serie.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name || '') + '</option>').join('') + '</select>' +
+      // v7.214 - dopo la serie, la tipologia di articolo di quella serie (`_collageTdaDellaSerie`)
+      '<div id="collage-sito-serie-tda-box">' +
+        '<div style="' + dom + '">' + (it ? 'Quale tipologia di articolo?' : 'Which item type?') + '</div>' +
+        '<select id="collage-sito-serie-tda" style="' + sel + '" onchange="_collageTdaScelta()">' + _collageTdaDellaSerie(sid0) + '</select>' +
+        '<div style="' + dom + '">' + (it ? 'Quale tipologia di versione?' : 'Which version type?') + '</div>' +
+        '<select id="collage-sito-serie-ver" style="' + sel + '" onchange="_collageSitoAggiorna()">' + _collageVersioniDellaSerie(sid0, sez0) + '</select>' +
+        '<div id="collage-sito-lato-box" style="display:none;">' +
+          '<div style="' + dom + '">' + (it ? 'Il fronte o il retro?' : 'Front or back?') + '</div>' +
+          radio('collage-sito-lato', 'fronte', it ? 'Fronte' : 'Front', true) + radio('collage-sito-lato', 'retro', it ? 'Retro' : 'Back') +
+        '</div>' +
+      '</div>' +
       '<select id="collage-sito-tda" style="' + sel + 'display:none;" onchange="_collageSitoAggiorna()">' +
         _tdaDellHub().map(sec => '<option value="' + esc(sec) + '">' + esc(getSectionLabel(sec)) + '</option>').join('') +
         tipi.map(t => '<option value="tipo:' + esc(t.id) + '">' + esc(_nomeTipo(t)) + '</option>').join('') +
@@ -41535,8 +41654,66 @@ function _collageSitoAggiorna() {
   const num = (document.querySelector('input[name="collage-sito-num"]:checked') || {}).value;
   const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-tda'), n = document.getElementById('collage-sito-numero');
   if (s) s.style.display = da === 'serie' ? '' : 'none';
+  const st = document.getElementById('collage-sito-serie-tda-box');   // v7.214
+  if (st) st.style.display = da === 'serie' ? '' : 'none';
+  const lb = document.getElementById('collage-sito-lato-box'), ver = document.getElementById('collage-sito-serie-ver');   // v7.214
+  if (lb) lb.style.display = da === 'serie' && ver && ver.value && ver.value !== 'base' ? '' : 'none';
   if (t) t.style.display = da === 'tda' ? '' : 'none';
   if (n) n.style.display = num === 'si' ? '' : 'none';
+}
+// 🆕 v7.214 (Franco: «nel collage, dopo che scelgo la serie, deve chiedermi la tda; solo dopo deve cercare gli articoli»)
+//    - LA TIPOLOGIA DENTRO LA SERIE. Le voci sono le tipologie che in quella serie hanno almeno un articolo base con la foto
+//    fra quelli contati, nell'ordine dell'Inventario, col numero accanto; i retro restano fuori, come prima (v7.212).
+//    Gli articoli si cercano solo al «Prendi le foto», con serie e tipologia già scelte.
+// 🆕 v7.214 (Franco: «dopo la domanda "Quale tipologia di articolo?" mettiamo una altra domanda: "Quale tipologia di
+//    versione ?"») - LA VERSIONE DENTRO LA TIPOLOGIA. Da qui la tipologia conta TUTTE le versioni con la foto, non
+//    solo le base: se no una tipologia fatta solo di variazioni non comparirebbe, e la sua versione non si potrebbe
+//    scegliere. Le versioni si dicono con `_chiaveTipo` e i nomi di `_nomeVersione`, base prima, poi l'ordine del
+//    descrittore. La foto è quella che il sito mostra (`_fotoFigurina`): una variazione senza foto sua porta il fronte
+//    della base, che per definizione è il suo.
+function _collageArticoliDellaSerie(sid) {
+  const tutti = getData('figurines', []);
+  return _articoliDaContareSito().filter(f => String(f.seriesId) === String(sid) && (f.section || 'figurines') !== 'retros' && _fotoFigurina(f, tutti));
+}
+function _collageSezioniDellaSerie(sid) {
+  const conti = {};
+  _collageArticoliDellaSerie(sid).forEach(f => { const sez = f.section || 'figurines'; conti[sez] = (conti[sez] || 0) + 1; });
+  const ordine = PRODOTTI_INVENTARIO.filter(s => conti[s]).concat(Object.keys(conti).filter(s => !PRODOTTI_INVENTARIO.includes(s)));
+  return ordine.map(s => [s, conti[s]]);
+}
+function _collageTdaDellaSerie(sid) {
+  return _collageSezioniDellaSerie(sid).map(([s, n]) => '<option value="' + esc(s) + '">' + esc(getSectionLabel(s)) + ' (' + n + ')</option>').join('');
+}
+function _collageVersioniDellaSerie(sid, sez) {
+  const it = currentLang === 'it';
+  const conti = {};
+  _collageArticoliDellaSerie(sid).forEach(f => {
+    if ((f.section || 'figurines') !== sez) return;
+    const ch = _chiaveTipo(f);
+    conti[ch] = (conti[ch] || 0) + 1;
+  });
+  return ['base'].concat(_VERSIONI_VIVE.map(v => v.chiave)).filter(ch => conti[ch])
+    .map(ch => '<option value="' + esc(ch) + '">' + esc(_nomeVersione(ch, it ? 'it' : 'en')) + ' (' + conti[ch] + ')</option>').join('');
+}
+function _collageSerieScelta() {
+  const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-serie-tda');
+  if (s && t) t.innerHTML = _collageTdaDellaSerie(s.value);
+  _collageTdaScelta();
+}
+function _collageTdaScelta() {
+  const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-serie-tda'), v = document.getElementById('collage-sito-serie-ver');
+  if (s && t && v) v.innerHTML = _collageVersioniDellaSerie(s.value, t.value);
+  _collageSitoAggiorna();
+}
+// 🆕 v7.214 (Franco: «se seleziono una versione non base, chiedimi se voglio estrarre il fronte, o il retro; se seleziono
+//    retro, sono i retro che vanno estratti, e non i fronte») - LA FOTO DI UN CANDIDATO, DAVANTI O DIETRO. Il retro di una
+//    figurina è quello che le assegna `_retroEffettivo` (suo, o della base per change ed errori frontali); per gli altri
+//    articoli è la foto del retro (`_imgRetroDi`). Due candidati con lo stesso retro fanno una carta sola (`_collageCandidati`).
+function _collageFotoCandidato(f, tutti, lato) {
+  if (lato !== 'retro') return _fotoFigurina(f, tutti);
+  if ((f.section || 'figurines') !== 'figurines') return _imgRetroDi(f);
+  const id = _retroEffettivo(f, tutti), r = id && tutti.find(x => x.id === id);
+  return r ? _fotoFigurina(r, tutti) : null;
 }
 // I candidati: base, con la foto, della serie o della tipologia scelta, col numero se chiesto
 function _collageCandidati() {
@@ -41544,22 +41721,32 @@ function _collageCandidati() {
   const conNum = (document.querySelector('input[name="collage-sito-num"]:checked') || {}).value === 'si';
   const numero = String((document.getElementById('collage-sito-numero') || {}).value || '').trim().toUpperCase();
   const tutti = getData('figurines', []);
-  let el = _articoliDaContareSito().filter(f => _eBase(f) && _fotoFigurina(f, tutti));
+  let el = _articoliDaContareSito().filter(f => _fotoFigurina(f, tutti));
   if (da === 'serie') {
     const sid = (document.getElementById('collage-sito-serie') || {}).value;
-    el = el.filter(f => String(f.seriesId) === String(sid) && (f.section || 'figurines') !== 'retros');
+    const sez = (document.getElementById('collage-sito-serie-tda') || {}).value;   // v7.214 - la tipologia scelta nella serie
+    const ver = (document.getElementById('collage-sito-serie-ver') || {}).value;   // v7.214 - e la versione
+    el = el.filter(f => String(f.seriesId) === String(sid) && (f.section || 'figurines') !== 'retros' && (f.section || 'figurines') === sez && _chiaveTipo(f) === ver);
   } else {
+    el = el.filter(f => _eBase(f));
     const v = String((document.getElementById('collage-sito-tda') || {}).value || '');
     el = v.startsWith('tipo:') ? el.filter(f => f.tipoProdotto === v.slice(5))
                                : el.filter(f => (f.section || 'figurines') === v && !f.tipoProdotto);
   }
   if (conNum) el = el.filter(f => String(_numeroAschermo(f) ?? '').split(' - ').some(x => x.trim().toUpperCase() === numero));
-  return { el, conNum, numero };
+  // v7.214 - il retro, se chiesto (solo da una serie e per una versione non base): uno per foto
+  const verSc = (document.getElementById('collage-sito-serie-ver') || {}).value;
+  const lato = da === 'serie' && verSc && verSc !== 'base' && (document.querySelector('input[name="collage-sito-lato"]:checked') || {}).value === 'retro' ? 'retro' : 'fronte';
+  if (lato === 'retro') {
+    const viste = new Set();
+    el = el.filter(f => { const u = _collageFotoCandidato(f, tutti, lato); if (!u || viste.has(u)) return false; viste.add(u); return true; });
+  }
+  return { el, conNum, numero, lato };
 }
 async function _collagePesca() {
   const it = currentLang === 'it';
   const n = Number((document.getElementById('collage-n') || {}).value);
-  const { el, conNum, numero } = _collageCandidati();
+  const { el, conNum, numero, lato } = _collageCandidati();
   if (conNum && !numero) { toast(it ? 'Scrivi il numero' : 'Type the number', 'error'); return; }
   if (!Number.isInteger(n) || n < 2) { _collageStato(); return; }
   if (el.length < n) {
@@ -41568,7 +41755,7 @@ async function _collagePesca() {
     _collageStato();
     const av = document.getElementById('collage-avviso');
     if (av) av.textContent = it
-      ? (el.length ? 'Ho trovato solo ' + el.length + ' articol' + (el.length === 1 ? 'o' : 'i') : 'Non ho trovato nessun articolo') + (conNum ? ' col numero ' + numero : '') + ' con la foto: ne servono ' + n + '.'
+      ? (el.length ? 'Ho trovato solo ' + el.length + ' articol' + (el.length === 1 ? 'o' : 'i') : 'Non ho trovato nessun articolo') + (conNum ? ' col numero ' + numero : '') + (lato === 'retro' ? ' con la foto del retro' : ' con la foto') + ': ne servono ' + n + '.'
       : 'Found only ' + el.length + ' items with a photo: ' + n + ' needed.';
     return;
   }
@@ -41579,7 +41766,7 @@ async function _collagePesca() {
   const lette = await Promise.all(a.slice(0, n).map(f => new Promise(ok => {
     const img = new Image();
     img.crossOrigin = 'anonymous';   // se no il canvas resta «sporco» e il PNG non si scarica
-    const url = cloudinaryUrl(_fotoFigurina(f, tutti), 'w_400,h_400,c_fit,q_auto,f_auto');
+    const url = cloudinaryUrl(_collageFotoCandidato(f, tutti, lato), 'w_400,h_400,c_fit,q_auto,f_auto');
     img.onload = () => ok({ nome: (_numeroAschermo(f) ? _numeroAschermo(f) + ' ' : '') + (f.name || ''), img, url });
     img.onerror = () => ok(null);
     img.src = url;
@@ -41731,6 +41918,9 @@ async function _collageCrea() {
   const c = _collageDisegna(tipo, imgs);
   const blob = await new Promise(ok => c.toBlob(ok, 'image/png'));
   if (!blob) { toast(it ? '❌ Non riesco a creare la foto' : '❌ Could not create the photo', 'error'); return; }
+  _collageBlob = blob;   // v7.214 - per «Usa come foto della card»
+  const usa = document.getElementById('collage-usa');
+  if (usa) { usa.style.display = ''; usa.disabled = false; }
   const url = URL.createObjectURL(blob);
   const a = document.getElementById('collage-scarica');
   if (a) {
@@ -46840,7 +47030,7 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
   // (le serie, i tipi di articolo, i box dell'hub). Una regola sulle classi avrebbe cambiato
   // griglie che nessuno ha guardato.
   return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="apriTDA(\'' + sec + '\')">' +
-    _matitaBox(sec) +   // v6.145
+    _matitaBox(sec) + _tastoCollageBox(sec) +   // v6.145, v7.214
     '<div class="card-img-placeholder">' + foto + '</div>' +
     '<div class="card-body" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0;">' +
       // v6.157 (Franco) - IL TOTALE VA SOTTO L'ELENCO, non sopra. Sopra era una premessa; sotto
@@ -48384,6 +48574,11 @@ async function _caricaFotoSezioneSerie(ev) {
     toast(it ? '\u274c Caricamento fallito — riprova' : '\u274c Upload failed — retry', 'error');
     return;
   }
+  if (await _scriviFotoSezioneSerie(serie, chiave, url)) _boxSerieInCorso = null;
+}
+// 🔄 v7.214 - lo scrive anche il collage di un box (`_collageUsaPerBox`): una strada sola per salvarla
+async function _scriviFotoSezioneSerie(serie, chiave, url) {
+  const it = currentLang === 'it';
   const prima = serie.fotoSezioni;
   serie.fotoSezioni = Object.assign({}, prima, { [chiave]: url });
   try { await fsSave('series', _serieSenzaItems(serie)); }
@@ -48394,12 +48589,12 @@ async function _caricaFotoSezioneSerie(ev) {
     serie.fotoSezioni = prima;
     toast(it ? '\u274c Salvataggio fallito: la foto non e\u2019 stata cambiata'
              : '\u274c Save failed: photo unchanged', 'error');
-    return;
+    return false;
   }
-  _boxSerieInCorso = null;
   _ridisegnaBox();
   toast(it ? '\u2705 Foto della card aggiornata per questa serie'
            : '\u2705 Card photo updated for this series', 'success');
+  return true;
 }
 
 async function _caricaFotoBox(ev) {
@@ -48420,6 +48615,11 @@ async function _caricaFotoBox(ev) {
     toast(it ? '❌ Caricamento fallito — riprova' : '❌ Upload failed — retry', 'error');
     return;
   }
+  if (await _scriviFotoBox(chiave, url)) _boxFotoInCorso = null;
+}
+// 🔄 v7.214 - lo scrive anche il collage di un box (`_collageUsaPerBox`): una strada sola per salvarla
+async function _scriviFotoBox(chiave, url) {
+  const it = currentLang === 'it';
   // Si scrive PRIMA su Firestore e solo dopo si aggiorna la cache: se la scrittura fallisce, la
   // foto nuova non deve restare a schermo dando l'impressione di essere salvata. E' la stessa
   // regola della v6.101 sul salvataggio con la rete staccata.
@@ -48429,12 +48629,12 @@ async function _caricaFotoBox(ev) {
   } catch (e) {
     console.error('_caricaFotoBox/salva', e);
     toast(it ? '❌ Salvataggio fallito: la foto non è stata cambiata' : '❌ Save failed: photo unchanged', 'error');
-    return;
+    return false;
   }
   _cache.immaginiBox = box;
-  _boxFotoInCorso = null;
   _ridisegnaBox();
   toast(it ? '✅ Foto della card aggiornata' : '✅ Card photo updated', 'success');
+  return true;
 }
 
 // Le foto dei box SEZIONE, dentro l'hub di una serie. Il markup di quelle card sta nell'index e non
@@ -48754,6 +48954,7 @@ function _applicaFotoSezioni() {
     }
     const vecchia = card.querySelector('[data-matita-box]');
     if (vecchia) vecchia.remove();
+    card.querySelector('[data-collage-box]')?.remove();   // v7.214
     if (!currentUser?.isAdmin) return;
     if (getComputedStyle(card).position === 'static') card.style.position = 'relative';
     const holder = document.createElement('div');
@@ -48765,6 +48966,10 @@ function _applicaFotoSezioni() {
     // 🐛 v7.204 - il segno va sul BOTTONE, che è quello che entra nella card. Stava sul `div`, che non ci entrava mai:
     //    la ricerca di `vecchia` qui sopra non trovava niente e ogni giro aggiungeva una matita (16.332 su 12 card).
     if (b) { b.setAttribute('data-matita-box', sec); card.appendChild(b); }
+    // v7.214 - e il «Cambia foto» col collage, per questa serie
+    holder.innerHTML = _tastoCollageBox(sec, true);
+    const c = holder.firstElementChild;
+    if (c) { c.setAttribute('data-collage-box', sec); card.appendChild(c); }
   });
 }
 
@@ -48892,7 +49097,7 @@ function tipoProdottoCardHTML(t, tutti) {
   // struttura dentro una release di allineamento. Sorvegliato da `prova-v6474.js`, che pretende
   // che i due stili restino uguali.
   return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="openTipoProdotto(\'' + t.id + '\')">' +
-    _matitaBox(t.id) + _matitaNome +
+    _matitaBox(t.id) + _matitaNome + _tastoCollageBox(t.id) +   // v7.214
     '<div class="card-img-placeholder">' + _foto + '</div>' +
     '<div class="card-body" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0;">' +
       '<div class="card-title" style="margin-bottom:0.5rem;color:var(--nome-entita);">' + esc(_nomeTipo(t)) + '</div>' +
@@ -60355,6 +60560,8 @@ function renderItems() {
   //    commento sta sulla fpa; la fcr lo prende dalla fpa collegata (`baseFigurineId`). Mappa fatta una volta.
   // v7.178 - acceso o spento per tipologia dalla console (Griglie → Commento album sulle card)
   const _lettoreCommento = _lettoreCommentoAlbum(_allFigs);
+  // v7.214 - i retro di ogni famiglia, una volta per griglia, solo dove ci sono le figurine con retro
+  const _retriFam = items.some(f => (f.section || 'figurines') === 'figurines') ? _retriDelleFamiglie(_allFigs, _idx) : null;
   const _commentoAlbumCard = f => ((f.section === 'attaccare' && _COMMENTO_CARD_CFG.fpa)
     || ((f.section || 'figurines') === 'figurines' && _COMMENTO_CARD_CFG.fcr)) ? _lettoreCommento(f) : '';
   // 🔄 v6.767 - QUI C'ERA `grid.innerHTML = items.map(...).join('')`. Adesso l'HTML delle card
@@ -61093,6 +61300,8 @@ function renderItems() {
              salta i clic che arrivano da un `<button>` (`event.target.closest('button')`), e
              questo e' un button. La regola c'era gia', vale anche per questo. */''}
         ${_bottoneSfogliaSuArticolo(f) ? `<div style="display:flex;justify-content:center;margin:0.35rem 0 0.15rem;">${_bottoneSfogliaSuArticolo(f)}</div>` : ''}
+        ${/* 🆕 v7.214 - «Mostra composizione varianti»: i retro della famiglia (`_retriDelleFamiglie`) */''}
+        ${_retriFam ? (() => { const r = _radiceFamiglia(f, _idx); return r ? _tastoComposizioneVarianti(r.id, _retriFam.get(r.id)) : ''; })() : ''}
         <div class="fig-actions">
         ${slotSinistraHTML}
         <div class="fig-act fig-act-mylist"><span class="fig-act-label">${t('owned.toggle')}</span><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista \u2014 clicca per toglierla':'In your list \u2014 click to remove') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="event.stopPropagation();toggleOwned('${f.id}')">\u2713</button></div>
@@ -68736,6 +68945,71 @@ function _mostraSfogliaAlbum() {
 //    che qualcuno la usasse. Una funzione giusta che non chiama nessuno passa qualunque controllo
 //    sulla sua forma. Da questa release quella suite pretende anche il chiamante.
 // 🆕 Il chiamante e' la card della griglia (Franco), e la taglia e' `piccola`.
+// 🆕 v7.214 (Franco: «nella card di una figurina con retro avente piu retro, vorrei un tasto che se richiamato mostra una
+//    finestra che mostra un quadante degli N retro di questa figurina»; il tasto lo vedono tutti, si chiama «Mostra
+//    composizione varianti», e la finestra è una griglia di foto) - I RETRO DI UNA FAMIGLIA. La famiglia è la base con
+//    tutte le versioni che risalgono a lei per `baseFigurineId` (anche il change di una variazione); il retro di ognuna è
+//    quello di `_retroEffettivo`. Uno per foto, e il tasto c'è quando le foto sono almeno due.
+// 📌 Le foto alla misura che la card chiede già (`cloudinaryUrl` senza trasformazione): nessuna copia nuova su Cloudinary.
+// ⚠️ La mappa si fa una volta per griglia (`renderItems`, `_retriFam`): per card sarebbe quadratica.
+// ⚠️ Si risale solo dentro le figurine con retro: la base di una fcr punta alla sua fpa (`baseFigurineId`, v7.178), che
+//    è un'altra tipologia e non è una versione.
+function _radiceFamiglia(f, idx) {
+  let x = f, giri = 0;
+  while (x && x.baseFigurineId && giri++ < 10) {
+    const p = idx.get(x.baseFigurineId);
+    if (!p || (p.section || 'figurines') !== 'figurines') break;
+    x = p;
+  }
+  return x;
+}
+function _retriDelleFamiglie(figs, idx) {
+  const m = new Map();
+  figs.forEach(f => {
+    if ((f.section || 'figurines') !== 'figurines') return;
+    const id = _retroEffettivo(f, figs, idx), r = id && idx.get(id), img = r && _fotoFigurina(r, figs);
+    if (!img) return;
+    const k = _radiceFamiglia(f, idx).id;
+    if (!m.has(k)) m.set(k, new Map());
+    const g = m.get(k);
+    if (!g.has(img)) g.set(img, []);
+    g.get(img).push(f);
+  });
+  return m;
+}
+function _tastoComposizioneVarianti(radice, retri) {
+  if (!retri || retri.size < 2) return '';
+  return '<div style="display:flex;justify-content:center;margin:0.35rem 0 0.15rem;"><button type="button" class="btn-primary" ' +
+    'style="font-size:0.7rem;padding:0.3rem 0.6rem;" onclick="apriComposizioneVarianti(\'' + radice + '\')">' +
+    (currentLang === 'it' ? 'Mostra composizione varianti' : 'Show variant composition') + '</button></div>';
+}
+function apriComposizioneVarianti(radice) {
+  const it = currentLang === 'it';
+  const figs = getData('figurines', []);
+  const idx = new Map(figs.map(x => [x.id, x]));
+  const base = idx.get(radice);
+  const retri = _retriDelleFamiglie(figs.filter(f => f.id === radice || _radiceFamiglia(f, idx).id === radice), idx).get(radice);
+  if (!base || !retri) return;
+  document.getElementById('composizione-modal')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'composizione-modal';
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  const voci = [...retri.entries()].map(([img, arts]) => {
+    const versioni = [...new Set(arts.map(a => _nomeVersione(_chiaveTipo(a), it ? 'it' : 'en')))].join(' · ');
+    return '<figure style="margin:0;display:flex;flex-direction:column;gap:0.3rem;">' +
+      '<div style="aspect-ratio:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow:hidden;">' +
+        '<img src="' + cloudinaryUrl(img) + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:4px;box-sizing:border-box;"></div>' +
+      '<figcaption style="font-size:0.75rem;color:var(--text);text-align:center;line-height:1.3;">' + esc(versioni) + '</figcaption></figure>';
+  }).join('');
+  ov.innerHTML = '<div class="modal" style="max-width:1000px;width:96vw;">' +
+    '<div class="modal-header"><h2 class="modal-title">' + esc((_numeroAschermo(base) ? _numeroAschermo(base) + ' ' : '') + (base.name || '')) +
+      ' <span style="font-size:0.8rem;opacity:0.7;">(' + retri.size + ' retro)</span></h2>' +
+    '<button type="button" class="modal-close" onclick="document.getElementById(\'composizione-modal\').remove()">✕</button></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.8rem;padding:0 1.2rem 1.2rem;">' + voci + '</div></div>';
+  document.body.appendChild(ov);
+}
+
 function _bottoneSfogliaSuArticolo(f) {
   if (!f || !_haPagine(f.section)) return '';
   const alb = _albumDaSfogliare(f.seriesId);
