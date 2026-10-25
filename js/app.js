@@ -1,7 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.218 - Modificati index.html (per la versione) e js/app.js. COLLAGE FINO A 40 FOTO (Franco: «il numero di articoli
+// v7.219 - Modificati index.html (per la versione) e js/app.js. COLLAGE: LA FAMIGLIA DELLE FPA SI VEDE SUBITO (Franco:
+//          «sulle fpa della serie 1 la famiglia è popolata; lo dimostra il fatto che se filtro le fpa per famiglia, i
+//          risultati escono»): scegliendo «Dal sito», `_collageDa` chiama `_collageSitoAggiorna`, così la domanda sulla
+//          famiglia (e quella sul fronte o retro) si decide già sulla tipologia di partenza, non solo cambiando tendina.
+//          La v7.218 aveva supposto fpa senza famiglia scritta: il ripiego `_collageFamiglia` resta, non fa danni.
+//          E IL COLLAGE SI SPOSTA IN «ANNUNCI» (Franco: «sposta la funzione Collage foto nella sezione "Annunci"; lì
+//          dentro ci metti un tasto, dello stesso stile del tasto "Crea annuncio", fa iniziare la procedura di creazione
+//          collage in una finestra»): il tasto «🖼️ Crea collage foto» accanto a «📸 Crea foto per annunci», anche sul
+//          telefono, apre la finestra (`apriCollage`, `_collageApriFinestra`, che usa anche il «Cambia foto»). Via il tab
+//          della console (`renderAdminCollage`) e la voce `#nav-collage` del menu del telefono della v7.217: dal
+//          telefono si arriva da «📢 Annunci». Modificato anche css/style.css (i numeri del menu tornano dodici).
+// v7.218 -Modificati index.html (per la versione) e js/app.js. COLLAGE FINO A 40 FOTO (Franco: «il numero di articoli
 //          per il collage fallo arrivare a 40»): ruota, mazzo e griglia da 2 a 40 (`COLLAGE_TIPI`, la casella del
 //          numero). Il mazzo resta al più mezzo giro: con 40 carte, 4,6° fra due.
 //          E LA FAMIGLIA ANCHE DALLA TIPOLOGIA (Franco: «manca il campo Famiglia … va chiesto dopo il campo "Quale
@@ -31684,7 +31695,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.218';
+const JS_VERSION = 'v7.219';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -37110,7 +37121,7 @@ function updateNavUser() {
   // 📌 Ognuno di questi viene riacceso piu' sotto da chi ne ha il diritto - `nav-reply-btn` per
   //    l'utente NON admin, gli altri per l'admin - e `nav-quota-warning-btn` da
   //    `_checkReadQuotaWarning()`, che gira dopo.
-  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-collage', 'nav-quota-warning-btn',
+  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-quota-warning-btn',
    'admin-add-series-btn', 'nav-wantlist', 'nav-js-version-wrap'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
@@ -37163,11 +37174,7 @@ function updateNavUser() {
     if (nlBtn) nlBtn.style.display = currentUser.isAdmin ? '' : 'none';
     // v7.186 (Franco) - la voce «Annunci», solo all'admin
     const annBtn = document.getElementById('nav-annunci');
-    if (annBtn) annBtn.style.display = currentUser.isAdmin ? '' : 'none';
-    // v7.217 (Franco) - e «Collage foto», solo all'admin: sul desktop la spegne comunque la regola dell'index
-    const colBtn = document.getElementById('nav-collage');
-    if (colBtn) colBtn.style.display = currentUser.isAdmin ? '' : 'none';
-    if (btnCollect) btnCollect.style.display = 'none';
+    if (annBtn) annBtn.style.display = currentUser.isAdmin ? '' : 'none';    if (btnCollect) btnCollect.style.display = 'none';
     const homeContent = document.getElementById('home-logged-in-content');
     if (homeContent) homeContent.style.display = '';
     // 🗄️ v6.913 — qui c'era `mostraNumeroniHero(true)` (v5.935): è salita fuori dall'`if`, perché
@@ -41455,6 +41462,9 @@ function renderAdminFotoAnnuncio() {
         : 'Listing photos for eBay or Vinted from the photos of an album\'s pages. Nothing is saved on the site. Albums with pages: <strong>' + n + '</strong>.') +
     '</p>' +
     '<button class="btn-primary btn-admin admin-anche-telefono" onclick="_faApri()">' + (it ? '📸 Crea foto per annunci' : '📸 Create listing photos') + '</button>' +
+    // 🆕 v7.219 (Franco: «sposta la funzione Collage foto nella sezione "Annunci"; lì dentro ci metti un tasto, dello stesso
+    //    stile del tasto "Crea annuncio", fa iniziare la procedura di creazione collage in una finestra») - `apriCollage`
+    '<button class="btn-primary btn-admin admin-anche-telefono" style="margin-left:0.6rem;" onclick="apriCollage()">' + (it ? '🖼️ Crea collage foto' : '🖼️ Create photo collage') + '</button>' +
     '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.8rem;flex-wrap:wrap;margin:2rem 0 0.6rem;">' +
       '<h4 style="font-family:var(--font-ui);margin:0;">📋 ' + (it ? 'Annunci in corso' : 'Current listings') + '</h4>' +
       '<button type="button" class="btn-primary" onclick="_annApriFinestra(null)">' + (it ? '+ Aggiungi annuncio' : '+ Add listing') + '</button>' +
@@ -41488,23 +41498,37 @@ const COLLAGE_TIPI = [
   { k: 'griglia', it: 'A griglia',        en: 'Grid',          min: 2, max: 40 },
 ];
 let _collageFoto = [];   // le immagini scelte: { nome, img }
-function renderAdminCollage() {
-  const box = document.getElementById('admin-collage-box');
-  if (!box) return;
+// 🔄 v7.219 (Franco: «sposta la funzione Collage foto nella sezione "Annunci"») - non più un tab della console
+//    (`renderAdminCollage`, tolta): il tasto «🖼️ Crea collage foto» di Annunci apre la stessa finestra del «Cambia foto»,
+//    senza un box da riempire. Le domande sono sempre in una finestra sola, quindi gli id non si doppiano mai.
+function apriCollage() {
+  if (!currentUser?.isAdmin) return;
   _collageBoxDest = null;
-  box.innerHTML = _collageHTML(false);
+  _collageApriFinestra('🖼️ ' + (currentLang === 'it' ? 'Collage foto' : 'Photo collage'), false);
   _collageMostraScelte();
   _collageStato();
 }
-// 🔄 v7.214 - le domande del collage in una funzione sola: le usano la console (`renderAdminCollage`) e la finestra del
-//    «Cambia foto» di un box (`apriCollageBox`). `perBox` cambia solo il titolo, la riga che spiega e il tasto «Usa».
+function _collageApriFinestra(titolo, perBox) {
+  document.getElementById('collage-box-modal')?.remove();
+  _collageFoto = []; _collageBlob = null; _collageModo = '';
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'collage-box-modal';
+  ov.innerHTML = '<div class="modal" style="max-width:900px;width:96vw;">' +
+    '<div class="modal-header"><h2 class="modal-title">' + titolo + '</h2>' +
+    '<button type="button" class="modal-close" onclick="chiudiCollageBox()">✕</button></div>' +
+    '<div id="collage-box-corpo" style="padding:0 1.2rem 1.2rem;">' + _collageHTML(perBox) + '</div></div>';
+  document.body.appendChild(ov);
+  return ov;
+}
+// 🔄 v7.214 - le domande del collage in una funzione sola: le usano la finestra di Annunci (`apriCollage`, v7.219) e
+//    quella del «Cambia foto» di un box (`apriCollageBox`). `perBox` cambia solo la riga che spiega e il tasto «Usa».
 function _collageHTML(perBox) {
   const it = currentLang === 'it';
   const dom = 'font-size:0.92rem;font-weight:700;color:var(--info);margin:1.2rem 0 0.45rem;';
   const scelta = (nome, val, testo, extra) => '<label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.88rem;color:var(--text);margin:0.25rem 0;">' +
     '<input type="radio" name="' + nome + '" value="' + val + '"' + (extra || '') + '>' + testo + '</label>';
-  return (perBox ? '' : '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">🖼️ ' + (it ? 'Collage foto' : 'Photo collage') + '</h4>') +
-    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;line-height:1.5;">' +
+  return '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;line-height:1.5;">' +
       (it ? 'Unisce più foto in una foto sola, con lo sfondo trasparente e la forma dei box degli hub (' + COLLAGE_W + '×' + COLLAGE_H + ' px).<br>' +
             (perBox ? 'Con «Usa come foto della card» il collage diventa la foto di questa card.' : 'La foto si scarica e basta: sul sito non si salva niente.')
           : 'Joins several photos into one, transparent background, hub box shape.' + (perBox ? '' : ' Nothing is saved on the site.')) +
@@ -41557,22 +41581,11 @@ function _tastoCollageBox(chiave, perSerie) {
 function apriCollageBox(chiave, perSerie) {
   if (!currentUser?.isAdmin) return;
   const it = currentLang === 'it';
-  const console_ = document.getElementById('admin-collage-box');
-  const daRifare = !!(console_ && console_.innerHTML);
-  if (console_) console_.innerHTML = '';
-  document.getElementById('collage-box-modal')?.remove();
-  _collageBoxDest = { chiave, perSerie: !!perSerie, seriesId: perSerie ? currentSeriesId : null, daRifare };
-  _collageFoto = []; _collageBlob = null; _collageModo = 'sito';
+  // 🔄 v7.219 - la finestra la fa `_collageApriFinestra`; la console non c'è più, quindi niente da svuotare né rifare
   const tipo = PRODOTTI_INVENTARIO.includes(chiave) ? null : ((typeof _tipiProdotto === 'function' ? _tipiProdotto() : []) || []).find(t => t.id === chiave);
   const nome = tipo ? _nomeTipo(tipo) : getSectionLabel(chiave);
-  const ov = document.createElement('div');
-  ov.className = 'modal-overlay';
-  ov.id = 'collage-box-modal';
-  ov.innerHTML = '<div class="modal" style="max-width:900px;width:96vw;">' +
-    '<div class="modal-header"><h2 class="modal-title">🖼️ ' + (it ? 'Foto della card «' : 'Card photo «') + esc(nome) + '»' + (perSerie ? (it ? ' di questa serie' : ' for this series') : '') + '</h2>' +
-    '<button type="button" class="modal-close" onclick="chiudiCollageBox()">✕</button></div>' +
-    '<div id="collage-box-corpo" style="padding:0 1.2rem 1.2rem;">' + _collageHTML(true) + '</div></div>';
-  document.body.appendChild(ov);
+  const ov = _collageApriFinestra('🖼️ ' + (it ? 'Foto della card «' : 'Card photo «') + esc(nome) + '»' + (perSerie ? (it ? ' di questa serie' : ' for this series') : ''), true);
+  _collageBoxDest = { chiave, perSerie: !!perSerie, seriesId: perSerie ? currentSeriesId : null };
   // già puntato sul box: «Dal sito», poi la serie e la tipologia (o la sola tipologia)
   const da = ov.querySelector('input[name="collage-da"][value="sito"]');
   if (da) da.checked = true;
@@ -41604,9 +41617,7 @@ function apriCollageBox(chiave, perSerie) {
 }
 function chiudiCollageBox() {
   document.getElementById('collage-box-modal')?.remove();
-  const rifai = _collageBoxDest && _collageBoxDest.daRifare;
   _collageBoxDest = null; _collageFoto = []; _collageBlob = null;
-  if (rifai) renderAdminCollage();
 }
 async function _collageUsaPerBox() {
   const it = currentLang === 'it';
@@ -41648,6 +41659,10 @@ function _collageDa() {
   _collageModo = (document.querySelector('input[name="collage-da"]:checked') || {}).value || '';
   const box = document.getElementById('collage-sito');
   if (box) box.style.display = _collageModo === 'sito' ? '' : 'none';
+  // v7.219 (Franco: «sulle fpa della serie 1 la famiglia è popolata») - le domande che dipendono dalle tendine (famiglia,
+  //    fronte o retro) si decidono anche all'apertura: prima restavano nascoste finché non si cambiava una tendina, e
+  //    sulla prima tipologia della serie (spesso le fpa) la famiglia non compariva mai
+  if (_collageModo === 'sito') _collageSitoAggiorna();
   const opz = document.getElementById('collage-pc-opz');   // v7.213
   if (opz) opz.style.display = _collageModo === 'pc' ? 'flex' : 'none';
   _collageFoto = [];
@@ -62642,7 +62657,6 @@ function adminTab(tab) {
   if (tab === 'questionario') renderAdminQuestionario();  // v7.156 (Franco)
   if (tab === 'aggiornamenti') renderAdminAggiornamenti();   // v7.170 (Franco)
   if (tab === 'fotoannuncio') renderAdminFotoAnnuncio();     // v7.182 (Franco)
-  if (tab === 'collage') renderAdminCollage();     // v7.209 (Franco)
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
