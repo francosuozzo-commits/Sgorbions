@@ -1,6 +1,20 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.224 - Modificati index.html e js/app.js. COLLAGE: con «Crea anche foto retro» spuntata, dopo «Prendi le foto»
+//          l'anteprima mostra anche i retro, in una riga sotto le fcr e nello stesso ordine (`_collageScelteRetro`);
+//          dove una fcr non ha il retro, un riquadro «senza retro». Spunta tolta o tipologia cambiata: la riga sparisce.
+//          E I RETRO A GRANDEZZA VERA (Franco: «quando il fronte è verticale, il retro è più piccolo … i retro devono
+//          avere dimensioni reali»; soluzione 2, «allargare entrambe le foto»): nella griglia ogni figurina ha un posto
+//          che tiene fronte e retro col lato lungo uguale, e le due foto usano gli stessi posti, bordi e scala
+//          (`_collageDisponi` con `retri`, `_collageRetriLeggi`). La spunta c'è solo con la griglia (Franco: «b»).
+//          Modificato anche css/style.css. SFOGLIA ALBUM DAL TELEFONO (Franco: «le pagine sono molto più piccole che
+//          nell'Inventario … vorrei le medesime dimensioni; spostiamo i tasti sopra e sotto alla foto»): la pagina a
+//          tutta larghezza come nel Questionario; sopra la freccia avanti e «Ultima pagina», sotto la freccia indietro
+//          e «Prima pagina» (come la v7.157 del Questionario); la cornice alta quanto la pagina più larga
+//          (`_sfogliaAdattaCornice`), così le frecce non si muovono e non c'è nero sopra e sotto.
+//          COLLAGE da Annunci: «Da dove le prendo ?» parte su «Dal sito» (Franco); e nelle domande del collage il «?»
+//          ha uno spazio davanti (Franco: «metti il "?" anteceduto da uno spazio»), solo in italiano.
 // v7.223 - Modificati index.html e js/app.js. COLLAGE: «Che tipo di collage vuoi?» parte su «A griglia» (Franco: «che
 //          tipo di collage: metti default "griglia"»; era il primo dell'elenco). E alla domanda della texture una
 //          miniatura per voce (Franco: «affianco ad ogni opzione (sotto, nel mobile) una miniatura della texture»):
@@ -31751,7 +31765,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.223';
+const JS_VERSION = 'v7.224';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41574,7 +41588,10 @@ let _collageFoto = [];   // le immagini scelte: { nome, img }
 function apriCollage() {
   if (!currentUser?.isAdmin) return;
   _collageBoxDest = null;
-  _collageApriFinestra('🖼️ ' + (currentLang === 'it' ? 'Collage foto' : 'Photo collage'), false);
+  const ov = _collageApriFinestra('🖼️ ' + (currentLang === 'it' ? 'Collage foto' : 'Photo collage'), false);
+  // 🆕 v7.224 (Franco: «alla domanda "Da dove le prendo?" metti a default il sito») - come dal «Cambia foto» di una card
+  const da = ov && ov.querySelector('input[name="collage-da"][value="sito"]');
+  if (da) { da.checked = true; _collageDa(); }
   _collageMostraScelte();
   _collageStato();
 }
@@ -41607,7 +41624,7 @@ function _collageHTML(perBox) {
     // 🔄 v7.222 (Franco: «la domanda "quante foto devi unire" mettiamola verso la fine, poco prima del bottone "prendi le
     //    foto"») - «Quante foto devi unire?» non è più la prima: sta in `_collageSitoHTML`, sopra «Prendi le foto», e con
     //    «Me le passi tu» `_collageDa` la sposta sotto la spunta dello sfondo. Le domande qui si rinumerano da 1.
-    '<div style="' + dom + '">1. ' + (it ? 'Da dove le prendo?' : 'Where do I get them?') + '</div>' +
+    '<div style="' + dom + '">1. ' + (it ? 'Da dove le prendo ?' : 'Where do I get them?') + '</div>' +
     // 🔄 v7.212 - «Dal sito» si accende: le sue domande stanno in `#collage-sito` (`_collageSitoHTML`)
     scelta('collage-da', 'sito', it ? 'Dal sito' : 'From the site', ' onchange="_collageDa()"') +
     scelta('collage-da', 'pc', it ? 'Me le passi tu' : 'You give them to me', ' onchange="_collageDa();_collageScegli()"') +
@@ -41618,17 +41635,17 @@ function _collageHTML(perBox) {
       ' <span style="font-size:0.75rem;opacity:0.7;">(' + (it ? 'solo sfondi di un colore unito, che toccano i bordi della foto' : 'plain one-colour backgrounds only') + ')</span></label>' +
     '<div id="collage-sito" style="display:none;margin:0.5rem 0 0 1.4rem;padding:0.6rem 0.9rem;border-left:2px solid var(--border);">' + _collageSitoHTML() + '</div>' +
     '<div id="collage-scelte" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-top:0.4rem;"></div>' +
-    '<div style="' + dom + '">2. ' + (it ? 'Che tipo di collage vuoi?' : 'Which collage?') + '</div>' +
+    '<div style="' + dom + '">2. ' + (it ? 'Che tipo di collage vuoi ?' : 'Which collage?') + '</div>' +
     COLLAGE_TIPI.map((t, i) => scelta('collage-tipo', t.k, esc(it ? t.it : t.en) + ' <span style="font-size:0.75rem;opacity:0.7;">(' +
       (t.min === t.max ? (it ? 'esattamente ' : 'exactly ') + t.min : t.min + '–' + t.max) + (it ? ' foto' : ' photos') + ')</span>',
       // 🔄 v7.223 (Franco: «che tipo di collage: metti default "griglia"») - era il primo dell'elenco
       (t.k === 'griglia' ? ' checked' : '') + ' onchange="_collageStato()"')).join('') +
     // 🆕 v7.220 - il venditore (facoltativo) mette la sua texture; la texture è obbligatoria: da Annunci non ce n'è una
     //    di serie, dal «Cambia foto» di una card «Nessuna», come prima
-    '<div style="' + dom + '">3. ' + (it ? 'Per quale venditore è? (facoltativa)' : 'Which seller is it for? (optional)') + '</div>' +
+    '<div style="' + dom + '">3. ' + (it ? 'Per quale venditore è ? (facoltativa)' : 'Which seller is it for? (optional)') + '</div>' +
     '<select id="collage-venditore" onchange="_collageVenditoreScelto()" style="background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:0.35rem 0.5rem;font-size:0.88rem;">' +
       '<option value="">—</option>' + _ANN_ACCOUNT.map(a => '<option value="' + esc(a) + '">' + esc(a) + '</option>').join('') + '</select>' +
-    '<div style="' + dom + '">4. ' + (it ? 'Quale texture di sfondo?' : 'Which background texture?') + '</div>' +
+    '<div style="' + dom + '">4. ' + (it ? 'Quale texture di sfondo ?' : 'Which background texture?') + '</div>' +
     // 🆕 v7.223 (Franco: «alla domanda sulla texture, sarebbe bello avere affianco ad ogni opzione (sotto, nel mobile)
     //    una miniatura della texture») - accanto al nome dal PC, sotto dal telefono (`_isMobileViewport`); per
     //    «Nessuna» gli scacchi dell'anteprima, che dicono «trasparente». Le immagini sono quelle del collage, dal sito.
@@ -41642,7 +41659,7 @@ function _collageHTML(perBox) {
         esc(it ? t.it : t.en) + (tel ? '<span style="flex-basis:100%;height:0;"></span>' : '') + mini + '</label>';
     }).join('') +
     // 🆕 v7.222 - la grandezza massima, solo da Annunci (dalla card il collage è sempre 1200×675)
-    (perBox ? '' : '<div style="' + dom + '">5. ' + (it ? 'Quanto grande al massimo?' : 'How large at most?') + '</div>' +
+    (perBox ? '' : '<div style="' + dom + '">5. ' + (it ? 'Quanto grande al massimo ?' : 'How large at most?') + '</div>' +
       COLLAGE_TETTI.map(w => scelta('collage-tetto', w, w + ' × ' + Math.round(w * COLLAGE_MAX_H / COLLAGE_MAX_W) + ' px' +
         ' <span style="font-size:0.75rem;opacity:0.7;">(' + ({ 2400: it ? 'leggera' : 'light', 3200: it ? 'media' : 'medium', 4000: it ? 'la più nitida' : 'sharpest' })[w] + ')</span>',
         w === COLLAGE_MAX_W ? ' checked' : '')).join('') +
@@ -41788,23 +41805,23 @@ function _collageSitoHTML() {
   const tipi = (typeof _tipiProdotto === 'function') ? _tipiProdotto() : [];
   const sid0 = serie[0] && serie[0].id, sez0 = (_collageSezioniDellaSerie(sid0)[0] || [])[0];
   const ver0 = (_collageVersioniDellaSerie(sid0, sez0).match(/value="([^"]*)"/) || [])[1];   // v7.215 - la prima versione, per le famiglie
-  return '<div style="' + dom + 'margin-top:0;">' + (it ? 'Da una serie o da una tipologia di articolo?' : 'From a series or an item type?') + '</div>' +
+  return '<div style="' + dom + 'margin-top:0;">' + (it ? 'Da una serie o da una tipologia di articolo ?' : 'From a series or an item type?') + '</div>' +
     radio('collage-sito-da', 'serie', it ? 'Serie' : 'Series', true) + radio('collage-sito-da', 'tda', it ? 'Tipologia di articolo' : 'Item type') +
     '<div style="margin-top:0.35rem;">' +
       '<select id="collage-sito-serie" style="' + sel + '" onchange="_collageSerieScelta()">' + serie.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name || '') + '</option>').join('') + '</select>' +
       // v7.214 - dopo la serie, la tipologia di articolo di quella serie (`_collageTdaDellaSerie`)
       '<div id="collage-sito-serie-tda-box">' +
-        '<div style="' + dom + '">' + (it ? 'Quale tipologia di articolo?' : 'Which item type?') + '</div>' +
+        '<div style="' + dom + '">' + (it ? 'Quale tipologia di articolo ?' : 'Which item type?') + '</div>' +
         '<select id="collage-sito-serie-tda" style="' + sel + '" onchange="_collageTdaScelta()">' + _collageTdaDellaSerie(sid0) + '</select>' +
-        '<div style="' + dom + '">' + (it ? 'Quale tipologia di versione?' : 'Which version type?') + '</div>' +
+        '<div style="' + dom + '">' + (it ? 'Quale tipologia di versione ?' : 'Which version type?') + '</div>' +
         '<select id="collage-sito-serie-ver" style="' + sel + '" onchange="_collageVerScelta()">' + _collageVersioniDellaSerie(sid0, sez0) + '</select>' +
         // v7.215 - e la famiglia, facoltativa, se gli articoli scelti ne hanno (`_collageFamiglieDellaSerie`)
         '<div id="collage-sito-fam-box" style="display:none;">' +
-          '<div style="' + dom + '">' + (it ? 'Quale famiglia? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which family? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
+          '<div style="' + dom + '">' + (it ? 'Quale famiglia ? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which family? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
           '<select id="collage-sito-serie-fam" style="' + sel + '" onchange="_collageSitoAggiorna()">' + _collageFamiglieDellaSerie(sid0, sez0, ver0) + '</select>' +
         '</div>' +
         '<div id="collage-sito-lato-box" style="display:none;">' +
-          '<div style="' + dom + '">' + (it ? 'Il fronte o il retro?' : 'Front or back?') + '</div>' +
+          '<div style="' + dom + '">' + (it ? 'Il fronte o il retro ?' : 'Front or back?') + '</div>' +
           radio('collage-sito-lato', 'fronte', it ? 'Fronte' : 'Front', true) + radio('collage-sito-lato', 'retro', it ? 'Retro' : 'Back') +
         '</div>' +
       '</div>' +
@@ -41814,31 +41831,31 @@ function _collageSitoHTML() {
       '</select>' +
       // v7.218 - la famiglia anche dalla tipologia, subito dopo (`_collageFamiglieDellaTda`)
       '<div id="collage-sito-tda-fam-box" style="display:none;">' +
-        '<div style="' + dom + '">' + (it ? 'Quale famiglia? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which family? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
+        '<div style="' + dom + '">' + (it ? 'Quale famiglia ? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which family? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
         '<select id="collage-sito-tda-fam" style="' + sel + '" onchange="_collageSitoAggiorna()">' + _collageFamiglieDellaTda(_tdaDellHub()[0] || (tipi[0] ? 'tipo:' + tipi[0].id : '')) + '</select>' +
       '</div>' +
     '</div>' +
-    '<div style="' + dom + '">' + (it ? 'C\'è un numero particolare da considerare?' : 'Any particular number?') + '</div>' +
+    '<div style="' + dom + '">' + (it ? 'C\'è un numero particolare da considerare ?' : 'Any particular number?') + '</div>' +
     radio('collage-sito-num', 'no', it ? 'No' : 'No', true) + radio('collage-sito-num', 'si', it ? 'Sì' : 'Yes') +
     '<input type="text" id="collage-sito-numero" class="form-input" placeholder="' + (it ? 'numero' : 'number') + '" maxlength="6" style="display:none;width:6rem;margin-left:0.3rem;" oninput="_collageSitoAggiorna()">' +
     // v7.218 - in che ordine si prendono: in ordine alfabetico i primi N, o N a caso (`_collagePesca`)
-    '<div style="' + dom + '">' + (it ? 'In che ordine le prendo?' : 'In which order do I pick them?') + '</div>' +
+    '<div style="' + dom + '">' + (it ? 'In che ordine le prendo ?' : 'In which order do I pick them?') + '</div>' +
     ['alfabetico', 'casuale'].map(v => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
       // 🔄 v7.222 (Franco: «il default della domanda sull'ordine lascialo ad alfabetico») - era Casuale (v7.218)
       '<input type="radio" name="collage-sito-ordine" value="' + v + '"' + (v === 'alfabetico' ? ' checked' : '') + ' onchange="_collageMostraScelte()">' +
       (v === 'alfabetico' ? (it ? 'Alfabetico' : 'Alphabetical') : (it ? 'Casuale' : 'Random')) + '</label>').join('') +
     // v7.216 - con o senza le macchie (`_collageUrlFoto`); cambiando, le foto già prese si rileggono
-    '<div style="' + dom + '">' + (it ? 'Con le macchie o senza?' : 'With or without watermark?') + '</div>' +
+    '<div style="' + dom + '">' + (it ? 'Con le macchie o senza ?' : 'With or without watermark?') + '</div>' +
     ['con', 'senza'].map(v => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
       // 🔄 v7.222 (Franco: «la domanda sulle macchie come default metti "senza macchie"») - era «Con» (v7.216)
       '<input type="radio" name="collage-sito-macchie" value="' + v + '"' + (v === 'senza' ? ' checked' : '') + ' onchange="_collageMacchieScelta()">' +
       (v === 'con' ? (it ? 'Con le macchie' : 'With watermark') : (it ? 'Senza macchie' : 'Without watermark')) + '</label>').join('') +
     // 🆕 v7.223 - «Crea anche foto retro», solo per le fcr (`_collageSitoAggiorna` la mostra), vedi `_collageRetroBase`
     '<label id="collage-sito-retro-box" style="display:none;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.6rem 0 0;">' +
-      '<input type="checkbox" id="collage-sito-retro">' + (it ? 'Crea anche foto retro' : 'Also create the backs photo') + '</label>' +
+      '<input type="checkbox" id="collage-sito-retro" onchange="_collageMostraScelte()">' + (it ? 'Crea anche foto retro' : 'Also create the backs photo') + '</label>' +
     // 🔄 v7.222 - «Quante foto devi unire?» qui, appena prima di «Prendi le foto», già riempita da `_collageSitoAggiorna`
     '<div id="collage-n-box">' +
-      '<div style="' + dom + '">' + (it ? 'Quante foto devi unire?' : 'How many photos?') + '</div>' +
+      '<div style="' + dom + '">' + (it ? 'Quante foto devi unire ?' : 'How many photos?') + '</div>' +
       '<input type="number" id="collage-n" class="form-input" min="2" max="40" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
     '</div>' +
     '<div id="collage-sito-prendi" style="margin-top:0.6rem;"><button type="button" class="btn-primary" onclick="_collagePesca()">🎲 ' + (it ? 'Prendi le foto' : 'Pick the photos') + '</button></div>';
@@ -41860,6 +41877,7 @@ function _collageSitoAggiorna() {
   if (n) n.style.display = num === 'si' ? '' : 'none';
   const rb = document.getElementById('collage-sito-retro-box');   // v7.223
   if (rb) rb.style.display = _collageRetroPossibile() ? 'flex' : 'none';
+  _collageMostraScelte();   // v7.224 - l'anteprima dei retro c'è solo finché la spunta si vede
   // 🆕 v7.222 (Franco: «quel valore, prepopolalo in automatico in base alle domande precedenti: per esempio, se metti
   //    serie 1, FPA, famiglia "gli Animals" mettici dentro il 15, perché quelle FPA sono esattamente 15»; «se il
   //    risultato è maggiore di 40 mettilo lo stesso, così la procedura si blocca ed io me ne accorgo») - a ogni risposta
@@ -41992,7 +42010,9 @@ function _collageFotoCandidato(f, tutti, lato) {
 //    `_basePosterDi`; la base è sé stessa). Solo da Annunci, solo dal sito, e non quando le foto sono già i retro.
 function _collageRetroPossibile() {
   if (_collageBoxDest || _collageModo !== 'sito') return false;
-  const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
+  // v7.224 (Franco: «per ora stiamo ragionando solo per la griglia»; con ruota e mazzo «spunta nascosta») - solo la griglia
+  if ((document.querySelector('input[name="collage-tipo"]:checked') || {}).value !== 'griglia') return false;
+  const da =(document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
   const sez = (document.getElementById(da === 'serie' ? 'collage-sito-serie-tda' : 'collage-sito-tda') || {}).value;
   const ver = (document.getElementById('collage-sito-serie-ver') || {}).value;
   const retro = da === 'serie' && ver && ver !== 'base' && (document.querySelector('input[name="collage-sito-lato"]:checked') || {}).value === 'retro';
@@ -42148,7 +42168,26 @@ function _collageMostraScelte() {
   box.innerHTML = _collageFoto.map(x => '<img src="' + x.url + '" alt="" title="' + esc(x.nome) + '" style="height:52px;width:auto;max-width:6rem;object-fit:contain;border:1px solid var(--border);border-radius:4px;background:var(--card2);">').join('') +
     (_collageFoto.length ? (_collageModo === 'sito'   // v7.212: dal sito si ripesca, dal PC si riscelgono i file
       ? '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;' + (alfa ? 'opacity:0.5;' : '') + '"' + (alfa ? ' disabled title="' + (it ? 'In ordine alfabetico le foto sono sempre le stesse' : 'Alphabetical order: always the same photos') + '"' : '') + ' onclick="_collagePesca()">🔀 ' + (it ? 'Rimescola' : 'Shuffle') + '</button>'
-      : '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;" onclick="_collageScegli()">' + (it ? 'Cambia le foto' : 'Change photos') + '</button>') : '');
+      : '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;" onclick="_collageScegli()">' + (it ? 'Cambia le foto' : 'Change photos') + '</button>') : '') +
+    _collageScelteRetro();
+}
+// 🆕 v7.224 (Franco: «se c'è la spunta "Crea anche foto retro", deve mostrare in anteprima anche le foto dei retro,
+//    sotto all'anteprima delle fcr e con ordine dato dalle fcr relative») - una riga sotto, a capo, un retro per fcr nello
+//    stesso ordine, ognuno quello della sua base (`_collageRetroBase`, lo stesso del «Crea»). Dove manca, un riquadro
+//    tratteggiato col nome: al «Crea» la foto dei retro non si farebbe.
+// 📌 L'indirizzo è quello del «Crea» (`_collageUrlFoto`): l'anteprima non chiede a Cloudinary niente che il «Crea» non chieda.
+function _collageScelteRetro() {
+  if (!_collageFoto.length || !_collageRetroPossibile() || !(document.getElementById('collage-sito-retro') || {}).checked) return '';
+  const it = currentLang === 'it';
+  const tutti = getData('figurines', []);
+  const stile = 'height:52px;width:auto;max-width:6rem;border:1px solid var(--border);border-radius:4px;background:var(--card2);';
+  return '<span style="flex-basis:100%;height:0;"></span>' +
+    '<span style="flex-basis:100%;font-size:0.8rem;color:var(--text);">' + (it ? 'Retro:' : 'Backs:') + '</span>' +
+    _collageFoto.map(x => {
+      const src = _collageRetroBase(tutti.find(y => y.id === x.fig), tutti);
+      return src ? '<img src="' + _collageUrlFoto(src) + '" alt="" title="' + esc(x.nome) + '" style="' + stile + 'object-fit:contain;">'
+        : '<span title="' + esc(x.nome) + '" style="' + stile + 'width:3.2rem;border-style:dashed;display:inline-flex;align-items:center;justify-content:center;font-size:0.65rem;color:var(--text);text-align:center;">' + (it ? 'senza retro' : 'no back') + '</span>';
+    }).join('');
 }
 // Che cosa manca per poter creare: il primo problema, a parole, oppure ''
 function _collageProblema() {
@@ -42188,11 +42227,43 @@ function _collageStato() {
   if (av) av.textContent = p;
   const b = document.getElementById('collage-crea');
   if (b) { b.disabled = !!p; b.style.opacity = p ? '0.5' : ''; }
+  _collageRetroMostra();   // v7.224 - cambiando il tipo di collage la spunta dei retro compare o sparisce
+}
+// 🆕 v7.224 - la spunta «Crea anche foto retro» si vede quando `_collageRetroPossibile`; se cambia, si rifà l'anteprima
+function _collageRetroMostra() {
+  const rb = document.getElementById('collage-sito-retro-box');
+  if (!rb) return;
+  const v = _collageRetroPossibile() ? 'flex' : 'none';
+  if (rb.style.display !== v) { rb.style.display = v; _collageMostraScelte(); }
 }
 // Le disposizioni. Ogni foto: { img, x, y, w, h, rot } in unità del collage (centro, misura, rotazione in radianti).
-function _collageDisponi(tipo, foto) {
+// 🆕 v7.224 (Franco: «i retro nella foto devono avere dimensioni reali, quindi i retro devono essere tutti uguali»; «dare
+//    più spazio al retro, lasciandolo orizzontale … allargare entrambe le foto … non importa se la foto diventa più
+//    larga») - `retri`: con la foto dei retro, nella griglia ogni figurina ha un posto (`cw` × `ch`) che tiene il fronte
+//    E il suo retro, tutti e due col lato lungo 1: le misure sono quelle vere, e un fronte verticale ha aria ai lati
+//    dove il suo retro orizzontale ci sta intero. La foto dei retro usa gli stessi posti (`_collageDisegna`, `come`).
+function _collageDisponi(tipo, foto, retri) {
   const forma = img => { const r = img.naturalWidth / img.naturalHeight || 1; return r >= 1 ? { w: 1, h: 1 / r } : { w: r, h: 1 }; };
   const n = foto.length;
+  if (tipo === 'griglia' && retri) {
+    const gap = 0.04;
+    const celle = foto.map((img, i) => { const f = forma(img), r = forma(retri[i]); return { img, f, w: Math.max(f.w, r.w) }; });
+    const ch = Math.max(...foto.map((img, i) => Math.max(forma(img).h, forma(retri[i]).h)));
+    const cw = celle.map(x => x.w).sort((a, b) => a - b)[Math.floor(n / 2)];
+    let col = 1, meglio = -1;
+    for (let c = 1; c <= n; c++) {
+      const righe = Math.ceil(n / c);
+      const k = Math.min(16 / (c * cw + (c - 1) * gap), 9 / (righe * ch + (righe - 1) * gap));
+      if (k > meglio + 1e-9) { meglio = k; col = c; }
+    }
+    const righe = Math.ceil(n / col), pezzi = [];
+    for (let rg = 0; rg < righe; rg++) {
+      const inRiga = celle.slice(rg * col, rg * col + col);
+      let x = -(inRiga.reduce((s, p) => s + p.w, 0) + gap * (inRiga.length - 1)) / 2;
+      inRiga.forEach(p => { pezzi.push({ img: p.img, x: x + p.w / 2, y: rg * (ch + gap), w: p.f.w, h: p.f.h, rot: 0, cw: p.w, ch }); x += p.w + gap; });
+    }
+    return pezzi;
+  }
   if (tipo === 'griglia') {
     // 🔄 v7.215 - LA GRIGLIA, da 2 a 20 foto (prima 2×2 fisso). Celle alte 1 e larghe quanto la foto di forma mediana;
     //    ogni foto sta nella sua cella senza tagli né rotazioni. Le colonne sono quelle che fanno le foto più grandi
@@ -42282,12 +42353,16 @@ function _collageMisuraGrande(pezzi, b, margine, tetto) {
 //    1200×675 come prima (la card)
 // 🔄 v7.223 - `come`: le posizioni di un collage già disegnato (`c.pezzi`), con le foto di `foto` al posto delle sue,
 //    nello stesso ordine: è la foto dei retro, ogni retro dove sta il suo fronte (ruota e mazzo hanno del caso)
-function _collageDisegna(tipo, foto, sfondo, grande, come) {
+// 🔄 v7.224 - `retri`: le foto dei retro, per fare a ogni figurina un posto che tenga anche il suo (`_collageDisponi`).
+//    Un pezzo col posto (`cw` × `ch`) conta per il posto, nei bordi: fronti e retro hanno così gli stessi bordi, la
+//    stessa scala e gli stessi centri, e ogni retro sta esattamente dove sta il suo fronte
+function _collageDisegna(tipo, foto, sfondo, grande, come, retri) {
   // un retro di forma diversa dal suo fronte sta dentro il posto del fronte, senza deformarsi
   const dentro = (p, img) => { const r = (img.naturalWidth || img.width) / (img.naturalHeight || img.height) || 1;
     return r > p.w / p.h ? { w: p.w, h: p.w / r } : { w: p.h * r, h: p.h }; };
-  const pezzi = come ? come.map((p, i) => Object.assign({}, p, dentro(p, foto[i]), { img: foto[i] })) : _collageDisponi(tipo, foto);
-  const b = _collageBordi(pezzi);
+  const posto = p => p.cw ? Object.assign({}, p, { w: p.cw, h: p.ch }) : p;
+  const pezzi = come ? come.map((p, i) => Object.assign({}, p, dentro(posto(p), foto[i]), { img: foto[i] })) : _collageDisponi(tipo, foto, retri);
+  const b = _collageBordi((come || pezzi).map(posto));
   const margine = tipo === 'griglia' ? 0.02 : 0.05;
   const { W, H } = come && grande ? { W: grande, H: Math.round(grande * COLLAGE_MAX_H / COLLAGE_MAX_W) }   // v7.223: i retro grandi quanto il fronte
     : grande ? _collageMisuraGrande(pezzi, b, margine, grande) : { W: COLLAGE_W, H: COLLAGE_H };
@@ -42344,7 +42419,9 @@ async function _collageCrea() {
   //    sul trasparente resta PNG, l'unico che lo tiene. Dalla card come prima: 1200×675, PNG.
   const grande = _collageBoxDest ? 0 : (Number((document.querySelector('input[name="collage-tetto"]:checked') || {}).value) || COLLAGE_MAX_W);
   const jpg = !!grande && !!sfondo;
-  const c = _collageDisegna(tipo, imgs, sfondo, grande);
+  // v7.224 - i retro si leggono prima del fronte: nella griglia il posto di ogni figurina tiene anche il suo retro
+  const retri = await _collageRetriLeggi();
+  const c = _collageDisegna(tipo, imgs, sfondo, grande, null, retri);
   const blob = await new Promise(ok => jpg ? c.toBlob(ok, 'image/jpeg', 0.92) : c.toBlob(ok, 'image/png'));
   if (!blob) { toast(it ? '❌ Non riesco a creare la foto' : '❌ Could not create the photo', 'error'); return; }
   _collageBlob = blob;   // v7.214 - per «Usa come foto della card»
@@ -42361,25 +42438,31 @@ async function _collageCrea() {
   if (peso) peso.textContent = (blob.size / 1048576).toFixed(1).replace('.', it ? ',' : '.') + ' MB · ' + c.width + '×' + c.height + ' px';
   const ant = document.getElementById('collage-anteprima');
   if (ant) { ant.innerHTML = '<img src="' + url + '" alt="" style="display:block;width:100%;height:auto;">'; ant.style.display = ''; }
-  await _collageCreaRetro(tipo, sfondo, grande, jpg, c);
+  await _collageCreaRetro(tipo, sfondo, grande, jpg, c, retri);
 }
 // 🆕 v7.223 - la seconda foto, coi retro delle base (`_collageRetroBase`), stesse posizioni, misura e formato del fronte.
 //    Se una figurina non ha il retro (o la foto non si legge) la foto dei retro non si fa, e si dice di chi.
-async function _collageCreaRetro(tipo, sfondo, grande, jpg, c) {
+// 🔄 v7.224 - i retro li legge `_collageRetriLeggi`, prima del fronte; qui arrivano già letti (`retri`, null = niente)
+async function _collageRetriLeggi() {
+  const it = currentLang === 'it';
+  if (!_collageRetroPossibile() || !(document.getElementById('collage-sito-retro') || {}).checked) return null;
+  const tutti = getData('figurines', []);
+  const src = _collageFoto.map(x => _collageRetroBase(tutti.find(y => y.id === x.fig), tutti));
+  const senza = _collageFoto.filter((x, i) => !src[i]).map(x => x.nome);
+  if (senza.length) { toast((it ? '⚠️ Foto dei retro non creata: senza retro ' : '⚠️ Backs photo not created, no back: ') + senza.join(', '), 'error'); return null; }
+  const lette = await Promise.all(src.map((s, i) => _collageLeggiFoto(s, _collageFoto[i].nome)));
+  const perse = _collageFoto.filter((x, i) => !lette[i]).map(x => x.nome);
+  if (perse.length) { toast((it ? '⚠️ Foto dei retro non creata: non si leggono i retro di ' : '⚠️ Backs photo not created, unreadable: ') + perse.join(', '), 'error'); return null; }
+  return lette.map(x => x.img);
+}
+async function _collageCreaRetro(tipo, sfondo, grande, jpg, c, retri) {
   const it = currentLang === 'it';
   const a = document.getElementById('collage-scarica-retro'), peso = document.getElementById('collage-peso-retro'), ant = document.getElementById('collage-anteprima-retro');
   if (a) { if (a.dataset.url) URL.revokeObjectURL(a.dataset.url); a.style.display = 'none'; a.dataset.url = ''; }
   if (peso) peso.textContent = '';
   if (ant) { ant.innerHTML = ''; ant.style.display = 'none'; }
-  if (!_collageRetroPossibile() || !(document.getElementById('collage-sito-retro') || {}).checked) return;
-  const tutti = getData('figurines', []);
-  const src = _collageFoto.map(x => _collageRetroBase(tutti.find(y => y.id === x.fig), tutti));
-  const senza = _collageFoto.filter((x, i) => !src[i]).map(x => x.nome);
-  if (senza.length) { toast((it ? '⚠️ Foto dei retro non creata: senza retro ' : '⚠️ Backs photo not created, no back: ') + senza.join(', '), 'error'); return; }
-  const lette = await Promise.all(src.map((s, i) => _collageLeggiFoto(s, _collageFoto[i].nome)));
-  const perse = _collageFoto.filter((x, i) => !lette[i]).map(x => x.nome);
-  if (perse.length) { toast((it ? '⚠️ Foto dei retro non creata: non si leggono i retro di ' : '⚠️ Backs photo not created, unreadable: ') + perse.join(', '), 'error'); return; }
-  const cR = _collageDisegna(tipo, lette.map(x => x.img), sfondo, grande ? c.width : 0, c.pezzi);
+  if (!retri) return;
+  const cR = _collageDisegna(tipo, retri, sfondo, grande ? c.width : 0, c.pezzi);
   const blob = await new Promise(ok => jpg ? cR.toBlob(ok, 'image/jpeg', 0.92) : cR.toBlob(ok, 'image/png'));
   if (!blob) { toast(it ? '❌ Non riesco a creare la foto dei retro' : '❌ Could not create the backs photo', 'error'); return; }
   const url = URL.createObjectURL(blob);
@@ -69543,6 +69626,14 @@ function _sfogliaAdattaCornice() {
   if (!c || m.classList.contains('hidden')) return;
   const tetto = Math.min(window.innerWidth * 0.7, 1100);
   c.style.width = _sfogliaAspetto ? Math.round(Math.min(tetto, c.clientHeight * _sfogliaAspetto)) + 'px' : 'min(70vw, 1100px)';
+  // 🆕 v7.224 - sul telefono la pagina è a tutta larghezza (style.css) e l'altezza della cornice è quella della pagina
+  //    più larga a quella larghezza, più la riga del nome (2rem): niente nero sopra e sotto, e le righe dei tasti
+  //    attaccate alla foto. Mai oltre lo schermo meno le quattro righe di comandi (13rem). Sul desktop come prima.
+  if (_isMobileViewport() && _sfogliaAspetto) {
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const h = Math.min(window.innerHeight - 13 * rem, c.clientWidth / _sfogliaAspetto + 2 * rem);
+    c.style.setProperty('height', Math.round(h) + 'px', 'important');
+  } else c.style.height = 'calc(100vh - 10rem)';
   const cnt = document.getElementById('sfoglia-album-conta');
   const riga = cnt && cnt.parentElement;
   if (!riga) return;
