@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.226 - Modificati index.html, js/app.js e css/style.css. 🐛 Sfoglia album dal telefono: «Precedente» e «Successiva»
+//          non si vedevano (Franco). Il `display: none` di `.sfoglia-freccia-testo` nello <style> dell'index viene dopo
+//          il foglio e vinceva sul `display: block` del telefono: ora la regola del foglio ha due classi.
+//          COLLAGE: l'usura del tessuto accentuata (Franco: «accentua ancora un poco di più»), `_collageUsura`.
 // v7.225 - Modificati index.html e js/app.js. COLLAGE: «Scarica» diventa «Scarica fronte»; peso e misure non più
 //          accanto ai tasti ma sopra ogni foto creata («Fronte · …» / «Retro · …» quando le foto sono due); e con la
 //          foto dei retro il tasto «Scarica entrambe» (`_collageScaricaTutte`). E LA TEXTURE POSATA A CASO a ogni
@@ -31776,7 +31780,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.225';
+const JS_VERSION = 'v7.226';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42431,10 +42435,12 @@ function _collageDisegna(tipo, foto, sfondo, grande, come, retri) {
 //    · 4-7 chiazze appena più chiare o più scure: il tessuto lavato e stinto non è uniforme;
 //    · una volta su due una macchia leggera color caffè, col bordo un po' più scuro, come una macchia vecchia.
 //    Tutto a bassa opacità: deve sembrare usata, non sporca. Solo gradienti, niente `filter` (Safari non lo fa).
+// 🔄 v7.226 (Franco: «accentua ancora un poco di più la usura») - circa una volta e mezza: 4-8 pieghe più marcate,
+//    6-9 chiazze più forti, la macchia sette volte su dieci e un po' più scura.
 function _collageUsura(ctx, W, H) {
   const caso = (a, b) => a + Math.random() * (b - a), L = Math.hypot(W, H);
   ctx.save();
-  for (let i = 0, n = Math.round(caso(3, 6)); i < n; i++) {
+  for (let i = 0, n = Math.round(caso(4, 8)); i < n; i++) {
     const w = caso(0.02, 0.06) * W;
     ctx.save();
     ctx.translate(caso(0, W), caso(0, H));
@@ -42442,28 +42448,28 @@ function _collageUsura(ctx, W, H) {
     const g = ctx.createLinearGradient(0, -w / 2, 0, w / 2);
     const forte = caso(0.6, 1);
     g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(0.42, 'rgba(0,0,0,' + (0.10 * forte).toFixed(3) + ')');
-    g.addColorStop(0.5, 'rgba(0,0,0,' + (0.16 * forte).toFixed(3) + ')');
-    g.addColorStop(0.58, 'rgba(255,255,255,' + (0.08 * forte).toFixed(3) + ')');
+    g.addColorStop(0.42, 'rgba(0,0,0,' + (0.15 * forte).toFixed(3) + ')');
+    g.addColorStop(0.5, 'rgba(0,0,0,' + (0.24 * forte).toFixed(3) + ')');
+    g.addColorStop(0.58, 'rgba(255,255,255,' + (0.12 * forte).toFixed(3) + ')');
     g.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = g;
     ctx.fillRect(-L * caso(0.15, 0.5), -w / 2, L * caso(0.3, 0.9), w);
     ctx.restore();
   }
-  for (let i = 0, n = Math.round(caso(4, 7)); i < n; i++) {
+  for (let i = 0, n = Math.round(caso(6, 9)); i < n; i++) {
     const x = caso(0, W), y = caso(0, H), r = caso(0.08, 0.3) * W;
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, Math.random() < 0.5 ? 'rgba(255,255,255,' + caso(0.03, 0.07).toFixed(3) + ')' : 'rgba(0,0,0,' + caso(0.03, 0.08).toFixed(3) + ')');
+    g.addColorStop(0, Math.random() < 0.5 ? 'rgba(255,255,255,' + caso(0.05, 0.10).toFixed(3) + ')' : 'rgba(0,0,0,' + caso(0.05, 0.12).toFixed(3) + ')');
     g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g;
     ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
   }
-  if (Math.random() < 0.5) {
+  if (Math.random() < 0.7) {
     const x = caso(0.05, 0.95) * W, y = caso(0.05, 0.95) * H, r = caso(0.025, 0.06) * W;
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, 'rgba(110,75,40,0.05)');
-    g.addColorStop(0.8, 'rgba(110,75,40,0.08)');
-    g.addColorStop(0.92, 'rgba(90,60,30,0.13)');
+    g.addColorStop(0, 'rgba(110,75,40,0.08)');
+    g.addColorStop(0.8, 'rgba(110,75,40,0.12)');
+    g.addColorStop(0.92, 'rgba(90,60,30,0.19)');
     g.addColorStop(1, 'rgba(90,60,30,0)');
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.ellipse(x, y, r, r * caso(0.75, 1), caso(0, Math.PI), 0, 2 * Math.PI); ctx.fill();
