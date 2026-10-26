@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.225 - Modificati index.html e js/app.js. COLLAGE: «Scarica» diventa «Scarica fronte»; peso e misure non più
+//          accanto ai tasti ma sopra ogni foto creata («Fronte · …» / «Retro · …» quando le foto sono due); e con la
+//          foto dei retro il tasto «Scarica entrambe» (`_collageScaricaTutte`). E LA TEXTURE POSATA A CASO a ogni
+//          disegno (Franco: «fronte e retro non possono avere texture identiche, si capirebbe che sono generate»):
+//          spostata, girata fino a ±6°, ±10% di vicinanza, e una luce leggera da un lato a caso (`_collageDisegna`).
+//          Parole di Franco nei commenti. Modificato anche css/style.css. SFOGLIA ALBUM DAL TELEFONO: «Precedente»
+//          e «Successiva» sopra le frecce (`.sfoglia-freccia-testo`, chiavi `sfoglia.precedente` / `.successiva`), e la
+//          freccia avanti in riga con «Ultima pagina» come quella indietro con «Prima pagina» (la riga di sopra
+//          restava in colonna: lo <style> dell'index vinceva sul foglio). E «Crea anche foto retro» spuntata di serie;
+//          i tre «Scarica» sotto l'ultima foto, su una riga; e il tessuto «usato» (`_collageUsura`: pieghe, chiazze,
+//          a volte una macchia, diverse a ogni disegno).
 // v7.224 - Modificati index.html e js/app.js. COLLAGE: con «Crea anche foto retro» spuntata, dopo «Prendi le foto»
 //          l'anteprima mostra anche i retro, in una riga sotto le fcr e nello stesso ordine (`_collageScelteRetro`);
 //          dove una fcr non ha il retro, un riquadro «senza retro». Spunta tolta o tipologia cambiata: la riga sparisce.
@@ -31765,7 +31776,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.224';
+const JS_VERSION = 'v7.225';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33547,7 +33558,7 @@ const i18n = {
   en: {
 
 'cld.down':'⚠️ Photos are temporarily unavailable due to technical maintenance. The catalogue is still available.','cld.fotoNo':'Photo unavailable',
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Export lists','nav.questionarioBreve':'Questionnaire','nav.miaListaDsk':'My <em>list</em>','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory !','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','sfoglia.prima':'First page','sfoglia.ultima':'Last page','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Export lists','nav.questionarioBreve':'Questionnaire','nav.miaListaDsk':'My <em>list</em>','wz.linguetta':'Resume the Sgorbions Questionnaire','wz.lingCorta':'Questionnaire','cc.linguetta':'The stickers you are looking for','inv.linguetta':'Explore the Sgorbions Inventory !','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search the site','nav.searchLink':'🔍 Search','sfoglia.vaiAlbum':'Go to the album','sfoglia.indietro':'Back','sfoglia.prima':'First page','sfoglia.ultima':'Last page','sfoglia.precedente':'Previous','sfoglia.successiva':'Next','foto.cambia':'Change photo','pagina.primo':'Go to the first page','pagina.ultimo':'Go to the last page','pagina.elimina':'Delete photo','pagina.spostaSx':'Move one position left','pagina.spostaDx':'Move one position right','sfoglia.tuttiAlbum':'Go to the series albums','modal.rg.title':'Search','modal.rg.go':'Search','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your <em>My list</em> and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -33637,7 +33648,7 @@ const i18n = {
   ,'form.fig.noNumber':'No number/letter','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
 'cld.down':'⚠️ Le foto sono temporaneamente non disponibili per un intervento tecnico. Il catalogo resta consultabile.','cld.fotoNo':'Foto non disponibile',
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Export liste','nav.questionarioBreve':'Questionario','nav.miaListaDsk':'La <em>mia lista</em>','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions !','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca nel sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','sfoglia.prima':'Prima pagina','sfoglia.ultima':'Ultima pagina','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog','nav.wantlist':'Export liste','nav.questionarioBreve':'Questionario','nav.miaListaDsk':'La <em>mia lista</em>','wz.linguetta':'Riprendi il Questionario Sgorbions','wz.lingCorta':'Questionario','cc.linguetta':'Le figurine che stai cercando','inv.linguetta':'Esplora l\'Inventario Sgorbions !','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Ricerca nel sito','nav.searchLink':'🔍 Ricerca','sfoglia.vaiAlbum':'Vai all\u0027album','sfoglia.indietro':'Indietro','sfoglia.prima':'Prima pagina','sfoglia.ultima':'Ultima pagina','sfoglia.precedente':'Precedente','sfoglia.successiva':'Successiva','foto.cambia':'Cambia foto','pagina.primo':'Vai a prima pagina','pagina.ultimo':'Vai a ultima pagina','pagina.elimina':'Elimina foto','pagina.spostaSx':'Sposta a sinistra di una posizione','pagina.spostaDx':'Sposta a destra di una posizione','sfoglia.tuttiAlbum':'Vai agli album della serie','modal.rg.title':'Ricerca','modal.rg.go':'Cerca','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
@@ -41667,19 +41678,28 @@ function _collageHTML(perBox) {
     '<div id="collage-avviso" style="font-size:0.82rem;color:var(--warn);min-height:1.2rem;margin:0.7rem 0 0.4rem;"></div>' +
     '<div style="display:flex;gap:0.7rem;flex-wrap:wrap;align-items:center;">' +
       '<button type="button" id="collage-crea" class="btn-primary" onclick="_collageCrea()">' + (it ? '🖼️ Crea il collage' : '🖼️ Create collage') + '</button>' +
-      '<a id="collage-scarica" class="btn-primary" style="display:none;text-decoration:none;" download="collage.png">⬇️ ' + (it ? 'Scarica' : 'Download') + '</a>' +
-      // 🆕 v7.223 (Franco: «affianco al bottone "scarica" vorrei leggere la dimensione (eg 1.7 Mb)») - scritta da `_collageCrea`
-      '<span id="collage-peso" style="font-size:0.85rem;color:var(--text);opacity:0.8;"></span>' +
-      // 🆕 v7.223 - la seconda foto, coi retro (`_collageRetroPossibile`)
-      '<a id="collage-scarica-retro" class="btn-primary" style="display:none;text-decoration:none;" download="collage-retro.png">⬇️ ' + (it ? 'Scarica retro' : 'Download backs') + '</a>' +
-      '<span id="collage-peso-retro" style="font-size:0.85rem;color:var(--text);opacity:0.8;"></span>' +
       (perBox ? '<button type="button" id="collage-usa" class="btn-primary" style="display:none;" onclick="_collageUsaPerBox()">✅ ' + (it ? 'Usa come foto della card' : 'Use as card photo') + '</button>' : '') +
     '</div>' +
+    // 🔄 v7.225 (Franco: «togli peso e misure dal fianco del pulsante "scarica" … indica peso e misure sopra ad ogni foto
+    //    generata») - una riga sopra ogni anteprima, scritta da `_collageCrea` e `_collageCreaRetro`
+    '<div id="collage-peso" style="display:none;margin-top:0.9rem;font-size:0.85rem;font-weight:700;color:var(--text);"></div>' +
     // a scacchi dietro l'anteprima: è così che si vede che lo sfondo è trasparente
-    '<div id="collage-anteprima" style="display:none;margin-top:0.9rem;max-width:' + COLLAGE_W + 'px;border:1px solid var(--border);border-radius:8px;overflow:hidden;' +
+    '<div id="collage-anteprima" style="display:none;margin-top:0.3rem;max-width:' + COLLAGE_W + 'px;border:1px solid var(--border);border-radius:8px;overflow:hidden;' +
       'background:repeating-conic-gradient(#3a3a3a 0% 25%, #555 0% 50%) 50% / 24px 24px;"></div>' +
-    '<div id="collage-anteprima-retro" style="display:none;margin-top:0.6rem;max-width:' + COLLAGE_W + 'px;border:1px solid var(--border);border-radius:8px;overflow:hidden;' +
-      'background:repeating-conic-gradient(#3a3a3a 0% 25%, #555 0% 50%) 50% / 24px 24px;"></div>';   // v7.223
+    '<div id="collage-peso-retro" style="display:none;margin-top:0.9rem;font-size:0.85rem;font-weight:700;color:var(--text);"></div>' +   // v7.225
+    '<div id="collage-anteprima-retro" style="display:none;margin-top:0.3rem;max-width:' + COLLAGE_W + 'px;border:1px solid var(--border);border-radius:8px;overflow:hidden;' +
+      'background:repeating-conic-gradient(#3a3a3a 0% 25%, #555 0% 50%) 50% / 24px 24px;"></div>' +   // v7.223
+    // 🔄 v7.225 (Franco: «i 3 pulsanti per scaricare le foto dei collage, mettili sotto alla ultima foto generata; tutti e
+    //    3 su di una sola riga») - qui, dopo le anteprime: si scarica dopo aver guardato. Una riga sola anche a 390 px
+    //    (`nowrap`, scritte un poco più piccole); i tasti senza foto restano nascosti come prima
+    '<div style="display:flex;gap:0.5rem;flex-wrap:nowrap;align-items:center;margin-top:0.7rem;">' +
+      // 🔄 v7.225 (Franco: «il pulsante "scarica" chiamalo "scarica fronte"»)
+      '<a id="collage-scarica" class="btn-primary" style="display:none;text-decoration:none;white-space:nowrap;font-size:0.85rem;" download="collage.png">⬇️ ' + (it ? 'Scarica fronte' : 'Download front') + '</a>' +
+      // 🆕 v7.223 - la seconda foto, coi retro (`_collageRetroPossibile`)
+      '<a id="collage-scarica-retro" class="btn-primary" style="display:none;text-decoration:none;white-space:nowrap;font-size:0.85rem;" download="collage-retro.png">⬇️ ' + (it ? 'Scarica retro' : 'Download backs') + '</a>' +
+      // 🆕 v7.225 (Franco: «metti un tasto da usare per scaricare entrambe le foto assieme») - c'è quando c'è la foto dei retro
+      '<button type="button" id="collage-scarica-tutte" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;" onclick="_collageScaricaTutte()">⬇️ ' + (it ? 'Scarica entrambe' : 'Download both') + '</button>' +
+    '</div>';
 }
 // 🆕 v7.214 (Franco: «nel box che rappresenta una tipologia di articolo, metti un pulsante (Anche da mobile) sempre admin
 //    visibile, che si chiama "Cambia foto"; se premuto, deve lanciare questa procedura nuova, e il suo risultato lo mette
@@ -41852,7 +41872,9 @@ function _collageSitoHTML() {
       (v === 'con' ? (it ? 'Con le macchie' : 'With watermark') : (it ? 'Senza macchie' : 'Without watermark')) + '</label>').join('') +
     // 🆕 v7.223 - «Crea anche foto retro», solo per le fcr (`_collageSitoAggiorna` la mostra), vedi `_collageRetroBase`
     '<label id="collage-sito-retro-box" style="display:none;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.6rem 0 0;">' +
-      '<input type="checkbox" id="collage-sito-retro" onchange="_collageMostraScelte()">' + (it ? 'Crea anche foto retro' : 'Also create the backs photo') + '</label>' +
+      // v7.225 (Franco: «mettila di default a true, se la tipologia è Figurine con retro») - spuntata di serie: si vede
+      //    solo con le fcr (`_collageRetroPossibile`), e nascosta non conta
+      '<input type="checkbox" id="collage-sito-retro" checked onchange="_collageMostraScelte()">' + (it ? 'Crea anche foto retro' : 'Also create the backs photo') + '</label>' +
     // 🔄 v7.222 - «Quante foto devi unire?» qui, appena prima di «Prendi le foto», già riempita da `_collageSitoAggiorna`
     '<div id="collage-n-box">' +
       '<div style="' + dom + '">' + (it ? 'Quante foto devi unire ?' : 'How many photos?') + '</div>' +
@@ -42372,8 +42394,20 @@ function _collageDisegna(tipo, foto, sfondo, grande, come, retri) {
   const ctx = c.getContext('2d');
   if (sfondo) {
     const pat = ctx.createPattern(sfondo, 'repeat');
-    if (s !== 1 && pat.setTransform) pat.setTransform(new DOMMatrix().scale(s));
+    // 🔄 v7.225 (Franco: «la texture deve sembrare un oggetto vero (la tovaglia); se esportiamo fronte e retro le due
+    //    texture non possono essere identiche, si capirebbe che sono foto generate … applicazione casuale») - a ogni
+    //    disegno il tessuto si posa in un modo suo: spostato di un tratto a caso (fino a un motivo intero), girato fino
+    //    a ±6° e un po' più vicino o lontano (±10%), come una tovaglia rimessa sul tavolo e fotografata di nuovo. E una
+    //    luce che viene da un lato a caso, appena accennata: una foto vera non è illuminata uguale dappertutto.
+    const ang = (Math.random() * 2 - 1) * 6, vic = 0.9 + Math.random() * 0.2;
+    const dx = Math.random() * sfondo.width * s, dy = Math.random() * sfondo.height * s;
+    if (pat.setTransform) pat.setTransform(new DOMMatrix().translate(W / 2, H / 2).rotate(ang).translate(-W / 2 + dx, -H / 2 + dy).scale(s * vic));
     ctx.fillStyle = pat; ctx.fillRect(0, 0, W, H);
+    const da = Math.random() * 2 * Math.PI, r = Math.hypot(W, H) / 2;
+    const luce = ctx.createLinearGradient(W / 2 - r * Math.cos(da), H / 2 - r * Math.sin(da), W / 2 + r * Math.cos(da), H / 2 + r * Math.sin(da));
+    luce.addColorStop(0, 'rgba(255,255,255,0.07)'); luce.addColorStop(1, 'rgba(0,0,0,0.12)');
+    ctx.fillStyle = luce; ctx.fillRect(0, 0, W, H);
+    _collageUsura(ctx, W, H);   // v7.225
   }
   const k = Math.min(W * (1 - 2 * margine) / (b.x1 - b.x0), H * (1 - 2 * margine) / (b.y1 - b.y0));
   const ox = W / 2 - k * (b.x0 + b.x1) / 2, oy = H / 2 - k * (b.y0 + b.y1) / 2;
@@ -42390,6 +42424,51 @@ function _collageDisegna(tipo, foto, sfondo, grande, come, retri) {
   });
   c.pezzi = pezzi;   // v7.223 - per la foto dei retro
   return c;
+}
+// 🆕 v7.225 (Franco: «riusciresti a rovinare leggermente la texture, di modo da farla sembrare un oggetto più reale (tipo
+//    una tovaglia usata)?») - L'USURA, sopra il tessuto e sotto le foto, diversa a ogni disegno:
+//    · 3-6 pieghe: bande lunghe e strette, scure al centro con un filo di luce accanto, come una piega lasciata dal cassetto;
+//    · 4-7 chiazze appena più chiare o più scure: il tessuto lavato e stinto non è uniforme;
+//    · una volta su due una macchia leggera color caffè, col bordo un po' più scuro, come una macchia vecchia.
+//    Tutto a bassa opacità: deve sembrare usata, non sporca. Solo gradienti, niente `filter` (Safari non lo fa).
+function _collageUsura(ctx, W, H) {
+  const caso = (a, b) => a + Math.random() * (b - a), L = Math.hypot(W, H);
+  ctx.save();
+  for (let i = 0, n = Math.round(caso(3, 6)); i < n; i++) {
+    const w = caso(0.02, 0.06) * W;
+    ctx.save();
+    ctx.translate(caso(0, W), caso(0, H));
+    ctx.rotate(caso(0, Math.PI));
+    const g = ctx.createLinearGradient(0, -w / 2, 0, w / 2);
+    const forte = caso(0.6, 1);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(0.42, 'rgba(0,0,0,' + (0.10 * forte).toFixed(3) + ')');
+    g.addColorStop(0.5, 'rgba(0,0,0,' + (0.16 * forte).toFixed(3) + ')');
+    g.addColorStop(0.58, 'rgba(255,255,255,' + (0.08 * forte).toFixed(3) + ')');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(-L * caso(0.15, 0.5), -w / 2, L * caso(0.3, 0.9), w);
+    ctx.restore();
+  }
+  for (let i = 0, n = Math.round(caso(4, 7)); i < n; i++) {
+    const x = caso(0, W), y = caso(0, H), r = caso(0.08, 0.3) * W;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, Math.random() < 0.5 ? 'rgba(255,255,255,' + caso(0.03, 0.07).toFixed(3) + ')' : 'rgba(0,0,0,' + caso(0.03, 0.08).toFixed(3) + ')');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
+  }
+  if (Math.random() < 0.5) {
+    const x = caso(0.05, 0.95) * W, y = caso(0.05, 0.95) * H, r = caso(0.025, 0.06) * W;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, 'rgba(110,75,40,0.05)');
+    g.addColorStop(0.8, 'rgba(110,75,40,0.08)');
+    g.addColorStop(0.92, 'rgba(90,60,30,0.13)');
+    g.addColorStop(1, 'rgba(90,60,30,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(x, y, r, r * caso(0.75, 1), caso(0, Math.PI), 0, 2 * Math.PI); ctx.fill();
+  }
+  ctx.restore();
 }
 async function _collageCrea() {
   const it = currentLang === 'it';
@@ -42433,9 +42512,9 @@ async function _collageCrea() {
     if (a.dataset.url) URL.revokeObjectURL(a.dataset.url);
     a.href = url; a.dataset.url = url; a.download = 'collage-' + tipo + '-' + _collageFoto.length + (jpg ? '.jpg' : '.png'); a.style.display = '';
   }
-  // v7.223 - il peso del file e la sua misura, accanto a «Scarica»
+  // v7.223 - il peso del file e la sua misura; v7.225: sopra l'anteprima, «Fronte» quando c'è anche la foto dei retro
   const peso = document.getElementById('collage-peso');
-  if (peso) peso.textContent = (blob.size / 1048576).toFixed(1).replace('.', it ? ',' : '.') + ' MB · ' + c.width + '×' + c.height + ' px';
+  if (peso) { peso.textContent = (retri ? (it ? 'Fronte · ' : 'Front · ') : '') + (blob.size / 1048576).toFixed(1).replace('.', it ? ',' : '.') + ' MB · ' + c.width + '×' + c.height + ' px'; peso.style.display = ''; }
   const ant = document.getElementById('collage-anteprima');
   if (ant) { ant.innerHTML = '<img src="' + url + '" alt="" style="display:block;width:100%;height:auto;">'; ant.style.display = ''; }
   await _collageCreaRetro(tipo, sfondo, grande, jpg, c, retri);
@@ -42455,11 +42534,22 @@ async function _collageRetriLeggi() {
   if (perse.length) { toast((it ? '⚠️ Foto dei retro non creata: non si leggono i retro di ' : '⚠️ Backs photo not created, unreadable: ') + perse.join(', '), 'error'); return null; }
   return lette.map(x => x.img);
 }
+// 🆕 v7.225 - «Scarica entrambe»: i due «Scarica» uno dopo l'altro. Il secondo parte poco dopo il primo, perché un
+//    browser che vede due download nello stesso istante può tenerne uno solo. La prima volta Chrome può chiedere se
+//    permettere più download dal sito: si risponde «Consenti» una volta sola.
+function _collageScaricaTutte() {
+  const f = document.getElementById('collage-scarica'), r = document.getElementById('collage-scarica-retro');
+  if (!f || !r || !f.dataset.url || !r.dataset.url) return;
+  f.click();
+  setTimeout(() => r.click(), 600);
+}
 async function _collageCreaRetro(tipo, sfondo, grande, jpg, c, retri) {
   const it = currentLang === 'it';
   const a = document.getElementById('collage-scarica-retro'), peso = document.getElementById('collage-peso-retro'), ant = document.getElementById('collage-anteprima-retro');
   if (a) { if (a.dataset.url) URL.revokeObjectURL(a.dataset.url); a.style.display = 'none'; a.dataset.url = ''; }
-  if (peso) peso.textContent = '';
+  const tutte = document.getElementById('collage-scarica-tutte');   // v7.225
+  if (tutte) tutte.style.display = 'none';
+  if (peso) { peso.textContent = ''; peso.style.display = 'none'; }
   if (ant) { ant.innerHTML = ''; ant.style.display = 'none'; }
   if (!retri) return;
   const cR = _collageDisegna(tipo, retri, sfondo, grande ? c.width : 0, c.pezzi);
@@ -42467,7 +42557,8 @@ async function _collageCreaRetro(tipo, sfondo, grande, jpg, c, retri) {
   if (!blob) { toast(it ? '❌ Non riesco a creare la foto dei retro' : '❌ Could not create the backs photo', 'error'); return; }
   const url = URL.createObjectURL(blob);
   if (a) { a.href = url; a.dataset.url = url; a.download = 'collage-' + tipo + '-' + _collageFoto.length + '-retro' + (jpg ? '.jpg' : '.png'); a.style.display = ''; }
-  if (peso) peso.textContent = (blob.size / 1048576).toFixed(1).replace('.', it ? ',' : '.') + ' MB · ' + cR.width + '×' + cR.height + ' px';
+  if (tutte) tutte.style.display = '';
+  if (peso) { peso.textContent = (it ? 'Retro · ' : 'Backs · ') + (blob.size / 1048576).toFixed(1).replace('.', it ? ',' : '.') + ' MB · ' + cR.width + '×' + cR.height + ' px'; peso.style.display = ''; }   // v7.225: sopra l'anteprima
   if (ant) { ant.innerHTML = '<img src="' + url + '" alt="" style="display:block;width:100%;height:auto;">'; ant.style.display = ''; }
 }
 // 🆕 v7.213 (Franco: la spunta «Rimuovo sfondo foto selezionate», solo per le foto dal PC; «vai con la (a)») - LO SFONDO
