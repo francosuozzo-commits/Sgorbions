@@ -1,6 +1,30 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.222 - Modificati index.html e js/app.js. ANNUNCI DAL TELEFONO, LE DUE PRIME COLONNE (Franco: «nella versione
+//          mobile, nella pagina annunci, la etichetta eBay vinted o subito fatta senza scritte; mi basta il colore»;
+//          «per il venditore, usa una abbreviazione: Fr per franco, Fa per fabio, L per Lendys»): sotto gli 860 px
+//          (`_isMobileViewport`) il selettore del Sito ha la scritta trasparente e resta largo quanto basta per il
+//          colore (le voci del menu che si apre restano scritte per intero, se no non si sceglie); il selettore del
+//          Venditore mostra Fr / Fa / L (`_ANN_SIGLA`); il titolo «Tipologia articolo» diventa «TDA» (Franco:
+//          «scrivi TDA invece che Tipologia di articolo»). Il valore salvato non cambia. Dal PC tutto come prima.
+//          COLLAGE, «QUANTE FOTO DEVI UNIRE?» (Franco: «mettiamola verso la fine, poco prima del bottone "prendi le
+//          foto"»; «prepopolalo in automatico in base alle domande precedenti … se metti serie 1, FPA, famiglia "gli
+//          Animals" mettici dentro il 15»; «se il risultato è maggiore di 40 mettilo lo stesso, così la procedura si
+//          blocca»): la domanda sta sopra «Prendi le foto» (dal PC sotto la spunta dello sfondo), le altre si rinumerano
+//          1-4; `_collageSitoAggiorna` la riempie con quanti articoli trova `_collageCandidati` (anche le due tendine
+//          della famiglia ora la richiamano); dal PC vale quante foto si passano. Oltre 40 «Prendi le foto» si ferma
+//          e lo dice. «In che ordine le prendo?» parte su Alfabetico (Franco: «il default della domanda sull'ordine
+//          lascialo ad alfabetico»; era Casuale dalla v7.218). «Con le macchie o senza?» parte su «Senza macchie»
+//          (Franco: «la domanda sulle macchie come default metti "senza macchie"»; era «Con» dalla v7.216).
+//          «🔀 Rimescola» spento con l'ordine Alfabetico (Franco), e si rifà cambiando l'ordine.
+//          COLLAGE GRANDE DA ANNUNCI (Franco: «la foto che esce dal collage è a bassa risoluzione»; «proporzionale al
+//          numero di foto»; dalla card «rimaniamo con la misura che abbiamo sempre utilizzato»; «procedere con il
+//          4000 * 2250»; «la possibilità di scegliere di volta in volta con un parametro»): la foto mediana a grandezza
+//          naturale, fra 1200×675 e il tetto della domanda 5 «Quanto grande al massimo?» (2400 / 3200 / 4000, di serie
+//          4000) - `_collageMisuraGrande`; tessuto e ombra scalati col collage; le foto lette dall'originale (zero
+//          trasformazioni), con le macchie su una protetta a 1600 `c_limit`; JPEG 0,92 col tessuto, PNG sul
+//          trasparente. Dalla card tutto come prima (1200×675, foto a 400, PNG).
 // v7.221 - Modificati index.html, css/style.css e js/app.js. «📢 ANNUNCI» DAL TELEFONO (Franco: «sotto a Annunci non
 //          vedo nulla: né il tasto per un nuovo annuncio né il tasto del collage»): la voce del panino apriva una
 //          pagina vuota, perché sul telefono il css spegne tutta la console (`#admin-panel`, v5.822) e Annunci ci sta
@@ -31715,7 +31739,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.221';
+const JS_VERSION = 'v7.222';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41563,13 +41587,15 @@ function _collageHTML(perBox) {
   const scelta = (nome, val, testo, extra) => '<label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.88rem;color:var(--text);margin:0.25rem 0;">' +
     '<input type="radio" name="' + nome + '" value="' + val + '"' + (extra || '') + '>' + testo + '</label>';
   return '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;line-height:1.5;">' +
-      (it ? 'Unisce più foto in una foto sola, sopra un tessuto o sullo sfondo trasparente, con la forma dei box degli hub (' + COLLAGE_W + '×' + COLLAGE_H + ' px).<br>' +
+      (it ? 'Unisce più foto in una foto sola, sopra un tessuto o sullo sfondo trasparente, con la forma dei box degli hub (' +
+            (perBox ? COLLAGE_W + '×' + COLLAGE_H + ' px' : '16:9, fino a ' + COLLAGE_MAX_W + '×' + COLLAGE_MAX_H + ' px') + ').<br>' +   // v7.222
             (perBox ? 'Con «Usa come foto della card» il collage diventa la foto di questa card.' : 'La foto si scarica e basta: sul sito non si salva niente.')
           : 'Joins several photos into one, transparent background, hub box shape.' + (perBox ? '' : ' Nothing is saved on the site.')) +
     '</p>' +
-    '<div style="' + dom + '">1. ' + (it ? 'Quante foto devi unire?' : 'How many photos?') + '</div>' +
-    '<input type="number" id="collage-n" class="form-input" min="2" max="40" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
-    '<div style="' + dom + '">2. ' + (it ? 'Da dove le prendo?' : 'Where do I get them?') + '</div>' +
+    // 🔄 v7.222 (Franco: «la domanda "quante foto devi unire" mettiamola verso la fine, poco prima del bottone "prendi le
+    //    foto"») - «Quante foto devi unire?» non è più la prima: sta in `_collageSitoHTML`, sopra «Prendi le foto», e con
+    //    «Me le passi tu» `_collageDa` la sposta sotto la spunta dello sfondo. Le domande qui si rinumerano da 1.
+    '<div style="' + dom + '">1. ' + (it ? 'Da dove le prendo?' : 'Where do I get them?') + '</div>' +
     // 🔄 v7.212 - «Dal sito» si accende: le sue domande stanno in `#collage-sito` (`_collageSitoHTML`)
     scelta('collage-da', 'sito', it ? 'Dal sito' : 'From the site', ' onchange="_collageDa()"') +
     scelta('collage-da', 'pc', it ? 'Me le passi tu' : 'You give them to me', ' onchange="_collageDa();_collageScegli()"') +
@@ -41580,18 +41606,24 @@ function _collageHTML(perBox) {
       ' <span style="font-size:0.75rem;opacity:0.7;">(' + (it ? 'solo sfondi di un colore unito, che toccano i bordi della foto' : 'plain one-colour backgrounds only') + ')</span></label>' +
     '<div id="collage-sito" style="display:none;margin:0.5rem 0 0 1.4rem;padding:0.6rem 0.9rem;border-left:2px solid var(--border);">' + _collageSitoHTML() + '</div>' +
     '<div id="collage-scelte" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-top:0.4rem;"></div>' +
-    '<div style="' + dom + '">3. ' + (it ? 'Che tipo di collage vuoi?' : 'Which collage?') + '</div>' +
+    '<div style="' + dom + '">2. ' + (it ? 'Che tipo di collage vuoi?' : 'Which collage?') + '</div>' +
     COLLAGE_TIPI.map((t, i) => scelta('collage-tipo', t.k, esc(it ? t.it : t.en) + ' <span style="font-size:0.75rem;opacity:0.7;">(' +
       (t.min === t.max ? (it ? 'esattamente ' : 'exactly ') + t.min : t.min + '–' + t.max) + (it ? ' foto' : ' photos') + ')</span>',
       (i === 0 ? ' checked' : '') + ' onchange="_collageStato()"')).join('') +
     // 🆕 v7.220 - il venditore (facoltativo) mette la sua texture; la texture è obbligatoria: da Annunci non ce n'è una
     //    di serie, dal «Cambia foto» di una card «Nessuna», come prima
-    '<div style="' + dom + '">4. ' + (it ? 'Per quale venditore è? (facoltativa)' : 'Which seller is it for? (optional)') + '</div>' +
+    '<div style="' + dom + '">3. ' + (it ? 'Per quale venditore è? (facoltativa)' : 'Which seller is it for? (optional)') + '</div>' +
     '<select id="collage-venditore" onchange="_collageVenditoreScelto()" style="background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:0.35rem 0.5rem;font-size:0.88rem;">' +
       '<option value="">—</option>' + _ANN_ACCOUNT.map(a => '<option value="' + esc(a) + '">' + esc(a) + '</option>').join('') + '</select>' +
-    '<div style="' + dom + '">5. ' + (it ? 'Quale texture di sfondo?' : 'Which background texture?') + '</div>' +
+    '<div style="' + dom + '">4. ' + (it ? 'Quale texture di sfondo?' : 'Which background texture?') + '</div>' +
     COLLAGE_TEXTURE.map(t => scelta('collage-texture', t.k, esc(it ? t.it : t.en),
       (perBox && t.k === 'nessuna' ? ' checked' : '') + ' onchange="_collageStato()"')).join('') +
+    // 🆕 v7.222 - la grandezza massima, solo da Annunci (dalla card il collage è sempre 1200×675)
+    (perBox ? '' : '<div style="' + dom + '">5. ' + (it ? 'Quanto grande al massimo?' : 'How large at most?') + '</div>' +
+      COLLAGE_TETTI.map(w => scelta('collage-tetto', w, w + ' × ' + Math.round(w * COLLAGE_MAX_H / COLLAGE_MAX_W) + ' px' +
+        ' <span style="font-size:0.75rem;opacity:0.7;">(' + ({ 2400: it ? 'leggera' : 'light', 3200: it ? 'media' : 'medium', 4000: it ? 'la più nitida' : 'sharpest' })[w] + ')</span>',
+        w === COLLAGE_MAX_W ? ' checked' : '')).join('') +
+      '<div style="font-size:0.75rem;opacity:0.7;color:var(--text);margin:0.2rem 0 0;">' + (it ? 'Con poche foto piccole il collage resta più piccolo: le foto non si ingrandiscono oltre l\'originale.' : 'With few small photos the collage stays smaller.') + '</div>') +
     '<div id="collage-avviso" style="font-size:0.82rem;color:var(--warn);min-height:1.2rem;margin:0.7rem 0 0.4rem;"></div>' +
     '<div style="display:flex;gap:0.7rem;flex-wrap:wrap;align-items:center;">' +
       '<button type="button" id="collage-crea" class="btn-primary" onclick="_collageCrea()">' + (it ? '🖼️ Crea il collage' : '🖼️ Create collage') + '</button>' +
@@ -41707,6 +41739,9 @@ function _collageDa() {
   if (_collageModo === 'sito') _collageSitoAggiorna();
   const opz = document.getElementById('collage-pc-opz');   // v7.213
   if (opz) opz.style.display = _collageModo === 'pc' ? 'flex' : 'none';
+  // v7.222 - «Quante foto devi unire?» va sopra «Prendi le foto» o, dal PC, sotto la spunta dello sfondo
+  const nb = document.getElementById('collage-n-box'), prendi = document.getElementById('collage-sito-prendi');
+  if (nb && prendi && opz) { if (_collageModo === 'pc') opz.after(nb); else prendi.before(nb); }
   _collageFoto = [];
   _collageMostraScelte();
   _collageStato();
@@ -41736,7 +41771,7 @@ function _collageSitoHTML() {
         // v7.215 - e la famiglia, facoltativa, se gli articoli scelti ne hanno (`_collageFamiglieDellaSerie`)
         '<div id="collage-sito-fam-box" style="display:none;">' +
           '<div style="' + dom + '">' + (it ? 'Quale famiglia? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which family? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
-          '<select id="collage-sito-serie-fam" style="' + sel + '">' + _collageFamiglieDellaSerie(sid0, sez0, ver0) + '</select>' +
+          '<select id="collage-sito-serie-fam" style="' + sel + '" onchange="_collageSitoAggiorna()">' + _collageFamiglieDellaSerie(sid0, sez0, ver0) + '</select>' +
         '</div>' +
         '<div id="collage-sito-lato-box" style="display:none;">' +
           '<div style="' + dom + '">' + (it ? 'Il fronte o il retro?' : 'Front or back?') + '</div>' +
@@ -41750,7 +41785,7 @@ function _collageSitoHTML() {
       // v7.218 - la famiglia anche dalla tipologia, subito dopo (`_collageFamiglieDellaTda`)
       '<div id="collage-sito-tda-fam-box" style="display:none;">' +
         '<div style="' + dom + '">' + (it ? 'Quale famiglia? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which family? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
-        '<select id="collage-sito-tda-fam" style="' + sel + '">' + _collageFamiglieDellaTda(_tdaDellHub()[0] || (tipi[0] ? 'tipo:' + tipi[0].id : '')) + '</select>' +
+        '<select id="collage-sito-tda-fam" style="' + sel + '" onchange="_collageSitoAggiorna()">' + _collageFamiglieDellaTda(_tdaDellHub()[0] || (tipi[0] ? 'tipo:' + tipi[0].id : '')) + '</select>' +
       '</div>' +
     '</div>' +
     '<div style="' + dom + '">' + (it ? 'C\'è un numero particolare da considerare?' : 'Any particular number?') + '</div>' +
@@ -41759,14 +41794,21 @@ function _collageSitoHTML() {
     // v7.218 - in che ordine si prendono: in ordine alfabetico i primi N, o N a caso (`_collagePesca`)
     '<div style="' + dom + '">' + (it ? 'In che ordine le prendo?' : 'In which order do I pick them?') + '</div>' +
     ['alfabetico', 'casuale'].map(v => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
-      '<input type="radio" name="collage-sito-ordine" value="' + v + '"' + (v === 'casuale' ? ' checked' : '') + '>' +
+      // 🔄 v7.222 (Franco: «il default della domanda sull'ordine lascialo ad alfabetico») - era Casuale (v7.218)
+      '<input type="radio" name="collage-sito-ordine" value="' + v + '"' + (v === 'alfabetico' ? ' checked' : '') + ' onchange="_collageMostraScelte()">' +
       (v === 'alfabetico' ? (it ? 'Alfabetico' : 'Alphabetical') : (it ? 'Casuale' : 'Random')) + '</label>').join('') +
     // v7.216 - con o senza le macchie (`_collageUrlFoto`); cambiando, le foto già prese si rileggono
     '<div style="' + dom + '">' + (it ? 'Con le macchie o senza?' : 'With or without watermark?') + '</div>' +
     ['con', 'senza'].map(v => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
-      '<input type="radio" name="collage-sito-macchie" value="' + v + '"' + (v === 'con' ? ' checked' : '') + ' onchange="_collageMacchieScelta()">' +
+      // 🔄 v7.222 (Franco: «la domanda sulle macchie come default metti "senza macchie"») - era «Con» (v7.216)
+      '<input type="radio" name="collage-sito-macchie" value="' + v + '"' + (v === 'senza' ? ' checked' : '') + ' onchange="_collageMacchieScelta()">' +
       (v === 'con' ? (it ? 'Con le macchie' : 'With watermark') : (it ? 'Senza macchie' : 'Without watermark')) + '</label>').join('') +
-    '<div style="margin-top:0.6rem;"><button type="button" class="btn-primary" onclick="_collagePesca()">🎲 ' + (it ? 'Prendi le foto' : 'Pick the photos') + '</button></div>';
+    // 🔄 v7.222 - «Quante foto devi unire?» qui, appena prima di «Prendi le foto», già riempita da `_collageSitoAggiorna`
+    '<div id="collage-n-box">' +
+      '<div style="' + dom + '">' + (it ? 'Quante foto devi unire?' : 'How many photos?') + '</div>' +
+      '<input type="number" id="collage-n" class="form-input" min="2" max="40" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
+    '</div>' +
+    '<div id="collage-sito-prendi" style="margin-top:0.6rem;"><button type="button" class="btn-primary" onclick="_collagePesca()">🎲 ' + (it ? 'Prendi le foto' : 'Pick the photos') + '</button></div>';
 }
 function _collageSitoAggiorna() {
   const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
@@ -41783,6 +41825,13 @@ function _collageSitoAggiorna() {
   const tfb = document.getElementById('collage-sito-tda-fam-box'), tfam = document.getElementById('collage-sito-tda-fam');   // v7.218
   if (tfb) tfb.style.display = da === 'tda' && tfam && tfam.options.length > 1 ? '' : 'none';
   if (n) n.style.display = num === 'si' ? '' : 'none';
+  // 🆕 v7.222 (Franco: «quel valore, prepopolalo in automatico in base alle domande precedenti: per esempio, se metti
+  //    serie 1, FPA, famiglia "gli Animals" mettici dentro il 15, perché quelle FPA sono esattamente 15»; «se il
+  //    risultato è maggiore di 40 mettilo lo stesso, così la procedura si blocca ed io me ne accorgo») - a ogni risposta
+  //    cambiata le foto da unire diventano quante ne trova `_collageCandidati`, anche oltre 40 o sotto 2: lì
+  //    «Prendi le foto» e «Crea» si fermano e lo dicono. Il numero si può sempre cambiare a mano dopo.
+  const nn = document.getElementById('collage-n');
+  if (nn && _collageModo === 'sito') { nn.value = _collageCandidati().el.length; _collageStato(); }
 }
 // 🆕 v7.214 (Franco: «nel collage, dopo che scelgo la serie, deve chiedermi la tda; solo dopo deve cercare gli articoli»)
 //    - LA TIPOLOGIA DENTRO LA SERIE. Le voci sono le tipologie che in quella serie hanno almeno un articolo base con la foto
@@ -41940,6 +41989,16 @@ async function _collagePesca() {
   const { el, conNum, numero, lato, fam } = _collageCandidati();
   if (conNum && !numero) { toast(it ? 'Scrivi il numero' : 'Type the number', 'error'); return; }
   if (!Number.isInteger(n) || n < 2) { _collageStato(); return; }
+  // v7.222 - oltre 40 si ferma qui, prima di leggere le foto (il numero può arrivare da `_collageSitoAggiorna`)
+  if (n > 40) {
+    _collageFoto = [];
+    _collageMostraScelte();
+    _collageStato();
+    const av = document.getElementById('collage-avviso');
+    if (av) av.textContent = it ? 'Con queste risposte le foto sono ' + n + ': il collage ne unisce al massimo 40. Restringi la scelta o scrivi un numero più basso.'
+                                : n + ' photos: 40 at most.';
+    return;
+  }
   if (el.length < n) {
     _collageFoto = [];
     _collageMostraScelte();
@@ -41972,12 +42031,17 @@ async function _collagePesca() {
 //    come `_urlSenzaScritta`, ma col formato WebP di sempre. Misura w_400, quella di prima.
 // 📌 Senza macchie, una foto protetta mai chiesta pulita a 400 è una trasformazione nuova su Cloudinary: al più una per
 //    foto del collage.
+// 🔄 v7.222 - da Annunci le foto si leggono grandi (il collage arriva a 4000×2250, `_collageMisuraGrande`): senza
+//    macchie, o su una foto non protetta, l'ORIGINALE così com'è, che non è una trasformazione; con le macchie su una
+//    foto protetta la scritta la mette Cloudinary, quindi una trasformazione a 1600 px al massimo (`c_limit` non
+//    ingrandisce), la prima volta. Dalla card tutto come prima, a 400.
 function _collageUrlFoto(src) {
   const con = (document.querySelector('input[name="collage-sito-macchie"]:checked') || {}).value !== 'senza';
+  if (!_collageBoxDest && (!con || !_fotoProtette().has(src))) return src;
   const prima = _adminSenzaMacchie;
   _fpSenzaScritta = !con;
   if (con) _adminSenzaMacchie = false;
-  try { return cloudinaryUrl(src, 'w_400,h_400,c_fit,q_auto,f_auto'); }
+  try { return cloudinaryUrl(src, _collageBoxDest ? 'w_400,h_400,c_fit,q_auto,f_auto' : 'w_1600,h_1600,c_limit,q_auto,f_auto'); }
   finally { _fpSenzaScritta = false; _adminSenzaMacchie = prima; }
 }
 function _collageLeggiFoto(src, nome) {
@@ -42011,6 +42075,9 @@ async function _collageCarica(files) {
   })));
   _collageFoto.forEach(x => { if (String(x.url).startsWith('blob:')) URL.revokeObjectURL(x.url); });   // v7.212: dal sito sono indirizzi veri
   _collageFoto = lette.filter(Boolean);
+  // v7.222 - dal PC le foto da unire sono quelle passate
+  const nn = document.getElementById('collage-n');
+  if (nn) nn.value = _collageFoto.length;
   if (lette.length !== _collageFoto.length) toast(it ? '⚠️ Alcuni file non si leggono come immagini: li ho lasciati fuori' : '⚠️ Some files are not readable images', 'error');
   _collageMostraScelte();
   _collageStato();
@@ -42019,9 +42086,12 @@ function _collageMostraScelte() {
   const box = document.getElementById('collage-scelte');
   if (!box) return;
   const it = currentLang === 'it';
+  // 🆕 v7.222 (Franco: «"rimescola" disabilitato se l'ordine impostato è alfabetico») - in ordine alfabetico ripescare
+  //    dà sempre le stesse foto; cambiando la risposta all'ordine il tasto si rifà
+  const alfa = (document.querySelector('input[name="collage-sito-ordine"]:checked') || {}).value === 'alfabetico';
   box.innerHTML = _collageFoto.map(x => '<img src="' + x.url + '" alt="" title="' + esc(x.nome) + '" style="height:52px;width:auto;max-width:6rem;object-fit:contain;border:1px solid var(--border);border-radius:4px;background:var(--card2);">').join('') +
     (_collageFoto.length ? (_collageModo === 'sito'   // v7.212: dal sito si ripesca, dal PC si riscelgono i file
-      ? '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;" onclick="_collagePesca()">🔀 ' + (it ? 'Rimescola' : 'Shuffle') + '</button>'
+      ? '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;' + (alfa ? 'opacity:0.5;' : '') + '"' + (alfa ? ' disabled title="' + (it ? 'In ordine alfabetico le foto sono sempre le stesse' : 'Alphabetical order: always the same photos') + '"' : '') + ' onclick="_collagePesca()">🔀 ' + (it ? 'Rimescola' : 'Shuffle') + '</button>'
       : '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;" onclick="_collageScegli()">' + (it ? 'Cambia le foto' : 'Change photos') + '</button>') : '');
 }
 // Che cosa manca per poter creare: il primo problema, a parole, oppure ''
@@ -42034,10 +42104,10 @@ function _collageProblema() {
   if (n < tipo.min || n > tipo.max) return it
     ? (tipo.min === tipo.max ? 'Il collage ' + tipo.it.toLowerCase() + ' vuole esattamente ' + tipo.min + ' foto.' : 'Il collage ' + tipo.it.toLowerCase() + ' va da ' + tipo.min + ' a ' + tipo.max + ' foto.')
     : 'This collage takes ' + tipo.min + '–' + tipo.max + ' photos.';
-  if (!_collageFoto.length) return it ? 'Scegli le foto (domanda 2).' : 'Choose the photos (question 2).';
+  if (!_collageFoto.length) return it ? 'Scegli le foto (domanda 1).' : 'Choose the photos (question 1).';
   if (_collageFoto.length !== n) return it ? 'Hai scelto ' + _collageFoto.length + ' foto, ma ne devi unire ' + n + '.' : 'You chose ' + _collageFoto.length + ' photos, not ' + n + '.';
   // v7.220 - la texture è obbligatoria
-  if (!document.querySelector('input[name="collage-texture"]:checked')) return it ? 'Scegli la texture di sfondo (domanda 5).' : 'Choose the background texture (question 5).';
+  if (!document.querySelector('input[name="collage-texture"]:checked')) return it ? 'Scegli la texture di sfondo (domanda 4).' : 'Choose the background texture (question 4).';
   return '';
 }
 // 🆕 v7.220 - scelto il venditore, la sua texture (si può sempre cambiare dopo); «—» non tocca la texture scelta
@@ -42131,17 +42201,45 @@ function _collageBordi(pezzi) {
   });
   return { x0, y0, x1, y1 };
 }
+// 🆕 v7.222 (Franco: «la foto che esce dal collage è a bassa risoluzione»; «la dimensione della foto output del collage
+//    deve essere proporzionale al numero di foto»; «quando il collage viene utilizzato per cambiare la foto di sfondo di
+//    una card, rimaniamo con la misura che abbiamo sempre utilizzato … le foto più grandi mi servono solo per fare gli
+//    annunci»; «procedere con il 4000 * 2250») - LA MISURA DEL COLLAGE DEGLI ANNUNCI. Quella in cui la foto mediana
+//    fra le scelte sta a grandezza naturale (un pixel dell'originale per un pixel del collage): con poche foto piccole
+//    il collage resta piccolo invece di ingrandirle. Mai sotto i 1200×675 di prima, mai sopra 4000×2250 (il tetto
+//    scelto da Franco fra 2400, 3200 e 4000: sotto i limiti di eBay, Vinted e Subito, e il JPEG resta di pochi MB).
+// 📌 La mediana e non la più piccola: una foto sola da 500 px abbasserebbe tutto il collage.
+// 🔄 v7.222 (Franco: «se mi dai la possibilità di scegliere di volta in volta con un parametro forse non sarebbe neanche
+//    troppo male … vedi tu che tipo di domanda vuoi farmi») - il tetto si sceglie nella domanda 5, «Quanto grande al
+//    massimo?» (`COLLAGE_TETTI`, parole mie), di serie 4000
+const COLLAGE_MAX_W = 4000, COLLAGE_MAX_H = 2250;
+const COLLAGE_TETTI = [2400, 3200, 4000];
+function _collageMisuraGrande(pezzi, b, margine, tetto) {
+  const nat = pezzi.map(p => (p.img.naturalHeight || p.img.height) / p.h).sort((x, y) => x - y);
+  const kNat = nat[Math.floor(nat.length / 2)] || 0;
+  const w = Math.max(kNat * (b.x1 - b.x0), kNat * (b.y1 - b.y0) * COLLAGE_W / COLLAGE_H) / (1 - 2 * margine);
+  const W = Math.round(Math.min(tetto || COLLAGE_MAX_W, Math.max(COLLAGE_W, w)));
+  return { W, H: Math.round(W * COLLAGE_MAX_H / COLLAGE_MAX_W) };
+}
 // 🔄 v7.220 - `sfondo`: l'immagine della texture, ripetuta a piastrella sotto le foto; null = trasparente, come prima
-function _collageDisegna(tipo, foto, sfondo) {
-  const c = document.createElement('canvas');
-  c.width = COLLAGE_W; c.height = COLLAGE_H;
-  const ctx = c.getContext('2d');
-  if (sfondo) { ctx.fillStyle = ctx.createPattern(sfondo, 'repeat'); ctx.fillRect(0, 0, COLLAGE_W, COLLAGE_H); }
+// 🔄 v7.222 - `grande`: il tetto in pixel di larghezza, e la misura la fa `_collageMisuraGrande` (da Annunci); senza,
+//    1200×675 come prima (la card)
+function _collageDisegna(tipo, foto, sfondo, grande) {
   const pezzi = _collageDisponi(tipo, foto);
   const b = _collageBordi(pezzi);
   const margine = tipo === 'griglia' ? 0.02 : 0.05;
-  const k = Math.min(COLLAGE_W * (1 - 2 * margine) / (b.x1 - b.x0), COLLAGE_H * (1 - 2 * margine) / (b.y1 - b.y0));
-  const ox = COLLAGE_W / 2 - k * (b.x0 + b.x1) / 2, oy = COLLAGE_H / 2 - k * (b.y0 + b.y1) / 2;
+  const { W, H } = grande ? _collageMisuraGrande(pezzi, b, margine, grande) : { W: COLLAGE_W, H: COLLAGE_H };
+  const s = W / COLLAGE_W;   // v7.222 - tessuto e ombra crescono con il collage, se no a 4000 sembrerebbero più fini
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  if (sfondo) {
+    const pat = ctx.createPattern(sfondo, 'repeat');
+    if (s !== 1 && pat.setTransform) pat.setTransform(new DOMMatrix().scale(s));
+    ctx.fillStyle = pat; ctx.fillRect(0, 0, W, H);
+  }
+  const k = Math.min(W * (1 - 2 * margine) / (b.x1 - b.x0), H * (1 - 2 * margine) / (b.y1 - b.y0));
+  const ox = W / 2 - k * (b.x0 + b.x1) / 2, oy = H / 2 - k * (b.y0 + b.y1) / 2;
   ctx.imageSmoothingQuality = 'high';
   pezzi.forEach(p => {
     ctx.save();
@@ -42149,7 +42247,7 @@ function _collageDisegna(tipo, foto, sfondo) {
     ctx.rotate(p.rot);
     // un'ombra leggera dove le foto si sovrappongono o girano: sul trasparente è ciò che le stacca una dall'altra
     // v7.220 - sul tessuto l'ombra anche nella griglia: è lei che fa sembrare le foto appoggiate
-    if (tipo !== 'griglia' || sfondo) { ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; }
+    if (tipo !== 'griglia' || sfondo) { ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14 * s; ctx.shadowOffsetY = 3 * s; }
     ctx.drawImage(p.img, -k * p.w / 2, -k * p.h / 2, k * p.w, k * p.h);
     ctx.restore();
   });
@@ -42179,8 +42277,12 @@ async function _collageCrea() {
     try { sfondo = await _collageLeggiTexture(tx); }
     catch (e) { console.error('_collageCrea/texture', e); toast(it ? '❌ Non riesco a leggere la texture «' + tx.it + '»' : '❌ Could not load the texture', 'error'); return; }
   }
-  const c = _collageDisegna(tipo, imgs, sfondo);
-  const blob = await new Promise(ok => c.toBlob(ok, 'image/png'));
+  // v7.222 - da Annunci il collage grande, e in JPEG quando c'è un tessuto (un PNG da 4000×2250 pesa decine di MB);
+  //    sul trasparente resta PNG, l'unico che lo tiene. Dalla card come prima: 1200×675, PNG.
+  const grande = _collageBoxDest ? 0 : (Number((document.querySelector('input[name="collage-tetto"]:checked') || {}).value) || COLLAGE_MAX_W);
+  const jpg = !!grande && !!sfondo;
+  const c = _collageDisegna(tipo, imgs, sfondo, grande);
+  const blob = await new Promise(ok => jpg ? c.toBlob(ok, 'image/jpeg', 0.92) : c.toBlob(ok, 'image/png'));
   if (!blob) { toast(it ? '❌ Non riesco a creare la foto' : '❌ Could not create the photo', 'error'); return; }
   _collageBlob = blob;   // v7.214 - per «Usa come foto della card»
   const usa = document.getElementById('collage-usa');
@@ -42189,7 +42291,7 @@ async function _collageCrea() {
   const a = document.getElementById('collage-scarica');
   if (a) {
     if (a.dataset.url) URL.revokeObjectURL(a.dataset.url);
-    a.href = url; a.dataset.url = url; a.download = 'collage-' + tipo + '-' + _collageFoto.length + '.png'; a.style.display = '';
+    a.href = url; a.dataset.url = url; a.download = 'collage-' + tipo + '-' + _collageFoto.length + (jpg ? '.jpg' : '.png'); a.style.display = '';
   }
   const ant = document.getElementById('collage-anteprima');
   if (ant) { ant.innerHTML = '<img src="' + url + '" alt="" style="display:block;width:100%;height:auto;">'; ant.style.display = ''; }
@@ -42460,13 +42562,16 @@ function _annDisegna() {
     return _annOrdine.su ? c : -c;
   });
   _annVisti = righe.map(([, i]) => i);
+  // v7.222 - sul telefono il Sito è solo il colore: scritta trasparente, selettore stretto
+  const tel = _isMobileViewport();
+  const _annSitoTel = tel ? 'color:transparent;width:2.4rem;' : '';
   box.innerHTML = '<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;">'
     + '<table class="data-table compact"><thead><tr>'
     // v7.200 - la spunta di tutte le righe che si vedono (coi filtri di adesso)
     + '<th style="text-align:center;"><input type="checkbox" title="' + (it ? 'Spunta tutte quelle che vedi' : 'Tick all visible') + '"'
       + (righe.every(([r]) => _annSpuntati.has(r.id)) ? ' checked' : '') + ' onchange="_annSpuntaTutti(this.checked)"></th>'
     // v7.200 (Franco: «"Tipologia" su una riga e "articolo" sulla riga dopo (senza "di")»)
-    + th(it ? 'Sito' : 'Site') + th(it ? 'Venditore' : 'Seller') + th(it ? 'Serie' : 'Series') + th(it ? 'Tipologia<br>articolo' : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
+    + th(it ? 'Sito' : 'Site') + th(it ? 'Venditore' : 'Seller') + th(it ? 'Serie' : 'Series') + th(it ? (tel ? 'TDA' : 'Tipologia<br>articolo') : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
     // v7.187 (Franco: «il campo descrizione non mostrarlo nella tabella degli annunci; mostra invece la url») - la
     //    descrizione resta nella finestra; in tabella al suo posto il link, scritto per intero
     // v7.187 (Franco: «per ora togli il campo Foto dalla tabellina») - lo zip resta nella finestra
@@ -42485,11 +42590,15 @@ function _annDisegna() {
         //    (`_annCampo`). Serie e Articolo no: passano dalla tipologia, che sta solo nella finestra (✏️).
         // 🆕 v7.202 (Franco: «colora il selettore Sito: ebay rosso, vinted verde, … azzurro») - il colore del sito scelto,
         //    rifatto anche al cambio (la riga non si ridisegna)
-        const sel = (campo, voci) => '<select class="ann-cella"' + (campo === 'sito' ? ' style="' + _annStileSito(r.sito) + 'font-weight:600;"' : '')
-          + ' onchange="' + (campo === 'sito' ? 'this.style.cssText=_annStileSito(this.value)+\'font-weight:600;\';' : '') + '_annCampo(' + i + ',\'' + campo + '\',this)">'
+        // 🆕 v7.222 (Franco, dal telefono: «la etichetta eBay vinted o subito fatta senza scritte; mi basta il colore») -
+        //    sul telefono la scritta del Sito è trasparente (solo il selettore chiuso: le voci del menu restano scritte)
+        //    e il Venditore si legge con la sigla di `_ANN_SIGLA`
+        const sel = (campo, voci) => '<select class="ann-cella"' + (campo === 'sito' ? ' style="' + _annStileSito(r.sito) + 'font-weight:600;' + _annSitoTel + '"' : '')
+          + ' onchange="' + (campo === 'sito' ? 'this.style.cssText=_annStileSito(this.value)+\'font-weight:600;' + _annSitoTel + '\';' : '') + '_annCampo(' + i + ',\'' + campo + '\',this)">'
           + (campo === 'account' ? '<option value="">—</option>' : '')
           // v7.200 (Franco: «Subito.it scrivilo come Subito») - in tabella si legge «Subito»; il valore resta «Subito.it»
-          + voci.map(x => '<option value="' + esc(x) + '"' + (campo === 'sito' ? ' style="' + _annStileSito(x) + '"' : '') + (x === r[campo] ? ' selected' : '') + '>' + esc(x === 'Subito.it' ? 'Subito' : x) + '</option>').join('') + '</select>';
+          + voci.map(x => '<option value="' + esc(x) + '"' + (campo === 'sito' ? ' style="' + _annStileSito(x) + '"' : '') + (x === r[campo] ? ' selected' : '') + '>'
+            + esc(x === 'Subito.it' ? 'Subito' : (campo === 'account' && tel && _ANN_SIGLA[x]) || x) + '</option>').join('') + '</select>';
         // 🔄 v7.191 (Franco: «le due colonne Costo e Prezzo, quando si premono i tasti con le frecce, devono salire e
         //    scendere di 1 euro») - `step="any"`: le frecce vanno di 1 e i centesimi si possono ancora scrivere a mano
         //    (con `step="1"` un 4,50 sarebbe un valore «non valido» per il browser)
@@ -42616,6 +42725,8 @@ function _annApriLink(i) {
 }
 // 🆕 v7.186 (Franco: «un campo che si chiama Account, con queste opzioni: Franco, Lendys, Fabio») - chi ha messo l'annuncio
 const _ANN_ACCOUNT = ['Franco', 'Lendys', 'Fabio'];
+// v7.222 (Franco: «per il venditore, usa una abbreviazione: Fr per franco, Fa per fabio, L per Lendys») - sul telefono
+const _ANN_SIGLA = { Franco: 'Fr', Fabio: 'Fa', Lendys: 'L' };
 // 🆕 v7.199 - «Prendi valore»: il campo omonimo dell'album scelto come Articolo, per l'Account dell'annuncio (i testi
 //    del tab Ebay dell'album, `testiAccount`). Su una versione vuota si guarda la sua partenza. Se manca qualcosa non
 //    si tocca la casella: si dice cosa manca nella riga di stato della finestra.
