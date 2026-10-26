@@ -2460,9 +2460,14 @@ footer {
   .sfoglia-cornice { width: 100% !important; flex: 0 0 100% !important; min-width: 0; order: 2;
     height: calc(100vh - 18rem) !important; }
   .sfoglia-lato { flex: 0 0 100%; flex-direction: row; justify-content: center; }
-  .sfoglia-lato:has(#sfoglia-album-succ) { order: 1; }
-  .sfoglia-lato:has(#sfoglia-album-prec) { order: 3; flex-direction: row-reverse; }
-  .sfoglia-capo { flex-direction: row; gap: 0.35rem; padding: 0.4rem 0.6rem; }
+  /* 🐛 v7.225 (Franco: «il tasto per la pagina successiva mettilo sulla stessa riga del tasto "Ultima pagina"») - la
+     riga di sopra restava in colonna: `.sfoglia-lato { flex-direction: column }` dello <style> dell'index viene dopo
+     questo foglio e, a pari peso, vince. Il `:has(#…)` pesa di più: la direzione si scrive lì, per tutti e due i lati.
+     Per la stessa ragione la vecchia `.sfoglia-capo { flex-direction: row }` non valeva: tolta, la scritta resta sopra
+     l'icona, ed è così che ora stanno anche «Precedente» e «Successiva» sopra le frecce. */
+  .sfoglia-lato:has(#sfoglia-album-succ) { order: 1; flex-direction: row; align-items: stretch; }
+  .sfoglia-lato:has(#sfoglia-album-prec) { order: 3; flex-direction: row-reverse; align-items: stretch; }
+  .sfoglia-freccia-testo { display: block; font-family: var(--font-ui); font-size: 0.72rem; line-height: 1.15; margin-bottom: 0.15rem; }
   #sfoglia-album-prec, #sfoglia-album-succ { min-width: 2.2rem !important; padding: 0.4rem 0.5rem !important; }
   .series-subname { font-size: 1.15rem; }   /* v6.720 - cresciuto da 0.92 anche qui */
   .series-info { display: contents; }
