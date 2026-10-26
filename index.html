@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.224">
+<link rel="stylesheet" href="css/style.css?v=7.225">
 
 
 <style>
@@ -793,6 +793,9 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
   font-family: var(--font-ui); font-size: 0.72rem; line-height: 1.15; white-space: nowrap; }
 .sfoglia-capo .sfoglia-capo-icona { font-size: 1rem; line-height: 1; }
 .sfoglia-capo:disabled { opacity: 0.35; cursor: not-allowed; }
+/* 🆕 v7.225 (Franco: «nella versione mobile, sopra la freccia, centrato, scrivi "precedente" … "successiva"») - la
+   scritta sta nella freccia e si vede solo sul telefono (style.css), come quella di `.sfoglia-capo` */
+.sfoglia-freccia-testo { display: none; }
 /* 🆕 v7.178 (Franco: «nelle fpa il valore della famiglia scriviamolo a capo (la card di una fpa è larga la metà di
    quella di una fcr)») - il valore (l'ultimo span di `_campoCard`) va sotto l'etichetta */
 .fig-card[data-sez="attaccare"] .retro-riga[data-campo="famiglia"] > span:last-child { display: block; }
@@ -6736,7 +6739,7 @@ di tutte le serie</button>
          tasti sotto al tasto di prossima pagina e pagina precedente») - ogni lato è una colonna: la freccia e, sotto,
          il capo con la scritta sopra l'icona (`.sfoglia-capo`). Prima stavano ai lati del contatore. -->
     <div class="sfoglia-lato">
-    <button type="button" id="sfoglia-album-prec" onclick="sfogliaVai(-1)" style="min-width:3rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.4rem 0.8rem;font-size:1.3rem;line-height:1;cursor:pointer;">&#8249;</button>
+    <button type="button" id="sfoglia-album-prec" onclick="sfogliaVai(-1)" style="min-width:3rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.4rem 0.8rem;font-size:1.3rem;line-height:1;cursor:pointer;"><span class="sfoglia-freccia-testo" data-i18n="sfoglia.precedente">Precedente</span>&#8249;</button>
     <button type="button" id="sfoglia-album-prima" class="sfoglia-capo" onclick="sfogliaVaiA(0)" aria-label="Prima pagina"><span data-i18n="sfoglia.prima">Prima pagina</span><span class="sfoglia-capo-icona">&#9198;</span></button>
     </div>
   <!-- 🔄 v6.868 (Franco: «le frecce che consentono di sfogliare l'album si spostano al cambio
@@ -6756,7 +6759,7 @@ di tutte le serie</button>
     <img id="sfoglia-album-img" alt="" style="max-width:100%;max-height:calc(100% - 2rem);object-fit:contain;min-height:0;">
   </div>
     <div class="sfoglia-lato">
-    <button type="button" id="sfoglia-album-succ" onclick="sfogliaVai(1)" style="min-width:3rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.4rem 0.8rem;font-size:1.3rem;line-height:1;cursor:pointer;">&#8250;</button>
+    <button type="button" id="sfoglia-album-succ" onclick="sfogliaVai(1)" style="min-width:3rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:var(--text);border-radius:8px;padding:0.4rem 0.8rem;font-size:1.3rem;line-height:1;cursor:pointer;"><span class="sfoglia-freccia-testo" data-i18n="sfoglia.successiva">Successiva</span>&#8250;</button>
     <button type="button" id="sfoglia-album-ultima" class="sfoglia-capo" onclick="sfogliaVaiA(-1)" aria-label="Ultima pagina"><span data-i18n="sfoglia.ultima">Ultima pagina</span><span class="sfoglia-capo-icona">&#9197;</span></button>
     </div>
   </div>
@@ -6775,7 +6778,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.224"></script>
+<script src="js/app.js?v=7.225"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6799,7 +6802,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.224'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.225'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
