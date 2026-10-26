@@ -2451,8 +2451,18 @@ footer {
   .sfoglia-riga { flex-wrap: wrap; justify-content: center; gap: 0.4rem !important; width: 100%; }
   .sfoglia-comandi { order: -1; width: 100%; flex-direction: row !important; flex-wrap: wrap;
     justify-content: center; margin: 0 0 0.4rem !important; }
-  .sfoglia-cornice { width: auto !important; flex: 1 1 0 !important; min-width: 0;
-    height: calc(100vh - 14rem) !important; }
+  /* 🔄 v7.224 (Franco: «da mobile, in Sfoglia album, le pagine sono molto più piccole che nel Questionario … vorrei le
+     medesime dimensioni; spostiamo i tasti per sfogliare sopra e sotto alla foto») - LA PAGINA A TUTTA LARGHEZZA, come
+     `.wz-album` del Questionario. 📏 Misurato a 390px: frecce e «Prima/Ultima pagina» ai lati prendevano ~150px, e la
+     pagina ne restava larga ~200 contro i ~358 del Questionario. Ora i lati diventano righe: sopra «avanti» (freccia e
+     «Ultima pagina»), sotto «indietro», come la v7.157 del Questionario. L'altezza della cornice la fa
+     `_sfogliaAdattaCornice` sulla pagina più larga dell'album, così le frecce restano ferme (v6.868). */
+  .sfoglia-cornice { width: 100% !important; flex: 0 0 100% !important; min-width: 0; order: 2;
+    height: calc(100vh - 18rem) !important; }
+  .sfoglia-lato { flex: 0 0 100%; flex-direction: row; justify-content: center; }
+  .sfoglia-lato:has(#sfoglia-album-succ) { order: 1; }
+  .sfoglia-lato:has(#sfoglia-album-prec) { order: 3; flex-direction: row-reverse; }
+  .sfoglia-capo { flex-direction: row; gap: 0.35rem; padding: 0.4rem 0.6rem; }
   #sfoglia-album-prec, #sfoglia-album-succ { min-width: 2.2rem !important; padding: 0.4rem 0.5rem !important; }
   .series-subname { font-size: 1.15rem; }   /* v6.720 - cresciuto da 0.92 anche qui */
   .series-info { display: contents; }
