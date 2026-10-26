@@ -2136,6 +2136,13 @@ footer {
 @media (max-width: 860px) {
   /* console di amministrazione (dentro la pagina Profilo) */
   #admin-panel { display: none !important; }
+  /* 🔄 v7.221 (Franco, dal telefono: «sotto a Annunci non vedo nulla: né il tasto per un nuovo annuncio né il tasto del
+     collage») - ECCEZIONE: aperta su «📢 Annunci» (la voce `#nav-annunci` del panino, v7.186) la console si vede, ma
+     solo quella sezione; titolo e tab restano spenti. Prima la voce apriva una pagina vuota: la riga qui sopra
+     spegneva tutto il pannello, Annunci compreso. */
+  #admin-panel:has(#admin-fotoannuncio.active) { display: block !important; }
+  #admin-panel:has(#admin-fotoannuncio.active) > h2,
+  #admin-panel:has(#admin-fotoannuncio.active) > .admin-tabs { display: none !important; }
 
   /* strumenti admin sparsi nelle pagine */
   /* 🔄 v7.091 (Franco: «nella maschera di ricerca delle carte, da applicazione mobile, non c'è il filtro admin ma
