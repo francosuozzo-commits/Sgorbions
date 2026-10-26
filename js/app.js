@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.220 - Modificati index.html (per la versione) e js/app.js; nuovi img/collage/texture-boucle.jpg,
+//          texture-quadretti.jpg e texture-jeans.jpg. COLLAGE: LA TEXTURE DI SFONDO (Franco: «chiedi quale texture
+//          usare, campo obbligatorio, oppure per quale venditore è (domanda facoltativa); ma se selezioni la persona,
+//          metti già quella texture che ti ho indicato»; dal foglio dei tessuti «14, 3, 1 … Lendys: 14, Fabio: 3,
+//          Franco: 1»). Domanda 4 «Per quale venditore è? (facoltativa)», domanda 5 «Quale texture di sfondo?»:
+//          Nessuna (sfondo trasparente), Bouclé di lana, Tovaglia a quadretti, Jeans (`COLLAGE_TEXTURE`,
+//          `COLLAGE_TEXTURE_VENDITORE`, `_collageVenditoreScelto`). Il tessuto si ripete a piastrella sotto le foto
+//          (`_collageDisegna`), con l'ombra anche nella griglia. Da Annunci la texture va scelta; dal «Cambia foto» di
+//          una card parte su «Nessuna».
 // v7.219 - Modificati index.html (per la versione) e js/app.js. COLLAGE: LA FAMIGLIA DELLE FPA SI VEDE SUBITO (Franco:
 //          «sulle fpa della serie 1 la famiglia è popolata; lo dimostra il fatto che se filtro le fpa per famiglia, i
 //          risultati escono»): scegliendo «Dal sito», `_collageDa` chiama `_collageSitoAggiorna`, così la domanda sulla
@@ -31695,7 +31704,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.219';
+const JS_VERSION = 'v7.220';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41497,6 +41506,20 @@ const COLLAGE_TIPI = [
   { k: 'mazzo',   it: 'A mazzo di carte', en: 'Hand of cards', min: 2, max: 40 },
   { k: 'griglia', it: 'A griglia',        en: 'Grid',          min: 2, max: 40 },
 ];
+// 🆕 v7.220 (Franco: «chiedi quale texture usare, campo obbligatorio, oppure per quale venditore è (domanda facoltativa);
+//    ma se selezioni la persona, metti già quella texture che ti ho indicato»; scelte dal foglio dei tessuti: «14, 3, 1 …
+//    Lendys: 14, Fabio: 3, Franco: 1») - LA TEXTURE DI SFONDO. Tessuti di Poly Haven (CC0, nessun obbligo di citazione),
+//    ridotti a 720 px e messi nel sito accanto ad app.js: niente Cloudinary, nessuna trasformazione. Si ripetono a
+//    piastrella sotto le foto. «Nessuna» resta (Franco: «Sì, resta»): è lo sfondo trasparente di prima.
+const COLLAGE_TEXTURE = [
+  { k: 'nessuna',   it: 'Nessuna (sfondo trasparente)', en: 'None (transparent background)' },
+  { k: 'boucle',    it: 'Bouclé di lana',               en: 'Wool bouclé',        file: '/img/collage/texture-boucle.jpg' },
+  { k: 'quadretti', it: 'Tovaglia a quadretti',         en: 'Gingham tablecloth', file: '/img/collage/texture-quadretti.jpg' },
+  { k: 'jeans',     it: 'Jeans',                        en: 'Denim',              file: '/img/collage/texture-jeans.jpg' },
+];
+// il venditore (gli stessi di Annunci, `_ANN_ACCOUNT`) e la sua texture
+const COLLAGE_TEXTURE_VENDITORE = { Lendys: 'boucle', Fabio: 'quadretti', Franco: 'jeans' };
+const _collageTextureImg = {};   // le texture già lette: k → Promise di Image
 let _collageFoto = [];   // le immagini scelte: { nome, img }
 // 🔄 v7.219 (Franco: «sposta la funzione Collage foto nella sezione "Annunci"») - non più un tab della console
 //    (`renderAdminCollage`, tolta): il tasto «🖼️ Crea collage foto» di Annunci apre la stessa finestra del «Cambia foto»,
@@ -41529,7 +41552,7 @@ function _collageHTML(perBox) {
   const scelta = (nome, val, testo, extra) => '<label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.88rem;color:var(--text);margin:0.25rem 0;">' +
     '<input type="radio" name="' + nome + '" value="' + val + '"' + (extra || '') + '>' + testo + '</label>';
   return '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;line-height:1.5;">' +
-      (it ? 'Unisce più foto in una foto sola, con lo sfondo trasparente e la forma dei box degli hub (' + COLLAGE_W + '×' + COLLAGE_H + ' px).<br>' +
+      (it ? 'Unisce più foto in una foto sola, sopra un tessuto o sullo sfondo trasparente, con la forma dei box degli hub (' + COLLAGE_W + '×' + COLLAGE_H + ' px).<br>' +
             (perBox ? 'Con «Usa come foto della card» il collage diventa la foto di questa card.' : 'La foto si scarica e basta: sul sito non si salva niente.')
           : 'Joins several photos into one, transparent background, hub box shape.' + (perBox ? '' : ' Nothing is saved on the site.')) +
     '</p>' +
@@ -41550,6 +41573,14 @@ function _collageHTML(perBox) {
     COLLAGE_TIPI.map((t, i) => scelta('collage-tipo', t.k, esc(it ? t.it : t.en) + ' <span style="font-size:0.75rem;opacity:0.7;">(' +
       (t.min === t.max ? (it ? 'esattamente ' : 'exactly ') + t.min : t.min + '–' + t.max) + (it ? ' foto' : ' photos') + ')</span>',
       (i === 0 ? ' checked' : '') + ' onchange="_collageStato()"')).join('') +
+    // 🆕 v7.220 - il venditore (facoltativo) mette la sua texture; la texture è obbligatoria: da Annunci non ce n'è una
+    //    di serie, dal «Cambia foto» di una card «Nessuna», come prima
+    '<div style="' + dom + '">4. ' + (it ? 'Per quale venditore è? (facoltativa)' : 'Which seller is it for? (optional)') + '</div>' +
+    '<select id="collage-venditore" onchange="_collageVenditoreScelto()" style="background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:0.35rem 0.5rem;font-size:0.88rem;">' +
+      '<option value="">—</option>' + _ANN_ACCOUNT.map(a => '<option value="' + esc(a) + '">' + esc(a) + '</option>').join('') + '</select>' +
+    '<div style="' + dom + '">5. ' + (it ? 'Quale texture di sfondo?' : 'Which background texture?') + '</div>' +
+    COLLAGE_TEXTURE.map(t => scelta('collage-texture', t.k, esc(it ? t.it : t.en),
+      (perBox && t.k === 'nessuna' ? ' checked' : '') + ' onchange="_collageStato()"')).join('') +
     '<div id="collage-avviso" style="font-size:0.82rem;color:var(--warn);min-height:1.2rem;margin:0.7rem 0 0.4rem;"></div>' +
     '<div style="display:flex;gap:0.7rem;flex-wrap:wrap;align-items:center;">' +
       '<button type="button" id="collage-crea" class="btn-primary" onclick="_collageCrea()">' + (it ? '🖼️ Crea il collage' : '🖼️ Create collage') + '</button>' +
@@ -41994,7 +42025,25 @@ function _collageProblema() {
     : 'This collage takes ' + tipo.min + '–' + tipo.max + ' photos.';
   if (!_collageFoto.length) return it ? 'Scegli le foto (domanda 2).' : 'Choose the photos (question 2).';
   if (_collageFoto.length !== n) return it ? 'Hai scelto ' + _collageFoto.length + ' foto, ma ne devi unire ' + n + '.' : 'You chose ' + _collageFoto.length + ' photos, not ' + n + '.';
+  // v7.220 - la texture è obbligatoria
+  if (!document.querySelector('input[name="collage-texture"]:checked')) return it ? 'Scegli la texture di sfondo (domanda 5).' : 'Choose the background texture (question 5).';
   return '';
+}
+// 🆕 v7.220 - scelto il venditore, la sua texture (si può sempre cambiare dopo); «—» non tocca la texture scelta
+function _collageVenditoreScelto() {
+  const k = COLLAGE_TEXTURE_VENDITORE[(document.getElementById('collage-venditore') || {}).value];
+  const r = k && document.querySelector('input[name="collage-texture"][value="' + k + '"]');
+  if (r) r.checked = true;
+  _collageStato();
+}
+function _collageLeggiTexture(t) {
+  if (!_collageTextureImg[t.k]) _collageTextureImg[t.k] = new Promise((ok, ko) => {
+    const img = new Image();
+    img.onload = () => ok(img);
+    img.onerror = () => { delete _collageTextureImg[t.k]; ko(new Error('texture ' + t.file)); };
+    img.src = t.file;
+  });
+  return _collageTextureImg[t.k];
 }
 function _collageStato() {
   const p = _collageProblema();
@@ -42071,10 +42120,12 @@ function _collageBordi(pezzi) {
   });
   return { x0, y0, x1, y1 };
 }
-function _collageDisegna(tipo, foto) {
+// 🔄 v7.220 - `sfondo`: l'immagine della texture, ripetuta a piastrella sotto le foto; null = trasparente, come prima
+function _collageDisegna(tipo, foto, sfondo) {
   const c = document.createElement('canvas');
   c.width = COLLAGE_W; c.height = COLLAGE_H;
   const ctx = c.getContext('2d');
+  if (sfondo) { ctx.fillStyle = ctx.createPattern(sfondo, 'repeat'); ctx.fillRect(0, 0, COLLAGE_W, COLLAGE_H); }
   const pezzi = _collageDisponi(tipo, foto);
   const b = _collageBordi(pezzi);
   const margine = tipo === 'griglia' ? 0.02 : 0.05;
@@ -42086,7 +42137,8 @@ function _collageDisegna(tipo, foto) {
     ctx.translate(ox + k * p.x, oy + k * p.y);
     ctx.rotate(p.rot);
     // un'ombra leggera dove le foto si sovrappongono o girano: sul trasparente è ciò che le stacca una dall'altra
-    if (tipo !== 'griglia') { ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; }
+    // v7.220 - sul tessuto l'ombra anche nella griglia: è lei che fa sembrare le foto appoggiate
+    if (tipo !== 'griglia' || sfondo) { ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; }
     ctx.drawImage(p.img, -k * p.w / 2, -k * p.h / 2, k * p.w, k * p.h);
     ctx.restore();
   });
@@ -42109,7 +42161,14 @@ async function _collageCrea() {
       ? '⚠️ Sfondo non di un colore unito, lasciato com\'è: ' + restate.join(', ')
       : '⚠️ Background not plain, left as it is: ' + restate.join(', '), 'error');
   }
-  const c = _collageDisegna(tipo, imgs);
+  // v7.220 - la texture di sfondo, letta una volta sola
+  const tx = COLLAGE_TEXTURE.find(t => t.k === document.querySelector('input[name="collage-texture"]:checked').value);
+  let sfondo = null;
+  if (tx && tx.file) {
+    try { sfondo = await _collageLeggiTexture(tx); }
+    catch (e) { console.error('_collageCrea/texture', e); toast(it ? '❌ Non riesco a leggere la texture «' + tx.it + '»' : '❌ Could not load the texture', 'error'); return; }
+  }
+  const c = _collageDisegna(tipo, imgs, sfondo);
   const blob = await new Promise(ok => c.toBlob(ok, 'image/png'));
   if (!blob) { toast(it ? '❌ Non riesco a creare la foto' : '❌ Could not create the photo', 'error'); return; }
   _collageBlob = blob;   // v7.214 - per «Usa come foto della card»
