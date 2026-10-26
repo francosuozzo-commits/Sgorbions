@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.221 - Modificati index.html, css/style.css e js/app.js. «📢 ANNUNCI» DAL TELEFONO (Franco: «sotto a Annunci non
+//          vedo nulla: né il tasto per un nuovo annuncio né il tasto del collage»): la voce del panino apriva una
+//          pagina vuota, perché sul telefono il css spegne tutta la console (`#admin-panel`, v5.822) e Annunci ci sta
+//          dentro. Eccezione nel css: con la sezione Annunci aperta il pannello si vede, senza titolo né tab.
+//          UTENTI: IL CAMPO «DUMMY» (Franco: «un campo nella tabella utenti, che si
+//          chiama "dummy", di tipo true false; popolabile da form utente; non metterlo in lista»): la spunta «Dummy»
+//          nella finestra dell'utente, sotto «Tipologia di utente» (`dummy` sul documento, true o false; chi non ce
+//          l'ha è false). Nella tabella non è una colonna.
+//          E IL PULSANTINO (Franco: «se premuto, fa in modo che gli utenti con dummy=true non compaiano nella
+//          lista»): «🙈 Nascondi i dummy (N)» accanto ad «Aggiorna dati»; premuto diventa «👁️ Mostra i dummy (N)». I
+//          nascosti escono anche dal conteggio del titolo. La scelta resta nel browser (`toggleDummyUtenti`).
 // v7.220 - Modificati index.html (per la versione) e js/app.js; nuovi img/collage/texture-boucle.jpg,
 //          texture-quadretti.jpg e texture-jeans.jpg. COLLAGE: LA TEXTURE DI SFONDO (Franco: «chiedi quale texture
 //          usare, campo obbligatorio, oppure per quale venditore è (domanda facoltativa); ma se selezioni la persona,
@@ -31704,7 +31715,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.220';
+const JS_VERSION = 'v7.221';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -63193,6 +63204,16 @@ async function markContactRead(id) {
   updateMsgBadge();
 }
 let _usersSort = { col: 'username', dir: 1 };
+// 🆕 v7.221 (Franco: «un pulsantino che, se premuto, fa in modo che gli utenti con dummy=true non compaiano nella
+//    lista») - premuto di nuovo li rimette. La scelta resta nel browser (si ricarica la pagina e la lista è come la si
+//    era lasciata); se il browser non la tiene, si parte coi dummy in lista.
+let _usersNascondiDummy = false;
+try { _usersNascondiDummy = localStorage.getItem('sgorbions_nascondiDummy') === '1'; } catch (e) {}
+function toggleDummyUtenti() {
+  _usersNascondiDummy = !_usersNascondiDummy;
+  try { localStorage.setItem('sgorbions_nascondiDummy', _usersNascondiDummy ? '1' : '0'); } catch (e) {}
+  renderAdminUsers();
+}
 
 function sortAdminUsers(col) {
   if (_usersSort.col === col) _usersSort.dir *= -1;
@@ -63203,6 +63224,13 @@ function sortAdminUsers(col) {
 function renderAdminUsers() {
   const el = document.getElementById('admin-users-table');
   let users = [...getData('users', [])];
+  // 🆕 v7.221 - i dummy fuori dalla lista, e dal conteggio, quando il pulsantino è premuto
+  const nDummy = users.filter(u => u.dummy === true).length;
+  if (_usersNascondiDummy) users = users.filter(u => u.dummy !== true);
+  const dBtn = document.getElementById('admin-users-dummy-btn');
+  if (dBtn) dBtn.textContent = currentLang === 'it'
+    ? (_usersNascondiDummy ? '👁️ Mostra i dummy (' + nDummy + ')' : '🙈 Nascondi i dummy (' + nDummy + ')')
+    : (_usersNascondiDummy ? '👁️ Show dummies (' + nDummy + ')' : '🙈 Hide dummies (' + nDummy + ')');
 
   // Conteggio accanto al titolo. Il numero sta in un <span> SUO, fratello di
   // quello con data-i18n: applyI18n() riscrive il textContent dell'elemento
@@ -72180,6 +72208,9 @@ function openEditUserModal(userId) {
   document.getElementById('edit-user-id').value = userId;
   document.getElementById('edit-user-username').value = user.username;
   document.getElementById('edit-user-chie').value = user.chiE || '';   // v7.210
+  // v7.221 - il campo «dummy»: chi non ce l'ha scritto è false
+  const dummyEl = document.getElementById('edit-user-dummy');
+  if (dummyEl) dummyEl.checked = user.dummy === true;
   document.getElementById('edit-user-email').value = user.email;
   document.getElementById('edit-user-role').value = user.isAdmin ? 'admin' : 'collector';
   // Update modal title
@@ -72255,6 +72286,9 @@ async function saveEditUser() {
   users[idx].username = username;
   users[idx].email = email;
   users[idx].chiE = (document.getElementById('edit-user-chie')?.value || '').trim() || null;   // v7.210: vuoto = null
+  // v7.221 - «dummy», true o false
+  const dummyEl = document.getElementById('edit-user-dummy');
+  if (dummyEl) users[idx].dummy = dummyEl.checked;
   await fsSave('users', users[idx]);
   _cache.users = users;
   closeModal('edit-user-modal');
