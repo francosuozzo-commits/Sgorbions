@@ -2467,7 +2467,9 @@ footer {
      l'icona, ed è così che ora stanno anche «Precedente» e «Successiva» sopra le frecce. */
   .sfoglia-lato:has(#sfoglia-album-succ) { order: 1; flex-direction: row; align-items: stretch; }
   .sfoglia-lato:has(#sfoglia-album-prec) { order: 3; flex-direction: row-reverse; align-items: stretch; }
-  .sfoglia-freccia-testo { display: block; font-family: var(--font-ui); font-size: 0.72rem; line-height: 1.15; margin-bottom: 0.15rem; }
+  /* 🐛 v7.226 (Franco: «nella preview mobile non leggo "precedente" e "successiva"») - lo stesso inciampo della riga
+     sopra: il `display: none` dello <style> dell'index viene dopo e, a pari peso, vinceva. Con due classi pesa di più (l'id del modale nel foglio no: `prova-v6809` lo vieta). */
+  .sfoglia-lato .sfoglia-freccia-testo { display: block; font-family: var(--font-ui); font-size: 0.72rem; line-height: 1.15; margin-bottom: 0.15rem; }
   #sfoglia-album-prec, #sfoglia-album-succ { min-width: 2.2rem !important; padding: 0.4rem 0.5rem !important; }
   .series-subname { font-size: 1.15rem; }   /* v6.720 - cresciuto da 0.92 anche qui */
   .series-info { display: contents; }
