@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.220">
+<link rel="stylesheet" href="css/style.css?v=7.221">
 
 
 <style>
@@ -4354,6 +4354,9 @@ di tutte le serie</button>
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;"><span data-i18n="admin.users.title">Registered Users:</span><span id="admin-users-count" style="color:var(--text);font-weight:400;margin-left:0.5rem;"></span></h3>
           <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.9rem;">
             <button class="btn-primary btn-admin" id="admin-refresh-btn" onclick="refreshAdminData()" style="font-size:0.85rem;padding:0.35rem 0.9rem;" data-i18n="admin.refresh">Aggiorna dati</button>
+            <!-- 🆕 v7.221 (Franco: «un pulsantino che, se premuto, fa in modo che gli utenti con dummy=true non compaiano
+                 nella lista») - il testo lo scrive `renderAdminUsers` -->
+            <button type="button" class="btn-primary btn-admin" id="admin-users-dummy-btn" onclick="toggleDummyUtenti()" style="font-size:0.85rem;padding:0.35rem 0.9rem;"></button>
             <span id="admin-refresh-info" style="font-size:0.78rem;color:var(--text);"></span>
           </div>
           <div id="admin-users-table"></div>
@@ -6630,6 +6633,13 @@ di tutte le serie</button>
         <option value="admin" data-i18n="admin.user.admin">Admin</option>
       </select>
     </div>
+    <!-- 🆕 v7.221 (Franco: «un campo nella tabella utenti, che si chiama "dummy", di tipo true false; popolabile da form
+         utente; non metterlo in lista») - campo `dummy` del documento dell'utente; nella tabella non è una colonna -->
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;color:var(--text);">
+        <input type="checkbox" id="edit-user-dummy"> Dummy
+      </label>
+    </div>
 
     <button class="btn-primary btn-admin" style="width:100%;" onclick="saveEditUser()" data-i18n="admin.user.save">Salva modifiche</button>
     <button class="btn-secondary" style="width:100%;margin-top:0.5rem;" onclick="adminResetPassword()" data-i18n="admin.user.reset">🔑 Reset password</button>
@@ -6765,7 +6775,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.220"></script>
+<script src="js/app.js?v=7.221"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6789,7 +6799,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.220'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.221'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
