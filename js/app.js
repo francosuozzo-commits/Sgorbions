@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.227 - Modificati index.html e js/app.js. 🐛 COLLAGE dal «Cambia foto» di una card: i tasti «Scarica fronte»,
+//          «Scarica retro» e «Scarica entrambe» non ci sono più (Franco: «non si deve vedere quando la procedura è
+//          lanciata dal tasto di modifica di un box»); lì resta «Usa come foto della card». Da Annunci come prima.
+//          E dalla card si parte con «A mazzo di carte», «Con le macchie» e l'ordine «Casuale» (Franco).
 // v7.226 - Modificati index.html, js/app.js e css/style.css. 🐛 Sfoglia album dal telefono: «Precedente» e «Successiva»
 //          non si vedevano (Franco). Il `display: none` di `.sfoglia-freccia-testo` nello <style> dell'index viene dopo
 //          il foglio e vinceva sul `display: block` del telefono: ora la regola del foglio ha due classi.
@@ -31780,7 +31784,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.226';
+const JS_VERSION = 'v7.227';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41654,7 +41658,9 @@ function _collageHTML(perBox) {
     COLLAGE_TIPI.map((t, i) => scelta('collage-tipo', t.k, esc(it ? t.it : t.en) + ' <span style="font-size:0.75rem;opacity:0.7;">(' +
       (t.min === t.max ? (it ? 'esattamente ' : 'exactly ') + t.min : t.min + '–' + t.max) + (it ? ' foto' : ' photos') + ')</span>',
       // 🔄 v7.223 (Franco: «che tipo di collage: metti default "griglia"») - era il primo dell'elenco
-      (t.k === 'griglia' ? ' checked' : '') + ' onchange="_collageStato()"')).join('') +
+      // v7.227 (Franco: «quando la funzione è fatta partire da un box, "che tipo di collage vuoi?" deve essere
+      //    preimpostato a "mazzo di carte"») - dalla card il mazzo, da Annunci la griglia
+      (t.k === (perBox ? 'mazzo' : 'griglia') ? ' checked' : '') + ' onchange="_collageStato()"')).join('') +
     // 🆕 v7.220 - il venditore (facoltativo) mette la sua texture; la texture è obbligatoria: da Annunci non ce n'è una
     //    di serie, dal «Cambia foto» di una card «Nessuna», come prima
     '<div style="' + dom + '">3. ' + (it ? 'Per quale venditore è ? (facoltativa)' : 'Which seller is it for? (optional)') + '</div>' +
@@ -41696,14 +41702,17 @@ function _collageHTML(perBox) {
     // 🔄 v7.225 (Franco: «i 3 pulsanti per scaricare le foto dei collage, mettili sotto alla ultima foto generata; tutti e
     //    3 su di una sola riga») - qui, dopo le anteprime: si scarica dopo aver guardato. Una riga sola anche a 390 px
     //    (`nowrap`, scritte un poco più piccole); i tasti senza foto restano nascosti come prima
-    '<div style="display:flex;gap:0.5rem;flex-wrap:nowrap;align-items:center;margin-top:0.7rem;">' +
+    // 🐛 v7.227 (Franco: «"scarica fronte" (ma anche "scarica retro") non si deve vedere quando la procedura è lanciata
+    //    dal tasto di modifica di un box») - dal «Cambia foto» di una card i tasti di scaricamento non ci sono: lì la foto
+    //    si usa con «Usa come foto della card». `_collageCrea` e `_collageCreaRetro` li cercano con `if (a)`
+    (perBox ? '' : '<div style="display:flex;gap:0.5rem;flex-wrap:nowrap;align-items:center;margin-top:0.7rem;">' +
       // 🔄 v7.225 (Franco: «il pulsante "scarica" chiamalo "scarica fronte"»)
       '<a id="collage-scarica" class="btn-primary" style="display:none;text-decoration:none;white-space:nowrap;font-size:0.85rem;" download="collage.png">⬇️ ' + (it ? 'Scarica fronte' : 'Download front') + '</a>' +
       // 🆕 v7.223 - la seconda foto, coi retro (`_collageRetroPossibile`)
       '<a id="collage-scarica-retro" class="btn-primary" style="display:none;text-decoration:none;white-space:nowrap;font-size:0.85rem;" download="collage-retro.png">⬇️ ' + (it ? 'Scarica retro' : 'Download backs') + '</a>' +
       // 🆕 v7.225 (Franco: «metti un tasto da usare per scaricare entrambe le foto assieme») - c'è quando c'è la foto dei retro
       '<button type="button" id="collage-scarica-tutte" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;" onclick="_collageScaricaTutte()">⬇️ ' + (it ? 'Scarica entrambe' : 'Download both') + '</button>' +
-    '</div>';
+    '</div>');
 }
 // 🆕 v7.214 (Franco: «nel box che rappresenta una tipologia di articolo, metti un pulsante (Anche da mobile) sempre admin
 //    visibile, che si chiama "Cambia foto"; se premuto, deve lanciare questa procedura nuova, e il suo risultato lo mette
@@ -41735,6 +41744,13 @@ function apriCollageBox(chiave, perSerie) {
   const da = ov.querySelector('input[name="collage-da"][value="sito"]');
   if (da) da.checked = true;
   _collageDa();
+  // 🆕 v7.227 (Franco: «quando una foto collage viene generata da un box, la opzione "macchie" deve essere accesa di
+  //    default») - dalla card «Con le macchie»: la foto finisce sul sito, e lì le foto protette le portano
+  const conM = ov.querySelector('input[name="collage-sito-macchie"][value="con"]');
+  if (conM) conM.checked = true;
+  // 🆕 v7.227 (Franco: «dalla modifica foto di un box, "In che ordine le prendo ?" deve essere preimpostata a "casuale"»)
+  const cas = ov.querySelector('input[name="collage-sito-ordine"][value="casuale"]');
+  if (cas) cas.checked = true;
   const s = document.getElementById('collage-sito-serie');
   // 🔄 v7.215 (Franco: dal «Cambia foto» dell'hub «anche lì voglio che parta su Serie») - fuori dalla pagina di una serie
   //    si parte dalla prima serie dell'elenco che ha quella tipologia (se nessuna, dalla prima); i tipi senza serie non
