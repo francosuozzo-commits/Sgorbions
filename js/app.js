@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.230 - Modificati index.html e js/app.js. COLLAGE dal telefono: «Scarica fronte», «Scarica retro» e «Scarica
+//          entrambe» uno sotto l'altro (Franco: «nella versione mobile, i tre pulsanti per scaricare le foto in colonna
+//          verticalmente»); dal PC restano su una riga.
 // v7.229 - Modificati index.html e js/app.js. 🐛 COLLAGE: dal «Cambia foto» del box Retro di una serie diceva che non
 //          c'erano foto, perché la tendina della tipologia dentro una serie lasciava fuori i retro (v7.212) (Franco: «la
 //          procedura di collage foto, se chiamata dal box Retro della serie 1, dice … che non ci sono foto per i retro»;
@@ -31798,7 +31801,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.229';
+const JS_VERSION = 'v7.230';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41719,7 +41722,9 @@ function _collageHTML(perBox) {
     // 🐛 v7.227 (Franco: «"scarica fronte" (ma anche "scarica retro") non si deve vedere quando la procedura è lanciata
     //    dal tasto di modifica di un box») - dal «Cambia foto» di una card i tasti di scaricamento non ci sono: lì la foto
     //    si usa con «Usa come foto della card». `_collageCrea` e `_collageCreaRetro` li cercano con `if (a)`
-    (perBox ? '' : '<div style="display:flex;gap:0.5rem;flex-wrap:nowrap;align-items:center;margin-top:0.7rem;">' +
+    // 🔄 v7.230 (Franco: «nella versione mobile, i tre pulsanti per scaricare le foto in colonna verticalmente») - sotto
+    //    gli 860 px (`_isMobileViewport`) uno sotto l'altro; dal PC sempre su una riga
+    (perBox ? '' : '<div style="display:flex;gap:0.5rem;' + (_isMobileViewport() ? 'flex-direction:column;align-items:flex-start;' : 'flex-wrap:nowrap;align-items:center;') + 'margin-top:0.7rem;">' +
       // 🔄 v7.225 (Franco: «il pulsante "scarica" chiamalo "scarica fronte"»)
       '<a id="collage-scarica" class="btn-primary" style="display:none;text-decoration:none;white-space:nowrap;font-size:0.85rem;" download="collage.png">⬇️ ' + (it ? 'Scarica fronte' : 'Download front') + '</a>' +
       // 🆕 v7.223 - la seconda foto, coi retro (`_collageRetroPossibile`)
