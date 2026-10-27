@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.229 - Modificati index.html e js/app.js. 🐛 COLLAGE: dal «Cambia foto» del box Retro di una serie diceva che non
+//          c'erano foto, perché la tendina della tipologia dentro una serie lasciava fuori i retro (v7.212) (Franco: «la
+//          procedura di collage foto, se chiamata dal box Retro della serie 1, dice … che non ci sono foto per i retro»;
+//          «lo fa con tutte le serie»). Ora i retro ci sono, nell'ordine dell'Inventario (`_collageArticoliDellaSerie`,
+//          `_collageCandidati`). ➕ «Quale tipologia di versione ?» ha anche «Tutte», in fondo e solo con almeno due
+//          versioni (Franco: «vorrei avesse anche la risposta "tutte"»): non filtra per versione, nemmeno le famiglie;
+//          il «Fronte o retro» resta, come per le versioni non base. ➕ ANNUNCI: due riquadri nuovi nella ricerca, dopo
+//          Serie (Franco: «un filtro di ricerca per tipologia di articolo; ed un altro per figurina singola (si/no)»):
+//          «Filtra per tipologia di articolo» (quella della colonna TDA) e «Filtra per figurina singola» (solo fcr e fpa:
+//          Sì = con un Articolo collegato, No = senza; album e altre TDA fuori - scelte di Franco). `_ANN_RIQUADRI` ha `val` per i valori che non sono un campo della riga.
 // v7.228 - Modificati index.html e js/app.js. 🐛 COLLAGE: le foto orizzontali restavano piccole senza la spunta dei retro
 //          (Franco: «le figurine sono tutte grandi uguali, quindi le foto di articoli della stessa tda devono sempre
 //          avere la stessa dimensione»). Ora griglia, ruota e mazzo danno a ogni foto il lato lungo uguale, coi retro o
@@ -31788,7 +31798,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.228';
+const JS_VERSION = 'v7.229';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41813,7 +41823,8 @@ function _collageScegli() {
 //    articoli base random; se sì, chiedi il numero e seleziona n articoli aventi quel numero»; poi «va bene anche la tua
 //    proposta») - LE FOTO DAL SITO. Regole proposte e accettate:
 //    · solo articoli BASE e con la foto, fra quelli che il sito conta (`_articoliDaContareSito`: niente IN ARRIVO né
-//      invisibili); da una serie, tutte le sue tipologie tranne i retro (sono i dorsi: in un collage non dicono niente);
+//      invisibili); da una serie, tutte le sue tipologie tranne i retro (sono i dorsi: in un collage non dicono niente;
+//      🔄 v7.229 - i retro ci sono anche lì, se no il «Cambia foto» della loro card non trova niente);
 //    · col numero, quelli il cui numero a schermo è quello (`_numeroAschermo`: vale anche la lettera delle olografiche, e
 //      il «2 - 16» delle fcr con più fpa conta per il 2 e per il 16);
 //    · più di N: N a caso, e «🔀 Rimescola» ne pesca altri; meno di N: si dice quanti sono e il collage non si crea;
@@ -41942,9 +41953,11 @@ function _collageSitoAggiorna() {
 //    scegliere. Le versioni si dicono con `_chiaveTipo` e i nomi di `_nomeVersione`, base prima, poi l'ordine del
 //    descrittore. La foto è quella che il sito mostra (`_fotoFigurina`): una variazione senza foto sua porta il fronte
 //    della base, che per definizione è il suo.
+// 🐛 v7.229 (Franco: dal box Retro «dice, con un popup, che non ci sono foto per i retro»; «lo fa con tutte le serie») -
+//    i retro ci sono anche qui: il «Cambia foto» della loro card cerca proprio loro
 function _collageArticoliDellaSerie(sid) {
   const tutti = getData('figurines', []);
-  return _articoliDaContareSito().filter(f => String(f.seriesId) === String(sid) && (f.section || 'figurines') !== 'retros' && _fotoFigurina(f, tutti));
+  return _articoliDaContareSito().filter(f => String(f.seriesId) === String(sid) && _fotoFigurina(f, tutti));
 }
 function _collageSezioniDellaSerie(sid) {
   const conti = {};
@@ -41963,8 +41976,13 @@ function _collageVersioniDellaSerie(sid, sez) {
     const ch = _chiaveTipo(f);
     conti[ch] = (conti[ch] || 0) + 1;
   });
-  return ['base'].concat(_VERSIONI_VIVE.map(v => v.chiave)).filter(ch => conti[ch])
-    .map(ch => '<option value="' + esc(ch) + '">' + esc(_nomeVersione(ch, it ? 'it' : 'en')) + ' (' + conti[ch] + ')</option>').join('');
+  const vive = ['base'].concat(_VERSIONI_VIVE.map(v => v.chiave)).filter(ch => conti[ch]);
+  // 🆕 v7.229 (Franco: «la domanda "Quale tipologia di versione ?", vorrei avesse anche la risposta "tutte"») - in fondo,
+  //    così di serie resta la prima versione; solo se le versioni sono almeno due. `_collageCandidati` e
+  //    `_collageFamiglieDellaSerie` con «tutte» non filtrano per versione
+  const tot = vive.reduce((n, ch) => n + conti[ch], 0);
+  return vive.map(ch => '<option value="' + esc(ch) + '">' + esc(_nomeVersione(ch, it ? 'it' : 'en')) + ' (' + conti[ch] + ')</option>').join('') +
+    (vive.length > 1 ? '<option value="tutte">' + (it ? 'Tutte' : 'All') + ' (' + tot + ')</option>' : '');
 }
 function _collageSerieScelta() {
   const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-serie-tda');
@@ -41984,7 +42002,7 @@ function _collageFamiglieDellaSerie(sid, sez, ver) {
   const it = currentLang === 'it';
   const conti = {};
   _collageArticoliDellaSerie(sid).forEach(f => {
-    if ((f.section || 'figurines') !== sez || _chiaveTipo(f) !== ver) return;
+    if ((f.section || 'figurines') !== sez || (ver !== 'tutte' && _chiaveTipo(f) !== ver)) return;   // v7.229 - «tutte»
     const fam = _collageFamiglia(f);   // v7.218 - anche la fpa senza famiglia scritta
     if (fam) conti[fam] = (conti[fam] || 0) + 1;
   });
@@ -42081,7 +42099,8 @@ function _collageCandidati() {
     const sid = (document.getElementById('collage-sito-serie') || {}).value;
     const sez = (document.getElementById('collage-sito-serie-tda') || {}).value;   // v7.214 - la tipologia scelta nella serie
     const ver = (document.getElementById('collage-sito-serie-ver') || {}).value;   // v7.214 - e la versione
-    el = el.filter(f => String(f.seriesId) === String(sid) && (f.section || 'figurines') !== 'retros' && (f.section || 'figurines') === sez && _chiaveTipo(f) === ver);
+    // v7.229 - retro compresi; con «tutte» ogni versione
+    el = el.filter(f => String(f.seriesId) === String(sid) && (f.section || 'figurines') === sez && (ver === 'tutte' || _chiaveTipo(f) === ver));
     const fam = (document.getElementById('collage-sito-serie-fam') || {}).value;   // v7.215 - la famiglia, se scelta
     if (fam) el = el.filter(f => _collageFamiglia(f) === fam);
   } else {
@@ -42721,7 +42740,7 @@ function _annTitoloPerSito(sito, t) {
 // 🆕 v7.199 (Franco: «aggiungiamo un box filtri chiamato "Serie", che contiene una pillola per ogni serie del sito;
 //    usa i nomi brevi») - il terzo riquadro. La voce è l'id della serie (`campo` = il campo della riga da guardare,
 //    se non è la chiave del riquadro), e a schermo va il nome breve (`etichetta`), come nella colonna Serie.
-const _annFiltro = { sito: new Set(), account: new Set(), serie: new Set(), n: new Set() };
+const _annFiltro = { sito: new Set(), account: new Set(), serie: new Set(), n: new Set(), tipologia: new Set(), singola: new Set() };   // v7.229: + tipologia, singola
 // 🔄 v7.202 (Franco: «mettere prima serie, poi account e poi sito; account rinominalo "Venditore"») - l'ordine dei
 //    riquadri è quello dell'elenco; il titolo segue la formula degli altri, «Filtra per venditore» (la chiave resta
 //    `account`, come il campo della riga)
@@ -42734,6 +42753,23 @@ const _ANN_RIQUADRI = [
   { k: 'serie', campo: 'seriesId', it: 'Serie', en: 'Series', stacco: '1rem',
     voci: () => _annSerie().filter(s => (s.items || []).some(f => f.section === 'albums' && !f.fotoDaAlbumId)).map(s => s.id),
     etichetta: id => { const s = _annSerie().find(x => x.id === id); return s ? _nomeSerieCard(s, true) : id; } },
+  // 🆕 v7.229 (Franco: «nella pagina di ricerca annunci metti un filtro di ricerca per tipologia di articolo; ed un altro
+  //    per figurina singola (si/no)») - `val` dà il valore della riga quando non è un suo campo. La tipologia è quella
+  //    della colonna TDA (salvata nell'annuncio, se no del suo articolo), una pillola per ognuna che compare negli
+  //    annunci, in ordine di nome. «Singola» (scelte di Franco: «Dall'Articolo scelto»; «in funzione della tipologia
+  //    dell'articolo associato all'annuncio, puoi capire se si tratta di una figurina o meno»; «gli annunci per gli album
+  //    sono sempre annunci di un singolo articolo»; poi «Fuori dal filtro», «fcr e fpa») - vale solo per gli annunci di
+  //    fcr e fpa: Sì = con un Articolo collegato, No = senza (più figurine). Album e altre TDA non stanno in nessuna
+  //    delle due pillole.
+  { k: 'tipologia', it: 'Filtra per tipologia di articolo', en: 'Filter by item type',
+    val: r => { const f = r.articoloId && (getData('figurines', []) || []).find(x => x.id === r.articoloId); return r.tipologia || (f ? _aggTipoDi(f) : ''); },
+    voci: () => { const q = _ANN_RIQUADRI.find(x => x.k === 'tipologia');
+      return [...new Set(_annRighe.map(q.val).filter(Boolean))].sort((a, b) => _aggNomeTipo(a).localeCompare(_aggNomeTipo(b), 'it', { sensitivity: 'base' })); },
+    etichetta: k => _aggNomeTipo(k) },
+  { k: 'singola', it: 'Filtra per figurina singola', en: 'Filter by single sticker',
+    val: r => ['figurines', 'attaccare'].includes(_ANN_RIQUADRI.find(x => x.k === 'tipologia').val(r)) ? (r.articoloId ? 'si' : 'no') : '',
+    voci: () => ['si', 'no'],
+    etichetta: v => v === 'si' ? (currentLang === 'it' ? 'Sì' : 'Yes') : 'No' },
   { k: 'account', it: 'Filtra per venditore', en: 'Filter by seller', voci: () => _ANN_ACCOUNT },
   { k: 'sito', it: 'Filtra per sito', en: 'Filter by site', voci: () => _FA_SITI.map(s => s.nome) },
   // 🆕 v7.202 (Franco: «un filtro … chiamato numero, con una pillola per ogni numero esistente tra gli annunci in corso
@@ -42747,7 +42783,7 @@ const _ANN_RIQUADRI = [
     voci: () => [...new Set(_annRighe.map(r => String(r.n ?? '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true })) },
 ];
 function _annPassa(r, salta) {
-  return _ANN_RIQUADRI.every(q => q.k === salta || !_annFiltro[q.k].size || _annFiltro[q.k].has(r[q.campo || q.k]));
+  return _ANN_RIQUADRI.every(q => q.k === salta || !_annFiltro[q.k].size || _annFiltro[q.k].has(q.val ? q.val(r) : r[q.campo || q.k]));   // v7.229: `val`
 }
 function _annFiltra(k, j, aggiungi) {
   const f = _annFiltro[k], v = _ANN_RIQUADRI.find(q => q.k === k).voci()[j];   // la voce per posizione: niente apici nell'onclick
@@ -42768,7 +42804,7 @@ function _annFiltriHTML() {
     + _ANN_RIQUADRI.map(q => {
     const voci = q.voci();
     const chips = voci.map((v, j) => _chipTipoHTML({
-      etichetta: q.etichetta ? q.etichetta(v) : v, n: _annRighe.filter(r => _annPassa(r, q.k) && r[q.campo || q.k] === v).length,
+      etichetta: q.etichetta ? q.etichetta(v) : v, n: _annRighe.filter(r => _annPassa(r, q.k) && (q.val ? q.val(r) : r[q.campo || q.k]) === v).length,   // v7.229: `val`
       attiva: _annFiltro[q.k].has(v), it,
       onSet: "_annFiltra('" + q.k + "'," + j + ",false)", onAdd: "_annFiltra('" + q.k + "'," + j + ",true)",
       titolo: it ? 'Solo questo' : 'Only this',
