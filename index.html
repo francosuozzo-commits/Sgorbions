@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.232">
+<link rel="stylesheet" href="css/style.css?v=7.233">
 
 
 <style>
@@ -1594,6 +1594,12 @@ button.back-btn { color:#ffffff; }
   #section-selector > .sec-grid {
     grid-template-columns:repeat(6,1fr) !important;
     gap:1rem !important; }
+  /* 🆕 v7.233 (Franco: «disponi i box delle famiglie il numero il più possibile simile tra le righe a disposizione; se
+     sono 8 come nella serie 1, fai 4 e 4») - le colonne sono `--fam-col` (le scrive `_rendiFamiglieSerie`), ognuna
+     LARGA COME UNA DELLE SEI di sopra: un sesto meno gli spazi, così il box resta grande uguale. Più specifica della
+     regola qui sopra (un id in più), quindi vince lei; sul telefono questa media query non c'è e restano le due. */
+  #section-selector > #famiglie-serie-griglia.sec-grid {
+    grid-template-columns:repeat(var(--fam-col, 6), calc((100% - 5rem) / 6)) !important; }
 }
 
 /* v6.027 (Franco) - LA COLONNA DELLA FOTO NELLA SCHEDA DI UN RETRO.
@@ -6791,7 +6797,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.232"></script>
+<script src="js/app.js?v=7.233"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6815,7 +6821,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.232'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.233'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
