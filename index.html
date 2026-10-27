@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.231">
+<link rel="stylesheet" href="css/style.css?v=7.232">
 
 
 <style>
@@ -3338,8 +3338,18 @@ di tutte le serie</button>
           <div class="section-choice-count" id="count-olografiche" data-i18n-loading="catalog.loading">caricamento...</div>
         </div>
       </div>
-      
+
     </div>
+    <!-- 🆕 v7.232 (Franco: «nella pagina della serie, sotto alla sezione "GLI ARTICOLI DELLA SERIE", una nuova sezione,
+         graficamente esposta come questa»; «chiamala solo "LE FAMIGLIE DELLA SERIE"; ed ovviamente mostrala solo quando la
+         serie ha famiglie») - titolo e griglia sono due figli diretti di #section-selector, come i due di sopra: sul
+         telefono il foglio mette ogni figlio diretto su due colonne (`#section-selector > div`), e un contenitore unico
+         metterebbe il titolo accanto alla griglia. Li riempie `_rendiFamiglieSerie`. -->
+    <div id="famiglie-serie-titolo" style="display:none;margin:2.4rem 0 1.2rem;padding-bottom:0.6rem;border-bottom:2px solid var(--accent);font-family:var(--font-display);font-size:1.15rem;font-weight:800;letter-spacing:0.1em;color:var(--accent);"></div>
+    <!-- la classe `sec-grid` è quella della griglia di sopra: sul PC il foglio le dà sei colonne e 1rem di spazio
+         (`#section-selector > .sec-grid`), così i box sono grandi uguali. Chi cerca `.sec-grid` col primo
+         `querySelector` trova quella degli articoli, che viene prima. -->
+    <div id="famiglie-serie-griglia" class="sec-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.5rem;"></div>
   </div>
   <!-- ITEMS GRID -->
   <div id="items-section" style="display:none;max-width:1100px;margin:0 auto;padding:0 2rem 2rem;">
@@ -3406,6 +3416,9 @@ di tutte le serie</button>
          quella tipologia di articolo è previsto un carosello») - IL QUARTO CAROSELLO, in cima alla
          sezione e sopra la ricerca. Nasce spento: lo accende `renderCaroselloSezione`. Frecce e fila
          sono quelle del carosello della serie, con ID suoi. -->
+    <!-- 🆕 v7.232 - LA TESTATA DELLA PAGINA DI UNA FAMIGLIA: nome, foto dell'album e i due tab «Figurine per album» /
+         «Figurine con retro». Spenta fuori da una famiglia; la scrive `_rendiTestaFamiglia`. -->
+    <div id="famiglia-testa" style="display:none;margin:0 0 1rem;"></div>
     <div id="sezione-carosello-sez" class="carosello-largo" style="display:none;position:relative;margin-bottom:1rem;">
       <button type="button" id="sezione-carosello-prec" aria-label="Precedente" style="position:absolute;left:-6px;top:42%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.3rem;line-height:1;padding:0.4rem 0.55rem;border-radius:999px;cursor:pointer;">&#8249;</button>
       <div id="sezione-carosello" style="display:flex;gap:0.9rem;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;padding:0.2rem 0.4rem 0.6rem;"></div>
@@ -6778,7 +6791,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.231"></script>
+<script src="js/app.js?v=7.232"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6802,7 +6815,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.231'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.232'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
