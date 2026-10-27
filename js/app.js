@@ -1,6 +1,21 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.233 - Modificati index.html e js/app.js. 👪 Nella pagina di una famiglia due frecce alla famiglia precedente e alla
+//          prossima, con la foto della famiglia, nell'ordine dei box, restando sullo stesso tab (Franco: «metti i soliti
+//          due pulsanti "Precedente" e "Successiva", con la miniatura»; «vanno messi nella parte bassa della schermata,
+//          a sx e dx delle pagine dell'album»): ai lati della striscia delle foto (`_rendiTestaFamiglia`,
+//          `_vaiAllaFamiglia`); lì le frecce delle sezioni della testata non ci sono (`_disegnaNavSezione`). ➕ Sul box di una famiglia, per l'admin, il
+//          «🖼️ Cambia foto» del collage (Franco: «come copertina delle famiglie, metti anche qui il pulsante per far
+//          partire la funzione di collage foto, con i campi preimpostati, quali: serie, tda, famiglia, versione ecc»):
+//          Dal sito → la serie → Figurine con retro → base → quella famiglia (`apriCollageFamiglia`); «Usa come foto
+//          della card» la salva nella sua riga di `famiglieDati` (`_famigliaScriviFoto`). ➕ I box delle famiglie in
+//          righe il più possibile uguali (Franco: «se sono 8 come nella serie 1, fai 4 e 4»): `_famColonne` sceglie le
+//          colonne col tetto di sei, il foglio (`--fam-col`) le fa larghe come quelle di sopra. Solo sul PC.
+//          ➕ Accanto a «LE FAMIGLIE DELLA SERIE», per l'admin, «🖼️ Collage per tutte le famiglie» (Franco: «un bottone
+//          che chiama una sola volta la funzione collage, ed applica lo stesso criterio per tutte le famiglie, cambiando
+//          solamente in automatico la famiglia, box per box»): la finestra puntata sulla prima, e «✅ Usa per tutte le
+//          famiglie» rifà il collage per ognuna e lo salva come sua foto (`apriCollageTutteFamiglie`, `_collageUsaPerTutte`).
 // v7.232 - Modificati index.html e js/app.js. 👪 LE FAMIGLIE DELLA SERIE (Franco: «sotto alla sezione "GLI ARTICOLI
 //          DELLA SERIE" una nuova sezione»; «chiamala solo "LE FAMIGLIE DELLA SERIE"; mostrala solo quando la serie ha
 //          famiglie»; «serve una piccola entità famiglia con ordine (numerico) e pagine (sequenza numerica)»; «il numero
@@ -31824,7 +31839,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.232';
+const JS_VERSION = 'v7.233';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41820,6 +41835,56 @@ function apriCollageBox(chiave, perSerie) {
   _collageMostraScelte();
   _collageStato();
 }
+// 🆕 v7.233 (Franco: «come copertina delle famiglie, metti anche qui il pulsante per far partire la funzione di collage
+//    foto, con i campi preimpostati, quali: serie, tda, famiglia, versione ecc») - IL COLLAGE DAL BOX DI UNA FAMIGLIA.
+//    La finestra del «Cambia foto» di una card, già puntata: «Dal sito» → la serie aperta → Figurine con retro (le fcr,
+//    quelle che il box conta) → versione base → quella famiglia; macchie e ordine come dalle altre card. «Usa come foto
+//    della card» la salva come foto della famiglia.
+// 🆕 v7.233 (Franco: «vicino al nome "LE FAMIGLIE DELLA SERIE" metti un bottone che chiama una sola volta la funzione
+//    collage, ed applica lo stesso criterio per tutte le famiglie, cambiando solamente in automatico la famiglia, box per
+//    box») - LA STESSA FINESTRA, PUNTATA SULLA PRIMA FAMIGLIA: si scelgono tipo, texture, macchie e ordine, si prova con
+//    «Crea il collage», e «✅ Usa per tutte le famiglie» rifà il collage per ognuna (`_collageUsaPerTutte`), cambiando
+//    solo la famiglia: le foto da unire seguono la famiglia (le sue fcr base con la foto, come nel box singolo).
+function apriCollageTutteFamiglie() {
+  if (!currentUser?.isAdmin || !currentSeriesId) return;
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  const nomi = _famiglieOrdinate(s);
+  if (!nomi.length) return;
+  const it = currentLang === 'it';
+  apriCollageFamiglia({ getAttribute: () => nomi[0] }, it ? '🖼️ Foto di tutte le famiglie' : '🖼️ Photos of all families');
+  _collageBoxDest = { tutteFamiglie: true, seriesId: currentSeriesId };
+  const usa = document.getElementById('collage-usa');
+  if (usa) usa.textContent = '✅ ' + (it ? 'Usa per tutte le famiglie (' + nomi.length + ')' : 'Use for all families (' + nomi.length + ')');
+}
+function apriCollageFamiglia(el, titolo) {
+  if (!currentUser?.isAdmin) return;
+  const nome = el && el.getAttribute('data-famiglia');
+  if (!nome || !currentSeriesId) return;
+  const it = currentLang === 'it';
+  const ov = _collageApriFinestra(titolo || ('🖼️ ' + (it ? 'Foto della famiglia «' : 'Family photo «') + esc(nome) + '»'), true);
+  _collageBoxDest = { famiglia: nome, seriesId: currentSeriesId };
+  const da = ov.querySelector('input[name="collage-da"][value="sito"]');
+  if (da) da.checked = true;
+  _collageDa();
+  const conM = ov.querySelector('input[name="collage-sito-macchie"][value="con"]');
+  if (conM) conM.checked = true;
+  const cas = ov.querySelector('input[name="collage-sito-ordine"][value="casuale"]');
+  if (cas) cas.checked = true;
+  const via = ov.querySelector('input[name="collage-sito-da"][value="serie"]');
+  if (via) via.checked = true;
+  const metti = (id, v) => { const x = document.getElementById(id); if (x && [...x.options].some(o => o.value === v)) { x.value = v; return true; } return false; };
+  if (metti('collage-sito-serie', String(currentSeriesId))) {
+    _collageSerieScelta();
+    if (metti('collage-sito-serie-tda', 'figurines')) {
+      _collageTdaScelta();
+      if (metti('collage-sito-serie-ver', 'base')) _collageVerScelta();
+      if (metti('collage-sito-serie-fam', nome)) _collageSitoAggiorna();
+      else toast(it ? '⚠️ Nessuna figurina con retro base con la foto in questa famiglia: scegli tu da dove prenderle' : '⚠️ No photos for this family: choose the source', 'error');
+    }
+  }
+  _collageMostraScelte();
+  _collageStato();
+}
 function chiudiCollageBox() {
   document.getElementById('collage-box-modal')?.remove();
   _collageBoxDest = null; _collageFoto = []; _collageBlob = null;
@@ -41827,6 +41892,7 @@ function chiudiCollageBox() {
 async function _collageUsaPerBox() {
   const it = currentLang === 'it';
   const d = _collageBoxDest;
+  if (d && d.tutteFamiglie) return _collageUsaPerTutte();   // v7.233: il giro su tutte le famiglie
   if (!d || !_collageBlob || !currentUser?.isAdmin) return;
   const b = document.getElementById('collage-usa');
   if (b) b.disabled = true;
@@ -41839,8 +41905,10 @@ async function _collageUsaPerBox() {
     if (b) b.disabled = false;
     return;
   }
-  const serie = d.perSerie ? getData('series', []).find(x => x.id === d.seriesId) : null;
-  const ok = d.perSerie ? (serie && await _scriviFotoSezioneSerie(serie, d.chiave, url)) : await _scriviFotoBox(d.chiave, url);
+  const serie = (d.perSerie || d.famiglia) ? getData('series', []).find(x => x.id === d.seriesId) : null;
+  // v7.233 - la copertina di una famiglia va nella sua riga di `famiglieDati` (`_famigliaScriviFoto`)
+  const ok = d.famiglia ? (serie && await _famigliaScriviFoto(serie, d.famiglia, url))
+    : d.perSerie ? (serie && await _scriviFotoSezioneSerie(serie, d.chiave, url)) : await _scriviFotoBox(d.chiave, url);
   if (!ok) { if (b) b.disabled = false; return; }
   chiudiCollageBox();
 }
@@ -54429,7 +54497,9 @@ function _disegnaNavSezione() {
   if (!dett) return;
   dett.querySelectorAll('.sez-nav-btn, .serie-nav-posto').forEach(b => b.remove());   // v7.126: anche i posti vuoti
   dett.querySelectorAll('.serie-nav-col').forEach(c => { while (c.firstChild) c.parentNode.insertBefore(c.firstChild, c); c.remove(); });
-  if (!currentSeriesId || !currentSection || _tipoProdottoCorrente) return;
+  // v7.233 - nella pagina di una famiglia le frecce sono quelle delle famiglie, in basso ai lati delle pagine dell'album
+  //    (`_rendiTestaFamiglia`; Franco: «vanno messi nella parte bassa della schermata, a sx e dx delle pagine dell'album»)
+  if (!currentSeriesId || !currentSection || _tipoProdottoCorrente || _famigliaAperta) return;
   const nome = document.getElementById('detail-name');
   if (!nome || !nome.parentElement) return;
   const s = getData('series', []).find(x => x.id === currentSeriesId);
@@ -54448,13 +54518,14 @@ function _disegnaNavSezione() {
   if (qui < 0) return;
   const prec = voci[qui - 1] || null, succ = voci[qui + 1] || null;
   const it = currentLang === 'it';
+  const parola = verso => verso === 'prec' ? (it ? 'sezione precedente' : 'previous section') : (it ? 'prossima sezione' : 'next section');
   const bott = (v, verso) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'serie-nav-btn sez-nav-btn sez-nav-' + verso;
     b.title = (verso === 'prec' ? (it ? 'Sezione precedente: ' : 'Previous section: ') : (it ? 'Sezione successiva: ' : 'Next section: ')) + v.nome;
     b.innerHTML = (v.img ? '<img src="' + esc(cloudinaryUrl(v.img, 'w_120,h_120,c_fit,q_auto,f_auto')) + '" alt="">' : '<span class="serie-nav-vuota">🗂️</span>')
-      + '<span class="serie-nav-scritta">' + (verso === 'prec' ? (it ? 'sezione precedente' : 'previous section') : (it ? 'prossima sezione' : 'next section')) + '</span>'
+      + '<span class="serie-nav-scritta">' + parola(verso) + '</span>'
       + '<span class="serie-nav-freccia">' + (verso === 'prec' ? '←' : '→') + '</span>';
     b.onclick = () => { openSeriesSection(v.sez, v.sub || undefined); try { window.scrollTo(0, 0); } catch (e) {} };
     return b;
@@ -54480,7 +54551,7 @@ function _disegnaNavSezione() {
     else if (verso === 'prec') nome.parentElement.insertBefore(col, nome);
     else nome.parentElement.insertBefore(col, anno && anno.parentElement === nome.parentElement ? anno.nextSibling : null);
     col.appendChild(sb || posto('serie-nav-' + verso, verso === 'prec' ? (it ? 'serie precedente' : 'previous series') : (it ? 'prossima serie' : 'next series'), verso));
-    col.appendChild(v ? bott(v, verso) : posto('sez-nav-btn sez-nav-' + verso, verso === 'prec' ? (it ? 'sezione precedente' : 'previous section') : (it ? 'prossima sezione' : 'next section'), verso));
+    col.appendChild(v ? bott(v, verso) : posto('sez-nav-btn sez-nav-' + verso, parola(verso), verso));
   };
   colonna('prec', prec);
   colonna('succ', succ);
@@ -55027,6 +55098,14 @@ function _contaFcrBaseFamiglia(sid, nome) {
   return _articoliDaContareSito().filter(f => f.seriesId === sid && (f.section || 'figurines') === 'figurines' && _eBase(f)
     && _famigliaDiArticolo(f) === nome).length;
 }
+// 🆕 v7.233 (Franco: «se sono 8 come nella serie 1, fai 4 e 4») - quante colonne per avere righe il più possibile
+//    uguali, col tetto di sei della griglia di sopra (sul PC): prima quante righe servono, poi i box divisi fra loro.
+//    8 → 2 righe da 4; 7 → 4 e 3; 13 → 3 righe da 5 (5, 5, 3 è il meglio con cinque colonne); 6 o meno → una riga.
+function _famColonne(n, max = 6) {
+  if (!(n > 0)) return max;
+  const righe = Math.ceil(n / max);
+  return Math.ceil(n / righe);
+}
 function _rendiFamiglieSerie() {
   const tit = document.getElementById('famiglie-serie-titolo'), gr = document.getElementById('famiglie-serie-griglia');
   if (!tit || !gr) return;
@@ -55034,19 +55113,26 @@ function _rendiFamiglieSerie() {
   const nomi = _famiglieOrdinate(s);
   if (!s || !nomi.length) { tit.style.display = 'none'; gr.style.display = 'none'; gr.innerHTML = ''; return; }
   const it = currentLang === 'it', adm = !!currentUser?.isAdmin;
-  tit.textContent = it ? 'LE FAMIGLIE DELLA SERIE' : 'THE SERIES FAMILIES';
+  // v7.233 - accanto al titolo, per l'admin, il collage per tutte le famiglie (`apriCollageTutteFamiglie`)
+  tit.innerHTML = '<span>' + (it ? 'LE FAMIGLIE DELLA SERIE' : 'THE SERIES FAMILIES') + '</span>'
+    + (adm ? ' <button type="button" class="btn-barra-admin" onclick="apriCollageTutteFamiglie()" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:0;font-weight:600;padding:0.2rem 0.8rem;margin-left:0.8rem;vertical-align:middle;">🖼️ '
+      + (it ? 'Collage per tutte le famiglie' : 'Collage for all families') + '</button>' : '');
   tit.style.display = '';
   // 🔴 il nome viaggia in un `data-`, mai dentro l'onclick: può avere un apostrofo (la regola delle sottoserie, v6.682)
   gr.innerHTML = nomi.map(nome => {
     const d = _famigliaDato(s, nome), n = _contaFcrBaseFamiglia(s.id, nome);
     return '<div class="section-choice-card" data-famiglia="' + esc(nome) + '" onclick="apriFamiglia(this)" style="padding:0;overflow:hidden;position:relative;">'
       + (adm ? '<button type="button" title="' + (it ? 'Modifica questa famiglia' : 'Edit this family') + '" onclick="event.stopPropagation();apriFinestraFamiglia(this.parentNode)" '
-        + 'style="position:absolute;top:6px;right:6px;z-index:3;border:none;border-radius:999px;width:30px;height:30px;line-height:1;cursor:pointer;font-size:0.95rem;background:rgba(0,0,0,0.6);color:#fff;">&#9998;</button>' : '')
+        + 'style="position:absolute;top:6px;right:6px;z-index:3;border:none;border-radius:999px;width:30px;height:30px;line-height:1;cursor:pointer;font-size:0.95rem;background:rgba(0,0,0,0.6);color:#fff;">&#9998;</button>'
+        // v7.233 - il collage per la copertina, vestito come il «🖼️ Cambia foto» delle card delle tipologie (`_tastoCollageBox`)
+        + '<button type="button" title="' + (it ? 'Un collage per la foto di questa famiglia' : 'A collage for this family photo') + '" onclick="event.stopPropagation();apriCollageFamiglia(this.parentNode)" '
+        + 'style="position:absolute;top:6px;left:6px;z-index:3;border:none;border-radius:999px;padding:0.3rem 0.7rem;cursor:pointer;font-size:0.75rem;font-weight:700;background:rgba(0,0,0,0.6);color:#fff;">🖼️ Cambia foto</button>' : '')
       + '<div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;background-size:contain;background-repeat:no-repeat;background-position:center;'
       + (d.img ? 'background-image:url(\'' + cloudinaryUrl(d.img, 'w_600,h_600,c_fit,q_auto,f_auto') + '\');' : '') + '"></div>'
       + '<div style="padding:1.25rem 1.5rem;"><div class="section-choice-title">' + esc(nome) + '</div>'
       + '<div class="section-choice-count">' + n + ' ' + (it ? (n === 1 ? 'figurina con retro' : 'figurine con retro') : (n === 1 ? 'sticker with back' : 'stickers with back')) + '</div></div></div>';
   }).join('');
+  gr.style.setProperty('--fam-col', String(_famColonne(nomi.length)));   // v7.233: righe il più possibile uguali
   gr.style.display = 'grid';
 }
 // La pagina della famiglia è la sezione delle fpa (o delle fcr) della serie con «Filtra per famiglia» già acceso
@@ -55059,6 +55145,13 @@ function apriFamiglia(el) {
   _famigliaAperta = nome;
   _famigliaInApertura = true;
   try { openSeriesSection(sez); } finally { _famigliaInApertura = false; }
+}
+// v7.233 - dalle frecce ai lati delle pagine dell'album: un'altra famiglia, sullo stesso tab
+function _vaiAllaFamiglia(nome) {
+  if (!nome) return;
+  _famigliaAperta = nome;
+  _famigliaInApertura = true;
+  try { openSeriesSection(currentSection); } finally { _famigliaInApertura = false; }
 }
 function scegliTabFamiglia(btn) {
   const sez = btn && btn.getAttribute('data-sezione');
@@ -55081,11 +55174,27 @@ function _rendiTestaFamiglia() {
     + (adm ? '<button type="button" class="btn-barra-admin" data-famiglia="' + esc(_famigliaAperta) + '" onclick="apriFinestraFamiglia(this)" style="font-size:0.8rem;padding:0.25rem 0.8rem;">&#9998; ' + (it ? 'Modifica famiglia' : 'Edit family') + '</button>' : '')
     + '</div>';
   // le foto dell'album: la misura delle miniature della scheda dell'album (w_520), già chiesta a Cloudinary
-  const foto = ci.length ? '<div style="font-size:0.85rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">' + (it ? 'Le pagine dell\'album' : 'Album pages') + '</div>'
-    + '<div style="display:flex;gap:0.6rem;overflow-x:auto;padding-bottom:0.4rem;margin-bottom:0.8rem;">'
+  // 🆕 v7.233 (Franco: «metti i soliti due pulsanti "Precedente" e "Successiva", con la miniatura»; poi «vanno messi
+  //    nella parte bassa della schermata, direi a sx e dx delle pagine dell'album») - LE FRECCE DELLE FAMIGLIE, ai lati
+  //    della striscia delle foto: la veste è quella delle frecce della testata (`.serie-nav-btn`), con la foto della
+  //    famiglia a 600 (la misura del suo box, già chiesta a Cloudinary) e l'ordine dei box. Dove una manca resta il suo
+  //    posto, invisibile, così la striscia non si sposta. Il clic resta sullo stesso tab (`_vaiAllaFamiglia`).
+  const nomi = _famiglieOrdinate(s), qui = nomi.indexOf(_famigliaAperta);
+  const freccia = (n, verso) => {
+    const scritta = verso === 'prec' ? (it ? 'famiglia precedente' : 'previous family') : (it ? 'prossima famiglia' : 'next family');
+    if (!n) return '<button type="button" class="serie-nav-btn fam-nav-' + verso + '" tabindex="-1" aria-hidden="true" style="visibility:hidden;"><span class="serie-nav-vuota"></span><span class="serie-nav-scritta">' + scritta + '</span><span class="serie-nav-freccia">→</span></button>';
+    const img = _famigliaDato(s, n).img;
+    return '<button type="button" class="serie-nav-btn fam-nav-' + verso + '" data-famiglia="' + esc(n) + '" onclick="_vaiAllaFamiglia(this.getAttribute(\'data-famiglia\'))" title="' + esc((verso === 'prec' ? (it ? 'Famiglia precedente: ' : 'Previous family: ') : (it ? 'Famiglia successiva: ' : 'Next family: ')) + n) + '">'
+      + (img ? '<img src="' + esc(cloudinaryUrl(img, 'w_600,h_600,c_fit,q_auto,f_auto')) + '" alt="">' : '<span class="serie-nav-vuota">👪</span>')
+      + '<span class="serie-nav-scritta">' + scritta + '</span><span class="serie-nav-freccia">' + (verso === 'prec' ? '←' : '→') + '</span></button>';
+  };
+  const striscia = '<div style="display:flex;gap:0.6rem;overflow-x:auto;padding-bottom:0.4rem;flex:1 1 auto;min-width:0;">'
     + ci.map(n => '<img src="' + cloudinaryUrl(pag[n - 1].url, 'w_520,h_520,c_fit,q_auto,f_auto') + '" alt="" loading="lazy" title="' + (it ? 'Sfoglia da qui' : 'Browse from here') + '" '
       + 'onclick="_famigliaSfoglia(' + n + ')" style="height:200px;width:auto;flex:0 0 auto;border-radius:8px;border:1px solid var(--border);cursor:pointer;background:var(--bg3);">').join('')
-    + '</div>' : '';
+    + '</div>';
+  const foto = (ci.length ? '<div style="font-size:0.85rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">' + (it ? 'Le pagine dell\'album' : 'Album pages') + '</div>' : '')
+    + '<div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.8rem;">'
+    + freccia(qui > 0 ? nomi[qui - 1] : null, 'prec') + striscia + freccia(qui >= 0 && qui < nomi.length - 1 ? nomi[qui + 1] : null, 'succ') + '</div>';
   // all'admin, in arancione, i numeri che l'album non ha (agli altri si tacciono)
   const avviso = adm && mancano.length ? '<div style="font-size:0.8rem;color:var(--warn);margin:-0.4rem 0 0.8rem;">' + (it ? 'Nell\'album non ci sono le foto: ' : 'The album has no photo: ') + mancano.join(', ') + '</div>' : '';
   const tab = _FAM_TAB.filter(x => _tipologiaAmmessa(x, currentSeriesId)).map(x => {
@@ -55195,6 +55304,70 @@ async function _famigliaSalva() {
   toast(it ? '✅ Famiglia salvata.' : '✅ Family saved.', 'success');
   try { _rendiFamiglieSerie(); } catch (e) { console.error('_rendiFamiglieSerie', e); }
   try { _rendiTestaFamiglia(); } catch (e) { console.error('_rendiTestaFamiglia', e); }
+}
+// 🆕 v7.233 - la foto della famiglia, da sola (dal collage, `_collageUsaPerBox`): la riga di `famiglieDati` resta com'è
+//    (ordine e pagine), cambia `img`. Sta qui e non accanto al collage: quel tratto di codice non scrive sul sito
+//    (prova-v7182, 24), e la scrittura della famiglia è una sola famiglia di funzioni.
+async function _famigliaScriviFoto(s, nome, url, zitto) {   // `zitto`: nel giro su tutte, un avviso solo alla fine
+  const it = currentLang === 'it';
+  const prima = s.famiglieDati;
+  const d = _famigliaDato(s, nome);
+  s.famiglieDati = _famiglieDati(s).filter(x => x.nome !== nome).concat([{ nome, ordine: d.ordine, pagine: d.pagine, img: url }]);
+  try { await fsSave('series', _serieSenzaItems(s)); }
+  catch (e) {
+    console.error('_famigliaScriviFoto', e);
+    s.famiglieDati = prima;
+    toast((it ? '⚠️ Foto NON salvata: ' : '⚠️ Photo NOT saved: ') + (e?.message || e), 'error');
+    return false;
+  }
+  if (zitto) return true;
+  toast(it ? '✅ Foto della famiglia aggiornata' : '✅ Family photo updated', 'success');
+  try { _rendiFamiglieSerie(); } catch (e) { console.error('_rendiFamiglieSerie', e); }
+  try { _rendiTestaFamiglia(); } catch (e) { console.error('_rendiTestaFamiglia', e); }
+  return true;
+}
+// v7.233 - IL GIRO SU TUTTE LE FAMIGLIE (`apriCollageTutteFamiglie`): per ognuna la tendina della famiglia, le sue foto,
+//    il collage, il caricamento e la foto salvata. Sta qui e non accanto al collage: lì l'unico caricamento è «Usa come
+//    foto della card» (prova-v7209, 7c), e queste righe scrivono sul sito come le altre della famiglia.
+async function _collageUsaPerTutte() {
+  const it = currentLang === 'it';
+  const d = _collageBoxDest;
+  const s = d && getData('series', []).find(x => x.id === d.seriesId);
+  if (!s || !currentUser?.isAdmin) return;
+  const nomi = _famiglieOrdinate(s);
+  const ok = await _finestraConferma({
+    titolo: '🖼️ ' + (it ? 'Foto di tutte le famiglie' : 'Photos of all families'),
+    testo: it ? 'Rifaccio il collage per tutte le ' + nomi.length + ' famiglie, con queste scelte, e lo metto come loro foto: quelle di adesso vengono sostituite.'
+      : 'Redo the collage for all ' + nomi.length + ' families with these settings and use it as their photo.',
+    ok: it ? 'Procedi' : 'Go', annulla: it ? 'Annulla' : 'Cancel'
+  });
+  if (!ok) return;
+  const b = document.getElementById('collage-usa'), av = document.getElementById('collage-avviso');
+  if (b) b.disabled = true;
+  const fatte = [], saltate = [];
+  for (let i = 0; i < nomi.length; i++) {
+    const nome = nomi[i];
+    if (!document.getElementById('collage-box-modal')) break;   // finestra chiusa: ci si ferma
+    if (av) av.textContent = (it ? 'Famiglia ' : 'Family ') + (i + 1) + ' / ' + nomi.length + ': ' + nome + '…';
+    const fam = document.getElementById('collage-sito-serie-fam');
+    if (!fam || ![...fam.options].some(o => o.value === nome)) { saltate.push(nome); continue; }
+    fam.value = nome;
+    _collageSitoAggiorna();   // le foto da unire diventano quante ne ha la famiglia
+    await _collagePesca();
+    if (_collageProblema() || !_collageFoto.length) { saltate.push(nome); continue; }
+    _collageBlob = null;
+    await _collageCrea();
+    if (!_collageBlob) { saltate.push(nome); continue; }
+    let url;
+    try { url = await uploadToCloudinary(_collageBlob); }
+    catch (e) { console.error('_collageUsaPerTutte/upload', nome, e); saltate.push(nome); continue; }
+    if (await _famigliaScriviFoto(s, nome, url, true)) fatte.push(nome); else saltate.push(nome);
+  }
+  if (av) av.textContent = '';
+  if (b) b.disabled = false;
+  toast((it ? '✅ Foto rifatte: ' : '✅ Photos done: ') + fatte.length + (saltate.length ? (it ? ' · saltate (senza foto, troppe o un errore): ' : ' · skipped: ') + saltate.join(', ') : ''), saltate.length ? 'error' : 'success', null, 8000);
+  try { _rendiFamiglieSerie(); } catch (e) { console.error('_rendiFamiglieSerie', e); }
+  if (!saltate.length) chiudiCollageBox();
 }
 
 // 🆕 v6.684 - CAMBIA LA FOTO DI UNA SOTTOSERIE, dalla sua card.
