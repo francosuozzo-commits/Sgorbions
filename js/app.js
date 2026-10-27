@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.231 - Modificati index.html e js/app.js. ANNUNCI: Costo e Prezzo diventano «Iniziale» e «Finale», numeri senza €
+//          (Franco: «cambiare la natura dei campi Costo e Prezzo. passiamo da Euro a numero. cambiamo inoltre il nome
+//          del campo: passiamo a Iniziale e Finale»), in tabella e nella finestra. Nel dato restano `costo` e `prezzo`.
+//          COLLAGE da Annunci: la tendina della serie parte vuota, «— scegli —» (Franco: «il campo Serie non deve
+//          avere come default "Sgorbions serie 1"; non deve avere un default»); la tipologia dice «— scegli prima la
+//          serie —». Dal «Cambia foto» di una card la serie la sceglie `apriCollageBox`, come prima. «In che ordine
+//          le prendo ?»: «Alfabetico» diventa «Numerico / Alfabetico», prima il numero a schermo e poi il nome (Franco:
+//          «l'ordine Alfabetico deve considerare il numero, quando la serie ha il numero»). 🐛 Nella sezione di una
+//          serie, alla prima apertura di un riquadro dei filtri la pagina saliva di ~180px (Franco: «il carosello, da che
+//          si vedeva in parte, si vede tutto»): lo scroll anchoring di Chrome mentre `_copertinaSezioneASinistra` rifà la
+//          testata. `_bmApri` lo spegne durante il disegno e tiene fermo il riquadro cliccato.
 // v7.230 - Modificati index.html e js/app.js. COLLAGE dal telefono: «Scarica fronte», «Scarica retro» e «Scarica
 //          entrambe» uno sotto l'altro (Franco: «nella versione mobile, i tre pulsanti per scaricare le foto in colonna
 //          verticalmente»); dal PC restano su una riga.
@@ -31801,7 +31812,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.230';
+const JS_VERSION = 'v7.231';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41774,7 +41785,7 @@ function apriCollageBox(chiave, perSerie) {
   // 🔄 v7.215 (Franco: dal «Cambia foto» dell'hub «anche lì voglio che parta su Serie») - fuori dalla pagina di una serie
   //    si parte dalla prima serie dell'elenco che ha quella tipologia (se nessuna, dalla prima); i tipi senza serie non
   //    stanno in nessuna serie e restano su «Tipologia di articolo»
-  const opz = s ? [...s.options].map(o => String(o.value)) : [];
+  const opz = s ? [...s.options].map(o => String(o.value)).filter(Boolean) : [];   // v7.231 - senza il «— scegli —»
   const sid = perSerie ? (opz.includes(String(currentSeriesId)) ? String(currentSeriesId) : null)
     : (PRODOTTI_INVENTARIO.includes(chiave) ? (opz.find(v => _collageSezioniDellaSerie(v).some(([x]) => x === chiave)) || opz[0] || null) : null);
   const inSerie = !!sid;
@@ -41863,12 +41874,16 @@ function _collageSitoHTML() {
   const contate = new Set(_articoliDaContareSito().map(f => f.seriesId));
   const serie = _serieOrdinate(getData('series', []) || []).filter(s => (!cont || s.id !== cont.id) && contate.has(s.id));
   const tipi = (typeof _tipiProdotto === 'function') ? _tipiProdotto() : [];
-  const sid0 = serie[0] && serie[0].id, sez0 = (_collageSezioniDellaSerie(sid0)[0] || [])[0];
+  // 🔄 v7.231 (Franco: «il campo Serie non deve avere come default "Sgorbions serie 1"; non deve avere un default») - la
+  //    tendina parte vuota («— scegli —»), e tipologia e versione aspettano la serie. Dal «Cambia foto» di una card
+  //    `apriCollageBox` la sceglie lui, come prima
+  const sid0 = '', sez0 = '';
   const ver0 = (_collageVersioniDellaSerie(sid0, sez0).match(/value="([^"]*)"/) || [])[1];   // v7.215 - la prima versione, per le famiglie
   return '<div style="' + dom + 'margin-top:0;">' + (it ? 'Da una serie o da una tipologia di articolo ?' : 'From a series or an item type?') + '</div>' +
     radio('collage-sito-da', 'serie', it ? 'Serie' : 'Series', true) + radio('collage-sito-da', 'tda', it ? 'Tipologia di articolo' : 'Item type') +
     '<div style="margin-top:0.35rem;">' +
-      '<select id="collage-sito-serie" style="' + sel + '" onchange="_collageSerieScelta()">' + serie.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name || '') + '</option>').join('') + '</select>' +
+      '<select id="collage-sito-serie" style="' + sel + '" onchange="_collageSerieScelta()">' +
+        '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>' + serie.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name || '') + '</option>').join('') + '</select>' +
       // v7.214 - dopo la serie, la tipologia di articolo di quella serie (`_collageTdaDellaSerie`)
       '<div id="collage-sito-serie-tda-box">' +
         '<div style="' + dom + '">' + (it ? 'Quale tipologia di articolo ?' : 'Which item type?') + '</div>' +
@@ -41903,7 +41918,8 @@ function _collageSitoHTML() {
     ['alfabetico', 'casuale'].map(v => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
       // 🔄 v7.222 (Franco: «il default della domanda sull'ordine lascialo ad alfabetico») - era Casuale (v7.218)
       '<input type="radio" name="collage-sito-ordine" value="' + v + '"' + (v === 'alfabetico' ? ' checked' : '') + ' onchange="_collageMostraScelte()">' +
-      (v === 'alfabetico' ? (it ? 'Alfabetico' : 'Alphabetical') : (it ? 'Casuale' : 'Random')) + '</label>').join('') +
+      // v7.231 - «Numerico / Alfabetico»: prima il numero, poi il nome (`_collagePesca`); il valore resta 'alfabetico'
+      (v === 'alfabetico' ? (it ? 'Numerico / Alfabetico' : 'Numeric / Alphabetical') : (it ? 'Casuale' : 'Random')) + '</label>').join('') +
     // v7.216 - con o senza le macchie (`_collageUrlFoto`); cambiando, le foto già prese si rileggono
     '<div style="' + dom + '">' + (it ? 'Con le macchie o senza ?' : 'With or without watermark?') + '</div>' +
     ['con', 'senza'].map(v => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
@@ -41971,6 +41987,7 @@ function _collageSezioniDellaSerie(sid) {
   return ordine.map(s => [s, conti[s]]);
 }
 function _collageTdaDellaSerie(sid) {
+  if (!sid) return '<option value="">' + (currentLang === 'it' ? '— scegli prima la serie —' : '— choose the series first —') + '</option>';   // v7.231
   return _collageSezioniDellaSerie(sid).map(([s, n]) => '<option value="' + esc(s) + '">' + esc(getSectionLabel(s)) + ' (' + n + ')</option>').join('');
 }
 function _collageVersioniDellaSerie(sid, sez) {
@@ -42158,8 +42175,12 @@ async function _collagePesca() {
   // 🆕 v7.218 (Franco: «Aggiungi la domanda "In che ordine le prendo?"; valori: alfabetico; casuale; default: casuale») -
   //    con «Alfabetico» i primi N per nome (a pari nome, per numero a schermo), e nel collage in quell'ordine
   const alfa = (document.querySelector('input[name="collage-sito-ordine"]:checked') || {}).value === 'alfabetico';
-  if (alfa) a.sort((x, y) => String(x.name || '').localeCompare(String(y.name || ''), 'it', { sensitivity: 'base', numeric: true })
-    || String(_numeroAschermo(x) ?? '').localeCompare(String(_numeroAschermo(y) ?? ''), 'it', { numeric: true }));
+  // 🔄 v7.231 (Franco: «l'ordine Alfabetico deve considerare il numero, quando la serie ha il numero. Se vuoi chiama la
+  //    opzione Numerico/Alfabetico») - prima il numero a schermo («2» prima di «10», le lettere delle olografiche dopo
+  //    le cifre), chi non ce l'ha in fondo; a pari numero, o senza numero, il nome
+  const numA = f => String(_numeroAschermo(f) ?? '').trim();
+  if (alfa) a.sort((x, y) => (!numA(x) - !numA(y)) || numA(x).localeCompare(numA(y), 'it', { numeric: true })
+    || String(x.name || '').localeCompare(String(y.name || ''), 'it', { sensitivity: 'base', numeric: true }));
   else for (let i = 0; i < n; i++) { const j = i + Math.floor(Math.random() * (a.length - i)); [a[i], a[j]] = [a[j], a[i]]; }
   const tutti = getData('figurines', []);
   // v7.223 - ogni foto ricorda il suo articolo (`fig`): serve alla foto dei retro
@@ -42917,7 +42938,10 @@ function _annDisegna() {
     // v7.187 (Franco: «per ora togli il campo Foto dalla tabellina») - lo zip resta nella finestra
     // v7.187 (Franco: «aggiungi un campo Costo nell'annuncio, mettilo prima di Prezzo»)
     // v7.191 (Franco: «aggiungiamo una colonna alla tabella degli annunci: Voto; da mettere prima di costo»)
-    + th(it ? 'Voto' : 'Rating') + th(it ? 'Costo' : 'Cost') + th(it ? 'Prezzo' : 'Price') + th('Link')
+    // 🔄 v7.231 (Franco: «cambiare la natura dei campi Costo e Prezzo. passiamo da Euro a numero. cambiamo inoltre il
+    //    nome del campo: passiamo a Iniziale e Finale») - a schermo Iniziale e Finale, senza €; nel dato restano
+    //    `costo` e `prezzo`, così gli annunci già salvati si leggono come prima
+    + th(it ? 'Voto' : 'Rating') + th(it ? 'Iniziale' : 'Initial') + th(it ? 'Finale' : 'Final') + th('Link')
     // v7.200 - sopra i quattro tasti della riga, «Applica valori da album» (agli annunci spuntati)
     // 🔄 v7.202 (Franco: «chiamalo "Applica valori da album e venditore" (vai pure su due righe)») - a capo dopo «album»
     + '<th style="text-align:center;text-transform:none;letter-spacing:0;"><button type="button" class="btn-barra-admin pieno" id="ann-applica-album" onclick="_annApplicaDaAlbum()"'
@@ -42964,8 +42988,9 @@ function _annDisegna() {
           //    valore»; «stringi anche la colonna Voto») - caselle più strette (3,4 → 2,9 e 2,6rem), celle senza il
           //    margine largo della tabella, € attaccato alla casella
           + '<td style="padding-left:0.25rem;padding-right:0.25rem;">' + inp('voto', 'number', r.voto, 'width:2.6rem;text-align:right;') + '</td>'   // v7.191
-          + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('costo', 'number', r.costo, 'width:2.9rem;text-align:right;') + '<span style="margin-left:2px;">€</span></td>'
-          + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('prezzo', 'number', r.prezzo, 'width:2.9rem;text-align:right;') + '<span style="margin-left:2px;">€</span></td>'
+          // v7.231 - Iniziale e Finale: numeri, senza €
+          + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('costo', 'number', r.costo, 'width:2.9rem;text-align:right;') + '</td>'
+          + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('prezzo', 'number', r.prezzo, 'width:2.9rem;text-align:right;') + '</td>'
           // il 🔗 legge il link al clic: così vale anche quello appena cambiato nella casella
           // v7.187 (Franco: «il campo "Link" accorcialo, tanto per aprirlo c'è il bottoncino affianco»)
           // 🆕 v7.202 (Franco: «se il campo Sito è Vinted, il campo url deve contenere la parola "vinted"» - e così eBay e
@@ -43238,9 +43263,10 @@ function _annApriFinestra(i, sola) {
     // v7.191 (Franco) - Voto prima di Costo, come in tabella; frecce di 1 (`step="any"`, vedi `_annDisegna`)
     + lab(it ? 'Voto' : 'Rating')
     + '<input id="ann-voto" class="form-input" type="number" min="0" step="0.5" value="' + (r.voto ?? '') + '" style="max-width:10rem;">'
-    + lab(it ? 'Costo (€)' : 'Cost (€)')
+    // v7.231 (Franco) - Iniziale e Finale, numeri senza € (nel dato `costo` e `prezzo`)
+    + lab(it ? 'Iniziale' : 'Initial')
     + '<input id="ann-costo" class="form-input" type="number" min="0" step="any" value="' + (r.costo ?? '') + '" style="max-width:10rem;">'
-    + lab(it ? 'Prezzo (€)' : 'Price (€)')
+    + lab(it ? 'Finale' : 'Final')
     + '<input id="ann-prezzo" class="form-input" type="number" min="0" step="any" value="' + (r.prezzo ?? '') + '" style="max-width:10rem;">'
     // v7.187 (Franco) - il link dell'annuncio sul sito dove è pubblicato
     + lab('Link')
@@ -60173,11 +60199,23 @@ function _dueColonneSeCiStanno(box) {
   cont.style.gap = '0.4rem';
   voci.forEach(v => { v.style.justifySelf = 'start'; });
 }
+// 🐛 v7.231 (Franco: dalla sezione delle fcr della serie 1, alla PRIMA apertura di «Filtra per versione» «il carosello,
+//    da che si vedeva in parte, si vede tutto; perché la pagina scorre verso l'alto») - nessuna riga chiedeva di
+//    scorrere: lo faceva il browser. `_copertinaSezioneASinistra` rifà la testata da capo (toglie e rimette posizioni e
+//    copie), e lo «scroll anchoring» di Chrome, inseguendo quei cambi a metà, spostava la pagina (📏 182px su da 1536px).
+//    Ora, mentre si ridisegna, l'ancoraggio è spento, e alla fine la pagina si sposta della differenza: il riquadro
+//    cliccato resta dove l'occhio l'ha lasciato (il primo visibile con quella chiave).
 function _bmApri(chiave) {
+  const ref = [...document.querySelectorAll('[data-bm-chiave="' + chiave + '"]')].find(b => b.getClientRects().length);
+  const top0 = ref ? ref.getBoundingClientRect().top : null;
+  const radice = document.documentElement;
+  radice.style.overflowAnchor = 'none';
   _bmAperti[chiave] = !_bmAperti[chiave];
   document.querySelectorAll('[data-bm-chiave="' + chiave + '"]').forEach(b => _bmApplica(b, chiave));
   // v7.126 - un riquadro della testata che si apre o si chiude cambia la sua altezza: i tasti di ritorno si rimisurano
   if (typeof _copertinaSezioneASinistra === 'function') { try { _copertinaSezioneASinistra(); } catch (e) {} }
+  if (ref && ref.isConnected) { const d = ref.getBoundingClientRect().top - top0; if (Math.abs(d) >= 1) window.scrollBy(0, d); }
+  requestAnimationFrame(() => { radice.style.overflowAnchor = ''; });
 }
 
 function renderRaggrSummaries() {
