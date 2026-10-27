@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.232 - Modificati index.html e js/app.js. 👪 LE FAMIGLIE DELLA SERIE (Franco: «sotto alla sezione "GLI ARTICOLI
+//          DELLA SERIE" una nuova sezione»; «chiamala solo "LE FAMIGLIE DELLA SERIE"; mostrala solo quando la serie ha
+//          famiglie»; «serve una piccola entità famiglia con ordine (numerico) e pagine (sequenza numerica)»; «il numero
+//          delle pagine dell'album (che poi sarebbe il numero delle foto dell'album)»; la pagina: «in alto le pagine
+//          dell'album che contengono le figurine di quella famiglia», «due tab affiancati, uno per le fpa ed uno per le
+//          fcr; il primo (selezionato di default) quello delle fpa»; «il tutto coi classici filtri della pagina delle
+//          fpa/fcr»). Un box per famiglia, grande come quelli di sopra, nell'ordine scritto (`_famiglieOrdinate`), col
+//          numero delle fcr base; la matita apre la finestra «Famiglia» (Ordine, Pagine, Foto) che salva in
+//          `s.famiglieDati`. Il clic apre la sezione delle fpa con «Filtra per famiglia» acceso, sotto `#famiglia-testa`:
+//          nome, foto dell'album (clic = Sfoglia album da lì) e i tab «Figurine per album» / «Figurine con retro». Il
+//          filtro della famiglia ora dà alla fpa senza famiglia scritta quella della sua fcr (`_famigliaDiArticolo`).
+//          Nella pagina di una famiglia il carosello della sezione è spento (girerebbe su tutta la tipologia).
 // v7.231 - Modificati index.html e js/app.js. ANNUNCI: Costo e Prezzo diventano «Iniziale» e «Finale», numeri senza €
 //          (Franco: «cambiare la natura dei campi Costo e Prezzo. passiamo da Euro a numero. cambiamo inoltre il nome
 //          del campo: passiamo a Iniziale e Finale»), in tabella e nella finestra. Nel dato restano `costo` e `prezzo`.
@@ -31812,7 +31824,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.231';
+const JS_VERSION = 'v7.232';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35666,6 +35678,8 @@ function renderCaroselloSezione() {
   // 🔄 v7.120 - dentro il box di un tipo senza serie decide la riga del tipo (`_articoloInCarosello`): prima qui non
   //    c'era mai, perché la console quei tipi non li conosceva
   if (!currentSeriesId || !currentSection || !_articoloInCarosello({ section: currentSection, tipoProdotto: _tipoProdottoCorrente })) { spento(); return; }
+  // 🆕 v7.232 - nella pagina di una famiglia niente carosello: girerebbe su tutta la tipologia, non sulla famiglia
+  if (_famigliaAperta) { spento(); return; }
   const serieAperta = currentSeriesId, sezAperta = currentSection, tipoAperto = _tipoProdottoCorrente || '';
   const gruppo = (typeof _sottoserieAttiva === 'string' && _sottoserieAttiva) ? _sottoserieAttiva : '';
   const _figs = getData('figurines', []);
@@ -46544,7 +46558,8 @@ const _RAGGR_FAMIGLIA = {
   // 🔴 `undefined` e non stringa vuota: è quello che fa sparire il riquadro dove famiglie non ce
   //    ne sono. Con la stringa vuota nascerebbe una pillola «(Senza tipo)» su TUTTE le serie, e
   //    sarebbe un filtro che non filtra niente offerto a tutti.
-  valoreDi: f => (f.famiglia || '').trim() || undefined,
+  // 🔄 v7.232 - la fpa senza famiglia scritta prende quella della sua fcr (`_famigliaDiArticolo`)
+  valoreDi: f => _famigliaDiArticolo(f) || undefined,
   // 🆕 v6.988 (Franco: «il filtro per Famiglia deve essere indipendente dagli altri; deve andare in
   //    AND; questo perché la famiglia è un dato in più, trasversale alle versioni») - premere una
   //    pillola di un ALTRO riquadro non la svuota, e premere una sua non svuota gli altri. Vedi
@@ -54884,6 +54899,7 @@ function updateSectionCounts() {
   // 🆕 v6.682 - e subito dopo le card delle sottoserie, dallo stesso punto: i numeri e le
   // card che li spiegano si rifanno insieme, o una delle due resta indietro senza dirlo.
   try { _rendiCardSottoserie(); } catch (e) { console.error('_rendiCardSottoserie', e); }
+  try { _rendiFamiglieSerie(); } catch (e) { console.error('_rendiFamiglieSerie', e); }   // v7.232
 }
 
 // 🆕 v6.682 - LE CARD DELLE SOTTOSERIE NELL'HUB DELLA SERIE.
@@ -54975,6 +54991,210 @@ function _rendiCardSottoserie() {
       prec = card;
     });
   });
+}
+
+// 🆕 v7.232 (Franco: «nella nuova sezione, vorrei dei box, analoghi per dimensione a quelli della sezione sovrastante»;
+//    «l'ordine dei box deve seguire l'ordine delle famiglie; l'ordine delle famiglie dobbiamo scriverlo a db; serve una
+//    piccola entità famiglia, per questo, con questi campi: ordine (numerico), pagine (sequenza numerica)»; «forse è
+//    meglio indicare il numero delle pagine dell'album (che poi sarebbe il numero delle foto dell'album)») - LE FAMIGLIE
+//    DELLA SERIE. I nomi restano quelli del campo «Famiglie» della scheda della serie (`s.famiglie`, stringhe, v6.837):
+//    sono i valori della tendina degli articoli e non si toccano. Il resto sta accanto, in `s.famiglieDati` =
+//    [ { nome, ordine, pagine: [3, 4, 7], img } ], una riga per famiglia che l'admin ha salvato dalla matita del box.
+// 📌 Sulla serie e non in una raccolta nuova: le regole di Firestore restano quelle, e la scheda della serie la conserva
+//    (il suo salvataggio fonde `...series[idx]`). La chiave è il NOME, come per le foto delle sottoserie (v6.679).
+// 📌 `pagine` sono i numeri delle foto dell'album di «Sfoglia album» (`_albumDaSfogliare`), dalla 1: niente foto
+//    ripetute a db.
+let _famigliaAperta = null;          // il nome della famiglia della pagina aperta, o null
+let _famigliaInApertura = false;     // vero solo mentre `apriFamiglia` / `scegliTabFamiglia` aprono una sezione
+const _FAM_TAB = ['attaccare', 'figurines'];   // Franco: il primo «quello selezionato di default»
+function _famiglieDati(s) {
+  return (s && Array.isArray(s.famiglieDati) ? s.famiglieDati : []).filter(d => d && String(d.nome || '').trim())
+    .map(d => ({ nome: String(d.nome).trim(), ordine: Number.isFinite(+d.ordine) && d.ordine !== null && d.ordine !== '' ? +d.ordine : null,
+                 pagine: Array.isArray(d.pagine) ? d.pagine.map(Number).filter(n => Number.isInteger(n) && n > 0) : [], img: d.img || null }));
+}
+function _famigliaDato(s, nome) {
+  return _famiglieDati(s).find(d => d.nome === nome) || { nome, ordine: null, pagine: [], img: null };
+}
+// le famiglie dichiarate, prima quelle con l'ordine (dal più basso), poi le altre come sono scritte nella scheda
+function _famiglieOrdinate(s) {
+  const nomi = s ? _famiglieSerie(s.id) : [];
+  const dati = new Map(_famiglieDati(s).map(d => [d.nome, d]));
+  return nomi.map((n, i) => ({ n, i, o: dati.has(n) ? dati.get(n).ordine : null }))
+    .sort((a, b) => ((a.o === null) - (b.o === null)) || ((a.o ?? 0) - (b.o ?? 0)) || (a.i - b.i)).map(x => x.n);
+}
+// Franco: il numero del box conta «solo le fcr base», fra quelle che il sito conta (niente IN ARRIVO né invisibili)
+function _contaFcrBaseFamiglia(sid, nome) {
+  return _articoliDaContareSito().filter(f => f.seriesId === sid && (f.section || 'figurines') === 'figurines' && _eBase(f)
+    && _famigliaDiArticolo(f) === nome).length;
+}
+function _rendiFamiglieSerie() {
+  const tit = document.getElementById('famiglie-serie-titolo'), gr = document.getElementById('famiglie-serie-griglia');
+  if (!tit || !gr) return;
+  const s = currentSeriesId ? getData('series', []).find(x => x.id === currentSeriesId) : null;
+  const nomi = _famiglieOrdinate(s);
+  if (!s || !nomi.length) { tit.style.display = 'none'; gr.style.display = 'none'; gr.innerHTML = ''; return; }
+  const it = currentLang === 'it', adm = !!currentUser?.isAdmin;
+  tit.textContent = it ? 'LE FAMIGLIE DELLA SERIE' : 'THE SERIES FAMILIES';
+  tit.style.display = '';
+  // 🔴 il nome viaggia in un `data-`, mai dentro l'onclick: può avere un apostrofo (la regola delle sottoserie, v6.682)
+  gr.innerHTML = nomi.map(nome => {
+    const d = _famigliaDato(s, nome), n = _contaFcrBaseFamiglia(s.id, nome);
+    return '<div class="section-choice-card" data-famiglia="' + esc(nome) + '" onclick="apriFamiglia(this)" style="padding:0;overflow:hidden;position:relative;">'
+      + (adm ? '<button type="button" title="' + (it ? 'Modifica questa famiglia' : 'Edit this family') + '" onclick="event.stopPropagation();apriFinestraFamiglia(this.parentNode)" '
+        + 'style="position:absolute;top:6px;right:6px;z-index:3;border:none;border-radius:999px;width:30px;height:30px;line-height:1;cursor:pointer;font-size:0.95rem;background:rgba(0,0,0,0.6);color:#fff;">&#9998;</button>' : '')
+      + '<div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;background-size:contain;background-repeat:no-repeat;background-position:center;'
+      + (d.img ? 'background-image:url(\'' + cloudinaryUrl(d.img, 'w_600,h_600,c_fit,q_auto,f_auto') + '\');' : '') + '"></div>'
+      + '<div style="padding:1.25rem 1.5rem;"><div class="section-choice-title">' + esc(nome) + '</div>'
+      + '<div class="section-choice-count">' + n + ' ' + (it ? (n === 1 ? 'figurina con retro' : 'figurine con retro') : (n === 1 ? 'sticker with back' : 'stickers with back')) + '</div></div></div>';
+  }).join('');
+  gr.style.display = 'grid';
+}
+// La pagina della famiglia è la sezione delle fpa (o delle fcr) della serie con «Filtra per famiglia» già acceso
+// (Franco: «ti direi il tutto coi classici filtri della pagina delle fpa/fcr; alla fine è solo un altro modo per
+// arrivare ai soliti articoli»). Sopra, `#famiglia-testa`: il nome, le foto dell'album e i due tab.
+function apriFamiglia(el) {
+  const nome = el && el.getAttribute('data-famiglia');
+  if (!nome) return;
+  const sez = _FAM_TAB.find(x => _tipologiaAmmessa(x, currentSeriesId)) || 'figurines';
+  _famigliaAperta = nome;
+  _famigliaInApertura = true;
+  try { openSeriesSection(sez); } finally { _famigliaInApertura = false; }
+}
+function scegliTabFamiglia(btn) {
+  const sez = btn && btn.getAttribute('data-sezione');
+  if (!sez || !_famigliaAperta || sez === currentSection) return;
+  _famigliaInApertura = true;
+  try { openSeriesSection(sez); } finally { _famigliaInApertura = false; }
+}
+function _rendiTestaFamiglia() {
+  const el = document.getElementById('famiglia-testa');
+  if (!el) return;
+  if (!_famigliaAperta) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const it = currentLang === 'it', adm = !!currentUser?.isAdmin;
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  const d = _famigliaDato(s, _famigliaAperta);
+  const alb = _albumDaSfogliare(currentSeriesId);
+  const pag = alb ? _pagineDaMostrare(alb) : [];
+  const ci = d.pagine.filter(n => n <= pag.length), mancano = d.pagine.filter(n => n > pag.length);
+  const testa = '<div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-bottom:0.8rem;">'
+    + '<div style="font-family:var(--font-display);font-size:1.35rem;font-weight:800;color:var(--nome-entita);">' + esc(_famigliaAperta) + '</div>'
+    + (adm ? '<button type="button" class="btn-barra-admin" data-famiglia="' + esc(_famigliaAperta) + '" onclick="apriFinestraFamiglia(this)" style="font-size:0.8rem;padding:0.25rem 0.8rem;">&#9998; ' + (it ? 'Modifica famiglia' : 'Edit family') + '</button>' : '')
+    + '</div>';
+  // le foto dell'album: la misura delle miniature della scheda dell'album (w_520), già chiesta a Cloudinary
+  const foto = ci.length ? '<div style="font-size:0.85rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">' + (it ? 'Le pagine dell\'album' : 'Album pages') + '</div>'
+    + '<div style="display:flex;gap:0.6rem;overflow-x:auto;padding-bottom:0.4rem;margin-bottom:0.8rem;">'
+    + ci.map(n => '<img src="' + cloudinaryUrl(pag[n - 1].url, 'w_520,h_520,c_fit,q_auto,f_auto') + '" alt="" loading="lazy" title="' + (it ? 'Sfoglia da qui' : 'Browse from here') + '" '
+      + 'onclick="_famigliaSfoglia(' + n + ')" style="height:200px;width:auto;flex:0 0 auto;border-radius:8px;border:1px solid var(--border);cursor:pointer;background:var(--bg3);">').join('')
+    + '</div>' : '';
+  // all'admin, in arancione, i numeri che l'album non ha (agli altri si tacciono)
+  const avviso = adm && mancano.length ? '<div style="font-size:0.8rem;color:var(--warn);margin:-0.4rem 0 0.8rem;">' + (it ? 'Nell\'album non ci sono le foto: ' : 'The album has no photo: ') + mancano.join(', ') + '</div>' : '';
+  const tab = _FAM_TAB.filter(x => _tipologiaAmmessa(x, currentSeriesId)).map(x => {
+    const att = x === currentSection;
+    return '<button type="button" data-sezione="' + x + '" onclick="scegliTabFamiglia(this)" style="font-family:var(--font-ui);font-size:0.9rem;padding:0.35rem 1rem;border-radius:10px;cursor:pointer;border:1px solid '
+      + (att ? 'var(--accent)' : 'var(--border)') + ';background:' + (att ? 'var(--accent)' : 'var(--card)') + ';color:' + (att ? 'var(--bg)' : 'var(--text)') + ';font-weight:' + (att ? '700' : '400') + ';">'
+      + esc(getSectionLabel(x)) + '</button>';
+  }).join('');
+  el.innerHTML = testa + foto + avviso + '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">' + tab + '</div>';
+  el.style.display = '';
+}
+function _famigliaSfoglia(n) {
+  apriSfogliaAlbum();
+  try { sfogliaVaiA(n - 1); } catch (e) {}
+}
+// «Ordine» e «Pagine» si leggono da una riga di testo: numeri separati da virgole o spazi, dalla 1, senza doppioni
+function _famigliaLeggiPagine(t) {
+  const pezzi = String(t || '').split(/[\s,;]+/).filter(Boolean);
+  const sbagliati = pezzi.filter(p => !/^\d+$/.test(p) || +p < 1);
+  if (sbagliati.length) return { errore: sbagliati };
+  return { pagine: [...new Set(pezzi.map(Number))] };
+}
+let _famFoto = null;   // la foto nella finestra: { url } già caricata, o null
+function apriFinestraFamiglia(el) {
+  if (!currentUser?.isAdmin) return;
+  const nome = el && el.getAttribute('data-famiglia');
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  if (!nome || !s) return;
+  const it = currentLang === 'it', d = _famigliaDato(s, nome);
+  _famFoto = d.img ? { url: d.img } : null;
+  document.getElementById('famiglia-modal')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'famiglia-modal';
+  ov.setAttribute('data-famiglia', nome);
+  const lab = t => '<label class="form-label" style="display:block;margin:0.9rem 0 0.3rem;">' + t + '</label>';
+  ov.innerHTML = '<div class="modal" style="max-width:520px;width:94vw;">'
+    + '<div class="modal-header"><h2 class="modal-title">' + (it ? 'Famiglia «' : 'Family «') + esc(nome) + '»</h2>'
+    + '<button type="button" class="modal-close" onclick="document.getElementById(\'famiglia-modal\').remove()">✕</button></div>'
+    + '<div style="padding:0 1.2rem 1.2rem;">'
+    + lab(it ? 'Ordine' : 'Order')
+    + '<input id="fam-ordine" class="form-input" type="number" step="1" value="' + (d.ordine ?? '') + '" style="max-width:8rem;">'
+    + lab(it ? 'Pagine' : 'Pages')
+    + '<input id="fam-pagine" class="form-input" type="text" value="' + esc(d.pagine.join(', ')) + '" placeholder="3, 4, 7">'
+    + '<div class="form-hint">' + (it ? 'I numeri delle foto dell\'album di «Sfoglia album», dalla 1, separati da virgole.' : 'Photo numbers of the «Browse album» album, from 1, comma separated.') + '</div>'
+    + lab(it ? 'Foto della card' : 'Card photo')
+    + '<div style="display:flex;align-items:center;gap:0.7rem;flex-wrap:wrap;">'
+    + '<div id="fam-foto-anteprima" style="width:120px;aspect-ratio:var(--hub-box-ratio);border:1px solid var(--border);border-radius:8px;background:var(--bg3) center / contain no-repeat;"></div>'
+    + '<button type="button" class="btn-secondary" onclick="_famigliaScegliFoto()">' + (it ? 'Carica foto' : 'Upload photo') + '</button>'
+    + '<button type="button" class="btn-secondary" onclick="_famFoto=null;_famigliaMostraFoto()">' + (it ? 'Togli foto' : 'Remove photo') + '</button>'
+    + '</div>'
+    + '<div id="fam-stato" style="font-size:0.85rem;min-height:1.2rem;margin-top:0.8rem;color:var(--warn);"></div>'
+    + '<div style="display:flex;justify-content:flex-end;gap:0.6rem;margin-top:0.6rem;">'
+    + '<button type="button" class="btn-secondary" onclick="document.getElementById(\'famiglia-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+    + '<button type="button" id="fam-salva" class="btn-primary" onclick="_famigliaSalva()">' + (it ? 'Salva' : 'Save') + '</button>'
+    + '</div></div></div>';
+  document.body.appendChild(ov);
+  _famigliaMostraFoto();
+}
+function _famigliaMostraFoto() {
+  const a = document.getElementById('fam-foto-anteprima');
+  if (a) a.style.backgroundImage = _famFoto ? 'url(\'' + cloudinaryUrl(_famFoto.url, 'w_600,h_600,c_fit,q_auto,f_auto') + '\')' : '';
+}
+// la stessa catena della foto di una sottoserie (`_caricaFotoSottoserie`): la finestra che toglie lo sfondo, poi Cloudinary
+function _famigliaScegliFoto() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = async () => {
+    const it = currentLang === 'it', file = inp.files && inp.files[0];
+    const nome = document.getElementById('famiglia-modal')?.getAttribute('data-famiglia') || '';
+    if (!file) return;
+    const scelto = await _scegliFoto(file, (it ? 'Foto della famiglia ' : 'Family photo ') + '«' + nome + '»');
+    if (!scelto) return;
+    const st = document.getElementById('fam-stato'), b = document.getElementById('fam-salva');
+    if (st) st.textContent = it ? 'Carico la foto…' : 'Uploading…';
+    if (b) b.disabled = true;
+    try { _famFoto = { url: await uploadToCloudinary(scelto) }; if (st) st.textContent = ''; }
+    catch (e) { console.error('_famigliaScegliFoto', e); if (st) st.textContent = it ? '❌ Caricamento fallito — riprova' : '❌ Upload failed — retry'; }
+    if (b) b.disabled = false;
+    _famigliaMostraFoto();
+  };
+  inp.click();
+}
+async function _famigliaSalva() {
+  const it = currentLang === 'it';
+  const ov = document.getElementById('famiglia-modal'), st = document.getElementById('fam-stato'), b = document.getElementById('fam-salva');
+  const nome = ov && ov.getAttribute('data-famiglia');
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  if (!nome || !s || !currentUser?.isAdmin) return;
+  const tOrd = String(document.getElementById('fam-ordine')?.value || '').trim();
+  if (tOrd !== '' && !Number.isFinite(+tOrd)) { if (st) st.textContent = it ? 'L\'ordine deve essere un numero.' : 'Order must be a number.'; return; }
+  const p = _famigliaLeggiPagine(document.getElementById('fam-pagine')?.value);
+  if (p.errore) { if (st) st.textContent = (it ? 'Pagine: non sono numeri dalla 1: ' : 'Pages: not numbers from 1: ') + p.errore.join(', '); return; }
+  const riga = { nome, ordine: tOrd === '' ? null : +tOrd, pagine: p.pagine, img: _famFoto ? _famFoto.url : null };
+  const prima = s.famiglieDati;
+  s.famiglieDati = _famiglieDati(s).filter(d => d.nome !== nome).concat([riga]);
+  if (b) b.disabled = true;
+  try { await fsSave('series', _serieSenzaItems(s)); }
+  catch (e) {
+    console.error('_famigliaSalva', e);
+    s.famiglieDati = prima;
+    if (st) st.textContent = (it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e);
+    if (b) b.disabled = false;
+    return;
+  }
+  ov.remove();
+  toast(it ? '✅ Famiglia salvata.' : '✅ Family saved.', 'success');
+  try { _rendiFamiglieSerie(); } catch (e) { console.error('_rendiFamiglieSerie', e); }
+  try { _rendiTestaFamiglia(); } catch (e) { console.error('_rendiTestaFamiglia', e); }
 }
 
 // 🆕 v6.684 - CAMBIA LA FOTO DI UNA SOTTOSERIE, dalla sua card.
@@ -55204,6 +55424,8 @@ function scegliTabSottoserie(btn) {
 // 🔄 v6.869 - entrando in una sezione il pulsante cambia lato (vedi `_mostraSfogliaAlbum`), quindi
 // si ridisegna anche qui: la testata resta a schermo, ma la domanda «in che sezione sono» cambia.
 function openSeriesSection(section, sottoserie) {
+  // 🆕 v7.232 - la pagina di una famiglia resta solo se si entra da lei (`apriFamiglia`, i suoi due tab)
+  if (!_famigliaInApertura) _famigliaAperta = null;
   setTimeout(function () { try { _mostraSfogliaAlbum(); } catch (e) { console.error('_mostraSfogliaAlbum', e); } }, 0);
   // 🔄 v6.597 - QUI STAVA LA TERZA LISTA, ed era quella che divergeva: dieci voci contro le
   // tredici delle altre due. Mancavano `_filtroLatoErrore` (il colpevole del 5 settembre 2026),
@@ -55215,6 +55437,8 @@ function openSeriesSection(section, sottoserie) {
   // cui si sta ENTRANDO: `currentSection` viene aggiornata piu' sotto, quindi senza l'argomento il
   // seme guarderebbe la sezione che stiamo LASCIANDO (v6.338).
   _azzeraFiltriNonDuraturi(section);
+  // 🆕 v7.232 - nella pagina di una famiglia «Filtra per famiglia» parte acceso su di lei (poi si spegne come sempre)
+  if (_famigliaAperta) _raggr('famiglia').filtro = new Set([_famigliaAperta]);
   currentSection = section;
   // 🆕 v6.651 - SI ENTRA DALLA PRIMA SOTTOSERIE (Franco: «mostriamo tutte le spille della
   //    prima sottoserie»), e `null` dove la sezione non ne usa.
@@ -55316,7 +55540,7 @@ function openSeriesSection(section, sottoserie) {
     if (_tipoProdottoCorrente) {
       _btnIndietro.removeAttribute('data-i18n');
       _btnIndietro.textContent = _it ? 'Inventario' : 'Inventory';
-    } else if (typeof _sottoserieDiPagina === 'function' ? _sottoserieDiPagina() : _sottoserieAttiva) {   // v7.195: dentro un tab dei retro si torna alle Sezioni
+    } else if (_famigliaAperta || (typeof _sottoserieDiPagina === 'function' ? _sottoserieDiPagina() : _sottoserieAttiva)) {   // v7.195: dentro un tab dei retro si torna alle Sezioni; v7.232: da una famiglia alla Serie
       _btnIndietro.setAttribute('data-i18n', 'catalog.backToSeries');
       _btnIndietro.textContent = _it ? 'Serie' : 'Series';
     } else {
@@ -55396,6 +55620,7 @@ function openSeriesSection(section, sottoserie) {
   // ✅ Adesso scrive solo `aggiornaTestiRicercaSezione`, e sa fare tutti e due i casi:
   //    dentro un box il singolare del TIPO (v6.164), fuori il singolare dell'ARTICOLO.
   try { _rendiTabSottoserie(); } catch (e) { console.error('_rendiTabSottoserie', e); }   // v7.195 - i tab dei retro
+  try { _rendiTestaFamiglia(); } catch (e) { console.error('_rendiTestaFamiglia', e); }   // v7.232
   renderItems();
   try { renderCaroselloSezione(); } catch (e) { console.error('renderCaroselloSezione', e); }   // v6.984
   // Show WIP banner if less than 50% of stickers have photos
@@ -55678,6 +55903,9 @@ function _tornaInventarioProdotti() {
 }
 
 function closeItemsSection() {
+  // 🆕 v7.232 - uscendo, la pagina della famiglia si chiude con la sezione
+  _famigliaAperta = null;
+  { const _ft = document.getElementById('famiglia-testa'); if (_ft) { _ft.style.display = 'none'; _ft.innerHTML = ''; } }
   // 🆕 v6.984 - uscendo dalla sezione il suo carosello si spegne subito, senza aspettare il timer.
   _caroselloSpegni('sezione');
   { const _cz = document.getElementById('sezione-carosello-sez'); if (_cz) _cz.style.display = 'none'; }
@@ -65043,6 +65271,22 @@ const TDA_CON_FAMIGLIA = ['figurines', 'attaccare'];
 function _famigliaASchermo(f) {
   const t = String((f && f.famiglia) || '').trim();
   return (f && f.section) === 'attaccare' ? t.toLocaleUpperCase('it') : t;
+}
+// 🆕 v7.232 - LA FAMIGLIA DI UN ARTICOLO, COME DATO (non a schermo): la sua; una fpa che non l'ha scritta prende quella
+//    della fcr collegata, che è chi la comanda (v6.840) - la stessa regola del collage (`_collageFamiglia`, v7.218).
+//    La usa il filtro «Filtra per famiglia» (`_RAGGR_FAMIGLIA.valoreDi`): nella pagina di una famiglia il tab delle fpa
+//    deve mostrarle tutte, anche quelle mai riallineate. La mappa si rifà quando cambia l'elenco delle figurine.
+let _famFpaMappa = { da: null, m: null };
+function _famigliaDiArticolo(f) {
+  const sua = String((f && f.famiglia) || '').trim();
+  if (sua || (f && f.section) !== 'attaccare') return sua;
+  const tutti = getData('figurines', []);
+  if (_famFpaMappa.da !== tutti) {
+    const m = new Map();
+    tutti.forEach(x => { const fam = String(x.famiglia || '').trim(); if (x.baseFigurineId && fam && !m.has(x.baseFigurineId)) m.set(x.baseFigurineId, fam); });
+    _famFpaMappa = { da: tutti, m };
+  }
+  return _famFpaMappa.m.get(f.id) || '';
 }
 // 🆕 v7.082 (Franco: «mettiamoli; sia sulla scheda di modifica che sulla form di dettaglio, da mostrare se
 //    popolati, sia sulla card della griglia») - le TDA di una serie con Categoria e Sottocategoria, oltre ai
