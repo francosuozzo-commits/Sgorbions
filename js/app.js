@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.228 - Modificati index.html e js/app.js. 🐛 COLLAGE: le foto orizzontali restavano piccole senza la spunta dei retro
+//          (Franco: «le figurine sono tutte grandi uguali, quindi le foto di articoli della stessa tda devono sempre
+//          avere la stessa dimensione»). Ora griglia, ruota e mazzo danno a ogni foto il lato lungo uguale, coi retro o
+//          senza (`_collageDisponi`); il mazzo non stira più le orizzontali.
 // v7.227 - Modificati index.html e js/app.js. 🐛 COLLAGE dal «Cambia foto» di una card: i tasti «Scarica fronte»,
 //          «Scarica retro» e «Scarica entrambe» non ci sono più (Franco: «non si deve vedere quando la procedura è
 //          lanciata dal tasto di modifica di un box»); lì resta «Usa come foto della card». Da Annunci come prima.
@@ -31784,7 +31788,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.227';
+const JS_VERSION = 'v7.228';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42284,9 +42288,17 @@ function _collageRetroMostra() {
 //    larga») - `retri`: con la foto dei retro, nella griglia ogni figurina ha un posto (`cw` × `ch`) che tiene il fronte
 //    E il suo retro, tutti e due col lato lungo 1: le misure sono quelle vere, e un fronte verticale ha aria ai lati
 //    dove il suo retro orizzontale ci sta intero. La foto dei retro usa gli stessi posti (`_collageDisegna`, `come`).
+// 🐛 v7.228 (Franco: «la dimensione delle foto del fronte rimane piccola, per le foto in orizzontale, se non viene
+//    selezionata la spunta "crea anche foto retro"»; «nella realtà le figurine sono tutte grandi uguali, quindi le foto
+//    di articoli della stessa tda devono sempre avere la stessa dimensione») - LA GRANDEZZA VERA SEMPRE, non solo coi
+//    retro. La griglia senza retro faceva le celle alte 1 e larghe quanto la foto mediana: con più verticali, una
+//    orizzontale stava in una cella larga 0,7 e usciva alta 0,49, cioè rimpicciolita. Ora la griglia è sempre quella dei
+//    posti (senza retro ogni posto è la foto stessa, `retri = foto`), e ogni foto ha il lato lungo 1. Lo stesso nel
+//    mazzo, che le faceva tutte alte 1 (un'orizzontale veniva più grande e stirata a 1,2): ora `forma`, come la ruota.
 function _collageDisponi(tipo, foto, retri) {
   const forma = img => { const r = img.naturalWidth / img.naturalHeight || 1; return r >= 1 ? { w: 1, h: 1 / r } : { w: r, h: 1 }; };
   const n = foto.length;
+  if (tipo === 'griglia') retri = retri || foto;   // v7.228
   if (tipo === 'griglia' && retri) {
     const gap = 0.04;
     const celle = foto.map((img, i) => { const f = forma(img), r = forma(retri[i]); return { img, f, w: Math.max(f.w, r.w) }; });
@@ -42351,10 +42363,10 @@ function _collageDisponi(tipo, foto, retri) {
   const apertura = Math.min(180, Math.max(80, (n - 1) * 15), (n - 1) * 22) * Math.PI / 180;
   const d = 0.9;
   return foto.map((img, i) => {
-    const r = Math.min(1.2, img.naturalWidth / img.naturalHeight || 0.7);
+    const f = forma(img);   // v7.228: la grandezza vera, lato lungo 1 (era alta 1 e larga al più 1,2)
     const rot = n === 1 ? 0 : -apertura / 2 + i * apertura / (n - 1);
     const dist = d + 0.5;
-    return { img, x: Math.sin(rot) * dist, y: -Math.cos(rot) * dist, w: r, h: 1, rot };
+    return { img, x: Math.sin(rot) * dist, y: -Math.cos(rot) * dist, w: f.w, h: f.h, rot };
   });
 }
 // Il riquadro che contiene tutte le foto girate
