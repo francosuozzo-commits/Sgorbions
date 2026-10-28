@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.237">
+<link rel="stylesheet" href="css/style.css?v=7.238">
 
 
 <style>
@@ -1615,6 +1615,34 @@ button.back-btn { color:#ffffff; }
   .fam-foto-riga > .fam-pag-riga { order:1; flex:1 1 100%; display:flex; justify-content:space-between; gap:0.6rem; }
   .fam-foto-riga > .fam-pag-riga > button { font-size:0.85rem; padding:0.35rem 0.8rem; }
   .fam-foto-riga > .fam-striscia { order:2 !important; flex:1 1 100% !important; }
+}
+/* 🆕 v7.238 (Franco: «nel tab ebay, tutte le etichette dei campi le vorrei in azzurro») - `--info`, come le etichette
+   della pagina utente; gli `!important` battono i colori scritti nella riga. Gli account da spuntare no: sono le
+   risposte, non le etichette */
+#fe-tab-ebay label:not(#fe-ebay-account-lista label), #fam-tab-ebay label { color: var(--info) !important; }   /* v7.238: + il tab Ebay della famiglia */
+/* 🆕 v7.238 (Franco: «i due tasti per passare alla famiglia successiva e precedente mettiamoli piu esterni»; «le foto
+   dell'album abbiano, come spazio, tutta la larghezza del box di ricerca sottostante»; «aumenta la dimensione di quelle
+   2 miniature famiglia; direi del 100%») - dal PC le due frecce escono dalla riga, una per lato: la striscia delle foto
+   resta larga quanto la testata, cioè quanto la ricerca sotto. Miniature 44 → 88px (dal telefono 24 → 48px); sotto la
+   scritta il nome della famiglia, su più righe se serve. Il telefono tiene le due file sopra le foto (v7.235).
+   📏 La ricerca sotto è più larga della testata di 16px per lato (misurato: 743–1811 contro 759–1795): la riga si
+   allarga di tanto. Fuori ci vuole posto per le frecce (~140px per lato): sotto i 1400px restano dentro la riga. */
+.serie-nav-btn .fam-nav-nome { font-size: 0.72rem; font-weight: 700; line-height: 1.2; text-align: center; max-width: 9rem; white-space: normal; overflow-wrap: anywhere; margin-top: 2px; }
+.fam-foto-riga .serie-nav-btn img, .fam-foto-riga .serie-nav-btn .serie-nav-vuota { width: 88px; height: 88px; font-size: 2rem; line-height: 88px; }
+/* 🆕 v7.238 (Franco: «il box che mostra le pagine dell'album, mettilo ben centrato (nello spazio a disposizione tra i 2
+   pulsanti)») - le foto al centro della striscia coi margini automatici sulla prima e sull'ultima: con troppe foto la
+   striscia scorre dall'inizio (un `justify-content:center` taglierebbe le prime a sinistra, irraggiungibili) */
+.fam-striscia > :first-child { margin-left: auto; }
+.fam-striscia > :last-child { margin-right: auto; }
+@media (min-width: 1400px) {
+  .fam-foto-riga { position: relative; margin-left: -16px; margin-right: -16px; }
+  .fam-foto-riga > .fam-nav-prec, .fam-foto-riga > .fam-nav-succ { position: absolute; top: 50%; transform: translateY(-50%); margin: 0 !important; }
+  .fam-foto-riga > .fam-nav-prec { right: calc(100% + 1rem); }
+  .fam-foto-riga > .fam-nav-succ { left: calc(100% + 1rem); }
+}
+@media (max-width: 860px) {
+  .fam-foto-riga .serie-nav-btn img, .fam-foto-riga .serie-nav-btn .serie-nav-vuota { width: 48px; height: 48px; line-height: 48px; font-size: 1.4rem; }
+  .serie-nav-btn .fam-nav-nome { display: none; }
 }
 
 /* v6.027 (Franco) - LA COLONNA DELLA FOTO NELLA SCHEDA DI UN RETRO.
@@ -6812,7 +6840,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.237"></script>
+<script src="js/app.js?v=7.238"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6836,7 +6864,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.237'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.238'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
