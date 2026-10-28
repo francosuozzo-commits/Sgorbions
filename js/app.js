@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.236 - Modificati index.html (per la versione) e js/app.js. 🖼️ Collage, numeri specifici: ne basta uno (Franco:
+//          «consenti anche un solo numero»), dal campo e dalla griglia. ➕ UN ARTICOLO SOLO (Franco: «in caso di un sol
+//          articolo, con retro, il collage lo puoi fare. Nella stessa foto metti il fronte e il retro della fcr»): con
+//          le fcr, il fronte e «Quante foto» a 1, «Prendi le foto» prende anche il suo retro (`diRetro`) e il collage li
+//          unisce; «Crea anche foto retro» lì si spegne. Senza la foto del retro si dice. Per il resto, almeno due.
+//          ➕ Cambiando una risposta si tolgono le foto prese e il collage già fatto (Franco: «vanno resettate sia le foto
+//          caricate che il collage eventualmente già preparato»): `_collageAzzera`, ascoltato sul corpo della finestra
+//          (`_collageRispostaCambiata`), anche dalla griglia dei numeri; le macchie non rileggono più le foto.
+//          ➕ «Quale tipologia di articolo ?» parte da Figurine con retro (Franco: «il default mettilo a fcr»).
 // v7.235 - Modificati index.html e js/app.js. 📱 Dal telefono, nella pagina di una famiglia, le frecce «famiglia
 //          precedente / prossima famiglia» stanno sopra le foto dell'album e non ai lati (Franco: «la foto della doppia
 //          pagina non ci sta tutta a schermo»): classi `fam-foto-riga` / `fam-striscia`, regola nell'index. Sotto, una
@@ -31864,7 +31873,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.235';
+const JS_VERSION = 'v7.236';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41711,6 +41720,9 @@ function _collageApriFinestra(titolo, perBox) {
     '<button type="button" class="modal-close" onclick="chiudiCollageBox()">✕</button></div>' +
     '<div id="collage-box-corpo" style="padding:0 1.2rem 1.2rem;">' + _collageHTML(perBox) + '</div></div>';
   document.body.appendChild(ov);
+  // v7.236 - una risposta cambiata toglie foto e collage (`_collageRispostaCambiata`); le scelte fatte dal codice no
+  const corpo = ov.querySelector('#collage-box-corpo');
+  if (corpo) { corpo.addEventListener('change', _collageRispostaCambiata); corpo.addEventListener('input', _collageRispostaCambiata); }
   return ov;
 }
 // 🔄 v7.214 - le domande del collage in una funzione sola: le usano la finestra di Annunci (`apriCollage`, v7.219) e
@@ -41918,6 +41930,27 @@ function chiudiCollageBox() {
   document.getElementById('collage-box-modal')?.remove();
   _collageBoxDest = null; _collageFoto = []; _collageBlob = null;
 }
+// 🆕 v7.236 (Franco: «quando si cambia la risposta a una delle domande, vanno resettate sia le foto caricate che il
+//    collage eventualmente già preparato») - VIA LE FOTO E IL COLLAGE: le foto prese, il collage creato, le due anteprime
+//    col loro peso, i tasti «Scarica» e «Usa come foto della card». Le risposte restano.
+function _collageAzzera() {
+  _collageFoto = [];
+  _collageBlob = null;
+  ['collage-scarica', 'collage-scarica-retro'].forEach(id => {
+    const a = document.getElementById(id);
+    if (a) { if (a.dataset.url) URL.revokeObjectURL(a.dataset.url); a.dataset.url = ''; a.removeAttribute('href'); a.style.display = 'none'; }
+  });
+  ['collage-scarica-tutte', 'collage-usa', 'collage-peso', 'collage-peso-retro'].forEach(id => { const x = document.getElementById(id); if (x) x.style.display = 'none'; });
+  ['collage-anteprima', 'collage-anteprima-retro'].forEach(id => { const x = document.getElementById(id); if (x) { x.innerHTML = ''; x.style.display = 'none'; } });
+  _collageMostraScelte();
+  _collageStato();
+}
+// ogni risposta cambiata nella finestra (tendine, scelte, spunte, caselle), ascoltata una volta sola sul suo corpo: il
+// file scelto dal PC no, perché è il modo di prendere le foto. Solo se c'è qualcosa da togliere.
+function _collageRispostaCambiata(e) {
+  if (e && e.target && e.target.type === 'file') return;
+  if (_collageFoto.length || _collageBlob) _collageAzzera();
+}
 async function _collageUsaPerBox() {
   const it = currentLang === 'it';
   const d = _collageBoxDest;
@@ -42010,7 +42043,7 @@ function _collageSitoHTML() {
             '<button type="button" class="btn-secondary" onclick="_collageGrigliaNumeri()">' + (it ? 'Scegli dalla griglia' : 'Pick from the grid') + '</button>' +
           '</div>' +
         '</div>' +
-        '<div style="' + dom + '">' + (it ? 'Quale tipologia di versione ?' : 'Which version type?') + '</div>' +
+        '<div style="' + dom + '">' + (it ? 'Quale versione ?' : 'Which version?') + '</div>' +
         '<select id="collage-sito-serie-ver" style="' + sel + '" onchange="_collageVerScelta()">' + _collageVersioniDellaSerie(sid0, sez0) + '</select>' +
         // v7.215 - e la famiglia, facoltativa, se gli articoli scelti ne hanno (`_collageFamiglieDellaSerie`)
         '<div id="collage-sito-fam-box" style="display:none;">' +
@@ -42121,7 +42154,9 @@ function _collageSezioniDellaSerie(sid) {
 }
 function _collageTdaDellaSerie(sid) {
   if (!sid) return '<option value="">' + (currentLang === 'it' ? '— scegli prima la serie —' : '— choose the series first —') + '</option>';   // v7.231
-  return _collageSezioniDellaSerie(sid).map(([s, n]) => '<option value="' + esc(s) + '">' + esc(getSectionLabel(s)) + ' (' + n + ')</option>').join('');
+  // 🔄 v7.236 (Franco: «per la domanda sulla tda, il default mettilo a fcr») - Figurine con retro scelta di partenza, se
+  //    la serie le ha; se no la prima, come prima. Dal «Cambia foto» di una card la sceglie `apriCollageBox`
+  return _collageSezioniDellaSerie(sid).map(([s, n]) => '<option value="' + esc(s) + '"' + (s === 'figurines' ? ' selected' : '') + '>' + esc(getSectionLabel(s)) + ' (' + n + ')</option>').join('');
 }
 function _collageVersioniDellaSerie(sid, sez) {
   const it = currentLang === 'it';
@@ -42229,6 +42264,8 @@ function _collageFotoCandidato(f, tutti, lato) {
 //    `_basePosterDi`; la base è sé stessa). Solo da Annunci, solo dal sito, e non quando le foto sono già i retro.
 function _collageRetroPossibile() {
   if (_collageBoxDest || _collageModo !== 'sito') return false;
+  // v7.236 - con un articolo solo il retro è già nella foto, accanto al fronte
+  if (_collageFoto.length === 2 && _collageFoto[1] && _collageFoto[1].diRetro) return false;
   // v7.224 (Franco: «per ora stiamo ragionando solo per la griglia»; con ruota e mazzo «spunta nascosta») - solo la griglia
   if ((document.querySelector('input[name="collage-tipo"]:checked') || {}).value !== 'griglia') return false;
   const da =(document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
@@ -42324,7 +42361,7 @@ function _collageGrigliaNumeri() {
     + '<button type="button" class="modal-close" onclick="document.getElementById(\'collage-numeri-modal\').remove()">✕</button></div>'
     + '<div style="padding:0 1.2rem 1.2rem;">'
     + (nums.length
-      ? '<div class="form-hint" style="margin:0 0 0.6rem;">' + (it ? 'Clicca le figurine da mettere nel collage: un clic la accende, un altro la spegne. Almeno due.' : 'Click the stickers for the collage. At least two.') + '</div>'
+      ? '<div class="form-hint" style="margin:0 0 0.6rem;">' + (it ? 'Clicca le figurine da mettere nel collage: un clic la accende, un altro la spegne.' : 'Click the stickers for the collage.') + '</div>'
         + '<div id="collage-numeri-griglia" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:0.5rem;max-height:60vh;overflow-y:auto;">'
         + nums.map(x => {
           const f = perNumero.get(x), foto = _fotoFigurina(f, tutti);
@@ -42357,10 +42394,12 @@ function _collageNumeroClic(b) {
 function _collageNumeriUsa() {
   const it = currentLang === 'it';
   const scelti = [...document.querySelectorAll('#collage-numeri-griglia button[aria-pressed="true"]')].map(b => b.getAttribute('data-numero'));
-  if (scelti.length < 2) { const st = document.getElementById('collage-numeri-stato'); if (st) st.textContent = it ? 'Scegli almeno due figurine.' : 'Pick at least two.'; return; }
+  // 🔄 v7.236 (Franco: «consenti anche un solo numero») - basta una
+  if (!scelti.length) { const st = document.getElementById('collage-numeri-stato'); if (st) st.textContent = it ? 'Scegli almeno una figurina.' : 'Pick at least one.'; return; }
   const campo = document.getElementById('collage-sito-spec-numeri');
   if (campo) campo.value = scelti.join(', ');
   document.getElementById('collage-numeri-modal')?.remove();
+  _collageRispostaCambiata();   // v7.236 - la griglia scrive il campo da sé: anche questa è una risposta cambiata
   _collageSitoAggiorna();
 }
 async function _collagePesca() {
@@ -42368,19 +42407,25 @@ async function _collagePesca() {
   const n = Number((document.getElementById('collage-n') || {}).value);
   const { el, conNum, numero, lato, fam, spec, numeri, mancano } = _collageCandidati();
   if (conNum && !numero) { toast(it ? 'Scrivi il numero' : 'Type the number', 'error'); return; }
-  // v7.235 - coi numeri specifici: almeno due, e tutti nella serie; se no ci si ferma prima di leggere le foto
-  if (spec && (numeri.length < 2 || mancano.length)) {
+  // v7.235 - coi numeri specifici: tutti nella serie; se no ci si ferma prima di leggere le foto
+  // 🔄 v7.236 (Franco: «consenti anche un solo numero») - ne basta uno (erano almeno due)
+  if (spec && (!numeri.length || mancano.length)) {
     _collageFoto = [];
     _collageMostraScelte();
     _collageStato();
     const av = document.getElementById('collage-avviso');
-    if (av) av.textContent = numeri.length < 2
-      ? (it ? 'Scrivi almeno due numeri, o sceglili dalla griglia.' : 'Type at least two numbers, or pick them from the grid.')
+    if (av) av.textContent = !numeri.length
+      ? (it ? 'Scrivi almeno un numero, o sceglilo dalla griglia.' : 'Type at least one number, or pick it from the grid.')
       : (it ? (mancano.length === 1 ? 'Il ' + mancano[0] + ' non c\'è' : 'Non ci sono i numeri ' + mancano.join(', ')) + ' con queste risposte (serie, tipologia, versione, famiglia).'
             : 'Not found: ' + mancano.join(', ') + '.');
     return;
   }
-  if (!Number.isInteger(n) || n < 2) { _collageStato(); return; }
+  // 🆕 v7.236 (Franco: «in caso di un sol articolo, con retro, il collage lo puoi fare. Nella stessa foto metti il fronte
+  //    e il retro della fcr») - UN ARTICOLO SOLO: con le fcr e il fronte basta 1, e sotto si prende anche il suo retro
+  const daSc = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
+  const sezSc = (document.getElementById(daSc === 'serie' ? 'collage-sito-serie-tda' : 'collage-sito-tda') || {}).value;
+  const coppia = n === 1 && lato === 'fronte' && sezSc === 'figurines';
+  if (!Number.isInteger(n) || n < (coppia ? 1 : 2)) { _collageStato(); return; }
   // v7.222 - oltre 40 si ferma qui, prima di leggere le foto (il numero può arrivare da `_collageSitoAggiorna`)
   // 🔄 v7.234 - il tetto è quello del tipo scelto (griglia 50, mazzo e ruota 40), o `COLLAGE_MAX_FOTO` se il tipo non
   //    c'è ancora: anche con mazzo e ruota ci si ferma prima di leggere le foto, che lette e poi scartate costano
@@ -42424,6 +42469,21 @@ async function _collagePesca() {
       .then(x => x && Object.assign(x, { fig: f.id }))));
   _collageFoto = lette.filter(Boolean);
   if (_collageFoto.length !== n) toast(it ? '⚠️ Alcune foto non si sono caricate: riprova con «Rimescola»' : '⚠️ Some photos did not load', 'error');
+  // v7.236 - un articolo solo: accanto al fronte il SUO retro (`_retroEffettivo`), segnato `diRetro`. Senza retro si dice.
+  if (coppia && _collageFoto.length === 1) {
+    const f = a[0], src = _collageFotoCandidato(f, tutti, 'retro');
+    const r = src ? await _collageLeggiFoto(src, _collageFoto[0].nome + (it ? ' (retro)' : ' (back)')) : null;
+    if (r) _collageFoto.push(Object.assign(r, { fig: f.id, diRetro: true }));
+    else {
+      _collageFoto = [];
+      _collageMostraScelte();
+      _collageStato();
+      const av = document.getElementById('collage-avviso');
+      if (av) av.textContent = it ? 'Con un articolo solo il collage mette il fronte e il retro, e «' + (f.name || '') + '» ' + (src ? 'ha il retro che non si legge.' : 'non ha la foto del retro.')
+                                  : 'With one item the collage needs its front and back.';
+      return;
+    }
+  }
   _collageMostraScelte();
   _collageStato();
 }
@@ -42456,14 +42516,11 @@ function _collageLeggiFoto(src, nome) {
     img.src = url;
   });
 }
-// cambiando la risposta, le foto già prese restano le stesse e si rileggono con o senza macchie
-async function _collageMacchieScelta() {
-  if (_collageModo !== 'sito' || !_collageFoto.length) return;
-  const lette = await Promise.all(_collageFoto.map(x => x.src ? _collageLeggiFoto(x.src, x.nome).then(y => y && Object.assign(y, { fig: x.fig })) : Promise.resolve(x)));   // v7.223: + fig
-  _collageFoto = lette.filter(Boolean);
-  _collageBlob = null;
-  _collageMostraScelte();
-  _collageStato();
+// 🔄 v7.236 - prima, cambiando la risposta, le foto già prese restavano e si rileggevano con o senza macchie; ora, come
+//    ogni risposta (Franco: «vanno resettate sia le foto caricate che il collage»), si tolgono: rileggerle per poi
+//    buttarle chiederebbe a Cloudinary foto per niente. Si riprendono con «Prendi le foto».
+function _collageMacchieScelta() {
+  _collageRispostaCambiata();
 }
 async function _collageCarica(files) {
   const it = currentLang === 'it';
@@ -42518,7 +42575,9 @@ function _collageScelteRetro() {
 // Che cosa manca per poter creare: il primo problema, a parole, oppure ''
 function _collageProblema() {
   const it = currentLang === 'it';
-  const n = Number((document.getElementById('collage-n') || {}).value);
+  let n = Number((document.getElementById('collage-n') || {}).value);
+  // v7.236 - un articolo solo, col suo retro (`_collagePesca`): le foto da unire sono due
+  if (n === 1 && _collageFoto.length === 2 && _collageFoto[1] && _collageFoto[1].diRetro) n = 2;
   const tipo = COLLAGE_TIPI.find(t => t.k === (document.querySelector('input[name="collage-tipo"]:checked') || {}).value);
   if (!tipo) return it ? 'Scegli il tipo di collage.' : 'Choose a collage type.';
   if (!Number.isInteger(n) || n < 2) return it ? 'Le foto da unire sono almeno 2.' : 'At least 2 photos.';
