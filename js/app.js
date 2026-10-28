@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.234 - Modificati index.html e js/app.js. 👪 Le pagine di una famiglia sono PAGINE dell'album, non più foto (Franco:
+//          «in un album la foto contiene sempre 2 pagine; ma può essere che una famiglia, su una data foto, stia solo
+//          nella pagina di sx o solo in quella di dx»). Nuovo campo `pagineAlbum` della riga di `famiglieDati` (numeri
+//          di pagina, più «Copertina», «II cop.», «III cop.», «Retro»), con la numerazione degli annunci
+//          (`_famPagineDellaFoto`, la stessa di `_faNomePagina`). Le righe di prima, con i soli numeri di foto, si
+//          leggono come le due pagine di ogni foto (`_famPagineAlbum`): a db non si riscrive niente. Nella pagina della
+//          famiglia, delle foto con una pagina sola si vede solo quella metà, senza tagliare il file (`object-position`,
+//          nessuna trasformazione nuova); con tutte e due, la foto intera. Nella finestra della famiglia le foto
+//          dell'album divise a metà, da cliccare (`_famSceltaPagineHTML`), al posto della riga di numeri.
+//          🖼️ Collage a griglia fino a 50 foto (Franco: «nella visualizzazione a griglia, il massimo da 40 deve passare
+//          a 50»); mazzo e ruota restano a 40. La casella del numero arriva a `COLLAGE_MAX_FOTO`; «Prendi le foto» si
+//          ferma al tetto del tipo scelto, prima di leggere le foto.
 // v7.233 - Modificati index.html e js/app.js. 👪 Nella pagina di una famiglia due frecce alla famiglia precedente e alla
 //          prossima, con la foto della famiglia, nell'ordine dei box, restando sullo stesso tab (Franco: «metti i soliti
 //          due pulsanti "Precedente" e "Successiva", con la miniatura»; «vanno messi nella parte bassa della schermata,
@@ -31839,7 +31851,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.233';
+const JS_VERSION = 'v7.234';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41641,8 +41653,12 @@ const COLLAGE_TIPI = [
   // 🔄 v7.218 (Franco: «il numero di articoli per il collage fallo arrivare a 40») - tutti e tre fino a 40
   { k: 'ruota',   it: 'A ruota',          en: 'Wheel',         min: 2, max: 40 },
   { k: 'mazzo',   it: 'A mazzo di carte', en: 'Hand of cards', min: 2, max: 40 },
-  { k: 'griglia', it: 'A griglia',        en: 'Grid',          min: 2, max: 40 },
+  // 🔄 v7.234 (Franco: «nella visualizzazione a griglia, il massimo da 40 deve passare a 50») - solo la griglia
+  { k: 'griglia', it: 'A griglia',        en: 'Grid',          min: 2, max: 50 },
 ];
+// v7.234 - il tetto di tutti i collage, cioè della casella del numero e di «Prendi le foto»: il più alto dei tre. Sotto,
+//    ogni tipo dice il suo (`_collageProblema`): 45 foto passano con la griglia, non col mazzo né con la ruota.
+const COLLAGE_MAX_FOTO = Math.max(...COLLAGE_TIPI.map(t => t.max));
 // 🆕 v7.220 (Franco: «chiedi quale texture usare, campo obbligatorio, oppure per quale venditore è (domanda facoltativa);
 //    ma se selezioni la persona, metti già quella texture che ti ho indicato»; scelte dal foglio dei tessuti: «14, 3, 1 …
 //    Lendys: 14, Fabio: 3, Franco: 1») - LA TEXTURE DI SFONDO. Tessuti di Poly Haven (CC0, nessun obbligo di citazione),
@@ -42016,7 +42032,7 @@ function _collageSitoHTML() {
     // 🔄 v7.222 - «Quante foto devi unire?» qui, appena prima di «Prendi le foto», già riempita da `_collageSitoAggiorna`
     '<div id="collage-n-box">' +
       '<div style="' + dom + '">' + (it ? 'Quante foto devi unire ?' : 'How many photos?') + '</div>' +
-      '<input type="number" id="collage-n" class="form-input" min="2" max="40" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
+      '<input type="number" id="collage-n" class="form-input" min="2" max="' + COLLAGE_MAX_FOTO + '" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
     '</div>' +
     '<div id="collage-sito-prendi" style="margin-top:0.6rem;"><button type="button" class="btn-primary" onclick="_collagePesca()">🎲 ' + (it ? 'Prendi le foto' : 'Pick the photos') + '</button></div>';
 }
@@ -42233,13 +42249,17 @@ async function _collagePesca() {
   if (conNum && !numero) { toast(it ? 'Scrivi il numero' : 'Type the number', 'error'); return; }
   if (!Number.isInteger(n) || n < 2) { _collageStato(); return; }
   // v7.222 - oltre 40 si ferma qui, prima di leggere le foto (il numero può arrivare da `_collageSitoAggiorna`)
-  if (n > 40) {
+  // 🔄 v7.234 - il tetto è quello del tipo scelto (griglia 50, mazzo e ruota 40), o `COLLAGE_MAX_FOTO` se il tipo non
+  //    c'è ancora: anche con mazzo e ruota ci si ferma prima di leggere le foto, che lette e poi scartate costano
+  const tipoSc = COLLAGE_TIPI.find(t => t.k === (document.querySelector('input[name="collage-tipo"]:checked') || {}).value);
+  const tetto = tipoSc ? tipoSc.max : COLLAGE_MAX_FOTO;
+  if (n > tetto) {
     _collageFoto = [];
     _collageMostraScelte();
     _collageStato();
     const av = document.getElementById('collage-avviso');
-    if (av) av.textContent = it ? 'Con queste risposte le foto sono ' + n + ': il collage ne unisce al massimo 40. Restringi la scelta o scrivi un numero più basso.'
-                                : n + ' photos: 40 at most.';
+    if (av) av.textContent = it ? 'Con queste risposte le foto sono ' + n + ': il collage' + (tipoSc ? ' ' + tipoSc.it.toLowerCase() : '') + ' ne unisce al massimo ' + tetto + '. Restringi la scelta o scrivi un numero più basso.'
+                                : n + ' photos: ' + tetto + ' at most.';
     return;
   }
   if (el.length < n) {
@@ -55075,16 +55095,59 @@ function _rendiCardSottoserie() {
 //    (il suo salvataggio fonde `...series[idx]`). La chiave è il NOME, come per le foto delle sottoserie (v6.679).
 // 📌 `pagine` sono i numeri delle foto dell'album di «Sfoglia album» (`_albumDaSfogliare`), dalla 1: niente foto
 //    ripetute a db.
+// 🔄 v7.234 - `pagineAlbum` sono le PAGINE dell'album (vedi `_famPagineDellaFoto`); quando c'è, `pagine` non si legge
+//    più e al salvataggio si svuota. Una riga senza `pagineAlbum` (scritta prima) vale le due pagine di ogni sua foto.
 let _famigliaAperta = null;          // il nome della famiglia della pagina aperta, o null
 let _famigliaInApertura = false;     // vero solo mentre `apriFamiglia` / `scegliTabFamiglia` aprono una sezione
 const _FAM_TAB = ['attaccare', 'figurines'];   // Franco: il primo «quello selezionato di default»
 function _famiglieDati(s) {
   return (s && Array.isArray(s.famiglieDati) ? s.famiglieDati : []).filter(d => d && String(d.nome || '').trim())
     .map(d => ({ nome: String(d.nome).trim(), ordine: Number.isFinite(+d.ordine) && d.ordine !== null && d.ordine !== '' ? +d.ordine : null,
-                 pagine: Array.isArray(d.pagine) ? d.pagine.map(Number).filter(n => Number.isInteger(n) && n > 0) : [], img: d.img || null }));
+                 pagine: Array.isArray(d.pagine) ? d.pagine.map(Number).filter(n => Number.isInteger(n) && n > 0) : [],
+                 pagineAlbum: Array.isArray(d.pagineAlbum) ? d.pagineAlbum.map(_famPagina).filter(x => x !== null) : null, img: d.img || null }));
 }
 function _famigliaDato(s, nome) {
-  return _famiglieDati(s).find(d => d.nome === nome) || { nome, ordine: null, pagine: [], img: null };
+  return _famiglieDati(s).find(d => d.nome === nome) || { nome, ordine: null, pagine: [], pagineAlbum: null, img: null };
+}
+// 🆕 v7.234 - UNA PAGINA DELL'ALBUM: un numero dalla 1, o una delle pagine senza numero. Il resto non vale (null).
+const _FAM_PAGINE_NOMI = ['Copertina', 'II cop.', 'III cop.', 'Retro'];
+function _famPagina(x) {
+  if (typeof x === 'number') return Number.isInteger(x) && x > 0 ? x : null;
+  const t = String(x ?? '').trim();
+  if (/^\d+$/.test(t)) return +t > 0 ? +t : null;
+  return _FAM_PAGINE_NOMI.includes(t) ? t : null;
+}
+// v7.234 - le pagine nella foto `i` dell'album (`urls` = le sue foto, in ordine): [sinistra, destra], o una sola per
+//    copertina e retro. È la numerazione di `_faNomePagina` (annunci, Sfoglia album), eccezione della serie 3 compresa.
+function _famPagineDellaFoto(i, urls) {
+  const N = urls.length;
+  if (i === 0) return ['Copertina'];
+  if (i === N - 1) return ['Retro'];
+  if (i === 1) return ['II cop.', 1];
+  if (i === N - 2 && !_FA_ULTIMA_NUMERATA.some(id => String(urls[0]).includes(id))) return [2 * i - 2, 'III cop.'];
+  return [2 * i - 2, 2 * i - 1];
+}
+// v7.234 - le pagine della famiglia: quelle scritte, o (riga di prima) le due di ogni foto scritta
+function _famPagineAlbum(d, urls) {
+  if (Array.isArray(d.pagineAlbum)) return d.pagineAlbum;
+  return d.pagine.filter(n => n <= urls.length).flatMap(n => _famPagineDellaFoto(n - 1, urls));
+}
+// v7.234 - dalle pagine alle foto, nell'ordine dell'album: { i, lato }, con `lato` 'left' / 'right' quando della foto
+//    c'è una pagina sola (null = la foto intera); `mancano` = le pagine che l'album non ha
+function _famFotoDellePagine(pagine, urls) {
+  const vuole = new Set(pagine.map(String)), fuori = new Set(vuole), foto = [];
+  urls.forEach((u, i) => {
+    const pp = _famPagineDellaFoto(i, urls), si = pp.map(p => vuole.has(String(p)));
+    pp.forEach(p => fuori.delete(String(p)));
+    if (!si.some(Boolean)) return;
+    foto.push({ i, lato: pp.length === 2 && si[0] !== si[1] ? (si[0] ? 'left' : 'right') : null });
+  });
+  return { foto, mancano: [...fuori] };
+}
+// v7.234 - il nome di una pagina a schermo: «pag. 6», «II cop.»
+function _famNomePagina(p, it) {
+  const s = typeof p === 'number' ? 'pag. ' + p : String(p);
+  return it ? s : _faNomePaginaEn(s);
 }
 // le famiglie dichiarate, prima quelle con l'ordine (dal più basso), poi le altre come sono scritte nella scheda
 function _famiglieOrdinate(s) {
@@ -55168,7 +55231,9 @@ function _rendiTestaFamiglia() {
   const d = _famigliaDato(s, _famigliaAperta);
   const alb = _albumDaSfogliare(currentSeriesId);
   const pag = alb ? _pagineDaMostrare(alb) : [];
-  const ci = d.pagine.filter(n => n <= pag.length), mancano = d.pagine.filter(n => n > pag.length);
+  // v7.234 - dalle pagine alle foto: `lato` dice quale metà mostrare, quando della foto c'è una pagina sola
+  const urls = pag.map(p => p.url), scelte = _famFotoDellePagine(_famPagineAlbum(d, urls), urls);
+  const ci = scelte.foto, mancano = Array.isArray(d.pagineAlbum) ? scelte.mancano.map(p => _famNomePagina(_famPagina(p), it)) : d.pagine.filter(n => n > pag.length);
   const testa = '<div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-bottom:0.8rem;">'
     + '<div style="font-family:var(--font-display);font-size:1.35rem;font-weight:800;color:var(--nome-entita);">' + esc(_famigliaAperta) + '</div>'
     + (adm ? '<button type="button" class="btn-barra-admin" data-famiglia="' + esc(_famigliaAperta) + '" onclick="apriFinestraFamiglia(this)" style="font-size:0.8rem;padding:0.25rem 0.8rem;">&#9998; ' + (it ? 'Modifica famiglia' : 'Edit family') + '</button>' : '')
@@ -55189,14 +55254,24 @@ function _rendiTestaFamiglia() {
       + '<span class="serie-nav-scritta">' + scritta + '</span><span class="serie-nav-freccia">' + (verso === 'prec' ? '←' : '→') + '</span></button>';
   };
   const striscia = '<div style="display:flex;gap:0.6rem;overflow-x:auto;padding-bottom:0.4rem;flex:1 1 auto;min-width:0;">'
-    + ci.map(n => '<img src="' + cloudinaryUrl(pag[n - 1].url, 'w_520,h_520,c_fit,q_auto,f_auto') + '" alt="" loading="lazy" title="' + (it ? 'Sfoglia da qui' : 'Browse from here') + '" '
-      + 'onclick="_famigliaSfoglia(' + n + ')" style="height:200px;width:auto;flex:0 0 auto;border-radius:8px;border:1px solid var(--border);cursor:pointer;background:var(--bg3);">').join('')
+    + ci.map(({ i, lato }) => {
+      const n = i + 1, src = cloudinaryUrl(pag[n - 1].url, 'w_520,h_520,c_fit,q_auto,f_auto'), tit = it ? 'Sfoglia da qui' : 'Browse from here';
+      if (!lato) return '<img src="' + src + '" alt="" loading="lazy" title="' + tit + '" '
+        + 'onclick="_famigliaSfoglia(' + n + ')" style="height:200px;width:auto;flex:0 0 auto;border-radius:8px;border:1px solid var(--border);cursor:pointer;background:var(--bg3);">';
+      // 🆕 v7.234 - LA MEZZA FOTO, senza tagliare il file (niente trasformazioni Cloudinary in più): un riquadro largo metà
+      //    della foto, che prende la sua forma quando arriva (`onload`), e `object-position` sul lato della pagina
+      return '<span title="' + tit + '" onclick="_famigliaSfoglia(' + n + ')" style="display:block;height:200px;width:140px;flex:0 0 auto;overflow:hidden;border-radius:8px;border:1px solid var(--border);cursor:pointer;background:var(--bg3);">'
+        + '<img src="' + src + '" alt="" loading="lazy" onload="this.parentNode.style.width=(this.naturalWidth/this.naturalHeight*100)+\'px\'" '
+        + 'style="display:block;height:100%;width:100%;object-fit:cover;object-position:' + lato + ';"></span>';
+    }).join('')
     + '</div>';
   const foto = (ci.length ? '<div style="font-size:0.85rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">' + (it ? 'Le pagine dell\'album' : 'Album pages') + '</div>' : '')
     + '<div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.8rem;">'
     + freccia(qui > 0 ? nomi[qui - 1] : null, 'prec') + striscia + freccia(qui >= 0 && qui < nomi.length - 1 ? nomi[qui + 1] : null, 'succ') + '</div>';
   // all'admin, in arancione, i numeri che l'album non ha (agli altri si tacciono)
-  const avviso = adm && mancano.length ? '<div style="font-size:0.8rem;color:var(--warn);margin:-0.4rem 0 0.8rem;">' + (it ? 'Nell\'album non ci sono le foto: ' : 'The album has no photo: ') + mancano.join(', ') + '</div>' : '';
+  const avviso = adm && mancano.length ? '<div style="font-size:0.8rem;color:var(--warn);margin:-0.4rem 0 0.8rem;">'
+    + (Array.isArray(d.pagineAlbum) ? (it ? 'Nell\'album non ci sono le pagine: ' : 'The album has no page: ') : (it ? 'Nell\'album non ci sono le foto: ' : 'The album has no photo: '))
+    + mancano.join(', ') + '</div>' : '';
   const tab = _FAM_TAB.filter(x => _tipologiaAmmessa(x, currentSeriesId)).map(x => {
     const att = x === currentSection;
     return '<button type="button" data-sezione="' + x + '" onclick="scegliTabFamiglia(this)" style="font-family:var(--font-ui);font-size:0.9rem;padding:0.35rem 1rem;border-radius:10px;cursor:pointer;border:1px solid '
@@ -55210,12 +55285,38 @@ function _famigliaSfoglia(n) {
   apriSfogliaAlbum();
   try { sfogliaVaiA(n - 1); } catch (e) {}
 }
-// «Ordine» e «Pagine» si leggono da una riga di testo: numeri separati da virgole o spazi, dalla 1, senza doppioni
-function _famigliaLeggiPagine(t) {
-  const pezzi = String(t || '').split(/[\s,;]+/).filter(Boolean);
-  const sbagliati = pezzi.filter(p => !/^\d+$/.test(p) || +p < 1);
-  if (sbagliati.length) return { errore: sbagliati };
-  return { pagine: [...new Set(pezzi.map(Number))] };
+// 🔄 v7.234 - LE PAGINE SI SCELGONO CLICCANDO, non più da una riga di numeri di foto (`_famigliaLeggiPagine`, tolta):
+//    ogni foto dell'album divisa nelle sue pagine, una metà per pagina (copertina e retro intere). Accese quelle della
+//    famiglia; una riga di prima parte con le due metà di ogni sua foto. Le miniature sono le w_520 della testata, già
+//    chieste a Cloudinary. Senza album da sfogliare non si sceglie niente, e al salvataggio le pagine restano com'erano.
+function _famSceltaPagineHTML(d, it) {
+  const alb = _albumDaSfogliare(currentSeriesId), pag = alb ? _pagineDaMostrare(alb) : [];
+  if (!pag.length) return '<div class="form-hint">' + (it ? 'La serie non ha un album da sfogliare: le pagine restano come sono.' : 'The series has no album to browse: pages stay as they are.') + '</div>';
+  const urls = pag.map(p => p.url), accese = new Set(_famPagineAlbum(d, urls).map(String));
+  return '<div class="form-hint" style="margin:0 0 0.5rem;">' + (it ? 'Clicca le pagine dove sta la famiglia: un clic la accende, un altro la spegne.' : 'Click the pages where the family is: one click on, another off.') + '</div>'
+    + '<div id="fam-pagine" style="display:flex;flex-wrap:wrap;gap:0.5rem;max-height:46vh;overflow-y:auto;">'
+    + urls.map((u, i) => {
+      const pp = _famPagineDellaFoto(i, urls);
+      return '<div style="position:relative;flex:0 0 auto;height:110px;border-radius:6px;overflow:hidden;border:1px solid var(--border);background:var(--bg3);">'
+        + '<img src="' + cloudinaryUrl(u, 'w_520,h_520,c_fit,q_auto,f_auto') + '" alt="" loading="lazy" style="display:block;height:110px;width:auto;">'
+        + '<div style="position:absolute;inset:0;display:flex;">'
+        + pp.map((p, k) => '<button type="button" data-pagina="' + esc(String(p)) + '" aria-pressed="' + accese.has(String(p)) + '" onclick="_famPaginaClic(this)" '
+          + 'title="' + esc(_famNomePagina(p, it)) + '" style="flex:1 1 0;min-width:0;margin:0;padding:0 0 4px;border:none;' + (k ? 'border-left:1px dashed rgba(255,255,255,0.7);' : '')
+          + 'cursor:pointer;display:flex;align-items:flex-end;justify-content:center;"><span style="font:700 0.72rem var(--font-ui);background:rgba(0,0,0,0.7);color:#fff;border-radius:999px;padding:0.1rem 0.45rem;white-space:nowrap;">'
+          + esc(_famNomePagina(p, it)) + '</span></button>').join('')
+        + '</div></div>';
+    }).join('')
+    + '</div>';
+}
+// accesa: la metà resta chiara e bordata; spenta: velata di scuro
+function _famPaginaStile(b) {
+  const on = b.getAttribute('aria-pressed') === 'true';
+  b.style.background = on ? 'transparent' : 'rgba(0,0,0,0.55)';
+  b.style.boxShadow = on ? 'inset 0 0 0 3px var(--accent)' : 'none';
+}
+function _famPaginaClic(b) {
+  b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+  _famPaginaStile(b);
 }
 let _famFoto = null;   // la foto nella finestra: { url } già caricata, o null
 function apriFinestraFamiglia(el) {
@@ -55231,15 +55332,14 @@ function apriFinestraFamiglia(el) {
   ov.id = 'famiglia-modal';
   ov.setAttribute('data-famiglia', nome);
   const lab = t => '<label class="form-label" style="display:block;margin:0.9rem 0 0.3rem;">' + t + '</label>';
-  ov.innerHTML = '<div class="modal" style="max-width:520px;width:94vw;">'
+  ov.innerHTML = '<div class="modal" style="max-width:760px;width:94vw;">'
     + '<div class="modal-header"><h2 class="modal-title">' + (it ? 'Famiglia «' : 'Family «') + esc(nome) + '»</h2>'
     + '<button type="button" class="modal-close" onclick="document.getElementById(\'famiglia-modal\').remove()">✕</button></div>'
     + '<div style="padding:0 1.2rem 1.2rem;">'
     + lab(it ? 'Ordine' : 'Order')
     + '<input id="fam-ordine" class="form-input" type="number" step="1" value="' + (d.ordine ?? '') + '" style="max-width:8rem;">'
     + lab(it ? 'Pagine' : 'Pages')
-    + '<input id="fam-pagine" class="form-input" type="text" value="' + esc(d.pagine.join(', ')) + '" placeholder="3, 4, 7">'
-    + '<div class="form-hint">' + (it ? 'I numeri delle foto dell\'album di «Sfoglia album», dalla 1, separati da virgole.' : 'Photo numbers of the «Browse album» album, from 1, comma separated.') + '</div>'
+    + _famSceltaPagineHTML(d, it)
     + lab(it ? 'Foto della card' : 'Card photo')
     + '<div style="display:flex;align-items:center;gap:0.7rem;flex-wrap:wrap;">'
     + '<div id="fam-foto-anteprima" style="width:120px;aspect-ratio:var(--hub-box-ratio);border:1px solid var(--border);border-radius:8px;background:var(--bg3) center / contain no-repeat;"></div>'
@@ -55252,6 +55352,7 @@ function apriFinestraFamiglia(el) {
     + '<button type="button" id="fam-salva" class="btn-primary" onclick="_famigliaSalva()">' + (it ? 'Salva' : 'Save') + '</button>'
     + '</div></div></div>';
   document.body.appendChild(ov);
+  ov.querySelectorAll('#fam-pagine button[data-pagina]').forEach(_famPaginaStile);
   _famigliaMostraFoto();
 }
 function _famigliaMostraFoto() {
@@ -55286,9 +55387,11 @@ async function _famigliaSalva() {
   if (!nome || !s || !currentUser?.isAdmin) return;
   const tOrd = String(document.getElementById('fam-ordine')?.value || '').trim();
   if (tOrd !== '' && !Number.isFinite(+tOrd)) { if (st) st.textContent = it ? 'L\'ordine deve essere un numero.' : 'Order must be a number.'; return; }
-  const p = _famigliaLeggiPagine(document.getElementById('fam-pagine')?.value);
-  if (p.errore) { if (st) st.textContent = (it ? 'Pagine: non sono numeri dalla 1: ' : 'Pages: not numbers from 1: ') + p.errore.join(', '); return; }
-  const riga = { nome, ordine: tOrd === '' ? null : +tOrd, pagine: p.pagine, img: _famFoto ? _famFoto.url : null };
+  // v7.234 - le metà accese, nell'ordine dell'album; senza la scelta (nessun album) restano le pagine di prima
+  const box = document.getElementById('fam-pagine'), prec = _famigliaDato(s, nome);
+  const scelte = box ? [...box.querySelectorAll('button[data-pagina]')].filter(x => x.getAttribute('aria-pressed') === 'true').map(x => _famPagina(x.getAttribute('data-pagina'))).filter(x => x !== null) : null;
+  const riga = { nome, ordine: tOrd === '' ? null : +tOrd, pagine: scelte ? [] : prec.pagine, img: _famFoto ? _famFoto.url : null };
+  if (scelte) riga.pagineAlbum = scelte; else if (prec.pagineAlbum) riga.pagineAlbum = prec.pagineAlbum;
   const prima = s.famiglieDati;
   s.famiglieDati = _famiglieDati(s).filter(d => d.nome !== nome).concat([riga]);
   if (b) b.disabled = true;
@@ -55312,7 +55415,9 @@ async function _famigliaScriviFoto(s, nome, url, zitto) {   // `zitto`: nel giro
   const it = currentLang === 'it';
   const prima = s.famiglieDati;
   const d = _famigliaDato(s, nome);
-  s.famiglieDati = _famiglieDati(s).filter(x => x.nome !== nome).concat([{ nome, ordine: d.ordine, pagine: d.pagine, img: url }]);
+  const riga = { nome, ordine: d.ordine, pagine: d.pagine, img: url };
+  if (d.pagineAlbum) riga.pagineAlbum = d.pagineAlbum;   // v7.234: anche le pagine dell'album restano
+  s.famiglieDati = _famiglieDati(s).filter(x => x.nome !== nome).concat([riga]);
   try { await fsSave('series', _serieSenzaItems(s)); }
   catch (e) {
     console.error('_famigliaScriviFoto', e);
