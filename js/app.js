@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.237 - Modificati index.html (per la versione) e js/app.js. 🗑️ Via i quattro campi vecchi del tab Ebay, per tutte
+//          le tipologie (Franco: «puoi cancellare quei 4 campi vecchi per tutte le tda»; «la vista ebay andrà rifatta;
+//          quindi per ora toglili»): Titolo e Descrizione ITA/ENG (`ebayTitleIt`, `ebayTitleEn`, `ebayDescIt`,
+//          `ebayDescEn`). Al salvataggio della scheda si scrivono null. Nella vista eBay il titolo è sempre il generato,
+//          in sola lettura: tolti la modifica in cella, «📝 Applica Nome completo al Titolo» e «🔁 Rigenera tutti i
+//          titoli». Il segno «A» dell'album conta ora i testi per account (`testiAccount`) al posto dei quattro.
 // v7.236 - Modificati index.html (per la versione) e js/app.js. 🖼️ Collage, numeri specifici: ne basta uno (Franco:
 //          «consenti anche un solo numero»), dal campo e dalla griglia. ➕ UN ARTICOLO SOLO (Franco: «in caso di un sol
 //          articolo, con retro, il collage lo puoi fare. Nella stessa foto metti il fronte e il retro della fcr»): con
@@ -31873,7 +31879,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.236';
+const JS_VERSION = 'v7.237';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -38114,67 +38120,7 @@ function ebayDeselezionaTutto() {
   try { renderEbayViewTable(); } catch (e) { console.error('ebayDeselezionaTutto', e); }
 }
 
-// Scrive il titolo generato (tagliato a 80) nei due campi, per le righe selezionate.
-// v5.979 (Franco) — RIGENERAZIONE COMPLETA. Riscrive ebayTitleIt ed ebayTitleEn di ogni oggetto
-// marcato Ebay dell'INTERO catalogo, non della sola serie aperta: serve dopo un cambio delle
-// regole di composizione (marcatori, glossario, sottonomi), che altrimenti resterebbe invisibile
-// — il valore salvato vince sempre sul generato.
-//
-// UN SOLO SALVATAGGIO PER SERIE, e non è un dettaglio: le figurine vivono dentro il documento
-// della loro serie, quindi fsSave('figurines', ...) riscrive l'INTERA serie ad ogni oggetto.
-// Su settecento pezzi sarebbero settecento riscritture complete invece di cinque. Gli oggetti in
-// series.items sono gli stessi di _cache.figurines (stessi riferimenti), quindi modificarli una
-// volta li aggiorna in tutti e due.
-async function ebayRigeneraTitoli() {
-  if (!currentUser?.isAdmin) return;
-  const it = (currentLang === 'it');
-  const serie = getData('series', []);
-
-  const bersagli = [];
-  for (const s of serie) for (const item of (s.items || [])) if (item.forSale) bersagli.push({ s, item });
-  if (!bersagli.length) { toast(it ? 'Nessun articolo marcato Ebay nell\u2019Inventario' : 'No items marked Ebay', 'error'); return; }
-
-  const scritti = bersagli.filter(b => (b.item.ebayTitleIt || '').trim() || (b.item.ebayTitleEn || '').trim()).length;
-  const domanda = it
-    ? ('Rigenerare titolo IT ed EN di ' + bersagli.length + ' articoli, in tutto l\u2019Inventario?' +
-       (scritti ? '\n\nAttenzione: ' + scritti + ' hanno già un titolo salvato, comprese le correzioni fatte a mano. Verranno sovrascritti.' : ''))
-    : ('Regenerate IT and EN titles of ' + bersagli.length + ' items across the whole catalogue?' +
-       (scritti ? '\n\n' + scritti + ' already have a saved title, including manual fixes. They will be overwritten.' : ''));
-  if (!confirm(domanda)) return;
-
-  let cambiati = 0, tagliati = 0;
-  const daSalvare = new Set();
-  for (const { s, item } of bersagli) {
-    const nuovoIt = ebayTitle(item, 'it');
-    const nuovoEn = ebayTitle(item, 'com');
-    if (item.ebayTitleIt !== nuovoIt || item.ebayTitleEn !== nuovoEn) {
-      item.ebayTitleIt = nuovoIt;
-      item.ebayTitleEn = nuovoEn;
-      cambiati++;
-      daSalvare.add(s);
-    }
-    if (ebayTitleStato(item, 'it') === 'tagliato' || ebayTitleStato(item, 'com') === 'tagliato') tagliati++;
-  }
-
-  if (!daSalvare.size) {
-    toast(it ? 'Erano già tutti aggiornati: niente da riscrivere' : 'Already up to date: nothing to write');
-    return;
-  }
-
-  let errori = 0;
-  for (const s of daSalvare) {
-    try { await fsSave('series', s); } catch (e) { console.error('rigenerazione, serie ' + s.id, e); errori++; }
-  }
-
-  const esito = it
-    ? (cambiati + ' titoli riscritti in ' + daSalvare.size + (daSalvare.size === 1 ? ' serie' : ' serie') +
-       (tagliati ? ' — ' + tagliati + ' con la forbice ✂, da guardare a mano' : '') +
-       (errori ? ' (' + errori + ' serie NON salvate, vedi console)' : ''))
-    : (cambiati + ' titles rewritten in ' + daSalvare.size + ' series' +
-       (tagliati ? ' — ' + tagliati + ' truncated ✂' : '') + (errori ? ' (' + errori + ' failed)' : ''));
-  toast(esito, errori ? 'error' : 'success');
-  try { renderEbayViewTable(); } catch (e) { console.error('ridisegno dopo rigenerazione', e); }
-}
+// 🗑️ v7.237 - `ebayRigeneraTitoli` tolta: lavorava sui campi del titolo, che non ci sono più (Franco: «la vista ebay andrà rifatta»)
 
 // v5.981 — Mette (o toglie) dalla coda di pubblicazione le righe selezionate.
 //
@@ -38219,91 +38165,9 @@ async function ebayImpostaCoda(valore) {
   toast(esito + (errori ? (it ? ' (' + errori + ' serie NON salvate, vedi console)' : ' (' + errori + ' series failed)') : ''), errori ? 'error' : 'success');
 }
 
-async function ebayApplicaTitoli() {
-  if (!currentUser?.isAdmin) return;
-  const it = (currentLang === 'it');
-  const figs = getData('figurines', []);
-  const scelti = figs.filter(f => _ebaySelected.has(f.id));
-  if (!scelti.length) { toast(it ? 'Nessuna riga selezionata' : 'No rows selected', 'error'); return; }
-  // Sovrascrivere un titolo scritto a mano è la sola cosa irreversibile qui: si chiede prima.
-  const giaScritti = scelti.filter(f => (f.ebayTitleIt || '').trim() || (f.ebayTitleEn || '').trim()).length;
-  const domanda = it
-    ? ('Scrivere il titolo generato su ' + scelti.length + (scelti.length === 1 ? ' articolo' : ' articoli') + '?' +
-       (giaScritti ? '\n\nAttenzione: ' + giaScritti + (giaScritti === 1 ? ' ha' : ' hanno') + ' già un titolo scritto a mano, che verrà sovrascritto.' : ''))
-    : ('Write the generated title on ' + scelti.length + ' item(s)?' + (giaScritti ? '\n\n' + giaScritti + ' already have a manual title that will be overwritten.' : ''));
-  if (!confirm(domanda)) return;
-  let salvati = 0;
-  for (const f of scelti) {
-    // v5.979 — i due mercati non hanno più lo stesso titolo: l'inglese passa dal glossario.
-    f.ebayTitleIt = ebayTitle(f, 'it');   // già tagliati a 80
-    f.ebayTitleEn = ebayTitle(f, 'com');
-  }
-  // v6.117 - una scrittura per SERIE invece di una per oggetto.
-  try {
-    await _salvaFigurineInBlocco(scelti);
-    salvati = scelti.length;
-  } catch (e) {
-    console.error('ebayApplicaTitoli', e);
-    toast(it ? 'Scrittura fallita: ' + (e?.code || e?.message || 'errore') : 'Write failed: ' + (e?.code || e?.message || 'error'), 'error');
-    return;
-  }
-  _cache.figurines = figs;
-  _ebaySelected.clear();
-  try { renderEbayViewTable(); } catch (e) { console.error('ebayApplicaTitoli', e); }
-  toast(it ? ('Titolo scritto su ' + salvati + (salvati === 1 ? ' articolo' : ' articoli')) : ('Title written on ' + salvati + ' item(s)'), 'success');
-}
+// 🗑️ v7.237 - `ebayApplicaTitoli` tolta: lavorava sui campi del titolo, che non ci sono più (Franco: «la vista ebay andrà rifatta»)
 
-// Modifica in cella: il testo diventa un input, Invio o uscita salvano, Esc annulla.
-// Svuotare il campo NON lascia il titolo vuoto: rimette in gioco il generato (è il modo per
-// "tornare indietro" senza dover ricopiare il Nome completo).
-function ebayEditTitolo(id, ev) {
-  if (ev) ev.stopPropagation();
-  const cella = document.getElementById('ebay-titolo-' + id);
-  if (!cella || cella.querySelector('input')) return;
-  const f = getData('figurines', []).find(x => x.id === id);
-  if (!f) return;
-  const isIt = (_ebayViewMarket === 'it');
-  const valore = (isIt ? f.ebayTitleIt : f.ebayTitleEn) || ebayTitle(f);
-  // v5.930 — l'input parte col titolo GENERATO quando il campo è vuoto: comodo da correggere, ma
-  // vuol dire che uscendo senza toccare niente il valore sarebbe "diverso dal campo salvato" e
-  // finirebbe scritto. È così che 47 titoli si sono salvati da soli al primo clic esplorativo.
-  // Il confronto ora è col valore INIZIALE dell'input (data-iniziale), non col campo: se non hai
-  // scritto nulla, non si salva nulla.
-  cella.innerHTML = `<input type="text" value="${(valore || '').replace(/"/g, '&quot;')}" data-iniziale="${(valore || '').replace(/"/g, '&quot;')}"
-      onclick="event.stopPropagation();" onkeydown="ebayEditTitoloTasto(event, '${id}')" onblur="ebaySalvaTitolo('${id}', this.value, this.dataset.iniziale)"
-      oninput="ebayContaCaratteri(this)"
-      style="width:100%;box-sizing:border-box;font-size:0.82rem;padding:3px 6px;border:1px solid var(--action-admin);border-radius:6px;background:var(--card);color:var(--text);">
-    <span class="conta" style="font-size:0.7rem;color:var(--muted);"></span>`;
-  const input = cella.querySelector('input');
-  input.focus(); input.select();
-  ebayContaCaratteri(input);
-}
-function ebayContaCaratteri(input) {
-  const c = input.parentNode.querySelector('.conta');
-  if (!c) return;
-  const n = input.value.length, oltre = n > EBAY_TITLE_MAX;
-  c.textContent = n + ' / ' + EBAY_TITLE_MAX;
-  c.style.color = oltre ? 'var(--danger, #e5484d)' : 'var(--muted)';
-  input.style.borderColor = oltre ? 'var(--danger, #e5484d)' : 'var(--action-admin)';
-}
-function ebayEditTitoloTasto(ev, id) {
-  if (ev.key === 'Enter') { ev.preventDefault(); ev.target.blur(); }
-  else if (ev.key === 'Escape') { ev.preventDefault(); ev.target.onblur = null; renderEbayViewTable(); }
-}
-async function ebaySalvaTitolo(id, valore, iniziale) {
-  const figs = getData('figurines', []);
-  const f = figs.find(x => x.id === id);
-  if (!f) return;
-  const isIt = (_ebayViewMarket === 'it');
-  const nuovo = (valore || '').trim();
-  // v5.930 — si salva solo ciò che è stato DAVVERO modificato rispetto a com'era all'apertura.
-  const partenza = (iniziale === undefined ? ((isIt ? f.ebayTitleIt : f.ebayTitleEn) || '') : iniziale).trim();
-  if (nuovo === partenza) { try { renderEbayViewTable(); } catch (e) {} return; }
-  if (isIt) f.ebayTitleIt = nuovo || null; else f.ebayTitleEn = nuovo || null;
-  _cache.figurines = figs;
-  try { await fsSave('figurines', f); } catch (e) { console.error('ebaySalvaTitolo', e); toast(currentLang === 'it' ? 'Salvataggio fallito' : 'Save failed', 'error'); }
-  try { renderEbayViewTable(); } catch (e) {}
-}
+// 🗑️ v7.237 - `ebaySalvaTitolo` tolta: lavorava sui campi del titolo, che non ci sono più (Franco: «la vista ebay andrà rifatta»)
 
 // v5.924 — intestazione di una colonna che NON si ordina (il numero di riga): ha solo la ✕.
 function ebayThFisso(col, label, extra) {
@@ -38429,13 +38293,13 @@ function renderEbayViewTable() {
   const muted = x => `<span style="color:var(--text);">${x}</span>`;
   const esc = s => (s || '').replace(/</g, '&lt;');
   // v5.918 — titolo generato (troncato a 80); un titolo scritto a mano ha la precedenza.
-  const titleOf = f => (isIt ? f.ebayTitleIt : f.ebayTitleEn) || ebayTitle(f, market);
+  // 🔄 v7.237 - i campi del titolo scritto non ci sono più: sempre il generato, in sola lettura
+  const titleOf = f => ebayTitle(f, market);
   // la cella segnala il taglio: chi guarda la tabella deve accorgersene senza contare i caratteri
   // v5.925 — la cella è modificabile (clic) e distingue a colpo d'occhio il titolo SCRITTO da
   // quello solo calcolato: il generato resta in grigio, perché finché è grigio non esiste ancora
   // da nessuna parte.
   const titleCell = f => {
-    const manuale = (isIt ? f.ebayTitleIt : f.ebayTitleEn) || '';
     const titoloMostrato = titleOf(f);
     const testo = esc(titoloMostrato);
     // v5.979 — la forbice non dipende più dal fatto che il titolo sia salvato o calcolato: dopo
@@ -38444,10 +38308,7 @@ function renderEbayViewTable() {
     // quello che la composizione ha dovuto TAGLIARE DENTRO IL NOME. Se lo riscrivi a mano, la
     // forbice se ne va da sola — perché quel testo non è più il troncato.
     const forbice = ebayForbice(f, market, titoloMostrato);
-    const troppoLungo = manuale.length > EBAY_TITLE_MAX
-      ? ` <span title="${it ? 'Oltre gli 80 caratteri: eBay lo rifiuta' : 'Over 80 characters: eBay will reject it'}" style="color:var(--danger, #e5484d);font-weight:700;">${manuale.length}</span>` : '';
-    return `<span id="ebay-titolo-${f.id}" onclick="ebayEditTitolo('${f.id}', event)" title="${it ? 'Clicca per modificare' : 'Click to edit'}"
-      style="display:block;${manuale ? '' : 'color:var(--text);font-style:italic;'}">${testo}${forbice}${troppoLungo}</span>`;
+    return `<span id="ebay-titolo-${f.id}" style="display:block;color:var(--text);font-style:italic;">${testo}${forbice}</span>`;
   };
   // v5.981 — Stato di pubblicazione del mercato che si sta guardando. Sola lettura: questi campi
   // li scrive il programma sul PC, il sito non li tocca mai. Sono due cose sovrapposte in una
@@ -38574,8 +38435,6 @@ function renderEbayViewTable() {
   const n = _ebaySelected.size;
   const barraAzioni = n ? `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.6rem;margin-bottom:0.75rem;padding:0.5rem 0.8rem;border:1px solid var(--action-admin);border-radius:10px;background:rgba(255,157,61,0.08);">
     <span style="font-size:0.82rem;color:var(--text);font-weight:600;">${n} ${it ? (n === 1 ? 'riga selezionata' : 'righe selezionate') : (n === 1 ? 'row selected' : 'rows selected')}</span>
-    <button class="btn-primary btn-admin" onclick="ebayApplicaTitoli()" style="font-size:0.82rem;padding:0.35rem 0.9rem;"
-      title="${it ? 'Scrive il titolo generato dal Nome completo nei campi Titolo IT ed EN (tagliato a 80 caratteri)' : 'Writes the generated title into the IT and EN title fields (cut at 80 chars)'}">${it ? '📝 Applica Nome completo al Titolo' : '📝 Apply full name to title'}</button>
     <button class="btn-primary btn-admin" onclick="ebayImpostaCoda(true)" style="font-size:0.82rem;padding:0.35rem 0.9rem;"
       title="${it ? 'Al prossimo lancio del programma questi annunci vengono creati o aggiornati' : 'These listings will be created or updated the next time the program runs'}">${it ? '📤 Metti in coda' : '📤 Queue'}</button>
     <button class="btn-danger-ghost" onclick="ebayImpostaCoda(false)" style="font-size:0.82rem;padding:0.35rem 0.9rem;cursor:pointer;"
@@ -38606,10 +38465,8 @@ function renderEbayConfrontoTitoli(tableEl, selector) {
   // Un titolo scritto a mano vince su quello generato, come nelle altre tabelle; e come là, il
   // generato resta in grigio corsivo — finché è grigio non esiste ancora da nessuna parte.
   const dati = figs.map(f => {
-    const manIt = (f.ebayTitleIt || '').trim(), manEn = (f.ebayTitleEn || '').trim();
-    return { f,
-      it:  manIt || ebayTitle(f, 'it'),  itManuale: !!manIt,
-      en:  manEn || ebayTitle(f, 'com'), enManuale: !!manEn };
+    // 🔄 v7.237 - niente più titoli scritti: sempre i generati
+    return { f, it: ebayTitle(f, 'it'), itManuale: false, en: ebayTitle(f, 'com'), enManuale: false };
   }).sort((a, b) => a.it.localeCompare(b.it, 'it', { numeric: true, sensitivity: 'base' }));
 
   const ordinati = dati; // ordine fisso: titolo italiano (Franco)
@@ -38646,12 +38503,9 @@ function renderEbayConfrontoTitoli(tableEl, selector) {
 
   const identici = ordinati.filter(r => r.it === r.en).length;
   const tagliati = ordinati.filter(r => ebayTitleStato(r.f, 'it') === 'tagliato' || ebayTitleStato(r.f, 'com') === 'tagliato').length;
-  const btnRigenera = currentUser?.isAdmin ? `<div style="margin-bottom:0.75rem;">
-    <button class="btn-primary btn-admin" onclick="ebayRigeneraTitoli()" style="font-size:0.82rem;padding:0.35rem 0.9rem;"
-      title="${it ? 'Riscrive ebayTitleIt ed ebayTitleEn di TUTTI gli articoli marcati Ebay dell\u2019Inventario' : 'Rewrites the IT and EN titles of EVERY item marked Ebay in the catalogue'}">${it ? '🔁 Rigenera tutti i titoli (tutto l’Inventario)' : '🔁 Regenerate all titles (whole catalogue)'}</button>
-  </div>` : '';
+  // 🗑️ v7.237 - via «🔁 Rigenera tutti i titoli»: scriveva i campi del titolo, che non ci sono più
   const th = (label, extra = '') => `<th style="padding:0.4rem 0.6rem;text-align:left;white-space:nowrap;color:var(--text);${extra}">${label}</th>`;
-  tableEl.innerHTML = selector + btnRigenera +
+  tableEl.innerHTML = selector +
     `<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.75rem;">${it
       ? ordinati.length + (ordinati.length === 1 ? ' articolo marcato Ebay' : ' articoli marcati Ebay') + ', ordinati per titolo italiano; per ciascuno le due righe di mercato. ' +
         (tagliati ? tagliati + (tagliati === 1 ? ' porta la forbice ✂ (tagliato dentro il nome). ' : ' portano la forbice ✂ (tagliati dentro il nome). ') : '') +
@@ -52180,7 +52034,9 @@ function _timbroInvisibile(f) {
 function _albumHaTestiAnnuncio(f) {
   if (!f || f.section !== 'albums') return false;
   const pieno = v => typeof v === 'string' && v.trim() !== '';
-  return ['ebayTitleIt', 'ebayTitleEn', 'ebayDescIt', 'ebayDescEn', 'disponibilita'].some(k => pieno(f[k]))
+  // 🔄 v7.237 - i quattro campi vecchi non contano più: al loro posto i testi per account
+  return ['disponibilita'].some(k => pieno(f[k]))
+    || Object.values(f.testiAccount || {}).some(t => Object.values(t || {}).some(pieno))
     || Object.values(f.fotoAnnuncio || {}).some(pieno);
 }
 function _segnoAnnuncio(f) {
@@ -56765,22 +56621,8 @@ function toggleForSaleFields() {
   // account solo configurato la domanda non esiste.
   const acc = document.getElementById('fig-ebay-account-group');
   if (acc) acc.style.display = (checked && acc.dataset.vuoto !== '1') ? '' : 'none';
-  contaCaratteriEbayTitolo('fig-ebay-title-it-input', 'fig-ebay-title-it-count');
-  contaCaratteriEbayTitolo('fig-ebay-title-en-input', 'fig-ebay-title-en-count');
 }
-
-// v5.931 — contatore dei caratteri del titolo: eBay ne accetta 80 e non uno di piu'.
-// A campo vuoto non dice niente: il vuoto e' legittimo (vince il titolo generato).
-function contaCaratteriEbayTitolo(idInput, idSpan) {
-  const el = document.getElementById(idInput), sp = document.getElementById(idSpan);
-  if (!el || !sp) return;
-  const n = el.value.length;
-  if (!n) { sp.textContent = ''; el.style.borderColor = ''; return; }
-  const oltre = n > EBAY_TITLE_MAX;
-  sp.textContent = '— ' + n + ' / ' + EBAY_TITLE_MAX + (oltre ? (currentLang === 'it' ? ' (eBay lo rifiuta)' : ' (eBay will reject it)') : '');
-  sp.style.color = oltre ? 'var(--danger, #e5484d)' : 'var(--muted)';
-  el.style.borderColor = oltre ? 'var(--danger, #e5484d)' : '';
-}
+// 🗑️ v7.237 - `contaCaratteriEbayTitolo` tolta: i campi del titolo non ci sono più
 
 
 
@@ -66648,10 +66490,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       const _testo = (etichetta, v) => _v(etichetta, v
         ? esc(v)
         : _muto(currentLang === 'it' ? 'vuoto — generato dal Nome completo' : 'empty — generated from the full name'));
-      _testo(currentLang === 'it' ? 'Titolo 🇮🇹' : 'Title 🇮🇹', f.ebayTitleIt);
-      _testo(currentLang === 'it' ? 'Titolo 🇬🇧' : 'Title 🇬🇧', f.ebayTitleEn);
-      if (f.ebayDescIt) _v(currentLang === 'it' ? 'Descrizione 🇮🇹' : 'Description 🇮🇹', esc(f.ebayDescIt));
-      if (f.ebayDescEn) _v(currentLang === 'it' ? 'Descrizione 🇬🇧' : 'Description 🇬🇧', esc(f.ebayDescEn));
+      // 🗑️ v7.237 - via Titolo e Descrizione 🇮🇹/🇬🇧: i campi non ci sono più
       // Account e stato hanno bisogno delle impostazioni, che si leggono in modo asincrono: si
       // lasciano due contenitori vuoti e li riempie `riempiEbayVistaLettura()` appena arrivano.
       ebayRows.push('<div id="figdetail-ebay-account"></div>');
@@ -68412,14 +68251,11 @@ function toggleFeForSaleFields() {
   // Il segnale in entrambi i casi e' `dataset.vuoto`, che lo scrivono i due renderer: e' loro che
   // sanno se c'era qualcosa da disegnare, e chiederlo di nuovo qui vorrebbe dire rifare il conto
   // in un secondo punto - cioe' il modo in cui i due finiscono per non concordare.
-  mostra('fe-ebay-testi', checked ? '' : 'none');
   mostra('fe-ebay-coda', checked ? '' : 'none');
   const stato = document.getElementById('fe-ebay-stato');
   if (stato) stato.style.display = (checked && stato.dataset.vuoto !== '1' && stato.innerHTML) ? '' : 'none';
   const acc = document.getElementById('fe-ebay-account-group');
   if (acc) acc.style.display = (checked && acc.dataset.vuoto !== '1') ? '' : 'none';
-  contaCaratteriEbayTitolo('fe-ebay-title-it', 'fe-ebay-title-it-count');
-  contaCaratteriEbayTitolo('fe-ebay-title-en', 'fe-ebay-title-en-count');
 }
 
 function toggleFeBaseFigurineGroup(appenaSpuntata) {
@@ -68785,7 +68621,6 @@ function _bozzaNuovoItem(sezione, seriesId) {
     changeType: '', printErrorType: null,
     img: null, imgRetro: null, ebayImg: null,
     forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new', disponibilita: null, fotoProtetta: null,   // v7.104: null = segue la tipologia
-    ebayTitleIt: null, ebayTitleEn: null, ebayDescIt: null, ebayDescEn: null,
     ebayAccounts: null, daPubblicare: false,
     // v6.144 - il box da cui si sta creando. Fuori da un box e' null, e resta null: cosi' un
     // oggetto creato dalla serie normale non finisce dentro un contenitore per sbaglio.
@@ -69682,22 +69517,8 @@ function switchToEditMode(figId) {
     // v6.103 - esito della pubblicazione, SOLA LETTURA: questi campi li scrive il programma sul PC.
     // Lo riempie renderEbayStatoScheda(f, s, 'fe').
     '<div id="fe-ebay-stato" style="display:none;margin-top:0.75rem;"></div>' +
-    // v6.103 - titoli e descrizioni. Il titolo lasciato vuoto NON e' un titolo mancante: la Vista
-    // Ebay ci mette quello generato dal Nome completo, ed e' per questo che il segnaposto lo dice.
-    '<div id="fe-ebay-testi" style="display:' + (f.forSale ? 'block' : 'none') + ';margin-top:0.75rem;">' +
-      '<div style="margin-bottom:0.6rem;"><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' +
-        (currentLang==='it'?'Titolo annuncio':'Listing title') + ' 🇮🇹 IT <span id="fe-ebay-title-it-count" style="font-size:0.7rem;"></span></label>' +
-        '<input class="form-input" type="text" id="fe-ebay-title-it" value="' + esc(f.ebayTitleIt || '') + '" oninput="contaCaratteriEbayTitolo(\'fe-ebay-title-it\',\'fe-ebay-title-it-count\')" placeholder="' + (currentLang==='it'?'vuoto = titolo generato dal Nome completo':'empty = title generated from the full name') + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
-      '<div style="margin-bottom:0.6rem;"><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' +
-        (currentLang==='it'?'Titolo annuncio':'Listing title') + ' 🇬🇧 EN <span id="fe-ebay-title-en-count" style="font-size:0.7rem;"></span></label>' +
-        '<input class="form-input" type="text" id="fe-ebay-title-en" value="' + esc(f.ebayTitleEn || '') + '" oninput="contaCaratteriEbayTitolo(\'fe-ebay-title-en\',\'fe-ebay-title-en-count\')" placeholder="' + (currentLang==='it'?'vuoto = titolo generato dal Nome completo':'empty = title generated from the full name') + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
-      '<div style="margin-bottom:0.6rem;"><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' +
-        (currentLang==='it'?'Descrizione annuncio':'Listing description') + ' 🇮🇹 IT</label>' +
-        '<textarea class="form-input" id="fe-ebay-desc-it" rows="3" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc(f.ebayDescIt || '') + '</textarea></div>' +
-      '<div><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' +
-        (currentLang==='it'?'Descrizione annuncio':'Listing description') + ' 🇬🇧 EN</label>' +
-        '<textarea class="form-input" id="fe-ebay-desc-en" rows="3" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc(f.ebayDescEn || '') + '</textarea></div>' +
-    '</div>' +
+    // 🗑️ v7.237 (Franco: «puoi cancellare quei 4 campi vecchi per tutte le tda»; «la vista ebay andrà rifatta») - via
+    //    Titolo e Descrizione ITA/ENG (`ebayTitleIt` … `ebayDescEn`): gli album hanno i testi per account (v7.199)
     '</div>';
   html += _sottoTabEbay(f);   // v7.200
   html += '<div style="margin-bottom:0.75rem;' + ((f.section === 'figurines' || f.section === 'retros') ? '' : 'display:none;') + '">' +
@@ -72908,10 +72729,8 @@ async function saveFigFromDetail(figId, opzioni) {
       // v6.103 - i testi dell'annuncio. Il vuoto diventa null e non stringa vuota: e' cosi' che il
       // resto del sito distingue "non l'ho scritto" (→ titolo generato dal Nome completo) da
       // "l'ho scritto io" (v5.931).
-      ebayTitleIt: _feTestoEbay('fe-ebay-title-it'),
-      ebayTitleEn: _feTestoEbay('fe-ebay-title-en'),
-      ebayDescIt:  _feTestoEbay('fe-ebay-desc-it'),
-      ebayDescEn:  _feTestoEbay('fe-ebay-desc-en'),
+      // 🗑️ v7.237 - i quattro campi vecchi non sono più nella scheda: al salvataggio si svuotano
+      ebayTitleIt: null, ebayTitleEn: null, ebayDescIt: null, ebayDescEn: null,
       // 🆕 v7.199 - titoli e descrizioni per account (album). Solo se il riquadro c'era: altrove la chiave non si scrive
       ...(document.getElementById('fe-testi-account') ? { testiAccount: _feTestiAccount() } : {}),
       // v6.103 - su quali account. null = "quello predefinito", che e' il caso normale: e' cio' che
