@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.234">
+<link rel="stylesheet" href="css/style.css?v=7.235">
 
 
 <style>
@@ -1600,6 +1600,21 @@ button.back-btn { color:#ffffff; }
      regola qui sopra (un id in più), quindi vince lei; sul telefono questa media query non c'è e restano le due. */
   #section-selector > #famiglie-serie-griglia.sec-grid {
     grid-template-columns:repeat(var(--fam-col, 6), calc((100% - 5rem) / 6)) !important; }
+}
+/* 🆕 v7.235 (Franco: «nella versione mobile, nella maschera di una famiglia, la foto della doppia pagina non ci sta tutta
+   a schermo»; «mettere le due freccettine … sopra alla foto invece che a destra e a sinistra») - dal telefono le frecce
+   delle famiglie stanno in una riga loro, la precedente a sinistra e la prossima a destra, e sotto le foto prendono
+   tutta la larghezza. Gli `!important` battono gli stili scritti nella riga da `_rendiTestaFamiglia`. */
+/* 🆕 v7.235 (Franco: «due file di bottoni sopra alla foto: la prima … famiglia successiva e precedente, la seconda … la
+   coppia di pagine precedente e successiva») - la seconda fila (`fam-pag-riga`), solo dal telefono; dal PC la striscia
+   si scorre come prima */
+.fam-pag-riga { display:none; }
+@media (max-width:860px) {
+  .fam-foto-riga { flex-wrap:wrap !important; }
+  .fam-foto-riga > .fam-nav-succ { margin-left:auto !important; }
+  .fam-foto-riga > .fam-pag-riga { order:1; flex:1 1 100%; display:flex; justify-content:space-between; gap:0.6rem; }
+  .fam-foto-riga > .fam-pag-riga > button { font-size:0.85rem; padding:0.35rem 0.8rem; }
+  .fam-foto-riga > .fam-striscia { order:2 !important; flex:1 1 100% !important; }
 }
 
 /* v6.027 (Franco) - LA COLONNA DELLA FOTO NELLA SCHEDA DI UN RETRO.
@@ -6797,7 +6812,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.234"></script>
+<script src="js/app.js?v=7.235"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6821,7 +6836,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.234'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.235'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
