@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.239 - Modificati index.html (per la versione) e js/app.js. Box delle famiglie (Franco: «possiamo applicare il
+//          bollino … che abbiamo messo sugli album … anche alle famiglie?»): la «A» dell'album (`_segnoAnnuncio`, solo
+//          admin) in basso a sinistra sulla foto, quando la famiglia ha almeno un testo per account nel tab Ebay. E
+//          (Franco: «la sezione ebay visibile non solo in modifica») nella pagina della famiglia, per l'admin, il tab
+//          Ebay in lettura sotto le pagine dell'album (`_famEbayLettura`, linguette `_famElTab`).
 // v7.238 - Modificati index.html e js/app.js (per la versione). Scheda dell'articolo, tab Ebay (Franco: «tutte le
 //          etichette dei campi le vorrei in azzurro»): una regola nell'index, `#fe-tab-ebay label` in `--info`; gli
 //          account da spuntare restano del colore del testo. E nella ricerca degli Annunci (Franco: «"Serie" dovrebbe
@@ -31899,7 +31904,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.238';
+const JS_VERSION = 'v7.239';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -55277,8 +55282,12 @@ function _rendiFamiglieSerie() {
         // v7.233 - il collage per la copertina, vestito come il «🖼️ Cambia foto» delle card delle tipologie (`_tastoCollageBox`)
         + '<button type="button" title="' + (it ? 'Un collage per la foto di questa famiglia' : 'A collage for this family photo') + '" onclick="event.stopPropagation();apriCollageFamiglia(this.parentNode)" '
         + 'style="position:absolute;top:6px;left:6px;z-index:3;border:none;border-radius:999px;padding:0.3rem 0.7rem;cursor:pointer;font-size:0.75rem;font-weight:700;background:rgba(0,0,0,0.6);color:#fff;">🖼️ Cambia foto</button>' : '')
-      + '<div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;background-size:contain;background-repeat:no-repeat;background-position:center;'
-      + (d.img ? 'background-image:url(\'' + cloudinaryUrl(d.img, 'w_600,h_600,c_fit,q_auto,f_auto') + '\');' : '') + '"></div>'
+      // 🆕 v7.239 (Franco: «possiamo applicare il bollino … che abbiamo messo sugli album … anche alle famiglie?») - la «A»
+      //    dell'album (`_segnoAnnuncio`, solo admin) in basso a sinistra sulla foto, quando il tab Ebay della famiglia
+      //    ha almeno un testo per account scritto: la famiglia si passa come un album coi suoi testi
+      + '<div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;position:relative;background-size:contain;background-repeat:no-repeat;background-position:center;'
+      + (d.img ? 'background-image:url(\'' + cloudinaryUrl(d.img, 'w_600,h_600,c_fit,q_auto,f_auto') + '\');' : '') + '">'
+      + _segnoAnnuncio({ section: 'albums', testiAccount: d.testiAccount }) + '</div>'
       + '<div style="padding:1.25rem 1.5rem;"><div class="section-choice-title">' + esc(nome) + '</div>'
       + '<div class="section-choice-count">' + n + ' ' + (it ? (n === 1 ? 'figurina con retro' : 'figurine con retro') : (n === 1 ? 'sticker with back' : 'stickers with back')) + '</div></div></div>';
   }).join('');
@@ -55376,8 +55385,37 @@ function _rendiTestaFamiglia() {
       + (att ? 'var(--accent)' : 'var(--border)') + ';background:' + (att ? 'var(--accent)' : 'var(--card)') + ';color:' + (att ? 'var(--bg)' : 'var(--text)') + ';font-weight:' + (att ? '700' : '400') + ';">'
       + esc(getSectionLabel(x)) + '</button>';
   }).join('');
-  el.innerHTML = testa + foto + avviso + '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">' + tab + '</div>';
+  el.innerHTML = testa + foto + avviso + (adm ? _famEbayLettura(d, it) : '') + '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">' + tab + '</div>';
   el.style.display = '';
+}
+// 🆕 v7.239 (Franco: «vorrei che la famiglia avesse la sezione ebay visibile non solo in modifica») - IL TAB EBAY IN
+//    LETTURA, nella pagina della famiglia, solo per l'admin (come il tab Ebay della scheda): il flag e, con le linguette
+//    Franco / Fabio / Lendys (col pallino di chi ha testi), i quattro testi di ogni account; vuoto = «—». Etichette
+//    azzurre (`--info`), valori bianchi; si cambia con «✎ Modifica famiglia».
+function _famEbayLettura(d, it) {
+  const t = d.testiAccount || {};
+  const pieno = a => Object.values(t[a] || {}).some(v => String(v || '').trim());
+  const lin = (a, i) => '<button type="button" class="fam-el-tab" data-account="' + a + '" onclick="_famElTab(\'' + a + '\')" style="padding:0.35rem 0.9rem;border:none;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;font-family:var(--font-ui);'
+    + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + a
+    + (pieno(a) ? '<span style="margin-left:0.35rem;color:var(--accent);">●</span>' : '') + '</button>';
+  return '<div id="fam-ebay-lettura" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin:0 0 0.8rem;">'
+    + '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">🏷️ Ebay: <span style="color:var(--text);">' + (d.forSale ? (it ? 'sì' : 'yes') : 'no') + '</span></div>'
+    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + _TESTI_ACCOUNT.map(lin).join('') + '</div>'
+    + _TESTI_ACCOUNT.map((a, i) => '<div class="fam-el-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
+      + _TESTI_CAMPI.map(([k, nIt, nEn]) => ['It', 'En'].map(l => {
+        const v = String((t[a] || {})[k + l] || '').trim();
+        return '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;">' + (it ? nIt : nEn) + ' - ' + (l === 'It' ? 'ITA' : 'ENG') + '</div>'
+          + '<div style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;">' + (v ? esc(v) : '—') + '</div></div>';
+      }).join('')).join('') + '</div>').join('')
+    + '</div>';
+}
+function _famElTab(a) {
+  document.querySelectorAll('#fam-ebay-lettura .fam-el-tab').forEach(b => {
+    const su = b.dataset.account === a;
+    b.style.borderBottomColor = su ? 'var(--accent)' : 'transparent';
+    b.style.fontWeight = su ? '700' : '400';
+  });
+  document.querySelectorAll('#fam-ebay-lettura .fam-el-pannello').forEach(p => { p.style.display = p.dataset.account === a ? '' : 'none'; });
 }
 // 🆕 v7.235 (Franco: «da mobile potrebbero servire anche i bottoni per passare alla pagina successiva e alla pagina
 //    precedente»; «la seconda fila … per passare alla coppia di pagine precedente e successiva») - la striscia scorre fino
