@@ -1,6 +1,19 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.235 - Modificati index.html e js/app.js. 📱 Dal telefono, nella pagina di una famiglia, le frecce «famiglia
+//          precedente / prossima famiglia» stanno sopra le foto dell'album e non ai lati (Franco: «la foto della doppia
+//          pagina non ci sta tutta a schermo»): classi `fam-foto-riga` / `fam-striscia`, regola nell'index. Sotto, una
+//          seconda fila «‹ Pagine precedenti» / «Pagine successive ›» che scorre la striscia di una foto
+//          (`_famStrisciaVai`), solo dal telefono e con almeno due foto. PC uguale. 🗑️ Nella finestra della famiglia
+//          via «Carica foto» e «Togli foto» (Franco: «non servono più»): la foto si guarda e basta, si cambia col
+//          collage del box; `_famigliaScegliFoto` tolta. Il salvataggio tiene la foto che c'è.
+//          🖼️ Collage, NUMERI SPECIFICI (Franco: «un collage per un set di figurine ottenuto sfogliando un album … o
+//          indicando io manualmente i numeri»): dopo «Quale tipologia di articolo ?», solo dalla serie e con fcr o fpa,
+//          «Numeri specifici ?»; col sì un campo (numeri separati da virgola, almeno due) e «Scegli dalla griglia», una
+//          finestra con una card per numero da accendere, che riempie il campo (`_collageGrigliaNumeri`). Versione e
+//          famiglia restringono ancora; l'ordine resta quello di «In che ordine le prendo ?»; la domanda del numero
+//          singolo si spegne. «Prendi le foto» si ferma se i numeri sono meno di due o uno non c'è, e lo dice.
 // v7.234 - Modificati index.html e js/app.js. 👪 Le pagine di una famiglia sono PAGINE dell'album, non più foto (Franco:
 //          «in un album la foto contiene sempre 2 pagine; ma può essere che una famiglia, su una data foto, stia solo
 //          nella pagina di sx o solo in quella di dx»). Nuovo campo `pagineAlbum` della riga di `famiglieDati` (numeri
@@ -31851,7 +31864,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.234';
+const JS_VERSION = 'v7.235';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41986,6 +41999,17 @@ function _collageSitoHTML() {
       '<div id="collage-sito-serie-tda-box">' +
         '<div style="' + dom + '">' + (it ? 'Quale tipologia di articolo ?' : 'Which item type?') + '</div>' +
         '<select id="collage-sito-serie-tda" style="' + sel + '" onchange="_collageTdaScelta()">' + _collageTdaDellaSerie(sid0) + '</select>' +
+        // 🆕 v7.235 (Franco: «una nuova domanda, dopo la domanda sulla tda, da mostrare se la tda è fcr o FPA»; «se la
+        //    risposta è sì, allora un campo che chiede i numeri, separati da virgola, oppure un pulsante che mostra una
+        //    griglia con le figurine della serie»; «i numeri sono almeno due») - `_collageSitoAggiorna` la mostra
+        '<div id="collage-sito-spec-box" style="display:none;">' +
+          '<div style="' + dom + '">' + (it ? 'Numeri specifici ?' : 'Specific numbers?') + '</div>' +
+          radio('collage-sito-spec', 'no', 'No', true) + radio('collage-sito-spec', 'si', it ? 'Sì' : 'Yes') +
+          '<div id="collage-sito-spec-campo" style="display:none;margin-top:0.35rem;align-items:center;gap:0.5rem;flex-wrap:wrap;">' +
+            '<input type="text" id="collage-sito-spec-numeri" class="form-input" placeholder="3, 7, 12, 15" style="width:16rem;max-width:100%;" oninput="_collageSitoAggiorna()">' +
+            '<button type="button" class="btn-secondary" onclick="_collageGrigliaNumeri()">' + (it ? 'Scegli dalla griglia' : 'Pick from the grid') + '</button>' +
+          '</div>' +
+        '</div>' +
         '<div style="' + dom + '">' + (it ? 'Quale tipologia di versione ?' : 'Which version type?') + '</div>' +
         '<select id="collage-sito-serie-ver" style="' + sel + '" onchange="_collageVerScelta()">' + _collageVersioniDellaSerie(sid0, sez0) + '</select>' +
         // v7.215 - e la famiglia, facoltativa, se gli articoli scelti ne hanno (`_collageFamiglieDellaSerie`)
@@ -42008,9 +42032,12 @@ function _collageSitoHTML() {
         '<select id="collage-sito-tda-fam" style="' + sel + '" onchange="_collageSitoAggiorna()">' + _collageFamiglieDellaTda(_tdaDellHub()[0] || (tipi[0] ? 'tipo:' + tipi[0].id : '')) + '</select>' +
       '</div>' +
     '</div>' +
+    // v7.235 - in un riquadro suo, che si spegne coi numeri specifici: le due domande direbbero cose diverse
+    '<div id="collage-sito-unnum-box">' +
     '<div style="' + dom + '">' + (it ? 'C\'è un numero particolare da considerare ?' : 'Any particular number?') + '</div>' +
     radio('collage-sito-num', 'no', it ? 'No' : 'No', true) + radio('collage-sito-num', 'si', it ? 'Sì' : 'Yes') +
     '<input type="text" id="collage-sito-numero" class="form-input" placeholder="' + (it ? 'numero' : 'number') + '" maxlength="6" style="display:none;width:6rem;margin-left:0.3rem;" oninput="_collageSitoAggiorna()">' +
+    '</div>' +
     // v7.218 - in che ordine si prendono: in ordine alfabetico i primi N, o N a caso (`_collagePesca`)
     '<div style="' + dom + '">' + (it ? 'In che ordine le prendo ?' : 'In which order do I pick them?') + '</div>' +
     ['alfabetico', 'casuale'].map(v => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
@@ -42051,6 +42078,14 @@ function _collageSitoAggiorna() {
   const tfb = document.getElementById('collage-sito-tda-fam-box'), tfam = document.getElementById('collage-sito-tda-fam');   // v7.218
   if (tfb) tfb.style.display = da === 'tda' && tfam && tfam.options.length > 1 ? '' : 'none';
   if (n) n.style.display = num === 'si' ? '' : 'none';
+  // v7.235 - «Numeri specifici ?» solo dalla serie e con fcr o fpa; col sì il campo, e la domanda del numero singolo si spegne
+  const spb = document.getElementById('collage-sito-spec-box'), spc = document.getElementById('collage-sito-spec-campo'), unb = document.getElementById('collage-sito-unnum-box');
+  if (spb) {
+    const spSi = _collageSpecAttivo();
+    spb.style.display = _collageSpecPossibile() ? '' : 'none';
+    if (spc) spc.style.display = spSi ? 'flex' : 'none';
+    if (unb) unb.style.display = spSi ? 'none' : '';
+  }
   const rb = document.getElementById('collage-sito-retro-box');   // v7.223
   if (rb) rb.style.display = _collageRetroPossibile() ? 'flex' : 'none';
   _collageMostraScelte();   // v7.224 - l'anteprima dei retro c'è solo finché la spunta si vede
@@ -42208,10 +42243,28 @@ function _collageRetroBase(f, tutti) {
   const r = b.retroId && tutti.find(x => x.id === b.retroId);
   return r ? _fotoFigurina(r, tutti) : null;
 }
-// I candidati: base, con la foto, della serie o della tipologia scelta, col numero se chiesto
-function _collageCandidati() {
+// 🆕 v7.235 - I NUMERI SPECIFICI (vedi `_collageSitoHTML`): la domanda vale dalla serie, con le fcr o le fpa
+const _COLLAGE_SPEC_TDA = ['figurines', 'attaccare'];
+function _collageSpecPossibile() {
   const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
-  const conNum = (document.querySelector('input[name="collage-sito-num"]:checked') || {}).value === 'si';
+  return da === 'serie' && _COLLAGE_SPEC_TDA.includes((document.getElementById('collage-sito-serie-tda') || {}).value);
+}
+function _collageSpecAttivo() {
+  return _collageSpecPossibile() && (document.querySelector('input[name="collage-sito-spec"]:checked') || {}).value === 'si';
+}
+// i numeri scritti: separati da virgole o spazi, in maiuscolo (le lettere delle olografiche), senza doppioni
+function _collageSpecNumeri(t) {
+  return [...new Set(String(t || '').split(/[\s,;]+/).map(x => x.trim().toUpperCase()).filter(Boolean))];
+}
+// i numeri a schermo di un articolo (una figurina doppia ne ha due: «12 - 13»), come li confronta il numero singolo
+const _collageNumeriDi = f => String(_numeroAschermo(f) ?? '').split(' - ').map(x => x.trim().toUpperCase()).filter(Boolean);
+// I candidati: base, con la foto, della serie o della tipologia scelta, col numero se chiesto
+// v7.235 - `senzaNumeri`: senza il filtro dei numeri specifici (la griglia da cui sceglierli)
+function _collageCandidati(senzaNumeri) {
+  const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
+  const spec = !senzaNumeri && _collageSpecAttivo();
+  const numeri = spec ? _collageSpecNumeri((document.getElementById('collage-sito-spec-numeri') || {}).value) : [];
+  const conNum = !spec && (document.querySelector('input[name="collage-sito-num"]:checked') || {}).value === 'si';
   const numero = String((document.getElementById('collage-sito-numero') || {}).value || '').trim().toUpperCase();
   const tutti = getData('figurines', []);
   let el = _articoliDaContareSito().filter(f => _fotoFigurina(f, tutti));
@@ -42232,6 +42285,14 @@ function _collageCandidati() {
     if (fam) el = el.filter(f => _collageFamiglia(f) === fam);
   }
   if (conNum) el = el.filter(f => String(_numeroAschermo(f) ?? '').split(' - ').some(x => x.trim().toUpperCase() === numero));
+  // v7.235 - coi numeri specifici, gli articoli con uno di quei numeri; `mancano` = i numeri che non hanno nessuno
+  let mancano = [];
+  if (spec) {
+    const vuoi = new Set(numeri);
+    el = el.filter(f => _collageNumeriDi(f).some(x => vuoi.has(x)));
+    const ci = new Set(el.flatMap(_collageNumeriDi));
+    mancano = numeri.filter(x => !ci.has(x));
+  }
   // v7.214 - il retro, se chiesto (solo da una serie e per una versione non base): uno per foto
   const verSc = (document.getElementById('collage-sito-serie-ver') || {}).value;
   const lato = da === 'serie' && verSc && verSc !== 'base' && (document.querySelector('input[name="collage-sito-lato"]:checked') || {}).value === 'retro' ? 'retro' : 'fronte';
@@ -42240,13 +42301,85 @@ function _collageCandidati() {
     el = el.filter(f => { const u = _collageFotoCandidato(f, tutti, lato); if (!u || viste.has(u)) return false; viste.add(u); return true; });
   }
   const fam = (document.getElementById(da === 'serie' ? 'collage-sito-serie-fam' : 'collage-sito-tda-fam') || {}).value || '';   // v7.215, v7.218
-  return { el, conNum, numero, lato, fam };
+  return { el, conNum, numero, lato, fam, spec, numeri, mancano };
+}
+// 🆕 v7.235 (Franco: «un pulsante che mostra una griglia con le figurine della serie, con le card selezionabili, e, di
+//    ritorno da quel form, il campo è compilato») - LA GRIGLIA DEI NUMERI. Una card per numero, fra gli articoli che le
+//    risposte di sopra lasciano (serie, tipologia, versione, famiglia), in ordine di numero; accese quelle già scritte.
+//    La foto è quella della card alla misura w_400 che il collage e il sito chiedono già: nessuna trasformazione nuova.
+function _collageGrigliaNumeri() {
+  const it = currentLang === 'it';
+  const { el } = _collageCandidati(true);
+  const perNumero = new Map();
+  el.forEach(f => _collageNumeriDi(f).forEach(x => { if (!perNumero.has(x)) perNumero.set(x, f); }));
+  const nums = [...perNumero.keys()].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
+  const accesi = new Set(_collageSpecNumeri((document.getElementById('collage-sito-spec-numeri') || {}).value));
+  const tutti = getData('figurines', []);
+  document.getElementById('collage-numeri-modal')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'collage-numeri-modal';
+  ov.innerHTML = '<div class="modal" style="max-width:900px;width:96vw;">'
+    + '<div class="modal-header"><h2 class="modal-title">' + (it ? 'Scegli i numeri' : 'Pick the numbers') + '</h2>'
+    + '<button type="button" class="modal-close" onclick="document.getElementById(\'collage-numeri-modal\').remove()">✕</button></div>'
+    + '<div style="padding:0 1.2rem 1.2rem;">'
+    + (nums.length
+      ? '<div class="form-hint" style="margin:0 0 0.6rem;">' + (it ? 'Clicca le figurine da mettere nel collage: un clic la accende, un altro la spegne. Almeno due.' : 'Click the stickers for the collage. At least two.') + '</div>'
+        + '<div id="collage-numeri-griglia" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:0.5rem;max-height:60vh;overflow-y:auto;">'
+        + nums.map(x => {
+          const f = perNumero.get(x), foto = _fotoFigurina(f, tutti);
+          return '<button type="button" data-numero="' + esc(x) + '" aria-pressed="' + accesi.has(x) + '" onclick="_collageNumeroClic(this)" title="' + esc(f.name || '') + '" '
+            + 'style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;padding:0.35rem;border-radius:8px;cursor:pointer;background:var(--card);color:var(--text);">'
+            + (foto ? '<img src="' + esc(cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto')) + '" alt="" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:contain;display:block;">' : '')
+            + '<span style="font:700 0.8rem var(--font-ui);">' + esc(x) + '</span></button>';
+        }).join('')
+        + '</div>'
+      : '<div class="form-hint">' + (it ? 'Con queste risposte non ci sono figurine con un numero.' : 'No numbered stickers with these answers.') + '</div>')
+    + '<div id="collage-numeri-stato" style="font-size:0.85rem;min-height:1.2rem;margin-top:0.7rem;color:var(--warn);"></div>'
+    + '<div style="display:flex;justify-content:flex-end;gap:0.6rem;margin-top:0.4rem;">'
+    + '<button type="button" class="btn-secondary" onclick="document.getElementById(\'collage-numeri-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+    + '<button type="button" class="btn-primary" onclick="_collageNumeriUsa()">' + (it ? 'Usa questi numeri' : 'Use these numbers') + '</button>'
+    + '</div></div></div>';
+  document.body.appendChild(ov);
+  ov.querySelectorAll('#collage-numeri-griglia button[data-numero]').forEach(_collageNumeroStile);
+}
+// accesa: bordo pieno e foto piena; spenta: bordo sottile e foto velata
+function _collageNumeroStile(b) {
+  const on = b.getAttribute('aria-pressed') === 'true';
+  b.style.border = on ? '3px solid var(--accent)' : '1px solid var(--border)';
+  b.style.opacity = on ? '1' : '0.55';
+}
+function _collageNumeroClic(b) {
+  b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+  _collageNumeroStile(b);
+}
+// di ritorno dalla griglia il campo è scritto, nell'ordine dei numeri, e il resto delle domande si rifà
+function _collageNumeriUsa() {
+  const it = currentLang === 'it';
+  const scelti = [...document.querySelectorAll('#collage-numeri-griglia button[aria-pressed="true"]')].map(b => b.getAttribute('data-numero'));
+  if (scelti.length < 2) { const st = document.getElementById('collage-numeri-stato'); if (st) st.textContent = it ? 'Scegli almeno due figurine.' : 'Pick at least two.'; return; }
+  const campo = document.getElementById('collage-sito-spec-numeri');
+  if (campo) campo.value = scelti.join(', ');
+  document.getElementById('collage-numeri-modal')?.remove();
+  _collageSitoAggiorna();
 }
 async function _collagePesca() {
   const it = currentLang === 'it';
   const n = Number((document.getElementById('collage-n') || {}).value);
-  const { el, conNum, numero, lato, fam } = _collageCandidati();
+  const { el, conNum, numero, lato, fam, spec, numeri, mancano } = _collageCandidati();
   if (conNum && !numero) { toast(it ? 'Scrivi il numero' : 'Type the number', 'error'); return; }
+  // v7.235 - coi numeri specifici: almeno due, e tutti nella serie; se no ci si ferma prima di leggere le foto
+  if (spec && (numeri.length < 2 || mancano.length)) {
+    _collageFoto = [];
+    _collageMostraScelte();
+    _collageStato();
+    const av = document.getElementById('collage-avviso');
+    if (av) av.textContent = numeri.length < 2
+      ? (it ? 'Scrivi almeno due numeri, o sceglili dalla griglia.' : 'Type at least two numbers, or pick them from the grid.')
+      : (it ? (mancano.length === 1 ? 'Il ' + mancano[0] + ' non c\'è' : 'Non ci sono i numeri ' + mancano.join(', ')) + ' con queste risposte (serie, tipologia, versione, famiglia).'
+            : 'Not found: ' + mancano.join(', ') + '.');
+    return;
+  }
   if (!Number.isInteger(n) || n < 2) { _collageStato(); return; }
   // v7.222 - oltre 40 si ferma qui, prima di leggere le foto (il numero può arrivare da `_collageSitoAggiorna`)
   // 🔄 v7.234 - il tetto è quello del tipo scelto (griglia 50, mazzo e ruota 40), o `COLLAGE_MAX_FOTO` se il tipo non
@@ -55253,7 +55386,7 @@ function _rendiTestaFamiglia() {
       + (img ? '<img src="' + esc(cloudinaryUrl(img, 'w_600,h_600,c_fit,q_auto,f_auto')) + '" alt="">' : '<span class="serie-nav-vuota">👪</span>')
       + '<span class="serie-nav-scritta">' + scritta + '</span><span class="serie-nav-freccia">' + (verso === 'prec' ? '←' : '→') + '</span></button>';
   };
-  const striscia = '<div style="display:flex;gap:0.6rem;overflow-x:auto;padding-bottom:0.4rem;flex:1 1 auto;min-width:0;">'
+  const striscia = '<div class="fam-striscia" style="display:flex;gap:0.6rem;overflow-x:auto;padding-bottom:0.4rem;flex:1 1 auto;min-width:0;">'
     + ci.map(({ i, lato }) => {
       const n = i + 1, src = cloudinaryUrl(pag[n - 1].url, 'w_520,h_520,c_fit,q_auto,f_auto'), tit = it ? 'Sfoglia da qui' : 'Browse from here';
       if (!lato) return '<img src="' + src + '" alt="" loading="lazy" title="' + tit + '" '
@@ -55266,8 +55399,14 @@ function _rendiTestaFamiglia() {
     }).join('')
     + '</div>';
   const foto = (ci.length ? '<div style="font-size:0.85rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">' + (it ? 'Le pagine dell\'album' : 'Album pages') + '</div>' : '')
-    + '<div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.8rem;">'
-    + freccia(qui > 0 ? nomi[qui - 1] : null, 'prec') + striscia + freccia(qui >= 0 && qui < nomi.length - 1 ? nomi[qui + 1] : null, 'succ') + '</div>';
+    // v7.235 - `fam-foto-riga`: dal telefono le frecce salgono sopra le foto (la regola sta nell'index), e sotto di loro
+    //    una seconda fila (`fam-pag-riga`, solo dal telefono e con almeno due foto) scorre la striscia di una foto
+    + '<div class="fam-foto-riga" style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.8rem;">'
+    + freccia(qui > 0 ? nomi[qui - 1] : null, 'prec')
+    + (ci.length > 1 ? '<div class="fam-pag-riga">'
+      + '<button type="button" class="btn-secondary" onclick="_famStrisciaVai(this, -1)">‹ ' + (it ? 'Pagine precedenti' : 'Previous pages') + '</button>'
+      + '<button type="button" class="btn-secondary" onclick="_famStrisciaVai(this, 1)">' + (it ? 'Pagine successive' : 'Next pages') + ' ›</button></div>' : '')
+    + striscia + freccia(qui >= 0 && qui < nomi.length - 1 ? nomi[qui + 1] : null, 'succ') + '</div>';
   // all'admin, in arancione, i numeri che l'album non ha (agli altri si tacciono)
   const avviso = adm && mancano.length ? '<div style="font-size:0.8rem;color:var(--warn);margin:-0.4rem 0 0.8rem;">'
     + (Array.isArray(d.pagineAlbum) ? (it ? 'Nell\'album non ci sono le pagine: ' : 'The album has no page: ') : (it ? 'Nell\'album non ci sono le foto: ' : 'The album has no photo: '))
@@ -55280,6 +55419,18 @@ function _rendiTestaFamiglia() {
   }).join('');
   el.innerHTML = testa + foto + avviso + '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">' + tab + '</div>';
   el.style.display = '';
+}
+// 🆕 v7.235 (Franco: «da mobile potrebbero servire anche i bottoni per passare alla pagina successiva e alla pagina
+//    precedente»; «la seconda fila … per passare alla coppia di pagine precedente e successiva») - la striscia scorre fino
+//    alla foto prima o dopo quella che sta all'inizio; alle due estremità non si va oltre
+function _famStrisciaVai(btn, d) {
+  const st = btn && btn.closest('.fam-foto-riga') && btn.closest('.fam-foto-riga').querySelector('.fam-striscia');
+  if (!st || !st.children.length) return;
+  const x0 = st.getBoundingClientRect().left, foto = [...st.children];
+  const dist = foto.map(f => Math.abs(f.getBoundingClientRect().left - x0));
+  const qui = dist.indexOf(Math.min(...dist));
+  const dove = foto[Math.max(0, Math.min(foto.length - 1, qui + d))];
+  st.scrollBy({ left: dove.getBoundingClientRect().left - x0, behavior: 'smooth' });
 }
 function _famigliaSfoglia(n) {
   apriSfogliaAlbum();
@@ -55343,8 +55494,9 @@ function apriFinestraFamiglia(el) {
     + lab(it ? 'Foto della card' : 'Card photo')
     + '<div style="display:flex;align-items:center;gap:0.7rem;flex-wrap:wrap;">'
     + '<div id="fam-foto-anteprima" style="width:120px;aspect-ratio:var(--hub-box-ratio);border:1px solid var(--border);border-radius:8px;background:var(--bg3) center / contain no-repeat;"></div>'
-    + '<button type="button" class="btn-secondary" onclick="_famigliaScegliFoto()">' + (it ? 'Carica foto' : 'Upload photo') + '</button>'
-    + '<button type="button" class="btn-secondary" onclick="_famFoto=null;_famigliaMostraFoto()">' + (it ? 'Togli foto' : 'Remove photo') + '</button>'
+    // 🗑️ v7.235 (Franco: «i bottoni carica foto e togli foto dalla maschera della famiglia non servono più») - la foto
+    //    qui si guarda soltanto: si cambia col «🖼️ Cambia foto» del box (il collage, `apriCollageFamiglia`)
+    + '<div class="form-hint" style="margin:0;">' + (it ? 'Si cambia col «🖼️ Cambia foto» del box della famiglia.' : 'Change it with the family box «🖼️ Change photo».') + '</div>'
     + '</div>'
     + '<div id="fam-stato" style="font-size:0.85rem;min-height:1.2rem;margin-top:0.8rem;color:var(--warn);"></div>'
     + '<div style="display:flex;justify-content:flex-end;gap:0.6rem;margin-top:0.6rem;">'
@@ -55358,26 +55510,6 @@ function apriFinestraFamiglia(el) {
 function _famigliaMostraFoto() {
   const a = document.getElementById('fam-foto-anteprima');
   if (a) a.style.backgroundImage = _famFoto ? 'url(\'' + cloudinaryUrl(_famFoto.url, 'w_600,h_600,c_fit,q_auto,f_auto') + '\')' : '';
-}
-// la stessa catena della foto di una sottoserie (`_caricaFotoSottoserie`): la finestra che toglie lo sfondo, poi Cloudinary
-function _famigliaScegliFoto() {
-  const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = 'image/*';
-  inp.onchange = async () => {
-    const it = currentLang === 'it', file = inp.files && inp.files[0];
-    const nome = document.getElementById('famiglia-modal')?.getAttribute('data-famiglia') || '';
-    if (!file) return;
-    const scelto = await _scegliFoto(file, (it ? 'Foto della famiglia ' : 'Family photo ') + '«' + nome + '»');
-    if (!scelto) return;
-    const st = document.getElementById('fam-stato'), b = document.getElementById('fam-salva');
-    if (st) st.textContent = it ? 'Carico la foto…' : 'Uploading…';
-    if (b) b.disabled = true;
-    try { _famFoto = { url: await uploadToCloudinary(scelto) }; if (st) st.textContent = ''; }
-    catch (e) { console.error('_famigliaScegliFoto', e); if (st) st.textContent = it ? '❌ Caricamento fallito — riprova' : '❌ Upload failed — retry'; }
-    if (b) b.disabled = false;
-    _famigliaMostraFoto();
-  };
-  inp.click();
 }
 async function _famigliaSalva() {
   const it = currentLang === 'it';
