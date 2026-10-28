@@ -1,6 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.238 - Modificati index.html e js/app.js (per la versione). Scheda dell'articolo, tab Ebay (Franco: «tutte le
+//          etichette dei campi le vorrei in azzurro»): una regola nell'index, `#fe-tab-ebay label` in `--info`; gli
+//          account da spuntare restano del colore del testo. E nella ricerca degli Annunci (Franco: «"Serie" dovrebbe
+//          essere "Filtra per serie"») il riquadro della serie si chiama come gli altri; nella tabella (Franco: «la
+//          colonna "Voto" va allargata un pochino») la casella del Voto passa da 2,6 a 3,2rem. E nel tab Ebay dell'album
+//          (Franco: «invertiamo i due sottotab») prima «Descrizione», che si apre, poi «Foto annuncio». E nel collage
+//          (Franco: «nella domanda "Serie" … usare il nome breve delle serie») la tendina usa `_nomeSerieCard(s, true)`;
+//          le foto prese si tolgono solo cambiando una domanda che sta prima di loro (Franco: «quelle successive …
+//          non hanno impatto»): le domande dopo tolgono solo il collage creato (`_collageRispostaPrima`). E «✎ Modifica
+//          famiglia» pieno, arancione (Franco: «deve avere l'aspetto degli altri tasti admin»). Pagina della famiglia
+//          (Franco: «i due tasti … mettiamoli piu esterni»; «le foto dell'album … tutta la larghezza del box di ricerca»;
+//          «"FAMIGLIA PRECEDENTE" … con sotto il nome di quella famiglia»; «"FAMIGLIA SUCCESSIVA"»; miniature «del
+//          100%»): dai 1400px le frecce escono dalla riga, la striscia è larga quanto la ricerca; nome sotto la scritta
+//          (`fam-nav-nome`); miniature 88px (48 dal telefono). Regole nell'index. E la finestra della famiglia (Franco:
+//          «aggiungere il tab ebay con i soliti campi ebay: il flag + i 12 campi Titolo/Descrizione»): tab «Generale» ed
+//          «Ebay» (`_famTab`); in Ebay il flag (`forSale` della riga di `famiglieDati`) e i 12 testi per account
+//          (`testiAccount`, con `_bloccoTestiAccountEdit`/`_feTestiAccount` dell'album). Le pagine dell'album della
+//          famiglia centrate fra le frecce (regola nell'index). E sulle linguette Franco / Fabio / Lendys (album e
+//          famiglia; Franco: «metti un simbolo affianco del nome del tab con dati») un pallino quando l'account ha
+//          almeno un campo scritto (`fe-ta-segno`, `_feTaSegna` mentre si scrive).
 // v7.237 - Modificati index.html (per la versione) e js/app.js. 🗑️ Via i quattro campi vecchi del tab Ebay, per tutte
 //          le tipologie (Franco: «puoi cancellare quei 4 campi vecchi per tutte le tda»; «la vista ebay andrà rifatta;
 //          quindi per ora toglili»): Titolo e Descrizione ITA/ENG (`ebayTitleIt`, `ebayTitleEn`, `ebayDescIt`,
@@ -31879,7 +31899,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.237';
+const JS_VERSION = 'v7.238';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41787,8 +41807,9 @@ function chiudiCollageBox() {
 // 🆕 v7.236 (Franco: «quando si cambia la risposta a una delle domande, vanno resettate sia le foto caricate che il
 //    collage eventualmente già preparato») - VIA LE FOTO E IL COLLAGE: le foto prese, il collage creato, le due anteprime
 //    col loro peso, i tasti «Scarica» e «Usa come foto della card». Le risposte restano.
-function _collageAzzera() {
-  _collageFoto = [];
+// 🔄 v7.238 - `soloCollage`: le foto prese restano, va via solo il collage creato
+function _collageAzzera(soloCollage) {
+  if (!soloCollage) _collageFoto = [];
   _collageBlob = null;
   ['collage-scarica', 'collage-scarica-retro'].forEach(id => {
     const a = document.getElementById(id);
@@ -41801,9 +41822,21 @@ function _collageAzzera() {
 }
 // ogni risposta cambiata nella finestra (tendine, scelte, spunte, caselle), ascoltata una volta sola sul suo corpo: il
 // file scelto dal PC no, perché è il modo di prendere le foto. Solo se c'è qualcosa da togliere.
+// 🔄 v7.238 (Franco: «il risultato del pulsante "Prendi foto" deve essere sbiancato solo se viene cambiato il valore di
+//    una delle domande precedenti … quelle successive, infatti, non hanno impatto») - le foto vanno via solo per le
+//    domande che stanno PRIMA delle foto prese (`#collage-scelte`): «Da dove le prendo ?», tutte quelle di «Dal sito»
+//    fino a «Prendi le foto», e dal PC la spunta dello sfondo e «Quante foto». Le domande dopo (tipo, venditore,
+//    texture, grandezza) cambiano solo il collage: le foto restano, il collage già creato si toglie. Senza risposta
+//    (chiamata da `_collageNumeriUsa` o dalle macchie) vale come domanda prima.
+function _collageRispostaPrima(t) {
+  const foto = document.getElementById('collage-scelte');
+  if (!t || !foto || !t.compareDocumentPosition) return true;
+  return !!(foto.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_PRECEDING);
+}
 function _collageRispostaCambiata(e) {
   if (e && e.target && e.target.type === 'file') return;
-  if (_collageFoto.length || _collageBlob) _collageAzzera();
+  if (_collageRispostaPrima(e && e.target)) { if (_collageFoto.length || _collageBlob) _collageAzzera(); }
+  else if (_collageBlob) _collageAzzera(true);
 }
 async function _collageUsaPerBox() {
   const it = currentLang === 'it';
@@ -41880,8 +41913,10 @@ function _collageSitoHTML() {
   return '<div style="' + dom + 'margin-top:0;">' + (it ? 'Da una serie o da una tipologia di articolo ?' : 'From a series or an item type?') + '</div>' +
     radio('collage-sito-da', 'serie', it ? 'Serie' : 'Series', true) + radio('collage-sito-da', 'tda', it ? 'Tipologia di articolo' : 'Item type') +
     '<div style="margin-top:0.35rem;">' +
+      // 🔄 v7.238 (Franco: «nella domanda "Serie" … usare il nome breve delle serie») - `_nomeSerieCard(s, true)`, il
+      //    nome lungo solo se il breve manca
       '<select id="collage-sito-serie" style="' + sel + '" onchange="_collageSerieScelta()">' +
-        '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>' + serie.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name || '') + '</option>').join('') + '</select>' +
+        '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>' + serie.map(s => '<option value="' + esc(s.id) + '">' + esc(_nomeSerieCard(s, true) || s.name || '') + '</option>').join('') + '</select>' +
       // v7.214 - dopo la serie, la tipologia di articolo di quella serie (`_collageTdaDellaSerie`)
       '<div id="collage-sito-serie-tda-box">' +
         '<div style="' + dom + '">' + (it ? 'Quale tipologia di articolo ?' : 'Which item type?') + '</div>' +
@@ -42924,7 +42959,8 @@ const _ANN_RIQUADRI = [
   //    con le foto sue: quello di Mega 1 e Mega 2 le prende da «W gli Sgorbions» (`fotoDaAlbumId`)
   // 🔄 v7.202 (Franco: «il contatore della pillola sia più lontano dall'etichetta … il nome della pillola è già un
   //    numero, e quindi vedo due numeri vicini») - `stacco`: lo spazio fra nome e conteggio («Serie 2   5»)
-  { k: 'serie', campo: 'seriesId', it: 'Serie', en: 'Series', stacco: '1rem',
+  // 🔄 v7.238 (Franco: «"Serie" dovrebbe essere "Filtra per serie"») - come gli altri riquadri
+  { k: 'serie', campo: 'seriesId', it: 'Filtra per serie', en: 'Filter by series', stacco: '1rem',
     voci: () => _annSerie().filter(s => (s.items || []).some(f => f.section === 'albums' && !f.fotoDaAlbumId)).map(s => s.id),
     etichetta: id => { const s = _annSerie().find(x => x.id === id); return s ? _nomeSerieCard(s, true) : id; } },
   // 🆕 v7.229 (Franco: «nella pagina di ricerca annunci metti un filtro di ricerca per tipologia di articolo; ed un altro
@@ -43135,7 +43171,8 @@ function _annDisegna() {
           // 🔄 v7.202 (Franco: «le colonne Costo e Prezzo sono ancora troppo larghe; avvicina il simbolo dell'Euro al
           //    valore»; «stringi anche la colonna Voto») - caselle più strette (3,4 → 2,9 e 2,6rem), celle senza il
           //    margine largo della tabella, € attaccato alla casella
-          + '<td style="padding-left:0.25rem;padding-right:0.25rem;">' + inp('voto', 'number', r.voto, 'width:2.6rem;text-align:right;') + '</td>'   // v7.191
+          // 🔄 v7.238 (Franco: «la colonna "Voto" va allargata un pochino») - 2,6 → 3,2rem
+          + '<td style="padding-left:0.25rem;padding-right:0.25rem;">' + inp('voto', 'number', r.voto, 'width:3.2rem;text-align:right;') + '</td>'   // v7.191
           // v7.231 - Iniziale e Finale: numeri, senza €
           + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('costo', 'number', r.costo, 'width:2.9rem;text-align:right;') + '</td>'
           + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('prezzo', 'number', r.prezzo, 'width:2.9rem;text-align:right;') + '</td>'
@@ -55152,10 +55189,12 @@ function _famiglieDati(s) {
   return (s && Array.isArray(s.famiglieDati) ? s.famiglieDati : []).filter(d => d && String(d.nome || '').trim())
     .map(d => ({ nome: String(d.nome).trim(), ordine: Number.isFinite(+d.ordine) && d.ordine !== null && d.ordine !== '' ? +d.ordine : null,
                  pagine: Array.isArray(d.pagine) ? d.pagine.map(Number).filter(n => Number.isInteger(n) && n > 0) : [],
-                 pagineAlbum: Array.isArray(d.pagineAlbum) ? d.pagineAlbum.map(_famPagina).filter(x => x !== null) : null, img: d.img || null }));
+                 pagineAlbum: Array.isArray(d.pagineAlbum) ? d.pagineAlbum.map(_famPagina).filter(x => x !== null) : null, img: d.img || null,
+                 // 🆕 v7.238 - il tab Ebay della finestra: il flag e i testi per account, come sull'album
+                 forSale: d.forSale === true, testiAccount: d.testiAccount && typeof d.testiAccount === 'object' ? d.testiAccount : null }));
 }
 function _famigliaDato(s, nome) {
-  return _famiglieDati(s).find(d => d.nome === nome) || { nome, ordine: null, pagine: [], pagineAlbum: null, img: null };
+  return _famiglieDati(s).find(d => d.nome === nome) || { nome, ordine: null, pagine: [], pagineAlbum: null, img: null, forSale: false, testiAccount: null };
 }
 // 🆕 v7.234 - UNA PAGINA DELL'ALBUM: un numero dalla 1, o una delle pagine senza numero. Il resto non vale (null).
 const _FAM_PAGINE_NOMI = ['Copertina', 'II cop.', 'III cop.', 'Retro'];
@@ -55284,7 +55323,9 @@ function _rendiTestaFamiglia() {
   const ci = scelte.foto, mancano = Array.isArray(d.pagineAlbum) ? scelte.mancano.map(p => _famNomePagina(_famPagina(p), it)) : d.pagine.filter(n => n > pag.length);
   const testa = '<div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-bottom:0.8rem;">'
     + '<div style="font-family:var(--font-display);font-size:1.35rem;font-weight:800;color:var(--nome-entita);">' + esc(_famigliaAperta) + '</div>'
-    + (adm ? '<button type="button" class="btn-barra-admin" data-famiglia="' + esc(_famigliaAperta) + '" onclick="apriFinestraFamiglia(this)" style="font-size:0.8rem;padding:0.25rem 0.8rem;">&#9998; ' + (it ? 'Modifica famiglia' : 'Edit family') + '</button>' : '')
+    // 🔄 v7.238 (Franco: «il tasto "Modifica famiglia" deve avere l'aspetto degli altri tasti admin») - pieno, arancione
+    //    col testo bianco (`pieno`, come «Applica valori da album»): resta anche dal telefono
+    + (adm ? '<button type="button" class="btn-barra-admin pieno" data-famiglia="' + esc(_famigliaAperta) + '" onclick="apriFinestraFamiglia(this)" style="font-size:0.8rem;padding:0.25rem 0.8rem;">&#9998; ' + (it ? 'Modifica famiglia' : 'Edit family') + '</button>' : '')
     + '</div>';
   // le foto dell'album: la misura delle miniature della scheda dell'album (w_520), già chiesta a Cloudinary
   // 🆕 v7.233 (Franco: «metti i soliti due pulsanti "Precedente" e "Successiva", con la miniatura»; poi «vanno messi
@@ -55293,13 +55334,16 @@ function _rendiTestaFamiglia() {
   //    famiglia a 600 (la misura del suo box, già chiesta a Cloudinary) e l'ordine dei box. Dove una manca resta il suo
   //    posto, invisibile, così la striscia non si sposta. Il clic resta sullo stesso tab (`_vaiAllaFamiglia`).
   const nomi = _famiglieOrdinate(s), qui = nomi.indexOf(_famigliaAperta);
+  // 🔄 v7.238 (Franco: «il tasto "FAMIGLIA PRECEDENTE" … con sotto il nome di quella famiglia; stessa cosa per il tasto
+  //    "PROSSIMA FAMIGLIA"; tasto che cmq sia deve chiamarsi "FAMIGLIA SUCCESSIVA"») - sotto la scritta il nome
+  //    (`fam-nav-nome`); più esterni e con la miniatura doppia: le regole stanno nell'index
   const freccia = (n, verso) => {
-    const scritta = verso === 'prec' ? (it ? 'famiglia precedente' : 'previous family') : (it ? 'prossima famiglia' : 'next family');
+    const scritta = verso === 'prec' ? (it ? 'famiglia precedente' : 'previous family') : (it ? 'famiglia successiva' : 'next family');
     if (!n) return '<button type="button" class="serie-nav-btn fam-nav-' + verso + '" tabindex="-1" aria-hidden="true" style="visibility:hidden;"><span class="serie-nav-vuota"></span><span class="serie-nav-scritta">' + scritta + '</span><span class="serie-nav-freccia">→</span></button>';
     const img = _famigliaDato(s, n).img;
     return '<button type="button" class="serie-nav-btn fam-nav-' + verso + '" data-famiglia="' + esc(n) + '" onclick="_vaiAllaFamiglia(this.getAttribute(\'data-famiglia\'))" title="' + esc((verso === 'prec' ? (it ? 'Famiglia precedente: ' : 'Previous family: ') : (it ? 'Famiglia successiva: ' : 'Next family: ')) + n) + '">'
       + (img ? '<img src="' + esc(cloudinaryUrl(img, 'w_600,h_600,c_fit,q_auto,f_auto')) + '" alt="">' : '<span class="serie-nav-vuota">👪</span>')
-      + '<span class="serie-nav-scritta">' + scritta + '</span><span class="serie-nav-freccia">' + (verso === 'prec' ? '←' : '→') + '</span></button>';
+      + '<span class="serie-nav-scritta">' + scritta + '</span><span class="fam-nav-nome">' + esc(n) + '</span><span class="serie-nav-freccia">' + (verso === 'prec' ? '←' : '→') + '</span></button>';
   };
   const striscia = '<div class="fam-striscia" style="display:flex;gap:0.6rem;overflow-x:auto;padding-bottom:0.4rem;flex:1 1 auto;min-width:0;">'
     + ci.map(({ i, lato }) => {
@@ -55398,10 +55442,24 @@ function apriFinestraFamiglia(el) {
   ov.id = 'famiglia-modal';
   ov.setAttribute('data-famiglia', nome);
   const lab = t => '<label class="form-label" style="display:block;margin:0.9rem 0 0.3rem;">' + t + '</label>';
+  // 🆕 v7.238 (Franco: «nella form della famiglia, aggiungere il tab ebay con i soliti campi ebay: il flag + i 12 campi
+  //    Titolo/Descrizione») - DUE TAB, «Generale» (quello di prima) ed «Ebay»: il flag «🏷️ Ebay» (`forSale` della riga)
+  //    e i dodici testi per account dell'album (`_bloccoTestiAccountEdit`, stessi id: li legge `_feTestiAccount`). Tutti e
+  //    due i tab restano nella pagina, il Salva li legge insieme.
+  const tabFam = (k, t, su) => '<button type="button" class="fam-tab" data-tab="' + k + '" onclick="_famTab(\'' + k + '\')" style="padding:0.45rem 1rem;border:none;background:transparent;color:var(--text);font-size:0.9rem;cursor:pointer;font-family:var(--font-ui);'
+    + 'border-bottom:2px solid ' + (su ? 'var(--accent)' : 'transparent') + ';font-weight:' + (su ? '700' : '400') + ';">' + t + '</button>';
   ov.innerHTML = '<div class="modal" style="max-width:760px;width:94vw;">'
     + '<div class="modal-header"><h2 class="modal-title">' + (it ? 'Famiglia «' : 'Family «') + esc(nome) + '»</h2>'
     + '<button type="button" class="modal-close" onclick="document.getElementById(\'famiglia-modal\').remove()">✕</button></div>'
     + '<div style="padding:0 1.2rem 1.2rem;">'
+    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.3rem;">' + tabFam('generale', it ? 'Generale' : 'General', true) + tabFam('ebay', 'Ebay', false) + '</div>'
+    + '<div id="fam-tab-ebay" class="fam-pannello" data-tab="ebay" style="display:none;padding-top:0.6rem;">'
+    + '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
+    + '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;font-weight:600;">'
+    + '<input type="checkbox" id="fam-for-sale"' + (d.forSale ? ' checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;"><span>🏷️ Ebay</span></label></div>'
+    + _bloccoTestiAccountEdit({ section: 'albums', testiAccount: d.testiAccount })
+    + '</div>'
+    + '<div class="fam-pannello" data-tab="generale">'
     + lab(it ? 'Ordine' : 'Order')
     + '<input id="fam-ordine" class="form-input" type="number" step="1" value="' + (d.ordine ?? '') + '" style="max-width:8rem;">'
     + lab(it ? 'Pagine' : 'Pages')
@@ -55413,6 +55471,7 @@ function apriFinestraFamiglia(el) {
     //    qui si guarda soltanto: si cambia col «🖼️ Cambia foto» del box (il collage, `apriCollageFamiglia`)
     + '<div class="form-hint" style="margin:0;">' + (it ? 'Si cambia col «🖼️ Cambia foto» del box della famiglia.' : 'Change it with the family box «🖼️ Change photo».') + '</div>'
     + '</div>'
+    + '</div>'   // v7.238: chiude il tab «Generale»
     + '<div id="fam-stato" style="font-size:0.85rem;min-height:1.2rem;margin-top:0.8rem;color:var(--warn);"></div>'
     + '<div style="display:flex;justify-content:flex-end;gap:0.6rem;margin-top:0.6rem;">'
     + '<button type="button" class="btn-secondary" onclick="document.getElementById(\'famiglia-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
@@ -55421,6 +55480,15 @@ function apriFinestraFamiglia(el) {
   document.body.appendChild(ov);
   ov.querySelectorAll('#fam-pagine button[data-pagina]').forEach(_famPaginaStile);
   _famigliaMostraFoto();
+}
+// v7.238 - il tab scelto si accende e si vede, l'altro si nasconde
+function _famTab(k) {
+  document.querySelectorAll('#famiglia-modal .fam-tab').forEach(b => {
+    const su = b.dataset.tab === k;
+    b.style.borderBottomColor = su ? 'var(--accent)' : 'transparent';
+    b.style.fontWeight = su ? '700' : '400';
+  });
+  document.querySelectorAll('#famiglia-modal .fam-pannello').forEach(p => { p.style.display = p.dataset.tab === k ? '' : 'none'; });
 }
 function _famigliaMostraFoto() {
   const a = document.getElementById('fam-foto-anteprima');
@@ -55439,6 +55507,9 @@ async function _famigliaSalva() {
   const scelte = box ? [...box.querySelectorAll('button[data-pagina]')].filter(x => x.getAttribute('aria-pressed') === 'true').map(x => _famPagina(x.getAttribute('data-pagina'))).filter(x => x !== null) : null;
   const riga = { nome, ordine: tOrd === '' ? null : +tOrd, pagine: scelte ? [] : prec.pagine, img: _famFoto ? _famFoto.url : null };
   if (scelte) riga.pagineAlbum = scelte; else if (prec.pagineAlbum) riga.pagineAlbum = prec.pagineAlbum;
+  // v7.238 - il tab Ebay: il flag e i testi per account (tutto vuoto = null, come sull'album)
+  riga.forSale = !!document.getElementById('fam-for-sale')?.checked;
+  riga.testiAccount = document.getElementById('fe-testi-account') ? _feTestiAccount() : prec.testiAccount;
   const prima = s.famiglieDati;
   s.famiglieDati = _famiglieDati(s).filter(d => d.nome !== nome).concat([riga]);
   if (b) b.disabled = true;
@@ -55464,6 +55535,7 @@ async function _famigliaScriviFoto(s, nome, url, zitto) {   // `zitto`: nel giro
   const d = _famigliaDato(s, nome);
   const riga = { nome, ordine: d.ordine, pagine: d.pagine, img: url };
   if (d.pagineAlbum) riga.pagineAlbum = d.pagineAlbum;   // v7.234: anche le pagine dell'album restano
+  riga.forSale = d.forSale; riga.testiAccount = d.testiAccount;   // v7.238: e il tab Ebay
   s.famiglieDati = _famiglieDati(s).filter(x => x.nome !== nome).concat([riga]);
   try { await fsSave('series', _serieSenzaItems(s)); }
   catch (e) {
@@ -70687,10 +70759,16 @@ function _bloccoTestiAccountEdit(f) {
   // 🔄 v7.200 (Franco: «organizziamoli su 3 tab (Franco, Fabio, Lendys), mettendoli negli omonimi tab») - una linguetta
   //    per account; in ognuna Titolo ITA, Titolo ENG, Descrizione ITA, Descrizione ENG. I tre pannelli restano tutti
   //    nella pagina (nascosti gli altri due): il Salva li legge tutti e tre, come prima.
+  // 🆕 v7.238 (Franco: «fare in modo che si veda che i 3 tab Franco, Fabio, Lendys hanno almeno un campo popolato; metti
+  //    un simbolo affianco del nome del tab con dati»; «anche sulla form dell'album») - un pallino accanto al nome
+  //    (`fe-ta-segno`), acceso se l'account ha almeno un campo scritto; si rifà mentre si scrive (`_feTaSegna`). Vale
+  //    per l'album e per la famiglia, che usano questo stesso blocco.
+  const pieno = a => Object.values(t[a] || {}).some(v => String(v || '').trim());
   const linguetta = (a, i) => '<button type="button" class="fe-ta-tab" data-account="' + a + '" onclick="_feTaTab(\'' + a + '\')"'
     + ' style="padding:0.35rem 0.9rem;border:none;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;font-family:var(--font-ui);'
-    + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + a + '</button>';
-  return '<div id="fe-testi-account" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
+    + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + a
+    + '<span class="fe-ta-segno" title="' + (it ? 'Ha testi scritti' : 'Has texts') + '" style="margin-left:0.35rem;color:var(--accent);' + (pieno(a) ? '' : 'display:none;') + '">●</span></button>';
+  return '<div id="fe-testi-account" oninput="_feTaSegna()" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
     + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;">✍️ ' + (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account') + '</div>'
     + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + _TESTI_ACCOUNT.map(linguetta).join('') + '</div>'
     + _TESTI_ACCOUNT.map((a, i) => '<div class="fe-ta-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
@@ -70714,7 +70792,8 @@ function _bloccoTestiAccountEdit(f) {
 //    pagine sue non ha le foto annuncio) la linguetta non serve: il blocco si mostra e basta.
 function _sottoTabEbay(f) {
   const it = currentLang === 'it';
-  const parti = [['foto', it ? 'Foto annuncio' : 'Listing photos', _bloccoFotoAnnuncioEdit(f)], ['desc', it ? 'Descrizione' : 'Description', _bloccoTestiAccountEdit(f)]]
+  // 🔄 v7.238 (Franco: «invertiamo i due sottotab "Foto annuncio" e "Descrizione"») - prima Descrizione, che si apre
+  const parti = [['desc', it ? 'Descrizione' : 'Description', _bloccoTestiAccountEdit(f)], ['foto', it ? 'Foto annuncio' : 'Listing photos', _bloccoFotoAnnuncioEdit(f)]]
     .filter(p => p[2]);
   if (parti.length < 2) return parti.map(p => p[2]).join('');
   return '<div id="fe-ebay-sottotab" style="margin-top:0.25rem;">'
@@ -70742,6 +70821,14 @@ function _feTaTab(a) {
     b.style.fontWeight = su ? '700' : '400';
   });
   document.querySelectorAll('#fe-testi-account .fe-ta-pannello').forEach(p => { p.style.display = p.dataset.account === a ? '' : 'none'; });
+}
+// v7.238 - il pallino di ogni linguetta segue le caselle del suo pannello
+function _feTaSegna() {
+  document.querySelectorAll('#fe-testi-account .fe-ta-pannello').forEach(p => {
+    const su = [...p.querySelectorAll('input, textarea')].some(x => x.value.trim());
+    const b = document.querySelector('#fe-testi-account .fe-ta-tab[data-account="' + p.dataset.account + '"] .fe-ta-segno');
+    if (b) b.style.display = su ? '' : 'none';
+  });
 }
 function _feTestiAccount() {
   const out = {};
