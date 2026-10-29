@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.246">
+<link rel="stylesheet" href="css/style.css?v=7.247">
 
 
 <style>
@@ -2475,7 +2475,7 @@ button.back-btn { color:#ffffff; }
     <!-- 🔄 v7.187 (Franco: «il tasto Annunci della navbar mettilo tutto a dx, prima della buca di ricerca») - sta
          subito prima della casella, e sul desktop il `margin-left:auto` lo spinge a destra (regola in testa). Nel
          panino del telefono il posto lo decide `order` (style.css): resta fra Newsletter e Contatti. -->
-    <a onclick="showAdminTab('fotoannuncio')" id="nav-annunci" style="display:none;">📢 Annunci</a>
+    <a onclick="apriAnnunciNav()" id="nav-annunci" style="display:none;">📢 Annunci</a>
     <div id="nav-search" style="display:none;">
       <!-- 🆕 v6.852 (Franco: «il messaggio da mostrare non deve starci tutto dentro; deve apparire
            facendo mouse over; mostralo sotto alla casella nera, cosi nn finisce sugli altri
@@ -6713,6 +6713,8 @@ di tutte le serie</button>
       <label class="form-label" data-i18n="admin.user.role">Tipologia di utente</label>
       <select class="form-input" id="edit-user-role">
         <option value="collector" data-i18n="admin.user.collector">Collezionista</option>
+        <!-- v7.247 - crea foto per annunci e collage, senza essere admin (campo `venditore` della scheda) -->
+        <option value="venditore" data-i18n="admin.user.venditore">Venditore</option>
         <option value="admin" data-i18n="admin.user.admin">Admin</option>
       </select>
     </div>
@@ -6858,7 +6860,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.246"></script>
+<script src="js/app.js?v=7.247"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6882,7 +6884,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.246'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.247'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
