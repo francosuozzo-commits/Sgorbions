@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.241 - Modificati index.html e js/app.js. Annunci dal telefono (Franco: «i due bottoni crea foto per annuncio e
+//          crea collage, si sovrappongono un pochino»; «diminuirne un minimo l'altezza di entrambi»): i due tasti in
+//          una fila `fa-tasti` (flex, a capo, spazio 0,6rem anche fra le righe) e dal telefono più bassi (testo 1rem,
+//          0,5rem sopra e sotto). Regole nell'index. E il collage (Franco: «la domanda quale tipologia di Articolo …
+//          non dovrebbe essere proprio mostrata se non si seleziona una serie»): il blocco tipologia / versione /
+//          famiglia / categoria / fronte o retro si vede solo con la serie scelta. E dal telefono (Franco: «c'è dello
+//          spazio sulla sinistra che è inutilizzato») via il margine del corpo della finestra e il rientro delle
+//          domande «Dal sito» (regole nell'index). E (Franco: «quando c'è da scaricare solo una foto, il bottone non
+//          chiamarlo "scarica fronte"») «Scarica foto», e «Scarica fronte» solo con la foto dei retro. E (Franco: «anche
+//          nella anteprima le figurine e i retro devono avere tutti la stessa dimensione, indipendentemente dal loro
+//          orientamento») le miniature dell'anteprima col lato lungo a 52px (`COLLAGE_ANT_STILE`), non l'altezza.
 // v7.240 - Modificati index.html (per la versione) e js/app.js. Collage (Franco: «se viene selezionata una tda che
 //          prevede le categorie, allora aggiungi una domanda sulla categoria, subito dopo la domanda sulla famiglia»):
 //          «Quale categoria ?», facoltativa, dalla serie e dalla tipologia, per Retro, Album, Extra serie e tipologie
@@ -31909,7 +31920,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.240';
+const JS_VERSION = 'v7.241';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41525,10 +41536,15 @@ function renderAdminFotoAnnuncio() {
           'Le foto si scaricano e basta: sul sito non si salva niente. Album con le pagine: <strong>' + n + '</strong>.'
         : 'Listing photos for eBay or Vinted from the photos of an album\'s pages. Nothing is saved on the site. Albums with pages: <strong>' + n + '</strong>.') +
     '</p>' +
+    // 🔄 v7.241 (Franco: «da mobile i due bottoni … si sovrappongono un pochino»; «diminuirne un minimo l'altezza di
+    //    entrambi») - in una fila `fa-tasti` (regole nell'index): lo spazio fra i due anche quando vanno a capo, e dal
+    //    telefono più bassi
+    '<div class="fa-tasti">' +
     '<button class="btn-primary btn-admin admin-anche-telefono" onclick="_faApri()">' + (it ? '📸 Crea foto per annunci' : '📸 Create listing photos') + '</button>' +
     // 🆕 v7.219 (Franco: «sposta la funzione Collage foto nella sezione "Annunci"; lì dentro ci metti un tasto, dello stesso
     //    stile del tasto "Crea annuncio", fa iniziare la procedura di creazione collage in una finestra») - `apriCollage`
-    '<button class="btn-primary btn-admin admin-anche-telefono" style="margin-left:0.6rem;" onclick="apriCollage()">' + (it ? '🖼️ Crea collage foto' : '🖼️ Create photo collage') + '</button>' +
+    '<button class="btn-primary btn-admin admin-anche-telefono" onclick="apriCollage()">' + (it ? '🖼️ Crea collage foto' : '🖼️ Create photo collage') + '</button>' +
+    '</div>' +
     '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.8rem;flex-wrap:wrap;margin:2rem 0 0.6rem;">' +
       '<h4 style="font-family:var(--font-ui);margin:0;">📋 ' + (it ? 'Annunci in corso' : 'Current listings') + '</h4>' +
       '<button type="button" class="btn-primary" onclick="_annApriFinestra(null)">' + (it ? '+ Aggiungi annuncio' : '+ Add listing') + '</button>' +
@@ -42011,7 +42027,10 @@ function _collageSitoAggiorna() {
   const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-tda'), n = document.getElementById('collage-sito-numero');
   if (s) s.style.display = da === 'serie' ? '' : 'none';
   const st = document.getElementById('collage-sito-serie-tda-box');   // v7.214
-  if (st) st.style.display = da === 'serie' ? '' : 'none';
+  // 🔄 v7.241 (Franco: «la domanda quale tipologia di Articolo … non dovrebbe essere proprio mostrata se non si seleziona
+  //    una serie») - e con lei le domande che la seguono (versione, famiglia, categoria, fronte o retro): senza serie non
+  //    hanno voci
+  if (st) st.style.display = da === 'serie' && s && s.value ? '' : 'none';
   const lb = document.getElementById('collage-sito-lato-box'), ver = document.getElementById('collage-sito-serie-ver');   // v7.214
   if (lb) lb.style.display = da === 'serie' && ver && ver.value && ver.value !== 'base' ? '' : 'none';
   const fb = document.getElementById('collage-sito-fam-box'), fam = document.getElementById('collage-sito-serie-fam');   // v7.215
@@ -42485,6 +42504,9 @@ async function _collageCarica(files) {
   _collageMostraScelte();
   _collageStato();
 }
+// v7.241 - le miniature dell'anteprima, fronte e retro: il lato lungo a 52px, qualunque sia il verso
+const COLLAGE_ANT_LATO = 52;
+const COLLAGE_ANT_STILE = 'width:auto;height:auto;max-width:' + COLLAGE_ANT_LATO + 'px;max-height:' + COLLAGE_ANT_LATO + 'px;border:1px solid var(--border);border-radius:4px;background:var(--card2);';
 function _collageMostraScelte() {
   const box = document.getElementById('collage-scelte');
   if (!box) return;
@@ -42492,7 +42514,10 @@ function _collageMostraScelte() {
   // 🆕 v7.222 (Franco: «"rimescola" disabilitato se l'ordine impostato è alfabetico») - in ordine alfabetico ripescare
   //    dà sempre le stesse foto; cambiando la risposta all'ordine il tasto si rifà
   const alfa = (document.querySelector('input[name="collage-sito-ordine"]:checked') || {}).value === 'alfabetico';
-  box.innerHTML = _collageFoto.map(x => '<img src="' + x.url + '" alt="" title="' + esc(x.nome) + '" style="height:52px;width:auto;max-width:6rem;object-fit:contain;border:1px solid var(--border);border-radius:4px;background:var(--card2);">').join('') +
+  // 🔄 v7.241 (Franco: «anche nella anteprima le figurine e i retro devono avere tutti la stessa dimensione,
+  //    indipendentemente dal loro orientamento») - il lato LUNGO uguale, 52px (`COLLAGE_ANT_LATO`), come nel collage: con
+  //    l'altezza fissa le orizzontali venivano più grandi
+  box.innerHTML = _collageFoto.map(x => '<img src="' + x.url + '" alt="" title="' + esc(x.nome) + '" style="' + COLLAGE_ANT_STILE + 'object-fit:contain;">').join('') +
     (_collageFoto.length ? (_collageModo === 'sito'   // v7.212: dal sito si ripesca, dal PC si riscelgono i file
       ? '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;' + (alfa ? 'opacity:0.5;' : '') + '"' + (alfa ? ' disabled title="' + (it ? 'In ordine alfabetico le foto sono sempre le stesse' : 'Alphabetical order: always the same photos') + '"' : '') + ' onclick="_collagePesca()">🔀 ' + (it ? 'Rimescola' : 'Shuffle') + '</button>'
       : '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;" onclick="_collageScegli()">' + (it ? 'Cambia le foto' : 'Change photos') + '</button>') : '') +
@@ -42507,13 +42532,13 @@ function _collageScelteRetro() {
   if (!_collageFoto.length || !_collageRetroPossibile() || !(document.getElementById('collage-sito-retro') || {}).checked) return '';
   const it = currentLang === 'it';
   const tutti = getData('figurines', []);
-  const stile = 'height:52px;width:auto;max-width:6rem;border:1px solid var(--border);border-radius:4px;background:var(--card2);';
   return '<span style="flex-basis:100%;height:0;"></span>' +
     '<span style="flex-basis:100%;font-size:0.8rem;color:var(--text);">' + (it ? 'Retro:' : 'Backs:') + '</span>' +
     _collageFoto.map(x => {
       const src = _collageRetroBase(tutti.find(y => y.id === x.fig), tutti);
-      return src ? '<img src="' + _collageUrlFoto(src) + '" alt="" title="' + esc(x.nome) + '" style="' + stile + 'object-fit:contain;">'
-        : '<span title="' + esc(x.nome) + '" style="' + stile + 'width:3.2rem;border-style:dashed;display:inline-flex;align-items:center;justify-content:center;font-size:0.65rem;color:var(--text);text-align:center;">' + (it ? 'senza retro' : 'no back') + '</span>';
+      // v7.241 - il lato lungo uguale anche qui (`COLLAGE_ANT_STILE`)
+      return src ? '<img src="' + _collageUrlFoto(src) + '" alt="" title="' + esc(x.nome) + '" style="' + COLLAGE_ANT_STILE + 'object-fit:contain;">'
+        : '<span title="' + esc(x.nome) + '" style="' + COLLAGE_ANT_STILE + 'height:' + COLLAGE_ANT_LATO + 'px;width:3.2rem;border-style:dashed;display:inline-flex;align-items:center;justify-content:center;font-size:0.65rem;color:var(--text);text-align:center;">' + (it ? 'senza retro' : 'no back') + '</span>';
     }).join('');
 }
 // Che cosa manca per poter creare: il primo problema, a parole, oppure ''
@@ -42828,6 +42853,9 @@ async function _collageCrea() {
   if (a) {
     if (a.dataset.url) URL.revokeObjectURL(a.dataset.url);
     a.href = url; a.dataset.url = url; a.download = 'collage-' + tipo + '-' + _collageFoto.length + (jpg ? '.jpg' : '.png'); a.style.display = '';
+    // 🔄 v7.241 (Franco: «quando c'è da scaricare solo una foto, il bottone non chiamarlo "scarica fronte" ma solo
+    //    "scarica foto"») - «Scarica fronte» solo quando c'è anche la foto dei retro
+    a.textContent = '⬇️ ' + (retri ? (it ? 'Scarica fronte' : 'Download front') : (it ? 'Scarica foto' : 'Download photo'));
   }
   // v7.223 - il peso del file e la sua misura; v7.225: sopra l'anteprima, «Fronte» quando c'è anche la foto dei retro
   const peso = document.getElementById('collage-peso');
