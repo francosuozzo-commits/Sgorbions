@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.241">
+<link rel="stylesheet" href="css/style.css?v=7.242">
 
 
 <style>
@@ -1479,6 +1479,9 @@ button.back-btn { color:#ffffff; }
   #collage-box-corpo { padding: 0 0 1.2rem !important; }
   #collage-box-corpo #collage-sito { margin-left: 0 !important; padding: 0.4rem 0 0.4rem 0.6rem !important; }
   #collage-box-corpo #collage-pc-opz { margin-left: 0 !important; }
+  /* 🔄 v7.242 (Franco, dal telefono: «stringi la colonna Sito») - la seconda colonna della tabella degli annunci (Sito,
+     dopo la spunta), titolo e celle, col margine stretto; il selettore lo stringe app.js (`_annSitoTel`) */
+  #annunci-tabella th:nth-child(2), #annunci-tabella td:nth-child(2) { padding-left: 0.2rem; padding-right: 0.2rem; }
 }
 
 /* v5.953 — TELEFONO: il Logout passa nel panino, come ULTIMA voce (Franco).
@@ -6855,7 +6858,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.241"></script>
+<script src="js/app.js?v=7.242"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6879,7 +6882,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.241'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.242'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
