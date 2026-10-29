@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.240 - Modificati index.html (per la versione) e js/app.js. Collage (Franco: «se viene selezionata una tda che
+//          prevede le categorie, allora aggiungi una domanda sulla categoria, subito dopo la domanda sulla famiglia»):
+//          «Quale categoria ?», facoltativa, dalla serie e dalla tipologia, per Retro, Album, Extra serie e tipologie
+//          senza serie (`_collageTdaConCategoria`); voci = le categorie degli articoli rimasti dopo la famiglia
+//          (`_collageCategorieDi`), «Tutte» non filtra; senza nessuna categoria la domanda non compare.
 // v7.239 - Modificati index.html (per la versione) e js/app.js. Box delle famiglie (Franco: «possiamo applicare il
 //          bollino … che abbiamo messo sugli album … anche alle famiglie?»): la «A» dell'album (`_segnoAnnuncio`, solo
 //          admin) in basso a sinistra sulla foto, quando la famiglia ha almeno un testo per account nel tab Ebay. E
@@ -31904,7 +31909,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.239';
+const JS_VERSION = 'v7.240';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41944,6 +41949,11 @@ function _collageSitoHTML() {
           '<div style="' + dom + '">' + (it ? 'Quale famiglia ? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which family? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
           '<select id="collage-sito-serie-fam" style="' + sel + '" onchange="_collageSitoAggiorna()">' + _collageFamiglieDellaSerie(sid0, sez0, ver0) + '</select>' +
         '</div>' +
+        // v7.240 - e la categoria, facoltativa, se la tipologia la prevede (le voci le mette `_collageSitoAggiorna`)
+        '<div id="collage-sito-serie-cat-box" style="display:none;">' +
+          '<div style="' + dom + '">' + (it ? 'Quale categoria ? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which category? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
+          '<select id="collage-sito-serie-cat" style="' + sel + '" onchange="_collageSitoAggiorna()"></select>' +
+        '</div>' +
         '<div id="collage-sito-lato-box" style="display:none;">' +
           '<div style="' + dom + '">' + (it ? 'Il fronte o il retro ?' : 'Front or back?') + '</div>' +
           radio('collage-sito-lato', 'fronte', it ? 'Fronte' : 'Front', true) + radio('collage-sito-lato', 'retro', it ? 'Retro' : 'Back') +
@@ -41957,6 +41967,11 @@ function _collageSitoHTML() {
       '<div id="collage-sito-tda-fam-box" style="display:none;">' +
         '<div style="' + dom + '">' + (it ? 'Quale famiglia ? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which family? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
         '<select id="collage-sito-tda-fam" style="' + sel + '" onchange="_collageSitoAggiorna()">' + _collageFamiglieDellaTda(_tdaDellHub()[0] || (tipi[0] ? 'tipo:' + tipi[0].id : '')) + '</select>' +
+      '</div>' +
+      // v7.240 - e la categoria, come dalla serie
+      '<div id="collage-sito-tda-cat-box" style="display:none;">' +
+        '<div style="' + dom + '">' + (it ? 'Quale categoria ? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which category? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
+        '<select id="collage-sito-tda-cat" style="' + sel + '" onchange="_collageSitoAggiorna()"></select>' +
       '</div>' +
     '</div>' +
     // v7.235 - in un riquadro suo, che si spegne coi numeri specifici: le due domande direbbero cose diverse
@@ -42004,6 +42019,18 @@ function _collageSitoAggiorna() {
   if (t) t.style.display = da === 'tda' ? '' : 'none';
   const tfb = document.getElementById('collage-sito-tda-fam-box'), tfam = document.getElementById('collage-sito-tda-fam');   // v7.218
   if (tfb) tfb.style.display = da === 'tda' && tfam && tfam.options.length > 1 ? '' : 'none';
+  // v7.240 - le voci della categoria si rifanno a ogni risposta (dipendono dalla famiglia), tenendo la scelta se c'è ancora
+  const ccat = document.getElementById(da === 'serie' ? 'collage-sito-serie-cat' : 'collage-sito-tda-cat');
+  if (ccat) {
+    const prima = ccat.value;
+    const sezCat = (document.getElementById(da === 'serie' ? 'collage-sito-serie-tda' : 'collage-sito-tda') || {}).value;
+    ccat.innerHTML = _collageTdaConCategoria(sezCat) ? _collageCategorieDi(_collageCandidati(true, true).el) : '';
+    if ([...ccat.options].some(o => o.value === prima)) ccat.value = prima;
+  }
+  const scb = document.getElementById('collage-sito-serie-cat-box'), scat = document.getElementById('collage-sito-serie-cat');
+  if (scb) scb.style.display = da === 'serie' && scat && scat.options.length > 1 ? '' : 'none';
+  const tcb = document.getElementById('collage-sito-tda-cat-box'), tcat = document.getElementById('collage-sito-tda-cat');
+  if (tcb) tcb.style.display = da === 'tda' && tcat && tcat.options.length > 1 ? '' : 'none';
   if (n) n.style.display = num === 'si' ? '' : 'none';
   // v7.235 - «Numeri specifici ?» solo dalla serie e con fcr o fpa; col sì il campo, e la domanda del numero singolo si spegne
   const spb = document.getElementById('collage-sito-spec-box'), spc = document.getElementById('collage-sito-spec-campo'), unb = document.getElementById('collage-sito-unnum-box');
@@ -42115,6 +42142,24 @@ function _collageFamiglia(f) {
   const fam = _collageFamFpa.m.get(f.id);
   return fam ? _famigliaASchermo({ section: 'attaccare', famiglia: fam }) : '';
 }
+// 🆕 v7.240 (Franco: «se viene selezionata una tda che prevede le categorie, allora aggiungi una domanda sulla categoria,
+//    subito dopo la domanda sulla famiglia») - LA CATEGORIA DOPO LA FAMIGLIA. La prevedono le sezioni di
+//    `SEZIONI_CON_CATEGORIA` (Retro, Album, Extra serie) e le tipologie senza serie («tipo:…»). Le voci sono le categorie
+//    degli articoli che le risposte di sopra lasciano, famiglia compresa, in ordine alfabetico e col numero; la prima,
+//    «Tutte», non filtra. Come per la famiglia, senza nessuna categoria la domanda non compare.
+function _collageTdaConCategoria(v) {
+  v = String(v || '');
+  return v.startsWith('tipo:') || SEZIONI_CON_CATEGORIA.includes(v);
+}
+function _collageCategorieDi(el) {
+  const it = currentLang === 'it';
+  const conti = {};
+  el.forEach(f => { const c = String(f.category || '').trim(); if (c) conti[c] = (conti[c] || 0) + 1; });
+  const voci = Object.keys(conti).sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+  if (!voci.length) return '';
+  return '<option value="">' + (it ? 'Tutte' : 'All') + '</option>' +
+    voci.map(c => '<option value="' + esc(c) + '">' + esc(c) + ' (' + conti[c] + ')</option>').join('');
+}
 function _collageArticoliDellaTda(v) {
   const tutti = getData('figurines', []);
   v = String(v || '');
@@ -42191,7 +42236,8 @@ function _collageSpecNumeri(t) {
 const _collageNumeriDi = f => String(_numeroAschermo(f) ?? '').split(' - ').map(x => x.trim().toUpperCase()).filter(Boolean);
 // I candidati: base, con la foto, della serie o della tipologia scelta, col numero se chiesto
 // v7.235 - `senzaNumeri`: senza il filtro dei numeri specifici (la griglia da cui sceglierli)
-function _collageCandidati(senzaNumeri) {
+// v7.240 - `finoAllaFamiglia`: gli articoli appena dopo la famiglia, da cui si contano le categorie
+function _collageCandidati(senzaNumeri, finoAllaFamiglia) {
   const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
   const spec = !senzaNumeri && _collageSpecAttivo();
   const numeri = spec ? _collageSpecNumeri((document.getElementById('collage-sito-spec-numeri') || {}).value) : [];
@@ -42215,6 +42261,10 @@ function _collageCandidati(senzaNumeri) {
     const fam = (document.getElementById('collage-sito-tda-fam') || {}).value;   // v7.218 - la famiglia, se scelta
     if (fam) el = el.filter(f => _collageFamiglia(f) === fam);
   }
+  if (finoAllaFamiglia) return { el };
+  // v7.240 - la categoria, se scelta (la tendina è vuota dove la tipologia non la prevede)
+  const cat = (document.getElementById(da === 'serie' ? 'collage-sito-serie-cat' : 'collage-sito-tda-cat') || {}).value || '';
+  if (cat) el = el.filter(f => String(f.category || '').trim() === cat);
   if (conNum) el = el.filter(f => String(_numeroAschermo(f) ?? '').split(' - ').some(x => x.trim().toUpperCase() === numero));
   // v7.235 - coi numeri specifici, gli articoli con uno di quei numeri; `mancano` = i numeri che non hanno nessuno
   let mancano = [];
@@ -42232,7 +42282,7 @@ function _collageCandidati(senzaNumeri) {
     el = el.filter(f => { const u = _collageFotoCandidato(f, tutti, lato); if (!u || viste.has(u)) return false; viste.add(u); return true; });
   }
   const fam = (document.getElementById(da === 'serie' ? 'collage-sito-serie-fam' : 'collage-sito-tda-fam') || {}).value || '';   // v7.215, v7.218
-  return { el, conNum, numero, lato, fam, spec, numeri, mancano };
+  return { el, conNum, numero, lato, fam, cat, spec, numeri, mancano };
 }
 // 🆕 v7.235 (Franco: «un pulsante che mostra una griglia con le figurine della serie, con le card selezionabili, e, di
 //    ritorno da quel form, il campo è compilato») - LA GRIGLIA DEI NUMERI. Una card per numero, fra gli articoli che le
