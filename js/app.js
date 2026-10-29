@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.244 - Modificati index.html (per la versione) e js/app.js. COLLAGE (Franco: «il tetto dei 200 articoli … toglilo
+//          pure perché tanto adesso abbiamo messo la divisione delle foto per 50 articoli alla volta») - da Annunci
+//          nessun tetto a tutto il collage (via `COLLAGE_MAX_TOTALE`): «Prendi le foto», la casella del numero e
+//          `_collageProblema` si fermano solo dal «Cambia foto» di una card, al massimo del tipo. Mazzo e ruota restano
+//          a 40 per foto (Franco: «teniamo ancora 40»). E (Franco: «con una sola figurina ovviamente la parola rimane al
+//          singolare») il testo dell'annuncio dice «1 Figurina».
 // v7.243 - Modificati index.html (per la versione) e js/app.js. FOTO PER ANNUNCI (Franco: «nella anteprima delle foto
 //          elaborate, deve essere possibile cancellare le singole foto»): ogni foto pronta del passo 4 ha «🗑️ Togli»;
 //          le altre si rinumerano, nomi dei file compresi, e «Scarica tutte» scarica solo quelle rimaste
@@ -31951,7 +31957,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.243';
+const JS_VERSION = 'v7.244';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41614,10 +41620,9 @@ const COLLAGE_TIPI = [
 const COLLAGE_MAX_FOTO = Math.max(...COLLAGE_TIPI.map(t => t.max));
 // 🆕 v7.243 (Franco: «ogni foto … deve contenere al massimo 50 articoli; se il collage ha più di 50 articoli facciamo n
 //    foto … ogni foto deve contenere nel limite del possibile lo stesso numero di articoli») - da Annunci il massimo del
-//    tipo vale PER FOTO, e gli articoli possono essere di più: si dividono in più foto (`_collageParti`). Questo è il
-//    tetto di tutto il collage, perché le foto si leggono tutte insieme, grandi, e il browser le tiene in memoria. Dal
-//    «Cambia foto» di una card la foto è una sola, e il tetto resta quello del tipo.
-const COLLAGE_MAX_TOTALE = 200;
+//    tipo vale PER FOTO, e gli articoli possono essere di più: si dividono in più foto (`_collageParti`). Dal «Cambia
+//    foto» di una card la foto è una sola, e il tetto resta quello del tipo.
+// 🗑️ v7.244 - qui c'era `COLLAGE_MAX_TOTALE` (200), il tetto di tutto il collage da Annunci: tolto (Franco).
 // 🆕 v7.220 (Franco: «chiedi quale texture usare, campo obbligatorio, oppure per quale venditore è (domanda facoltativa);
 //    ma se selezioni la persona, metti già quella texture che ti ho indicato»; scelte dal foglio dei tessuti: «14, 3, 1 …
 //    Lendys: 14, Fabio: 3, Franco: 1») - LA TEXTURE DI SFONDO. Tessuti di Poly Haven (CC0, nessun obbligo di citazione),
@@ -42066,8 +42071,8 @@ function _collageSitoHTML() {
     // 🔄 v7.222 - «Quante foto devi unire?» qui, appena prima di «Prendi le foto», già riempita da `_collageSitoAggiorna`
     '<div id="collage-n-box">' +
       '<div style="' + dom + '">' + (it ? 'Quante foto devi unire ?' : 'How many photos?') + '</div>' +
-      // v7.243 - da Annunci fino a `COLLAGE_MAX_TOTALE`, divisi in più foto
-      '<input type="number" id="collage-n" class="form-input" min="2" max="' + (_collageBoxDest ? COLLAGE_MAX_FOTO : COLLAGE_MAX_TOTALE) + '" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
+      // v7.243 - da Annunci divisi in più foto, e (v7.244) senza tetto
+      '<input type="number" id="collage-n" class="form-input" min="2"' + (_collageBoxDest ? ' max="' + COLLAGE_MAX_FOTO + '"' : '') + ' step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
     '</div>' +
     '<div id="collage-sito-prendi" style="margin-top:0.6rem;"><button type="button" class="btn-primary" onclick="_collagePesca()">🎲 ' + (it ? 'Prendi le foto' : 'Pick the photos') + '</button></div>';
 }
@@ -42443,15 +42448,17 @@ async function _collagePesca() {
   // 🔄 v7.234 - il tetto è quello del tipo scelto (griglia 50, mazzo e ruota 40), o `COLLAGE_MAX_FOTO` se il tipo non
   //    c'è ancora: anche con mazzo e ruota ci si ferma prima di leggere le foto, che lette e poi scartate costano
   const tipoSc = COLLAGE_TIPI.find(t => t.k === (document.querySelector('input[name="collage-tipo"]:checked') || {}).value);
-  // 🔄 v7.243 - da Annunci il tetto è di tutto il collage (`COLLAGE_MAX_TOTALE`): oltre il massimo del tipo le foto
+  // 🔄 v7.243 - da Annunci il tetto è di tutto il collage (`COLLAGE_MAX_TOTALE`, tolto alla v7.244): oltre il massimo del tipo le foto
   //    diventano più d'una. Dal «Cambia foto» di una card resta quello del tipo
-  const tetto = !_collageBoxDest ? COLLAGE_MAX_TOTALE : tipoSc ? tipoSc.max : COLLAGE_MAX_FOTO;
-  if (n > tetto) {
+  // 🔄 v7.244 (Franco: «il tetto dei 200 articoli … toglilo pure, perché tanto adesso abbiamo messo la divisione delle
+  //    foto per 50 articoli alla volta») - da Annunci nessun tetto: si ferma solo dalla card
+  const tetto = tipoSc ? tipoSc.max : COLLAGE_MAX_FOTO;
+  if (_collageBoxDest && n > tetto) {
     _collageFoto = [];
     _collageMostraScelte();
     _collageStato();
     const av = document.getElementById('collage-avviso');
-    if (av) av.textContent = it ? 'Con queste risposte le foto sono ' + n + ': il collage' + (tipoSc && _collageBoxDest ? ' ' + tipoSc.it.toLowerCase() : '') + ' ne unisce al massimo ' + tetto + '. Restringi la scelta o scrivi un numero più basso.'
+    if (av) av.textContent = it ? 'Con queste risposte le foto sono ' + n + ': il collage' + (tipoSc ? ' ' + tipoSc.it.toLowerCase() : '') + ' ne unisce al massimo ' + tetto + '. Restringi la scelta o scrivi un numero più basso.'
                                 : n + ' photos: ' + tetto + ' at most.';
     return;
   }
@@ -42602,10 +42609,8 @@ function _collageProblema() {
   const tipo = COLLAGE_TIPI.find(t => t.k === (document.querySelector('input[name="collage-tipo"]:checked') || {}).value);
   if (!tipo) return it ? 'Scegli il tipo di collage.' : 'Choose a collage type.';
   if (!Number.isInteger(n) || n < 2) return it ? 'Le foto da unire sono almeno 2.' : 'At least 2 photos.';
-  // v7.243 - da Annunci oltre il massimo del tipo il collage si divide in più foto: il tetto è `COLLAGE_MAX_TOTALE`
-  if (!_collageBoxDest && n > tipo.max) {
-    if (n > COLLAGE_MAX_TOTALE) return it ? 'Il collage unisce al massimo ' + COLLAGE_MAX_TOTALE + ' foto.' : 'At most ' + COLLAGE_MAX_TOTALE + ' photos.';
-  } else if (n < tipo.min || n > tipo.max) return it
+  // v7.243 - da Annunci oltre il massimo del tipo il collage si divide in più foto (v7.244: senza tetto)
+  if (n < tipo.min || (_collageBoxDest && n > tipo.max)) return it
     ? (tipo.min === tipo.max ? 'Il collage ' + tipo.it.toLowerCase() + ' vuole esattamente ' + tipo.min + ' foto.' : 'Il collage ' + tipo.it.toLowerCase() + ' va da ' + tipo.min + ' a ' + tipo.max + ' foto.')
     : 'This collage takes ' + tipo.min + '–' + tipo.max + ' photos.';
   if (!_collageFoto.length) return it ? 'Scegli le foto (domanda 1).' : 'Choose the photos (question 1).';
@@ -42959,6 +42964,8 @@ function _collageTestoAnnuncio() {
   const n = (_collageFoto || []).filter(x => !x.diRetro).length;
   const quanti = t => (n ? n + ' ' : '') + t.charAt(0).toLocaleUpperCase('it') + t.slice(1);   // la maiuscola dopo il numero
   const su = v => v.toLocaleUpperCase('it');
+  // 🔄 v7.244 (Franco: «con una sola figurina ovviamente la parola rimane al singolare») - «1 Figurina»
+  const parolaFig = n === 1 ? 'Figurina' : 'Figurine';
   // (Franco: «set completo lo dobbiamo scrivere solo … se è stata selezionata una famiglia oppure … una categoria oppure
   //    se il numero di articoli del collage è pari al numero di articoli per la tipologia di versione richiesta») - il
   //    totale è quello fra parentesi nella tendina della versione (`_collageVersioniDellaSerie`, «Tutte» = ogni
@@ -42971,13 +42978,13 @@ function _collageTestoAnnuncio() {
     if (!s || !sez) return '';
     fam = val('collage-sito-serie-fam'); cat = val('collage-sito-serie-cat');
     tot = _collageArticoliDellaSerie(s.id).filter(f => (f.section || 'figurines') === sez && (ver === 'tutte' || _chiaveTipo(f) === ver)).length;
-    parti.push(_nomeSerie(s), quanti(figurine(sez) ? 'Figurine' : getSectionLabel(sez)), su(fam), su(cat));
+    parti.push(_nomeSerie(s), quanti(figurine(sez) ? parolaFig : getSectionLabel(sez)), su(fam), su(cat));
   } else {
     const t = document.getElementById('collage-sito-tda');
     if (!t || !t.value) return '';
     fam = val('collage-sito-tda-fam'); cat = val('collage-sito-tda-cat');
     tot = _collageArticoliDellaTda(t.value).length;
-    parti.push(quanti(figurine(t.value) ? 'Figurine' : t.options[t.selectedIndex].textContent), su(fam), su(cat));
+    parti.push(quanti(figurine(t.value) ? parolaFig : t.options[t.selectedIndex].textContent), su(fam), su(cat));
   }
   const completo = !!fam || !!cat || (n > 0 && n === tot);
   // (Franco: «dopo ogni - si inizia con la maiuscola») - la prima lettera di ogni pezzo, il resto com'è
