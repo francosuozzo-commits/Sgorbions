@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.247 - Modificati index.html e js/app.js. IL VENDITORE (Franco: «vorrei dare a un altro utente il diritto di creare
+//          un annuncio e un collage»; «senza che sia admin»; scelte sue: solo foto e collage, dalla «Tipologia di
+//          utente», «Senza macchie» come l'admin): nella scheda dell'utente «Tipologia di utente» ha «Venditore» (campo
+//          `venditore`, salvato da `saveEditUser`). Il venditore vede «📢 Annunci» nella barra, che gli apre una
+//          finestrella con «Crea foto per annunci» e «Crea collage foto» (`apriAnnunciNav`); all'admin apre la console
+//          come prima. `_faApri` e `apriCollage` chiedono `_puoAnnunci` (admin o venditore). La console, la tabella
+//          degli annunci e «Usa come foto della card» restano dell'admin.
 // v7.246 - Modificati index.html (per la versione) e js/app.js. COLLAGE (Franco: «aggiungi la sottocategoria con lo
 //          stesso meccanismo, nel testo copiato»): «Copia testo annuncio» scrive la sottocategoria scelta dopo la
 //          categoria, tutta in maiuscolo («… - 8 Retro - PUBBLICITÀ - BEVANDE - Set completo»; `_collageTestoAnnuncio`).
@@ -31967,7 +31974,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.246';
+const JS_VERSION = 'v7.247';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33765,7 +33772,7 @@ const i18n = {
 'admin.user.delete':'🗑️ Delete user','admin.user.save':'Save changes','admin.user.reset':'🔑 Reset password',
 'admin.user.joined':'Member since','admin.user.lastlogin':'Last login','admin.user.level':'Level',
 
-'admin.user.role':'User type','admin.user.collector':'Collector','admin.user.admin':'Admin',
+'admin.user.role':'User type','admin.user.collector':'Collector','admin.user.admin':'Admin','admin.user.venditore':'Seller',
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message !',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
@@ -33860,7 +33867,7 @@ const i18n = {
 'admin.user.delete':'🗑️ Elimina utente','admin.user.save':'Salva modifiche','admin.user.reset':'🔑 Reset password',
 'admin.user.joined':'Iscritto dal','admin.user.lastlogin':'Ultima login','admin.user.level':'Livello',
 
-'admin.user.role':'Tipologia di utente','admin.user.collector':'Collezionista','admin.user.admin':'Admin',
+'admin.user.role':'Tipologia di utente','admin.user.collector':'Collezionista','admin.user.admin':'Admin','admin.user.venditore':'Venditore',
 
 'contact.title':'Contatta <span class=\'hi\'>l\'amministratore</span>',
 'contact.intro':'Hai trovato qualche pezzo raro che non è censito nel sito?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio !',
@@ -37447,8 +37454,9 @@ function updateNavUser() {
     const nlBtn = document.getElementById('nav-newsletter-btn');
     if (nlBtn) nlBtn.style.display = currentUser.isAdmin ? '' : 'none';
     // v7.186 (Franco) - la voce «Annunci», solo all'admin
+    // v7.247 - e al venditore (`_puoAnnunci`), per cui apre la finestrella coi due tasti (`apriAnnunciNav`)
     const annBtn = document.getElementById('nav-annunci');
-    if (annBtn) annBtn.style.display = currentUser.isAdmin ? '' : 'none';    if (btnCollect) btnCollect.style.display = 'none';
+    if (annBtn) annBtn.style.display = _puoAnnunci() ? '' : 'none';    if (btnCollect) btnCollect.style.display = 'none';
     const homeContent = document.getElementById('home-logged-in-content');
     if (homeContent) homeContent.style.display = '';
     // 🗄️ v6.913 — qui c'era `mostraNumeroniHero(true)` (v5.935): è salita fuori dall'`if`, perché
@@ -41651,8 +41659,38 @@ let _collageFoto = [];   // le immagini scelte: { nome, img }
 // 🔄 v7.219 (Franco: «sposta la funzione Collage foto nella sezione "Annunci"») - non più un tab della console
 //    (`renderAdminCollage`, tolta): il tasto «🖼️ Crea collage foto» di Annunci apre la stessa finestra del «Cambia foto»,
 //    senza un box da riempire. Le domande sono sempre in una finestra sola, quindi gli id non si doppiano mai.
+// 🆕 v7.247 (Franco: «vorrei dare a un altro utente il diritto di creare un annuncio e un collage»; «senza che sia admin»;
+//    scelte sue: «solo foto e collage», «tipologia di utente», «senza macchie sì, come l'admin») - IL VENDITORE. Nella
+//    scheda dell'utente la tendina «Tipologia di utente» ha «Venditore» (campo `venditore` del documento dell'utente):
+//    può aprire «Crea foto per annunci» e «Crea collage foto», dalla voce «📢 Annunci» della barra. Non la console, né
+//    la tabella degli annunci, né «Usa come foto della card».
+// 📌 Il campo è sul documento dell'utente, e il browser potrebbe fingerlo: va bene così, perché i due strumenti
+//    leggono soltanto le foto e i dati che il sito mostra già, e non scrivono niente. Ciò che scrive resta dell'admin,
+//    deciso sul server (`admin_uids`).
+// una `function` e non una `const`: la barra (`updateNavUser`) la chiama anche prima che lo script arrivi fin qui
+function _puoAnnunci() { return !!(currentUser && (currentUser.isAdmin || currentUser.venditore === true)); }
+// la voce «📢 Annunci» della barra: all'admin la scheda della console, al venditore una finestrella coi due tasti
+function apriAnnunciNav() {
+  if (currentUser?.isAdmin) { showAdminTab('fotoannuncio'); return; }
+  if (!_puoAnnunci()) return;
+  const it = currentLang === 'it';
+  document.getElementById('annunci-venditore-modal')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'annunci-venditore-modal';
+  ov.innerHTML = '<div class="modal" style="max-width:520px;width:94vw;">' +
+    '<div class="modal-header"><h2 class="modal-title">📢 ' + (it ? 'Annunci' : 'Listings') + '</h2>' +
+    '<button type="button" class="modal-close" onclick="document.getElementById(\'annunci-venditore-modal\').remove()">✕</button></div>' +
+    '<div style="padding:0 1.2rem 1.4rem;"><p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it ? 'Le foto si scaricano e basta: sul sito non si salva niente.' : 'Photos are only downloaded: nothing is saved on the site.') + '</p>' +
+    '<div class="fa-tasti">' +
+      '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();_faApri()">' + (it ? '📸 Crea foto per annunci' : '📸 Create listing photos') + '</button>' +
+      '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();apriCollage()">' + (it ? '🖼️ Crea collage foto' : '🖼️ Create photo collage') + '</button>' +
+    '</div></div></div>';
+  document.body.appendChild(ov);
+}
 function apriCollage() {
-  if (!currentUser?.isAdmin) return;
+  if (!_puoAnnunci()) return;   // v7.247 - anche il venditore
   _collageBoxDest = null;
   const ov = _collageApriFinestra('🖼️ ' + (currentLang === 'it' ? 'Collage foto' : 'Photo collage'), false);
   // 🆕 v7.224 (Franco: «alla domanda "Da dove le prendo?" metti a default il sito») - come dal «Cambia foto» di una card
@@ -44179,7 +44217,7 @@ h1 { font-size:22px; margin:6px 0 4px; }
 </div></body></html>`;
 
 function _faApri() {
-  if (!currentUser || !currentUser.isAdmin) return;
+  if (!_puoAnnunci()) return;   // v7.247 - anche il venditore
   const it = currentLang === 'it';
   const w = window.open('', 'foto-annuncio');
   if (!w) { toast(it ? 'Il browser ha bloccato la finestra: consenti le finestre per questo sito' : 'The browser blocked the window', 'error'); return; }
@@ -73796,7 +73834,7 @@ function openEditUserModal(userId) {
   const dummyEl = document.getElementById('edit-user-dummy');
   if (dummyEl) dummyEl.checked = user.dummy === true;
   document.getElementById('edit-user-email').value = user.email;
-  document.getElementById('edit-user-role').value = user.isAdmin ? 'admin' : 'collector';
+  document.getElementById('edit-user-role').value = user.isAdmin ? 'admin' : user.venditore === true ? 'venditore' : 'collector';   // v7.247
   // Update modal title
   const titleEl = document.getElementById('edit-user-modal-title');
   if (titleEl) titleEl.textContent = '👤 ' + user.username;
@@ -73873,6 +73911,8 @@ async function saveEditUser() {
   // v7.221 - «dummy», true o false
   const dummyEl = document.getElementById('edit-user-dummy');
   if (dummyEl) users[idx].dummy = dummyEl.checked;
+  // 🆕 v7.247 - «Venditore», true o false. «Admin» qui resta com'era: admin lo decide la lista sul server (`admin_uids`)
+  users[idx].venditore = document.getElementById('edit-user-role').value === 'venditore';
   await fsSave('users', users[idx]);
   _cache.users = users;
   closeModal('edit-user-modal');
