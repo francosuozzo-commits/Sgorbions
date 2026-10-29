@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.245 - Modificati index.html (per la versione) e js/app.js. COLLAGE: LA SOTTOCATEGORIA (Franco: «bisogna aggiungere
+//          anche la domanda sulla sottocategoria, da mostrare quando viene selezionata la categoria»): «Quale
+//          sottocategoria ?» (facoltativa) subito dopo la categoria, dalla serie e dalla tipologia, con le
+//          sottocategorie degli articoli di quella categoria (`_collageSottocategorieDi`); filtra `_collageCandidati`.
+//          E (Franco: «se la sottocategoria non viene scelta, nella estrazione fatta con ordine alfabetico numerico, gli
+//          articoli devono essere ordinati sì alfabeticamente ma all'interno di un sovraordinamento fatto per sotto
+//          categoria») in «Numerico / Alfabetico» prima la sottocategoria, chi non ce l'ha in fondo (`_collagePesca`).
 // v7.244 - Modificati index.html (per la versione) e js/app.js. COLLAGE (Franco: «il tetto dei 200 articoli … toglilo
 //          pure perché tanto adesso abbiamo messo la divisione delle foto per 50 articoli alla volta») - da Annunci
 //          nessun tetto a tutto il collage (via `COLLAGE_MAX_TOTALE`): «Prendi le foto», la casella del numero e
@@ -31957,7 +31964,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.244';
+const JS_VERSION = 'v7.245';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42024,6 +42031,11 @@ function _collageSitoHTML() {
           '<div style="' + dom + '">' + (it ? 'Quale categoria ? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which category? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
           '<select id="collage-sito-serie-cat" style="' + sel + '" onchange="_collageSitoAggiorna()"></select>' +
         '</div>' +
+        // v7.245 - e la sottocategoria, facoltativa, quando una categoria è scelta (le voci le mette `_collageSitoAggiorna`)
+        '<div id="collage-sito-serie-sub-box" style="display:none;">' +
+          '<div style="' + dom + '">' + (it ? 'Quale sottocategoria ? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which subcategory? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
+          '<select id="collage-sito-serie-sub" style="' + sel + '" onchange="_collageSitoAggiorna()"></select>' +
+        '</div>' +
         '<div id="collage-sito-lato-box" style="display:none;">' +
           '<div style="' + dom + '">' + (it ? 'Il fronte o il retro ?' : 'Front or back?') + '</div>' +
           radio('collage-sito-lato', 'fronte', it ? 'Fronte' : 'Front', true) + radio('collage-sito-lato', 'retro', it ? 'Retro' : 'Back') +
@@ -42042,6 +42054,10 @@ function _collageSitoHTML() {
       '<div id="collage-sito-tda-cat-box" style="display:none;">' +
         '<div style="' + dom + '">' + (it ? 'Quale categoria ? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which category? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
         '<select id="collage-sito-tda-cat" style="' + sel + '" onchange="_collageSitoAggiorna()"></select>' +
+      '</div>' +
+      '<div id="collage-sito-tda-sub-box" style="display:none;">' +   // v7.245
+        '<div style="' + dom + '">' + (it ? 'Quale sottocategoria ? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which subcategory? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
+        '<select id="collage-sito-tda-sub" style="' + sel + '" onchange="_collageSitoAggiorna()"></select>' +
       '</div>' +
     '</div>' +
     // v7.235 - in un riquadro suo, che si spegne coi numeri specifici: le due domande direbbero cose diverse
@@ -42105,6 +42121,19 @@ function _collageSitoAggiorna() {
   if (scb) scb.style.display = da === 'serie' && scat && scat.options.length > 1 ? '' : 'none';
   const tcb = document.getElementById('collage-sito-tda-cat-box'), tcat = document.getElementById('collage-sito-tda-cat');
   if (tcb) tcb.style.display = da === 'tda' && tcat && tcat.options.length > 1 ? '' : 'none';
+  // 🆕 v7.245 (Franco: «bisogna aggiungere anche la domanda sulla sottocategoria, da mostrare quando viene selezionata la
+  //    categoria») - le voci sono le sottocategorie degli articoli di quella categoria; senza categoria scelta si svuota
+  //    (e quindi non filtra). Tiene la scelta se c'è ancora.
+  const csub = document.getElementById(da === 'serie' ? 'collage-sito-serie-sub' : 'collage-sito-tda-sub');
+  if (csub) {
+    const prima = csub.value, catSc = ccat ? ccat.value : '';
+    csub.innerHTML = catSc ? _collageSottocategorieDi(_collageCandidati(true, true).el.filter(f => String(f.category || '').trim() === catSc)) : '';
+    if ([...csub.options].some(o => o.value === prima)) csub.value = prima;
+  }
+  const ssb = document.getElementById('collage-sito-serie-sub-box'), ssub = document.getElementById('collage-sito-serie-sub');
+  if (ssb) ssb.style.display = da === 'serie' && ssub && ssub.options.length > 1 ? '' : 'none';
+  const tsb = document.getElementById('collage-sito-tda-sub-box'), tsub = document.getElementById('collage-sito-tda-sub');
+  if (tsb) tsb.style.display = da === 'tda' && tsub && tsub.options.length > 1 ? '' : 'none';
   if (n) n.style.display = num === 'si' ? '' : 'none';
   // v7.235 - «Numeri specifici ?» solo dalla serie e con fcr o fpa; col sì il campo, e la domanda del numero singolo si spegne
   const spb = document.getElementById('collage-sito-spec-box'), spc = document.getElementById('collage-sito-spec-campo'), unb = document.getElementById('collage-sito-unnum-box');
@@ -42234,6 +42263,16 @@ function _collageCategorieDi(el) {
   return '<option value="">' + (it ? 'Tutte' : 'All') + '</option>' +
     voci.map(c => '<option value="' + esc(c) + '">' + esc(c) + ' (' + conti[c] + ')</option>').join('');
 }
+// 🆕 v7.245 - le voci della sottocategoria, come quelle della categoria: «Tutte» e poi in ordine alfabetico col numero
+function _collageSottocategorieDi(el) {
+  const it = currentLang === 'it';
+  const conti = {};
+  el.forEach(f => { const c = String(f.subcategory || '').trim(); if (c) conti[c] = (conti[c] || 0) + 1; });
+  const voci = Object.keys(conti).sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+  if (!voci.length) return '';
+  return '<option value="">' + (it ? 'Tutte' : 'All') + '</option>' +
+    voci.map(c => '<option value="' + esc(c) + '">' + esc(c) + ' (' + conti[c] + ')</option>').join('');
+}
 function _collageArticoliDellaTda(v) {
   const tutti = getData('figurines', []);
   v = String(v || '');
@@ -42339,6 +42378,9 @@ function _collageCandidati(senzaNumeri, finoAllaFamiglia) {
   // v7.240 - la categoria, se scelta (la tendina è vuota dove la tipologia non la prevede)
   const cat = (document.getElementById(da === 'serie' ? 'collage-sito-serie-cat' : 'collage-sito-tda-cat') || {}).value || '';
   if (cat) el = el.filter(f => String(f.category || '').trim() === cat);
+  // v7.245 - la sottocategoria, se scelta (c'è solo con la categoria scelta)
+  const sub = cat ? (document.getElementById(da === 'serie' ? 'collage-sito-serie-sub' : 'collage-sito-tda-sub') || {}).value || '' : '';
+  if (sub) el = el.filter(f => String(f.subcategory || '').trim() === sub);
   if (conNum) el = el.filter(f => String(_numeroAschermo(f) ?? '').split(' - ').some(x => x.trim().toUpperCase() === numero));
   // v7.235 - coi numeri specifici, gli articoli con uno di quei numeri; `mancano` = i numeri che non hanno nessuno
   let mancano = [];
@@ -42356,7 +42398,7 @@ function _collageCandidati(senzaNumeri, finoAllaFamiglia) {
     el = el.filter(f => { const u = _collageFotoCandidato(f, tutti, lato); if (!u || viste.has(u)) return false; viste.add(u); return true; });
   }
   const fam = (document.getElementById(da === 'serie' ? 'collage-sito-serie-fam' : 'collage-sito-tda-fam') || {}).value || '';   // v7.215, v7.218
-  return { el, conNum, numero, lato, fam, cat, spec, numeri, mancano };
+  return { el, conNum, numero, lato, fam, cat, sub, spec, numeri, mancano };
 }
 // 🆕 v7.235 (Franco: «un pulsante che mostra una griglia con le figurine della serie, con le card selezionabili, e, di
 //    ritorno da quel form, il campo è compilato») - LA GRIGLIA DEI NUMERI. Una card per numero, fra gli articoli che le
@@ -42481,7 +42523,13 @@ async function _collagePesca() {
   //    opzione Numerico/Alfabetico») - prima il numero a schermo («2» prima di «10», le lettere delle olografiche dopo
   //    le cifre), chi non ce l'ha in fondo; a pari numero, o senza numero, il nome
   const numA = f => String(_numeroAschermo(f) ?? '').trim();
-  if (alfa) a.sort((x, y) => (!numA(x) - !numA(y)) || numA(x).localeCompare(numA(y), 'it', { numeric: true })
+  // 🆕 v7.245 (Franco: «se la sottocategoria non viene scelta, nella estrazione fatta con ordine alfabetico numerico, gli
+  //    articoli devono essere ordinati sì alfabeticamente ma all'interno di un sovraordinamento fatto per sotto
+  //    categoria») - prima la sottocategoria (in ordine alfabetico, chi non ce l'ha in fondo), poi come prima. Con la
+  //    sottocategoria scelta sono tutti uguali e non cambia niente; nelle tipologie senza sottocategorie neppure.
+  const subA = f => String(f.subcategory || '').trim();
+  const perSub = (x, y) => (!subA(x) - !subA(y)) || subA(x).localeCompare(subA(y), 'it', { sensitivity: 'base', numeric: true });
+  if (alfa) a.sort((x, y) => perSub(x, y) || (!numA(x) - !numA(y)) || numA(x).localeCompare(numA(y), 'it', { numeric: true })
     || String(x.name || '').localeCompare(String(y.name || ''), 'it', { sensitivity: 'base', numeric: true }));
   else for (let i = 0; i < n; i++) { const j = i + Math.floor(Math.random() * (a.length - i)); [a[i], a[j]] = [a[j], a[i]]; }
   const tutti = getData('figurines', []);
