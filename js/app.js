@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.242 - Modificati index.html (per la versione) e js/app.js. Tabella degli annunci dal telefono (Franco: «"venditore"
+//          diventa "account"»): il titolo della colonna è «Account»; dal PC resta «Venditore». E (Franco: «Iniziale
+//          diventa "Mio"») dal telefono «Mio»; (Franco: «stringi la colonna Sito») dal telefono il selettore da 2,4 a
+//          1,6rem senza freccia, e la colonna col margine stretto (regola nell'index). E (Franco: «aggiungi filtro
+//          sul prezzo (campo "Finale")»; «chiamalo "Filtra per valore"») il riquadro «Filtra per valore», in fondo: una
+//          pillola per valore di Finale, come «Filtra per numero».
 // v7.241 - Modificati index.html e js/app.js. Annunci dal telefono (Franco: «i due bottoni crea foto per annuncio e
 //          crea collage, si sovrappongono un pochino»; «diminuirne un minimo l'altezza di entrambi»): i due tasti in
 //          una fila `fa-tasti` (flex, a capo, spazio 0,6rem anche fra le righe) e dal telefono più bassi (testo 1rem,
@@ -31920,7 +31926,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.241';
+const JS_VERSION = 'v7.242';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -43032,7 +43038,7 @@ function _annTitoloPerSito(sito, t) {
 // 🆕 v7.199 (Franco: «aggiungiamo un box filtri chiamato "Serie", che contiene una pillola per ogni serie del sito;
 //    usa i nomi brevi») - il terzo riquadro. La voce è l'id della serie (`campo` = il campo della riga da guardare,
 //    se non è la chiave del riquadro), e a schermo va il nome breve (`etichetta`), come nella colonna Serie.
-const _annFiltro = { sito: new Set(), account: new Set(), serie: new Set(), n: new Set(), tipologia: new Set(), singola: new Set() };   // v7.229: + tipologia, singola
+const _annFiltro = { sito: new Set(), account: new Set(), serie: new Set(), n: new Set(), tipologia: new Set(), singola: new Set(), valore: new Set() };   // v7.229: + tipologia, singola; v7.242: + valore
 // 🔄 v7.202 (Franco: «mettere prima serie, poi account e poi sito; account rinominalo "Venditore"») - l'ordine dei
 //    riquadri è quello dell'elenco; il titolo segue la formula degli altri, «Filtra per venditore» (la chiave resta
 //    `account`, come il campo della riga)
@@ -43074,6 +43080,14 @@ const _ANN_RIQUADRI = [
   //    #») il conteggio si legge «#3» (`prima`, in `_chipTipoHTML`)
   { k: 'n', it: 'Filtra per numero', en: 'Filter by number', stacco: '1.6rem', prima: '#',
     voci: () => [...new Set(_annRighe.map(r => String(r.n ?? '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true })) },
+  // 🆕 v7.242 (Franco: «aggiungi filtro sul prezzo (campo "Finale")»; «chiamalo "Filtra per valore"») - come il numero:
+  //    una pillola per ogni valore di Finale (`prezzo`) fra gli annunci, senza doppioni e senza i vuoti, dal più basso;
+  //    a schermo con la virgola. Il nome è già un numero: lo stesso `stacco` e il «#» del numero
+  { k: 'valore', it: 'Filtra per valore', en: 'Filter by value', stacco: '1.6rem', prima: '#',
+    val: r => (r.prezzo === null || r.prezzo === undefined || String(r.prezzo).trim() === '') ? '' : String(r.prezzo).trim(),
+    voci: () => { const q = _ANN_RIQUADRI.find(x => x.k === 'valore');
+      return [...new Set(_annRighe.map(q.val).filter(Boolean))].sort((a, b) => Number(a) - Number(b)); },
+    etichetta: v => currentLang === 'it' ? v.replace('.', ',') : v },
 ];
 function _annPassa(r, salta) {
   return _ANN_RIQUADRI.every(q => q.k === salta || !_annFiltro[q.k].size || _annFiltro[q.k].has(q.val ? q.val(r) : r[q.campo || q.k]));   // v7.229: `val`
@@ -43192,14 +43206,18 @@ function _annDisegna() {
   _annVisti = righe.map(([, i]) => i);
   // v7.222 - sul telefono il Sito è solo il colore: scritta trasparente, selettore stretto
   const tel = _isMobileViewport();
-  const _annSitoTel = tel ? 'color:transparent;width:2.4rem;' : '';
+  // 🔄 v7.242 (Franco: «stringi la colonna Sito») - il selettore da 2,4 a 1,6rem, senza la freccia né il margine dentro
+  //    (resta il colore); il margine stretto della colonna sta in una regola dell'index (`#annunci-tabella`)
+  const _annSitoTel = tel ? 'color:transparent;width:1.6rem;padding:0;-webkit-appearance:none;appearance:none;' : '';
   box.innerHTML = '<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;">'
     + '<table class="data-table compact"><thead><tr>'
     // v7.200 - la spunta di tutte le righe che si vedono (coi filtri di adesso)
     + '<th style="text-align:center;"><input type="checkbox" title="' + (it ? 'Spunta tutte quelle che vedi' : 'Tick all visible') + '"'
       + (righe.every(([r]) => _annSpuntati.has(r.id)) ? ' checked' : '') + ' onchange="_annSpuntaTutti(this.checked)"></th>'
     // v7.200 (Franco: «"Tipologia" su una riga e "articolo" sulla riga dopo (senza "di")»)
-    + th(it ? 'Sito' : 'Site') + th(it ? 'Venditore' : 'Seller') + th(it ? 'Serie' : 'Series') + th(it ? (tel ? 'TDA' : 'Tipologia<br>articolo') : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
+    // 🔄 v7.242 (Franco: «da mobile, nella tabella degli annunci "venditore" diventa "account"») - solo il titolo
+    //    della colonna, solo dal telefono (`tel`), come «TDA»
+    + th(it ? 'Sito' : 'Site') + th(it ? (tel ? 'Account' : 'Venditore') : (tel ? 'Account' : 'Seller')) + th(it ? 'Serie' : 'Series') + th(it ? (tel ? 'TDA' : 'Tipologia<br>articolo') : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
     // v7.187 (Franco: «il campo descrizione non mostrarlo nella tabella degli annunci; mostra invece la url») - la
     //    descrizione resta nella finestra; in tabella al suo posto il link, scritto per intero
     // v7.187 (Franco: «per ora togli il campo Foto dalla tabellina») - lo zip resta nella finestra
@@ -43208,7 +43226,8 @@ function _annDisegna() {
     // 🔄 v7.231 (Franco: «cambiare la natura dei campi Costo e Prezzo. passiamo da Euro a numero. cambiamo inoltre il
     //    nome del campo: passiamo a Iniziale e Finale») - a schermo Iniziale e Finale, senza €; nel dato restano
     //    `costo` e `prezzo`, così gli annunci già salvati si leggono come prima
-    + th(it ? 'Voto' : 'Rating') + th(it ? 'Iniziale' : 'Initial') + th(it ? 'Finale' : 'Final') + th('Link')
+    // 🔄 v7.242 (Franco, dal telefono: «Iniziale diventa "Mio"») - solo dal telefono, come «Account» e «TDA»
+    + th(it ? 'Voto' : 'Rating') + th(it ? (tel ? 'Mio' : 'Iniziale') : (tel ? 'Mine' : 'Initial')) + th(it ? 'Finale' : 'Final') + th('Link')
     // v7.200 - sopra i quattro tasti della riga, «Applica valori da album» (agli annunci spuntati)
     // 🔄 v7.202 (Franco: «chiamalo "Applica valori da album e venditore" (vai pure su due righe)») - a capo dopo «album»
     + '<th style="text-align:center;text-transform:none;letter-spacing:0;"><button type="button" class="btn-barra-admin pieno" id="ann-applica-album" onclick="_annApplicaDaAlbum()"'
