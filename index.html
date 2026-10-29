@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.240">
+<link rel="stylesheet" href="css/style.css?v=7.241">
 
 
 <style>
@@ -1465,6 +1465,21 @@ button.back-btn { color:#ffffff; }
    che quel colore cambia, cambiano insieme. */
 .btn-azione-admin { background: var(--action-admin); color: #ffffff; }   /* 🧪 v6.858 - la gemella di `.btn-admin`: cambiano insieme o il sito ha due arancioni diversi */
 .btn-azione-admin:hover { background: var(--action-admin-hover); box-shadow: 0 8px 30px rgba(var(--action-admin-rgb),0.4); }
+/* 🔄 v7.241 (Franco: «da mobile i due bottoni crea foto per annuncio e crea collage, si sovrappongono un pochino»;
+   «diminuirne un minimo l'altezza di entrambi») - i due tasti di Annunci in una fila che va a capo con lo spazio
+   anche fra le righe; dal telefono più bassi (erano 1,15rem di testo e 0,75rem sopra e sotto, come sul PC) */
+.fa-tasti { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+@media (max-width: 860px) {
+  .fa-tasti .btn-primary { font-size: 1rem; padding: 0.5rem 1.3rem; }
+  /* 🔄 v7.241 (Franco: «la funzione di collage foto … non sfrutta bene tutto lo schermo»; «la funzione di crea annuncio
+     invece lo sfrutta ottimamente»; «c'è dello spazio sulla sinistra che è inutilizzato») - dal telefono via i due
+     rientri che la finestra dell'annuncio non ha: il margine del corpo (1,2rem per lato) e il rientro delle domande
+     «Dal sito» e della spunta dello sfondo (1,4rem + 0,9rem). Resta la riga a sinistra delle domande, più vicina.
+     `!important` perché sono stili in linea */
+  #collage-box-corpo { padding: 0 0 1.2rem !important; }
+  #collage-box-corpo #collage-sito { margin-left: 0 !important; padding: 0.4rem 0 0.4rem 0.6rem !important; }
+  #collage-box-corpo #collage-pc-opz { margin-left: 0 !important; }
+}
 
 /* v5.953 — TELEFONO: il Logout passa nel panino, come ULTIMA voce (Franco).
    Il pulsante della navbar (#user-nav .btn-logout) e la voce di menu (#nav-logout-link) sono
@@ -6840,7 +6855,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.240"></script>
+<script src="js/app.js?v=7.241"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6864,7 +6879,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.240'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.241'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
