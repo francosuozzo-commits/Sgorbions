@@ -1,6 +1,31 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.243 - Modificati index.html (per la versione) e js/app.js. FOTO PER ANNUNCI (Franco: «nella anteprima delle foto
+//          elaborate, deve essere possibile cancellare le singole foto»): ogni foto pronta del passo 4 ha «🗑️ Togli»;
+//          le altre si rinumerano, nomi dei file compresi, e «Scarica tutte» scarica solo quelle rimaste
+//          (`_faRisultati`, `_faTogli`). E (Franco: «dopo che si seleziona il sito web deve essere possibile selezionare
+//          anche il venditore … le stesse tre opzioni che abbiamo nella procedura di collage, e … lo stesso identico
+//          meccanismo di sfondo con texture»; poi «avevo detto di fare come dall'altra parte») al passo 3, scelto il
+//          sito, come nel collage: «Per quale venditore?» con Franco, Lendys e Fabio (facoltativo, mette già il suo
+//          tessuto, `COLLAGE_TEXTURE_VENDITORE`) e «Quale texture di sfondo?» (obbligatoria, con le miniature;
+//          «Nessuna» è lo sfondo bianco di prima). Le pagine si posano sul tessuto con l'ombra, la posa a caso, la luce
+//          e l'usura del collage (`_faSulTessuto`).
+//          COLLAGE: «📋 Copia testo annuncio» sotto i tasti dello scaricamento (Franco: «il nome della serie per
+//          esteso … poi spazio-spazio la tipologia di Articolo … la famiglia … oppure … la categoria … la dicitura set
+//          completo»; «scriviamo sempre figurine sia quando sono fcr che quando sono FPA»; «dopo ogni - si inizia con la
+//          maiuscola»; «il nome della famiglia e il nome della categoria vanno tutto in maiuscolo»; «prima della parola
+//          figurine scrivi anche il numero di articoli estratti … anche se si tratta di retro»): «Sgorbions serie 1 -
+//          15 Figurine - GLI ANIMALS - Set completo», negli appunti. «Set completo» (Franco) solo con la famiglia o la
+//          categoria scelta, o col collage di tutti gli articoli della versione scelta.
+//          E IL COLLAGE IN PIÙ FOTO (Franco: «ogni foto … deve contenere al massimo 50 articoli; se il collage ha più
+//          di 50 articoli facciamo n foto … ogni foto deve contenere nel limite del possibile lo stesso numero di
+//          articoli»; «se gli articoli sono 51 … una foto con 25 articoli e una foto con 26»): da Annunci il massimo del
+//          tipo (griglia 50, mazzo e ruota 40) vale per foto, e gli articoli si dividono il più possibile uguali
+//          (`_collageParti`); il tetto di tutto il collage è `COLLAGE_MAX_TOTALE` (200). Ogni foto col suo «Scarica»
+//          sotto (e la sua foto dei retro), in fondo «Scarica tutte (N)» (`_collageCreaParti`). Dal «Cambia foto» di
+//          una card come prima, una foto sola.
+//          (`_collageTestoAnnuncio`, `_collageCopiaTesto`). Compare col collage fatto dal sito.
 // v7.242 - Modificati index.html (per la versione) e js/app.js. Tabella degli annunci dal telefono (Franco: «"venditore"
 //          diventa "account"»): il titolo della colonna è «Account»; dal PC resta «Venditore». E (Franco: «Iniziale
 //          diventa "Mio"») dal telefono «Mio»; (Franco: «stringi la colonna Sito») dal telefono il selettore da 2,4 a
@@ -31926,7 +31951,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.242';
+const JS_VERSION = 'v7.243';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41587,6 +41612,12 @@ const COLLAGE_TIPI = [
 // v7.234 - il tetto di tutti i collage, cioè della casella del numero e di «Prendi le foto»: il più alto dei tre. Sotto,
 //    ogni tipo dice il suo (`_collageProblema`): 45 foto passano con la griglia, non col mazzo né con la ruota.
 const COLLAGE_MAX_FOTO = Math.max(...COLLAGE_TIPI.map(t => t.max));
+// 🆕 v7.243 (Franco: «ogni foto … deve contenere al massimo 50 articoli; se il collage ha più di 50 articoli facciamo n
+//    foto … ogni foto deve contenere nel limite del possibile lo stesso numero di articoli») - da Annunci il massimo del
+//    tipo vale PER FOTO, e gli articoli possono essere di più: si dividono in più foto (`_collageParti`). Questo è il
+//    tetto di tutto il collage, perché le foto si leggono tutte insieme, grandi, e il browser le tiene in memoria. Dal
+//    «Cambia foto» di una card la foto è una sola, e il tetto resta quello del tipo.
+const COLLAGE_MAX_TOTALE = 200;
 // 🆕 v7.220 (Franco: «chiedi quale texture usare, campo obbligatorio, oppure per quale venditore è (domanda facoltativa);
 //    ma se selezioni la persona, metti già quella texture che ti ho indicato»; scelte dal foglio dei tessuti: «14, 3, 1 …
 //    Lendys: 14, Fabio: 3, Franco: 1») - LA TEXTURE DI SFONDO. Tessuti di Poly Haven (CC0, nessun obbligo di citazione),
@@ -41703,6 +41734,7 @@ function _collageHTML(perBox) {
     '<div id="collage-peso-retro" style="display:none;margin-top:0.9rem;font-size:0.85rem;font-weight:700;color:var(--text);"></div>' +   // v7.225
     '<div id="collage-anteprima-retro" style="display:none;margin-top:0.3rem;max-width:' + COLLAGE_W + 'px;border:1px solid var(--border);border-radius:8px;overflow:hidden;' +
       'background:repeating-conic-gradient(#3a3a3a 0% 25%, #555 0% 50%) 50% / 24px 24px;"></div>' +   // v7.223
+    '<div id="collage-parti" style="display:none;"></div>' +   // v7.243 - il collage diviso in più foto (`_collageCreaParti`)
     // 🔄 v7.225 (Franco: «i 3 pulsanti per scaricare le foto dei collage, mettili sotto alla ultima foto generata; tutti e
     //    3 su di una sola riga») - qui, dopo le anteprime: si scarica dopo aver guardato. Una riga sola anche a 390 px
     //    (`nowrap`, scritte un poco più piccole); i tasti senza foto restano nascosti come prima
@@ -41718,7 +41750,10 @@ function _collageHTML(perBox) {
       '<a id="collage-scarica-retro" class="btn-primary" style="display:none;text-decoration:none;white-space:nowrap;font-size:0.85rem;" download="collage-retro.png">⬇️ ' + (it ? 'Scarica retro' : 'Download backs') + '</a>' +
       // 🆕 v7.225 (Franco: «metti un tasto da usare per scaricare entrambe le foto assieme») - c'è quando c'è la foto dei retro
       '<button type="button" id="collage-scarica-tutte" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;" onclick="_collageScaricaTutte()">⬇️ ' + (it ? 'Scarica entrambe' : 'Download both') + '</button>' +
-    '</div>');
+    '</div>' +
+    // 🆕 v7.243 (Franco: «in fondo a tutto, sotto al bottone di scaricamento della foto vorrei un bottone che si chiama
+    //    copia testo annuncio») - `_collageTestoAnnuncio`; compare col collage fatto dal sito (`_collageCrea`)
+    '<button type="button" id="collage-copia-testo" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;margin-top:0.7rem;" onclick="_collageCopiaTesto()">📋 ' + (it ? 'Copia testo annuncio' : 'Copy listing text') + '</button>');
 }
 // 🆕 v7.214 (Franco: «nel box che rappresenta una tipologia di articolo, metti un pulsante (Anche da mobile) sempre admin
 //    visibile, che si chiama "Cambia foto"; se premuto, deve lanciare questa procedura nuova, e il suo risultato lo mette
@@ -41849,8 +41884,16 @@ function _collageAzzera(soloCollage) {
   });
   ['collage-scarica-tutte', 'collage-usa', 'collage-peso', 'collage-peso-retro'].forEach(id => { const x = document.getElementById(id); if (x) x.style.display = 'none'; });
   ['collage-anteprima', 'collage-anteprima-retro'].forEach(id => { const x = document.getElementById(id); if (x) { x.innerHTML = ''; x.style.display = 'none'; } });
+  _collageAzzeraParti();   // v7.243
   _collageMostraScelte();
   _collageStato();
+}
+// 🆕 v7.243 - via le foto del collage diviso, liberando la memoria dei loro file
+function _collageAzzeraParti() {
+  const box = document.getElementById('collage-parti');
+  if (!box) return;
+  box.querySelectorAll('a[data-url]').forEach(a => { if (a.dataset.url) URL.revokeObjectURL(a.dataset.url); });
+  box.innerHTML = ''; box.style.display = 'none';
 }
 // ogni risposta cambiata nella finestra (tendine, scelte, spunte, caselle), ascoltata una volta sola sul suo corpo: il
 // file scelto dal PC no, perché è il modo di prendere le foto. Solo se c'è qualcosa da togliere.
@@ -42023,7 +42066,8 @@ function _collageSitoHTML() {
     // 🔄 v7.222 - «Quante foto devi unire?» qui, appena prima di «Prendi le foto», già riempita da `_collageSitoAggiorna`
     '<div id="collage-n-box">' +
       '<div style="' + dom + '">' + (it ? 'Quante foto devi unire ?' : 'How many photos?') + '</div>' +
-      '<input type="number" id="collage-n" class="form-input" min="2" max="' + COLLAGE_MAX_FOTO + '" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
+      // v7.243 - da Annunci fino a `COLLAGE_MAX_TOTALE`, divisi in più foto
+      '<input type="number" id="collage-n" class="form-input" min="2" max="' + (_collageBoxDest ? COLLAGE_MAX_FOTO : COLLAGE_MAX_TOTALE) + '" step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
     '</div>' +
     '<div id="collage-sito-prendi" style="margin-top:0.6rem;"><button type="button" class="btn-primary" onclick="_collagePesca()">🎲 ' + (it ? 'Prendi le foto' : 'Pick the photos') + '</button></div>';
 }
@@ -42399,13 +42443,15 @@ async function _collagePesca() {
   // 🔄 v7.234 - il tetto è quello del tipo scelto (griglia 50, mazzo e ruota 40), o `COLLAGE_MAX_FOTO` se il tipo non
   //    c'è ancora: anche con mazzo e ruota ci si ferma prima di leggere le foto, che lette e poi scartate costano
   const tipoSc = COLLAGE_TIPI.find(t => t.k === (document.querySelector('input[name="collage-tipo"]:checked') || {}).value);
-  const tetto = tipoSc ? tipoSc.max : COLLAGE_MAX_FOTO;
+  // 🔄 v7.243 - da Annunci il tetto è di tutto il collage (`COLLAGE_MAX_TOTALE`): oltre il massimo del tipo le foto
+  //    diventano più d'una. Dal «Cambia foto» di una card resta quello del tipo
+  const tetto = !_collageBoxDest ? COLLAGE_MAX_TOTALE : tipoSc ? tipoSc.max : COLLAGE_MAX_FOTO;
   if (n > tetto) {
     _collageFoto = [];
     _collageMostraScelte();
     _collageStato();
     const av = document.getElementById('collage-avviso');
-    if (av) av.textContent = it ? 'Con queste risposte le foto sono ' + n + ': il collage' + (tipoSc ? ' ' + tipoSc.it.toLowerCase() : '') + ' ne unisce al massimo ' + tetto + '. Restringi la scelta o scrivi un numero più basso.'
+    if (av) av.textContent = it ? 'Con queste risposte le foto sono ' + n + ': il collage' + (tipoSc && _collageBoxDest ? ' ' + tipoSc.it.toLowerCase() : '') + ' ne unisce al massimo ' + tetto + '. Restringi la scelta o scrivi un numero più basso.'
                                 : n + ' photos: ' + tetto + ' at most.';
     return;
   }
@@ -42556,7 +42602,10 @@ function _collageProblema() {
   const tipo = COLLAGE_TIPI.find(t => t.k === (document.querySelector('input[name="collage-tipo"]:checked') || {}).value);
   if (!tipo) return it ? 'Scegli il tipo di collage.' : 'Choose a collage type.';
   if (!Number.isInteger(n) || n < 2) return it ? 'Le foto da unire sono almeno 2.' : 'At least 2 photos.';
-  if (n < tipo.min || n > tipo.max) return it
+  // v7.243 - da Annunci oltre il massimo del tipo il collage si divide in più foto: il tetto è `COLLAGE_MAX_TOTALE`
+  if (!_collageBoxDest && n > tipo.max) {
+    if (n > COLLAGE_MAX_TOTALE) return it ? 'Il collage unisce al massimo ' + COLLAGE_MAX_TOTALE + ' foto.' : 'At most ' + COLLAGE_MAX_TOTALE + ' photos.';
+  } else if (n < tipo.min || n > tipo.max) return it
     ? (tipo.min === tipo.max ? 'Il collage ' + tipo.it.toLowerCase() + ' vuole esattamente ' + tipo.min + ' foto.' : 'Il collage ' + tipo.it.toLowerCase() + ' va da ' + tipo.min + ' a ' + tipo.max + ' foto.')
     : 'This collage takes ' + tipo.min + '–' + tipo.max + ' photos.';
   if (!_collageFoto.length) return it ? 'Scegli le foto (domanda 1).' : 'Choose the photos (question 1).';
@@ -42848,6 +42897,10 @@ async function _collageCrea() {
   const jpg = !!grande && !!sfondo;
   // v7.224 - i retro si leggono prima del fronte: nella griglia il posto di ogni figurina tiene anche il suo retro
   const retri = await _collageRetriLeggi();
+  // v7.243 - oltre il massimo del tipo, più foto (solo da Annunci: dalla card `_collageProblema` non ci arriva)
+  const misure = _collageParti(imgs.length, (COLLAGE_TIPI.find(t => t.k === tipo) || {}).max || COLLAGE_MAX_FOTO);
+  if (!_collageBoxDest && misure.length > 1) { await _collageCreaParti(tipo, imgs, retri, sfondo, grande, jpg, misure); return; }
+  _collageAzzeraParti();
   const c = _collageDisegna(tipo, imgs, sfondo, grande, null, retri);
   const blob = await new Promise(ok => jpg ? c.toBlob(ok, 'image/jpeg', 0.92) : c.toBlob(ok, 'image/png'));
   if (!blob) { toast(it ? '❌ Non riesco a creare la foto' : '❌ Could not create the photo', 'error'); return; }
@@ -42863,6 +42916,8 @@ async function _collageCrea() {
     //    "scarica foto"») - «Scarica fronte» solo quando c'è anche la foto dei retro
     a.textContent = '⬇️ ' + (retri ? (it ? 'Scarica fronte' : 'Download front') : (it ? 'Scarica foto' : 'Download photo'));
   }
+  const ct = document.getElementById('collage-copia-testo');   // v7.243 - solo dal sito: dal PC non c'è una serie da dire
+  if (ct) ct.style.display = _collageModo === 'sito' && _collageTestoAnnuncio() ? '' : 'none';
   // v7.223 - il peso del file e la sua misura; v7.225: sopra l'anteprima, «Fronte» quando c'è anche la foto dei retro
   const peso = document.getElementById('collage-peso');
   if (peso) { peso.textContent = (retri ? (it ? 'Fronte · ' : 'Front · ') : '') + (blob.size / 1048576).toFixed(1).replace('.', it ? ',' : '.') + ' MB · ' + c.width + '×' + c.height + ' px'; peso.style.display = ''; }
@@ -42885,14 +42940,139 @@ async function _collageRetriLeggi() {
   if (perse.length) { toast((it ? '⚠️ Foto dei retro non creata: non si leggono i retro di ' : '⚠️ Backs photo not created, unreadable: ') + perse.join(', '), 'error'); return null; }
   return lette.map(x => x.img);
 }
+// 🆕 v7.243 (Franco: «il nome della serie per esteso, per esempio se ho selezionato serie 1 il valore deve essere
+//    sgorbions serie 1; poi spazio-spazio, la tipologia di articolo; poi se ho selezionato una famiglia … il nome della
+//    famiglia oppure se ho selezionato una categoria … il nome della categoria; in fondo … la dicitura set completo»;
+//    «ogni termine deve essere separato da spazio-spazio») - IL TESTO DELL'ANNUNCIO, dalle risposte «Dal sito»: la
+//    serie col nome lungo (`_nomeSerie`, non quello breve della tendina), la tipologia senza il numero fra parentesi,
+//    la famiglia e la categoria se scelte (tutte e due, se ci sono tutte e due), «set completo»; separati da « - ».
+//    Dalla tipologia senza serie si parte dalla tipologia.
+// (Franco: «scriviamo sempre figurine sia quando sono fcr che quando sono FPA») - le due tipologie di figurine sono
+//    «Figurine» e basta.
+function _collageTestoAnnuncio() {
+  const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
+  const val = id => String((document.getElementById(id) || {}).value || '').trim();
+  const figurine = v => v === 'figurines' || v === 'attaccare';
+  // (Franco: «prima della parola figurine scrivi anche il numero di articoli estratti»; «anche se si tratta di retro») -
+  //    gli articoli del collage, senza la foto del retro che accompagna un articolo solo (`diRetro`, v7.236).
+  //    (Franco: «il nome della famiglia e il nome della categoria vanno tutto in maiuscolo»)
+  const n = (_collageFoto || []).filter(x => !x.diRetro).length;
+  const quanti = t => (n ? n + ' ' : '') + t.charAt(0).toLocaleUpperCase('it') + t.slice(1);   // la maiuscola dopo il numero
+  const su = v => v.toLocaleUpperCase('it');
+  // (Franco: «set completo lo dobbiamo scrivere solo … se è stata selezionata una famiglia oppure … una categoria oppure
+  //    se il numero di articoli del collage è pari al numero di articoli per la tipologia di versione richiesta») - il
+  //    totale è quello fra parentesi nella tendina della versione (`_collageVersioniDellaSerie`, «Tutte» = ogni
+  //    versione); dalla tipologia senza serie, gli articoli di quella tipologia (`_collageArticoliDellaTda`)
+  const parti = [];
+  let fam, cat, tot;
+  if (da === 'serie') {
+    const s = (getData('series', []) || []).find(x => String(x.id) === val('collage-sito-serie'));
+    const sez = val('collage-sito-serie-tda'), ver = val('collage-sito-serie-ver');
+    if (!s || !sez) return '';
+    fam = val('collage-sito-serie-fam'); cat = val('collage-sito-serie-cat');
+    tot = _collageArticoliDellaSerie(s.id).filter(f => (f.section || 'figurines') === sez && (ver === 'tutte' || _chiaveTipo(f) === ver)).length;
+    parti.push(_nomeSerie(s), quanti(figurine(sez) ? 'Figurine' : getSectionLabel(sez)), su(fam), su(cat));
+  } else {
+    const t = document.getElementById('collage-sito-tda');
+    if (!t || !t.value) return '';
+    fam = val('collage-sito-tda-fam'); cat = val('collage-sito-tda-cat');
+    tot = _collageArticoliDellaTda(t.value).length;
+    parti.push(quanti(figurine(t.value) ? 'Figurine' : t.options[t.selectedIndex].textContent), su(fam), su(cat));
+  }
+  const completo = !!fam || !!cat || (n > 0 && n === tot);
+  // (Franco: «dopo ogni - si inizia con la maiuscola») - la prima lettera di ogni pezzo, il resto com'è
+  return parti.map(x => String(x || '').trim()).filter(Boolean).concat(completo ? ['set completo'] : [])
+    .map(x => x.charAt(0).toLocaleUpperCase('it') + x.slice(1)).join(' - ');
+}
+async function _collageCopiaTesto() {
+  const it = currentLang === 'it';
+  const t = _collageTestoAnnuncio();
+  if (!t) return;
+  try {
+    await navigator.clipboard.writeText(t);
+  } catch (e) {
+    // ripiego: il vecchio «copia» del browser, da una casella nascosta (come `_annCopiaDescrizioni`)
+    const ta = document.createElement('textarea');
+    ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    const fatto = document.execCommand('copy');
+    ta.remove();
+    if (!fatto) { toast(it ? '⚠️ Non riesco a copiare' : '⚠️ Cannot copy', 'error'); return; }
+  }
+  toast((it ? '📋 Copiato: ' : '📋 Copied: ') + t, 'success');
+}
 // 🆕 v7.225 - «Scarica entrambe»: i due «Scarica» uno dopo l'altro. Il secondo parte poco dopo il primo, perché un
 //    browser che vede due download nello stesso istante può tenerne uno solo. La prima volta Chrome può chiedere se
 //    permettere più download dal sito: si risponde «Consenti» una volta sola.
+// 🔄 v7.243 - col collage diviso in più foto (`_collageCreaParti`) scarica tutti i «Scarica» delle foto, uno ogni 600 ms
 function _collageScaricaTutte() {
+  const parti = [...document.querySelectorAll('#collage-parti a[data-url]')].filter(a => a.dataset.url);
+  if (parti.length) { parti.forEach((a, i) => setTimeout(() => a.click(), i * 600)); return; }
   const f = document.getElementById('collage-scarica'), r = document.getElementById('collage-scarica-retro');
   if (!f || !r || !f.dataset.url || !r.dataset.url) return;
   f.click();
   setTimeout(() => r.click(), 600);
+}
+// 🆕 v7.243 (Franco: «se gli articoli sono 51 non voglio una foto con 50 articoli e una foto con un solo articolo ma
+//    voglio una foto con 25 articoli e una foto con 26 articoli») - QUANTI ARTICOLI IN OGNI FOTO: le foto sono il minimo
+//    che basta (`max` per foto), e gli articoli si dividono il più possibile uguali; quelle con uno in più in fondo.
+//    51 con 50 → [25, 26]; 101 → [33, 34, 34]; 50 → [50].
+function _collageParti(n, max) {
+  const k = Math.max(1, Math.ceil(n / max)), base = Math.floor(n / k), resto = n % k;
+  return Array.from({ length: k }, (_, i) => base + (i >= k - resto ? 1 : 0));
+}
+// 🆕 v7.243 (Franco: «il pulsante di download … lascia un pulsante di download sotto ogni foto più uno unico in fondo»)
+//    - IL COLLAGE IN PIÙ FOTO. Ogni foto con gli articoli che le toccano, nell'ordine preso; coi retro (`retri`) ogni foto
+//    ha la sua foto dei retro, con le stesse posizioni. Sopra ogni anteprima la riga con quale foto è, gli articoli, il
+//    peso e la misura; sotto, il suo «Scarica». In fondo «Scarica tutte» (`_collageScaricaTutte`). I tasti della foto
+//    unica restano nascosti.
+async function _collageCreaParti(tipo, imgs, retri, sfondo, grande, jpg, misure) {
+  const it = currentLang === 'it';
+  ['collage-scarica', 'collage-scarica-retro'].forEach(id => {
+    const a = document.getElementById(id);
+    if (a) { if (a.dataset.url) URL.revokeObjectURL(a.dataset.url); a.dataset.url = ''; a.removeAttribute('href'); a.style.display = 'none'; }
+  });
+  ['collage-peso', 'collage-peso-retro'].forEach(id => { const x = document.getElementById(id); if (x) x.style.display = 'none'; });
+  ['collage-anteprima', 'collage-anteprima-retro'].forEach(id => { const x = document.getElementById(id); if (x) { x.innerHTML = ''; x.style.display = 'none'; } });
+  _collageAzzeraParti();
+  const box = document.getElementById('collage-parti');
+  if (!box) return;
+  const k = misure.length, tot = imgs.length;
+  let da = 0, file = 0;
+  const aggiungi = async (c, titolo, nome) => {
+    const blob = await new Promise(ok => jpg ? c.toBlob(ok, 'image/jpeg', 0.92) : c.toBlob(ok, 'image/png'));
+    if (!blob) { toast(it ? '❌ Non riesco a creare la foto ' + titolo : '❌ Could not create the photo', 'error'); return; }
+    const url = URL.createObjectURL(blob);
+    const peso = document.createElement('div');
+    peso.style.cssText = 'margin-top:0.9rem;font-size:0.85rem;font-weight:700;color:var(--text);';
+    peso.textContent = titolo + ' · ' + (blob.size / 1048576).toFixed(1).replace('.', it ? ',' : '.') + ' MB · ' + c.width + '×' + c.height + ' px';
+    const ant = document.createElement('div');
+    ant.style.cssText = 'margin-top:0.3rem;max-width:' + COLLAGE_W + 'px;border:1px solid var(--border);border-radius:8px;overflow:hidden;' +
+      'background:repeating-conic-gradient(#3a3a3a 0% 25%, #555 0% 50%) 50% / 24px 24px;';
+    ant.innerHTML = '<img src="' + url + '" alt="" style="display:block;width:100%;height:auto;">';
+    const a = document.createElement('a');
+    a.className = 'btn-primary'; a.style.cssText = 'display:inline-block;margin-top:0.4rem;text-decoration:none;white-space:nowrap;font-size:0.85rem;';
+    a.href = url; a.dataset.url = url; a.download = nome + (jpg ? '.jpg' : '.png');
+    a.textContent = '⬇️ ' + (it ? 'Scarica ' : 'Download ') + titolo.split(' · ')[0].toLowerCase();
+    box.append(peso, ant, a);
+    file++;
+  };
+  for (let i = 0; i < k; i++) {
+    const m = misure[i], pezzo = imgs.slice(da, da + m), rp = retri ? retri.slice(da, da + m) : null;
+    da += m;
+    const quale = (it ? 'Foto ' : 'Photo ') + (i + 1) + (it ? ' di ' : ' of ') + k;
+    const c = _collageDisegna(tipo, pezzo, sfondo, grande, null, rp);
+    await aggiungi(c, quale + (rp ? (it ? ' fronte' : ' front') : '') + ' · ' + m + _paroleArticoli(m),'collage-' + tipo + '-' + tot + '-' + (i + 1) + 'di' + k);
+    if (rp) {
+      const cR = _collageDisegna(tipo, rp, sfondo, c.width, c.pezzi);
+      await aggiungi(cR, quale + (it ? ' retro' : ' backs') + ' · ' + m + _paroleArticoli(m),'collage-' + tipo + '-' + tot + '-' + (i + 1) + 'di' + k + '-retro');
+    }
+  }
+  box.style.display = '';
+  const tutte = document.getElementById('collage-scarica-tutte');
+  if (tutte) { tutte.textContent = '⬇️ ' + (it ? 'Scarica tutte (' + file + ')' : 'Download all (' + file + ')'); tutte.style.display = file ? '' : 'none'; }
+  const ct = document.getElementById('collage-copia-testo');
+  if (ct) ct.style.display = _collageModo === 'sito' && _collageTestoAnnuncio() ? '' : 'none';
 }
 async function _collageCreaRetro(tipo, sfondo, grande, jpg, c, retri) {
   const it = currentLang === 'it';
@@ -42903,6 +43083,7 @@ async function _collageCreaRetro(tipo, sfondo, grande, jpg, c, retri) {
   if (peso) { peso.textContent = ''; peso.style.display = 'none'; }
   if (ant) { ant.innerHTML = ''; ant.style.display = 'none'; }
   if (!retri) return;
+  if (tutte) tutte.textContent = '⬇️ ' + (it ? 'Scarica entrambe' : 'Download both');   // v7.243 - col collage diviso diceva «Scarica tutte»
   const cR = _collageDisegna(tipo, retri, sfondo, grande ? c.width : 0, c.pezzi);
   const blob = await new Promise(ok => jpg ? cR.toBlob(ok, 'image/jpeg', 0.92) : cR.toBlob(ok, 'image/png'));
   if (!blob) { toast(it ? '❌ Non riesco a creare la foto dei retro' : '❌ Could not create the backs photo', 'error'); return; }
@@ -43886,6 +44067,7 @@ h1 { font-size:22px; margin:6px 0 4px; }
 .risultati img { max-width:100%; height:150px; object-fit:contain; display:block; margin:0 auto 4px; }
 .risultati figcaption { font-size:12px; color:#777; white-space:pre-line; }
 .risultati a { font-size:13px; color:#c0392b; }
+.risultati .togli { display:block; margin:4px auto 0; border:1px solid #ddd; background:#fff; border-radius:6px; padding:2px 10px; font:inherit; font-size:13px; cursor:pointer; color:#222; }
 #stato { font-size:14px; color:#777; margin-top:8px; min-height:1.4em; }
 #editor { position:fixed; inset:0; background:rgba(0,0,0,.82); color:#fff; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:10; padding:8px; }
 #editor.aperto { display:flex; }
@@ -43920,7 +44102,10 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <div class="griglia" id="miniature"></div>
 </section>
 <!-- v7.185 (Franco: «dovremmo invertire gli step 2 e 3; prima si caricano le foto e dopo si sceglie il sito») -->
-<section class="passo"><h2>3. Per quale sito servono le foto?</h2><div class="scelte" id="scelta-sito"></div><div class="piano" id="piano"></div></section>
+<section class="passo"><h2>3. Per quale sito servono le foto?</h2><div class="scelte" id="scelta-sito"></div><div class="piano" id="piano"></div>
+  <!-- v7.243 - il venditore, dopo il sito: il suo tessuto sotto le pagine -->
+  <div id="venditore-box" style="display:none;"><h2 style="margin-top:14px;">Per quale venditore? <span class="nota">(facoltativo: mette già il suo tessuto)</span></h2><div class="scelte" id="scelta-venditore"></div>
+  <h2 style="margin-top:14px;">Quale texture di sfondo?</h2><div class="scelte" id="scelta-texture"></div></div></section>
 <section class="passo"><h2>4. Le foto per l'annuncio</h2>
   <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte</button></div>
   <div class="piano" id="piano2"></div><div class="risultati" id="risultati"></div>
@@ -43939,7 +44124,7 @@ function _faApri() {
   const w = window.open('', 'foto-annuncio');
   if (!w) { toast(it ? 'Il browser ha bloccato la finestra: consenti le finestre per questo sito' : 'The browser blocked the window', 'error'); return; }
   w.document.open(); w.document.write(_FA_HTML); w.document.close();
-  _fa = { w, album: null, sito: null, foto: [], rif: null, uscite: [], ed: null };
+  _fa = { w, album: null, sito: null, venditore: null, texture: null, foto: [], rif: null, uscite: [], ed: null };
   const $ = id => w.document.getElementById(id);
   $('file').onchange = e => { _faCaricaFile(e.target.files).catch(err => _faStato('Errore: ' + err.message)); e.target.value = ''; };
   $('demo').onclick = () => _faFotoDelSito().catch(err => _faStato('Errore: ' + err.message));
@@ -43984,18 +44169,51 @@ function _faDisegnaScelte() {
     b.onclick = () => { _fa.sito = s; _faDisegnaScelte(); };
     sitoBox.appendChild(b);
   });
+  // 🆕 v7.243 - come nel collage: il venditore (gli stessi, `_ANN_ACCOUNT`) è facoltativo e mette già il suo tessuto
+  //    (`COLLAGE_TEXTURE_VENDITORE`); ritoccato si toglie e la texture resta. La texture è obbligatoria (Franco: «avevo
+  //    detto di fare come dall'altra parte»); «Nessuna» qui è lo sfondo bianco (la foto è un JPEG, niente trasparenza).
+  //    Solo col sito scelto. Con le foto già pronte, cambiando texture si rifanno subito.
+  _fa$('venditore-box').style.display = _fa.sito ? '' : 'none';
+  const rifai = () => { _faDisegnaScelte(); if (_fa.uscite.length && _fa.texture) _faComponi().catch(err => _faStato('Errore: ' + err.message)); };
+  const vendBox = _fa$('scelta-venditore'); vendBox.innerHTML = '';
+  _ANN_ACCOUNT.forEach(v => {
+    const b = d.createElement('button');
+    b.textContent = v;
+    if (v === _fa.venditore) b.className = 'on';
+    b.onclick = () => {
+      _fa.venditore = _fa.venditore === v ? null : v;
+      if (_fa.venditore && COLLAGE_TEXTURE_VENDITORE[v]) _fa.texture = COLLAGE_TEXTURE_VENDITORE[v];
+      rifai();
+    };
+    vendBox.appendChild(b);
+  });
+  // le texture con la loro miniatura, come nel collage (per «Nessuna» il bianco); il file dal sito, con l'indirizzo
+  //    intero: la finestra è scritta a mano e non ha un indirizzo suo da cui partire
+  const texBox = _fa$('scelta-texture'); texBox.innerHTML = '';
+  COLLAGE_TEXTURE.forEach(t => {
+    const b = d.createElement('button');
+    b.style.cssText = 'display:inline-flex;align-items:center;gap:8px;';
+    const mini = d.createElement('span');
+    mini.style.cssText = 'display:inline-block;width:56px;height:24px;border:1px solid #ccc;border-radius:4px;' +
+      (t.file ? 'background:url(\'' + location.origin + t.file + '\') center / cover;' : 'background:#fff;');
+    b.append(t.k === 'nessuna' ? 'Nessuna (sfondo bianco)' : t.it, mini);
+    if (t.k === _fa.texture) b.className = 'on';
+    b.onclick = () => { _fa.texture = t.k; rifai(); };
+    texBox.appendChild(b);
+  });
   // 🔄 v7.182 (Franco: «se clicco sulla serie, non succede nulla») - ogni scelta risponde subito con una riga, anche
   //    quando manca l'altra: prima l'album acceso in rosso era l'unico segno, e non si notava
   const a = _fa.album, s = _fa.sito;
   _fa$('piano').innerHTML = a && s
     ? esc(a.nome) + ', ' + a.pagine.length + ' pagine. Su ' + s.nome + ' (massimo ' + s.limite + ' foto) → ' + _faDescriviPiano(_faPianoDi(a, s), a.pagine.length)
       + (_faLeggiPiano(a.piani[s.chiave], a.pagine.length, s.limite).gruppi ? ' Come scritto nella scheda dell’album.' : '')
-      + (_fa.foto.length ? '<br>Ora prepara le foto (passo 4).' : '<br>Ora carica le foto delle pagine (passo 2).')
+      + (!_fa.texture ? '<br>Ora scegli la texture di sfondo, qui sotto.'
+        : _fa.foto.length ? '<br>Ora prepara le foto (passo 4).' : '<br>Ora carica le foto delle pagine (passo 2).')
     // v7.185: il sito è diventato il passo 3, dopo le foto
     : a ? 'Album scelto: <b>' + esc(a.nome) + '</b>, ' + a.pagine.length + ' pagine. Carica le foto delle pagine (passo 2), poi scegli il sito.'
     : s ? 'Sito scelto: <b>' + s.nome + '</b>. Ora scegli l’album (passo 1).'
     : 'Scegli l’album e il sito.';
-  _fa$('componi').disabled = !_fa.foto.length || !_fa.sito;
+  _fa$('componi').disabled = !_fa.foto.length || !_fa.sito || !_fa.texture;
   // v7.187 (Franco: «il tasto carica foto non deve essere premibile se prima non ho selezionato l'album allo step 1») -
   //    «Carica le foto» è un'etichetta che apre la casella dei file: si spegne la casella (così il clic non apre niente)
   //    e l'etichetta prende l'aspetto dei tasti spenti. Stessa regola per «Usa le foto del sito».
@@ -44334,7 +44552,7 @@ async function _faFotoDelSito() {
   }
   _faStato('');
   _faMiniature();
-  if (_fa.sito) await _faComponi();
+  if (_fa.sito && _fa.texture) await _faComponi();
 }
 
 // ---- le miniature ----
@@ -44376,7 +44594,7 @@ function _faMiniature() {
     card.append(c, sel, riga);
     box.appendChild(card);
   });
-  _fa$('componi').disabled = !_fa.foto.length || !_fa.sito;
+  _fa$('componi').disabled = !_fa.foto.length || !_fa.sito || !_fa.texture;
 }
 
 // ---- la correzione del ritaglio ----
@@ -44530,14 +44748,15 @@ const _FA_SPAZIO = 16, _FA_LATO = 1600;
 function _faAffianca(tele, h) {
   const s = tele.map(c => { const t = _faTela(c.width * h / c.height, h); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height); return t; });
   const out = _faTela(s.reduce((a, c) => a + c.width, 0) + _FA_SPAZIO * (s.length - 1), h), x = out.getContext('2d');
-  x.fillStyle = '#fff'; x.fillRect(0, 0, out.width, out.height);
+  // v7.243 - col tessuto lo spazio fra le pagine resta trasparente: ci si vede il tessuto, e ogni pagina ha la sua ombra
+  if (!_fa.tessuto) { x.fillStyle = '#fff'; x.fillRect(0, 0, out.width, out.height); }
   let px = 0; s.forEach(c => { x.drawImage(c, px, 0); px += c.width + _FA_SPAZIO; });
   return out;
 }
 function _faImpila(righe) {
   const W = Math.max(...righe.map(c => c.width));
   const out = _faTela(W, righe.reduce((a, c) => a + c.height, 0) + _FA_SPAZIO * (righe.length - 1)), x = out.getContext('2d');
-  x.fillStyle = '#fff'; x.fillRect(0, 0, out.width, out.height);
+  if (!_fa.tessuto) { x.fillStyle = '#fff'; x.fillRect(0, 0, out.width, out.height); }
   let py = 0; righe.forEach(c => { x.drawImage(c, Math.round((W - c.width) / 2), py); py += c.height + _FA_SPAZIO; });
   return out;
 }
@@ -44552,25 +44771,41 @@ function _faComponiGruppo(tele) {
 }
 async function _faComponi() {
   const a = _fa.album, sito = _fa.sito;
-  if (!a || !sito) return;
+  if (!a || !sito || !_fa.texture) return;
   const N = a.pagine.length, d = _fa.w.document;
   const perPagina = new Map(_fa.foto.filter(f => f.pagina !== null).map(f => [f.pagina, f]));
   _fa.uscite.forEach(u => URL.revokeObjectURL(u.url)); _fa.uscite = [];
   _fa$('risultati').innerHTML = '';
+  // v7.243 - la texture scelta, letta una volta sola (come nel collage, `_collageLeggiTexture`)
+  const tx = COLLAGE_TEXTURE.find(t => t.k === _fa.texture);
+  _fa.tessuto = null;
+  if (tx && tx.file) {
+    try { _fa.tessuto = await _collageLeggiTexture(tx); }
+    catch (e) { console.error('_faComponi/texture', e); _faStato('⚠️ Non riesco a leggere il tessuto «' + tx.it + '»: foto su sfondo bianco.'); }
+  }
   const saltate = [];
   for (const g of (_faPianoDi(a, sito) || [])) {
     g.filter(p => !perPagina.has(p)).forEach(p => saltate.push(_faNomePagina(p, N)));
     const presenti = g.filter(p => perPagina.has(p));
     if (!presenti.length) continue;
     _faStato('Preparo la foto ' + (_fa.uscite.length + 1) + '…');
-    const c = _faComponiGruppo(presenti.map(p => _faRitaglio(perPagina.get(p))));
+    let c = _faComponiGruppo(presenti.map(p => _faRitaglio(perPagina.get(p))));
+    if (_fa.tessuto) c = _faSulTessuto(c, _fa.tessuto);
     const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.9));
     const n = String(_fa.uscite.length + 1).padStart(2, '0');
     // v7.188: nel nome del file la chiave del sito (`subito`), non il nome a schermo («Subito.it» darebbe «subito.it-1.jpg»)
     _fa.uscite.push({ nome: a.file + '-' + sito.chiave + '-' + n + '.jpg', blob, url: URL.createObjectURL(blob), dida: presenti.map(p => _faNomePagina(p, N)).join(' + '), didaLunga: presenti.map(p => _faNomePagina(p, N, null, true)).join(' + ') });
   }
-  _faStato('');
+  if (!_fa$('stato').textContent.startsWith('⚠️')) _faStato('');
+  _fa.saltate = saltate;
+  _faRisultati();
+}
+// 🔄 v7.243 - le foto pronte, ridisegnate anche dopo «Togli» (prima stavano in fondo a `_faComponi`)
+function _faRisultati() {
+  const d = _fa.w.document, sito = _fa.sito, saltate = _fa.saltate || [];
+  _fa$('risultati').innerHTML = '';
   _fa$('piano2').innerHTML = _fa.uscite.length + ' foto pronte per ' + sito.nome + ' (massimo ' + sito.limite + ').' +
+    (_fa.tessuto ? ' Sfondo: ' + esc((COLLAGE_TEXTURE.find(t => t.k === _fa.texture) || {}).it || '') + '.' : '') +
     (saltate.length ? ' <span style="color:#c0392b">Mancano: ' + esc(saltate.join(', ')) + '.</span>' : '');
   _fa.uscite.forEach((u, i) => {
     const fig = d.createElement('figure');
@@ -44579,10 +44814,48 @@ async function _faComponi() {
     // Franco: «scrivi i numeri di pagina su due righe» - «Foto 6:» sopra, le pagine sotto (`white-space:pre-line`)
     const cap = d.createElement('figcaption'); cap.textContent = 'Foto ' + (i + 1) + ':\n' + u.dida;
     const link = d.createElement('a'); link.href = u.url; link.download = u.nome; link.textContent = 'Scarica';
-    fig.append(img, cap, link);
+    const togli = d.createElement('button'); togli.className = 'togli'; togli.textContent = '🗑️ Togli'; togli.title = 'Togli questa foto dall’annuncio';
+    togli.onclick = () => _faTogli(i);
+    fig.append(img, cap, link, togli);
     _fa$('risultati').appendChild(fig);
   });
   _fa$('scarica').disabled = !_fa.uscite.length;
+}
+// 🆕 v7.243 (Franco: «nella anteprima delle foto elaborate, deve essere possibile cancellare le singole foto») - la foto
+//    esce dall'elenco (e da «Scarica tutte»); le altre si rinumerano, nel nome del file come nella didascalia.
+//    «Prepara le foto» le rifà tutte.
+function _faTogli(i) {
+  const u = _fa.uscite[i];
+  if (!u) return;
+  URL.revokeObjectURL(u.url);
+  _fa.uscite.splice(i, 1);
+  _fa.uscite.forEach((x, k) => { x.nome = x.nome.replace(/-\d+\.jpg$/, '-' + String(k + 1).padStart(2, '0') + '.jpg'); });
+  _faRisultati();
+}
+// 🆕 v7.243 - le pagine (`c`, trasparente fra una pagina e l'altra) posate sul tessuto: lo stesso meccanismo del collage
+//    (`_collageDisegna`): il motivo spostato, girato fino a ±6° e un po' più vicino o lontano, a caso; la luce da un
+//    lato a caso; l'usura (`_collageUsura`); l'ombra sotto ogni pagina. Intorno un bordo di tessuto del 5% del lato
+//    lungo, poi la foto torna dentro i 1600 px.
+function _faSulTessuto(c, sfondo) {
+  const m = Math.round(Math.max(c.width, c.height) * 0.05);
+  const W = c.width + 2 * m, H = c.height + 2 * m;
+  const out = _faTela(W, H), ctx = out.getContext('2d');
+  const s = W / COLLAGE_W;
+  const pat = ctx.createPattern(sfondo, 'repeat');
+  const ang = (Math.random() * 2 - 1) * 6, vic = 0.9 + Math.random() * 0.2;
+  const dx = Math.random() * sfondo.width * s, dy = Math.random() * sfondo.height * s;
+  if (pat.setTransform) pat.setTransform(new DOMMatrix().translate(W / 2, H / 2).rotate(ang).translate(-W / 2 + dx, -H / 2 + dy).scale(s * vic));
+  ctx.fillStyle = pat; ctx.fillRect(0, 0, W, H);
+  const da = Math.random() * 2 * Math.PI, r = Math.hypot(W, H) / 2;
+  const luce = ctx.createLinearGradient(W / 2 - r * Math.cos(da), H / 2 - r * Math.sin(da), W / 2 + r * Math.cos(da), H / 2 + r * Math.sin(da));
+  luce.addColorStop(0, 'rgba(255,255,255,0.07)'); luce.addColorStop(1, 'rgba(0,0,0,0.12)');
+  ctx.fillStyle = luce; ctx.fillRect(0, 0, W, H);
+  _collageUsura(ctx, W, H);
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14 * s; ctx.shadowOffsetY = 3 * s;
+  ctx.drawImage(c, m, m);
+  ctx.restore();
+  return _faRiduci(out, W, H, _FA_LATO);
 }
 // 🆕 v7.182 (Franco: «le frecce non le hai messe nelle finestre della sezione "le pagine per l'annuncio"») - la foto
 //    dell'annuncio, toccata, si apre grande con ◀ ▶ (e le frecce della tastiera), «Scarica» e «Chiudi»
