@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.246 - Modificati index.html (per la versione) e js/app.js. COLLAGE (Franco: «aggiungi la sottocategoria con lo
+//          stesso meccanismo, nel testo copiato»): «Copia testo annuncio» scrive la sottocategoria scelta dopo la
+//          categoria, tutta in maiuscolo («… - 8 Retro - PUBBLICITÀ - BEVANDE - Set completo»; `_collageTestoAnnuncio`).
 // v7.245 - Modificati index.html (per la versione) e js/app.js. COLLAGE: LA SOTTOCATEGORIA (Franco: «bisogna aggiungere
 //          anche la domanda sulla sottocategoria, da mostrare quando viene selezionata la categoria»): «Quale
 //          sottocategoria ?» (facoltativa) subito dopo la categoria, dalla serie e dalla tipologia, con le
@@ -31964,7 +31967,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.245';
+const JS_VERSION = 'v7.246';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -43019,20 +43022,22 @@ function _collageTestoAnnuncio() {
   //    totale è quello fra parentesi nella tendina della versione (`_collageVersioniDellaSerie`, «Tutte» = ogni
   //    versione); dalla tipologia senza serie, gli articoli di quella tipologia (`_collageArticoliDellaTda`)
   const parti = [];
-  let fam, cat, tot;
+  // 🔄 v7.246 (Franco: «aggiungi la sottocategoria con lo stesso meccanismo, nel testo copiato») - dopo la categoria,
+  //    tutta in maiuscolo; c'è solo con la categoria scelta (`_collageSitoAggiorna` svuota la tendina)
+  let fam, cat, sub, tot;
   if (da === 'serie') {
     const s = (getData('series', []) || []).find(x => String(x.id) === val('collage-sito-serie'));
     const sez = val('collage-sito-serie-tda'), ver = val('collage-sito-serie-ver');
     if (!s || !sez) return '';
-    fam = val('collage-sito-serie-fam'); cat = val('collage-sito-serie-cat');
+    fam = val('collage-sito-serie-fam'); cat = val('collage-sito-serie-cat'); sub = cat ? val('collage-sito-serie-sub') : '';
     tot = _collageArticoliDellaSerie(s.id).filter(f => (f.section || 'figurines') === sez && (ver === 'tutte' || _chiaveTipo(f) === ver)).length;
-    parti.push(_nomeSerie(s), quanti(figurine(sez) ? parolaFig : getSectionLabel(sez)), su(fam), su(cat));
+    parti.push(_nomeSerie(s), quanti(figurine(sez) ? parolaFig : getSectionLabel(sez)), su(fam), su(cat), su(sub));
   } else {
     const t = document.getElementById('collage-sito-tda');
     if (!t || !t.value) return '';
-    fam = val('collage-sito-tda-fam'); cat = val('collage-sito-tda-cat');
+    fam = val('collage-sito-tda-fam'); cat = val('collage-sito-tda-cat'); sub = cat ? val('collage-sito-tda-sub') : '';
     tot = _collageArticoliDellaTda(t.value).length;
-    parti.push(quanti(figurine(t.value) ? parolaFig : t.options[t.selectedIndex].textContent), su(fam), su(cat));
+    parti.push(quanti(figurine(t.value) ? parolaFig : t.options[t.selectedIndex].textContent), su(fam), su(cat), su(sub));
   }
   const completo = !!fam || !!cat || (n > 0 && n === tot);
   // (Franco: «dopo ogni - si inizia con la maiuscola») - la prima lettera di ogni pezzo, il resto com'è
