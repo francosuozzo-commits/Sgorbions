@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.249 - Modificati index.html (per la versione) e js/app.js. COLLAGE: «GRADO USURA TEXTURE» (Franco: «valori: basso
+//          (attuale), medio, alto; medio ed alto devono aumentare la usura del tessuto sottostante alla foto, sia pieghe
+//          che macchie»): dopo la texture, solo con un tessuto scelto, di serie Basso. Basso è l'usura di prima;
+//          medio e alto moltiplicano pieghe e chiazze (quante e quanto scure) e aggiungono macchie color caffè (medio
+//          1-2, alto 2-4 più grandi) - `COLLAGE_USURA`, `_collageUsura(…, grado)`, `_collageGradoUsura`. Vale anche per
+//          la foto dei retro e per le foto del collage diviso; le foto per annunci restano sul basso.
+//          E «📖 SCARICA PAGINE ALBUM» (Franco: «un altro tasto, chiamato Scarica pagine album … nel caso in cui sia
+//          stata selezionata una famiglia … le pagine dell'album che contengono quella famiglia»; «mi basta il tasto»):
+//          dopo il collage, dalla serie con una famiglia scelta che ha le pagine scritte, scarica le foto dell'album
+//          sfogliabile con quelle pagine; dove serve una pagina sola, la metà tagliata nel browser
+//          (`_collagePagineFamiglia`, `_collageScaricaPagine`). E cambiando una risposta «Copia testo annuncio» ora si
+//          spegne col collage (`_collageAzzera`).
 // v7.248 - Modificati index.html (per la versione) e js/app.js. COLLAGE IN PIÙ FOTO, PER SOTTOCATEGORIA (Franco:
 //          «quando spezzi gli articoli in più di una foto, se ci sono articoli con diverse sottocategorie, racchiudi
 //          tutti gli articoli con la stessa sotto categoria all'interno di una foto»; «va in precedenza» rispetto alla
@@ -31980,7 +31992,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.248';
+const JS_VERSION = 'v7.249';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41773,6 +41785,13 @@ function _collageHTML(perBox) {
         '<input type="radio" name="collage-texture" value="' + t.k + '"' + (perBox && t.k === 'nessuna' ? ' checked' : '') + ' onchange="_collageStato()">' +
         esc(it ? t.it : t.en) + (tel ? '<span style="flex-basis:100%;height:0;"></span>' : '') + mini + '</label>';
     }).join('') +
+    // 🆕 v7.249 - «Grado usura texture», dopo la texture (senza numero, è una parte della domanda 4); solo con un tessuto
+    //    scelto (`_collageStato` la mostra), di serie Basso, cioè l'usura di prima (`COLLAGE_USURA`)
+    '<div id="collage-usura-box" style="display:none;">' +
+      '<div style="' + dom + '">' + (it ? 'Grado usura texture ?' : 'Texture wear?') + '</div>' +
+      COLLAGE_USURA.map(u => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.88rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
+        '<input type="radio" name="collage-usura" value="' + u.k + '"' + (u.k === 1 ? ' checked' : '') + '>' + esc(it ? u.it : u.en) + '</label>').join('') +
+    '</div>' +
     // 🆕 v7.222 - la grandezza massima, solo da Annunci (dalla card il collage è sempre 1200×675)
     (perBox ? '' : '<div style="' + dom + '">5. ' + (it ? 'Quanto grande al massimo ?' : 'How large at most?') + '</div>' +
       COLLAGE_TETTI.map(w => scelta('collage-tetto', w, w + ' × ' + Math.round(w * COLLAGE_MAX_H / COLLAGE_MAX_W) + ' px' +
@@ -41810,6 +41829,10 @@ function _collageHTML(perBox) {
       // 🆕 v7.225 (Franco: «metti un tasto da usare per scaricare entrambe le foto assieme») - c'è quando c'è la foto dei retro
       '<button type="button" id="collage-scarica-tutte" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;" onclick="_collageScaricaTutte()">⬇️ ' + (it ? 'Scarica entrambe' : 'Download both') + '</button>' +
     '</div>' +
+    // 🆕 v7.249 (Franco: «un altro tasto, chiamato Scarica pagine album … dopo le foto degli articoli estratti»; «nel caso
+    //    in cui sia stata selezionata una famiglia … le pagine dell'album che contengono quella famiglia»; «non serve
+    //    che le pagine dell'album siano mostrate nella finestra del collage, mi basta il tasto») - `_collageScaricaPagine`
+    '<button type="button" id="collage-scarica-pagine" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;margin-top:0.7rem;margin-right:0.5rem;" onclick="_collageScaricaPagine()">📖 ' + (it ? 'Scarica pagine album' : 'Download album pages') + '</button>' +
     // 🆕 v7.243 (Franco: «in fondo a tutto, sotto al bottone di scaricamento della foto vorrei un bottone che si chiama
     //    copia testo annuncio») - `_collageTestoAnnuncio`; compare col collage fatto dal sito (`_collageCrea`)
     '<button type="button" id="collage-copia-testo" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;margin-top:0.7rem;" onclick="_collageCopiaTesto()">📋 ' + (it ? 'Copia testo annuncio' : 'Copy listing text') + '</button>');
@@ -41941,7 +41964,8 @@ function _collageAzzera(soloCollage) {
     const a = document.getElementById(id);
     if (a) { if (a.dataset.url) URL.revokeObjectURL(a.dataset.url); a.dataset.url = ''; a.removeAttribute('href'); a.style.display = 'none'; }
   });
-  ['collage-scarica-tutte', 'collage-usa', 'collage-peso', 'collage-peso-retro'].forEach(id => { const x = document.getElementById(id); if (x) x.style.display = 'none'; });
+  // v7.249 - anche «Copia testo annuncio» (v7.243, restava acceso) e «Scarica pagine album»: valgono per il collage fatto
+  ['collage-scarica-tutte', 'collage-usa', 'collage-peso', 'collage-peso-retro', 'collage-copia-testo', 'collage-scarica-pagine'].forEach(id => { const x = document.getElementById(id); if (x) x.style.display = 'none'; });
   ['collage-anteprima', 'collage-anteprima-retro'].forEach(id => { const x = document.getElementById(id); if (x) { x.innerHTML = ''; x.style.display = 'none'; } });
   _collageAzzeraParti();   // v7.243
   _collageMostraScelte();
@@ -42736,6 +42760,9 @@ function _collageStato() {
   if (av) av.textContent = p;
   const b = document.getElementById('collage-crea');
   if (b) { b.disabled = !!p; b.style.opacity = p ? '0.5' : ''; }
+  // v7.249 - «Grado usura texture» solo con un tessuto: sul trasparente non c'è niente da usurare
+  const ub = document.getElementById('collage-usura-box');
+  if (ub) { const tx = document.querySelector('input[name="collage-texture"]:checked'); ub.style.display = tx && tx.value !== 'nessuna' ? '' : 'none'; }
   _collageRetroMostra();   // v7.224 - cambiando il tipo di collage la spunta dei retro compare o sparisce
 }
 // 🆕 v7.224 - la spunta «Crea anche foto retro» si vede quando `_collageRetroPossibile`; se cambia, si rifà l'anteprima
@@ -42902,7 +42929,7 @@ function _collageDisegna(tipo, foto, sfondo, grande, come, retri) {
     const luce = ctx.createLinearGradient(W / 2 - r * Math.cos(da), H / 2 - r * Math.sin(da), W / 2 + r * Math.cos(da), H / 2 + r * Math.sin(da));
     luce.addColorStop(0, 'rgba(255,255,255,0.07)'); luce.addColorStop(1, 'rgba(0,0,0,0.12)');
     ctx.fillStyle = luce; ctx.fillRect(0, 0, W, H);
-    _collageUsura(ctx, W, H);   // v7.225
+    _collageUsura(ctx, W, H, _collageGradoUsura());   // v7.225; v7.249: col grado scelto
   }
   const k = Math.min(W * (1 - 2 * margine) / (b.x1 - b.x0), H * (1 - 2 * margine) / (b.y1 - b.y0));
   const ox = W / 2 - k * (b.x0 + b.x1) / 2, oy = H / 2 - k * (b.y0 + b.y1) / 2;
@@ -42928,16 +42955,30 @@ function _collageDisegna(tipo, foto, sfondo, grande, come, retri) {
 //    Tutto a bassa opacità: deve sembrare usata, non sporca. Solo gradienti, niente `filter` (Safari non lo fa).
 // 🔄 v7.226 (Franco: «accentua ancora un poco di più la usura») - circa una volta e mezza: 4-8 pieghe più marcate,
 //    6-9 chiazze più forti, la macchia sette volte su dieci e un po' più scura.
-function _collageUsura(ctx, W, H) {
+// 🆕 v7.249 (Franco: «un altro parametro nella funzione Collage, chiamato "Grado usura texture"; valori: basso
+//    (attuale), medio, alto; medio ed alto devono aumentare la usura del tessuto … sia pieghe che macchie») - I TRE
+//    GRADI. Basso è l'usura di prima, identica. Medio e alto moltiplicano le pieghe e le chiazze (quante e quanto
+//    scure) e aggiungono macchie: medio 1-2 sempre, alto 2-4 e un po' più grandi.
+const COLLAGE_USURA = [
+  { k: 1, it: 'Basso', en: 'Low',    pieghe: 1,   chiazze: 1,   forza: 1,   macchie: () => (Math.random() < 0.7 ? 1 : 0), grandi: 1 },
+  { k: 2, it: 'Medio', en: 'Medium', pieghe: 1.6, chiazze: 1.4, forza: 1.5, macchie: () => 1 + (Math.random() < 0.5 ? 1 : 0), grandi: 1.15 },
+  { k: 3, it: 'Alto',  en: 'High',   pieghe: 2.3, chiazze: 1.8, forza: 2,   macchie: () => 2 + Math.floor(Math.random() * 3), grandi: 1.3 },
+];
+// il grado scelto nella finestra del collage; senza la domanda (o senza risposta) basso
+function _collageGradoUsura() {
+  return Number((document.querySelector('input[name="collage-usura"]:checked') || {}).value) || 1;
+}
+function _collageUsura(ctx, W, H, grado) {
+  const G = COLLAGE_USURA.find(u => u.k === grado) || COLLAGE_USURA[0];   // v7.249 - senza `grado`, basso
   const caso = (a, b) => a + Math.random() * (b - a), L = Math.hypot(W, H);
   ctx.save();
-  for (let i = 0, n = Math.round(caso(4, 8)); i < n; i++) {
+  for (let i = 0, n = Math.round(Math.round(caso(4, 8)) * G.pieghe); i < n; i++) {
     const w = caso(0.02, 0.06) * W;
     ctx.save();
     ctx.translate(caso(0, W), caso(0, H));
     ctx.rotate(caso(0, Math.PI));
     const g = ctx.createLinearGradient(0, -w / 2, 0, w / 2);
-    const forte = caso(0.6, 1);
+    const forte = caso(0.6, 1) * G.forza;
     g.addColorStop(0, 'rgba(0,0,0,0)');
     g.addColorStop(0.42, 'rgba(0,0,0,' + (0.15 * forte).toFixed(3) + ')');
     g.addColorStop(0.5, 'rgba(0,0,0,' + (0.24 * forte).toFixed(3) + ')');
@@ -42947,20 +42988,22 @@ function _collageUsura(ctx, W, H) {
     ctx.fillRect(-L * caso(0.15, 0.5), -w / 2, L * caso(0.3, 0.9), w);
     ctx.restore();
   }
-  for (let i = 0, n = Math.round(caso(6, 9)); i < n; i++) {
+  for (let i = 0, n = Math.round(Math.round(caso(6, 9)) * G.chiazze); i < n; i++) {
     const x = caso(0, W), y = caso(0, H), r = caso(0.08, 0.3) * W;
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, Math.random() < 0.5 ? 'rgba(255,255,255,' + caso(0.05, 0.10).toFixed(3) + ')' : 'rgba(0,0,0,' + caso(0.05, 0.12).toFixed(3) + ')');
+    g.addColorStop(0, Math.random() < 0.5 ? 'rgba(255,255,255,' + (caso(0.05, 0.10) * G.forza).toFixed(3) + ')' : 'rgba(0,0,0,' + (caso(0.05, 0.12) * G.forza).toFixed(3) + ')');
     g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g;
     ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
   }
-  if (Math.random() < 0.7) {
-    const x = caso(0.05, 0.95) * W, y = caso(0.05, 0.95) * H, r = caso(0.025, 0.06) * W;
+  // la macchia color caffè: col basso sette volte su dieci, come prima; col medio e l'alto più d'una, più scure
+  for (let i = 0, n = G.macchie(); i < n; i++) {
+    const x = caso(0.05, 0.95) * W, y = caso(0.05, 0.95) * H, r = caso(0.025, 0.06) * W * G.grandi;
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, 'rgba(110,75,40,0.08)');
-    g.addColorStop(0.8, 'rgba(110,75,40,0.12)');
-    g.addColorStop(0.92, 'rgba(90,60,30,0.19)');
+    const a = v => Math.min(0.6, v * G.forza).toFixed(3);
+    g.addColorStop(0, 'rgba(110,75,40,' + a(0.08) + ')');
+    g.addColorStop(0.8, 'rgba(110,75,40,' + a(0.12) + ')');
+    g.addColorStop(0.92, 'rgba(90,60,30,' + a(0.19) + ')');
     g.addColorStop(1, 'rgba(90,60,30,0)');
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.ellipse(x, y, r, r * caso(0.75, 1), caso(0, Math.PI), 0, 2 * Math.PI); ctx.fill();
@@ -43027,6 +43070,7 @@ async function _collageCrea() {
   }
   const ct = document.getElementById('collage-copia-testo');   // v7.243 - solo dal sito: dal PC non c'è una serie da dire
   if (ct) ct.style.display = _collageModo === 'sito' && _collageTestoAnnuncio() ? '' : 'none';
+  _collageMostraTastoPagine();   // v7.249
   // v7.223 - il peso del file e la sua misura; v7.225: sopra l'anteprima, «Fronte» quando c'è anche la foto dei retro
   const peso = document.getElementById('collage-peso');
   if (peso) { peso.textContent = (retri ? (it ? 'Fronte · ' : 'Front · ') : '') + (blob.size / 1048576).toFixed(1).replace('.', it ? ',' : '.') + ' MB · ' + c.width + '×' + c.height + ' px'; peso.style.display = ''; }
@@ -43201,6 +43245,60 @@ async function _collageCreaParti(tipo, imgs, retri, sfondo, grande, jpg, misure)
   if (tutte) { tutte.textContent = '⬇️ ' + (it ? 'Scarica tutte (' + file + ')' : 'Download all (' + file + ')'); tutte.style.display = file ? '' : 'none'; }
   const ct = document.getElementById('collage-copia-testo');
   if (ct) ct.style.display = _collageModo === 'sito' && _collageTestoAnnuncio() ? '' : 'none';
+  _collageMostraTastoPagine();   // v7.249
+}
+// 🆕 v7.249 - LE PAGINE DELL'ALBUM DELLA FAMIGLIA SCELTA. Dalla serie, con una famiglia scelta: le foto dell'album
+//    sfogliabile della serie (`_albumDaSfogliare`) che contengono le pagine scritte nella famiglia (`_famPagineAlbum`,
+//    `_famFotoDellePagine`, come la pagina della famiglia). La famiglia della tendina può essere in maiuscolo (le fpa,
+//    `_famigliaASchermo`): si confronta senza badare alle maiuscole. null se non c'è niente da scaricare.
+function _collagePagineFamiglia() {
+  if (_collageModo !== 'sito' || (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value !== 'serie') return null;
+  const sid = (document.getElementById('collage-sito-serie') || {}).value, fam = String((document.getElementById('collage-sito-serie-fam') || {}).value || '').trim();
+  if (!sid || !fam) return null;
+  const s = getData('series', []).find(x => String(x.id) === String(sid));
+  const d = s && _famiglieDati(s).find(x => x.nome.toLocaleUpperCase('it') === fam.toLocaleUpperCase('it'));
+  if (!d) return null;
+  const alb = _albumDaSfogliare(s.id), urls = (alb ? _pagineDaMostrare(alb) : []).map(p => p.url);
+  const foto = _famFotoDellePagine(_famPagineAlbum(d, urls), urls).foto;
+  return foto.length ? { d, urls, foto } : null;
+}
+function _collageMostraTastoPagine() {
+  const b = document.getElementById('collage-scarica-pagine');
+  if (b) b.style.display = _collagePagineFamiglia() ? '' : 'none';
+}
+// Le scarica una per una (600 ms fra l'una e l'altra, come «Scarica tutte»). Dell'album si legge l'ORIGINALE, che non è
+//    una trasformazione; quando della foto serve una pagina sola la metà si taglia qui, nel browser, mai su Cloudinary.
+//    Il nome del file dice la famiglia e le pagine: «album-gli-animals-pag-6-pag-7.jpg».
+async function _collageScaricaPagine() {
+  const it = currentLang === 'it';
+  const p = _collagePagineFamiglia();
+  if (!p) return;
+  const b = document.getElementById('collage-scarica-pagine');
+  if (b) b.disabled = true;
+  const pulito = t => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  let fatte = 0;
+  for (const x of p.foto) {
+    const img = await new Promise(ok => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => ok(im); im.onerror = () => ok(null); im.src = p.urls[x.i]; });
+    if (!img) continue;
+    const W = img.naturalWidth, H = img.naturalHeight, w = x.lato ? Math.floor(W / 2) : W, da = x.lato === 'right' ? W - w : 0;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = H;
+    c.getContext('2d').drawImage(img, da, 0, w, H, 0, 0, w, H);
+    const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.92));
+    if (!blob) continue;
+    const pp = _famPagineDellaFoto(x.i, p.urls), nomi = x.lato ? [pp[x.lato === 'left' ? 0 : 1]] : pp;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'album-' + pulito(p.d.nome) + '-' + nomi.map(n => pulito(_famNomePagina(n, true))).join('-') + '.jpg';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    fatte++;
+    await new Promise(ok => setTimeout(ok, 600));
+  }
+  if (b) b.disabled = false;
+  toast(fatte === p.foto.length
+    ? (it ? '📖 ' + fatte + ' foto delle pagine scaricate.' : '📖 ' + fatte + ' page photos downloaded.')
+    : (it ? '⚠️ Scaricate ' + fatte + ' foto su ' + p.foto.length + ': le altre non si leggono.' : '⚠️ Downloaded ' + fatte + ' of ' + p.foto.length + '.'), fatte ? 'success' : 'error');
 }
 async function _collageCreaRetro(tipo, sfondo, grande, jpg, c, retri) {
   const it = currentLang === 'it';
