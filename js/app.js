@@ -1,6 +1,33 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.252 - Modificati index.html (per la versione) e js/app.js. EVENTI (Franco: «nella tabella degli eventi, dove dici
+//          l'azione che un utente fa, per esempio "richiesto reset pwd", scrivi tra () il valore del campo "Chi è?",
+//          ove presente»): dopo il nome (o l'e-mail) in grassetto, fra parentesi il «Chi è?» del suo utente, trovato
+//          dall'`authUid` dell'evento o, per il reset della password, dal nome o e-mail in grassetto (`_eventoConChiE`).
+//          E nel collage (Franco: «il tasto "scarica entrambe" chiamalo "scarica fronte e retro"») «⬇️ Scarica fronte e
+//          retro»; e (Franco: «Grado usura texture ? -> default: alto») il grado parte su Alto.
+//          E nella finestra della famiglia (Franco: «metti "Salva e next" e "Salva e previous"») i due tasti prima di
+//          «Salva», spenti sulla prima e sull'ultima famiglia (ordine delle frecce, `_famiglieOrdinate`): salvano e
+//          aprono la finestra della famiglia vicina, e dalla pagina di una famiglia ci portano anche la pagina.
+//          E (Franco: «nella form della famiglia, aggiungi un campo che si chiama "Messaggio di testo finale annuncio",
+//          nel tab Ebay; anche questo campo va 3 volte») un campo per account, sotto le descrizioni, solo nella
+//          famiglia (`conFinale`), salvato in `testiAccount[account].finale`; si vede anche nell'Ebay in lettura.
+//          E nel collage (Franco: «"copia testo annuncio" rinominalo "Copia titolo annuncio"; crea un altro tasto …
+//          "copia descrizione annuncio" … affianco (sotto, nel mobile) … lo stesso testo … una riga vuota … il testo di
+//          questo nuovo campo … quello legato alla domanda "Per quale venditore è ?"»): «📋 Copia titolo annuncio» e
+//          «📋 Copia descrizione annuncio» in una fila (in colonna dal telefono); la descrizione = titolo, riga vuota,
+//          messaggio finale della famiglia scelta per quel venditore; se manca venditore, famiglia o messaggio lo dice
+//          e non copia (`_collageDescrizioneAnnuncio`, `_collageFamigliaScelta`, `_collageCopia`). E (Franco: «l'elenco
+//          delle famiglie, nella funzione collage foto, deve essere mostrato con l'ordine che le famiglie hanno nella
+//          griglia») dalla serie le famiglie nell'ordine della griglia (`_famiglieOrdinate`), le altre in fondo.
+//          E nel tab Ebay (album e famiglia, anche in lettura) le linguette degli account (Franco: «prima quelli col *,
+//          in ordine alfabetico, e poi i rimanenti, in ordine alfabetico»), aperta la prima (`_testiAccountInOrdine`).
+//          E «📋 VISTA TABELLARE» delle famiglie (Franco: «affianco al tasto "Collage tutte le famiglie"; … deve avere
+//          l'aggiornamento massivo dei valori»): una finestra con una riga per famiglia (ordine della griglia), Ordine,
+//          Ebay e i tre messaggi finali modificabili; in alto l'aggiornamento massivo (campo, valore, «Applica alle righe
+//          selezionate»); «Salva» scrive una volta sola le famiglie cambiate (`apriTabellaFamiglie`, `_ftApplica`,
+//          `_ftSalva`).
 // v7.251 - Modificati index.html (per la versione) e js/app.js. COLLAGE, L'USURA MEDIA E ALTA RITOCCATA (viste le
 //          immagini mandate a Franco, «ok va bene»): 🐛 `tra` dava un elemento in più del massimo (nel medio 2 buchi
 //          su 1); i buchi senza i fili chiari, che li facevano sembrare insetti: strappi scuri irregolari e allungati,
@@ -32006,7 +32033,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.251';
+const JS_VERSION = 'v7.252';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41804,7 +41831,8 @@ function _collageHTML(perBox) {
     '<div id="collage-usura-box" style="display:none;">' +
       '<div style="' + dom + '">' + (it ? 'Grado usura texture ?' : 'Texture wear?') + '</div>' +
       COLLAGE_USURA.map(u => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.88rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
-        '<input type="radio" name="collage-usura" value="' + u.k + '"' + (u.k === 1 ? ' checked' : '') + '>' + esc(it ? u.it : u.en) + '</label>').join('') +
+        // v7.252 (Franco: «Grado usura texture ? -> default: alto») - era Basso
+        '<input type="radio" name="collage-usura" value="' + u.k + '"' + (u.k === 3 ? ' checked' : '') + '>' + esc(it ? u.it : u.en) + '</label>').join('') +
       // v7.251 - le parti dell'usura, accese di serie (`COLLAGE_USURA_PARTI`)
       '<div style="margin-top:0.3rem;">' + COLLAGE_USURA_PARTI.map(x => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
         '<input type="checkbox" id="collage-usura-' + x.k + '" checked>' + esc(it ? x.it : x.en) + '</label>').join('') + '</div>' +
@@ -41844,7 +41872,7 @@ function _collageHTML(perBox) {
       // 🆕 v7.223 - la seconda foto, coi retro (`_collageRetroPossibile`)
       '<a id="collage-scarica-retro" class="btn-primary" style="display:none;text-decoration:none;white-space:nowrap;font-size:0.85rem;" download="collage-retro.png">⬇️ ' + (it ? 'Scarica retro' : 'Download backs') + '</a>' +
       // 🆕 v7.225 (Franco: «metti un tasto da usare per scaricare entrambe le foto assieme») - c'è quando c'è la foto dei retro
-      '<button type="button" id="collage-scarica-tutte" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;" onclick="_collageScaricaTutte()">⬇️ ' + (it ? 'Scarica entrambe' : 'Download both') + '</button>' +
+      '<button type="button" id="collage-scarica-tutte" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;" onclick="_collageScaricaTutte()">⬇️ ' + (it ? 'Scarica fronte e retro' : 'Download front and back') + '</button>' +   // v7.252 - era «Scarica entrambe»
     '</div>' +
     // 🆕 v7.249 (Franco: «un altro tasto, chiamato Scarica pagine album … dopo le foto degli articoli estratti»; «nel caso
     //    in cui sia stata selezionata una famiglia … le pagine dell'album che contengono quella famiglia»; «non serve
@@ -41852,7 +41880,13 @@ function _collageHTML(perBox) {
     '<button type="button" id="collage-scarica-pagine" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;margin-top:0.7rem;margin-right:0.5rem;" onclick="_collageScaricaPagine()">📖 ' + (it ? 'Scarica pagine album' : 'Download album pages') + '</button>' +
     // 🆕 v7.243 (Franco: «in fondo a tutto, sotto al bottone di scaricamento della foto vorrei un bottone che si chiama
     //    copia testo annuncio») - `_collageTestoAnnuncio`; compare col collage fatto dal sito (`_collageCrea`)
-    '<button type="button" id="collage-copia-testo" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;margin-top:0.7rem;" onclick="_collageCopiaTesto()">📋 ' + (it ? 'Copia testo annuncio' : 'Copy listing text') + '</button>');
+    // 🔄 v7.252 (Franco: «il tasto "copia testo annuncio" rinominalo "Copia titolo annuncio"; crea un altro tasto, da
+    //    chiamare "copia descrizione annuncio", da mettere affianco (sotto, nel mobile)») - i due in una fila, dal
+    //    telefono in colonna (`_isMobileViewport`, come i tasti dello scaricamento)
+    '<div style="display:flex;gap:0.5rem;margin-top:0.7rem;' + (_isMobileViewport() ? 'flex-direction:column;align-items:flex-start;' : 'flex-wrap:wrap;align-items:center;') + '">' +
+      '<button type="button" id="collage-copia-testo" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;" onclick="_collageCopiaTesto()">📋 ' + (it ? 'Copia titolo annuncio' : 'Copy listing title') + '</button>' +
+      '<button type="button" id="collage-copia-desc" class="btn-primary" style="display:none;white-space:nowrap;font-size:0.85rem;" onclick="_collageCopiaDescrizione()">📋 ' + (it ? 'Copia descrizione annuncio' : 'Copy listing description') + '</button>' +
+    '</div>');
 }
 // 🆕 v7.214 (Franco: «nel box che rappresenta una tipologia di articolo, metti un pulsante (Anche da mobile) sempre admin
 //    visibile, che si chiama "Cambia foto"; se premuto, deve lanciare questa procedura nuova, e il suo risultato lo mette
@@ -41982,7 +42016,7 @@ function _collageAzzera(soloCollage) {
     if (a) { if (a.dataset.url) URL.revokeObjectURL(a.dataset.url); a.dataset.url = ''; a.removeAttribute('href'); a.style.display = 'none'; }
   });
   // v7.249 - anche «Copia testo annuncio» (v7.243, restava acceso) e «Scarica pagine album»: valgono per il collage fatto
-  ['collage-scarica-tutte', 'collage-usa', 'collage-peso', 'collage-peso-retro', 'collage-copia-testo', 'collage-scarica-pagine'].forEach(id => { const x = document.getElementById(id); if (x) x.style.display = 'none'; });
+  ['collage-scarica-tutte', 'collage-usa', 'collage-peso', 'collage-peso-retro', 'collage-copia-testo', 'collage-copia-desc' /* v7.252 */, 'collage-scarica-pagine'].forEach(id => { const x = document.getElementById(id); if (x) x.style.display = 'none'; });
   ['collage-anteprima', 'collage-anteprima-retro'].forEach(id => { const x = document.getElementById(id); if (x) { x.innerHTML = ''; x.style.display = 'none'; } });
   _collageAzzeraParti();   // v7.243
   _collageMostraScelte();
@@ -42308,7 +42342,14 @@ function _collageFamiglieDellaSerie(sid, sez, ver) {
     const fam = _collageFamiglia(f);   // v7.218 - anche la fpa senza famiglia scritta
     if (fam) conti[fam] = (conti[fam] || 0) + 1;
   });
-  const voci = Object.keys(conti).sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+  // 🔄 v7.252 (Franco: «l'elenco delle famiglie, nella funzione collage foto, deve essere mostrato con l'ordine che le
+  //    famiglie hanno nella griglia») - l'ordine della griglia delle famiglie della serie (`_famiglieOrdinate`: prima
+  //    quelle con l'ordine, poi come sono scritte); il confronto senza maiuscole (le fpa sono in maiuscolo). Quelle
+  //    che nella griglia non ci sono vanno in fondo, in ordine alfabetico come prima.
+  const serie = typeof _famiglieOrdinate === 'function' ? (getData('series', []) || []).find(x => String(x.id) === String(sid)) : null;
+  const ord = serie ? _famiglieOrdinate(serie).map(n => String(n).toLocaleUpperCase('it')) : [];
+  const pos = n => { const i = ord.indexOf(n.toLocaleUpperCase('it')); return i < 0 ? ord.length : i; };
+  const voci = Object.keys(conti).sort((a, b) => (pos(a) - pos(b)) || a.localeCompare(b, 'it', { sensitivity: 'base' }));
   if (!voci.length) return '';
   return '<option value="">' + (it ? 'Tutte' : 'All') + '</option>' +
     voci.map(fam => '<option value="' + esc(fam) + '">' + esc(fam) + ' (' + conti[fam] + ')</option>').join('');
@@ -43273,8 +43314,32 @@ function _collageTestoAnnuncio() {
     .map(x => x.charAt(0).toLocaleUpperCase('it') + x.slice(1)).join(' - ');
 }
 async function _collageCopiaTesto() {
+  _collageCopia(_collageTestoAnnuncio());
+}
+// 🆕 v7.252 (Franco: «"copia descrizione annuncio" … deve generare lo stesso testo del tasto "copia titolo annuncio" ma
+//    poi deve aggiungere una riga vuota, e dopo … il testo di questo nuovo campo»; «il valore corretto da prendere è
+//    quello legato alla domanda "Per quale venditore è ?"») - il titolo, una riga vuota, e il «Messaggio di testo finale
+//    annuncio» della famiglia scelta (`testiAccount[venditore].finale`). Se manca qualcosa lo si dice e non si copia.
+function _collageDescrizioneAnnuncio() {
   const it = currentLang === 'it';
-  const t = _collageTestoAnnuncio();
+  const titolo = _collageTestoAnnuncio();
+  if (!titolo) return { errore: it ? 'Manca il titolo dell\'annuncio.' : 'No listing title.' };
+  const ven = String((document.getElementById('collage-venditore') || {}).value || '').trim();
+  if (!ven) return { errore: it ? 'Scegli il venditore (domanda «Per quale venditore è ?»): il messaggio finale è diverso per ognuno.' : 'Choose the seller.' };
+  const f = _collageFamigliaScelta();
+  if (!f) return { errore: it ? 'Il messaggio finale sta nella famiglia: scegli una famiglia (dalla serie).' : 'Choose a family.' };
+  const fin = String(((f.d.testiAccount || {})[ven] || {}).finale || '').trim();
+  if (!fin) return { errore: it ? 'La famiglia «' + f.d.nome + '» non ha il messaggio finale di ' + ven + ' (tab Ebay della famiglia).' : 'No closing message for ' + ven + '.' };
+  return { testo: titolo + '\n\n' + fin };
+}
+async function _collageCopiaDescrizione() {
+  const r = _collageDescrizioneAnnuncio();
+  if (r.errore) { toast('⚠️ ' + esc(r.errore), 'error'); return; }
+  _collageCopia(r.testo);
+}
+// v7.252 - la copia negli appunti dei due tasti (era il corpo di `_collageCopiaTesto`)
+async function _collageCopia(t) {
+  const it = currentLang === 'it';
   if (!t) return;
   try {
     await navigator.clipboard.writeText(t);
@@ -43287,7 +43352,7 @@ async function _collageCopiaTesto() {
     ta.remove();
     if (!fatto) { toast(it ? '⚠️ Non riesco a copiare' : '⚠️ Cannot copy', 'error'); return; }
   }
-  toast((it ? '📋 Copiato: ' : '📋 Copied: ') + t, 'success');
+  toast((it ? '📋 Copiato: ' : '📋 Copied: ') + esc(t).replace(/\n/g, '<br>'), 'success');
 }
 // 🆕 v7.225 - «Scarica entrambe»: i due «Scarica» uno dopo l'altro. Il secondo parte poco dopo il primo, perché un
 //    browser che vede due download nello stesso istante può tenerne uno solo. La prima volta Chrome può chiedere se
@@ -43382,20 +43447,30 @@ async function _collageCreaParti(tipo, imgs, retri, sfondo, grande, jpg, misure)
 //    sfogliabile della serie (`_albumDaSfogliare`) che contengono le pagine scritte nella famiglia (`_famPagineAlbum`,
 //    `_famFotoDellePagine`, come la pagina della famiglia). La famiglia della tendina può essere in maiuscolo (le fpa,
 //    `_famigliaASchermo`): si confronta senza badare alle maiuscole. null se non c'è niente da scaricare.
-function _collagePagineFamiglia() {
+// 🔄 v7.252 - la famiglia scelta (la sua riga di `famiglieDati`, e la serie) sta in `_collageFamigliaScelta`: la usa
+//    anche «Copia descrizione annuncio»
+function _collageFamigliaScelta() {
   if (_collageModo !== 'sito' || (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value !== 'serie') return null;
   const sid = (document.getElementById('collage-sito-serie') || {}).value, fam = String((document.getElementById('collage-sito-serie-fam') || {}).value || '').trim();
   if (!sid || !fam) return null;
   const s = getData('series', []).find(x => String(x.id) === String(sid));
   const d = s && _famiglieDati(s).find(x => x.nome.toLocaleUpperCase('it') === fam.toLocaleUpperCase('it'));
-  if (!d) return null;
+  return d ? { s, d } : null;
+}
+function _collagePagineFamiglia() {
+  const f = _collageFamigliaScelta();
+  if (!f) return null;
+  const { s, d } = f;
   const alb = _albumDaSfogliare(s.id), urls = (alb ? _pagineDaMostrare(alb) : []).map(p => p.url);
   const foto = _famFotoDellePagine(_famPagineAlbum(d, urls), urls).foto;
   return foto.length ? { d, urls, foto } : null;
 }
+// v7.249 - «Scarica pagine album»; v7.252: e «Copia descrizione annuncio», che c'è quando c'è il titolo
 function _collageMostraTastoPagine() {
   const b = document.getElementById('collage-scarica-pagine');
   if (b) b.style.display = _collagePagineFamiglia() ? '' : 'none';
+  const cd = document.getElementById('collage-copia-desc');
+  if (cd) cd.style.display = _collageModo === 'sito' && _collageTestoAnnuncio() ? '' : 'none';
 }
 // Le scarica una per una (600 ms fra l'una e l'altra, come «Scarica tutte»). Dell'album si legge l'ORIGINALE, che non è
 //    una trasformazione; quando della foto serve una pagina sola la metà si taglia qui, nel browser, mai su Cloudinary.
@@ -43440,7 +43515,9 @@ async function _collageCreaRetro(tipo, sfondo, grande, jpg, c, retri) {
   if (peso) { peso.textContent = ''; peso.style.display = 'none'; }
   if (ant) { ant.innerHTML = ''; ant.style.display = 'none'; }
   if (!retri) return;
-  if (tutte) tutte.textContent = '⬇️ ' + (it ? 'Scarica entrambe' : 'Download both');   // v7.243 - col collage diviso diceva «Scarica tutte»
+  // v7.243 - col collage diviso diceva «Scarica tutte»; v7.252 (Franco: «il tasto "scarica entrambe" chiamalo "scarica
+  //    fronte e retro"»)
+  if (tutte) tutte.textContent = '⬇️ ' + (it ? 'Scarica fronte e retro' : 'Download front and back');
   const cR = _collageDisegna(tipo, retri, sfondo, grande ? c.width : 0, c.pezzi);
   const blob = await new Promise(ok => jpg ? cR.toBlob(ok, 'image/jpeg', 0.92) : cR.toBlob(ok, 'image/png'));
   if (!blob) { toast(it ? '❌ Non riesco a creare la foto dei retro' : '❌ Could not create the backs photo', 'error'); return; }
@@ -55998,7 +56075,10 @@ function _rendiFamiglieSerie() {
   // v7.233 - accanto al titolo, per l'admin, il collage per tutte le famiglie (`apriCollageTutteFamiglie`)
   tit.innerHTML = '<span>' + (it ? 'LE FAMIGLIE DELLA SERIE' : 'THE SERIES FAMILIES') + '</span>'
     + (adm ? ' <button type="button" class="btn-barra-admin" onclick="apriCollageTutteFamiglie()" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:0;font-weight:600;padding:0.2rem 0.8rem;margin-left:0.8rem;vertical-align:middle;">🖼️ '
-      + (it ? 'Collage per tutte le famiglie' : 'Collage for all families') + '</button>' : '');
+      + (it ? 'Collage per tutte le famiglie' : 'Collage for all families') + '</button>'
+      // 🆕 v7.252 (Franco: «un tasto chiamato "Vista tabellare", da mettere affianco al tasto "Collage tutte le famiglie"»)
+      + ' <button type="button" class="btn-barra-admin" onclick="apriTabellaFamiglie()" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:0;font-weight:600;padding:0.2rem 0.8rem;margin-left:0.4rem;vertical-align:middle;">📋 '
+      + (it ? 'Vista tabellare' : 'Table view') + '</button>' : '');
   tit.style.display = '';
   // 🔴 il nome viaggia in un `data-`, mai dentro l'onclick: può avere un apostrofo (la regola delle sottoserie, v6.682)
   gr.innerHTML = nomi.map(nome => {
@@ -56127,13 +56207,18 @@ function _famEbayLettura(d, it) {
     + (pieno(a) ? '<span style="margin-left:0.35rem;color:var(--accent);">●</span>' : '') + '</button>';
   return '<div id="fam-ebay-lettura" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin:0 0 0.8rem;">'
     + '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">🏷️ Ebay: <span style="color:var(--text);">' + (d.forSale ? (it ? 'sì' : 'yes') : 'no') + '</span></div>'
-    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + _TESTI_ACCOUNT.map(lin).join('') + '</div>'
-    + _TESTI_ACCOUNT.map((a, i) => '<div class="fam-el-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
+    // v7.252 - le linguette nello stesso ordine della finestra: prima chi ha testi (`_testiAccountInOrdine`)
+    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + _testiAccountInOrdine(t).map(lin).join('') + '</div>'
+    + _testiAccountInOrdine(t).map((a, i) => '<div class="fam-el-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
       + _TESTI_CAMPI.map(([k, nIt, nEn]) => ['It', 'En'].map(l => {
         const v = String((t[a] || {})[k + l] || '').trim();
         return '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;">' + (it ? nIt : nEn) + ' - ' + (l === 'It' ? 'ITA' : 'ENG') + '</div>'
           + '<div style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;">' + (v ? esc(v) : '—') + '</div></div>';
-      }).join('')).join('') + '</div>').join('')
+      }).join('')).join('')
+      // v7.252 - e il messaggio finale dell'annuncio, come nella finestra
+      + ((v => '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;">' + (it ? 'Messaggio di testo finale annuncio' : 'Closing message of the listing') + '</div>'
+          + '<div style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;">' + (v ? esc(v) : '—') + '</div></div>')(String((t[a] || {}).finale || '').trim()))
+      + '</div>').join('')
     + '</div>';
 }
 function _famElTab(a) {
@@ -56222,7 +56307,7 @@ function apriFinestraFamiglia(el) {
     + '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
     + '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;font-weight:600;">'
     + '<input type="checkbox" id="fam-for-sale"' + (d.forSale ? ' checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;"><span>🏷️ Ebay</span></label></div>'
-    + _bloccoTestiAccountEdit({ section: 'albums', testiAccount: d.testiAccount })
+    + _bloccoTestiAccountEdit({ section: 'albums', testiAccount: d.testiAccount, conFinale: true })   // v7.252: col messaggio finale
     + '</div>'
     + '<div class="fam-pannello" data-tab="generale">'
     + lab(it ? 'Ordine' : 'Order')
@@ -56240,6 +56325,16 @@ function apriFinestraFamiglia(el) {
     + '<div id="fam-stato" style="font-size:0.85rem;min-height:1.2rem;margin-top:0.8rem;color:var(--warn);"></div>'
     + '<div style="display:flex;justify-content:flex-end;gap:0.6rem;margin-top:0.6rem;">'
     + '<button type="button" class="btn-secondary" onclick="document.getElementById(\'famiglia-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+    // 🆕 v7.252 (Franco: «sulla form della famiglia, metti "Salva e next" e "Salva e previous"») - come nella scheda
+    //    dell'articolo: prima di «Salva», spenti sulla prima e sull'ultima famiglia; l'ordine è quello delle frecce
+    //    della pagina della famiglia (`_famiglieOrdinate`)
+    + (() => {
+        const nomi = _famiglieOrdinate(s), i = nomi.indexOf(nome);
+        const tasto = (id, dove, spento, testo, titolo) => '<button type="button" id="' + id + '" class="btn-primary" onclick="_famigliaSalva(\'' + dove + '\')"'
+          + (spento ? ' disabled style="opacity:0.3;"' : '') + ' title="' + titolo + '">💾 ' + testo + '</button>';
+        return i < 0 ? '' : tasto('fam-salva-prev', 'prev', i === 0, 'Salva e previous', it ? (i === 0 ? 'È la prima famiglia' : 'Salva e apri la famiglia precedente') : 'Save and open the previous family')
+          + tasto('fam-salva-next', 'next', i === nomi.length - 1, 'Salva e next', it ? (i === nomi.length - 1 ? 'È l\'ultima famiglia' : 'Salva e apri la famiglia successiva') : 'Save and open the next family');
+      })()
     + '<button type="button" id="fam-salva" class="btn-primary" onclick="_famigliaSalva()">' + (it ? 'Salva' : 'Save') + '</button>'
     + '</div></div></div>';
   document.body.appendChild(ov);
@@ -56259,7 +56354,9 @@ function _famigliaMostraFoto() {
   const a = document.getElementById('fam-foto-anteprima');
   if (a) a.style.backgroundImage = _famFoto ? 'url(\'' + cloudinaryUrl(_famFoto.url, 'w_600,h_600,c_fit,q_auto,f_auto') + '\')' : '';
 }
-async function _famigliaSalva() {
+// v7.252 - `dove`: 'next' / 'prev' = «Salva e next» / «Salva e previous», che dopo il salvataggio aprono la finestra
+//    della famiglia vicina (e, se si è nella pagina di una famiglia, ci portano anche la pagina)
+async function _famigliaSalva(dove) {
   const it = currentLang === 'it';
   const ov = document.getElementById('famiglia-modal'), st = document.getElementById('fam-stato'), b = document.getElementById('fam-salva');
   const nome = ov && ov.getAttribute('data-famiglia');
@@ -56277,17 +56374,148 @@ async function _famigliaSalva() {
   riga.testiAccount = document.getElementById('fe-testi-account') ? _feTestiAccount() : prec.testiAccount;
   const prima = s.famiglieDati;
   s.famiglieDati = _famiglieDati(s).filter(d => d.nome !== nome).concat([riga]);
-  if (b) b.disabled = true;
+  // v7.252 - i tre tasti spenti insieme mentre si salva (lo stato dei due «Salva e …» si ricorda per riaccenderli)
+  const tasti = ['fam-salva', 'fam-salva-prev', 'fam-salva-next'].map(id => document.getElementById(id)).filter(Boolean);
+  const eraSpento = tasti.map(t => t.disabled);
+  tasti.forEach(t => { t.disabled = true; });
   try { await fsSave('series', _serieSenzaItems(s)); }
   catch (e) {
     console.error('_famigliaSalva', e);
+    s.famiglieDati = prima;
+    if (st) st.textContent = (it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e);
+    tasti.forEach((t, k) => { t.disabled = eraSpento[k]; });
+    return;
+  }
+  ov.remove();
+  toast(it ? '✅ Famiglia salvata.' : '✅ Family saved.', 'success');
+  // v7.252 - la famiglia vicina, nell'ordine delle frecce
+  const nomi = _famiglieOrdinate(s), i = nomi.indexOf(nome);
+  const altra = dove === 'next' ? nomi[i + 1] : dove === 'prev' && i > 0 ? nomi[i - 1] : null;
+  if (altra && _famigliaAperta) { try { _vaiAllaFamiglia(altra); } catch (e) { console.error('_vaiAllaFamiglia', e); } }
+  else {
+    try { _rendiFamiglieSerie(); } catch (e) { console.error('_rendiFamiglieSerie', e); }
+    try { _rendiTestaFamiglia(); } catch (e) { console.error('_rendiTestaFamiglia', e); }
+  }
+  if (altra) apriFinestraFamiglia({ getAttribute: () => altra });
+}
+// 🆕 v7.252 (Franco: «nella sezione delle famiglie un tasto "Vista tabellare"; se premuto deve mostrare una vista
+//    tabellare per le famiglie; questa vista tabellare deve avere l'aggiornamento massivo dei valori») - LA TABELLA
+//    DELLE FAMIGLIE, in una finestra: una riga per famiglia, nell'ordine della griglia (`_famiglieOrdinate`), coi campi
+//    che si scrivono in breve: Ordine, Ebay, e il «Messaggio di testo finale annuncio» dei tre account. In alto
+//    l'AGGIORNAMENTO MASSIVO: un campo, un valore, «Applica alle righe selezionate» (riempie le caselle, non salva).
+//    «Salva» scrive in una volta sola le famiglie cambiate (come `_famigliaSalva`: le pagine, la foto e gli altri
+//    testi restano quelli che sono). Titoli e descrizioni per account sono lunghi: restano nella finestra della famiglia.
+const _FT_CAMPI = () => {
+  const it = currentLang === 'it';
+  return [['ordine', it ? 'Ordine' : 'Order'], ['ebay', 'Ebay']]
+    .concat(_TESTI_ACCOUNT.map(a => ['finale-' + a, (it ? 'Messaggio finale ' : 'Closing message ') + a]));
+};
+function apriTabellaFamiglie() {
+  if (!currentUser?.isAdmin) return;
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  const nomi = _famiglieOrdinate(s);
+  if (!s || !nomi.length) return;
+  const it = currentLang === 'it';
+  document.getElementById('famiglie-tabella-modal')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'famiglie-tabella-modal';
+  ov._nomi = nomi;
+  const inp = 'padding:0.25rem 0.4rem;font-size:0.82rem;';
+  const righe = nomi.map((nome, i) => {
+    const d = _famigliaDato(s, nome), t = d.testiAccount || {};
+    return '<tr data-i="' + i + '">'
+      + '<td style="text-align:center;"><input type="checkbox" class="ft-sel"></td>'
+      + '<td style="white-space:nowrap;font-weight:600;">' + esc(nome) + '</td>'
+      + '<td><input type="number" step="1" class="form-input ft-ordine" value="' + (d.ordine ?? '') + '" style="width:5rem;' + inp + '"></td>'
+      + '<td style="text-align:center;"><input type="checkbox" class="ft-ebay"' + (d.forSale ? ' checked' : '') + '></td>'
+      + _TESTI_ACCOUNT.map(a => '<td><input type="text" class="form-input ft-finale" data-account="' + a + '" value="' + esc((t[a] || {}).finale || '') + '" style="min-width:14rem;' + inp + '"></td>').join('')
+      + '</tr>';
+  }).join('');
+  ov.innerHTML = '<div class="modal" style="max-width:1300px;width:96vw;">'
+    + '<div class="modal-header"><h2 class="modal-title">📋 ' + (it ? 'Le famiglie della serie' : 'The series families') + '</h2>'
+    + '<button type="button" class="modal-close" onclick="document.getElementById(\'famiglie-tabella-modal\').remove()">✕</button></div>'
+    + '<div style="padding:0 1.2rem 1.2rem;">'
+    // l'aggiornamento massivo
+    + '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;background:var(--card2);border-radius:10px;padding:0.6rem 0.8rem;margin-bottom:0.8rem;">'
+    + '<span style="font-weight:700;color:var(--info);">🔁 ' + (it ? 'Aggiornamento massivo' : 'Bulk update') + '</span>'
+    + '<select id="ft-campo" class="form-input" style="width:auto;' + inp + '" onchange="_ftCampoScelto()">' + _FT_CAMPI().map(([k, n]) => '<option value="' + k + '">' + esc(n) + '</option>').join('') + '</select>'
+    + '<input id="ft-valore" type="number" step="1" class="form-input" placeholder="' + (it ? 'valore (vuoto = cancella)' : 'value (empty = clear)') + '" style="width:16rem;max-width:100%;' + inp + '">'
+    + '<select id="ft-valore-ebay" class="form-input" style="display:none;width:auto;' + inp + '"><option value="si">' + (it ? 'Sì' : 'Yes') + '</option><option value="no">No</option></select>'
+    + '<button type="button" class="btn-primary" style="font-size:0.82rem;padding:0.3rem 0.9rem;" onclick="_ftApplica()">' + (it ? 'Applica alle righe selezionate' : 'Apply to selected rows') + '</button>'
+    + '</div>'
+    + '<div style="overflow-x:auto;"><table class="data-table compact"><thead><tr>'
+    + '<th style="text-align:center;"><input type="checkbox" title="' + (it ? 'Seleziona tutte' : 'Select all') + '" onclick="document.querySelectorAll(\'#famiglie-tabella-modal .ft-sel\').forEach(x => { x.checked = this.checked; })"></th>'
+    + '<th>' + (it ? 'Famiglia' : 'Family') + '</th><th>' + (it ? 'Ordine' : 'Order') + '</th><th>Ebay</th>'
+    + _TESTI_ACCOUNT.map(a => '<th>' + (it ? 'Messaggio finale ' : 'Closing message ') + a + '</th>').join('')
+    + '</tr></thead><tbody>' + righe + '</tbody></table></div>'
+    + '<div id="ft-stato" style="font-size:0.85rem;min-height:1.2rem;margin-top:0.8rem;color:var(--warn);"></div>'
+    + '<div style="display:flex;justify-content:flex-end;gap:0.6rem;margin-top:0.6rem;">'
+    + '<button type="button" class="btn-secondary" onclick="document.getElementById(\'famiglie-tabella-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+    + '<button type="button" id="ft-salva" class="btn-primary" onclick="_ftSalva()">' + (it ? 'Salva' : 'Save') + '</button>'
+    + '</div></div></div>';
+  document.body.appendChild(ov);
+}
+// il valore dell'aggiornamento massivo: un numero per l'Ordine, sì / no per Ebay, un testo per i messaggi
+function _ftCampoScelto() {
+  const k = document.getElementById('ft-campo')?.value || '', v = document.getElementById('ft-valore'), e = document.getElementById('ft-valore-ebay');
+  if (!v || !e) return;
+  v.style.display = k === 'ebay' ? 'none' : '';
+  e.style.display = k === 'ebay' ? '' : 'none';
+  v.type = k === 'ordine' ? 'number' : 'text';
+}
+function _ftApplica() {
+  const it = currentLang === 'it', st = document.getElementById('ft-stato');
+  const k = document.getElementById('ft-campo')?.value || '';
+  const righe = [...document.querySelectorAll('#famiglie-tabella-modal tbody tr')].filter(r => r.querySelector('.ft-sel')?.checked);
+  if (!righe.length) { if (st) st.textContent = it ? 'Spunta prima le righe da aggiornare.' : 'Select the rows first.'; return; }
+  const v = String(document.getElementById('ft-valore')?.value || '').trim();
+  if (k === 'ordine' && v !== '' && !Number.isFinite(+v)) { if (st) st.textContent = it ? 'L\'ordine deve essere un numero.' : 'Order must be a number.'; return; }
+  righe.forEach(r => {
+    if (k === 'ordine') r.querySelector('.ft-ordine').value = v;
+    else if (k === 'ebay') r.querySelector('.ft-ebay').checked = document.getElementById('ft-valore-ebay')?.value === 'si';
+    else if (k.startsWith('finale-')) { const c = r.querySelector('.ft-finale[data-account="' + k.slice(7) + '"]'); if (c) c.value = v; }
+  });
+  if (st) st.textContent = it ? 'Applicato a ' + righe.length + (righe.length === 1 ? ' famiglia' : ' famiglie') + ': ora premi «Salva».' : 'Applied to ' + righe.length + ': now press Save.';
+}
+async function _ftSalva() {
+  const it = currentLang === 'it', st = document.getElementById('ft-stato'), b = document.getElementById('ft-salva');
+  const ov = document.getElementById('famiglie-tabella-modal');
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  if (!ov || !s || !currentUser?.isAdmin) return;
+  const nuove = [];
+  for (const r of ov.querySelectorAll('tbody tr')) {
+    const nome = ov._nomi[+r.dataset.i], d = _famigliaDato(s, nome);
+    const tOrd = String(r.querySelector('.ft-ordine')?.value || '').trim();
+    if (tOrd !== '' && !Number.isFinite(+tOrd)) { if (st) st.textContent = (it ? 'L\'ordine di «' : 'Order of «') + nome + (it ? '» deve essere un numero.' : '» must be a number.'); return; }
+    const ordine = tOrd === '' ? null : +tOrd, forSale = !!r.querySelector('.ft-ebay')?.checked;
+    // i testi per account: si toccano solo i messaggi finali; un account rimasto vuoto esce, tutto vuoto = null
+    const testi = JSON.parse(JSON.stringify(d.testiAccount || {}));
+    r.querySelectorAll('.ft-finale').forEach(c => {
+      const a = c.dataset.account, v = c.value.trim();
+      if (v) (testi[a] = testi[a] || {}).finale = v; else if (testi[a]) delete testi[a].finale;
+      if (testi[a] && !Object.keys(testi[a]).length) delete testi[a];
+    });
+    const testiAccount = Object.keys(testi).length ? testi : null;
+    if (ordine === d.ordine && forSale === d.forSale && JSON.stringify(testiAccount) === JSON.stringify(d.testiAccount || null)) continue;
+    const riga = { nome, ordine, pagine: d.pagine, img: d.img, forSale, testiAccount };
+    if (d.pagineAlbum) riga.pagineAlbum = d.pagineAlbum;
+    nuove.push(riga);
+  }
+  if (!nuove.length) { if (st) st.textContent = it ? 'Niente da salvare: nessuna famiglia è cambiata.' : 'Nothing changed.'; return; }
+  const cambiate = new Set(nuove.map(x => x.nome)), prima = s.famiglieDati;
+  s.famiglieDati = _famiglieDati(s).filter(d => !cambiate.has(d.nome)).concat(nuove);
+  if (b) b.disabled = true;
+  try { await fsSave('series', _serieSenzaItems(s)); }
+  catch (e) {
+    console.error('_ftSalva', e);
     s.famiglieDati = prima;
     if (st) st.textContent = (it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e);
     if (b) b.disabled = false;
     return;
   }
   ov.remove();
-  toast(it ? '✅ Famiglia salvata.' : '✅ Family saved.', 'success');
+  toast(it ? '✅ ' + nuove.length + (nuove.length === 1 ? ' famiglia salvata.' : ' famiglie salvate.') : '✅ ' + nuove.length + ' families saved.', 'success');
   try { _rendiFamiglieSerie(); } catch (e) { console.error('_rendiFamiglieSerie', e); }
   try { _rendiTestaFamiglia(); } catch (e) { console.error('_rendiTestaFamiglia', e); }
 }
@@ -65591,6 +65819,22 @@ async function logEvent(type, description, extra = {}) {
   } catch(e) { console.error('logEvent error:', e); }
 }
 
+// 🆕 v7.252 (Franco: «nella tabella degli eventi, dove dici l'azione che un utente fa, per esempio "richiesto reset pwd",
+//    scrivi tra () il valore del campo "Chi è?", ove presente») - la descrizione col «Chi è?» (`chiE`) del suo utente
+//    fra parentesi, subito dopo il primo grassetto (il nome o l'e-mail: così resta attaccato alla persona, e non va
+//    dopo il titolo di un post). L'utente è quello dell'`authUid` dell'evento; se non c'è (il reset della password
+//    parte da chi non è entrato) quello il cui nome o e-mail è il grassetto. Utente sparito o senza «Chi è?»: com'era.
+function _eventoConChiE(e) {
+  const d = String(e.description || '');
+  const utenti = getData('users', []);
+  const nel = (d.match(/<strong>([\s\S]*?)<\/strong>/) || [])[1];
+  const u = (e.authUid && utenti.find(x => x.authUid === e.authUid))
+    || (nel ? utenti.find(x => (x.username && esc(x.username) === nel) || (x.email && esc(x.email) === nel)) : null);
+  const chi = u && String(u.chiE || '').trim();
+  if (!chi) return d;
+  const tra = ' (' + esc(chi) + ')';
+  return nel !== undefined ? d.replace('</strong>', '</strong>' + tra) : d + tra;
+}
 function renderAdminEventi() {
   const el = document.getElementById('admin-eventi-table');
   if (!el) return;
@@ -65607,7 +65851,7 @@ function renderAdminEventi() {
   ${eventi.map(e => `<tr style="${e.read ? '' : 'background:rgba(181,255,46,0.05);'}">
     <td style="white-space:nowrap;font-size:0.78rem;">${new Date(e.date).toLocaleDateString('it-IT')} ${new Date(e.date).toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}</td>
     <td>${typeIcon[e.type] || '📌'}</td>
-    <td>${e.description}</td>
+    <td>${_eventoConChiE(e)}</td>
     <td style="white-space:nowrap;">
       <button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : (currentLang === 'it' ? 'Segna come letto' : 'Mark as read')}</button>
       <button class="tbl-btn tbl-btn-del" style="margin-left:0.35rem;" onclick="deleteEvento('${e.id}')" title="${currentLang === 'it' ? 'Elimina questo evento' : 'Delete this event'}">🗑️</button>
@@ -71518,6 +71762,12 @@ function _bloccoFotoAnnuncioEdit(f) {
 //    di sempre (`ebayTitleIt` …), che restano dove sono.
 const _TESTI_ACCOUNT = ['Franco', 'Fabio', 'Lendys'];
 const _TESTI_CAMPI = [['titolo', 'Titolo', 'Title'], ['desc', 'Descrizione', 'Description']];
+// 🆕 v7.252 - l'ordine delle linguette degli account: prima quelli con almeno un testo scritto, poi gli altri; tutti e
+//    due i gruppi in ordine alfabetico. `t` = `testiAccount` dell'articolo o della famiglia.
+function _testiAccountInOrdine(t) {
+  const pieno = a => Object.values((t || {})[a] || {}).some(v => String(v || '').trim());
+  return _TESTI_ACCOUNT.slice().sort((x, y) => (pieno(y) - pieno(x)) || x.localeCompare(y, 'it'));
+}
 function _bloccoTestiAccountEdit(f) {
   if (!f || f.section !== 'albums') return '';
   const it = currentLang === 'it', t = f.testiAccount || {};
@@ -71533,10 +71783,13 @@ function _bloccoTestiAccountEdit(f) {
     + ' style="padding:0.35rem 0.9rem;border:none;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;font-family:var(--font-ui);'
     + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + a
     + '<span class="fe-ta-segno" title="' + (it ? 'Ha testi scritti' : 'Has texts') + '" style="margin-left:0.35rem;color:var(--accent);' + (pieno(a) ? '' : 'display:none;') + '">●</span></button>';
+  // 🔄 v7.252 (Franco: «metti per primo il tab per il quale ci sono dati, poi gli altri; prima quelli col segno, in
+  //    ordine alfabetico, e poi i rimanenti, in ordine alfabetico») - `_testiAccountInOrdine`; si apre il primo
+  const ordine = _testiAccountInOrdine(t);
   return '<div id="fe-testi-account" oninput="_feTaSegna()" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
     + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;">✍️ ' + (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account') + '</div>'
-    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + _TESTI_ACCOUNT.map(linguetta).join('') + '</div>'
-    + _TESTI_ACCOUNT.map((a, i) => '<div class="fe-ta-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
+    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + ordine.map(linguetta).join('') + '</div>'
+    + ordine.map((a, i) => '<div class="fe-ta-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
       + _TESTI_CAMPI.map(([k, nIt, nEn]) => ['It', 'En'].map(l => {
         const id = 'fe-ta-' + a + '-' + k + l, v = (t[a] || {})[k + l] || '';
         const etichetta = (it ? nIt : nEn) + ' - ' + (l === 'It' ? 'ITA' : 'ENG');
@@ -71547,6 +71800,14 @@ function _bloccoTestiAccountEdit(f) {
             : '<textarea class="form-input" id="' + id + '" rows="12" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc(v) + '</textarea>')
           + '</div>';
       }).join('')).join('')
+      // 🆕 v7.252 (Franco: «nella form della famiglia, aggiungi un campo che si chiama "Messaggio di testo finale
+      //    annuncio", nel tab Ebay; anche questo campo va 3 volte») - uno per account, sotto le descrizioni, solo
+      //    dove chi chiama lo chiede (`conFinale`: la famiglia); si salva in `testiAccount[account].finale`
+      + (f.conFinale ? (() => {
+          const id = 'fe-ta-' + a + '-finale';
+          return '<div style="margin-bottom:0.5rem;"><label for="' + id + '" style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' + (it ? 'Messaggio di testo finale annuncio' : 'Closing message of the listing') + '</label>'
+            + '<textarea class="form-input" id="' + id + '" rows="4" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc((t[a] || {}).finale || '') + '</textarea></div>';
+        })() : '')
       + '</div>').join('')
     + '</div>';
 }
@@ -71601,6 +71862,11 @@ function _feTestiAccount() {
     const v = (document.getElementById('fe-ta-' + a + '-' + k + l)?.value || '').trim();
     if (v) (out[a] = out[a] || {})[k + l] = v;
   })));
+  // v7.252 - il messaggio finale, dove c'è la casella (la famiglia)
+  _TESTI_ACCOUNT.forEach(a => {
+    const v = (document.getElementById('fe-ta-' + a + '-finale')?.value || '').trim();
+    if (v) (out[a] = out[a] || {}).finale = v;
+  });
   return Object.keys(out).length ? out : null;
 }
 // La riga accanto al nome del sito: quante foto escono, o cosa non va. Restituisce l'errore (o '').
