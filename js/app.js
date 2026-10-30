@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.253 - Modificati index.html (per la versione) e js/app.js. ANNUNCI (Franco: «"Filtra per numero" diventa "Filtra per
+//          numero articolo"»; «nella sezione "Filtra per tipologia di articolo", aggiungi una pillola "Famiglie" … famiglia
+//          deve essere una opzione aggiuntiva alla domanda "Tipologia di articolo" di un nuovo annuncio»): il riquadro si
+//          chiama «Filtra per numero articolo»; la tipologia `famiglia` («Famiglia» nella tendina del nuovo annuncio, in
+//          fondo, se la serie ha famiglie; `_annOpzioniTipologia`, `_aggNomeTipo`) e la pillola «Famiglie», sempre
+//          presente, nel filtro della tipologia.
 // v7.252 - Modificati index.html (per la versione) e js/app.js. EVENTI (Franco: «nella tabella degli eventi, dove dici
 //          l'azione che un utente fa, per esempio "richiesto reset pwd", scrivi tra () il valore del campo "Chi è?",
 //          ove presente»): dopo il nome (o l'e-mail) in grassetto, fra parentesi il «Chi è?» del suo utente, trovato
@@ -32033,7 +32039,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.252';
+const JS_VERSION = 'v7.253';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -43677,9 +43683,12 @@ const _ANN_RIQUADRI = [
   //    delle due pillole.
   { k: 'tipologia', it: 'Filtra per tipologia di articolo', en: 'Filter by item type',
     val: r => { const f = r.articoloId && (getData('figurines', []) || []).find(x => x.id === r.articoloId); return r.tipologia || (f ? _aggTipoDi(f) : ''); },
+    // 🔄 v7.253 (Franco: «aggiungi una pillola "Famiglie", che, se premuta, mostra gli annunci che riguardano le
+    //    famiglie») - la tipologia `famiglia` (una scelta del nuovo annuncio, `_annOpzioniTipologia`): la pillola c'è
+    //    sempre, anche senza annunci di famiglie, e si legge al plurale
     voci: () => { const q = _ANN_RIQUADRI.find(x => x.k === 'tipologia');
-      return [...new Set(_annRighe.map(q.val).filter(Boolean))].sort((a, b) => _aggNomeTipo(a).localeCompare(_aggNomeTipo(b), 'it', { sensitivity: 'base' })); },
-    etichetta: k => _aggNomeTipo(k) },
+      return [...new Set(_annRighe.map(q.val).filter(Boolean).concat('famiglia'))].sort((a, b) => _aggNomeTipo(a).localeCompare(_aggNomeTipo(b), 'it', { sensitivity: 'base' })); },
+    etichetta: k => k === 'famiglia' ? (currentLang === 'it' ? 'Famiglie' : 'Families') : _aggNomeTipo(k) },
   { k: 'singola', it: 'Filtra per figurina singola', en: 'Filter by single sticker',
     val: r => ['figurines', 'attaccare'].includes(_ANN_RIQUADRI.find(x => x.k === 'tipologia').val(r)) ? (r.articoloId ? 'si' : 'no') : '',
     voci: () => ['si', 'no'],
@@ -43693,7 +43702,8 @@ const _ANN_RIQUADRI = [
   // 🔄 v7.202 (Franco: «anche nelle pillole dei filtri per numero, aumenta lo spazio tra l'etichetta e il valore») - più
   //    delle serie: qui l'etichetta è solo un numero. E (Franco: «prima del numero (il valore della pillola) mettici un
   //    #») il conteggio si legge «#3» (`prima`, in `_chipTipoHTML`)
-  { k: 'n', it: 'Filtra per numero', en: 'Filter by number', stacco: '1.6rem', prima: '#',
+  // 🔄 v7.253 (Franco: «"Filtra per numero" diventa "Filtra per numero articolo"»)
+  { k: 'n', it: 'Filtra per numero articolo', en: 'Filter by item number', stacco: '1.6rem', prima: '#',
     voci: () => [...new Set(_annRighe.map(r => String(r.n ?? '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true })) },
   // 🆕 v7.242 (Franco: «aggiungi filtro sul prezzo (campo "Finale")»; «chiamalo "Filtra per valore"») - come il numero:
   //    una pillola per ogni valore di Finale (`prezzo`) fra gli annunci, senza doppioni e senza i vuoti, dal più basso;
@@ -43923,6 +43933,10 @@ function _annOpzioniTipologia(seriesId, scelto) {
   const ordine = Object.keys(ARTICOLI), posto = k => { const i = ordine.indexOf(k); return i < 0 ? 9999 : i; };
   const tipi = [...new Set((getData('figurines', []) || []).filter(f => f.seriesId === seriesId).map(_aggTipoDi))]
     .sort((a, b) => (posto(a) - posto(b)) || _aggNomeTipo(a).localeCompare(_aggNomeTipo(b), 'it'));
+  // 🆕 v7.253 (Franco: «famiglia deve essere una opzione aggiuntiva, alla domanda "Tipologia di articolo" di un nuovo
+  //    annuncio») - in fondo, se la serie ha delle famiglie (o se l'annuncio è già di una famiglia)
+  const s = (getData('series', []) || []).find(x => x.id === seriesId);
+  if ((s && _famiglieOrdinate(s).length) || scelto === 'famiglia') tipi.push('famiglia');
   return '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
     + tipi.map(k => '<option value="' + esc(k) + '"' + (k === scelto ? ' selected' : '') + '>' + esc(_aggNomeTipo(k)) + '</option>').join('');
 }
@@ -45381,6 +45395,7 @@ const _aggPulisci = v => String(v || '').trim().split(/\s+/).filter(Boolean).joi
 //    salva per conto suo. Ordine: le sezioni come nel descrittore `ARTICOLI`, poi i tipi per nome.
 const _aggTipoDi = f => f.tipoProdotto ? 'tp:' + f.tipoProdotto : (f.section || 'figurines');
 function _aggNomeTipo(k) {
+  if (k === 'famiglia') return currentLang === 'it' ? 'Famiglia' : 'Family';   // v7.253 - la tipologia degli annunci delle famiglie
   if (!k.startsWith('tp:')) return getSectionLabel(k);
   const id = k.slice(3);
   return _nomeTipo(_tipiProdotto().find(t => t.id === id)) || id;
