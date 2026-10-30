@@ -1,7 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.250 - Modificati index.html (per la versione) e js/app.js. COLLAGE: L'USURA MEDIA E ALTA RIFATTA (Franco: «non ci
+// v7.251 - Modificati index.html (per la versione) e js/app.js. COLLAGE, L'USURA MEDIA E ALTA RITOCCATA (viste le
+//          immagini mandate a Franco, «ok va bene»): 🐛 `tra` dava un elemento in più del massimo (nel medio 2 buchi
+//          su 1); i buchi senza i fili chiari, che li facevano sembrare insetti: strappi scuri irregolari e allungati,
+//          col bordo consumato e la sua ombra; le pieghe curve più larghe e marcate (`_collageUsuraForte`).
+//          E LE PARTI DELL'USURA (Franco: «sulle macchie sono un po' indeciso … mettimi le opzioni singole: buchi,
+//          macchia, pieghe dritte, pieghe storte; già selezionate, ma io le posso spegnere»): quattro spunte sotto il
+//          grado, accese di serie; una spenta non si disegna (`COLLAGE_USURA_PARTI`, `_collageParteUsura`). Pieghe
+//          storte = curve e grinze; Macchie = anche la macchia di caffè del basso. Sporco e chiazze restano sempre.// v7.250 - Modificati index.html (per la versione) e js/app.js. COLLAGE: L'USURA MEDIA E ALTA RIFATTA (Franco: «non ci
 //          siamo; hai aumentato solo il numero di pieghe; con la usura alta si vedono sin troppe pieghe, tutte dello
 //          stesso tipo (perfettamente dritte), quindi sembra finta»; «vorrei un mix di fattori: pieghe, sporco, buchi,
 //          macchie»). Basso resta quello di sempre. Medio e alto: meno pieghe dritte e al loro posto pieghe curve e
@@ -31999,7 +32006,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.250';
+const JS_VERSION = 'v7.251';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41798,6 +41805,9 @@ function _collageHTML(perBox) {
       '<div style="' + dom + '">' + (it ? 'Grado usura texture ?' : 'Texture wear?') + '</div>' +
       COLLAGE_USURA.map(u => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.88rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
         '<input type="radio" name="collage-usura" value="' + u.k + '"' + (u.k === 1 ? ' checked' : '') + '>' + esc(it ? u.it : u.en) + '</label>').join('') +
+      // v7.251 - le parti dell'usura, accese di serie (`COLLAGE_USURA_PARTI`)
+      '<div style="margin-top:0.3rem;">' + COLLAGE_USURA_PARTI.map(x => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
+        '<input type="checkbox" id="collage-usura-' + x.k + '" checked>' + esc(it ? x.it : x.en) + '</label>').join('') + '</div>' +
     '</div>' +
     // 🆕 v7.222 - la grandezza massima, solo da Annunci (dalla card il collage è sempre 1200×675)
     (perBox ? '' : '<div style="' + dom + '">5. ' + (it ? 'Quanto grande al massimo ?' : 'How large at most?') + '</div>' +
@@ -42936,7 +42946,7 @@ function _collageDisegna(tipo, foto, sfondo, grande, come, retri) {
     const luce = ctx.createLinearGradient(W / 2 - r * Math.cos(da), H / 2 - r * Math.sin(da), W / 2 + r * Math.cos(da), H / 2 + r * Math.sin(da));
     luce.addColorStop(0, 'rgba(255,255,255,0.07)'); luce.addColorStop(1, 'rgba(0,0,0,0.12)');
     ctx.fillStyle = luce; ctx.fillRect(0, 0, W, H);
-    _collageUsura(ctx, W, H, _collageGradoUsura());   // v7.225; v7.249: col grado scelto
+    _collageUsura(ctx, W, H, _collageGradoUsura(), _collageParteUsura());   // v7.225; v7.249: col grado scelto; v7.251: e le parti
   }
   const k = Math.min(W * (1 - 2 * margine) / (b.x1 - b.x0), H * (1 - 2 * margine) / (b.y1 - b.y0));
   const ox = W / 2 - k * (b.x0 + b.x1) / 2, oy = H / 2 - k * (b.y0 + b.y1) / 2;
@@ -42981,12 +42991,28 @@ const COLLAGE_USURA = [
 function _collageGradoUsura() {
   return Number((document.querySelector('input[name="collage-usura"]:checked') || {}).value) || 1;
 }
-function _collageUsura(ctx, W, H, grado) {
+// 🆕 v7.251 (Franco: «sulle macchie sono un po' indeciso … mettimi le opzioni singole: buchi, macchia, pieghe dritte,
+//    pieghe storte; già selezionate, ma io le posso spegnere») - LE PARTI DELL'USURA, una spunta ciascuna sotto il grado.
+//    Pieghe storte = le curve e le grinze; Macchie = la macchia di caffè del basso e quelle del medio e dell'alto. Lo
+//    sporco e le chiazze restano sempre. Senza la domanda (o senza risposta) tutte accese.
+const COLLAGE_USURA_PARTI = [
+  { k: 'buchi',   it: 'Buchi',         en: 'Holes' },
+  { k: 'macchie', it: 'Macchie',       en: 'Stains' },
+  { k: 'dritte',  it: 'Pieghe dritte', en: 'Straight folds' },
+  { k: 'storte',  it: 'Pieghe storte', en: 'Crooked folds' },
+];
+function _collageParteUsura() {
+  const p = {};
+  COLLAGE_USURA_PARTI.forEach(x => { const el = document.getElementById('collage-usura-' + x.k); p[x.k] = !el || el.checked; });
+  return p;
+}
+function _collageUsura(ctx, W, H, grado, parti) {
   const G = COLLAGE_USURA.find(u => u.k === grado) || COLLAGE_USURA[0];   // v7.249 - senza `grado`, basso
+  const P = Object.assign({ buchi: true, macchie: true, dritte: true, storte: true }, parti);   // v7.251
   const caso = (a, b) => a + Math.random() * (b - a), L = Math.hypot(W, H);
   ctx.save();
   // v7.250 - le pieghe dritte del basso; col medio e l'alto meno (`dritte`): le altre sono curve
-  for (let i = 0, n = Math.round(Math.round(caso(4, 8)) * G.dritte); i < n; i++) {
+  for (let i = 0, n = P.dritte ? Math.round(Math.round(caso(4, 8)) * G.dritte) : 0; i < n; i++) {
     const w = caso(0.02, 0.06) * W;
     ctx.save();
     ctx.translate(caso(0, W), caso(0, H));
@@ -43010,7 +43036,7 @@ function _collageUsura(ctx, W, H, grado) {
     ctx.fillStyle = g;
     ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
   }
-  if (Math.random() < 0.7) {
+  if (P.macchie && Math.random() < 0.7) {
     const x = caso(0.05, 0.95) * W, y = caso(0.05, 0.95) * H, r = caso(0.025, 0.06) * W;
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
     g.addColorStop(0, 'rgba(110,75,40,0.08)');
@@ -43021,13 +43047,15 @@ function _collageUsura(ctx, W, H, grado) {
     ctx.beginPath(); ctx.ellipse(x, y, r, r * caso(0.75, 1), caso(0, Math.PI), 0, 2 * Math.PI); ctx.fill();
   }
   ctx.restore();
-  if (G.k > 1) _collageUsuraForte(ctx, W, H, G, caso);   // v7.250
+  if (G.k > 1) _collageUsuraForte(ctx, W, H, G, caso, P);   // v7.250; v7.251: con le parti accese
 }
 // 🆕 v7.250 - L'USURA MEDIA E ALTA (vedi `COLLAGE_USURA`). Le forme sfumate si disegnano con l'OMBRA del canvas
 //    (`morbido`): la forma va fuori dalla tela e la sua ombra sfocata cade al posto giusto. È il modo di sfocare che
 //    funziona anche su Safari, dove `filter` non c'è.
-function _collageUsuraForte(ctx, W, H, G, caso) {
-  const s = W / COLLAGE_W, L = Math.hypot(W, H), tra = ([a, b]) => Math.round(caso(a, b + 0.999));
+function _collageUsuraForte(ctx, W, H, G, caso, P = {}) {
+  const acceso = k => P[k] !== false;   // v7.251 - una parte spenta non si disegna
+  // 🐛 v7.251 - `tra` dava anche b + 1 (Math.round di quasi b + 1): nel medio uscivano 2 buchi su un massimo di 1
+  const s = W / COLLAGE_W, L = Math.hypot(W, H), tra = ([a, b]) => Math.min(b, Math.floor(caso(a, b + 1)));
   const LONTANO = 20000;   // più della tela più larga (4000), ma non tanto da far sbagliare i browser
   const morbido = (colore, sfuma, disegna) => {
     ctx.save();
@@ -43067,18 +43095,19 @@ function _collageUsuraForte(ctx, W, H, G, caso) {
     }
   }
   // 4. le pieghe curve: una curva lunga, ognuna diversa per larghezza, forza e piega; scura, col filo di luce accanto
-  for (let i = 0, n = tra(G.curve); i < n; i++) {
+  for (let i = 0, n = acceso('storte') ? tra(G.curve) : 0; i < n; i++) {
     const x0 = caso(0, W), y0 = caso(0, H), ang = caso(0, 2 * Math.PI), lung = caso(0.25, 0.7) * L;
     const x3 = x0 + lung * Math.cos(ang), y3 = y0 + lung * Math.sin(ang);
     const curva = (dx, dy) => { ctx.beginPath(); ctx.moveTo(x0 + dx, y0 + dy);
       ctx.bezierCurveTo(x0 + lung * 0.33 * Math.cos(ang) + caso(-0.15, 0.15) * lung + dx, y0 + lung * 0.33 * Math.sin(ang) + caso(-0.15, 0.15) * lung + dy,
                         x0 + lung * 0.66 * Math.cos(ang) + caso(-0.15, 0.15) * lung + dx, y0 + lung * 0.66 * Math.sin(ang) + caso(-0.15, 0.15) * lung + dy, x3 + dx, y3 + dy); };
-    const w = caso(4, 14) * s, forte = caso(0.5, 1);
-    morbido('rgba(0,0,0,' + (0.30 * forte).toFixed(3) + ')', w * 1.5, () => { ctx.lineWidth = w * 0.6; ctx.lineCap = 'round'; curva(0, 0); ctx.stroke(); });
-    morbido('rgba(255,255,255,' + (0.18 * forte).toFixed(3) + ')', w, () => { ctx.lineWidth = w * 0.3; ctx.lineCap = 'round'; curva(w * 0.5, -w * 0.5); ctx.stroke(); });
+    // 🔄 v7.251 (viste le prove: «si vedono poco») - più larghe e più marcate, e la luce più netta
+    const w = caso(6, 18) * s, forte = caso(0.6, 1);
+    morbido('rgba(0,0,0,' + (0.50 * forte).toFixed(3) + ')', w * 1.3, () => { ctx.lineWidth = w * 0.6; ctx.lineCap = 'round'; curva(0, 0); ctx.stroke(); });
+    morbido('rgba(255,255,255,' + (0.32 * forte).toFixed(3) + ')', w * 0.8, () => { ctx.lineWidth = w * 0.3; ctx.lineCap = 'round'; curva(w * 0.5, -w * 0.5); ctx.stroke(); });
   }
   // 5. le grinze: tre-sei piccole pieghe corte e storte vicine, come il tessuto spiegazzato
-  for (let i = 0, n = tra(G.grinze); i < n; i++) {
+  for (let i = 0, n = acceso('storte') ? tra(G.grinze) : 0; i < n; i++) {
     const cx = caso(0, W), cy = caso(0, H), base = caso(0, Math.PI);
     for (let j = 0, m = Math.round(caso(3, 6)); j < m; j++) {
       const a = base + caso(-0.5, 0.5), lung = caso(0.03, 0.08) * W, x = cx + caso(-0.04, 0.04) * W, y = cy + caso(-0.04, 0.04) * W;
@@ -43089,7 +43118,7 @@ function _collageUsuraForte(ctx, W, H, G, caso) {
     }
   }
   // 6. le macchie, di forma irregolare: l'alone della tazza (un anello), il vino, l'unto
-  for (let i = 0, n = tra(G.macchie); i < n; i++) {
+  for (let i = 0, n = acceso('macchie') ? tra(G.macchie) : 0; i < n; i++) {
     const x = caso(0.05, 0.95) * W, y = caso(0.05, 0.95) * H, r = caso(0.02, 0.05) * W, tipo = Math.floor(Math.random() * 3);
     if (tipo === 0) {
       morbido('rgba(140,95,50,0.10)', r * 0.3, () => { chiazza(x, y, r, 0.15, 20); ctx.fill(); });
@@ -43101,18 +43130,16 @@ function _collageUsuraForte(ctx, W, H, G, caso) {
       morbido('rgba(20,15,5,0.16)', r * 0.5, () => { chiazza(x, y, r * 1.2, 0.5); ctx.fill(); });
     }
   }
-  // 7. i buchi: piccoli, sfrangiati, con sotto il legno scuro del tavolo e i fili chiari che escono dal bordo
-  for (let i = 0, n = tra(G.buchi); i < n; i++) {
-    const x = caso(0.05, 0.95) * W, y = caso(0.05, 0.95) * H, r = caso(0.004, 0.011) * W;
-    morbido('rgba(0,0,0,0.35)', r * 0.8, () => { chiazza(x, y, r * 1.3, 0.5, 10); ctx.fill(); });
-    ctx.fillStyle = 'rgb(38,26,18)';
-    chiazza(x, y, r, 0.8, 10); ctx.fill();
-    ctx.strokeStyle = 'rgba(235,228,210,0.85)'; ctx.lineCap = 'round';
-    for (let j = 0, m = Math.round(caso(10, 18)); j < m; j++) {
-      const a = caso(0, 2 * Math.PI), d = r * caso(0.7, 1.1), l = r * caso(0.3, 0.9), b = a + Math.PI + caso(-0.7, 0.7);
-      ctx.lineWidth = caso(0.6, 1.4) * s;
-      ctx.beginPath(); ctx.moveTo(x + d * Math.cos(a), y + d * Math.sin(a)); ctx.lineTo(x + d * Math.cos(a) + l * Math.cos(b), y + d * Math.sin(a) + l * Math.sin(b)); ctx.stroke();
-    }
+  // 7. i buchi: piccoli strappi irregolari, un po' allungati, con sotto il legno scuro del tavolo.
+  // 🔄 v7.251 (viste le prove: coi fili chiari intorno sembravano insetti o stelline) - niente fili: il bordo è il
+  //    tessuto consumato, appena più chiaro e sfumato, e intorno la sua ombra
+  for (let i = 0, n = acceso('buchi') ? tra(G.buchi) : 0; i < n; i++) {
+    const x = caso(0.05, 0.95) * W, y = caso(0.05, 0.95) * H, r = caso(0.005, 0.012) * W, ang = caso(0, Math.PI), sch = caso(0.45, 0.8);
+    const forma = (rr, irr) => { ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.scale(1, sch); chiazza(0, 0, rr, irr, 12); ctx.restore(); };
+    morbido('rgba(255,255,255,0.22)', r * 0.5, () => { forma(r * 1.35, 0.5); ctx.fill(); });   // il tessuto consumato
+    morbido('rgba(0,0,0,0.30)', r * 0.6, () => { forma(r * 1.1, 0.7); ctx.fill(); });         // l'ombra del bordo
+    ctx.fillStyle = 'rgb(34,24,17)';
+    forma(r, 0.9); ctx.fill();
   }
 }
 async function _collageCrea() {
@@ -43188,8 +43215,7 @@ async function _collageCrea() {
 // 🔄 v7.224 - i retro li legge `_collageRetriLeggi`, prima del fronte; qui arrivano già letti (`retri`, null = niente)
 async function _collageRetriLeggi() {
   const it = currentLang === 'it';
-  if (!_collageRetroPossibile() || !(document.getElementById('collage-sito-retro') || {}).checked) return null;
-  const tutti = getData('figurines', []);
+  if (!_collageRetroPossibile() || !(document.getElementById('collage-sito-retro') || {}).checked) return null;  const tutti = getData('figurines', []);
   const src = _collageFoto.map(x => _collageRetroBase(tutti.find(y => y.id === x.fig), tutti));
   const senza = _collageFoto.filter((x, i) => !src[i]).map(x => x.nome);
   if (senza.length) { toast((it ? '⚠️ Foto dei retro non creata: senza retro ' : '⚠️ Backs photo not created, no back: ') + senza.join(', '), 'error'); return null; }
