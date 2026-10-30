@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.248 - Modificati index.html (per la versione) e js/app.js. COLLAGE IN PIÙ FOTO, PER SOTTOCATEGORIA (Franco:
+//          «quando spezzi gli articoli in più di una foto, se ci sono articoli con diverse sottocategorie, racchiudi
+//          tutti gli articoli con la stessa sotto categoria all'interno di una foto»; «va in precedenza» rispetto alla
+//          media; «51 retro … 20 A, 20 B e 21 C: … 3 foto: 20, 20 e 21»): quando il collage va diviso, ogni
+//          sottocategoria ha le sue foto, senza mescolarsi; una sottocategoria oltre il massimo si divide come prima
+//          (`_collageDividiPerSub`). Una sottocategoria sola, o nessuna: la divisione di prima.
 // v7.247 - Modificati index.html e js/app.js. IL VENDITORE (Franco: «vorrei dare a un altro utente il diritto di creare
 //          un annuncio e un collage»; «senza che sia admin»; scelte sue: solo foto e collage, dalla «Tipologia di
 //          utente», «Senza macchie» come l'admin): nella scheda dell'utente «Tipologia di utente» ha «Venditore» (campo
@@ -31974,7 +31980,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.247';
+const JS_VERSION = 'v7.248';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42992,8 +42998,17 @@ async function _collageCrea() {
   // v7.224 - i retro si leggono prima del fronte: nella griglia il posto di ogni figurina tiene anche il suo retro
   const retri = await _collageRetriLeggi();
   // v7.243 - oltre il massimo del tipo, più foto (solo da Annunci: dalla card `_collageProblema` non ci arriva)
-  const misure = _collageParti(imgs.length, (COLLAGE_TIPI.find(t => t.k === tipo) || {}).max || COLLAGE_MAX_FOTO);
-  if (!_collageBoxDest && misure.length > 1) { await _collageCreaParti(tipo, imgs, retri, sfondo, grande, jpg, misure); return; }
+  const maxFoto = (COLLAGE_TIPI.find(t => t.k === tipo) || {}).max || COLLAGE_MAX_FOTO;
+  const misure = _collageParti(imgs.length, maxFoto);
+  if (!_collageBoxDest && misure.length > 1) {
+    // v7.248 - con più sottocategorie, una (o più) foto per sottocategoria (`_collageDividiPerSub`): si riordinano
+    //    insieme le foto e i loro retro
+    const tutti = getData('figurines', []);
+    const g = _collageDividiPerSub(_collageFoto.map(x => { const f = x.fig && tutti.find(y => y.id === x.fig); return f ? String(f.subcategory || '').trim() : ''; }), maxFoto);
+    if (g) await _collageCreaParti(tipo, g.ordine.map(i => imgs[i]), retri && g.ordine.map(i => retri[i]), sfondo, grande, jpg, g.misure);
+    else await _collageCreaParti(tipo, imgs, retri, sfondo, grande, jpg, misure);
+    return;
+  }
   _collageAzzeraParti();
   const c = _collageDisegna(tipo, imgs, sfondo, grande, null, retri);
   const blob = await new Promise(ok => jpg ? c.toBlob(ok, 'image/jpeg', 0.92) : c.toBlob(ok, 'image/png'));
@@ -43118,6 +43133,21 @@ function _collageScaricaTutte() {
 function _collageParti(n, max) {
   const k = Math.max(1, Math.ceil(n / max)), base = Math.floor(n / k), resto = n % k;
   return Array.from({ length: k }, (_, i) => base + (i >= k - resto ? 1 : 0));
+}
+// 🆕 v7.248 (Franco: «quando spezzi gli articoli in più di una foto, se ci sono articoli con diverse sottocategorie,
+//    racchiudi tutti gli articoli con la stessa sotto categoria all'interno di una foto»; «questa regola va in
+//    precedenza rispetto a quella … di dare un numero di foto medio»; «51 retro di cui 20 … A, 20 … B e 21 … C: non due
+//    foto da 25 e 26 ma 3 foto: 20, 20 e 21») - UNA FOTO PER SOTTOCATEGORIA. `subs` = la sottocategoria di ogni foto,
+//    nell'ordine del collage; i gruppi nell'ordine in cui compaiono (chi non ha la sottocategoria fa un gruppo suo).
+//    Un gruppo oltre il massimo si divide come sempre (`_collageParti`), ma non si mescola mai con un altro. Con una
+//    sottocategoria sola (o nessuna) torna null: vale la divisione di prima.
+//    Restituisce { ordine: gli indici delle foto, gruppo dopo gruppo; misure: quante foto in ogni foto }.
+function _collageDividiPerSub(subs, max) {
+  const gruppi = new Map();
+  subs.forEach((s, i) => { if (!gruppi.has(s)) gruppi.set(s, []); gruppi.get(s).push(i); });
+  if (gruppi.size < 2) return null;
+  const g = [...gruppi.values()];
+  return { ordine: g.flat(), misure: g.flatMap(x => _collageParti(x.length, max)) };
 }
 // 🆕 v7.243 (Franco: «il pulsante di download … lascia un pulsante di download sotto ogni foto più uno unico in fondo»)
 //    - IL COLLAGE IN PIÙ FOTO. Ogni foto con gli articoli che le toccano, nell'ordine preso; coi retro (`retri`) ogni foto
