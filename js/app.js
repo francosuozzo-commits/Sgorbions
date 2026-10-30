@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.250 - Modificati index.html (per la versione) e js/app.js. COLLAGE: L'USURA MEDIA E ALTA RIFATTA (Franco: «non ci
+//          siamo; hai aumentato solo il numero di pieghe; con la usura alta si vedono sin troppe pieghe, tutte dello
+//          stesso tipo (perfettamente dritte), quindi sembra finta»; «vorrei un mix di fattori: pieghe, sporco, buchi,
+//          macchie»). Basso resta quello di sempre. Medio e alto: meno pieghe dritte e al loro posto pieghe curve e
+//          grinze a gruppetti; sporco (bordi più scuri, puntini raccolti, aloni grigi); macchie irregolari di tre tipi
+//          (alone di tazza, vino, unto); buchi piccoli e sfrangiati col tavolo sotto (`_collageUsuraForte`,
+//          `COLLAGE_USURA` coi nuovi campi). Le forme sfumate con l'ombra del canvas, che va anche su Safari.
 // v7.249 - Modificati index.html (per la versione) e js/app.js. COLLAGE: «GRADO USURA TEXTURE» (Franco: «valori: basso
 //          (attuale), medio, alto; medio ed alto devono aumentare la usura del tessuto sottostante alla foto, sia pieghe
 //          che macchie»): dopo la texture, solo con un tessuto scelto, di serie Basso. Basso è l'usura di prima;
@@ -31992,7 +31999,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.249';
+const JS_VERSION = 'v7.250';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42957,12 +42964,18 @@ function _collageDisegna(tipo, foto, sfondo, grande, come, retri) {
 //    6-9 chiazze più forti, la macchia sette volte su dieci e un po' più scura.
 // 🆕 v7.249 (Franco: «un altro parametro nella funzione Collage, chiamato "Grado usura texture"; valori: basso
 //    (attuale), medio, alto; medio ed alto devono aumentare la usura del tessuto … sia pieghe che macchie») - I TRE
-//    GRADI. Basso è l'usura di prima, identica. Medio e alto moltiplicano le pieghe e le chiazze (quante e quanto
-//    scure) e aggiungono macchie: medio 1-2 sempre, alto 2-4 e un po' più grandi.
+//    GRADI. Basso è l'usura di prima, identica.
+// 🔄 v7.250 (Franco, viste le prove: «non ci siamo; hai aumentato solo il numero di pieghe; con la usura alta si vedono
+//    sin troppe pieghe, che poi sono tutte dello stesso tipo (perfettamente dritte), quindi sembra finta»; «vorrei un
+//    mix di fattori: pieghe, sporco, buchi, macchie») - MEDIO E ALTO SONO UN ALTRO DISEGNO, sopra il basso
+//    (`_collageUsuraForte`): meno pieghe dritte (`dritte`), e al loro posto pieghe CURVE di larghezza e forza diverse
+//    (`curve`) e piccole grinze a gruppetti (`grinze`); lo SPORCO (bordi più scuri, puntini raccolti in zone, aloni
+//    grigi); le MACCHIE di forma irregolare, di tre tipi (alone di tazza, vino, unto); i BUCHI, piccoli e sfrangiati,
+//    da cui si vede il tavolo. Ogni voce è [minimo, massimo]; sporco 0 / 1 / 2.
 const COLLAGE_USURA = [
-  { k: 1, it: 'Basso', en: 'Low',    pieghe: 1,   chiazze: 1,   forza: 1,   macchie: () => (Math.random() < 0.7 ? 1 : 0), grandi: 1 },
-  { k: 2, it: 'Medio', en: 'Medium', pieghe: 1.6, chiazze: 1.4, forza: 1.5, macchie: () => 1 + (Math.random() < 0.5 ? 1 : 0), grandi: 1.15 },
-  { k: 3, it: 'Alto',  en: 'High',   pieghe: 2.3, chiazze: 1.8, forza: 2,   macchie: () => 2 + Math.floor(Math.random() * 3), grandi: 1.3 },
+  { k: 1, it: 'Basso', en: 'Low',    dritte: 1,   curve: [0, 0], grinze: [0, 0], sporco: 0, macchie: [0, 0], buchi: [0, 0] },
+  { k: 2, it: 'Medio', en: 'Medium', dritte: 0.5, curve: [2, 3], grinze: [1, 2], sporco: 1, macchie: [1, 2], buchi: [0, 1] },
+  { k: 3, it: 'Alto',  en: 'High',   dritte: 0.3, curve: [2, 4], grinze: [2, 4], sporco: 2, macchie: [2, 4], buchi: [1, 3] },
 ];
 // il grado scelto nella finestra del collage; senza la domanda (o senza risposta) basso
 function _collageGradoUsura() {
@@ -42972,13 +42985,14 @@ function _collageUsura(ctx, W, H, grado) {
   const G = COLLAGE_USURA.find(u => u.k === grado) || COLLAGE_USURA[0];   // v7.249 - senza `grado`, basso
   const caso = (a, b) => a + Math.random() * (b - a), L = Math.hypot(W, H);
   ctx.save();
-  for (let i = 0, n = Math.round(Math.round(caso(4, 8)) * G.pieghe); i < n; i++) {
+  // v7.250 - le pieghe dritte del basso; col medio e l'alto meno (`dritte`): le altre sono curve
+  for (let i = 0, n = Math.round(Math.round(caso(4, 8)) * G.dritte); i < n; i++) {
     const w = caso(0.02, 0.06) * W;
     ctx.save();
     ctx.translate(caso(0, W), caso(0, H));
     ctx.rotate(caso(0, Math.PI));
     const g = ctx.createLinearGradient(0, -w / 2, 0, w / 2);
-    const forte = caso(0.6, 1) * G.forza;
+    const forte = caso(0.6, 1);
     g.addColorStop(0, 'rgba(0,0,0,0)');
     g.addColorStop(0.42, 'rgba(0,0,0,' + (0.15 * forte).toFixed(3) + ')');
     g.addColorStop(0.5, 'rgba(0,0,0,' + (0.24 * forte).toFixed(3) + ')');
@@ -42988,27 +43002,118 @@ function _collageUsura(ctx, W, H, grado) {
     ctx.fillRect(-L * caso(0.15, 0.5), -w / 2, L * caso(0.3, 0.9), w);
     ctx.restore();
   }
-  for (let i = 0, n = Math.round(Math.round(caso(6, 9)) * G.chiazze); i < n; i++) {
+  for (let i = 0, n = Math.round(caso(6, 9)); i < n; i++) {
     const x = caso(0, W), y = caso(0, H), r = caso(0.08, 0.3) * W;
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, Math.random() < 0.5 ? 'rgba(255,255,255,' + (caso(0.05, 0.10) * G.forza).toFixed(3) + ')' : 'rgba(0,0,0,' + (caso(0.05, 0.12) * G.forza).toFixed(3) + ')');
+    g.addColorStop(0, Math.random() < 0.5 ? 'rgba(255,255,255,' + caso(0.05, 0.10).toFixed(3) + ')' : 'rgba(0,0,0,' + caso(0.05, 0.12).toFixed(3) + ')');
     g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g;
     ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
   }
-  // la macchia color caffè: col basso sette volte su dieci, come prima; col medio e l'alto più d'una, più scure
-  for (let i = 0, n = G.macchie(); i < n; i++) {
-    const x = caso(0.05, 0.95) * W, y = caso(0.05, 0.95) * H, r = caso(0.025, 0.06) * W * G.grandi;
+  if (Math.random() < 0.7) {
+    const x = caso(0.05, 0.95) * W, y = caso(0.05, 0.95) * H, r = caso(0.025, 0.06) * W;
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    const a = v => Math.min(0.6, v * G.forza).toFixed(3);
-    g.addColorStop(0, 'rgba(110,75,40,' + a(0.08) + ')');
-    g.addColorStop(0.8, 'rgba(110,75,40,' + a(0.12) + ')');
-    g.addColorStop(0.92, 'rgba(90,60,30,' + a(0.19) + ')');
+    g.addColorStop(0, 'rgba(110,75,40,0.08)');
+    g.addColorStop(0.8, 'rgba(110,75,40,0.12)');
+    g.addColorStop(0.92, 'rgba(90,60,30,0.19)');
     g.addColorStop(1, 'rgba(90,60,30,0)');
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.ellipse(x, y, r, r * caso(0.75, 1), caso(0, Math.PI), 0, 2 * Math.PI); ctx.fill();
   }
   ctx.restore();
+  if (G.k > 1) _collageUsuraForte(ctx, W, H, G, caso);   // v7.250
+}
+// 🆕 v7.250 - L'USURA MEDIA E ALTA (vedi `COLLAGE_USURA`). Le forme sfumate si disegnano con l'OMBRA del canvas
+//    (`morbido`): la forma va fuori dalla tela e la sua ombra sfocata cade al posto giusto. È il modo di sfocare che
+//    funziona anche su Safari, dove `filter` non c'è.
+function _collageUsuraForte(ctx, W, H, G, caso) {
+  const s = W / COLLAGE_W, L = Math.hypot(W, H), tra = ([a, b]) => Math.round(caso(a, b + 0.999));
+  const LONTANO = 20000;   // più della tela più larga (4000), ma non tanto da far sbagliare i browser
+  const morbido = (colore, sfuma, disegna) => {
+    ctx.save();
+    ctx.shadowColor = colore; ctx.shadowBlur = sfuma; ctx.shadowOffsetX = LONTANO;
+    ctx.translate(-LONTANO, 0);
+    ctx.fillStyle = ctx.strokeStyle = '#000';
+    disegna();
+    ctx.restore();
+  };
+  // una forma irregolare chiusa attorno a (x, y): `k` punti a raggio variabile, raccordati
+  const chiazza = (x, y, r, irr, k = 14) => {
+    const p = Array.from({ length: k }, (_, i) => { const a = i / k * 2 * Math.PI, rr = r * (1 - irr / 2 + Math.random() * irr); return [x + rr * Math.cos(a), y + rr * Math.sin(a)]; });
+    ctx.beginPath();
+    p.forEach((q, i) => { const n = p[(i + 1) % k], mx = (q[0] + n[0]) / 2, my = (q[1] + n[1]) / 2; if (i === 0) ctx.moveTo(mx, my); else ctx.quadraticCurveTo(q[0], q[1], mx, my); });
+    ctx.quadraticCurveTo(p[0][0], p[0][1], (p[0][0] + p[1][0]) / 2, (p[0][1] + p[1][1]) / 2);
+    ctx.closePath();
+  };
+  // 1. lo sporco ai bordi: un tessuto usato è più scuro dove lo si tocca e dove sta sul tavolo
+  if (G.sporco) {
+    const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, L * 0.6);
+    g.addColorStop(0, 'rgba(60,45,30,0)');
+    g.addColorStop(1, 'rgba(60,45,30,' + (0.10 * G.sporco).toFixed(3) + ')');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  // 2. gli aloni grigi: sporco steso, larghi e sfumati
+  for (let i = 0, n = tra([G.sporco, G.sporco * 2]); i < n; i++) {
+    const x = caso(0, W), y = caso(0, H), r = caso(0.05, 0.12) * W;
+    morbido('rgba(70,60,50,' + caso(0.10, 0.18).toFixed(3) + ')', r * 0.6, () => { chiazza(x, y, r, 0.6); ctx.fill(); });
+  }
+  // 3. i puntini: briciole e polvere, raccolti in qualche zona e non sparsi uniformi
+  for (let z = 0, nz = tra([G.sporco + 1, G.sporco * 2 + 1]); z < nz; z++) {
+    const cx = caso(0, W), cy = caso(0, H), raggio = caso(0.04, 0.10) * W;
+    for (let i = 0, n = Math.round(caso(30, 70)); i < n; i++) {
+      const a = caso(0, 2 * Math.PI), d = raggio * Math.sqrt(Math.random());
+      ctx.fillStyle = 'rgba(50,38,28,' + caso(0.12, 0.35).toFixed(3) + ')';
+      ctx.beginPath(); ctx.arc(cx + d * Math.cos(a), cy + d * Math.sin(a), caso(0.6, 2.2) * s, 0, 2 * Math.PI); ctx.fill();
+    }
+  }
+  // 4. le pieghe curve: una curva lunga, ognuna diversa per larghezza, forza e piega; scura, col filo di luce accanto
+  for (let i = 0, n = tra(G.curve); i < n; i++) {
+    const x0 = caso(0, W), y0 = caso(0, H), ang = caso(0, 2 * Math.PI), lung = caso(0.25, 0.7) * L;
+    const x3 = x0 + lung * Math.cos(ang), y3 = y0 + lung * Math.sin(ang);
+    const curva = (dx, dy) => { ctx.beginPath(); ctx.moveTo(x0 + dx, y0 + dy);
+      ctx.bezierCurveTo(x0 + lung * 0.33 * Math.cos(ang) + caso(-0.15, 0.15) * lung + dx, y0 + lung * 0.33 * Math.sin(ang) + caso(-0.15, 0.15) * lung + dy,
+                        x0 + lung * 0.66 * Math.cos(ang) + caso(-0.15, 0.15) * lung + dx, y0 + lung * 0.66 * Math.sin(ang) + caso(-0.15, 0.15) * lung + dy, x3 + dx, y3 + dy); };
+    const w = caso(4, 14) * s, forte = caso(0.5, 1);
+    morbido('rgba(0,0,0,' + (0.30 * forte).toFixed(3) + ')', w * 1.5, () => { ctx.lineWidth = w * 0.6; ctx.lineCap = 'round'; curva(0, 0); ctx.stroke(); });
+    morbido('rgba(255,255,255,' + (0.18 * forte).toFixed(3) + ')', w, () => { ctx.lineWidth = w * 0.3; ctx.lineCap = 'round'; curva(w * 0.5, -w * 0.5); ctx.stroke(); });
+  }
+  // 5. le grinze: tre-sei piccole pieghe corte e storte vicine, come il tessuto spiegazzato
+  for (let i = 0, n = tra(G.grinze); i < n; i++) {
+    const cx = caso(0, W), cy = caso(0, H), base = caso(0, Math.PI);
+    for (let j = 0, m = Math.round(caso(3, 6)); j < m; j++) {
+      const a = base + caso(-0.5, 0.5), lung = caso(0.03, 0.08) * W, x = cx + caso(-0.04, 0.04) * W, y = cy + caso(-0.04, 0.04) * W;
+      const w = caso(2, 5) * s;
+      morbido('rgba(0,0,0,' + caso(0.15, 0.28).toFixed(3) + ')', w * 1.2, () => {
+        ctx.lineWidth = w * 0.5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, y);
+        ctx.quadraticCurveTo(x + lung / 2 * Math.cos(a) + caso(-0.3, 0.3) * lung, y + lung / 2 * Math.sin(a) + caso(-0.3, 0.3) * lung, x + lung * Math.cos(a), y + lung * Math.sin(a)); ctx.stroke(); });
+    }
+  }
+  // 6. le macchie, di forma irregolare: l'alone della tazza (un anello), il vino, l'unto
+  for (let i = 0, n = tra(G.macchie); i < n; i++) {
+    const x = caso(0.05, 0.95) * W, y = caso(0.05, 0.95) * H, r = caso(0.02, 0.05) * W, tipo = Math.floor(Math.random() * 3);
+    if (tipo === 0) {
+      morbido('rgba(140,95,50,0.10)', r * 0.3, () => { chiazza(x, y, r, 0.15, 20); ctx.fill(); });
+      morbido('rgba(105,65,30,0.45)', r * 0.06, () => { ctx.lineWidth = r * caso(0.05, 0.1); chiazza(x, y, r, 0.12, 20); ctx.stroke(); });
+    } else if (tipo === 1) {
+      morbido('rgba(110,30,45,0.28)', r * 0.15, () => { chiazza(x, y, r * 0.8, 0.7); ctx.fill(); });
+      morbido('rgba(85,20,35,0.30)', r * 0.05, () => { ctx.lineWidth = r * 0.04; chiazza(x, y, r * 0.8, 0.7); ctx.stroke(); });
+    } else {
+      morbido('rgba(20,15,5,0.16)', r * 0.5, () => { chiazza(x, y, r * 1.2, 0.5); ctx.fill(); });
+    }
+  }
+  // 7. i buchi: piccoli, sfrangiati, con sotto il legno scuro del tavolo e i fili chiari che escono dal bordo
+  for (let i = 0, n = tra(G.buchi); i < n; i++) {
+    const x = caso(0.05, 0.95) * W, y = caso(0.05, 0.95) * H, r = caso(0.004, 0.011) * W;
+    morbido('rgba(0,0,0,0.35)', r * 0.8, () => { chiazza(x, y, r * 1.3, 0.5, 10); ctx.fill(); });
+    ctx.fillStyle = 'rgb(38,26,18)';
+    chiazza(x, y, r, 0.8, 10); ctx.fill();
+    ctx.strokeStyle = 'rgba(235,228,210,0.85)'; ctx.lineCap = 'round';
+    for (let j = 0, m = Math.round(caso(10, 18)); j < m; j++) {
+      const a = caso(0, 2 * Math.PI), d = r * caso(0.7, 1.1), l = r * caso(0.3, 0.9), b = a + Math.PI + caso(-0.7, 0.7);
+      ctx.lineWidth = caso(0.6, 1.4) * s;
+      ctx.beginPath(); ctx.moveTo(x + d * Math.cos(a), y + d * Math.sin(a)); ctx.lineTo(x + d * Math.cos(a) + l * Math.cos(b), y + d * Math.sin(a) + l * Math.sin(b)); ctx.stroke();
+    }
+  }
 }
 async function _collageCrea() {
   const it = currentLang === 'it';
