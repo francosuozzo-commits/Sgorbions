@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.253">
+<link rel="stylesheet" href="css/style.css?v=7.254">
 
 
 <style>
@@ -429,9 +429,11 @@
    libero passa da DENTRO la casella a PRIMA di «Annunci»: la casella non cresce più, e il margine automatico
    spinge a destra Annunci con lei attaccata. Sotto i 1500px la casella non c'è e Annunci sta prima del 🔍.
    Solo sul desktop: nel panino le voci vanno in colonna e un margine automatico le sposterebbe. */
+/* 🔄 v7.254 (Franco: «anche per gli annunci [una linguetta arancione a dx]; togli il tasto della navbar») - sul desktop
+   la voce non c'è più: c'è la linguetta `#ann-linguetta`. La casella torna come per chi non vede Annunci. Nel panino
+   del telefono resta, perché lì le linguette non ci sono e sarebbe l'unica strada per gli Annunci. */
 @media (min-width:861px) {
-  .nav-links #nav-annunci { margin-left:auto; }
-  #nav-annunci + #nav-search { flex:0 1 auto; }}
+  .nav-links #nav-annunci { display:none !important; }}
 /* ⬜ E SOTTO I 1500px LA CASELLA SPARISCE, AL SUO POSTO UN TASTO 🔍 che apre la finestrella del
    telefono. 📏 Misurato: da admin, a 1440px le voci da sole arrivano già dove comincia la bandiera,
    quindi una casella lì non ci sta comunque - stringerla a 26px non è «più stretta», è illeggibile.
@@ -775,6 +777,13 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
 #mac-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga { position: absolute; }
 #mac-linguetta:hover .wz-ling-corta, #mac-linguetta:focus-visible .wz-ling-corta { display: none; }
 #mac-linguetta:hover .wz-ling-lunga, #mac-linguetta:focus-visible .wz-ling-lunga { max-width: 26rem; opacity: 1; }
+/* 🆕 v7.254 (Franco: «metti una linguetta arancione a dx per questa nuova sezione»; «anche per gli annunci») -
+   «🧾 Mancoliste» e «📢 Annunci», gemelle di «Macchie» e subito sotto. Le accende `_aggiornaLinguettaImpersona`:
+   Mancoliste solo all'admin, Annunci anche al venditore (`_puoAnnunci`, apre `apriAnnunciNav` come la voce della barra). */
+#ml-linguetta, #ann-linguetta { display: none; align-items: center; gap: 0.5rem; border: none; cursor: pointer;
+  background: var(--action-admin); color: #fff; font-family: var(--font-ui); font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+#ml-linguetta:hover, #ann-linguetta:hover { background: var(--action-admin-hover); }
+@media (max-width: 860px) { #ml-linguetta, #ann-linguetta { display: none !important; } }
 /* 🆕 v7.178 (Franco: «mostrare il campo "Commento album" quando si fa mouse over sulle card di una fpa / fcr») - una
    riga gialla sopra il fondo della foto, accesa al passaggio del mouse; sul telefono non c'è passaggio, quindi niente */
 .fig-commento-album { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 0.45rem 0.55rem;
@@ -2364,6 +2373,10 @@ button.back-btn { color:#ffffff; }
 <div id="linguette">
 <!-- 🆕 v7.120 (Franco) - «Togli macchie»: solo admin, arancio, prima della colonna blu (sotto «Impersona») -->
 <button type="button" id="mac-linguetta" onclick="_cliccaLinguettaMacchie()">🧽 Macchie</button>
+<!-- 🆕 v7.254 (Franco) - «Mancoliste»: solo admin, arancio, sotto «Macchie»; apre la sezione della console -->
+<button type="button" id="ml-linguetta" onclick="showAdminTab('mancoliste')">🧾 Mancoliste</button>
+<!-- 🆕 v7.254 (Franco: «anche per gli annunci») - all'admin e al venditore, come la voce della barra che sul desktop sparisce -->
+<button type="button" id="ann-linguetta" onclick="apriAnnunciNav()">📢 Annunci</button>
 <button type="button" id="wz-linguetta" class="solo-wz" onclick="apriWizardLista()" aria-label="Riprendi il Questionario Sgorbions">
   <span class="wz-ling-corta">📝 <span data-i18n="wz.lingCorta">Questionario</span></span>
   <span class="wz-ling-lunga" data-i18n="wz.linguetta">Riprendi il Questionario Sgorbions</span>
@@ -4145,6 +4158,9 @@ di tutte le serie</button>
           <button class="admin-tab" onclick="adminTab('gsc')">🔍 Google Search Console</button>
           <button class="admin-tab" onclick="adminTab('griglie')">&#128208; Griglie</button>
           <button class="admin-tab" onclick="adminTab('settings')" data-i18n="admin.settings.tab">⚙️ Impostazioni</button>
+          <!-- 🆕 v7.254 (Franco: «mi serve una nuova sezione nella admin console, chiamata Mancoliste») - in ordine alfabetico
+               dopo Impostazioni; la disegna `renderAdminMancoliste` -->
+          <button class="admin-tab" onclick="adminTab('mancoliste')">🧾 Mancoliste</button>
           <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
           <button class="admin-tab" onclick="adminTab('protezione')">🔒 Protezione foto</button>
           <!-- 🆕 v7.156 (Franco: «se vuoi possiamo gestire anche questa cosa in configurazione») - quali tipologie hanno le
@@ -4506,6 +4522,10 @@ di tutte le serie</button>
         </div>
         <div id="admin-caroselli" class="admin-section">
           <div><div id="admin-caroselli-tda"></div></div>
+        </div>
+        <!-- 🆕 v7.254 - LA SEZIONE «MANCOLISTE»: la disegna `renderAdminMancoliste` -->
+        <div id="admin-mancoliste" class="admin-section">
+          <div><div id="admin-mancoliste-box"></div></div>
         </div>
         <!-- 🆕 v7.156 - LA SEZIONE «QUESTIONARIO»: la disegna `renderAdminQuestionario` -->
         <div id="admin-questionario" class="admin-section">
@@ -6860,7 +6880,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.253"></script>
+<script src="js/app.js?v=7.254"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6884,7 +6904,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.253'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.254'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
