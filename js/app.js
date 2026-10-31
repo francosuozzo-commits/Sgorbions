@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.254 - Modificati index.html e js/app.js. MANCOLISTE (Franco: «mi serve una nuova sezione nella admin console, chiamata
+//          Mancoliste … per ogni serie, definire quante e quali figurine mancano, rispetto ad una data tda, per ogni set a
+//          mia disposizione»): campo `quante` sull'articolo (non fpa), nella scheda con «Quante ne mancano ?» che toglie e
+//          si svuota. Sezione nuova della console (`renderAdminMancoliste`): scelta la serie, per ogni tipologia
+//          «N. di set [N] Applica a tutti» (scrive `quante = N` sui suoi articoli base, invisibili fuori; sulla serie
+//          non si salva niente); poi la tabella di una tipologia con Quante e le frecce ▲ ▼, salvate riga per riga.
+//          LINGUETTE ARANCIO A DESTRA (Franco: «metti una linguetta arancione a dx per questa nuova sezione»; «anche per
+//          gli annunci; togli il tasto della navbar»): «🧾 Mancoliste» (admin) e «📢 Annunci» (admin e venditore) sotto
+//          «Macchie»; sul desktop via la voce «📢 Annunci» della barra, che nel panino del telefono resta.
 // v7.253 - Modificati index.html (per la versione) e js/app.js. ANNUNCI (Franco: «"Filtra per numero" diventa "Filtra per
 //          numero articolo"»; «nella sezione "Filtra per tipologia di articolo", aggiungi una pillola "Famiglie" … famiglia
 //          deve essere una opzione aggiuntiva alla domanda "Tipologia di articolo" di un nuovo annuncio»): il riquadro si
@@ -32039,7 +32048,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.253';
+const JS_VERSION = 'v7.254';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45543,6 +45552,297 @@ async function salvaAggiornamentiMassivi() {
     + (giusti === null ? (it ? ' (rilettura non riuscita)' : ' (re-read failed)') : (it ? '; riletti dal server: ' + giusti + ' giusti.' : '; re-read from server: ' + giusti + ' correct.'));
   toast(it ? '✅ Aggiornamento fatto' : '✅ Update done', giusti === daScrivere.length ? 'success' : 'error');
 }
+
+// 🆕 v7.254 (Franco: «mi serve una nuova sezione nella admin console, chiamata Mancoliste; per ogni serie, definire
+//    quante e quali figurine mancano, rispetto ad una data tda, per ogni set a mia disposizione»; «ogni articolo ha un
+//    nuovo campo, chiamato "Quante"»; «aggiornabile massivamente, dalla serie»; «"togline tante" che si svuota dopo
+//    l'uso»; «agg massivo nella scheda della serie ma anche nella mancolista»; «escludiamo le fpa»; «per le fcr, Quante,
+//    se popolato attraverso la serie, fa sempre riferimento alle versioni base») - LE MANCOLISTE.
+//    · `quante` sull'articolo: quante copie ne ha Franco (vuoto = mai scritto).
+//    · 🔄 (Franco: «a livello di serie … non è un campo vero e proprio; serve solo per aggiornare»; «facciamo tutto nella
+//      scheda Mancoliste») - sulla serie non si salva niente: nella sezione, per ogni tipologia, «Quante copie [N]
+//      Applica a tutti» mette `quante = N` su tutti i suoi articoli base, in una scrittura sola (vivono nel documento
+//      della serie); la casella parte vuota.
+//    · 🗑️ La «Mancolista per set» della prima stesura è tolta (Franco: «potrei avere delle figurine doppie; spegni
+//      questa cosa»): il numero di set non si ricavava dai soli «Quante».
+//    📌 La tipologia è quella di `_aggTipoDi` (il tipo, se no la sezione). Fuori le fpa; solo le versioni base; fuori
+//       gli invisibili (regola dei contatori).
+const _ML_FUORI = ['attaccare'];
+const _mlHaQuante = f => !!f && !_ML_FUORI.includes(_aggTipoDi(f));
+const _mlConta = f => _mlHaQuante(f) && !f.invisibile && _eBase(f);
+const _mlNumero = v => { const n = parseInt(v, 10); return Number.isFinite(n) && n >= 0 ? n : null; };
+// `col`: la colonna dell'ordine ('numero', 'quante', 'nome'), `verso`: 'su' crescente, 'giu' decrescente (clic sulle intestazioni)
+// `filtro`: null = tutte le righe, N = solo gli articoli a cui ne mancano N (clic nella tabellina MANCANZE)
+let _ml = { sid: '', tipo: '', col: 'numero', verso: 'su', filtro: null };
+function _mlArticoli(sid, tipo) {
+  return getData('figurines', []).filter(f => f.seriesId === sid && _aggTipoDi(f) === tipo && _mlConta(f))
+    .sort((a, b) => (a.number && b.number) ? (a.number - b.number) : (a.number ? -1 : b.number ? 1
+      : String(a.fullName || a.name || '').localeCompare(String(b.fullName || b.name || ''), 'it', { numeric: true })));
+}
+// le tipologie della serie che hanno articoli da contare, nell'ordine del descrittore
+function _mlTipiDi(sid) {
+  const sezioni = Object.keys(ARTICOLI), posto = k => { const i = sezioni.indexOf(k); return i < 0 ? 9999 : i; };
+  return [...new Set(getData('figurines', []).filter(f => f.seriesId === sid && _mlConta(f)).map(_aggTipoDi))]
+    .sort((a, b) => posto(a) - posto(b) || _aggNomeTipo(a).localeCompare(_aggNomeTipo(b), 'it'));
+}
+// una riga per tipologia: «N. di set [N] Applica a tutti», la casella vuota (Franco: «"Quante copie" diventa "N. di set"»)
+function _mlRigaMassivaHTML(s, tipo) {
+  const it = currentLang === 'it';
+  return '<div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.5rem;">'
+    + '<span style="min-width:12rem;font-size:0.9rem;font-weight:600;color:var(--accent);">' + esc(_aggNomeTipo(tipo)) + '</span>'
+    + '<label style="font-size:0.88rem;color:var(--info);">' + (it ? 'N. di set' : 'No. of sets') + '</label>'
+    + '<input type="number" min="0" step="1" class="form-input" style="width:5.5rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
+    + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" data-ml-serie="' + esc(s.id) + '" data-ml-tipo="' + esc(tipo) + '"'
+    + ' onclick="_mlApplicaDaTasto(this)" style="padding:0.3rem 0.9rem;font-size:0.85rem;">' + (it ? 'Applica a tutti' : 'Apply to all') + '</button></div>';
+}
+async function _mlApplicaDaTasto(btn) {
+  if (!currentUser?.isAdmin || _bloccatoDalLucchetto()) return;
+  const it = currentLang === 'it', sid = btn.dataset.mlSerie, tipo = btn.dataset.mlTipo;
+  const n = _mlNumero(btn.previousElementSibling?.value);
+  const s = getData('series', []).find(x => x.id === sid);
+  if (!s) return;
+  if (n === null) { toast(it ? 'Scrivi quante copie' : 'Write how many copies', 'error'); return; }
+  const arts = _mlArticoli(sid, tipo);
+  if (!await _finestraConferma({ titolo: '🧾 ' + (it ? 'Mancoliste' : 'Want lists'),
+    testo: it ? (s.name || s.id) + ' · ' + _aggNomeTipo(tipo) + '\n«Quantità» diventa ' + n + ' su tutti i ' + arts.length + ' articoli base, anche su quelli già cambiati a mano.\n\nConfermi ?'
+              : '«Quantity» becomes ' + n + ' on all ' + arts.length + ' base items.\n\nConfirm?',
+    aCapo: true, ok: it ? 'Applica' : 'Apply' })) return;
+  const nuovi = arts.filter(f => f.quante !== n).map(f => ({ ...f, quante: n }));
+  try {
+    await _salvaFigurineInBlocco(nuovi);
+  } catch (e) {
+    console.error('_mlApplicaDaTasto', e);
+    toast((it ? '❌ Scrittura fallita: ' : '❌ Write failed: ') + (e?.code || e?.message || 'errore'), 'error');
+    return;
+  }
+  toast(it ? '✅ Scritti ' + nuovi.length + ' articoli' : '✅ ' + nuovi.length + ' items written', 'success');
+  renderAdminMancoliste();
+}
+// 🆕 v7.254 (Franco: «voglio poter aumentare di una unità tutte le quantità; mettimi un bottone sotto alla tabellina
+//    MANCANZE … alla pressione chiedi conferma») - +1 su tutti gli articoli della tipologia, anche quelli nascosti dal
+//    filtro; vuoto diventa 1. Con una riga ancora da scrivere si aspetta: la sua scrittura arriverebbe dopo e
+//    cancellerebbe il +1.
+async function _mlAumentaTutti() {
+  if (!currentUser?.isAdmin || _bloccatoDalLucchetto()) return;
+  const it = currentLang === 'it', s = getData('series', []).find(x => x.id === _ml.sid);
+  if (!s || !_ml.tipo) return;
+  if (Object.keys(_mlInAttesa).length || Object.keys(_mlScritte).length) { toast(it ? 'Un attimo: sto ancora salvando una riga' : 'Still saving a row, try again', 'error'); return; }
+  const arts = _mlArticoli(s.id, _ml.tipo);
+  if (!await _finestraConferma({ titolo: '🧾 ' + (it ? 'Mancoliste' : 'Want lists'),
+    testo: it ? (s.name || s.id) + ' · ' + _aggNomeTipo(_ml.tipo) + '\nIl tasto aumenta di 1 la «Quantità» di tutte le righe della tabella: ' + arts.length + ' articoli, anche quelli nascosti dal filtro. Dove è vuota diventa 1.\n\nConfermi ?'
+              : '«Quantity» goes up by 1 on all ' + arts.length + ' items.\n\nConfirm?',
+    aCapo: true, ok: it ? 'Aumenta' : 'Increase' })) return;
+  const nuovi = arts.map(f => ({ ...f, quante: (f.quante || 0) + 1 }));
+  try {
+    await _salvaFigurineInBlocco(nuovi);
+  } catch (e) {
+    console.error('_mlAumentaTutti', e);
+    toast((it ? '❌ Scrittura fallita: ' : '❌ Write failed: ') + (e?.code || e?.message || 'errore'), 'error');
+    return;
+  }
+  toast(it ? '✅ Aumentati ' + nuovi.length + ' articoli' : '✅ ' + nuovi.length + ' items increased', 'success');
+  renderAdminMancoliste();
+}
+async function _mlSalvaQuante(id, q) {
+  if (!currentUser?.isAdmin || _bloccatoDalLucchetto()) return false;
+  const f = getData('figurines', []).find(x => x.id === id);
+  if (!f) return false;
+  try {
+    await _salvaFigurineInBlocco([{ ...f, quante: q }]);
+    return true;
+  } catch (e) {
+    console.error('_mlSalvaQuante', e);
+    toast((currentLang === 'it' ? '❌ Salvataggio fallito: ' : '❌ Save failed: ') + (e?.code || e?.message || 'errore'), 'error');
+    return false;
+  }
+}
+// dopo il salvataggio di una riga si rifà solo la sua casella «Quante»: ridisegnare la tabella toglierebbe il cursore
+//    dalla casella dove si è appena passati col tasto Tab
+function _mlDopoRiga(id) {
+  const f = getData('figurines', []).find(x => x.id === id), q = document.querySelector('#admin-mancoliste-box input[data-ml-q="' + id + '"]');
+  if (f && q) { q.value = f.quante ?? ''; q.dataset.iniziale = String(f.quante ?? ''); }
+  _mlColora();
+}
+// 🆕 v7.254 (Franco: «dai un colore diverso alle celle che hanno un valore minore del valore massimo») - il massimo è il
+//    «Quante» più alto della tabella; le caselle sotto di lui (vuote comprese) prendono l'arancio (Franco: «arancione»).
+//    Si rifà dopo ogni riga salvata, perché il massimo può cambiare.
+function _mlSottoIlMassimo(valori) {
+  const n = valori.map(v => _mlNumero(v) ?? 0), max = Math.max(0, ...n);
+  return n.map(v => v < max);
+}
+function _mlColora() {
+  const cas = [...document.querySelectorAll('#admin-mancoliste-box input[data-ml-q]')];
+  const sotto = _mlSottoIlMassimo(cas.map(el => el.dataset.iniziale));
+  cas.forEach((el, i) => {
+    el.style.background = sotto[i] ? 'rgba(var(--action-admin-rgb),0.3)' : 'var(--bg2)';
+    el.style.borderColor = sotto[i] ? 'var(--action-admin)' : 'var(--border2)';
+  });
+  _mlRiepilogo(cas);
+}
+// 🆕 v7.254 (Franco: «affianco alla tabella, una piccola tabellina che dice quanti articoli ci sono per ogni scarto dal
+//    numero massimo») - per ogni distanza dal «Quante» più alto, quanti articoli ne hanno quella; vuoto conta 0, come
+//    per l'arancio. Si rifà insieme ai colori, quindi anche dopo ogni riga salvata.
+function _mlScarti(valori) {
+  const n = valori.map(v => _mlNumero(v) ?? 0), max = Math.max(0, ...n), conta = {};
+  // senza la riga dello 0 (Franco: «la riga con lo 0 non ha nessun senso; toglila»)
+  n.forEach(v => { if (v < max) conta[max - v] = (conta[max - v] || 0) + 1; });
+  return Object.keys(conta).map(Number).sort((a, b) => a - b).map(manca => ({ manca, quanti: conta[manca] }));
+}
+function _mlRiepilogo(cas) {
+  const box = document.getElementById('ml-scarti');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--accent2);font-weight:600;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:4px 8px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums;';
+  // 🆕 (Franco: «dagli un nome: MANCANZE; scrivilo sopra»; «cliccando sul numero in colonna 2, la tabella completa si
+  //    filtrasse per quella mancanza»; «un bottoncino chiamato "Resetta"») - la riga del filtro acceso si vede in arancio
+  const link = 'background:none;border:none;padding:0;cursor:pointer;color:var(--info);text-decoration:underline;font:inherit;';
+  const resetta = 'margin-left:0.6rem;padding:1px 8px;font-size:0.75rem;cursor:pointer;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;';
+  box.innerHTML = '<div style="font-family:var(--font-ui);font-weight:700;font-size:0.9rem;margin-bottom:0.3rem;">' + (it ? 'MANCANZE' : 'MISSING')
+    + '<button type="button" onclick="_mlFiltra(null)"' + (_ml.filtro === null ? ' disabled' : '') + ' style="' + resetta + (_ml.filtro === null ? 'opacity:0.45;cursor:default;' : '') + '">' + (it ? 'Resetta' : 'Reset') + '</button></div>'
+    + '<table style="border-collapse:collapse;">'
+    + '<tr><th style="' + th + '">' + (it ? 'Quante ne mancano' : 'Missing') + '</th><th style="' + th + '">' + (it ? 'Articoli' : 'Items') + '</th></tr>'
+    + _mlScarti(cas.map(el => el.dataset.iniziale)).map(r => '<tr' + (r.manca === _ml.filtro ? ' style="background:rgba(var(--action-admin-rgb),0.3);"' : '') + '><td style="' + td + '">' + r.manca + '</td>'
+      + '<td style="' + td + '"><button type="button" onclick="_mlFiltra(' + r.manca + ')" title="' + (it ? 'Mostra solo questi articoli' : 'Show only these items') + '" style="' + link + '">' + r.quanti + '</button></td></tr>').join('')
+    + '</table>'
+    + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_mlAumentaTutti()" style="margin-top:0.8rem;">' + (it ? 'Aumenti di 1 il n. di set' : 'Add 1 to the number of sets') + '</button>';
+}
+// le righe filtrate restano nella pagina, solo nascoste: il massimo, l'arancio e la tabellina si contano su tutte
+function _mlFiltra(m) {
+  _ml.filtro = m;
+  renderAdminMancoliste();
+}
+// la casella «Quante» della tabella: si salva uscendo dalla casella (o con Invio)
+async function _mlCambiaQuante(el) {
+  const q = _mlNumero(el.value);
+  if (el.value !== '' && q === null) { el.value = el.dataset.iniziale; return; }
+  if (String(q ?? '') === el.dataset.iniziale) return;
+  el.dataset.iniziale = String(q ?? '');
+  _mlColora();
+  await _mlScrivi(el.dataset.mlQ, q);
+}
+// «Quante ne mancano ?»: toglie da «Quante» il numero scritto, mai sotto zero, poi la casella si svuota
+function _mlMeno(q, m) { return Math.max(0, (q || 0) - m); }
+// 🔄 v7.254 (Franco: «"Mancano" è un po' scomodo … sostituirlo con 2 frecce, una su, per aumentare, ed una giù per
+//    diminuire») - nella tabella, al posto della casella, ▲ aggiunge una copia e ▼ ne toglie una (mai sotto zero); si
+//    salva subito.
+// 🔄 (Franco: «le freccette … sono molto lente a recepire il clic») - prima aspettavano la scrittura della serie, a
+//    frecce spente. Ora il numero e l'arancio cambiano al clic, partendo da quello a schermo, e la scrittura parte
+//    mezzo secondo dopo l'ultimo clic della riga: tre clic di fila sono una scrittura sola. Finita la scrittura la
+//    casella si rilegge dal salvato (se fallisce torna al valore di prima), a meno che nel frattempo non ci siano
+//    altri clic in attesa.
+const _mlInAttesa = {};
+function _mlPasso(btn, d) {
+  const id = btn.dataset.mlId, cas = document.querySelector('#admin-mancoliste-box input[data-ml-q="' + id + '"]');
+  if (!cas || !currentUser?.isAdmin || _bloccatoDalLucchetto()) return;
+  const ora = _mlNumero(cas.dataset.iniziale) ?? 0, q = d > 0 ? ora + d : _mlMeno(ora, -d);
+  cas.value = q; cas.dataset.iniziale = String(q);
+  _mlScritte[id] = q;
+  _mlColora();
+  clearTimeout(_mlInAttesa[id]);
+  _mlInAttesa[id] = setTimeout(() => _mlScriviPasso(id, q), 500);
+}
+async function _mlScriviPasso(id, q) {
+  delete _mlInAttesa[id];
+  await _mlScrivi(id, q);
+}
+// 🔄 (Franco: «se ordino per la colonna "Quante", l'ordinamento non è sempre corretto … la riga della figurina 168») -
+//    la memoria del sito prende il numero nuovo solo a scrittura finita: un clic sull'intestazione nel frattempo
+//    ridisegnava la tabella col numero vecchio, e la riga restava al posto vecchio. `_mlScritte` tiene i numeri già a
+//    schermo e non ancora scritti, e il disegno della tabella usa quelli.
+const _mlScritte = {};
+async function _mlScrivi(id, q) {
+  _mlScritte[id] = q;
+  await _mlSalvaQuante(id, q);
+  if (!_mlInAttesa[id] && _mlScritte[id] === q) { delete _mlScritte[id]; _mlDopoRiga(id); }
+}
+// nella scheda dell'articolo la stessa casella cambia solo «Quante» a schermo: si scrive col «Salva» della scheda
+function _mlTogliDaCasella(idQuante, el) {
+  const m = _mlNumero(el.value), q = document.getElementById(idQuante);
+  if (m && q) q.value = _mlMeno(_mlNumero(q.value), m);
+  el.value = '';
+}
+// 🆕 v7.254 (Franco: «la tabella deve essere ordinabile per "Quante"») - il clic sull'intestazione gira fra dal più basso,
+//    dal più alto e di nuovo per numero; a pari «Quante» resta l'ordine per numero (`sort` è stabile). Salvando una riga
+//    la tabella non si riordina: la riga scapperebbe da sotto il mouse.
+// 🔄 (Franco: «al terzo non ordini più per quante … per tornare all'ordine di partenza, dammi l'ordinamento su tutte le
+//    colonne») - si ordina per Quante, N. o Nome: il primo clic su una colonna è crescente, il secondo decrescente, e
+//    così via; all'ordine di partenza si torna col clic su «N.». A pari valore resta l'ordine per numero.
+const _mlNome = f => (_aggTipoDi(f) === 'figurines' ? f.name : f.fullName) || f.name || '';
+function _mlOrdina(arts, col, verso) {
+  const giu = verso === 'giu';
+  if (col === 'numero') return giu ? arts.slice().reverse() : arts;
+  const chiave = col === 'quante' ? (a, b) => (a.quante ?? 0) - (b.quante ?? 0)
+    : (a, b) => _mlNome(a).localeCompare(_mlNome(b), 'it', { numeric: true });
+  return arts.slice().sort((a, b) => giu ? chiave(b, a) : chiave(a, b));
+}
+function _mlCambiaOrdine(col) {
+  _ml.verso = _ml.col === col && _ml.verso === 'su' ? 'giu' : 'su';
+  _ml.col = col;
+  renderAdminMancoliste();
+}
+function _mlScegli(quale, v) {
+  _ml[quale] = v;
+  _ml.filtro = null;
+  if (quale === 'sid') _ml.tipo = '';
+  renderAdminMancoliste();
+}
+function renderAdminMancoliste() {
+  const box = document.getElementById('admin-mancoliste-box');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const serie = getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  if (!serie.some(s => s.id === _ml.sid)) _ml.sid = '';
+  const s = serie.find(x => x.id === _ml.sid);
+  const tipi = s ? _mlTipiDi(s.id) : [];
+  if (!tipi.includes(_ml.tipo)) _ml.tipo = tipi[0] || '';
+  const sel = 'padding:0.3rem 0.5rem;font-size:0.9rem;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;';
+  const et = 'font-size:0.88rem;color:var(--info);margin-right:0.4rem;';
+  let html = '<h3 style="font-family:var(--font-ui);margin:0 0 0.4rem;">🧾 ' + (it ? 'Mancoliste' : 'Want lists') + '</h3>'
+    + '<p style="font-size:0.85rem;color:var(--text);margin-bottom:1rem;line-height:1.5;max-width:900px;">'
+    + (it ? '«Quantità» dice quante copie hai di ogni articolo. «Applica a tutti» lo scrive su tutti gli articoli della tipologia; poi lo cambi articolo per articolo, scrivendolo o con le frecce ▲ ▼.<br>'
+          + 'Solo le versioni base; fuori le figurine per album.'
+        : '«Quantity» is how many copies you have of each item.') + '</p>'
+    + '<div style="margin-bottom:1rem;">'
+    + '<label style="' + et + '">' + (it ? 'Serie' : 'Series') + '</label><select id="ml-serie" onchange="_mlScegli(\'sid\', this.value)" style="' + sel + '">'
+    + '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+    + serie.map(x => '<option value="' + esc(x.id) + '"' + (x.id === _ml.sid ? ' selected' : '') + '>' + esc(x.name || x.id) + '</option>').join('') + '</select></div>';
+  if (!s) { box.innerHTML = html; return; }
+  if (!_ml.tipo) { box.innerHTML = html + '<p style="color:var(--text);">' + (it ? 'Questa serie non ha articoli da contare.' : 'No items to count in this series.') + '</p>'; return; }
+  // l'aggiornamento massivo, un tasto per tipologia (Franco: «serve un tasto per ogni tda»)
+  html += '<h4 style="font-family:var(--font-ui);margin:0 0 0.6rem;">🔁 ' + (it ? 'Aggiornamento massivo' : 'Bulk update') + '</h4>'
+    + '<div style="margin-bottom:1.6rem;">' + tipi.map(k => _mlRigaMassivaHTML(s, k)).join('') + '</div>';
+  // poi gli articoli di una tipologia, da cambiare a mano
+  html += '<div style="margin-bottom:0.8rem;"><label style="' + et + '">' + (it ? 'Tipologia' : 'Item type') + '</label><select id="ml-tipo" onchange="_mlScegli(\'tipo\', this.value)" style="' + sel + '">'
+    + tipi.map(k => '<option value="' + esc(k) + '"' + (k === _ml.tipo ? ' selected' : '') + '>' + esc(_aggNomeTipo(k)) + '</option>').join('') + '</select></div>';
+  const arts = _mlOrdina(_mlArticoli(s.id, _ml.tipo).map(f => f.id in _mlScritte ? { ...f, quante: _mlScritte[f.id] } : f), _ml.col, _ml.verso);
+  const massimo = Math.max(0, ...arts.map(f => f.quante ?? 0));
+  const nascosta = f => _ml.filtro !== null && massimo - (f.quante ?? 0) !== _ml.filtro;
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--accent2);font-weight:600;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:4px 8px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);';
+  // v7.254 (Franco: «accorcia la larghezza di queste 2 colonne») - caselle strette, intestazioni corte
+  const cas = 'width:3.6rem;padding:2px 4px;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;';
+  const freccia = 'width:1.9rem;height:1.6rem;padding:0;font-size:0.75rem;line-height:1;cursor:pointer;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;';
+  // le intestazioni ordinabili: ▲ o ▼ su quella che ordina adesso
+  const intest = (col, testo) => '<th style="' + th + 'cursor:pointer;user-select:none;" onclick="_mlCambiaOrdine(\'' + col + '\')" title="' + (it ? 'Ordina' : 'Sort') + '">'
+    + testo + (_ml.col === col ? (_ml.verso === 'giu' ? ' ▼' : ' ▲') : '') + '</th>';
+  // accanto, la tabellina degli scarti dal massimo (la riempie `_mlRiepilogo`); sul telefono va sotto
+  html += '<div style="display:flex;flex-wrap:wrap;gap:1.5rem;align-items:flex-start;">'
+    + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:min(100%,36rem);">'
+    // v7.254 (Franco: «i numeri quante e quante ne mancano, mettili a sx nella riga, non a dx») - le due caselle per prime
+    // 🔄 (Franco: «"Quante ne mancano ?" diventa "Mancano"»; poi le due frecce al suo posto, vedi `_mlPasso`)
+    // (Franco: «la colonna "Quante" rinominala in "Quantità"»)
+    + '<tr>' + intest('quante', it ? 'Quantità' : 'Quantity') + '<th style="' + th + '"></th>' + intest('numero', 'N.') + intest('nome', it ? 'Nome' : 'Name') + '</tr>'
+    + arts.map(f => '<tr' + (nascosta(f) ? ' style="display:none;"' : '') + '><td style="' + td + '"><input type="number" min="0" step="1" data-ml-q="' + esc(f.id) + '" data-iniziale="' + (f.quante ?? '') + '" value="' + (f.quante ?? '') + '" onchange="_mlCambiaQuante(this)" style="' + cas + '"></td>'
+      + '<td style="' + td + 'white-space:nowrap;">'
+      + '<button type="button" data-ml-id="' + esc(f.id) + '" onclick="_mlPasso(this, 1)" title="' + (it ? 'Una in più' : 'One more') + '" style="' + freccia + '">▲</button>'
+      + '<button type="button" data-ml-id="' + esc(f.id) + '" onclick="_mlPasso(this, -1)" title="' + (it ? 'Una in meno' : 'One less') + '" style="' + freccia + 'margin-left:0.25rem;">▼</button></td>'
+      // (Franco: «per le fcr, nella mancolista, non mostrare il nome del retro associato») - per loro il Nome, non il Nome completo
+      + '<td style="' + td + 'font-variant-numeric:tabular-nums;">' + (f.number || '') + '</td><td style="' + td + '">' + esc(_mlNome(f)) + '</td></tr>').join('')
+    + '</table></div><div id="ml-scarti"></div></div>';
+  box.innerHTML = html;
+  _mlColora();
+}
 // si salvano solo le spunte diverse dal descrittore: le altre seguono lui, anche se un giorno cambia
 async function salvaQuestionario() {
   if (!currentUser?.isAdmin) return;
@@ -57732,6 +58032,8 @@ function cloneFigurine(itemId) {
   //    Sgorbions» erano nati con le foto delle pagine dell'album clonato. Con le pagine se ne va «album da sfogliare».
   //    I file su Cloudinary non si toccano: la copia semplicemente non li elenca.
   b.pagine = []; b.sfogliabile = false;
+  // v7.254 - e nemmeno «Quante»: le copie che Franco ha sono dell'articolo di partenza
+  b.quante = null;
   // v6.105 - e non copia nemmeno l'ESITO della pubblicazione. Non era un caso da gestire prima,
   // perche' la finestra ripopolava i campi uno per uno e questi non li toccava; con lo spread ci
   // finirebbero dentro tutti. `ebay` contiene `listingId` e `offerId` di annunci VERI: un oggetto
@@ -64581,6 +64883,11 @@ function _aggiornaLinguettaImpersona() {
     const corta = (_adminSenzaMacchie ? '💧 ' : '🧽 ') + (it ? 'Macchie' : 'Watermarks');
     mac.innerHTML = '<span class="wz-ling-corta">' + corta + '</span><span class="wz-ling-lunga">' + lunga + '</span>';
   }
+  // v7.254 - la linguetta delle Mancoliste, solo per l'admin; quella degli Annunci anche per il venditore
+  const ml = document.getElementById('ml-linguetta');
+  if (ml) ml.style.display = admin ? 'flex' : 'none';
+  const ann = document.getElementById('ann-linguetta');
+  if (ann) ann.style.display = _puoAnnunci() ? 'flex' : 'none';
 }
 // 🆕 v7.120 - accende e spegne le macchie per l'admin, e ridisegna quello che è a schermo (stesso giro di
 //    `_impostaProtezione`). Una scheda già aperta si aggiorna alla prossima apertura.
@@ -64835,6 +65142,9 @@ function adminTab(tab) {
   if (tab === 'questionario') renderAdminQuestionario();  // v7.156 (Franco)
   if (tab === 'aggiornamenti') renderAdminAggiornamenti();   // v7.170 (Franco)
   if (tab === 'fotoannuncio') renderAdminFotoAnnuncio();     // v7.182 (Franco)
+  // v7.254 (Franco: «all'ingresso in pagina, l'ordinamento deve essere per "Quantità" in ordine decrescente»; prima
+  //    era per numero) - a pari quantità resta l'ordine per numero
+  if (tab === 'mancoliste') { _ml.col = 'quante'; _ml.verso = 'giu'; renderAdminMancoliste(); }
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
@@ -70497,6 +70807,17 @@ function switchToEditMode(figId) {
       + '</span></div>';
   }
 
+  // 🆕 v7.254 (Franco) - «QUANTE»: quante copie ne ha, per le mancoliste; non sulle figurine per album. Accanto «Quante ne
+  //    mancano ?»: il numero scritto si toglie da «Quante» e la casella si svuota; si salva col «Salva» della scheda.
+  if (currentUser?.isAdmin && _mlHaQuante(f)) {
+    const _it = currentLang === 'it';
+    html += '<div class="detail-row"><span class="detail-label">Quante</span>'
+      + '<span class="detail-value" style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">'
+      + '<input type="number" min="0" step="1" class="form-input" id="fe-quante" value="' + (f.quante ?? '') + '" style="max-width:6rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
+      + '<input type="number" min="1" step="1" class="form-input" id="fe-quante-mancano" onchange="_mlTogliDaCasella(\'fe-quante\', this)" placeholder="' + (_it ? 'Quante ne mancano ?' : 'How many missing?') + '" style="max-width:12rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
+      + '</span></div>';
+  }
+
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Foto non disponibile':'Photo unavailable') + '</span>' +
     '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">' +
     '<input type="checkbox" id="fe-foto-non-disponibile" ' + (f.fotoNonDisponibile ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
@@ -73775,6 +74096,8 @@ async function saveFigFromDetail(figId, opzioni) {
             const n = id => { const v = parseInt(document.getElementById(id)?.value, 10); return on && v > 0 ? v : null; };
             return { poster: on, posterRiga: n('fe-poster-riga'), posterColonna: n('fe-poster-colonna') };
           })() : {}),
+      // 🆕 v7.254 - «Quante», solo dove la casella c'è (admin, non fpa); vuota = null
+      ...(document.getElementById('fe-quante') ? { quante: _mlNumero(document.getElementById('fe-quante').value) } : {}),
       invisibile: document.getElementById('fe-invisibile')?.checked || false, // v6.080
       subseries: document.getElementById('fe-subseries')?.value.trim() || '',
       desc: document.getElementById('fe-desc')?.value.trim() || '',
