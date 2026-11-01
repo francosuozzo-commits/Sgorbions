@@ -1,7 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.258 - Modificati index.html (versione) e js/app.js. MANCOLISTA: il numero dell'articolo apre la sua scheda (Franco).
+// v7.259 - Modificati index.html (versione) e js/app.js. Categorie (Franco): per raggruppare, filtrare e contare «?» e
+//          «!» non contano (`_catChiave`, `_catNome`): «PUBBLICITÀ PROGRESSO !?!» e «PUBBLICITÀ PROGRESSO» sono un gruppo
+//          solo, col nome senza segni; i dati restano come sono. Valgono i riquadri delle categorie dei retro e i loro
+//          filtri, la ricerca della tipologia, il collage, la griglia spezzata per categoria, le tendine dei cartoncini.
+//          MANCOLISTA: «Diminuisci di 1 il n. di set» sotto «Aumenti di 1 il n. di set» (Franco).
+// v7.258 -Modificati index.html (versione) e js/app.js. MANCOLISTA: il numero dell'articolo apre la sua scheda (Franco).
 //          Tab nuovo «Doppi» nella scheda di ogni articolo (dopo Ebay; in lettura solo admin, anche dal telefono), coi
 //          nomi di Franco: «Disponibilità in set doppi» (`quante`, era «Quante» nel Generale), «Disponibilità singole
 //          doppie» (campo nuovo `disponibili`, un numero; il clone non lo copia) e, sulle fcr base, «Disponibilità
@@ -32073,7 +32078,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.258';
+const JS_VERSION = 'v7.259';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -36012,7 +36017,7 @@ function _rtFiltrati(esclusa) {
   const cerco = (currentUser && x._wishlistFilter) ? getWishlist() : null;
   return tutte.filter(f => (f.section || 'figurines') === sec
     && (!qn || _figMatchRicerca(f, qn))
-    && (!qc || _matchRicerca(f.category, qc))
+    && (!qc || _matchRicerca(_catChiave(f.category), _catChiave(qc)))   // v7.259: «?» e «!» non contano
     && (!qs || _matchRicerca(f.subcategory, qs))
     && (esclusa === 'serie' || !x.serie.size || x.serie.has(f.seriesId))
     && (esclusa === 'versioni' || !x.versioni.size || x.versioni.has(_rtVersione(f)))
@@ -36068,7 +36073,8 @@ function renderRicercaTipologia() {
   const conCat = miei.some(f => String(f.category || '').trim());
   // 🗑️ v7.001 - via la Sottocategoria (Franco: «tanto le sottocategorie sono pochissime»)
   // 🆕 v7.001 - le categorie per l'autocompletamento: tutte quelle della tipologia, una volta sola
-  const categorie = [...new Set(miei.map(f => String(f.category || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it'));
+  // 🔄 v7.259 - una proposta per gruppo (`_catNome`)
+  const categorie = [...new Set(miei.map(f => _catNome(f.category)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it'));
   const bordo = 'position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;pointer-events:none;';
   const riquadro = (titolo, dentro) => '<div style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
     + '<div style="' + bordo + '">' + titolo + '</div>' + dentro + '</div>';
@@ -42289,7 +42295,7 @@ function _collageSitoAggiorna() {
   const csub = document.getElementById(da === 'serie' ? 'collage-sito-serie-sub' : 'collage-sito-tda-sub');
   if (csub) {
     const prima = csub.value, catSc = ccat ? ccat.value : '';
-    csub.innerHTML = catSc ? _collageSottocategorieDi(_collageCandidati(true, true).el.filter(f => String(f.category || '').trim() === catSc)) : '';
+    csub.innerHTML = catSc ? _collageSottocategorieDi(_collageCandidati(true, true).el.filter(f => _catNome(f.category) === catSc)) : '';   // v7.259
     if ([...csub.options].some(o => o.value === prima)) csub.value = prima;
   }
   const ssb = document.getElementById('collage-sito-serie-sub-box'), ssub = document.getElementById('collage-sito-serie-sub');
@@ -42439,7 +42445,7 @@ function _collageTdaConCategoria(v) {
 function _collageCategorieDi(el) {
   const it = currentLang === 'it';
   const conti = {};
-  el.forEach(f => { const c = String(f.category || '').trim(); if (c) conti[c] = (conti[c] || 0) + 1; });
+  el.forEach(f => { const c = _catNome(f.category); if (c) conti[c] = (conti[c] || 0) + 1; });   // v7.259: per gruppo
   const voci = Object.keys(conti).sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
   if (!voci.length) return '';
   return '<option value="">' + (it ? 'Tutte' : 'All') + '</option>' +
@@ -42559,7 +42565,7 @@ function _collageCandidati(senzaNumeri, finoAllaFamiglia) {
   if (finoAllaFamiglia) return { el };
   // v7.240 - la categoria, se scelta (la tendina è vuota dove la tipologia non la prevede)
   const cat = (document.getElementById(da === 'serie' ? 'collage-sito-serie-cat' : 'collage-sito-tda-cat') || {}).value || '';
-  if (cat) el = el.filter(f => String(f.category || '').trim() === cat);
+  if (cat) el = el.filter(f => _catNome(f.category) === cat);   // v7.259
   // v7.245 - la sottocategoria, se scelta (c'è solo con la categoria scelta)
   const sub = cat ? (document.getElementById(da === 'serie' ? 'collage-sito-serie-sub' : 'collage-sito-tda-sub') || {}).value || '' : '';
   if (sub) el = el.filter(f => String(f.subcategory || '').trim() === sub);
@@ -45693,6 +45699,31 @@ async function _mlAumentaTutti() {
   toast(it ? '✅ Aumentati ' + nuovi.length + ' articoli' : '✅ ' + nuovi.length + ' items increased', 'success');
   renderAdminMancoliste();
 }
+// 🆕 v7.259 (Franco: «mi serve anche il pulsante "Diminuisci di 1 il n. di set"») - il gemello di `_mlAumentaTutti`:
+//    −1 su tutti gli articoli della tipologia, anche quelli nascosti dal filtro; mai sotto zero. Si scrivono solo quelli
+//    che cambiano: vuoti e zeri restano come sono (un vuoto non diventa 0). Stessa attesa per le righe da scrivere.
+async function _mlDiminuisciTutti() {
+  if (!currentUser?.isAdmin || _bloccatoDalLucchetto()) return;
+  const it = currentLang === 'it', s = getData('series', []).find(x => x.id === _ml.sid);
+  if (!s || !_ml.tipo) return;
+  if (Object.keys(_mlInAttesa).length || Object.keys(_mlScritte).length) { toast(it ? 'Un attimo: sto ancora salvando una riga' : 'Still saving a row, try again', 'error'); return; }
+  const arts = _mlArticoli(s.id, _ml.tipo);
+  const nuovi = arts.filter(f => (f.quante || 0) > 0).map(f => ({ ...f, quante: f.quante - 1 }));
+  if (!nuovi.length) { toast(it ? 'Nessun articolo da diminuire: sono tutti a zero o vuoti' : 'Nothing to decrease: all zero or empty', 'error'); return; }
+  if (!await _finestraConferma({ titolo: '🧾 ' + (it ? 'Set doppi' : 'Duplicate sets'),
+    testo: it ? (s.name || s.id) + ' · ' + _aggNomeTipo(_ml.tipo) + '\nIl tasto diminuisce di 1 la «Quantità» di ' + nuovi.length + ' articoli su ' + arts.length + ', anche quelli nascosti dal filtro. Non scende mai sotto zero: chi è a zero o vuoto resta com\'è.\n\nConfermi ?'
+              : '«Quantity» goes down by 1 on ' + nuovi.length + ' of ' + arts.length + ' items, never below zero.\n\nConfirm?',
+    aCapo: true, ok: it ? 'Diminuisci' : 'Decrease' })) return;
+  try {
+    await _salvaFigurineInBlocco(nuovi);
+  } catch (e) {
+    console.error('_mlDiminuisciTutti', e);
+    toast((it ? '❌ Scrittura fallita: ' : '❌ Write failed: ') + (e?.code || e?.message || 'errore'), 'error');
+    return;
+  }
+  toast(it ? '✅ Diminuiti ' + nuovi.length + ' articoli' : '✅ ' + nuovi.length + ' items decreased', 'success');
+  renderAdminMancoliste();
+}
 async function _mlSalvaQuante(id, q) {
   if (!currentUser?.isAdmin || _bloccatoDalLucchetto()) return false;
   const f = getData('figurines', []).find(x => x.id === id);
@@ -45759,7 +45790,9 @@ function _mlRiepilogo(cas) {
     + _mlScarti(cas.map(el => el.dataset.iniziale)).map(r => '<tr' + (r.manca === _ml.filtro ? ' style="background:rgba(var(--action-admin-rgb),0.3);"' : '') + '><td style="' + td + '">' + r.manca + '</td>'
       + '<td style="' + td + '"><button type="button" onclick="_mlFiltra(' + r.manca + ')" title="' + (it ? 'Mostra solo questi articoli' : 'Show only these items') + '" style="' + link + '">' + r.quanti + '</button></td></tr>').join('')
     + '</table>'
-    + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_mlAumentaTutti()" style="margin-top:0.8rem;">' + (it ? 'Aumenti di 1 il n. di set' : 'Add 1 to the number of sets') + '</button>';
+    + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_mlAumentaTutti()" style="margin-top:0.8rem;">' + (it ? 'Aumenti di 1 il n. di set' : 'Add 1 to the number of sets') + '</button>'
+    // 🆕 v7.259 (Franco: «mi serve anche il pulsante "Diminuisci di 1 il n. di set"; mettilo sotto al suo omologo»)
+    + '<br><button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_mlDiminuisciTutti()" style="margin-top:0.5rem;">' + (it ? 'Diminuisci di 1 il n. di set' : 'Remove 1 from the number of sets') + '</button>';
 }
 // le righe filtrate restano nella pagina, solo nascoste: il massimo, l'arancio e la tabellina si contano su tutte
 function _mlFiltra(m) {
@@ -52011,6 +52044,32 @@ function renderCatalog() {
 // ⚠️ TOCCA TUTTI I PUNTI CHE CERCANO — le due ricerche, i quattro menu dei collegamenti, il
 // selettore del paese. Conseguenza da sapere: "sanmarino" scritto tutto attaccato non trova piu'
 // "San Marino". E' il prezzo della correzione, ed e' piccolo rispetto ai falsi positivi che toglie.
+// 🆕 v7.259 (Franco: «a volte capita che ci sono delle categorie che sono identiche a meno di caratteri speciali quali "?"
+//    e "!"; vorrei che ai fini dei raggruppamenti, e di conseguenza dei filtri di ricerca per raggruppamento, questi
+//    caratteri non siano considerati»; il nome del gruppo: «tieni la versione senza "!"») - LA CATEGORIA DEL GRUPPO.
+//    I dati non cambiano: ogni articolo tiene la sua categoria scritta com'è, e la scheda e la card la mostrano così.
+//    Per raggruppare, filtrare e contare si usa `_catNome`: se la stessa categoria esiste (in tutto il catalogo) scritta
+//    in più modi che differiscono solo per «?» e «!», il gruppo si chiama come la versione senza segni (`_catChiave`);
+//    se esiste in un modo solo, resta com'è («COSA MANCA ?» non ha gemelle e non cambia).
+//    Al 1/11 le coppie erano 6, tutte nei retro: OFFERTA SPECIALE, SGORBIONATE, ULTIMISSIME, PUBBLICITÀ PROGRESSO,
+//    CINEMA, INCREDIBILE. Nessun doppione per maiuscole, accenti o altri segni.
+// 📌 Le varianti si contano una volta per catalogo e si rifanno quando cambia l'elenco degli articoli.
+const _catChiave = c => String(c == null ? '' : c).replace(/[?!]/g, '').replace(/\s+/g, ' ').trim();
+let _catVariantiCache = null;
+function _catNome(c) {
+  const t = String(c == null ? '' : c).trim();
+  const k = _catChiave(t);
+  if (k === t || !k) return t;
+  const tutti = typeof getData === 'function' ? getData('figurines', []) : [];
+  if (!_catVariantiCache || _catVariantiCache.ref !== tutti || _catVariantiCache.n !== tutti.length) {
+    const m = new Map();
+    tutti.forEach(f => { const v = String((f && f.category) || '').trim(); if (v) { const kk = _catChiave(v); if (!m.has(kk)) m.set(kk, new Set()); m.get(kk).add(v); } });
+    _catVariantiCache = { ref: tutti, n: tutti.length, m };
+  }
+  const v = _catVariantiCache.m.get(k);
+  return v && v.size > 1 ? k : t;
+}
+
 function _perRicerca(s) {
   return String(s == null ? '' : s)
     .normalize('NFD').replace(/\p{M}/gu, '')
@@ -60998,14 +61057,14 @@ function getCurrentlyFilteredItems(opts) {
     // delle scelte. Insieme vuoto = filtro spento, come il vecchio null.
     if (!_skipCat && _retroCategoryFilter.size
         && (currentSection === 'retros' || _tipoProdottoCorrente)
-        && !_retroCategoryFilter.has((f.category || '').trim())) return false;
+        && !_retroCategoryFilter.has(_catNome(f.category))) return false;   // v7.259: il nome del gruppo
     // Filtro per sottocategoria (solo Retro), dai sotto-box dello specchietto risultati (v5.987)
     // 🆕 v6.269 - SI RESTRINGE SOLO DOVE HAI CHIESTO DI RESTRINGERE. La sottocategoria vale
     // dentro la SUA categoria: se sotto la categoria di questo oggetto non ne hai scelta nessuna,
     // qui non c'e' niente da controllare. Senza questa condizione, "tutta la categoria A piu' la
     // sola sottocategoria x di B" sarebbe inesprimibile e darebbe zero — il difetto della v6.134.
     if (!_skipSub && _retroSubcategoryFilter.size && currentSection === 'retros') {
-      const _cat = (f.category || '').trim();
+      const _cat = _catNome(f.category);   // v7.259
       if (_catConSotto.has(_cat)
           && !_retroSubcategoryFilter.has(_chiaveSottocat(_cat, (f.subcategory || '').trim()))) return false;
     }
@@ -61116,7 +61175,8 @@ function getCurrentlyFilteredItems(opts) {
 function _retroCatCounts(items) {
   const map = new Map(); // cat -> Map(sotto -> n)
   for (const f of items) {
-    const cat = (f.category || '').trim(); // valore REALE ('' = senza categoria)
+    // 🔄 v7.259 - il nome del GRUPPO ('' = senza categoria): «CINEMA !» e «CINEMA» stanno insieme (`_catNome`)
+    const cat = _catNome(f.category);
     const sub = (f.subcategory || '').trim();
     if (!map.has(cat)) map.set(cat, new Map());
     const sm = map.get(cat);
@@ -69670,7 +69730,7 @@ function _nomeCartoncino(c) {
 function _opzioniCartoncino(scelto) {
   const cc = _cartoncini().slice().sort((a, b) => _nomeCartoncino(a).localeCompare(_nomeCartoncino(b), 'it', { numeric: true }));
   const gruppi = {};
-  cc.forEach(c => { const k = c.category || ''; (gruppi[k] = gruppi[k] || []).push(c); });
+  cc.forEach(c => { const k = _catNome(c.category); (gruppi[k] = gruppi[k] || []).push(c); });   // v7.259: per gruppo
   const opz = c => '<option value="' + esc(c.id) + '"' + (c.id === scelto ? ' selected' : '') + '>'
     + esc([c.subcategory, (c.fullName && c.fullName.trim()) || c.name].filter(Boolean).join(' · ')) + '</option>';
   return '<option value="">' + (currentLang === 'it' ? '— scegli —' : '— choose —') + '</option>'
@@ -79263,7 +79323,7 @@ function _gscPartiPerCategoria(pezzi) {
   if (!gruppi.length || (gruppi.length === 1 && gruppi[0][0] === '')) return [];
   return gruppi.map(([cat]) => ({
     etichetta: _retroCatLabel(cat),
-    pezzi: pezzi.filter(f => (f.category || '').trim() === cat),
+    pezzi: pezzi.filter(f => _catNome(f.category) === cat),   // v7.259: lo stesso nome di `_retroCatCounts`
   }));
 }
 
@@ -83627,7 +83687,7 @@ function renderWishlist() {
       // (Retro) o Sottoserie (Figurine), con l'etichetta scritta una sola
       // volta prima del suo elenco. Gli oggetti senza nessuno dei due campi
       // restano in un unico elenco
-      const groupLabel = f => f.category || f.subseries || null;
+      const groupLabel = f => _catNome(f.category) || f.subseries || null;   // v7.259: la categoria del gruppo
       const withoutGroup = secFigs.filter(f => !groupLabel(f));
       const byGroup = {};
       secFigs.filter(f => groupLabel(f)).forEach(f => {
