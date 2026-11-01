@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.255 - Modificati index.html (versione) e js/app.js. Mancoliste: la tabella grande si chiama «MANCOLISTA», col titolo
+//          alla stessa altezza di quello della tabellina accanto, che da «MANCANZE» diventa «MANCANTI» (Franco).
+//          La sezione si chiama «Set doppi» (tab e linguetta) e ha due tab: MANCOLISTE (quella di prima) e DETTAGLI SET DOPPI,
+//          coi sottotab Serie 1, Serie 3, Serie 4. Serie 3: 256 figurine per album × 10 set, tendina Ho / Rov / RROV /
+//          Pox defect / Recupero / vuota, mai toccata = Ho; scrive solo la cella in `settings/dettagliSet_<serie>`.
+//          Serie 1 e 4 da definire. Poi: sezione «Set doppi», tab «DETTAGLI SET DOPPI»; serie 3 parte da 9 set, «Aggiungi
+//          set» (con conferma) scrive `nSet`; Pox defect scritto azzurro, Recupero scritto rosso; una tendina di filtro
+//          sotto ogni set. Collage: «Quale versione ?» ha «Base» (era «Versione base»), «Base + variazioni ufficiali» e
+//          «Base + variazioni» (`_collageVerOk`).
 // v7.254 - Modificati index.html e js/app.js. MANCOLISTE (Franco: «mi serve una nuova sezione nella admin console, chiamata
 //          Mancoliste … per ogni serie, definire quante e quali figurine mancano, rispetto ad una data tda, per ogni set a
 //          mia disposizione»): campo `quante` sull'articolo (non fpa), nella scheda con «Quante ne mancano ?» che toglie e
@@ -32048,7 +32057,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.254';
+const JS_VERSION = 'v7.255';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42332,9 +42341,22 @@ function _collageVersioniDellaSerie(sid, sez) {
   //    così di serie resta la prima versione; solo se le versioni sono almeno due. `_collageCandidati` e
   //    `_collageFamiglieDellaSerie` con «tutte» non filtrano per versione
   const tot = vive.reduce((n, ch) => n + conti[ch], 0);
-  return vive.map(ch => '<option value="' + esc(ch) + '">' + esc(_nomeVersione(ch, it ? 'it' : 'en')) + ' (' + conti[ch] + ')</option>').join('') +
+  // 🆕 v7.255 (Franco: «vorrei anche la opzione "Base + variazioni ufficiali" e anche la opzione "Base + variazioni"; la
+  //    opzione "Versione base" rinominala in "Base"») - solo qui: altrove la base resta «Versione base». Le due risposte
+  //    insieme compaiono solo se aggiungono qualcosa: «Base + variazioni ufficiali» se ci sono base e ufficiali,
+  //    «Base + variazioni» se ci sono base e non ufficiali (senza, sarebbe uguale all'altra)
+  const conta = ver => (_COLLAGE_VER_INSIEME[ver] || []).reduce((n, ch) => n + (conti[ch] || 0), 0);
+  const insieme = [
+    ['base+uff', it ? 'Base + variazioni ufficiali' : 'Base + official variations', conti.base && conti.variation],
+    ['base+var', it ? 'Base + variazioni' : 'Base + variations', conti.base && conti.unofficialVariation],
+  ].filter(x => x[2]);
+  return vive.map(ch => '<option value="' + esc(ch) + '">' + esc(ch === 'base' ? 'Base' : _nomeVersione(ch, it ? 'it' : 'en')) + ' (' + conti[ch] + ')</option>').join('') +
+    insieme.map(([v, nome]) => '<option value="' + v + '">' + nome + ' (' + conta(v) + ')</option>').join('') +
     (vive.length > 1 ? '<option value="tutte">' + (it ? 'Tutte' : 'All') + ' (' + tot + ')</option>' : '');
 }
+// v7.255 - le risposte che mettono insieme più versioni; «tutte» non filtra
+const _COLLAGE_VER_INSIEME = { 'base+uff': ['base', 'variation'], 'base+var': ['base', 'variation', 'unofficialVariation'] };
+const _collageVerOk = (f, ver) => ver === 'tutte' || (_COLLAGE_VER_INSIEME[ver] || [ver]).includes(_chiaveTipo(f));
 function _collageSerieScelta() {
   const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-serie-tda');
   if (s && t) t.innerHTML = _collageTdaDellaSerie(s.value);
@@ -42353,7 +42375,7 @@ function _collageFamiglieDellaSerie(sid, sez, ver) {
   const it = currentLang === 'it';
   const conti = {};
   _collageArticoliDellaSerie(sid).forEach(f => {
-    if ((f.section || 'figurines') !== sez || (ver !== 'tutte' && _chiaveTipo(f) !== ver)) return;   // v7.229 - «tutte»
+    if ((f.section || 'figurines') !== sez || !_collageVerOk(f, ver)) return;   // v7.229 - «tutte»; v7.255 - e le versioni insieme
     const fam = _collageFamiglia(f);   // v7.218 - anche la fpa senza famiglia scritta
     if (fam) conti[fam] = (conti[fam] || 0) + 1;
   });
@@ -42507,7 +42529,7 @@ function _collageCandidati(senzaNumeri, finoAllaFamiglia) {
     const sez = (document.getElementById('collage-sito-serie-tda') || {}).value;   // v7.214 - la tipologia scelta nella serie
     const ver = (document.getElementById('collage-sito-serie-ver') || {}).value;   // v7.214 - e la versione
     // v7.229 - retro compresi; con «tutte» ogni versione
-    el = el.filter(f => String(f.seriesId) === String(sid) && (f.section || 'figurines') === sez && (ver === 'tutte' || _chiaveTipo(f) === ver));
+    el = el.filter(f => String(f.seriesId) === String(sid) && (f.section || 'figurines') === sez && _collageVerOk(f, ver));
     const fam = (document.getElementById('collage-sito-serie-fam') || {}).value;   // v7.215 - la famiglia, se scelta
     if (fam) el = el.filter(f => _collageFamiglia(f) === fam);
   } else {
@@ -43314,7 +43336,7 @@ function _collageTestoAnnuncio() {
     const sez = val('collage-sito-serie-tda'), ver = val('collage-sito-serie-ver');
     if (!s || !sez) return '';
     fam = val('collage-sito-serie-fam'); cat = val('collage-sito-serie-cat'); sub = cat ? val('collage-sito-serie-sub') : '';
-    tot = _collageArticoliDellaSerie(s.id).filter(f => (f.section || 'figurines') === sez && (ver === 'tutte' || _chiaveTipo(f) === ver)).length;
+    tot = _collageArticoliDellaSerie(s.id).filter(f => (f.section || 'figurines') === sez && _collageVerOk(f, ver)).length;
     parti.push(_nomeSerie(s), quanti(figurine(sez) ? parolaFig : getSectionLabel(sez)), su(fam), su(cat), su(sub));
   } else {
     const t = document.getElementById('collage-sito-tda');
@@ -45603,7 +45625,7 @@ async function _mlApplicaDaTasto(btn) {
   if (!s) return;
   if (n === null) { toast(it ? 'Scrivi quante copie' : 'Write how many copies', 'error'); return; }
   const arts = _mlArticoli(sid, tipo);
-  if (!await _finestraConferma({ titolo: '🧾 ' + (it ? 'Mancoliste' : 'Want lists'),
+  if (!await _finestraConferma({ titolo: '🧾 ' + (it ? 'Set doppi' : 'Duplicate sets'),
     testo: it ? (s.name || s.id) + ' · ' + _aggNomeTipo(tipo) + '\n«Quantità» diventa ' + n + ' su tutti i ' + arts.length + ' articoli base, anche su quelli già cambiati a mano.\n\nConfermi ?'
               : '«Quantity» becomes ' + n + ' on all ' + arts.length + ' base items.\n\nConfirm?',
     aCapo: true, ok: it ? 'Applica' : 'Apply' })) return;
@@ -45628,7 +45650,7 @@ async function _mlAumentaTutti() {
   if (!s || !_ml.tipo) return;
   if (Object.keys(_mlInAttesa).length || Object.keys(_mlScritte).length) { toast(it ? 'Un attimo: sto ancora salvando una riga' : 'Still saving a row, try again', 'error'); return; }
   const arts = _mlArticoli(s.id, _ml.tipo);
-  if (!await _finestraConferma({ titolo: '🧾 ' + (it ? 'Mancoliste' : 'Want lists'),
+  if (!await _finestraConferma({ titolo: '🧾 ' + (it ? 'Set doppi' : 'Duplicate sets'),
     testo: it ? (s.name || s.id) + ' · ' + _aggNomeTipo(_ml.tipo) + '\nIl tasto aumenta di 1 la «Quantità» di tutte le righe della tabella: ' + arts.length + ' articoli, anche quelli nascosti dal filtro. Dove è vuota diventa 1.\n\nConfermi ?'
               : '«Quantity» goes up by 1 on all ' + arts.length + ' items.\n\nConfirm?',
     aCapo: true, ok: it ? 'Aumenta' : 'Increase' })) return;
@@ -45688,6 +45710,9 @@ function _mlScarti(valori) {
   n.forEach(v => { if (v < max) conta[max - v] = (conta[max - v] || 0) + 1; });
   return Object.keys(conta).map(Number).sort((a, b) => a - b).map(manca => ({ manca, quanti: conta[manca] }));
 }
+// v7.255 (Franco: «la tabella con la mancolista … chiamala MANCOLISTA; deve risultare alla stessa altezza di MANCANZE») -
+//    i due titoli hanno lo stesso stile e la stessa altezza, quella del tasto «Resetta» che sta accanto a MANCANTI
+const _ML_TITOLO = 'display:flex;align-items:center;min-height:1.8rem;font-family:var(--font-ui);font-weight:700;font-size:0.9rem;margin-bottom:0.3rem;';
 function _mlRiepilogo(cas) {
   const box = document.getElementById('ml-scarti');
   if (!box) return;
@@ -45698,7 +45723,8 @@ function _mlRiepilogo(cas) {
   //    filtrasse per quella mancanza»; «un bottoncino chiamato "Resetta"») - la riga del filtro acceso si vede in arancio
   const link = 'background:none;border:none;padding:0;cursor:pointer;color:var(--info);text-decoration:underline;font:inherit;';
   const resetta = 'margin-left:0.6rem;padding:1px 8px;font-size:0.75rem;cursor:pointer;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;';
-  box.innerHTML = '<div style="font-family:var(--font-ui);font-weight:700;font-size:0.9rem;margin-bottom:0.3rem;">' + (it ? 'MANCANZE' : 'MISSING')
+  // v7.255 (Franco: «MANCANZE rinominala in MANCANTI»)
+  box.innerHTML = '<div style="' + _ML_TITOLO + '">' + (it ? 'MANCANTI' : 'MISSING')
     + '<button type="button" onclick="_mlFiltra(null)"' + (_ml.filtro === null ? ' disabled' : '') + ' style="' + resetta + (_ml.filtro === null ? 'opacity:0.45;cursor:default;' : '') + '">' + (it ? 'Resetta' : 'Reset') + '</button></div>'
     + '<table style="border-collapse:collapse;">'
     + '<tr><th style="' + th + '">' + (it ? 'Quante ne mancano' : 'Missing') + '</th><th style="' + th + '">' + (it ? 'Articoli' : 'Items') + '</th></tr>'
@@ -45798,8 +45824,8 @@ function renderAdminMancoliste() {
   if (!tipi.includes(_ml.tipo)) _ml.tipo = tipi[0] || '';
   const sel = 'padding:0.3rem 0.5rem;font-size:0.9rem;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;';
   const et = 'font-size:0.88rem;color:var(--info);margin-right:0.4rem;';
-  let html = '<h3 style="font-family:var(--font-ui);margin:0 0 0.4rem;">🧾 ' + (it ? 'Mancoliste' : 'Want lists') + '</h3>'
-    + '<p style="font-size:0.85rem;color:var(--text);margin-bottom:1rem;line-height:1.5;max-width:900px;">'
+  // v7.255 - il titolo della sezione sta nell'index, sopra i due tab
+  let html = '<p style="font-size:0.85rem;color:var(--text);margin-bottom:1rem;line-height:1.5;max-width:900px;">'
     + (it ? '«Quantità» dice quante copie hai di ogni articolo. «Applica a tutti» lo scrive su tutti gli articoli della tipologia; poi lo cambi articolo per articolo, scrivendolo o con le frecce ▲ ▼.<br>'
           + 'Solo le versioni base; fuori le figurine per album.'
         : '«Quantity» is how many copies you have of each item.') + '</p>'
@@ -45828,7 +45854,8 @@ function renderAdminMancoliste() {
     + testo + (_ml.col === col ? (_ml.verso === 'giu' ? ' ▼' : ' ▲') : '') + '</th>';
   // accanto, la tabellina degli scarti dal massimo (la riempie `_mlRiepilogo`); sul telefono va sotto
   html += '<div style="display:flex;flex-wrap:wrap;gap:1.5rem;align-items:flex-start;">'
-    + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;min-width:min(100%,36rem);">'
+    + '<div style="overflow-x:auto;"><div style="' + _ML_TITOLO + '">' + (it ? 'MANCOLISTA' : 'WANT LIST') + '</div>'
+    + '<table style="border-collapse:collapse;min-width:min(100%,36rem);">'
     // v7.254 (Franco: «i numeri quante e quante ne mancano, mettili a sx nella riga, non a dx») - le due caselle per prime
     // 🔄 (Franco: «"Quante ne mancano ?" diventa "Mancano"»; poi le due frecce al suo posto, vedi `_mlPasso`)
     // (Franco: «la colonna "Quante" rinominala in "Quantità"»)
@@ -45842,6 +45869,162 @@ function renderAdminMancoliste() {
     + '</table></div><div id="ml-scarti"></div></div>';
   box.innerHTML = html;
   _mlColora();
+}
+// 🆕 v7.255 (Franco: «vorrei poi un altro tab; chiamato DETTAGLI SET; il primo tab lo chiami MANCOLISTE») - i due tab
+//    della sezione «Miei set»: si accende un riquadro e si spegne l'altro
+function _mlVista(v) {
+  _ml.vista = v;
+  document.querySelectorAll('#admin-mancoliste .ml-schede .admin-subtab').forEach(b => b.classList.toggle('active', b.dataset.mlVista === v));
+  const ml = document.getElementById('admin-mancoliste-box'), ds = document.getElementById('admin-dettagli-set-box');
+  if (ml) ml.style.display = v === 'ds' ? 'none' : '';
+  if (ds) ds.style.display = v === 'ds' ? '' : 'none';
+  if (v === 'ds') renderAdminDettagliSet(); else renderAdminMancoliste();
+}
+// 🆕 v7.255 - DETTAGLI SET (Franco: «nel secondo tab vorrei altri sottotab, per ora 3, chiamati: Serie 1, Serie 3, Serie
+//    4»). Per la serie 3: «10 colonne (una per ogni set esistente); 256 righe; una per figurina» (le figurine per album
+//    base), e in ogni cella Ho, Rov (arancio), RROV («sarà sempre rosso»), Pox defect, Recupero o vuota; all'inizio
+//    tutte «Ho». Serie 1 e 4 sono ancora da definire.
+//    Le serie si riconoscono dall'id, che non cambia se Franco rinomina una serie.
+//    📌 DOVE SI SCRIVE (Franco: «non deve aggiornare tutta la serie»): non negli articoli, che vivono dentro il
+//    documento della serie e lo farebbero riscrivere intero, ma in `settings/dettagliSet_<id serie>`, `celle.<id
+//    articolo>.<n. set>`; ogni tendina scrive solo la sua cella (`setDoc` con `merge`). Una cella mai toccata non c'è
+//    e vale «Ho». `settings` si legge da chiunque, come «Quantità».
+// 🔄 (Franco: «i set doppi della serie 3 erano 9, non 10 … la tabella deve avere un numero di colonne pari al numero di
+//    set doppi totali … quando avrò un altro set lo aggiungo io a mano … un tasto "Aggiungi set" … chiede conferma») -
+//    `set` è il numero di partenza; quello vero sta nello stesso documento, campo `nSet`, scritto da «Aggiungi set».
+const _DS_SERIE = [
+  { k: 's1', nome: 'Serie 1', sid: 'B8YNfd4pqHtf3UIqcvef' },
+  { k: 's3', nome: 'Serie 3', sid: '0UqtlWyqCJtFliPTLk8Y', tipo: 'attaccare', set: 9 },
+  { k: 's4', nome: 'Serie 4', sid: 'WVfuV0mSvyNkLcPQYnCk' },
+];
+// (Franco: «"pox defect" scrivilo in azzurro, "recupero" scrivilo in rosso») - `testo` è il colore della scritta
+const _DS_VALORI = [
+  { v: 'Ho' },
+  { v: 'Rov', fondo: 'rgba(var(--action-admin-rgb),0.45)' },
+  { v: 'RROV', fondo: 'rgba(229,57,53,0.75)' },
+  { v: 'Pox defect', testo: 'var(--info)' },
+  { v: 'Recupero', testo: '#ff5252' },
+  { v: '', it: 'vuota', en: 'empty' },
+];
+// `filtri`: per ogni set il valore che le righe devono avere ('*' = tutti)
+let _ds = { sub: 's3', dati: {}, nSet: {}, filtri: {} };
+const _dsNumSet = conf => _ds.nSet[conf.sid] || conf.set;
+const _dsDocId = sid => 'dettagliSet_' + sid;
+const _dsValore = (celle, id, n) => { const r = celle[id]; return r && Object.prototype.hasOwnProperty.call(r, n) ? r[n] : 'Ho'; };
+const _dsStile = v => { const x = _DS_VALORI.find(y => y.v === v) || {};
+  return 'background:' + (x.fondo || 'var(--bg2)') + ';color:' + (x.testo || 'var(--text)') + ';'; };
+// 🆕 (Franco: «per ogni colonna, deve essere possibile filtrare le righe della tabella per i valori possibili a tendina;
+//    ovviamente si filtra tutta la tabella») - i filtri di più colonne valgono insieme; cambiando una cella la riga resta
+//    dov'è anche se non rispetta più il filtro, finché non si cambia un filtro
+const _dsPassa = (celle, id) => Object.entries(_ds.filtri).every(([n, v]) => v === '*' || _dsValore(celle, id, n) === v);
+function _dsFiltra(n, v) {
+  _ds.filtri[n] = v;
+  renderAdminDettagliSet();
+}
+function _dsArticoli(conf) {
+  return getData('figurines', []).filter(f => f.seriesId === conf.sid && _aggTipoDi(f) === conf.tipo && !f.invisibile && _eBase(f))
+    .sort((a, b) => (a.number && b.number) ? (a.number - b.number) : (a.number ? -1 : b.number ? 1
+      : String(_mlNome(a)).localeCompare(String(_mlNome(b)), 'it', { numeric: true })));
+}
+// le celle si leggono una volta per serie e poi restano in memoria, aggiornate da chi scrive
+async function _dsCarica(sid) {
+  if (_ds.dati[sid]) return _ds.dati[sid];
+  const { doc, getDoc } = window._fb;
+  const snap = await getDoc(doc(db, 'settings', _dsDocId(sid))), dati = (snap.exists() && snap.data()) || {};
+  if (Number.isInteger(dati.nSet) && dati.nSet > 0) _ds.nSet[sid] = dati.nSet;
+  return (_ds.dati[sid] = dati.celle || {});
+}
+// «Aggiungi set»: una colonna in più, dopo la conferma; le sue celle nascono «Ho» come le altre
+async function _dsAggiungiSet() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it', conf = _DS_SERIE.find(x => x.k === _ds.sub);
+  if (!conf || !conf.set) return;
+  const n = _dsNumSet(conf) + 1;
+  if (!await _finestraConferma({ titolo: '🧾 ' + (it ? 'Set doppi' : 'Duplicate sets'),
+    testo: it ? conf.nome + '\nAggiungi il set ' + n + ': la tabella avrà una colonna in più, «Set ' + n + '», con tutte le celle a «Ho».\n\nConfermi ?'
+              : conf.nome + '\nAdd set ' + n + ': one more column, all cells «Ho».\n\nConfirm?',
+    aCapo: true, ok: it ? 'Aggiungi' : 'Add' })) return;
+  try {
+    const { doc, setDoc } = window._fb;
+    await setDoc(doc(db, 'settings', _dsDocId(conf.sid)), { nSet: n }, { merge: true });
+  } catch (e) {
+    console.error('_dsAggiungiSet', e);
+    toast((it ? '❌ Salvataggio fallito: ' : '❌ Save failed: ') + (e?.code || e?.message || 'errore'), 'error');
+    return;
+  }
+  _ds.nSet[conf.sid] = n;
+  toast(it ? '✅ Aggiunto il set ' + n : '✅ Set ' + n + ' added', 'success');
+  renderAdminDettagliSet();
+}
+function _dsScegli(k) {
+  _ds.sub = k;
+  _ds.filtri = {};
+  renderAdminDettagliSet();
+}
+const _dsRicolora = (el, v) => el.setAttribute('style', el.getAttribute('style').replace(/background:[^;]*;color:[^;]*;/, '') + _dsStile(v));
+async function _dsCambia(el) {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it', sid = el.dataset.dsSerie, id = el.dataset.dsId, n = el.dataset.dsSet, v = el.value;
+  const celle = _ds.dati[sid] || (_ds.dati[sid] = {}), prima = _dsValore(celle, id, n);
+  (celle[id] = celle[id] || {})[n] = v;
+  _dsRicolora(el, v);
+  try {
+    const { doc, setDoc } = window._fb;
+    await setDoc(doc(db, 'settings', _dsDocId(sid)), { celle: { [id]: { [n]: v } } }, { merge: true });
+  } catch (e) {
+    console.error('_dsCambia', e);
+    celle[id][n] = prima;
+    el.value = prima;
+    _dsRicolora(el, prima);
+    toast((it ? '❌ Salvataggio fallito: ' : '❌ Save failed: ') + (e?.code || e?.message || 'errore'), 'error');
+  }
+}
+function _dsTabellaHTML(conf, celle, it) {
+  const arts = _dsArticoli(conf), set = Array.from({ length: _dsNumSet(conf) }, (_, i) => String(i + 1));
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--accent2);font-weight:600;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:3px 6px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);';
+  const tendina = 'padding:2px 2px;font-size:0.78rem;border:1px solid var(--border2);border-radius:6px;';
+  const opzioni = v => _DS_VALORI.map(x => '<option value="' + esc(x.v) + '"' + (x.v === v ? ' selected' : '') + '>' + esc(x.v || (it ? x.it : x.en)) + '</option>').join('');
+  // la riga dei filtri, sotto le intestazioni: «Tutti» più le stesse voci delle celle
+  const filtro = n => { const f = _ds.filtri[n] ?? '*';
+    return '<select onchange="_dsFiltra(\'' + n + '\', this.value)" title="' + (it ? 'Filtra per questo set' : 'Filter by this set') + '" style="' + tendina + _dsStile(f === '*' ? 'Ho' : f) + '">'
+      + '<option value="*"' + (f === '*' ? ' selected' : '') + '>' + (it ? 'Tutti' : 'All') + '</option>' + opzioni(f === '*' ? null : f) + '</select>'; };
+  const visibili = arts.filter(f => _dsPassa(celle, f.id)).length;
+  return '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.8rem;line-height:1.5;max-width:900px;">'
+    + (it ? 'Una riga per ogni figurina per album base, una colonna per ogni set. Ogni scelta si salva subito, solo quella cella. Sotto ogni set, la tendina filtra le righe.'
+          : 'One row per base album sticker, one column per set. Each choice is saved at once, that cell only. Under each set, the drop-down filters the rows.') + '</p>'
+    + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin-bottom:0.8rem;">'
+    + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_dsAggiungiSet()">' + (it ? 'Aggiungi set' : 'Add set') + '</button>'
+    + '<span style="font-size:0.85rem;color:var(--info);">' + (it ? 'Righe: ' : 'Rows: ') + visibili + (visibili !== arts.length ? (it ? ' su ' : ' of ') + arts.length : '') + '</span></div>'
+    // (Franco: «scorrendo verso il basso si perde quasi subito la testata … vorrei mantenere la testata fissa») - la tabella
+    //    scorre dentro un riquadro alto quanto lo schermo, e lì le due righe di testa restano ferme (sticky, fondo pieno)
+    + '<div style="overflow:auto;max-height:78vh;"><table style="border-collapse:collapse;">'
+    + '<thead style="position:sticky;top:0;z-index:2;">'
+    + '<tr><th style="' + th + 'background:var(--bg);">N.</th><th style="' + th + 'background:var(--bg);">' + (it ? 'Nome' : 'Name') + '</th>'
+    + set.map(n => '<th style="' + th + 'background:var(--bg);">Set ' + n + '</th>').join('') + '</tr>'
+    + '<tr><th style="' + th + 'background:var(--bg);"></th><th style="' + th + 'background:var(--bg);"></th>' + set.map(n => '<th style="' + th + 'background:var(--bg);">' + filtro(n) + '</th>').join('') + '</tr>'
+    + '</thead>'
+    + arts.map(f => '<tr' + (_dsPassa(celle, f.id) ? '' : ' style="display:none;"') + '><td style="' + td + 'font-variant-numeric:tabular-nums;">' + (f.number || '') + '</td><td style="' + td + 'white-space:nowrap;">' + esc(_mlNome(f)) + '</td>'
+      + set.map(n => { const v = _dsValore(celle, f.id, n);
+        return '<td style="' + td + '"><select data-ds-serie="' + esc(conf.sid) + '" data-ds-id="' + esc(f.id) + '" data-ds-set="' + n + '" onchange="_dsCambia(this)" style="' + tendina + _dsStile(v) + '">' + opzioni(v) + '</select></td>'; }).join('')
+      + '</tr>').join('')
+    + '</table></div>';
+}
+function renderAdminDettagliSet() {
+  const box = document.getElementById('admin-dettagli-set-box');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const conf = _DS_SERIE.find(x => x.k === _ds.sub) || _DS_SERIE[1];
+  const testa = '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1rem;">'
+    + _DS_SERIE.map(x => '<button type="button" class="admin-subtab' + (x.k === conf.k ? ' active' : '') + '" onclick="_dsScegli(\'' + x.k + '\')">' + esc(x.nome) + '</button>').join('') + '</div>';
+  if (!conf.set) { box.innerHTML = testa + '<p style="color:var(--text);">' + (it ? 'Da definire.' : 'To be defined.') + '</p>'; return; }
+  box.innerHTML = testa + '<p style="color:var(--text);">' + (it ? 'Carico…' : 'Loading…') + '</p>';
+  _dsCarica(conf.sid).then(celle => {
+    if (_ds.sub === conf.k) box.innerHTML = testa + _dsTabellaHTML(conf, celle, it);
+  }).catch(e => {
+    console.error('renderAdminDettagliSet', e);
+    box.innerHTML = testa + '<p style="color:var(--text);">❌ ' + (it ? 'Lettura non riuscita: ' : 'Read failed: ') + esc(e?.code || e?.message || '') + '</p>';
+  });
 }
 // si salvano solo le spunte diverse dal descrittore: le altre seguono lui, anche se un giorno cambia
 async function salvaQuestionario() {
@@ -65144,7 +65327,8 @@ function adminTab(tab) {
   if (tab === 'fotoannuncio') renderAdminFotoAnnuncio();     // v7.182 (Franco)
   // v7.254 (Franco: «all'ingresso in pagina, l'ordinamento deve essere per "Quantità" in ordine decrescente»; prima
   //    era per numero) - a pari quantità resta l'ordine per numero
-  if (tab === 'mancoliste') { _ml.col = 'quante'; _ml.verso = 'giu'; renderAdminMancoliste(); }
+  //    v7.255 - e si riapre sul tab dov'era, MANCOLISTE la prima volta
+  if (tab === 'mancoliste') { _ml.col = 'quante'; _ml.verso = 'giu'; _mlVista(_ml.vista || 'ml'); }
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
