@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.257 - Modificati index.html (versione) e js/app.js. DETTAGLI SET DOPPI: la tendina del filtro di un set mostra solo
+//          i valori che darebbero righe, tenendo conto degli altri filtri, col numero di righe, e resta neutra (Franco:
+//          baco, prendeva il colore del valore filtrato). «vuota» a schermo diventa «manca» (Franco). «Filtra tabella»:
+//          le righe con quel valore in almeno un set; la riga dei filtri dei set dice «Filtra set ▸».
 // v7.256 - Modificati index.html (versione) e js/app.js. DETTAGLI SET DOPPI: riquadro «Incolla valori» (set, valore, numeri
 //          uno per riga o separati da virgole): conferma con quante celle cambiano e quali numeri non ci sono, poi una
 //          scrittura sola (Franco: «se ti passo dei numeri, qui, mi imposti tu i valori, nella tabella?»); «tutti» al posto
@@ -32062,7 +32066,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.256';
+const JS_VERSION = 'v7.257';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45912,11 +45916,13 @@ const _DS_VALORI = [
   { v: 'Pox defect', testo: 'var(--info)' },
   // v7.256 (Franco: «recupero va rossa come vuota») - il fondo rosso della vuota (prima solo la scritta rossa)
   { v: 'Recupero', fondo: 'rgba(229,57,53,0.75)' },
-  { v: '', it: 'vuota', en: 'empty', fondo: 'rgba(229,57,53,0.75)' },
+  // v7.257 (Franco: «cambia "vuota" con "manca"») - a schermo; il valore salvato resta la stringa vuota
+  { v: '', it: 'manca', en: 'missing', fondo: 'rgba(229,57,53,0.75)' },
 ];
 // `filtri`: per ogni set il valore che le righe devono avere ('*' = tutti)
 // `spDa`, `spA`: i set di «Sposta set» (v7.256)
-let _ds = { sub: 's3', dati: {}, nSet: {}, filtri: {}, spDa: '1', spA: '2' };
+// `tabella`: il filtro su tutta la tabella ('*' = nessuno; v7.257)
+let _ds = { sub: 's3', dati: {}, nSet: {}, filtri: {}, tabella: '*', spDa: '1', spA: '2' };
 const _dsNumSet = conf => _ds.nSet[conf.sid] || conf.set;
 const _dsDocId = sid => 'dettagliSet_' + sid;
 const _dsValore = (celle, id, n) => { const r = celle[id]; return r && Object.prototype.hasOwnProperty.call(r, n) ? r[n] : 'Ho'; };
@@ -45925,7 +45931,33 @@ const _dsStile = v => { const x = _DS_VALORI.find(y => y.v === v) || {};
 // 🆕 (Franco: «per ogni colonna, deve essere possibile filtrare le righe della tabella per i valori possibili a tendina;
 //    ovviamente si filtra tutta la tabella») - i filtri di più colonne valgono insieme; cambiando una cella la riga resta
 //    dov'è anche se non rispetta più il filtro, finché non si cambia un filtro
-const _dsPassa = (celle, id) => Object.entries(_ds.filtri).every(([n, v]) => v === '*' || _dsValore(celle, id, n) === v);
+// 🆕 v7.257 (Franco: «un filtro anche a livello di tutta la tabella: se seleziono "recupero" deve mostrare le sole righe
+//    nelle quali almeno una colonna ha il valore "recupero"»; «chiamalo "Filtra tabella"») - vale insieme ai filtri dei set
+const _dsPassaTabella = (celle, id, nSet) => _ds.tabella === '*' || Array.from({ length: nSet || 0 }, (_, i) => String(i + 1)).some(n => _dsValore(celle, id, n) === _ds.tabella);
+const _dsPassa = (celle, id, nSet) => Object.entries(_ds.filtri).every(([n, v]) => v === '*' || _dsValore(celle, id, n) === v) && _dsPassaTabella(celle, id, nSet);
+function _dsFiltraTabella(v) {
+  _ds.tabella = v;
+  renderAdminDettagliSet();
+}
+// per la tendina di «Filtra tabella»: quante righe hanno almeno una volta ogni valore, fra quelle che passano i filtri dei set
+function _dsContiTabella(arts, celle, nSet) {
+  const set = Array.from({ length: nSet }, (_, i) => String(i + 1)), conti = {};
+  arts.filter(f => Object.entries(_ds.filtri).every(([n, v]) => v === '*' || _dsValore(celle, f.id, n) === v)).forEach(f => {
+    new Set(set.map(n => _dsValore(celle, f.id, n))).forEach(v => { conti[v] = (conti[v] || 0) + 1; });
+  });
+  return conti;
+}
+// v7.257 - per la tendina del filtro del set `n`: quante righe hanno ogni valore, fra quelle che passano gli altri filtri
+function _dsContiFiltro(arts, celle, n, nSet) {
+  const altri = Object.entries(_ds.filtri).filter(([k, v]) => k !== String(n) && v !== '*');
+  const conti = {};
+  arts.forEach(f => {
+    if (!altri.every(([k, v]) => _dsValore(celle, f.id, k) === v) || !_dsPassaTabella(celle, f.id, nSet)) return;
+    const v = _dsValore(celle, f.id, n);
+    conti[v] = (conti[v] || 0) + 1;
+  });
+  return conti;
+}
 function _dsFiltra(n, v) {
   _ds.filtri[n] = v;
   renderAdminDettagliSet();
@@ -45968,6 +46000,7 @@ async function _dsAggiungiSet() {
 function _dsScegli(k) {
   _ds.sub = k;
   _ds.filtri = {};
+  _ds.tabella = '*';
   renderAdminDettagliSet();
 }
 const _dsRicolora = (el, v) => el.setAttribute('style', el.getAttribute('style').replace(/background:[^;]*;color:[^;]*;/, '') + _dsStile(v));
@@ -46014,7 +46047,7 @@ async function _dsIncolla() {
   const casella = document.getElementById('ds-inc-numeri');
   const celle = _ds.dati[conf.sid] || (_ds.dati[conf.sid] = {});
   const r = _dsDaIncollare(_dsArticoli(conf), celle, casella && casella.value, n, v);
-  const nomeV = v || (it ? 'vuota' : 'empty');
+  const nomeV = v || (it ? 'manca' : 'missing');
   if (!r.cambia.length) {
     toast(it ? 'Niente da cambiare' + (r.uguali ? ': ' + r.uguali + ' erano già «' + nomeV + '»' : '') + (r.assenti.length ? '; non trovati: ' + r.assenti.join(', ') : '')
              : 'Nothing to change', 'error');
@@ -46081,10 +46114,25 @@ function _dsTabellaHTML(conf, celle, it) {
   const tendina = 'padding:2px 2px;font-size:0.78rem;border:1px solid var(--border2);border-radius:6px;';
   const opzioni = v => _DS_VALORI.map(x => '<option value="' + esc(x.v) + '"' + (x.v === v ? ' selected' : '') + '>' + esc(x.v || (it ? x.it : x.en)) + '</option>').join('');
   // la riga dei filtri, sotto le intestazioni: «Tutti» più le stesse voci delle celle
-  const filtro = n => { const f = _ds.filtri[n] ?? '*';
-    return '<select onchange="_dsFiltra(\'' + n + '\', this.value)" title="' + (it ? 'Filtra per questo set' : 'Filter by this set') + '" style="' + tendina + _dsStile(f === '*' ? 'Ho' : f) + '">'
-      + '<option value="*"' + (f === '*' ? ' selected' : '') + '>' + (it ? 'Tutti' : 'All') + '</option>' + opzioni(f === '*' ? null : f) + '</select>'; };
-  const visibili = arts.filter(f => _dsPassa(celle, f.id)).length;
+  // 🔄 v7.257 (Franco: «la tendina del filtro dovrebbe mostrare solo i valori per cui ha senso filtrare») - le voci sono
+  //    i valori che ci sono in quel set fra le righe che passano GLI ALTRI filtri, col numero di righe; quella scelta
+  //    resta sempre. (Franco, baco: «il colore delle celle filtrate si applica come sfondo alla tendina del filtro
+  //    stesso») - la tendina del filtro resta neutra; un filtro acceso si vede dal bordo azzurro.
+  const filtro = n => { const f = _ds.filtri[n] ?? '*', conti = _dsContiFiltro(arts, celle, n, set.length);
+    const voci = _DS_VALORI.filter(x => conti[x.v] || x.v === f);
+    return '<select onchange="_dsFiltra(\'' + n + '\', this.value)" title="' + (it ? 'Filtra per questo set' : 'Filter by this set') + '" style="' + tendina + _dsStile('Ho')
+      + (f === '*' ? '' : 'border-color:var(--info);box-shadow:0 0 0 1px var(--info);') + '">'
+      + '<option value="*"' + (f === '*' ? ' selected' : '') + '>' + (it ? 'Tutti' : 'All') + '</option>'
+      + voci.map(x => '<option value="' + esc(x.v) + '"' + (x.v === f ? ' selected' : '') + '>' + esc(x.v || (it ? x.it : x.en)) + ' (' + (conti[x.v] || 0) + ')</option>').join('') + '</select>'; };
+  const visibili = arts.filter(f => _dsPassa(celle, f.id, set.length)).length;
+  // v7.257 - «Filtra tabella», prima della riga di «Filtra set»: stesse regole delle voci (solo i valori presenti, col
+  //    numero delle righe che li hanno almeno una volta), stessa tendina neutra
+  const contiT = _dsContiTabella(arts, celle, set.length), ft = _ds.tabella;
+  const filtroTabella = '<label style="font-size:0.88rem;color:var(--info);margin-right:0.3rem;">' + (it ? 'Filtra tabella' : 'Filter table') + '</label>'
+    + '<select onchange="_dsFiltraTabella(this.value)" style="' + tendina + _dsStile('Ho') + (ft === '*' ? '' : 'border-color:var(--info);box-shadow:0 0 0 1px var(--info);') + '">'
+    + '<option value="*"' + (ft === '*' ? ' selected' : '') + '>' + (it ? 'Tutti' : 'All') + '</option>'
+    + _DS_VALORI.filter(x => contiT[x.v] || x.v === ft).map(x => '<option value="' + esc(x.v) + '"' + (x.v === ft ? ' selected' : '') + '>' + esc(x.v || (it ? x.it : x.en)) + ' (' + (contiT[x.v] || 0) + ')</option>').join('')
+    + '</select>';
   // v7.256 - il riquadro «Incolla valori» (vedi `_dsIncolla`); set e valore restano quelli scelti l'ultima volta
   const et = 'font-size:0.88rem;color:var(--info);margin-right:0.3rem;';
   const incolla = '<details style="margin-bottom:0.9rem;"' + (_ds.incollaAperto ? ' open' : '') + ' ontoggle="_ds.incollaAperto = this.open">'
@@ -46113,6 +46161,7 @@ function _dsTabellaHTML(conf, celle, it) {
     + incolla + sposta
     + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin-bottom:0.8rem;">'
     + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_dsAggiungiSet()">' + (it ? 'Aggiungi set' : 'Add set') + '</button>'
+    + '<span>' + filtroTabella + '</span>'
     + '<span style="font-size:0.85rem;color:var(--info);">' + (it ? 'Righe: ' : 'Rows: ') + visibili + (visibili !== arts.length ? (it ? ' su ' : ' of ') + arts.length : '') + '</span></div>'
     // (Franco: «scorrendo verso il basso si perde quasi subito la testata … vorrei mantenere la testata fissa») - la tabella
     //    scorre dentro un riquadro alto quanto lo schermo, e lì le due righe di testa restano ferme (sticky, fondo pieno)
@@ -46121,9 +46170,10 @@ function _dsTabellaHTML(conf, celle, it) {
     + '<tr><th style="' + th + 'background:var(--bg);">N.</th><th style="' + th + 'background:var(--bg);">' + (it ? 'Nome' : 'Name') + '</th>'
     + set.map(n => '<th style="' + th + 'background:var(--bg);">Set ' + n + '</th>').join('') + '</tr>'
     // v7.256 (Franco: «non trovo il filtro per valore della tendina») - la riga dei filtri si dichiara
-    + '<tr><th style="' + th + 'background:var(--bg);"></th><th style="' + th + 'background:var(--bg);text-align:right;color:var(--info);">' + (it ? 'Filtra ▸' : 'Filter ▸') + '</th>' + set.map(n => '<th style="' + th + 'background:var(--bg);">' + filtro(n) + '</th>').join('') + '</tr>'
+    // 🔄 v7.257 (Franco: «quello attuale lo rinomini in "filtra set"»)
+    + '<tr><th style="' + th + 'background:var(--bg);"></th><th style="' + th + 'background:var(--bg);text-align:right;color:var(--info);">' + (it ? 'Filtra set ▸' : 'Filter set ▸') + '</th>' + set.map(n => '<th style="' + th + 'background:var(--bg);">' + filtro(n) + '</th>').join('') + '</tr>'
     + '</thead>'
-    + arts.map(f => '<tr' + (_dsPassa(celle, f.id) ? '' : ' style="display:none;"') + '><td style="' + td + 'font-variant-numeric:tabular-nums;">' + (f.number || '') + '</td><td style="' + td + 'white-space:nowrap;">' + esc(_mlNome(f)) + '</td>'
+    + arts.map(f => '<tr' + (_dsPassa(celle, f.id, set.length) ? '' : ' style="display:none;"') + '><td style="' + td + 'font-variant-numeric:tabular-nums;">' + (f.number || '') + '</td><td style="' + td + 'white-space:nowrap;">' + esc(_mlNome(f)) + '</td>'
       + set.map(n => { const v = _dsValore(celle, f.id, n);
         return '<td style="' + td + '"><select data-ds-serie="' + esc(conf.sid) + '" data-ds-id="' + esc(f.id) + '" data-ds-set="' + n + '" onchange="_dsCambia(this)" style="' + tendina + _dsStile(v) + '">' + opzioni(v) + '</select></td>'; }).join('')
       + '</tr>').join('')
