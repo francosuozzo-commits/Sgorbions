@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.259">
+<link rel="stylesheet" href="css/style.css?v=7.260">
 
 
 <style>
@@ -784,6 +784,12 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
   background: var(--action-admin); color: #fff; font-family: var(--font-ui); font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
 #ml-linguetta:hover, #ann-linguetta:hover { background: var(--action-admin-hover); }
 @media (max-width: 860px) { #ml-linguetta, #ann-linguetta { display: none !important; } }
+/* 🆕 v7.260 (Franco: «le linguette admin falle tutte lunghe uguali») - le quattro arancio con la stessa larghezza da
+   chiuse: una minima comune, così «Macchie» al passaggio del mouse si allunga ancora come prima. */
+#imp-linguetta, #mac-linguetta, #ml-linguetta, #ann-linguetta { min-width: 10.5rem; box-sizing: border-box; }
+/* 🆕 v7.260 (Franco: «lascia i riquadri ma rendili non utilizzabili») - nelle sezioni coi tab (i retro) un riquadro della
+   ricerca che nel tab aperto non ha casi resta al suo posto, grigio e non premibile (`_attrSpentoNelTab`) */
+.riquadro-spento-tab { opacity: 0.4; filter: grayscale(1); pointer-events: none; user-select: none; }
 /* 🆕 v7.178 (Franco: «mostrare il campo "Commento album" quando si fa mouse over sulle card di una fpa / fcr») - una
    riga gialla sopra il fondo della foto, accesa al passaggio del mouse; sul telefono non c'è passaggio, quindi niente */
 .fig-commento-album { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 0.45rem 0.55rem;
@@ -3703,8 +3709,13 @@ di tutte le serie</button>
       </div>
     </div>
     <!-- 🆕 v7.195 - i tab delle sottoserie di retro («Retro» / «Retro non standard»): li disegna `_rendiTabSottoserie` -->
-    <div id="sottoserie-tab" style="display:none;flex-wrap:wrap;gap:0.5rem;margin:0.4rem 0 0.8rem;"></div>
-    <div id="items-pagination-top"></div>
+    <!-- 🔄 v7.260 (Franco: «li metterei sulla stessa riga della paginazione, tutto a sx: devono iniziare con l'inizio
+         della griglia») - i tab e la paginazione in alto su una riga sola: i tab a sinistra, allineati alla prima card
+         da `_allineaTabSottoserie`; la paginazione resta centrata nello spazio che avanza. -->
+    <div id="riga-tab-paginazione" style="display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap;">
+      <div id="sottoserie-tab" style="display:none;flex-wrap:wrap;align-items:flex-end;gap:0.25rem;margin:0 0 1rem;flex:0 0 auto;border-bottom:2px solid var(--accent);"></div>
+      <div id="items-pagination-top" style="flex:1 1 auto;min-width:0;"></div>
+    </div>
     <div class="grid-6" id="items-grid">
       <div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora !</p></div>
     </div>
@@ -6891,7 +6902,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.259"></script>
+<script src="js/app.js?v=7.260"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6915,7 +6926,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.259'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.260'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
