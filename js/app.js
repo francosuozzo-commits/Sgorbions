@@ -1,7 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.257 - Modificati index.html (versione) e js/app.js. DETTAGLI SET DOPPI: la tendina del filtro di un set mostra solo
+// v7.258 - Modificati index.html (versione) e js/app.js. MANCOLISTA: il numero dell'articolo apre la sua scheda (Franco).
+//          Tab nuovo «Doppi» nella scheda di ogni articolo (dopo Ebay; in lettura solo admin, anche dal telefono), coi
+//          nomi di Franco: «Disponibilità in set doppi» (`quante`, era «Quante» nel Generale), «Disponibilità singole
+//          doppie» (campo nuovo `disponibili`, un numero; il clone non lo copia) e, sulle fcr base, «Disponibilità
+//          singole doppie totale», sola lettura = base + variazioni ufficiali (invisibili no), con la spiegazione sotto.
+//          Via la «Disponibilità» a testo libero del tab Ebay (v7.039, `disponibilita`): il Salva la svuota, e la «A»
+//          dell'album non la conta più.
+// v7.257 -Modificati index.html (versione) e js/app.js. DETTAGLI SET DOPPI: la tendina del filtro di un set mostra solo
 //          i valori che darebbero righe, tenendo conto degli altri filtri, col numero di righe, e resta neutra (Franco:
 //          baco, prendeva il colore del valore filtrato). «vuota» a schermo diventa «manca» (Franco). «Filtra tabella»:
 //          le righe con quel valore in almeno un set; la riga dei filtri dei set dice «Filtra set ▸».
@@ -32066,7 +32073,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.257';
+const JS_VERSION = 'v7.258';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45602,6 +45609,18 @@ const _ML_FUORI = ['attaccare'];
 const _mlHaQuante = f => !!f && !_ML_FUORI.includes(_aggTipoDi(f));
 const _mlConta = f => _mlHaQuante(f) && !f.invisibile && _eBase(f);
 const _mlNumero = v => { const n = parseInt(v, 10); return Number.isFinite(n) && n >= 0 ? n : null; };
+// 🆕 v7.258 (Franco: «un campo chiamato Disponibilità totale, da mostrare solo per le fcr base … in sola lettura … la somma
+//    della disponibilità della versione base + quella delle sue variazioni ufficiali») - null fuori dalle fcr base.
+//    `propria`: la disponibilità della base da usare (la casella mentre si scrive); senza, quella salvata. Vuoto = 0;
+//    le variazioni invisibili non contano (regola dei contatori).
+const _dispTotaleFcr = (f, tutti, propria) => !f || _aggTipoDi(f) !== 'figurines' || !_eBase(f) ? null
+  : (propria !== undefined ? propria : f.disponibili || 0)
+    + (tutti || []).filter(x => x && x.isVariation && x.baseFigurineId === f.id && !x.invisibile).reduce((s, x) => s + (x.disponibili || 0), 0);
+function _feAggiornaDispTotale(el) {
+  const out = document.getElementById('fe-disponibili-totale');
+  const f = getData('figurines', []).find(x => x.id === el.dataset.figId);
+  if (out && f) out.textContent = _dispTotaleFcr(f, getData('figurines', []), _mlNumero(el.value) || 0);
+}
 // `col`: la colonna dell'ordine ('numero', 'quante', 'nome'), `verso`: 'su' crescente, 'giu' decrescente (clic sulle intestazioni)
 // `filtro`: null = tutte le righe, N = solo gli articoli a cui ne mancano N (clic nella tabellina MANCANZE)
 let _ml = { sid: '', tipo: '', col: 'numero', verso: 'su', filtro: null };
@@ -45874,7 +45893,8 @@ function renderAdminMancoliste() {
       + '<button type="button" data-ml-id="' + esc(f.id) + '" onclick="_mlPasso(this, 1)" title="' + (it ? 'Una in più' : 'One more') + '" style="' + freccia + '">▲</button>'
       + '<button type="button" data-ml-id="' + esc(f.id) + '" onclick="_mlPasso(this, -1)" title="' + (it ? 'Una in meno' : 'One less') + '" style="' + freccia + 'margin-left:0.25rem;">▼</button></td>'
       // (Franco: «per le fcr, nella mancolista, non mostrare il nome del retro associato») - per loro il Nome, non il Nome completo
-      + '<td style="' + td + 'font-variant-numeric:tabular-nums;">' + (f.number || '') + '</td><td style="' + td + '">' + esc(_mlNome(f)) + '</td></tr>').join('')
+      // 🆕 v7.258 (Franco: «il numero dell'articolo rendilo cliccabile; cliccando si apre l'articolo») - link alla scheda
+      + '<td style="' + td + 'font-variant-numeric:tabular-nums;"><a href="#" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;" title="' + (it ? 'Apri l\'articolo' : 'Open the item') + '" style="color:var(--info);text-decoration:underline;">' + (f.number || '—') + '</a></td><td style="' + td + '">' + esc(_mlNome(f)) + '</td></tr>').join('')
     + '</table></div><div id="ml-scarti"></div></div>';
   box.innerHTML = html;
   _mlColora();
@@ -53548,8 +53568,8 @@ function _albumHaTestiAnnuncio(f) {
   if (!f || f.section !== 'albums') return false;
   const pieno = v => typeof v === 'string' && v.trim() !== '';
   // 🔄 v7.237 - i quattro campi vecchi non contano più: al loro posto i testi per account
-  return ['disponibilita'].some(k => pieno(f[k]))
-    || Object.values(f.testiAccount || {}).some(t => Object.values(t || {}).some(pieno))
+  // 🗑️ v7.258 - e nemmeno la Disponibilità a testo libero, cancellata (Franco)
+  return Object.values(f.testiAccount || {}).some(t => Object.values(t || {}).some(pieno))
     || Object.values(f.fotoAnnuncio || {}).some(pieno);
 }
 function _segnoAnnuncio(f) {
@@ -58386,6 +58406,8 @@ function cloneFigurine(itemId) {
   b.pagine = []; b.sfogliabile = false;
   // v7.254 - e nemmeno «Quante»: le copie che Franco ha sono dell'articolo di partenza
   b.quante = null;
+  // v7.258 - né la Disponibilità: è dell'articolo di partenza
+  b.disponibili = null;
   // v6.105 - e non copia nemmeno l'ESITO della pubblicazione. Non era un caso da gestire prima,
   // perche' la finestra ripopolava i campi uno per uno e questi non li toccava; con lo spread ci
   // finirebbero dentro tutti. `ebay` contiene `listingId` e `offerId` di annunci VERI: un oggetto
@@ -66771,7 +66793,7 @@ function updateBellBadge() {
 // si dimenticherebbe. E' il difetto che questo file ha registrato piu' volte di ogni altro.
 // 📌 L'elenco e' SEPARATO da `_FE_TAB`: sono due schede diverse e possono avere tab diversi -
 // in lettura non c'e' niente da modificare, in modifica non c'e' niente da sfogliare.
-const _FD_TAB = ['generale', 'pagine', 'ebay'];
+const _FD_TAB = ['generale', 'pagine', 'ebay', 'doppi'];   // v7.258: + Doppi (solo admin)
 
 // 🆕 v6.888 - LA BARRA DEI TAB DELLA VISTA IN LETTURA SI COSTRUISCE DA UN ELENCO.
 // 🔴 Era scritta a mano con due bottoni, e i tab adesso possono essere due o tre secondo il
@@ -67974,6 +67996,8 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   if (currentUser?.isAdmin && String(f.note || '').trim()) {
     rows.push(`<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">Note</span><span class="detail-value" style="font-size:0.88rem;line-height:1.5;white-space:pre-wrap;">${esc(f.note)}</span></div>`);
   }
+  // 📌 v7.258 - «Disponibilità in set doppi» e «Disponibilità singole doppie» in lettura stanno nel tab «Doppi»
+  //    (`_bloccoDoppiLettura`), solo admin
 
   // Taglia (only for series with hasSizes)
   // v6.148 - e sempre sui prodotti extra serie, dove la Taglia e' una delle tre scelte della form.
@@ -68219,9 +68243,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   if (isAdmin && !_isMobileViewport()) {
     const conditionLabel = f.condition === 'used' ? (currentLang === 'it' ? 'Usato' : 'Used') : (currentLang === 'it' ? 'Nuovo' : 'New');
     const ebayRows = [];
-    // 🆕 v7.039 - la disponibilità, in cima come nella scheda in modifica
-    ebayRows.push('<div class="detail-row"><span class="detail-label">📦 ' + (currentLang === 'it' ? 'Disponibilità' : 'Availability') + '</span><span class="detail-value">'
-      + (f.disponibilita ? esc(f.disponibilita) : '<span style="color:var(--muted);font-style:italic;">—</span>') + '</span></div>');
+    // 🗑️ v7.258 - via la disponibilità a testo libero (v7.039): il numero nuovo sta nel Generale
     ebayRows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Ebay' : 'For sale'}</span><span class="detail-value">${f.forSale ? `<span style="color:var(--success);">✓ €${(f.price||0).toFixed(2)} · ${currentLang === 'it' ? 'Q.tà' : 'Qty'} ${f.quantity||1} · ${conditionLabel}</span>` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'no' : 'no') + '</span>'}</span></div>`);
     // v6.103 (§12.1, segnalato da Franco) - QUESTA VISTA ERA IL TERZO ELENCO DEGLI STESSI CAMPI, e
     // nessuno lo contava: il §12.1 parla di DUE form, ma i campi eBay si scrivono in tre posti - la
@@ -68263,12 +68285,14 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     const _voci = [{ k: 'generale', et: '📋 ' + (currentLang === 'it' ? 'Generale' : 'General') }];
     if (_pagLett) _voci.push({ k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') });
     _voci.push({ k: 'ebay', et: '🏷️ Ebay' });
+    _voci.push({ k: 'doppi', et: '🧾 ' + (currentLang === 'it' ? 'Doppi' : 'Duplicates') });   // 🆕 v7.258
     const tabNav = _tabNavLettura(_voci);
     // v6.529 - lo scambio si lancia dopo, quando questo markup e' nel DOM (in fondo alla funzione).
   document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + tabNav +
       '<div id="figdetail-tab-generale">' + rows.join('') + '</div>' +
       (_pagLett ? '<div id="figdetail-tab-pagine" style="display:none;">' + _pagLett + '</div>' : '') +
       '<div id="figdetail-tab-ebay" style="display:none;">' + ebayRows.join('') + '</div>' +
+      '<div id="figdetail-tab-doppi" style="display:none;">' + _bloccoDoppiLettura(f) + '</div>' +
       _sfogliaCodaDetail() + _codaAzioniDetail(bottomButtons);
     // v6.103 - dopo l'innerHTML, altrimenti i due contenitori non esistono ancora.
     if (f.forSale) riempiEbayVistaLettura(f);
@@ -68281,13 +68305,16 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     //    ⚠️ Senza pagine da mostrare la barra non si disegna: `_tabNavLettura` con una voce sola
     //    torna stringa vuota, quindi per una figurina non cambia assolutamente niente.
     const _pagLett2 = _bloccoPagineLettura(f);
-    const _tabLett2 = _tabNavLettura(_pagLett2
-      ? [{ k: 'generale', et: '📋 ' + (currentLang === 'it' ? 'Generale' : 'General') },
-         { k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') }]
-      : []);
+    // 🆕 v7.258 - l'admin dal telefono passa da qui, e il tab «Doppi» lo vede anche lui
+    const _doppi2 = !!currentUser?.isAdmin;
+    const _voci2 = [{ k: 'generale', et: '📋 ' + (currentLang === 'it' ? 'Generale' : 'General') }];
+    if (_pagLett2) _voci2.push({ k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') });
+    if (_doppi2) _voci2.push({ k: 'doppi', et: '🧾 ' + (currentLang === 'it' ? 'Doppi' : 'Duplicates') });
+    const _tabLett2 = _tabNavLettura(_voci2);
     document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + _tabLett2
       + '<div id="figdetail-tab-generale">' + rows.join('') + '</div>'
       + (_pagLett2 ? '<div id="figdetail-tab-pagine" style="display:none;">' + _pagLett2 + '</div>' : '')
+      + (_doppi2 ? '<div id="figdetail-tab-doppi" style="display:none;">' + _bloccoDoppiLettura(f) + '</div>' : '')
       + _sfogliaCodaDetail() + _codaAzioniDetail(bottomButtons);
   }
   // 🆕 v6.966 - il markup c'e' (in tutti e due i rami): si riempie il campo Personaggio.
@@ -69964,7 +69991,60 @@ let editingFeEbayImgFileSave = null;
 // mano; al terzo sarebbero diventate tre, e il giorno del quarto una si dimenticherebbe - e' il
 // difetto che questo file ha registrato piu' volte di ogni altro: due elenchi che devono dire per
 // forza la stessa cosa. Qui si cicla, e un tab nuovo si aggiunge a questa riga.
-const _FE_TAB = ['generale', 'pagine', 'ebay'];
+const _FE_TAB = ['generale', 'pagine', 'ebay', 'doppi'];   // v7.258: + Doppi
+
+// 🆕 v7.258 (Franco) - IL TAB «DOPPI» DELLA SCHEDA IN MODIFICA: la Disponibilità (un numero, `disponibili`, su ogni
+//    articolo; il clone non la copia) e, solo sulle fcr base, la Disponibilità totale in sola lettura (`_dispTotaleFcr`),
+//    rifatta mentre si scrive. La spiegazione è scritta sotto il numero: il `title` sul telefono non si vede.
+// 🔄 v7.258 (Franco: «"Presente in set doppi" va anch'esso nel tab "Doppi", prima di "Disponibilità"»; poi i nomi:
+//    «Disponibilità in set doppi» (`quante`), «Disponibilità singole doppie» (`disponibili`), «Disponibilità singole
+//    doppie totale»)
+const _DOPPI_ET = {
+  quante: ['Disponibilità in set doppi', 'Available in duplicate sets'],
+  disp: ['Disponibilità singole doppie', 'Single duplicates available'],
+  tot: ['Disponibilità singole doppie totale', 'Single duplicates available, total'] };
+const _doppiEt = k => _DOPPI_ET[k][currentLang === 'it' ? 0 : 1];
+function _dispTotaleHint() {
+  return currentLang === 'it' ? 'La somma della «Disponibilità singole doppie» di questa versione base e delle sue variazioni ufficiali (le invisibili no). Non si scrive: si aggiorna da sola.'
+    : 'The sum of the «Single duplicates available» of this base version and of its official variations (invisible ones excluded). Not editable: it updates by itself.';
+}
+function _bloccoDoppiEdit(f) {
+  const it = currentLang === 'it';
+  let h = '';
+  // 🆕 v7.254 (Franco) - «QUANTE»: quante copie ne ha, per le mancoliste; non sulle figurine per album. Accanto «Quante ne
+  //    mancano ?»: il numero scritto si toglie dalla casella e questa si svuota; si salva col «Salva» della scheda.
+  if (currentUser?.isAdmin && _mlHaQuante(f)) {
+    h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('quante') + '</span>'
+      + '<span class="detail-value" style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">'
+      + '<input type="number" min="0" step="1" class="form-input" id="fe-quante" value="' + (f.quante ?? '') + '" style="max-width:6rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
+      + '<input type="number" min="1" step="1" class="form-input" id="fe-quante-mancano" onchange="_mlTogliDaCasella(\'fe-quante\', this)" placeholder="' + (it ? 'Quante ne mancano ?' : 'How many missing?') + '" style="max-width:12rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
+      + '</span></div>';
+  }
+  h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('disp') + '</span>'
+    + '<span class="detail-value"><input type="number" min="0" step="1" class="form-input" id="fe-disponibili" value="' + (f.disponibili ?? '') + '" data-fig-id="' + esc(f.id || '') + '" oninput="_feAggiornaDispTotale(this)" style="max-width:6rem;padding:0.3rem 0.5rem;font-size:0.9rem;"></span></div>';
+  const tot = _dispTotaleFcr(f, getData('figurines', []));
+  if (tot !== null) {
+    h += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label" title="' + esc(_dispTotaleHint()) + '" style="cursor:help;">' + _doppiEt('tot') + ' ⓘ</span>'
+      + '<span class="detail-value" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;"><span id="fe-disponibili-totale" style="font-weight:600;font-variant-numeric:tabular-nums;">' + tot + '</span>'
+      + '<span style="font-size:0.75rem;color:var(--muted);max-width:22rem;text-align:right;line-height:1.35;">' + esc(_dispTotaleHint()) + '</span></span></div>';
+  }
+  return h;
+}
+// e lo stesso tab in lettura (solo admin)
+function _bloccoDoppiLettura(f) {
+  const it = currentLang === 'it';
+  const vuoto = '<span style="color:var(--muted);font-style:italic;">' + (it ? 'non impostata' : 'not set') + '</span>';
+  let h = '';
+  if (_mlHaQuante(f)) h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('quante') + '</span><span class="detail-value">' + (f.quante == null ? vuoto : esc(String(f.quante))) + '</span></div>';
+  h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('disp') + '</span><span class="detail-value">' + (f.disponibili == null ? vuoto : esc(String(f.disponibili))) + '</span></div>';
+  const tot = _dispTotaleFcr(f, getData('figurines', []));
+  if (tot !== null) {
+    h += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label" title="' + esc(_dispTotaleHint()) + '" style="cursor:help;">' + _doppiEt('tot') + ' ⓘ</span>'
+      + '<span class="detail-value" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;"><span style="font-weight:600;font-variant-numeric:tabular-nums;">' + tot + '</span>'
+      + '<span style="font-size:0.75rem;color:var(--muted);max-width:22rem;text-align:right;line-height:1.35;">' + esc(_dispTotaleHint()) + '</span></span></div>';
+  }
+  return h;
+}
 function switchFeTab(tab) {
   _FE_TAB.forEach(k => {
     const div = document.getElementById('fe-tab-' + k);
@@ -70379,7 +70459,7 @@ function _bozzaNuovoItem(sezione, seriesId) {
     baseFigurineId: null, retroId: null, retroBianco: false,
     changeType: '', printErrorType: null,
     img: null, imgRetro: null, ebayImg: null,
-    forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new', disponibilita: null, fotoProtetta: null,   // v7.104: null = segue la tipologia
+    forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new', disponibili: null, fotoProtetta: null,   // v7.104: null = segue la tipologia
     ebayAccounts: null, daPubblicare: false,
     // v6.144 - il box da cui si sta creando. Fuori da un box e' null, e resta null: cosi' un
     // oggetto creato dalla serie normale non finisce dentro un contenitore per sbaglio.
@@ -70613,6 +70693,8 @@ function switchToEditMode(figId) {
     '<button type="button" id="fe-tab-btn-generale" onclick="switchFeTab(\'generale\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Generale</button>' +
     _tabPagineBtn(f) +
     '<button type="button" id="fe-tab-btn-ebay" onclick="switchFeTab(\'ebay\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>' +
+    // 🆕 v7.258 - il tab «Doppi», su ogni tipologia
+    '<button type="button" id="fe-tab-btn-doppi" onclick="switchFeTab(\'doppi\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🧾 ' + (currentLang === 'it' ? 'Doppi' : 'Duplicates') + '</button>' +
     '</div>';
   // 🔄 v7.082 (Franco: «da quando le due foto dell'album, nella sua form, sono andate in basso a
   //    tutto? mettile in alto a dx, come per le altre tda») - con le foto dentro il tab, il tab si
@@ -71160,16 +71242,8 @@ function switchToEditMode(figId) {
       + '</span></div>';
   }
 
-  // 🆕 v7.254 (Franco) - «QUANTE»: quante copie ne ha, per le mancoliste; non sulle figurine per album. Accanto «Quante ne
-  //    mancano ?»: il numero scritto si toglie da «Quante» e la casella si svuota; si salva col «Salva» della scheda.
-  if (currentUser?.isAdmin && _mlHaQuante(f)) {
-    const _it = currentLang === 'it';
-    html += '<div class="detail-row"><span class="detail-label">Quante</span>'
-      + '<span class="detail-value" style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">'
-      + '<input type="number" min="0" step="1" class="form-input" id="fe-quante" value="' + (f.quante ?? '') + '" style="max-width:6rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
-      + '<input type="number" min="1" step="1" class="form-input" id="fe-quante-mancano" onchange="_mlTogliDaCasella(\'fe-quante\', this)" placeholder="' + (_it ? 'Quante ne mancano ?' : 'How many missing?') + '" style="max-width:12rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
-      + '</span></div>';
-  }
+  // 📌 v7.258 - «Quante» (v7.254), ora «Disponibilità in set doppi», sta nel tab «Doppi» (`_bloccoDoppiEdit`)
+  // 📌 v7.258 - la «Disponibilità» sta nel tab «Doppi» (`_bloccoDoppiEdit`), non qui
 
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Foto non disponibile':'Photo unavailable') + '</span>' +
     '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">' +
@@ -71239,10 +71313,8 @@ function switchToEditMode(figId) {
 
   // Tab Ebay: Vendita (Da vendere / Prezzo / Quantità / Condizione) + foto dedicata
   html += '<div id="fe-tab-ebay" style="display:none;">';
-  // 🆕 v7.039 (Franco: «un campo chiamato disponibilità, admin visible… va nella scheda Ebay») - testo libero,
-  //    sempre visibile: non dipende da «In vendita». Il tab lo vede solo l'admin.
-  html += '<div style="margin-bottom:0.75rem;"><label class="detail-label" style="display:block;margin-bottom:0.3rem;">📦 ' + (currentLang==='it'?'Disponibilità':'Availability') + '</label>'
-    + '<input class="form-input" type="text" id="fe-disponibilita" value="' + esc(f.disponibilita || '') + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>';
+  // 🗑️ v7.258 (Franco: «quello del tab ebay, cancellalo») - via la «Disponibilità» a testo libero della v7.039
+  //    (`disponibilita`): al suo posto il numero `disponibili` nel tab Generale. Il Salva svuota il campo vecchio.
   // 🆕 v7.184 - le pagine per le foto annuncio, solo sull'album base con le pagine sue (vedi `_FA_SITI`)
   // 🔄 v7.200 - le foto annuncio e i testi per account scendono sotto il flag Ebay, in due linguette (`_sottoTabEbay`)
   html += '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">' +
@@ -71306,6 +71378,9 @@ function switchToEditMode(figId) {
     '<button id="fe-ebay-remove-bg-btn" type="button" onclick="removeBgFromEbay()" class="btn-foto" style="width:100%;margin-top:0.4rem;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' +
     '</div>';
   html += '</div>'; // chiude fe-tab-ebay
+  // 🆕 v7.258 (Franco: «crea un tab nella form di dettaglio di ogni tipologia di articolo, chiamato "Doppi", e metti il
+  //    campo Disponibilità qui») - dopo Ebay
+  html += '<div id="fe-tab-doppi" style="display:none;">' + _bloccoDoppiEdit(f) + '</div>';
 
   // v6.052 (Franco) - I PULSANTI SALGONO IN CIMA E CI RESTANO.
   // Stavano in fondo al form, dopo il tab Ebay: per salvare bisognava scorrere tutto ogni volta.
@@ -74511,8 +74586,10 @@ async function saveFigFromDetail(figId, opzioni) {
       // 🔴 v6.253 - SENZA QUESTA RIGA IL TIPO DI OMAGGIO NON SI SALVAVA AFFATTO dalla scheda.
       freeVersionType: document.getElementById('fe-free-version-type')?.value || null,
       printErrorType: document.getElementById('fe-print-error-type')?.value.trim() || null,
-      // 🆕 v7.039 - la disponibilità: il vuoto diventa null
-      disponibilita: (document.getElementById('fe-disponibilita')?.value || '').trim() || null,
+      // 🗑️ v7.258 - la disponibilità a testo libero (v7.039) non c'è più: il Salva la svuota
+      disponibilita: null,
+      // 🆕 v7.258 - «Disponibilità», un numero (vuoto = null); solo se la casella c'era
+      ...(document.getElementById('fe-disponibili') ? { disponibili: _mlNumero(document.getElementById('fe-disponibili').value) } : {}),
       // 🆕 v7.184 - le caselle delle foto annuncio. Solo se c'erano: altrove la chiave non si scrive
       ...(document.getElementById('fe-foto-annuncio') ? { fotoAnnuncio: _feFotoAnnuncio() } : {}),
       // 🗑️ v7.199 - gli sfondi delle foto (v7.185) non ci sono più: dove il campo è rimasto, il Salva lo svuota
