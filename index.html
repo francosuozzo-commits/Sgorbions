@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.254">
+<link rel="stylesheet" href="css/style.css?v=7.255">
 
 
 <style>
@@ -2374,7 +2374,7 @@ button.back-btn { color:#ffffff; }
 <!-- 🆕 v7.120 (Franco) - «Togli macchie»: solo admin, arancio, prima della colonna blu (sotto «Impersona») -->
 <button type="button" id="mac-linguetta" onclick="_cliccaLinguettaMacchie()">🧽 Macchie</button>
 <!-- 🆕 v7.254 (Franco) - «Mancoliste»: solo admin, arancio, sotto «Macchie»; apre la sezione della console -->
-<button type="button" id="ml-linguetta" onclick="showAdminTab('mancoliste')">🧾 Mancoliste</button>
+<button type="button" id="ml-linguetta" onclick="showAdminTab('mancoliste')">🧾 Set doppi</button>
 <!-- 🆕 v7.254 (Franco: «anche per gli annunci») - all'admin e al venditore, come la voce della barra che sul desktop sparisce -->
 <button type="button" id="ann-linguetta" onclick="apriAnnunciNav()">📢 Annunci</button>
 <button type="button" id="wz-linguetta" class="solo-wz" onclick="apriWizardLista()" aria-label="Riprendi il Questionario Sgorbions">
@@ -4158,9 +4158,6 @@ di tutte le serie</button>
           <button class="admin-tab" onclick="adminTab('gsc')">🔍 Google Search Console</button>
           <button class="admin-tab" onclick="adminTab('griglie')">&#128208; Griglie</button>
           <button class="admin-tab" onclick="adminTab('settings')" data-i18n="admin.settings.tab">⚙️ Impostazioni</button>
-          <!-- 🆕 v7.254 (Franco: «mi serve una nuova sezione nella admin console, chiamata Mancoliste») - in ordine alfabetico
-               dopo Impostazioni; la disegna `renderAdminMancoliste` -->
-          <button class="admin-tab" onclick="adminTab('mancoliste')">🧾 Mancoliste</button>
           <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
           <button class="admin-tab" onclick="adminTab('protezione')">🔒 Protezione foto</button>
           <!-- 🆕 v7.156 (Franco: «se vuoi possiamo gestire anche questa cosa in configurazione») - quali tipologie hanno le
@@ -4169,6 +4166,10 @@ di tutte le serie</button>
           <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
           <button class="admin-tab" onclick="adminTab('segnalazioni')" data-i18n="admin.segnalazioni">🔔 Segnalazioni</button>
           <button class="admin-tab" onclick="adminTab('series')" data-i18n="admin.series">Series</button>
+          <!-- 🆕 v7.254 (Franco: «mi serve una nuova sezione nella admin console, chiamata Mancoliste»); la disegna
+               `renderAdminMancoliste`. 🔄 v7.255 (Franco: «la sezione MANCOLISTE la rinominiamo come MIEI SET»; poi: «la
+               sezione della admin console deve chiamarsi "Set doppi" (anche la linguetta)») - in ordine alfabetico dopo Serie -->
+          <button class="admin-tab" onclick="adminTab('mancoliste')">🧾 Set doppi</button>
           <button class="admin-tab" onclick="adminTab('tipoarticolo')">🧩 Tipologie di articoli</button>
           <button class="admin-tab active" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
         </div>
@@ -4525,7 +4526,17 @@ di tutte le serie</button>
         </div>
         <!-- 🆕 v7.254 - LA SEZIONE «MANCOLISTE»: la disegna `renderAdminMancoliste` -->
         <div id="admin-mancoliste" class="admin-section">
+          <!-- 🆕 v7.255 (Franco: «vorrei poi un altro tab; chiamato DETTAGLI SET; il primo tab lo chiami MANCOLISTE») -
+               i due tab li accende `_mlVista`; DETTAGLI SET lo disegna `renderAdminDettagliSet` -->
+          <!-- (Franco: «la sezione MANCOLISTE la rinominiamo come MIEI SET») -->
+          <h3 style="font-family:var(--font-ui);margin:0 0 0.4rem;">🧾 Set doppi</h3>
+          <div class="ml-schede" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin:0.4rem 0 1rem;">
+            <button class="admin-subtab active" data-ml-vista="ml" onclick="_mlVista('ml')">MANCOLISTE</button>
+            <!-- (Franco: «il tab DETTAGLI SET deve chiamarsi DETTAGLI SET DOPPI») -->
+            <button class="admin-subtab" data-ml-vista="ds" onclick="_mlVista('ds')">DETTAGLI SET DOPPI</button>
+          </div>
           <div><div id="admin-mancoliste-box"></div></div>
+          <div><div id="admin-dettagli-set-box" style="display:none;"></div></div>
         </div>
         <!-- 🆕 v7.156 - LA SEZIONE «QUESTIONARIO»: la disegna `renderAdminQuestionario` -->
         <div id="admin-questionario" class="admin-section">
@@ -6880,7 +6891,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.254"></script>
+<script src="js/app.js?v=7.255"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6904,7 +6915,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.254'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.255'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
