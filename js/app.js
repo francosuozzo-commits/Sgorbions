@@ -1,7 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.255 - Modificati index.html (versione) e js/app.js. Mancoliste: la tabella grande si chiama «MANCOLISTA», col titolo
+// v7.256 - Modificati index.html (versione) e js/app.js. DETTAGLI SET DOPPI: riquadro «Incolla valori» (set, valore, numeri
+//          uno per riga o separati da virgole): conferma con quante celle cambiano e quali numeri non ci sono, poi una
+//          scrittura sola (Franco: «se ti passo dei numeri, qui, mi imposti tu i valori, nella tabella?»); «tutti» al posto
+//          dei numeri. «Sposta set»: il set d'arrivo prende i valori di quello di partenza. Colori: vuota e Recupero
+//          rosse, Rov gialla, RROV arancione. La riga dei filtri dice «Filtra ▸».
+// v7.255 -Modificati index.html (versione) e js/app.js. Mancoliste: la tabella grande si chiama «MANCOLISTA», col titolo
 //          alla stessa altezza di quello della tabellina accanto, che da «MANCANZE» diventa «MANCANTI» (Franco).
 //          La sezione si chiama «Set doppi» (tab e linguetta) e ha due tab: MANCOLISTE (quella di prima) e DETTAGLI SET DOPPI,
 //          coi sottotab Serie 1, Serie 3, Serie 4. Serie 3: 256 figurine per album × 10 set, tendina Ho / Rov / RROV /
@@ -32057,7 +32062,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.255';
+const JS_VERSION = 'v7.256';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45900,14 +45905,18 @@ const _DS_SERIE = [
 // (Franco: «"pox defect" scrivilo in azzurro, "recupero" scrivilo in rosso») - `testo` è il colore della scritta
 const _DS_VALORI = [
   { v: 'Ho' },
-  { v: 'Rov', fondo: 'rgba(var(--action-admin-rgb),0.45)' },
-  { v: 'RROV', fondo: 'rgba(229,57,53,0.75)' },
+  // v7.256 (Franco: «l'arancione di "rov" fallo più chiaro»; poi: «vuota fallo rosso, rov fallo giallo, rrov fallo
+  //    arancione») - fondi pieni, con la scritta scura dove il fondo è chiaro
+  { v: 'Rov', fondo: '#ffe066', testo: '#1a1028' },
+  { v: 'RROV', fondo: '#ff9233', testo: '#1a1028' },
   { v: 'Pox defect', testo: 'var(--info)' },
-  { v: 'Recupero', testo: '#ff5252' },
-  { v: '', it: 'vuota', en: 'empty' },
+  // v7.256 (Franco: «recupero va rossa come vuota») - il fondo rosso della vuota (prima solo la scritta rossa)
+  { v: 'Recupero', fondo: 'rgba(229,57,53,0.75)' },
+  { v: '', it: 'vuota', en: 'empty', fondo: 'rgba(229,57,53,0.75)' },
 ];
 // `filtri`: per ogni set il valore che le righe devono avere ('*' = tutti)
-let _ds = { sub: 's3', dati: {}, nSet: {}, filtri: {} };
+// `spDa`, `spA`: i set di «Sposta set» (v7.256)
+let _ds = { sub: 's3', dati: {}, nSet: {}, filtri: {}, spDa: '1', spA: '2' };
 const _dsNumSet = conf => _ds.nSet[conf.sid] || conf.set;
 const _dsDocId = sid => 'dettagliSet_' + sid;
 const _dsValore = (celle, id, n) => { const r = celle[id]; return r && Object.prototype.hasOwnProperty.call(r, n) ? r[n] : 'Ho'; };
@@ -45979,6 +45988,92 @@ async function _dsCambia(el) {
     toast((it ? '❌ Salvataggio fallito: ' : '❌ Save failed: ') + (e?.code || e?.message || 'errore'), 'error');
   }
 }
+// 🆕 v7.256 (Franco: «se ti passo dei numeri, qui, mi imposti tu i valori, nella tabella?»; poi «serie 3; set numero 4;
+//    articoli "rov": 419 472 …») - INCOLLA VALORI: un set, un valore e i numeri delle figurine (uno per riga, o separati
+//    da virgole o spazi). Prima di scrivere la conferma dice quante celle cambiano, quante lo erano già e quali numeri
+//    non ci sono; poi una scrittura sola, con dentro solo quelle celle (stesso `setDoc` + `merge` della tendina).
+// 🔄 (Franco: «dove chiedi il numero degli articoli, dai la possibilità di dire "tutti"») - la parola «tutti» (o
+//    «tutte», «all») al posto dei numeri vale tutte le righe del set
+const _dsTutti = testo => /^\s*(tutti|tutte|all)\s*$/i.test(String(testo || ''));
+function _dsDaIncollare(arts, celle, testo, n, v) {
+  const tutti = _dsTutti(testo);
+  const numeri = tutti ? [] : [...new Set(String(testo || '').split(/[\s,;]+/).filter(Boolean).map(Number))];
+  const perNumero = new Map(arts.filter(f => f.number).map(f => [Number(f.number), f]));
+  const trovati = tutti ? arts : numeri.filter(x => perNumero.has(x)).map(x => perNumero.get(x));
+  return {
+    cambia: trovati.filter(f => _dsValore(celle, f.id, n) !== v),
+    uguali: trovati.filter(f => _dsValore(celle, f.id, n) === v).length,
+    assenti: numeri.filter(x => !perNumero.has(x)).map(x => Number.isFinite(x) ? String(x) : '?'),
+  };
+}
+async function _dsIncolla() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it', conf = _DS_SERIE.find(x => x.k === _ds.sub);
+  if (!conf || !conf.set) return;
+  const n = (document.getElementById('ds-inc-set') || {}).value, v = (document.getElementById('ds-inc-val') || {}).value ?? 'Ho';
+  const casella = document.getElementById('ds-inc-numeri');
+  const celle = _ds.dati[conf.sid] || (_ds.dati[conf.sid] = {});
+  const r = _dsDaIncollare(_dsArticoli(conf), celle, casella && casella.value, n, v);
+  const nomeV = v || (it ? 'vuota' : 'empty');
+  if (!r.cambia.length) {
+    toast(it ? 'Niente da cambiare' + (r.uguali ? ': ' + r.uguali + ' erano già «' + nomeV + '»' : '') + (r.assenti.length ? '; non trovati: ' + r.assenti.join(', ') : '')
+             : 'Nothing to change', 'error');
+    return;
+  }
+  if (!await _finestraConferma({ titolo: '🧾 ' + (it ? 'Set doppi' : 'Duplicate sets'),
+    testo: it ? conf.nome + ' · Set ' + n + '\n' + r.cambia.length + ' celle diventano «' + nomeV + '»'
+                + (_dsTutti(casella && casella.value) ? ' (tutte quelle del set che non lo erano già).' : ': ' + r.cambia.map(f => f.number).join(', ') + '.')
+                + (r.uguali ? '\n' + r.uguali + ' erano già «' + nomeV + '».' : '') + (r.assenti.length ? '\nNon trovati, restano fuori: ' + r.assenti.join(', ') + '.' : '') + '\n\nConfermi ?'
+              : conf.nome + ' · Set ' + n + '\n' + r.cambia.length + ' cells become «' + nomeV + '».\n\nConfirm?',
+    aCapo: true, ok: it ? 'Scrivi' : 'Write' })) return;
+  const scritte = {};
+  r.cambia.forEach(f => { scritte[f.id] = { [n]: v }; });
+  try {
+    const { doc, setDoc } = window._fb;
+    await setDoc(doc(db, 'settings', _dsDocId(conf.sid)), { celle: scritte }, { merge: true });
+  } catch (e) {
+    console.error('_dsIncolla', e);
+    toast((it ? '❌ Salvataggio fallito: ' : '❌ Save failed: ') + (e?.code || e?.message || 'errore'), 'error');
+    return;
+  }
+  r.cambia.forEach(f => { (celle[f.id] = celle[f.id] || {})[n] = v; });
+  toast(it ? '✅ Scritte ' + r.cambia.length + ' celle' : '✅ ' + r.cambia.length + ' cells written', 'success');
+  renderAdminDettagliSet();
+}
+// 🆕 v7.256 (Franco: «mi serve una funzione "sposta set": chiede set di partenza e set di arrivo e copia i valori del
+//    primo nel secondo») - riga per riga il set d'arrivo prende il valore di quello di partenza (una cella mai toccata
+//    vale «Ho» e come «Ho» si copia); il set di partenza non cambia. Conferma, poi una scrittura sola con le sole celle
+//    d'arrivo diverse.
+function _dsDaSpostare(arts, celle, da, a) {
+  return arts.filter(f => _dsValore(celle, f.id, a) !== _dsValore(celle, f.id, da)).map(f => ({ f, v: _dsValore(celle, f.id, da) }));
+}
+async function _dsSposta() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it', conf = _DS_SERIE.find(x => x.k === _ds.sub);
+  if (!conf || !conf.set) return;
+  const da = (document.getElementById('ds-sp-da') || {}).value, a = (document.getElementById('ds-sp-a') || {}).value;
+  if (!da || !a || da === a) { toast(it ? 'Scegli due set diversi' : 'Pick two different sets', 'error'); return; }
+  const celle = _ds.dati[conf.sid] || (_ds.dati[conf.sid] = {});
+  const cambia = _dsDaSpostare(_dsArticoli(conf), celle, da, a);
+  if (!cambia.length) { toast(it ? 'Il set ' + a + ' è già uguale al set ' + da : 'Set ' + a + ' already equals set ' + da, 'error'); return; }
+  if (!await _finestraConferma({ titolo: '🧾 ' + (it ? 'Set doppi' : 'Duplicate sets'),
+    testo: it ? conf.nome + '\nIl set ' + a + ' prende i valori del set ' + da + ', riga per riga: cambiano ' + cambia.length + ' celle del set ' + a + '.\nIl set ' + da + ' resta com\'è.\n\nConfermi ?'
+              : conf.nome + '\nSet ' + a + ' takes the values of set ' + da + ': ' + cambia.length + ' cells change.\n\nConfirm?',
+    aCapo: true, ok: it ? 'Sposta' : 'Move' })) return;
+  const scritte = {};
+  cambia.forEach(({ f, v }) => { scritte[f.id] = { [a]: v }; });
+  try {
+    const { doc, setDoc } = window._fb;
+    await setDoc(doc(db, 'settings', _dsDocId(conf.sid)), { celle: scritte }, { merge: true });
+  } catch (e) {
+    console.error('_dsSposta', e);
+    toast((it ? '❌ Salvataggio fallito: ' : '❌ Save failed: ') + (e?.code || e?.message || 'errore'), 'error');
+    return;
+  }
+  cambia.forEach(({ f, v }) => { (celle[f.id] = celle[f.id] || {})[a] = v; });
+  toast(it ? '✅ Set ' + a + ': scritte ' + cambia.length + ' celle' : '✅ Set ' + a + ': ' + cambia.length + ' cells written', 'success');
+  renderAdminDettagliSet();
+}
 function _dsTabellaHTML(conf, celle, it) {
   const arts = _dsArticoli(conf), set = Array.from({ length: _dsNumSet(conf) }, (_, i) => String(i + 1));
   const th = 'padding:5px 8px;font-size:0.76rem;color:var(--accent2);font-weight:600;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
@@ -45990,9 +46085,32 @@ function _dsTabellaHTML(conf, celle, it) {
     return '<select onchange="_dsFiltra(\'' + n + '\', this.value)" title="' + (it ? 'Filtra per questo set' : 'Filter by this set') + '" style="' + tendina + _dsStile(f === '*' ? 'Ho' : f) + '">'
       + '<option value="*"' + (f === '*' ? ' selected' : '') + '>' + (it ? 'Tutti' : 'All') + '</option>' + opzioni(f === '*' ? null : f) + '</select>'; };
   const visibili = arts.filter(f => _dsPassa(celle, f.id)).length;
+  // v7.256 - il riquadro «Incolla valori» (vedi `_dsIncolla`); set e valore restano quelli scelti l'ultima volta
+  const et = 'font-size:0.88rem;color:var(--info);margin-right:0.3rem;';
+  const incolla = '<details style="margin-bottom:0.9rem;"' + (_ds.incollaAperto ? ' open' : '') + ' ontoggle="_ds.incollaAperto = this.open">'
+    + '<summary style="cursor:pointer;font-family:var(--font-ui);font-weight:700;font-size:0.9rem;">' + (it ? '📋 Incolla valori' : '📋 Paste values') + '</summary>'
+    + '<div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.8rem;margin-top:0.6rem;">'
+    + '<label style="' + et + '">Set</label><select id="ds-inc-set" onchange="_ds.incSet = this.value" style="' + tendina + _dsStile('Ho') + '">'
+    + set.map(n => '<option value="' + n + '"' + (n === _ds.incSet ? ' selected' : '') + '>' + n + '</option>').join('') + '</select>'
+    + '<label style="' + et + '">' + (it ? 'Valore' : 'Value') + '</label><select id="ds-inc-val" onchange="_ds.incVal = this.value" style="' + tendina + _dsStile('Ho') + '">' + opzioni(_ds.incVal ?? 'Rov') + '</select>'
+    + '<textarea id="ds-inc-numeri" class="form-input" rows="5" placeholder="' + (it ? 'Numeri delle figurine, uno per riga, oppure «tutti»' : 'Sticker numbers, one per line, or «all»') + '" style="width:14rem;max-width:100%;"></textarea>'
+    + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_dsIncolla()">' + (it ? 'Applica' : 'Apply') + '</button>'
+    + '</div></details>';
+  // e «Sposta set» (vedi `_dsSposta`)
+  const sceltaSet = (id, quale) => '<select id="' + id + '" onchange="_ds.' + quale + ' = this.value" style="' + tendina + _dsStile('Ho') + '">'
+    + set.map(n => '<option value="' + n + '"' + (n === _ds[quale] ? ' selected' : '') + '>' + n + '</option>').join('') + '</select>';
+  const sposta = '<details style="margin-bottom:0.9rem;"' + (_ds.spostaAperto ? ' open' : '') + ' ontoggle="_ds.spostaAperto = this.open">'
+    + '<summary style="cursor:pointer;font-family:var(--font-ui);font-weight:700;font-size:0.9rem;">' + (it ? '🔁 Sposta set' : '🔁 Move set') + '</summary>'
+    + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.8rem;margin-top:0.6rem;">'
+    + '<label style="' + et + '">' + (it ? 'Dal set' : 'From set') + '</label>' + sceltaSet('ds-sp-da', 'spDa')
+    + '<label style="' + et + '">' + (it ? 'al set' : 'to set') + '</label>' + sceltaSet('ds-sp-a', 'spA')
+    + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_dsSposta()">' + (it ? 'Sposta' : 'Move') + '</button>'
+    + '<span style="font-size:0.8rem;color:var(--text);opacity:0.8;">' + (it ? 'Il set d\'arrivo prende i valori di quello di partenza, che resta com\'è.' : 'The target set takes the values of the source set.') + '</span>'
+    + '</div></details>';
   return '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.8rem;line-height:1.5;max-width:900px;">'
     + (it ? 'Una riga per ogni figurina per album base, una colonna per ogni set. Ogni scelta si salva subito, solo quella cella. Sotto ogni set, la tendina filtra le righe.'
           : 'One row per base album sticker, one column per set. Each choice is saved at once, that cell only. Under each set, the drop-down filters the rows.') + '</p>'
+    + incolla + sposta
     + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin-bottom:0.8rem;">'
     + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_dsAggiungiSet()">' + (it ? 'Aggiungi set' : 'Add set') + '</button>'
     + '<span style="font-size:0.85rem;color:var(--info);">' + (it ? 'Righe: ' : 'Rows: ') + visibili + (visibili !== arts.length ? (it ? ' su ' : ' of ') + arts.length : '') + '</span></div>'
@@ -46002,7 +46120,8 @@ function _dsTabellaHTML(conf, celle, it) {
     + '<thead style="position:sticky;top:0;z-index:2;">'
     + '<tr><th style="' + th + 'background:var(--bg);">N.</th><th style="' + th + 'background:var(--bg);">' + (it ? 'Nome' : 'Name') + '</th>'
     + set.map(n => '<th style="' + th + 'background:var(--bg);">Set ' + n + '</th>').join('') + '</tr>'
-    + '<tr><th style="' + th + 'background:var(--bg);"></th><th style="' + th + 'background:var(--bg);"></th>' + set.map(n => '<th style="' + th + 'background:var(--bg);">' + filtro(n) + '</th>').join('') + '</tr>'
+    // v7.256 (Franco: «non trovo il filtro per valore della tendina») - la riga dei filtri si dichiara
+    + '<tr><th style="' + th + 'background:var(--bg);"></th><th style="' + th + 'background:var(--bg);text-align:right;color:var(--info);">' + (it ? 'Filtra ▸' : 'Filter ▸') + '</th>' + set.map(n => '<th style="' + th + 'background:var(--bg);">' + filtro(n) + '</th>').join('') + '</tr>'
     + '</thead>'
     + arts.map(f => '<tr' + (_dsPassa(celle, f.id) ? '' : ' style="display:none;"') + '><td style="' + td + 'font-variant-numeric:tabular-nums;">' + (f.number || '') + '</td><td style="' + td + 'white-space:nowrap;">' + esc(_mlNome(f)) + '</td>'
       + set.map(n => { const v = _dsValore(celle, f.id, n);
