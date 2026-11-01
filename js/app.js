@@ -32078,7 +32078,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.259';
+const JS_VERSION = 'v7.260';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -39124,7 +39124,10 @@ function _etichettaSottoserie(v) {
 // 🆕 v7.195 - la stessa, sapendo la tipologia: dove le sottoserie stanno nei tab (i retro) il vuoto si chiama come la
 //    tipologia, «Retro» (Franco: «dentro 2 tab: Retro e Retro non standard»).
 function _etichettaSottoserieDi(v, sez) {
-  if (!v && sez && typeof _sottoserieInTab === 'function' && _sottoserieInTab(sez)) return getSectionLabel(sez);
+  // 🔄 v7.260 (Franco: «Retro, deve diventare "Retro standard"; così fa veramente coppia con "Retro non standard"»)
+  if (!v && sez && typeof _sottoserieInTab === 'function' && _sottoserieInTab(sez)) {
+    return currentLang === 'it' ? getSectionLabel(sez) + ' standard' : 'Standard ' + getSectionLabel(sez).toLowerCase();
+  }
   return _etichettaSottoserie(v);
 }
 
@@ -53604,6 +53607,28 @@ function _timbroStatoSerie(s) {
   return '';
 }
 
+// 🆕 v7.260 (Franco: «nelle card di una serie che non sia in stato "in arrivo", quindi accessibile, se tutta la sezione
+//    accessibile con la card (la sottoserie) non ha foto, allora metti il banner "in arrivo" anche alla foto della
+//    sezione») - IL TIMBRO «IN ARRIVO !» SULLA FOTO DI UNA CARD DELLA PAGINA DELLA SERIE: card di tipologia o di
+//    sottoserie, quando NESSUNO degli articoli a cui porta ha una foto (`_fotoFigurina`, la stessa domanda della
+//    griglia: vale anche la foto presa dalla base o dall'album indicato). Il flag «foto non disponibile» non è una foto.
+//    Su una serie «in arrivo» no: lì il timbro c'è già sulla serie. Gli articoli sono quelli che chi guarda vede
+//    (`getData` toglie già gli invisibili a chi non è admin). Il timbro si rifà a ogni giro: le card si riusano.
+function _timbroSezioneSenzaFoto(riquadro, articoli, serie) {
+  if (!riquadro) return;
+  const vecchio = riquadro.querySelector(':scope > .timbro-sez-arrivo');
+  if (vecchio) vecchio.remove();
+  if (!articoli || !articoli.length || _statoSerie(serie) === 'in-arrivo') return;
+  const tutti = getData('figurines', []);
+  if (articoli.some(f => _fotoFigurina(f, tutti))) return;
+  const t = document.createElement('div');
+  t.className = 'timbro-sez-arrivo';
+  t.innerHTML = _timbroHTML(currentLang === 'it' ? 'IN ARRIVO !' : 'COMING SOON !', 'var(--in-arrivo)');
+  riquadro.style.position = 'relative';
+  riquadro.style.containerType = 'inline-size';   // il timbro misura in `cqw` (vedi `_timbroHTML`)
+  riquadro.appendChild(t);
+}
+
 // 🆕 v6.609 (Franco: *«quando un articolo e' invisibile, fallo notare all'admin»*)
 // 📌 SOLO ADMIN, ed e' una scelta con un prezzo. «getData» toglie gia' gli invisibili a chi
 // non e' admin (v6.080), quindi oggi la guardia e' ridondante. Si mette lo stesso perche' se
@@ -56568,6 +56593,9 @@ function updateSectionCounts() {
       ? items.filter(f => !_gruppi.includes(String(f.subseries || '').trim()))
       : items;
     const total = _resto.length;
+    // 🆕 v7.260 - il timbro «IN ARRIVO !» se nessuno degli articoli a cui porta la card ha una foto (vedi la funzione)
+    try { const _c = el.closest('.section-choice-card'); _timbroSezioneSenzaFoto(_c && _c.firstElementChild, _resto, _serie); }
+    catch (e) { console.error('_timbroSezioneSenzaFoto', sec, e); }
     // 🔄 v6.477 (Franco: *"dovrebbe essere «xxx articoli»"*) — L'ULTIMA «oggetti».
     // 📌 Chiude un punto che il codice si era annotato da solo: il commento della
     // v6.471 diceva *"la gemella dice ancora «12 oggetti» per la stessa cosa: due
@@ -56694,7 +56722,7 @@ function _rendiCardSottoserie() {
             + 'border-radius:999px;width:30px;height:30px;line-height:1;cursor:pointer;'
             + 'font-size:0.95rem;background:rgba(0,0,0,0.6);color:#fff;">&#9998;</button>'
           : '')
-        + '<div style="width:100%;aspect-ratio:var(--hub-box-ratio);'
+        + '<div class="riquadro-sottoserie" style="width:100%;aspect-ratio:var(--hub-box-ratio);'
         + 'background:var(--bg3);overflow:hidden;background-size:contain;'
         + 'background-repeat:no-repeat;background-position:center;'
         + (foto ? 'background-image:url(\'' + cloudinaryUrl(foto, 'w_600,h_600,c_fit,q_auto,f_auto') + '\');' : '')
@@ -56718,6 +56746,9 @@ function _rendiCardSottoserie() {
       // 🆕 v6.692 - l'ultima riga, con la tipologia della SEZIONE a cui questa
       //    sottoserie appartiene. ⚠️ DOPO l'`innerHTML` qui sopra, che la cancellerebbe.
       _mettiRigaTipologia(card, sec);
+      // 🆕 v7.260 - e il timbro «IN ARRIVO !» se nessun articolo della sottoserie ha una foto
+      try { _timbroSezioneSenzaFoto(card.querySelector('.riquadro-sottoserie'), items.filter(f => String(f.subseries || '').trim() === nome), s); }
+      catch (e) { console.error('_timbroSezioneSenzaFoto', nome, e); }
       if (prec && prec.parentNode === griglia) prec.after(card); else griglia.appendChild(card);
       prec = card;
     });
@@ -57539,15 +57570,38 @@ function _rendiTabSottoserie() {
   const gruppi = (currentSection && _sottoserieInTab(currentSection)) ? _sottoserieDellaSezione() : [];
   if (gruppi.length < 2) { el.style.display = 'none'; el.innerHTML = ''; return; }
   el.style.display = 'flex';
+  // 🔄 v7.260 (Franco: «sembrano pulsanti e non linguette; devono sembrare linguette») - LINGUETTE DA SCHEDARIO: angoli
+  //    tondi solo in alto, niente bordo sotto, poggiate su una riga del colore di quella aperta; l'aperta è più alta e
+  //    piena, le altre più basse e spente.
   el.innerHTML = gruppi.map(v => {
     const attivo = (_sottoserieAttiva || '') === v;
-    return '<button type="button" data-sottoserie="' + esc(v) + '" onclick="scegliTabSottoserie(this)" style="font-family:var(--font-ui);font-size:0.9rem;padding:0.35rem 1rem;border-radius:10px;cursor:pointer;border:1px solid '
-      + (attivo ? 'var(--accent)' : 'var(--border)') + ';background:' + (attivo ? 'var(--accent)' : 'var(--card)') + ';color:'
-      + (attivo ? 'var(--bg)' : 'var(--text)') + ';font-weight:' + (attivo ? '700' : '400') + ';">' + esc(_etichettaSottoserieDi(v, currentSection)) + '</button>';
+    return '<button type="button" data-sottoserie="' + esc(v) + '" onclick="scegliTabSottoserie(this)" style="font-family:var(--font-ui);font-size:0.9rem;cursor:pointer;'
+      + 'border-radius:10px 10px 0 0;border:1px solid ' + (attivo ? 'var(--accent)' : 'var(--border)') + ';border-bottom:none;margin-bottom:' + (attivo ? '-2px' : '0') + ';'
+      + 'padding:' + (attivo ? '0.55rem 1.3rem' : '0.4rem 1.1rem') + ';'
+      + 'background:' + (attivo ? 'var(--accent)' : 'var(--bg3)') + ';color:' + (attivo ? 'var(--bg)' : 'var(--muted)') + ';'
+      + 'font-weight:' + (attivo ? '700' : '400') + ';">' + esc(_etichettaSottoserieDi(v, currentSection)) + '</button>';
   }).join('');
+  _allineaTabSottoserie();
+}
+// 🆕 v7.260 (Franco: «devono iniziare con l'inizio della griglia») - i tab stanno sulla riga della paginazione
+//    (`#riga-tab-paginazione`), e il loro bordo sinistro si porta su quello della prima card: la griglia può
+//    essere più stretta della pagina (le viste dei retro con le colonne larghe), quindi si misura a griglia disegnata.
+function _allineaTabSottoserie() {
+  const el = document.getElementById('sottoserie-tab'), riga = document.getElementById('riga-tab-paginazione');
+  const prima = document.querySelector('#items-grid > .fig-card, #items-grid .fig-card');
+  if (!el || !riga) return;
+  el.style.marginLeft = '0px';
+  if (el.style.display === 'none' || !prima) return;
+  // 📏 anche NEGATIVO: misurato sul sito (serie 4, retro, schermo 2560) la griglia è più larga della colonna della
+  //    pagina — prima card a 377px, riga della paginazione a 759px — e i tab devono uscire a sinistra fino a lei
+  const dx = Math.round(prima.getBoundingClientRect().left - riga.getBoundingClientRect().left);
+  if (dx) el.style.marginLeft = dx + 'px';
 }
 function scegliTabSottoserie(btn) {
   if (!btn) return;
+  // 🆕 v7.260 - dove sta la riga dei tab PRIMA del cambio (margine compreso): vedi `_tieniFermaLaGriglia`
+  const _riga = document.getElementById('riga-tab-paginazione');
+  const _primaY = _riga ? _riga.getBoundingClientRect().height : null;   // l'altezza della riga, non la posizione
   _sottoserieAttiva = btn.getAttribute('data-sottoserie') || '';
   currentItemPage = 1;
   const _s = getData('series', []).find(x => x.id === currentSeriesId);
@@ -57555,6 +57609,21 @@ function scegliTabSottoserie(btn) {
   _rendiTabSottoserie();
   renderItems();
   try { renderCaroselloSezione(); } catch (e) { console.error('renderCaroselloSezione', e); }
+  _tieniFermaLaGriglia(_primaY);
+  setTimeout(() => _tieniFermaLaGriglia(_primaY), 0);   // e dopo chi ridisegna i riquadri in differita
+}
+// 🆕 v7.260 (Franco: «non è il massimo che nel passare da retro std a retro non std il blocco griglia si sposti») -
+//    CAMBIANDO TAB NON SI MUOVE NIENTE. I riquadri della ricerca restano (spenti dove il tab non ha casi, vedi
+//    `_tuttiITab`); resta la paginazione, che con una pagina sola sparisce e abbassa la riga dei tab (📏 30px sulla
+//    serie 4). La riga allora tiene l'altezza che aveva (`min-height`), coi tab in basso (`align-items:flex-end`):
+//    né i tab né la griglia si spostano. 🔄 Franco ha scartato lo spazio aggiunto SOPRA la riga («tieni ferma la
+//    griglia ma si spostano tutti i pulsanti»). Entrando nella pagina (`openSeriesSection`) si azzera.
+function _tieniFermaLaGriglia(altezzaPrima) {
+  const riga = document.getElementById('riga-tab-paginazione');
+  if (!riga) return;
+  riga.style.minHeight = '';
+  if (altezzaPrima == null) return;
+  if (riga.getBoundingClientRect().height < altezzaPrima) riga.style.minHeight = Math.round(altezzaPrima) + 'px';
 }
 
 // 🔄 v6.869 - entrando in una sezione il pulsante cambia lato (vedi `_mostraSfogliaAlbum`), quindi
@@ -57576,6 +57645,7 @@ function openSeriesSection(section, sottoserie) {
   // 🆕 v7.232 - nella pagina di una famiglia «Filtra per famiglia» parte acceso su di lei (poi si spegne come sempre)
   if (_famigliaAperta) _raggr('famiglia').filtro = new Set([_famigliaAperta]);
   currentSection = section;
+  try { _tieniFermaLaGriglia(null); } catch (e) {}   // v7.260 - entrando nella pagina la riga dei tab riparte senza margine
   // 🆕 v6.651 - SI ENTRA DALLA PRIMA SOTTOSERIE (Franco: «mostriamo tutte le spille della
   //    prima sottoserie»), e `null` dove la sezione non ne usa.
   // ⚠️ DOPO `currentSection = section`: `_sottoserieDellaSezione` guarda la sezione CORRENTE, e
@@ -61049,7 +61119,9 @@ function getCurrentlyFilteredItems(opts) {
     // 📌 `skipLato` e `skipRaggr` RESTANO: quelli li chiede ancora chi calcola i riquadri.
     // 🔄 v6.775 - la condizione e' diventata `_delGruppoAttivo`, perche' adesso la chiede anche la
     //    testata. La regola non cambia di una virgola: cambia che e' scritta in un posto solo.
-    if (!_delGruppoAttivo(f)) return false;
+    // 🆕 v7.260 - `tuttiITab`: dove le sottoserie stanno nei TAB (i retro) chi decide QUALI riquadri esistono guarda
+    //    tutti i tab, così cambiando tab i riquadri restano (vedi `_tuttiITab`)
+    if (!(opts && opts.tuttiITab && _tuttiITab()) && !_delGruppoAttivo(f)) return false;
     // Filtro per categoria (solo Retro), attivato cliccando un box nello specchietto risultati (v5.762)
     // v6.157 - il filtro per categoria vale nei retro E dentro un box di tipo prodotto. Accendere
     // un chip che poi non filtra sarebbe peggio che non averlo: un comando che non fa niente.
@@ -61449,12 +61521,29 @@ header += `</div>`;
 // 🔴 Il box e' DOVE SI E', come la sezione e il gruppo: il setaccio lo sa dalla v6.144,
 //    questa funzione no. Le tre domande adesso stanno nello stesso posto, ed e' l'unico modo
 //    perche' non se ne dimentichi una la prossima volta.
+// 🔄 v7.260 - nelle sezioni coi TAB guarda tutti i tab: la leggono solo i due che decidono QUALI riquadri esistono
 function _articoliDiQuestaVista() {
   if (!currentSeriesId || !currentSection) return [];
+  const _tutti = typeof _tuttiITab === 'function' && _tuttiITab();
   return getData('figurines', []).filter(f =>
     f.seriesId === currentSeriesId && f.section === currentSection
     && (!_tipoProdottoCorrente || (f.tipoProdotto || '') === _tipoProdottoCorrente)
-    && (_sottoserieAttiva === null || String(f.subseries || '').trim() === _sottoserieAttiva));
+    && (_tutti || _sottoserieAttiva === null || String(f.subseries || '').trim() === _sottoserieAttiva));
+}
+// 🆕 v7.260 (Franco: «lascia i riquadri ma rendili non utilizzabili. ovviamente solo in questa particolare circostanza
+//    (2 tab nella stessa form di ricerca)») - SIAMO IN UNA SEZIONE COI TAB (i retro «standard» / «non standard»)?
+//    Lì QUALI riquadri della ricerca esistono lo decidono gli articoli di tutti i tab; i NUMERI restano quelli del tab
+//    aperto. Un riquadro che nel tab aperto non ha casi resta al suo posto con tutte le voci a zero: spento, grigio e
+//    non premibile (`.riquadro-spento-tab`). Fuori dai tab non cambia niente.
+function _tuttiITab() {
+  return !!currentSection && _sottoserieAttiva !== null && typeof _sottoserieInTab === 'function' && _sottoserieInTab(currentSection);
+}
+// gli attributi del contenitore di un riquadro: spento se in una sezione coi tab ha tutte le voci a zero.
+//    `pointer-events:none` anche sulla barra «Apri ▼»: il riquadro non si usa, ma resta dov'è (la ricerca non si sposta).
+function _attrSpentoNelTab(pairs) {
+  if (!_tuttiITab() || pairs.some(p => p[1] > 0)) return '';
+  return ' class="riquadro-spento-tab" title="' + (currentLang === 'it' ? 'Nessun caso in questo tab' : 'Nothing in this tab')
+    + '" data-spento-tab="1"';
 }
 // 🆕 v6.731 (Franco: «la categoria non e' una informazione obbligatoria per ogni tipologia
 // di articolo») - LA REGOLA NON E' «UN GRUPPO SOLO NON SI MOSTRA»: e' «si nasconde quando
@@ -62359,7 +62448,14 @@ function renderSpecchiettiTop() {
   //    pannello ci arrivano i soli conteggi, e da quelli il lato non si ricava piu'.
   // 📌 Chi non dichiara `partiDi` passa `null` e disegna esattamente come prima: gli altri quattro
   //    riquadri di questa riga non cambiano di una virgola.
-  const perVersione = _VERSIONI_CON_TIPO.map(v => ({ v, pairs: _raggrCounts(dellaSezione, v),
+  // 🔄 v7.260 - nei TAB (i retro) i riquadri sono quelli di tutti i tab, coi numeri del tab aperto (vedi `_tuttiITab`)
+  const _diTuttiITab = _tuttiITab() ? getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection) : null;
+  const _conZeriNelTab = (v, pairs) => {
+    if (!_diTuttiITab) return pairs;
+    const n = new Map(pairs);
+    return _raggrCounts(_diTuttiITab, v).map(([val]) => [val, n.get(val) || 0]);
+  };
+  const perVersione = _VERSIONI_CON_TIPO.map(v => ({ v, pairs: _conZeriNelTab(v, _raggrCounts(dellaSezione, v)),
                                                      parti: v.partiDi ? v.partiDi(dellaSezione) : null }));
   // v6.079 - anche le CATEGORIE entrano qui: erano il terzo nodo a se', ed e' per questo che i
   // riquadri finivano su due righe pur essendo affiancati fra loro. Un contenitore, tre pannelli.
@@ -62411,11 +62507,17 @@ function renderSpecchiettiTop() {
   //    diventa l'etichetta che la barra legge. Partono chiusi come i filtri; lo stato resta per la sessione, uno per
   //    riquadro (chiave dal titolo). Solo sul desktop: sul telefono questi riquadri si chiudono già col triangolino.
   // 🔄 v7.138 - e sul telefono pure: il triangolino c'era solo da dieci voci in su, quindi quasi mai.
+  // v7.260 - quali pannelli sono spenti nel tab: gli stessi, nell'ordine in cui sono stati scritti
+  const _spenti = [cat.length ? false : null, perFamiglia.length ? false : null]
+    .concat(perVersione.map(({ pairs }) => pairs.length ? !!_attrSpentoNelTab(pairs) : null)).filter(x => x !== null);
+  let _iPan = 0;
   [...el.children].forEach(p => {
+    const i = _iPan++;
     const t = p.firstElementChild;
     if (!t) return;
     t.classList.add('bm-etichetta');
     _bmApplica(p, 'num:' + t.textContent.replace(/\(.*$/, '').trim());
+    if (_spenti[i]) { p.classList.add('riquadro-spento-tab'); p.dataset.spentoTab = '1'; p.title = currentLang === 'it' ? 'Nessun caso in questo tab' : 'Nothing in this tab'; }
   });
   el.style.flexDirection = mob ? 'column' : 'row';
   el.style.display = html ? 'flex' : 'none';
@@ -62589,7 +62691,7 @@ function renderRaggrSummaries() {
     // elenco viene vuoto e il riquadro sparisce — contro la regola di Franco.
     // 📌 I CONTEGGI (sopra) non cambiano: restano zero, ed e' lo zero che rende la pillola
     // non premibile. Non si nasconde niente, si spegne.
-    const elenco = _raggrCounts(getCurrentlyFilteredItems({ skipRaggr: true, skipLato: true }), v);
+    const elenco = _raggrCounts(getCurrentlyFilteredItems({ skipRaggr: true, skipLato: true, tuttiITab: true }), v);   // v7.260: + tuttiITab
     return elenco.map(([val]) => [val, numeri.get(val) || 0]);
   };
   // 🆕 v6.268 (Franco) - UNO PER RIGA. Erano elastici e affiancati (`flex: 1 1 320px`, v6.079,
@@ -62648,7 +62750,7 @@ function renderRaggrSummaries() {
     // altro contenitore con 0.6rem, e l'ultimo riquadro lasciava un margine appeso in fondo al box.
     // 📌 Un margine per figlio e' una distanza scritta N volte; un `gap` sul padre e' scritta una
     // volta e non puo' essere diversa fra due coppie. Le spaziature disuguali nascono cosi'.
-    return `<div style="width:100%;" data-bm="${v.chiave}">`   // v7.000: la barra
+    return `<div style="width:100%;" data-bm="${v.chiave}"${_attrSpentoNelTab(pairs)}>`   // v7.000: la barra; v7.260: spento nel tab
       // 🆕 v6.330 - stato e toggle tornano. Che poi si veda o no un triangolino lo decide il
       // PANNELLO in base a quante opzioni ha: qui non si sa e non si deve sapere.
       // 🔄 v7.000 - sempre aperto dentro, e senza triangolino: ad aprire e chiudere ci pensa la barra
@@ -64446,6 +64548,7 @@ function renderItems() {
   _mobileSpazioEsclamativo(grid);   // v7.142: prima di misurare, perché il testo cambia di lunghezza
   _allineaRigheRetro();
   _osservaRigheRetro();
+  try { _allineaTabSottoserie(); } catch (e) { console.error('_allineaTabSottoserie', e); }   // v7.260
 
   // v6.106 (Franco, anomalia) - QUAL E' LA VISTA ATTIVA LO SI DECIDE QUI, IN FONDO E UNA VOLTA SOLA.
   // Vedi `_applicaVistaCorrente`. `renderItems` piu' sopra rimette la griglia visibile in tre punti,
@@ -71026,9 +71129,12 @@ function switchToEditMode(figId) {
   // descrivono il rapporto con una figurina di partenza, e li' non c'e' niente da cui discendere.
   // Nella bozza restano `false`, quindi non si crea nessun dato a meta'.
   // Flag Variazione ufficiale / non ufficiale (solo Figurine/Album/Altro) e Change (anche Retro)
-  if (!isRetrosItem && !_extraSerie) {
-    if (_versioneAmmessa('variation', f, figSeries))
+  // 🐛 v7.260 (Franco: «io il campo non lo vedo, sulla form di un retro sg4; c'è solo il campo "change"») - la
+  //    VARIAZIONE UFFICIALE anche sui retro, dove la serie la dichiara: dalla v7.192 la serie può accenderla per i retro
+  //    (`flagSerieRetro`, la serie 4 ce l'ha), ma qui la riga diceva ancora «solo non retro». La non ufficiale resta fuori.
+  if (!_extraSerie && _versioneAmmessa('variation', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('variation') + '<span class="detail-value"><input type="checkbox" id="fe-is-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-variation\')" ' + (f.isVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+  if (!isRetrosItem && !_extraSerie) {
     if (_versioneAmmessa('unofficialVariation', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('unofficialVariation') + '<span class="detail-value"><input type="checkbox" id="fe-is-unofficial-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-unofficial-variation\')" ' + (f.isUnofficialVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   }
