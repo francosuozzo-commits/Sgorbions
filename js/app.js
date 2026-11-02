@@ -1,7 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.259 - Modificati index.html (versione) e js/app.js. Categorie (Franco): per raggruppare, filtrare e contare «?» e
+// v7.261 - Modificati index.html (versione) e js/app.js. COLLAGE da Annunci (Franco): «Crea anche foto retro» anche per
+//          le tipologie diverse dalle fcr i cui articoli hanno la foto del retro, spuntata di serie
+//          (`_collageRetroPossibile`, `_collageRetroBase` con `_imgRetroDi`); «Quanti articoli in ogni foto ?», di serie
+//          il massimo del tipo (griglia 50), che segue il tipo (`_collageTipoScelto`, `_collagePerFoto`); «Tengo unite
+//          le sottocategorie ?» Sì/No, di serie Sì, solo dal sito (prima era sempre sì, v7.248).
+// v7.259 -Modificati index.html (versione) e js/app.js. Categorie (Franco): per raggruppare, filtrare e contare «?» e
 //          «!» non contano (`_catChiave`, `_catNome`): «PUBBLICITÀ PROGRESSO !?!» e «PUBBLICITÀ PROGRESSO» sono un gruppo
 //          solo, col nome senza segni; i dati restano come sono. Valgono i riquadri delle categorie dei retro e i loro
 //          filtri, la ricerca della tipologia, il collage, la griglia spezzata per categoria, le tendine dei cartoncini.
@@ -32078,7 +32083,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.260';
+const JS_VERSION = 'v7.261';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41856,7 +41861,21 @@ function _collageHTML(perBox) {
       // 🔄 v7.223 (Franco: «che tipo di collage: metti default "griglia"») - era il primo dell'elenco
       // v7.227 (Franco: «quando la funzione è fatta partire da un box, "che tipo di collage vuoi?" deve essere
       //    preimpostato a "mazzo di carte"») - dalla card il mazzo, da Annunci la griglia
-      (t.k === (perBox ? 'mazzo' : 'griglia') ? ' checked' : '') + ' onchange="_collageStato()"')).join('') +
+      (t.k === (perBox ? 'mazzo' : 'griglia') ? ' checked' : '') + ' onchange="_collageTipoScelto()"')).join('') +
+    // 🆕 v7.261 (Franco: «invece di dividere articoli a 50 per pagina, chiedi quanti articoli mettere per pagina; il default
+    //    è l'attuale valore»; «il discorso di mantenere unite le sottocategorie, fallo diventare una domanda; anche qui,
+    //    default sì») - solo da Annunci (dalla card la foto è una sola). Il numero parte dal massimo del tipo e lo segue
+    //    quando il tipo cambia (`_collageTipoScelto`); la domanda delle sottocategorie solo dal sito (`_collageStato`)
+    (perBox ? '' : '<div id="collage-perfoto-box">' +
+      '<div style="' + dom + '">' + (it ? 'Quanti articoli in ogni foto ?' : 'How many items in each photo?') + '</div>' +
+      '<input type="number" id="collage-perfoto" class="form-input" min="1" max="' + ((COLLAGE_TIPI.find(t => t.k === 'griglia') || {}).max || COLLAGE_MAX_FOTO) + '" step="1" value="' +
+        ((COLLAGE_TIPI.find(t => t.k === 'griglia') || {}).max || COLLAGE_MAX_FOTO) + '" style="width:6rem;" oninput="_collageStato()">' +
+      '<div id="collage-unisci-sub-box" style="display:none;">' +
+        '<div style="' + dom + '">' + (it ? 'Tengo unite le sottocategorie ?' : 'Keep subcategories together?') + '</div>' +
+        scelta('collage-unisci-sub', 'si', it ? 'Sì' : 'Yes', ' checked') + scelta('collage-unisci-sub', 'no', 'No') +
+        '<div style="font-size:0.75rem;opacity:0.7;color:var(--text);margin:0.2rem 0 0;">' + (it ? 'Quando gli articoli vanno in più foto, quelli della stessa sottocategoria stanno nella stessa foto.' : 'When items go into several photos, those of the same subcategory share a photo.') + '</div>' +
+      '</div>' +
+    '</div>') +
     // 🆕 v7.220 - il venditore (facoltativo) mette la sua texture; la texture è obbligatoria: da Annunci non ce n'è una
     //    di serie, dal «Cambia foto» di una card «Nessuna», come prima
     '<div style="' + dom + '">3. ' + (it ? 'Per quale venditore è ? (facoltativa)' : 'Which seller is it for? (optional)') + '</div>' +
@@ -42515,11 +42534,18 @@ function _collageRetroPossibile() {
   const sez = (document.getElementById(da === 'serie' ? 'collage-sito-serie-tda' : 'collage-sito-tda') || {}).value;
   const ver = (document.getElementById('collage-sito-serie-ver') || {}).value;
   const retro = da === 'serie' && ver && ver !== 'base' && (document.querySelector('input[name="collage-sito-lato"]:checked') || {}).value === 'retro';
-  return sez === 'figurines' && !retro;
+  if (retro) return false;
+  if (sez === 'figurines') return true;
+  // 🆕 v7.261 (Franco: «anche per le card devi chiedere se ci sono i retro; default risposta sì») - ogni altra
+  //    tipologia i cui articoli scelti hanno la foto del retro (Carte d'identità, Cartoncini…: `_imgRetroDi`)
+  const tutti = getData('figurines', []);
+  return _collageCandidati(true, true).el.some(f => _collageRetroBase(f, tutti));
 }
+// 🔄 v7.261 - fuori dalle fcr il retro è la foto del retro dell'articolo (`_imgRetroDi`), o quella della sua base
 function _collageRetroBase(f, tutti) {
   if (!f) return null;
   const b = f.baseFigurineId ? (tutti.find(x => x.id === f.baseFigurineId) || f) : f;
+  if ((f.section || 'figurines') !== 'figurines') return _imgRetroDi(f) || _imgRetroDi(b) || null;
   const r = b.retroId && tutti.find(x => x.id === b.retroId);
   return r ? _fotoFigurina(r, tutti) : null;
 }
@@ -42852,6 +42878,12 @@ function _collageProblema() {
   if (n < tipo.min || (_collageBoxDest && n > tipo.max)) return it
     ? (tipo.min === tipo.max ? 'Il collage ' + tipo.it.toLowerCase() + ' vuole esattamente ' + tipo.min + ' foto.' : 'Il collage ' + tipo.it.toLowerCase() + ' va da ' + tipo.min + ' a ' + tipo.max + ' foto.')
     : 'This collage takes ' + tipo.min + '–' + tipo.max + ' photos.';
+  // v7.261 - gli articoli in ogni foto: da 1 al massimo del tipo
+  const pfEl = !_collageBoxDest && document.getElementById('collage-perfoto');
+  const pf = pfEl ? Number(pfEl.value) : tipo.max;
+  if (!Number.isInteger(pf) || pf < 1 || pf > tipo.max) return it
+    ? 'Gli articoli in ogni foto vanno da 1 a ' + tipo.max + ' (collage ' + tipo.it.toLowerCase() + ').'
+    : 'Items in each photo: 1 to ' + tipo.max + '.';
   if (!_collageFoto.length) return it ? 'Scegli le foto (domanda 1).' : 'Choose the photos (question 1).';
   if (_collageFoto.length !== n) return it ? 'Hai scelto ' + _collageFoto.length + ' foto, ma ne devi unire ' + n + '.' : 'You chose ' + _collageFoto.length + ' photos, not ' + n + '.';
   // v7.220 - la texture è obbligatoria
@@ -42884,6 +42916,22 @@ function _collageStato() {
   const ub = document.getElementById('collage-usura-box');
   if (ub) { const tx = document.querySelector('input[name="collage-texture"]:checked'); ub.style.display = tx && tx.value !== 'nessuna' ? '' : 'none'; }
   _collageRetroMostra();   // v7.224 - cambiando il tipo di collage la spunta dei retro compare o sparisce
+  // v7.261 - «Tengo unite le sottocategorie ?» solo dal sito: le foto dal PC non hanno una sottocategoria
+  const usb = document.getElementById('collage-unisci-sub-box');
+  if (usb) usb.style.display = _collageModo === 'sito' ? '' : 'none';
+}
+// 🆕 v7.261 - cambiando il tipo di collage, «Quanti articoli in ogni foto ?» torna al massimo del nuovo tipo
+function _collageTipoScelto() {
+  const tipo = COLLAGE_TIPI.find(t => t.k === (document.querySelector('input[name="collage-tipo"]:checked') || {}).value);
+  const pf = document.getElementById('collage-perfoto');
+  if (tipo && pf) { pf.max = tipo.max; pf.value = tipo.max; }
+  _collageStato();
+}
+// 🆕 v7.261 - quanti articoli in ogni foto, da Annunci: la risposta, o il massimo del tipo dove la domanda non c'è
+function _collagePerFoto(tipo) {
+  const max = (COLLAGE_TIPI.find(t => t.k === tipo) || {}).max || COLLAGE_MAX_FOTO;
+  const pf = document.getElementById('collage-perfoto');
+  return _collageBoxDest || !pf ? max : Number(pf.value);
 }
 // 🆕 v7.224 - la spunta «Crea anche foto retro» si vede quando `_collageRetroPossibile`; se cambia, si rifà l'anteprima
 function _collageRetroMostra() {
@@ -43276,13 +43324,15 @@ async function _collageCrea() {
   // v7.224 - i retro si leggono prima del fronte: nella griglia il posto di ogni figurina tiene anche il suo retro
   const retri = await _collageRetriLeggi();
   // v7.243 - oltre il massimo del tipo, più foto (solo da Annunci: dalla card `_collageProblema` non ci arriva)
-  const maxFoto = (COLLAGE_TIPI.find(t => t.k === tipo) || {}).max || COLLAGE_MAX_FOTO;
+  // v7.261 - il massimo per foto è la risposta a «Quanti articoli in ogni foto ?» (`_collagePerFoto`)
+  const maxFoto = _collagePerFoto(tipo);
   const misure = _collageParti(imgs.length, maxFoto);
   if (!_collageBoxDest && misure.length > 1) {
     // v7.248 - con più sottocategorie, una (o più) foto per sottocategoria (`_collageDividiPerSub`): si riordinano
-    //    insieme le foto e i loro retro
+    //    insieme le foto e i loro retro. v7.261: solo se a «Tengo unite le sottocategorie ?» è sì
     const tutti = getData('figurines', []);
-    const g = _collageDividiPerSub(_collageFoto.map(x => { const f = x.fig && tutti.find(y => y.id === x.fig); return f ? String(f.subcategory || '').trim() : ''; }), maxFoto);
+    const unisci = (document.querySelector('input[name="collage-unisci-sub"]:checked') || {}).value !== 'no';
+    const g = unisci && _collageDividiPerSub(_collageFoto.map(x => { const f = x.fig && tutti.find(y => y.id === x.fig); return f ? String(f.subcategory || '').trim() : ''; }), maxFoto);
     if (g) await _collageCreaParti(tipo, g.ordine.map(i => imgs[i]), retri && g.ordine.map(i => retri[i]), sfondo, grande, jpg, g.misure);
     else await _collageCreaParti(tipo, imgs, retri, sfondo, grande, jpg, misure);
     return;
