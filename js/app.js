@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.262 - Modificati index.html (regole e versione) e js/app.js. LE LINGUETTE ARANCIO DI NUOVO A SCOMPARSA (Franco: «le
+//          linguette admin non sono più a scomparsa»; scelta: «solo l'icona, uguali»): Impersona, Macchie, Set doppi e
+//          Annunci da chiuse solo l'icona, larghe uguali (`min-width: 3.4rem`, era 10.5rem dalla v7.260), al passaggio
+//          il nome intero (`wz-ling-corta` / `wz-ling-lunga`, `_aggiornaLinguettaImpersona`).
+//          SEZIONE «🧾 DOPPIONI» della console (Franco): una riga per tipologia, una colonna per «Disponibilità in set
+//          doppi» e «Disponibilità singole doppie», tutte accese di serie (`settings/doppioni`, salvate solo le spente;
+//          `renderAdminDoppioni`, `salvaDoppioni`, `_doppiAccesoPer`). Il tab «Doppi» della scheda mostra solo i campi
+//          accesi (il totale segue le singole); con tutti spenti il tab non c'è (`_doppiTabC`). Terza colonna «Copie
+//          doppie strutturate» (Franco): nel tab «Doppi» la tabella «Copie», una riga per copia con n. (scritto a mano),
+//          Versione (tendina degli articoli base della stessa serie e tipologia, salvato l'id), Condizioni (più righe),
+//          Iniziale (numero); «+ Aggiungi copia», ✕ per togliere; campo `copie`, il clone non lo copia
+//          (`_copieEditHTML`, `_copieLeggi`, `_copieLetturaHTML`).
 // v7.261 - Modificati index.html (versione) e js/app.js. COLLAGE da Annunci (Franco): «Crea anche foto retro» anche per
 //          le tipologie diverse dalle fcr i cui articoli hanno la foto del retro, spuntata di serie
 //          (`_collageRetroPossibile`, `_collageRetroBase` con `_imgRetroDi`); «Quanti articoli in ogni foto ?», di serie
@@ -32083,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.261';
+const JS_VERSION = 'v7.262';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41210,6 +41222,7 @@ async function _caricaLegendeDefinizioni() {
     _impostaVersioniTDA(docs.find(x => x.id === 'versioniTDA'));   // v7.203 - idem
     _impostaEreditaBase(docs.find(x => x.id === 'ereditaBase'));   // v7.205 - idem
     _impostaColonneVT(docs.find(x => x.id === 'colonneVT'));   // v7.207 - idem
+    _impostaDoppioni(docs.find(x => x.id === 'doppioni'));   // v7.262 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -58587,6 +58600,8 @@ function cloneFigurine(itemId) {
   b.quante = null;
   // v7.258 - né la Disponibilità: è dell'articolo di partenza
   b.disponibili = null;
+  // v7.262 - né le Copie doppie strutturate: sono dell'articolo di partenza
+  b.copie = [];
   // v6.105 - e non copia nemmeno l'ESITO della pubblicazione. Non era un caso da gestire prima,
   // perche' la finestra ripopolava i campi uno per uno e questi non li toccava; con lo spread ci
   // finirebbero dentro tutti. `ebay` contiene `listingId` e `offerId` di annunci VERI: un oggetto
@@ -65456,7 +65471,8 @@ function _aggiornaLinguettaImpersona() {
   const imp = typeof isImpersonating === 'function' && isImpersonating();
   const admin = !!(currentUser && currentUser.isAdmin);
   ling.style.display = (admin || imp) ? 'flex' : 'none';
-  ling.textContent = imp ? (currentLang === 'it' ? '🎭 Torna admin' : '🎭 Back to admin') : (currentLang === 'it' ? '🎭 Impersona' : '🎭 Impersonate');
+  // 🔄 v7.262 (Franco: «le linguette admin non sono più a scomparsa») - chiusa solo l'icona, al passaggio la scritta
+  ling.innerHTML = '<span class="wz-ling-corta">🎭</span><span class="wz-ling-lunga">' + (imp ? (currentLang === 'it' ? '🎭 Torna admin' : '🎭 Back to admin') : (currentLang === 'it' ? '🎭 Impersona' : '🎭 Impersonate')) + '</span>';
   const pan = document.getElementById('imp-pannello');
   if (pan && (imp || !admin)) pan.style.display = 'none';
   // v7.120 - la linguetta delle macchie, solo per l'admin (impersonando le macchie si vedono comunque)
@@ -65467,7 +65483,8 @@ function _aggiornaLinguettaImpersona() {
     //    tolte o messe») - chiusa «🧽 Macchie» (si tolgono) o «💧 Macchie» (si rimettono); al passaggio la frase intera
     const it = currentLang === 'it';
     const lunga = _adminSenzaMacchie ? (it ? '💧 Metti macchie' : '💧 Show watermarks') : (it ? '🧽 Togli macchie' : '🧽 Hide watermarks');
-    const corta = (_adminSenzaMacchie ? '💧 ' : '🧽 ') + (it ? 'Macchie' : 'Watermarks');
+    // 🔄 v7.262 - chiusa solo l'icona, come le altre tre linguette arancio
+    const corta = _adminSenzaMacchie ? '💧' : '🧽';
     mac.innerHTML = '<span class="wz-ling-corta">' + corta + '</span><span class="wz-ling-lunga">' + lunga + '</span>';
   }
   // v7.254 - la linguetta delle Mancoliste, solo per l'admin; quella degli Annunci anche per il venditore
@@ -65727,6 +65744,7 @@ function adminTab(tab) {
   if (tab === 'protezione') renderAdminProtezioneTDA();   // v7.104, tab suo dalla v7.121
   if (tab === 'caroselli') renderAdminCaroselliTDA();     // v6.982, tab suo dalla v7.151 (Franco)
   if (tab === 'questionario') renderAdminQuestionario();  // v7.156 (Franco)
+  if (tab === 'doppioni') renderAdminDoppioni();   // v7.262 (Franco)
   if (tab === 'aggiornamenti') renderAdminAggiornamenti();   // v7.170 (Franco)
   if (tab === 'fotoannuncio') renderAdminFotoAnnuncio();     // v7.182 (Franco)
   // v7.254 (Franco: «all'ingresso in pagina, l'ordinamento deve essere per "Quantità" in ordine decrescente»; prima
@@ -68498,14 +68516,15 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     const _voci = [{ k: 'generale', et: '📋 ' + (currentLang === 'it' ? 'Generale' : 'General') }];
     if (_pagLett) _voci.push({ k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') });
     _voci.push({ k: 'ebay', et: '🏷️ Ebay' });
-    _voci.push({ k: 'doppi', et: '🧾 ' + (currentLang === 'it' ? 'Doppi' : 'Duplicates') });   // 🆕 v7.258
+    const _doppi1 = _doppiTabC(f);   // v7.262 - con tutti e due i campi spenti (Doppioni) il tab non c'è
+    if (_doppi1) _voci.push({ k: 'doppi', et: '🧾 ' + (currentLang === 'it' ? 'Doppi' : 'Duplicates') });   // 🆕 v7.258
     const tabNav = _tabNavLettura(_voci);
     // v6.529 - lo scambio si lancia dopo, quando questo markup e' nel DOM (in fondo alla funzione).
   document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + tabNav +
       '<div id="figdetail-tab-generale">' + rows.join('') + '</div>' +
       (_pagLett ? '<div id="figdetail-tab-pagine" style="display:none;">' + _pagLett + '</div>' : '') +
       '<div id="figdetail-tab-ebay" style="display:none;">' + ebayRows.join('') + '</div>' +
-      '<div id="figdetail-tab-doppi" style="display:none;">' + _bloccoDoppiLettura(f) + '</div>' +
+      (_doppi1 ? '<div id="figdetail-tab-doppi" style="display:none;">' + _bloccoDoppiLettura(f) + '</div>' : '') +
       _sfogliaCodaDetail() + _codaAzioniDetail(bottomButtons);
     // v6.103 - dopo l'innerHTML, altrimenti i due contenitori non esistono ancora.
     if (f.forSale) riempiEbayVistaLettura(f);
@@ -68519,7 +68538,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     //    torna stringa vuota, quindi per una figurina non cambia assolutamente niente.
     const _pagLett2 = _bloccoPagineLettura(f);
     // 🆕 v7.258 - l'admin dal telefono passa da qui, e il tab «Doppi» lo vede anche lui
-    const _doppi2 = !!currentUser?.isAdmin;
+    const _doppi2 = !!currentUser?.isAdmin && _doppiTabC(f);   // v7.262 - e se la matrice dei Doppioni accende un campo
     const _voci2 = [{ k: 'generale', et: '📋 ' + (currentLang === 'it' ? 'Generale' : 'General') }];
     if (_pagLett2) _voci2.push({ k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') });
     if (_doppi2) _voci2.push({ k: 'doppi', et: '🧾 ' + (currentLang === 'it' ? 'Doppi' : 'Duplicates') });
@@ -70215,8 +70234,70 @@ const _FE_TAB = ['generale', 'pagine', 'ebay', 'doppi'];   // v7.258: + Doppi
 const _DOPPI_ET = {
   quante: ['Disponibilità in set doppi', 'Available in duplicate sets'],
   disp: ['Disponibilità singole doppie', 'Single duplicates available'],
-  tot: ['Disponibilità singole doppie totale', 'Single duplicates available, total'] };
+  tot: ['Disponibilità singole doppie totale', 'Single duplicates available, total'],
+  // 🆕 v7.262 (Franco: «per non confonderlo con gli altri campi già presenti chiamalo "Copie doppie strutturate"»); nel
+  //    tab della scheda la tabella si intitola «Copie»
+  copie: ['Copie doppie strutturate', 'Structured duplicate copies'] };
 const _doppiEt = k => _DOPPI_ET[k][currentLang === 'it' ? 0 : 1];
+// 🆕 v7.262 (Franco: «i campi che sono legati al materiale doppio voglio che siano configurabili in configurazione; crea una
+//    sezione, in admin console, chiamata "Doppioni"; all'interno, una matrice dove ogni riga corrisponde ad una tda, ed ogni
+//    colonna da un campo»; «per ora accendi tutte le combinazioni; spengo io quello che non serve»; «in base a questa
+//    tabella, la form di dettaglio di un articolo di una certa tda mostrerà o meno questi 2 campi») - LA MATRICE DEI DOPPIONI.
+//    Vive in `settings/doppioni` (`voci`, chiave «campo:tipologia»); si salvano solo le spunte spente: accese è la regola
+//    di sempre, e una tipologia nuova nasce accesa. La tipologia è quella di `_aggTipoDi` (il tipo, se no la sezione),
+//    quindi le versioni seguono la loro base. «Disponibilità singole doppie totale» segue «Disponibilità singole doppie»:
+//    è la sua somma. I dati non si toccano: un campo spento non si vede e non si salva, ma il valore resta.
+// 📌 La matrice decide la SCHEDA, non le Mancoliste: lì le fpa restano fuori come prima (`_ML_FUORI`).
+const _DOPPI_CAMPI = ['quante', 'disp', 'copie'];   // v7.262: + le Copie doppie strutturate
+let _DOPPI_CFG = {};
+function _impostaDoppioni(d) { _DOPPI_CFG = (d && d.voci) || {}; }
+const _doppiAcceso = (campo, tda) => _DOPPI_CFG[campo + ':' + tda] !== false;
+const _doppiAccesoPer = (campo, f) => !!f && _doppiAcceso(campo, _aggTipoDi(f));
+// il tab «Doppi» c'è se almeno uno dei due campi è acceso
+const _doppiTabC = f => _DOPPI_CAMPI.some(c => _doppiAccesoPer(c, f));
+// le righe della matrice: le tipologie di serie senza «Altri articoli» (Franco: «come mai considera ancora "Altri
+//    articoli" come una TDA?»), poi le tipologie senza serie, ognuna la sua riga: come le altre tabelle (`_colonneTDA`)
+function _doppiTipologie() {
+  const tipi = (typeof _tipiProdotto === 'function' ? _tipiProdotto() : []).map(t => 'tp:' + t.id);
+  return PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez] && sez !== 'extras').concat(tipi);
+}
+function renderAdminDoppioni() {
+  const box = document.getElementById('admin-doppioni-tda');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
+  box.innerHTML =
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🧾 ' + (it ? 'Doppioni: i campi nella scheda dell\'articolo' : 'Duplicates: the fields in the item form') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it ? 'Accesa: il campo compare nel tab «Doppi» della scheda degli articoli di quella tipologia, in lettura e in modifica. ' +
+            'Spenta: il campo non si vede e non si salva, ma il valore già scritto resta. Con tutte spente il tab «Doppi» non c\'è.<br>' +
+            '«' + esc(_doppiEt('tot')) + '» segue «' + esc(_doppiEt('disp')) + '».'
+          : 'Checked: the field shows in the «Duplicates» tab of the items of that type. Unchecked: hidden and not saved; the value stays.') +
+    '</p>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
+      _DOPPI_CAMPI.map(c => '<th style="' + th + 'text-align:center;">' + esc(_doppiEt(c)) + '</th>').join('') + '</tr>' +
+    _doppiTipologie().map(k => '<tr><td style="' + td + '">' + esc(_aggNomeTipo(k)) + '</td>' +
+      _DOPPI_CAMPI.map(c => '<td style="' + td + 'text-align:center;"><input type="checkbox" data-doppi="' + esc(c + ':' + k) + '"' + (_doppiAcceso(c, k) ? ' checked' : '') + '></td>').join('') + '</tr>').join('') +
+    '</table></div>' +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
+      '<button class="btn-primary btn-admin" onclick="salvaDoppioni()">' + (it ? 'Salva i doppioni' : 'Save duplicates') + '</button>' +
+    '</div>';
+}
+async function salvaDoppioni() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it', voci = {};
+  document.querySelectorAll('#admin-doppioni-tda input[data-doppi]').forEach(el => { if (!el.checked) voci[el.dataset.doppi] = false; });
+  try {
+    await fsSave('settings', { id: 'doppioni', voci });
+    _impostaDoppioni({ voci });
+    toast(it ? '✅ Doppioni salvati. Valgono dalla prossima scheda che si apre.' : '✅ Duplicates saved.', 'success');
+  } catch (e) {
+    console.error('salvaDoppioni', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
+}
 function _dispTotaleHint() {
   return currentLang === 'it' ? 'La somma della «Disponibilità singole doppie» di questa versione base e delle sue variazioni ufficiali (le invisibili no). Non si scrive: si aggiorna da sola.'
     : 'The sum of the «Single duplicates available» of this base version and of its official variations (invisible ones excluded). Not editable: it updates by itself.';
@@ -70226,36 +70307,117 @@ function _bloccoDoppiEdit(f) {
   let h = '';
   // 🆕 v7.254 (Franco) - «QUANTE»: quante copie ne ha, per le mancoliste; non sulle figurine per album. Accanto «Quante ne
   //    mancano ?»: il numero scritto si toglie dalla casella e questa si svuota; si salva col «Salva» della scheda.
-  if (currentUser?.isAdmin && _mlHaQuante(f)) {
+  // 🔄 v7.262 - quali campi, lo dice la matrice dei Doppioni (`_doppiAccesoPer`); era `_mlHaQuante` (fuori le fpa)
+  if (currentUser?.isAdmin && _doppiAccesoPer('quante', f)) {
     h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('quante') + '</span>'
       + '<span class="detail-value" style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">'
       + '<input type="number" min="0" step="1" class="form-input" id="fe-quante" value="' + (f.quante ?? '') + '" style="max-width:6rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
       + '<input type="number" min="1" step="1" class="form-input" id="fe-quante-mancano" onchange="_mlTogliDaCasella(\'fe-quante\', this)" placeholder="' + (it ? 'Quante ne mancano ?' : 'How many missing?') + '" style="max-width:12rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
       + '</span></div>';
   }
-  h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('disp') + '</span>'
-    + '<span class="detail-value"><input type="number" min="0" step="1" class="form-input" id="fe-disponibili" value="' + (f.disponibili ?? '') + '" data-fig-id="' + esc(f.id || '') + '" oninput="_feAggiornaDispTotale(this)" style="max-width:6rem;padding:0.3rem 0.5rem;font-size:0.9rem;"></span></div>';
-  const tot = _dispTotaleFcr(f, getData('figurines', []));
-  if (tot !== null) {
-    h += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label" title="' + esc(_dispTotaleHint()) + '" style="cursor:help;">' + _doppiEt('tot') + ' ⓘ</span>'
-      + '<span class="detail-value" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;"><span id="fe-disponibili-totale" style="font-weight:600;font-variant-numeric:tabular-nums;">' + tot + '</span>'
-      + '<span style="font-size:0.75rem;color:var(--muted);max-width:22rem;text-align:right;line-height:1.35;">' + esc(_dispTotaleHint()) + '</span></span></div>';
+  if (_doppiAccesoPer('disp', f)) {   // v7.262 - e con lei il totale
+    h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('disp') + '</span>'
+      + '<span class="detail-value"><input type="number" min="0" step="1" class="form-input" id="fe-disponibili" value="' + (f.disponibili ?? '') + '" data-fig-id="' + esc(f.id || '') + '" oninput="_feAggiornaDispTotale(this)" style="max-width:6rem;padding:0.3rem 0.5rem;font-size:0.9rem;"></span></div>';
+    const tot = _dispTotaleFcr(f, getData('figurines', []));
+    if (tot !== null) {
+      h += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label" title="' + esc(_dispTotaleHint()) + '" style="cursor:help;">' + _doppiEt('tot') + ' ⓘ</span>'
+        + '<span class="detail-value" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;"><span id="fe-disponibili-totale" style="font-weight:600;font-variant-numeric:tabular-nums;">' + tot + '</span>'
+        + '<span style="font-size:0.75rem;color:var(--muted);max-width:22rem;text-align:right;line-height:1.35;">' + esc(_dispTotaleHint()) + '</span></span></div>';
+    }
   }
+  if (currentUser?.isAdmin && _doppiAccesoPer('copie', f)) h += _copieEditHTML(f);   // v7.262
   return h;
+}
+// 🆕 v7.262 (Franco: «nel comparto "Doppi" aggiungiamo un campo multivalore, chiamato Copie; è una struttura a tabella,
+//    dove le righe sono le copie (copia 1, 2, n) e le colonne sono degli attributi»; colonne: «n.», «versione: tendina con il
+//    nome delle versioni base di quella tda (per quella serie)» - chiarito: «il nome degli articoli base presenti per quella
+//    serie, per quella tda; ad esempio, in un articolo di tipo Album, per un album della Serie 2, la tendina avrà questi 2
+//    valori: L.2000 e OMAGGIO» -, «Condizioni (text multiline)», «Iniziale: numerico»; «la colonna "Numero" la scrivo io»)
+//    - LE COPIE. Campo `copie` dell'articolo: [{ n, versione, condizioni, iniziale }]; `versione` è l'id dell'articolo
+//    base, così un nome cambiato si segue da solo. Si salva col «Salva» della scheda; le righe tutte vuote non entrano.
+// gli articoli base della stessa serie e della stessa tipologia (`_aggTipoDi`), per numero e poi per nome
+function _copieBasi(f) {
+  if (!f || !f.seriesId) return [];
+  const tda = _aggTipoDi(f);
+  return (getData('figurines', []) || []).filter(x => x && String(x.seriesId) === String(f.seriesId) && _aggTipoDi(x) === tda && _eBase(x))
+    .sort((a, b) => ((+a.number || 9999) - (+b.number || 9999)) || String(a.name || '').localeCompare(String(b.name || ''), 'it'));
+}
+const _copiaNomeBase = x => String((x && (x.name || x.fullName || x.number)) || (x && x.id) || '');
+const _copieCella = 'padding:4px 6px;border-bottom:1px solid var(--border);vertical-align:top;';
+function _copiaRigaHTML(basi, c) {
+  c = c || {};
+  const inp = 'class="form-input" style="padding:0.25rem 0.4rem;font-size:0.85rem;';
+  const opz = '<option value="">—</option>' + basi.map(x => '<option value="' + esc(x.id) + '"' + (x.id === c.versione ? ' selected' : '') + '>' + esc(_copiaNomeBase(x)) + '</option>').join('')
+    // una versione che non c'è più resta scelta, col suo id: si vede e non si perde al Salva
+    + (c.versione && !basi.some(x => x.id === c.versione) ? '<option value="' + esc(c.versione) + '" selected>' + esc(c.versione) + ' ⚠️</option>' : '');
+  return '<tr data-copia>'
+    + '<td style="' + _copieCella + '"><input type="number" min="0" step="1" data-copia-n value="' + (c.n ?? '') + '" ' + inp + 'width:4.2rem;"></td>'
+    + '<td style="' + _copieCella + '"><select data-copia-versione ' + inp + 'max-width:14rem;">' + opz + '</select></td>'
+    + '<td style="' + _copieCella + '"><textarea data-copia-condizioni rows="2" ' + inp + 'width:16rem;max-width:100%;resize:vertical;">' + esc(c.condizioni || '') + '</textarea></td>'
+    + '<td style="' + _copieCella + '"><input type="number" step="1" data-copia-iniziale value="' + (c.iniziale ?? '') + '" ' + inp + 'width:5rem;"></td>'
+    + '<td style="' + _copieCella + '"><button type="button" class="tbl-btn tbl-btn-delete" title="' + (currentLang === 'it' ? 'Togli questa copia' : 'Remove this copy') + '" onclick="this.closest(\'tr\').remove()">✕</button></td></tr>';
+}
+function _copieIntestazione() {
+  const it = currentLang === 'it';
+  const th = 'padding:4px 6px;font-size:0.76rem;color:var(--info);font-weight:600;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;';
+  return '<tr><th style="' + th + '">n.</th><th style="' + th + '">' + (it ? 'Versione' : 'Version') + '</th><th style="' + th + '">' + (it ? 'Condizioni' : 'Condition') + '</th><th style="' + th + '">' + (it ? 'Iniziale' : 'Initial') + '</th>';
+}
+function _copieEditHTML(f) {
+  const it = currentLang === 'it';
+  const basi = _copieBasi(f);
+  return '<div class="detail-row" style="flex-direction:column;align-items:stretch;gap:0.4rem;"><span class="detail-label">' + (it ? 'Copie' : 'Copies') + '</span>'
+    + '<div style="overflow-x:auto;"><table id="fe-copie" data-fig-id="' + esc(f.id || '') + '" style="border-collapse:collapse;">' + _copieIntestazione() + '<th></th></tr>'
+    + (Array.isArray(f.copie) ? f.copie : []).map(c => _copiaRigaHTML(basi, c)).join('') + '</table></div>'
+    + '<div><button type="button" class="btn-primary btn-admin" style="font-size:0.82rem;padding:0.3rem 0.8rem;" onclick="_copiaAggiungi()">+ ' + (it ? 'Aggiungi copia' : 'Add copy') + '</button></div></div>';
+}
+// la riga nuova, con le versioni della serie e della tipologia dell'articolo della scheda
+function _copiaAggiungi() {
+  const t = document.getElementById('fe-copie');
+  if (!t) return;
+  const id = t.dataset.figId, tutti = getData('figurines', []) || [];
+  t.insertAdjacentHTML('beforeend', _copiaRigaHTML(_copieBasi((id && tutti.find(x => x.id === id)) || null), {}));
+}
+// le righe scritte; quelle tutte vuote non entrano
+function _copieLeggi() {
+  const t = document.getElementById('fe-copie');
+  if (!t) return [];
+  return [...t.querySelectorAll('tr[data-copia]')].map(r => ({
+    n: _mlNumero(r.querySelector('[data-copia-n]').value),
+    versione: r.querySelector('[data-copia-versione]').value || null,
+    condizioni: String(r.querySelector('[data-copia-condizioni]').value || '').trim(),
+    iniziale: (v => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : null; })(r.querySelector('[data-copia-iniziale]').value),
+  })).filter(c => c.n !== null || c.versione || c.condizioni || c.iniziale !== null);
+}
+function _copieLetturaHTML(f) {
+  const it = currentLang === 'it';
+  const copie = Array.isArray(f.copie) ? f.copie : [];
+  const lab = '<span class="detail-label">' + (it ? 'Copie' : 'Copies') + '</span>';
+  if (!copie.length) return '<div class="detail-row">' + lab + '<span class="detail-value"><span style="color:var(--muted);font-style:italic;">' + (it ? 'nessuna' : 'none') + '</span></span></div>';
+  const tutti = getData('figurines', []) || [];
+  const td = _copieCella + 'font-size:0.85rem;color:var(--text);';
+  return '<div class="detail-row" style="flex-direction:column;align-items:stretch;gap:0.4rem;">' + lab
+    + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' + _copieIntestazione() + '</tr>'
+    + copie.map(c => { const b = c.versione && tutti.find(x => x.id === c.versione);
+      return '<tr><td style="' + td + '">' + esc(String(c.n ?? '')) + '</td><td style="' + td + '">' + esc(b ? _copiaNomeBase(b) : (c.versione || '—')) + '</td>'
+        + '<td style="' + td + 'white-space:pre-wrap;">' + esc(c.condizioni || '') + '</td><td style="' + td + '">' + esc(String(c.iniziale ?? '')) + '</td></tr>'; }).join('')
+    + '</table></div></div>';
 }
 // e lo stesso tab in lettura (solo admin)
 function _bloccoDoppiLettura(f) {
   const it = currentLang === 'it';
   const vuoto = '<span style="color:var(--muted);font-style:italic;">' + (it ? 'non impostata' : 'not set') + '</span>';
   let h = '';
-  if (_mlHaQuante(f)) h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('quante') + '</span><span class="detail-value">' + (f.quante == null ? vuoto : esc(String(f.quante))) + '</span></div>';
-  h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('disp') + '</span><span class="detail-value">' + (f.disponibili == null ? vuoto : esc(String(f.disponibili))) + '</span></div>';
-  const tot = _dispTotaleFcr(f, getData('figurines', []));
-  if (tot !== null) {
-    h += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label" title="' + esc(_dispTotaleHint()) + '" style="cursor:help;">' + _doppiEt('tot') + ' ⓘ</span>'
-      + '<span class="detail-value" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;"><span style="font-weight:600;font-variant-numeric:tabular-nums;">' + tot + '</span>'
-      + '<span style="font-size:0.75rem;color:var(--muted);max-width:22rem;text-align:right;line-height:1.35;">' + esc(_dispTotaleHint()) + '</span></span></div>';
+  if (_doppiAccesoPer('quante', f)) h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('quante') + '</span><span class="detail-value">' + (f.quante == null ? vuoto : esc(String(f.quante))) + '</span></div>';   // v7.262
+  if (_doppiAccesoPer('disp', f)) {   // v7.262
+    h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('disp') + '</span><span class="detail-value">' + (f.disponibili == null ? vuoto : esc(String(f.disponibili))) + '</span></div>';
+    const tot = _dispTotaleFcr(f, getData('figurines', []));
+    if (tot !== null) {
+      h += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label" title="' + esc(_dispTotaleHint()) + '" style="cursor:help;">' + _doppiEt('tot') + ' ⓘ</span>'
+        + '<span class="detail-value" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;"><span style="font-weight:600;font-variant-numeric:tabular-nums;">' + tot + '</span>'
+        + '<span style="font-size:0.75rem;color:var(--muted);max-width:22rem;text-align:right;line-height:1.35;">' + esc(_dispTotaleHint()) + '</span></span></div>';
+    }
   }
+  if (_doppiAccesoPer('copie', f)) h += _copieLetturaHTML(f);   // v7.262
   return h;
 }
 function switchFeTab(tab) {
@@ -70906,8 +71068,8 @@ function switchToEditMode(figId) {
     '<button type="button" id="fe-tab-btn-generale" onclick="switchFeTab(\'generale\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Generale</button>' +
     _tabPagineBtn(f) +
     '<button type="button" id="fe-tab-btn-ebay" onclick="switchFeTab(\'ebay\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>' +
-    // 🆕 v7.258 - il tab «Doppi», su ogni tipologia
-    '<button type="button" id="fe-tab-btn-doppi" onclick="switchFeTab(\'doppi\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🧾 ' + (currentLang === 'it' ? 'Doppi' : 'Duplicates') + '</button>' +
+    // 🆕 v7.258 - il tab «Doppi», su ogni tipologia; v7.262: se la matrice dei Doppioni accende almeno un campo
+    (_doppiTabC(f) ? '<button type="button" id="fe-tab-btn-doppi" onclick="switchFeTab(\'doppi\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🧾 ' + (currentLang === 'it' ? 'Doppi' : 'Duplicates') + '</button>' : '') +
     '</div>';
   // 🔄 v7.082 (Franco: «da quando le due foto dell'album, nella sua form, sono andate in basso a
   //    tutto? mettile in alto a dx, come per le altre tda») - con le foto dentro il tab, il tab si
@@ -74806,6 +74968,8 @@ async function saveFigFromDetail(figId, opzioni) {
       disponibilita: null,
       // 🆕 v7.258 - «Disponibilità», un numero (vuoto = null); solo se la casella c'era
       ...(document.getElementById('fe-disponibili') ? { disponibili: _mlNumero(document.getElementById('fe-disponibili').value) } : {}),
+      // 🆕 v7.262 - le Copie doppie strutturate, solo se la tabella era in pagina (`_copieLeggi`)
+      ...(document.getElementById('fe-copie') ? { copie: _copieLeggi() } : {}),
       // 🆕 v7.184 - le caselle delle foto annuncio. Solo se c'erano: altrove la chiave non si scrive
       ...(document.getElementById('fe-foto-annuncio') ? { fotoAnnuncio: _feFotoAnnuncio() } : {}),
       // 🗑️ v7.199 - gli sfondi delle foto (v7.185) non ci sono più: dove il campo è rimasto, il Salva lo svuota
