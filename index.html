@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.261">
+<link rel="stylesheet" href="css/style.css?v=7.262">
 
 
 <style>
@@ -786,7 +786,14 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
 @media (max-width: 860px) { #ml-linguetta, #ann-linguetta { display: none !important; } }
 /* 🆕 v7.260 (Franco: «le linguette admin falle tutte lunghe uguali») - le quattro arancio con la stessa larghezza da
    chiuse: una minima comune, così «Macchie» al passaggio del mouse si allunga ancora come prima. */
-#imp-linguetta, #mac-linguetta, #ml-linguetta, #ann-linguetta { min-width: 10.5rem; box-sizing: border-box; }
+/* 🔄 v7.262 (Franco: «le linguette admin non sono più a scomparsa»; scelta sua: «solo l'icona, uguali») - da chiuse
+   tutte e quattro mostrano solo l'icona, strette e larghe uguali; al passaggio del mouse il nome intero, con le regole
+   delle linguette blu (v7.108). Il `min-width` da 10.5rem della v7.260 le teneva larghe anche da chiuse. */
+#imp-linguetta, #mac-linguetta, #ml-linguetta, #ann-linguetta { min-width: 3.4rem; justify-content: center; box-sizing: border-box; }
+#imp-linguetta .wz-ling-lunga, #ml-linguetta .wz-ling-lunga, #ann-linguetta .wz-ling-lunga { display: inline-block; max-width: 0; overflow: hidden; opacity: 0; transition: opacity 0.2s ease; }
+#imp-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga, #ml-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga, #ann-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga { position: absolute; }
+#imp-linguetta:hover .wz-ling-corta, #imp-linguetta:focus-visible .wz-ling-corta, #ml-linguetta:hover .wz-ling-corta, #ml-linguetta:focus-visible .wz-ling-corta, #ann-linguetta:hover .wz-ling-corta, #ann-linguetta:focus-visible .wz-ling-corta { display: none; }
+#imp-linguetta:hover .wz-ling-lunga, #imp-linguetta:focus-visible .wz-ling-lunga, #ml-linguetta:hover .wz-ling-lunga, #ml-linguetta:focus-visible .wz-ling-lunga, #ann-linguetta:hover .wz-ling-lunga, #ann-linguetta:focus-visible .wz-ling-lunga { max-width: 26rem; opacity: 1; }
 /* 🆕 v7.260 (Franco: «lascia i riquadri ma rendili non utilizzabili») - nelle sezioni coi tab (i retro) un riquadro della
    ricerca che nel tab aperto non ha casi resta al suo posto, grigio e non premibile (`_attrSpentoNelTab`) */
 .riquadro-spento-tab { opacity: 0.4; filter: grayscale(1); pointer-events: none; user-select: none; }
@@ -2380,9 +2387,9 @@ button.back-btn { color:#ffffff; }
 <!-- 🆕 v7.120 (Franco) - «Togli macchie»: solo admin, arancio, prima della colonna blu (sotto «Impersona») -->
 <button type="button" id="mac-linguetta" onclick="_cliccaLinguettaMacchie()">🧽 Macchie</button>
 <!-- 🆕 v7.254 (Franco) - «Mancoliste»: solo admin, arancio, sotto «Macchie»; apre la sezione della console -->
-<button type="button" id="ml-linguetta" onclick="showAdminTab('mancoliste')">🧾 Set doppi</button>
+<button type="button" id="ml-linguetta" onclick="showAdminTab('mancoliste')" aria-label="Set doppi"><span class="wz-ling-corta">🧾</span><span class="wz-ling-lunga">🧾 Set doppi</span></button>
 <!-- 🆕 v7.254 (Franco: «anche per gli annunci») - all'admin e al venditore, come la voce della barra che sul desktop sparisce -->
-<button type="button" id="ann-linguetta" onclick="apriAnnunciNav()">📢 Annunci</button>
+<button type="button" id="ann-linguetta" onclick="apriAnnunciNav()" aria-label="Annunci"><span class="wz-ling-corta">📢</span><span class="wz-ling-lunga">📢 Annunci</span></button>
 <button type="button" id="wz-linguetta" class="solo-wz" onclick="apriWizardLista()" aria-label="Riprendi il Questionario Sgorbions">
   <span class="wz-ling-corta">📝 <span data-i18n="wz.lingCorta">Questionario</span></span>
   <span class="wz-ling-lunga" data-i18n="wz.linguetta">Riprendi il Questionario Sgorbions</span>
@@ -4158,6 +4165,9 @@ di tutte le serie</button>
                foto» della v7.209: ora è un tasto di Annunci che apre una finestra (`apriCollage`) -->
           <button class="admin-tab" onclick="adminTab('email')" data-i18n="admin.email.tab">✉️ Comunicazioni</button>
           <button class="admin-tab" onclick="adminTab('foto')" data-i18n="admin.foto">📥 Data import</button>
+          <!-- 🆕 v7.262 (Franco: «crea una sezione, in admin console, chiamata "Doppioni"») - in ordine alfabetico dopo Data
+               import; la disegna `renderAdminDoppioni` -->
+          <button class="admin-tab" onclick="adminTab('doppioni')">🧾 Doppioni</button>
           <button class="admin-tab" onclick="adminTab('ebay')">🏷️ Ebay</button>
           <button class="admin-tab" onclick="adminTab('errori')" data-i18n="admin.errori">⚠️ Errori</button>
           <button class="admin-tab" onclick="adminTab('eventi')" data-i18n="admin.eventi"><span style="filter:hue-rotate(200deg);">🔔</span> Eventi</button>
@@ -4548,6 +4558,10 @@ di tutte le serie</button>
           </div>
           <div><div id="admin-mancoliste-box"></div></div>
           <div><div id="admin-dettagli-set-box" style="display:none;"></div></div>
+        </div>
+        <!-- 🆕 v7.262 - LA SEZIONE «DOPPIONI»: la disegna `renderAdminDoppioni` -->
+        <div id="admin-doppioni" class="admin-section">
+          <div><div id="admin-doppioni-tda"></div></div>
         </div>
         <!-- 🆕 v7.156 - LA SEZIONE «QUESTIONARIO»: la disegna `renderAdminQuestionario` -->
         <div id="admin-questionario" class="admin-section">
@@ -6902,7 +6916,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.261"></script>
+<script src="js/app.js?v=7.262"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6926,7 +6940,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.261'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.262'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
