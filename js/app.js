@@ -32095,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.265';
+const JS_VERSION = 'v7.266';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -44043,6 +44043,25 @@ function _annDisegna() {
     box.innerHTML = '<p style="font-style:italic;margin:0;">' + (it ? 'Nessun annuncio con questi filtri.' : 'No listings match these filters.') + '</p>';
     return;
   }
+  // 🆕 v7.266 (Franco: «anche la tabella degli annunci deve seguire lo stesso ordinamento» - quello dell'ELENCO COPIE,
+  //    Serie - TDA - Nome/Numero - N. copia - «a valle di queste colonne, abbiamo Sito e Venditore») - L'ORDINE DI PARTENZA,
+  //    finché non si clicca un titolo: serie (ordine delle serie), TDA (ordine del descrittore), articolo (numero, poi
+  //    nome), N. copia (quello visto, `_annVisto`, come numero), sito, venditore. Chi non ha un valore va dopo chi ce l'ha.
+  if (!_annOrdine.col) {
+    const sOrd = new Map(getData('series', []).map((s, i) => [s.id, s.order ?? i]));
+    const ordTipi = Object.keys(ARTICOLI), posto = k => { const i = ordTipi.indexOf(k); return i < 0 ? 9999 : i; };
+    const chiave = r => {
+      const f = figs.get(r.articoloId), tipo = r.tipologia || (f ? _aggTipoDi(f) : '');
+      const n = parseInt(String(_annVisto(r, 'n', figs) ?? '').trim(), 10);
+      return [sOrd.get(r.seriesId) ?? 1e9, tipo ? posto(tipo) : 1e9, tipo ? _aggNomeTipo(tipo) : '￿',
+        f && !f.noNumber && Number.isFinite(parseInt(f.number, 10)) ? parseInt(f.number, 10) : 1e9, f ? _annNomeArticolo(f) : '￿',
+        Number.isFinite(n) ? n : 1e9, r.sito || '￿', r.account || '￿'];
+    };
+    const k = new Map(righe.map(([r]) => [r, chiave(r)]));
+    righe.sort(([a], [b]) => { const x = k.get(a), y = k.get(b);
+      for (let j = 0; j < x.length; j++) { const c = typeof x[j] === 'number' ? x[j] - y[j] : String(x[j]).localeCompare(String(y[j]), 'it'); if (c) return c; }
+      return 0; });
+  }
   if (_annOrdine.col) righe.sort(([a], [b]) => {
     const x = valore(a), y = valore(b);
     if (x === '' || y === '') return (x === '') - (y === '');   // i vuoti sempre in fondo
@@ -44063,7 +44082,9 @@ function _annDisegna() {
     // v7.200 (Franco: «"Tipologia" su una riga e "articolo" sulla riga dopo (senza "di")»)
     // 🔄 v7.242 (Franco: «da mobile, nella tabella degli annunci "venditore" diventa "account"») - solo il titolo
     //    della colonna, solo dal telefono (`tel`), come «TDA»
-    + th(it ? 'Sito' : 'Site') + th(it ? (tel ? 'Account' : 'Venditore') : (tel ? 'Account' : 'Seller')) + th(it ? 'Serie' : 'Series') + th(it ? (tel ? 'TDA' : 'Tipologia<br>articolo') : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
+    // 🔄 v7.266 (Franco: «nella tabella degli annunci la colonna "Tipologia di articolo" rinominala in "TDA"») - «TDA»
+    //    sempre, non più solo dal telefono
+    + th(it ? 'Sito' : 'Site') + th(it ? (tel ? 'Account' : 'Venditore') : (tel ? 'Account' : 'Seller')) + th(it ? 'Serie' : 'Series') + th(it ? 'TDA' : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
     // v7.187 (Franco: «il campo descrizione non mostrarlo nella tabella degli annunci; mostra invece la url») - la
     //    descrizione resta nella finestra; in tabella al suo posto il link, scritto per intero
     // v7.187 (Franco: «per ora togli il campo Foto dalla tabellina») - lo zip resta nella finestra
@@ -44115,8 +44136,9 @@ function _annDisegna() {
           // v7.187 (Franco: «i 2 link non fanno leggere il testo, visto il blu scuro utilizzato; usiamo un azzurro»)
           + '<td>' + (f ? '<a href="#" style="color:var(--info);" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;">' + esc(_annNomeArticolo(f)) + '</a>'
                        : (r.articoloId ? '<span style="color:var(--warn);">' + (it ? 'articolo non trovato' : 'item not found') + '</span>' : ''))
-            // v7.263 - sotto l'articolo, la copia messa in vendita
-            + (f && r.copiaId ? '<div style="font-size:0.78rem;color:var(--muted);">' + (it ? 'copia ' : 'copy ') + esc(_annNomeCopia(_annTrovaCopia(f, r.copiaId)) || (it ? 'non trovata' : 'not found')) + '</div>' : '') + '</td>'
+            // 🗑️ v7.266 (Franco: «nella colonna "Articolo" riportiamo solo il valore chiave, senza riportare sotto il n. di
+            //    copia e la qualità; tanto ci sono già i campi "N" e "Voto"») - qui la v7.263 scriveva la copia sotto l'articolo
+            + '</td>'
           // v7.187 (Franco: «riduci larghezza colonne Prezzo e Costo; allarga colonna Titolo; riduci larghezza colonna N»)
           + '<td>' + inp('n', 'text', r.n, 'width:2.6rem;') + '</td>'
           // v7.200 (Franco: «accorcia il campo "Titolo" di un 20%»; «riduci la larghezza della colonna Costo e Prezzo»)
@@ -70488,7 +70510,16 @@ function renderAdminDoppioni() {
   box.innerHTML =
     // 🔄 v7.264 (Franco: «in admin console, rinomina "Doppioni" in "Copie doppie"») - anche il titolo; e il tab della scheda
     //    si chiama «Copie» dalla v7.263
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">🧾 ' + (it ? 'Copie doppie: i campi nella scheda dell\'articolo' : 'Duplicate copies: the fields in the item form') + '</h4>' +
+    // 🔄 v7.266 (Franco: «la tabella "Copie doppie: i campi nella scheda dell'articolo" mostrala chiusa; si apre solamente
+    //    cliccando un tastino, magari con l'icona di un ingranaggio») - il titolo resta, col ⚙️ accanto; testo, tabella e
+    //    Salva stanno in `#doppioni-config`, chiuso finché non lo si apre (`_doppioniApri`; aperto resta aperto fino al
+    //    prossimo ingresso nel tab)
+    '<div style="display:flex;align-items:center;gap:0.6rem;margin:1.6rem 0 0.5rem;">' +
+      '<h4 style="font-family:var(--font-ui);margin:0;color:var(--info);">🧾 ' + (it ? 'Copie doppie: i campi nella scheda dell\'articolo' : 'Duplicate copies: the fields in the item form') + '</h4>' +
+      '<button type="button" id="doppioni-config-btn" class="btn-secondary" onclick="_doppioniApri()" title="' + (it ? 'Apri / chiudi la configurazione' : 'Open / close the settings') + '"' +
+        ' style="font-size:0.95rem;padding:0.1rem 0.5rem;line-height:1.2;">⚙️</button>' +
+    '</div>' +
+    '<div id="doppioni-config" style="display:none;">' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it ? 'Accesa: il campo compare nel tab «Copie» della scheda degli articoli di quella tipologia, in lettura e in modifica. ' +
             'Spenta: il campo non si vede e non si salva, ma il valore già scritto resta. Con tutte spente il tab «Copie» non c\'è.<br>' +
@@ -70505,7 +70536,13 @@ function renderAdminDoppioni() {
       // 🔄 v7.264 (Franco: «il tasto "Salva i doppioni" cambialo in "Salva struttura copie doppie"»)
       '<button class="btn-primary btn-admin" onclick="salvaDoppioni()">' + (it ? 'Salva struttura copie doppie' : 'Save duplicate copies structure') + '</button>' +
     '</div>' +
+    '</div>' +   // v7.266: fine di `#doppioni-config`
     _copieDoppieListaHTML();   // v7.264
+}
+// v7.266 - il ⚙️: apre e chiude la configurazione (le spunte restano quelle che sono: si nasconde, non si ridisegna)
+function _doppioniApri() {
+  const el = document.getElementById('doppioni-config');
+  if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
 }
 // 🆕 v7.264 (Franco: «nel tab "Copie doppie", sotto alla tabella, metti una tabella che elenca le copie doppie; eccone i
 //    campi: Serie, Tipologia di articolo, Versione, Nome/Numero, Iniziale, Condizioni») - UNA RIGA PER COPIA, di tutti gli
@@ -70569,15 +70606,18 @@ function _cdRighe() {
   // v7.265 (Franco: «quando "Versione" vale "Versione base", scrivi solo "Base"»)
   const nomeVer = ch => ch === 'base' ? 'Base' : _nomeVersione(ch, currentLang);
   const righe = [];
-  (getData('figurines', []) || []).forEach(f => { if (Array.isArray(f.copie)) f.copie.forEach(c => {
+  (getData('figurines', []) || []).forEach(f => { if (Array.isArray(f.copie)) f.copie.forEach((c, i) => {
     const ver = _chiaveTipo(f);
-    righe.push({ f, c, serie: f.seriesId, tipo: _aggTipoDi(f), versione: ver,
+    righe.push({ f, c, chiave: _annChiaveCopia(c, i), serie: f.seriesId, tipo: _aggTipoDi(f), versione: ver,
       sOrd: sOrd.get(f.seriesId) ?? 9999, tOrd: posto(_aggTipoDi(f)), numOrd: parseInt(num(f), 10) || 1e9,
       nomeSerie: sNome(f.seriesId), nomeTipo: _aggNomeTipo(_aggTipoDi(f)), nomeVer: nomeVer(ver),
       nome: (numVisto(f) ? numVisto(f) + ' · ' : '') + _annNomeArticolo(f) });
   }); });
+  // 🔄 v7.266 (Franco: «le righe della tabella devono essere ordinate come segue: Serie - Tda - Nome/Numero - N. copia») -
+  //    in fondo il N. copia (le copie senza numero dopo le altre dello stesso articolo)
   righe.sort((a, b) => (a.sOrd - b.sOrd) || (a.tOrd - b.tOrd) || a.nomeTipo.localeCompare(b.nomeTipo, 'it')
-    || (a.numOrd - b.numOrd) || _annNomeArticolo(a.f).localeCompare(_annNomeArticolo(b.f), 'it'));
+    || (a.numOrd - b.numOrd) || _annNomeArticolo(a.f).localeCompare(_annNomeArticolo(b.f), 'it') || a.f.id.localeCompare(b.f.id)
+    || ((a.c.n ?? 1e9) - (b.c.n ?? 1e9)));
   return { righe, sNome, nomeVer };
 }
 // le colonne: chiave, titolo e valore per ordinare (numeri come numeri, testi come testi; '' = vuoto, in fondo)
@@ -70603,7 +70643,9 @@ function _cdInterno() {
   // i riquadri dei filtri, vestiti come quelli degli annunci (titolo azzurro sul bordo)
   const etichetta = { serie: sNome, tipo: k => _aggNomeTipo(k), versione: nomeVer };
   const titolo = { serie: it ? 'Filtra per serie' : 'Filter by series', tipo: it ? 'Filtra per tipologia di articolo' : 'Filter by item type', versione: it ? 'Filtra per versione' : 'Filter by version' };
-  const filtri = '<div style="display:flex;flex-direction:column;gap:0.9rem;margin-bottom:1rem;">'
+  // v7.266 (Franco: «i box contenitore sopra la tabella sono esageratamente lunghi; direi di stare al 70% di quella
+  //    lunghezza») - i riquadri dei filtri al 70% della larghezza della pagina
+  const filtri = '<div style="display:flex;flex-direction:column;gap:0.9rem;margin-bottom:1rem;width:70%;">'
     + '<div><button type="button" class="btn-primary" onclick="_cdAzzera()" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button></div>'
     + _CD_FILTRI.map(k => {
       const voci = _cdVoci(tutte, k);
@@ -70627,7 +70669,7 @@ function _cdInterno() {
   // v7.264 (Franco: «il campo "Condizioni" fallo più lungo») - la tabella fino a fine pagina, lo spazio in più a Condizioni
   return testa + filtri + '<div id="copie-doppie-lista" style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'
     + '<tr>' + _CD_COLONNE.map(c => '<th style="' + th + al(c) + 'cursor:pointer;user-select:none;" onclick="_cdOrdina(\'' + c.k + '\')" title="' + (it ? 'Ordina' : 'Sort') + '">'
-      + (it ? c.it : c.en) + (_cdOrdine.col === c.k ? (_cdOrdine.su ? ' ▲' : ' ▼') : '') + '</th>').join('') + '</tr>'
+      + (it ? c.it : c.en) + (_cdOrdine.col === c.k ? (_cdOrdine.su ? ' ▲' : ' ▼') : '') + '</th>').join('') + '<th style="' + th + '"></th></tr>'
     + (righe.length ? righe.map(x => '<tr>'
       + '<td style="' + td + 'white-space:nowrap;">' + esc(x.nomeSerie) + '</td>'
       + '<td style="' + td + 'white-space:nowrap;">' + esc(x.nomeTipo) + '</td>'
@@ -70636,9 +70678,85 @@ function _cdInterno() {
       // v7.265 (Franco: «N. copia e Iniziale, centra il valore della colonna rispetto all'etichetta della colonna»)
       + '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.n == null ? '' : String(x.c.n)) + '</td>'
       + '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.iniziale == null ? '' : (it ? String(x.c.iniziale).replace('.', ',') : String(x.c.iniziale))) + '</td>'
-      + '<td style="' + td + 'white-space:pre-wrap;min-width:12rem;width:100%;">' + esc(x.c.condizioni || '') + '</td></tr>').join('')
-      : '<tr><td colspan="7" style="' + td + 'font-style:italic;color:var(--muted);">' + (it ? 'Nessuna copia con questi filtri.' : 'No copies match these filters.') + '</td></tr>')
+      + '<td style="' + td + 'white-space:pre-wrap;min-width:12rem;width:100%;">' + esc(x.c.condizioni || '') + '</td>'
+      // 🆕 v7.266 (Franco: «dalla tabella delle copie deve essere possibile aprire in visualizzazione o modifica il record
+      //    di copia») - l'occhio e la matita della tabella degli annunci, che aprono la finestra della copia (`_copiaApri`)
+      + '<td style="' + td + 'white-space:nowrap;">'
+        + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Apri in sola lettura' : 'Open read-only') + '"'
+        + ' onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\',true)">&#128065;</button> '
+        + '<button type="button" class="tbl-btn tbl-btn-edit" title="' + (it ? 'Modifica' : 'Edit') + '" onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">✏️</button>'
+      + '</td></tr>').join('')
+      : '<tr><td colspan="8" style="' + td + 'font-style:italic;color:var(--muted);">' + (it ? 'Nessuna copia con questi filtri.' : 'No copies match these filters.') + '</td></tr>')
     + '</table></div>';
+}
+// 🆕 v7.266 (Franco: «dalla tabella delle copie deve essere possibile aprire in visualizzazione o modifica il record di
+//    copia») - LA FINESTRA DELLA COPIA, gemella di quella dell'annuncio: in testa l'articolo (serie, tipologia, versione,
+//    nome; il nome apre la scheda), poi i campi della copia come nel tab «Copie» (N. copia, Condizioni, Iniziale, Qualità) e
+//    i suoi annunci. In lettura tutto spento e niente Salva. Salva riscrive la copia DENTRO il suo articolo (`copie` è un
+//    campo dell'articolo), passando da `_saveFigurineItem` come la scheda; l'id della copia resta quello che è, così gli
+//    annunci collegati la ritrovano.
+function _copiaApri(artId, chiave, sola) {
+  const it = currentLang === 'it';
+  const art = _indiceArticoli().get(artId), c = _annTrovaCopia(art, chiave);
+  if (!art || !c) { toast(it ? 'Copia non trovata: forse l’articolo è stato cambiato. Ricarica la pagina.' : 'Copy not found.', 'error'); return; }
+  const x = _cdRighe().righe.find(y => y.f.id === artId && y.chiave === chiave) || {};
+  document.getElementById('copia-modal')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'copia-modal';
+  const lab = t => '<label class="detail-label" style="display:block;margin:0.7rem 0 0.25rem;">' + t + '</label>';
+  const dis = sola ? ' disabled' : '';
+  ov.innerHTML = '<div class="modal" style="max-width:620px;width:94vw;">'
+    + '<div class="modal-header"><h2 class="modal-title">' + (sola ? (it ? 'Copia' : 'Copy') : (it ? 'Modifica copia' : 'Edit copy')) + '</h2>'
+    + '<button type="button" class="modal-close" onclick="document.getElementById(\'copia-modal\').remove()">✕</button></div>'
+    + '<div style="font-size:0.9rem;color:var(--text);line-height:1.5;">' + esc([x.nomeSerie, x.nomeTipo, x.nomeVer].filter(Boolean).join(' · ')) + '<br>'
+      + '<a href="#" style="color:var(--info);font-weight:600;" onclick="document.getElementById(\'copia-modal\').remove();openFigDetail(\'' + esc(artId) + '\');return false;">' + esc(x.nome || _annNomeArticolo(art)) + '</a></div>'
+    + lab(it ? 'N. copia' : 'Copy no.')
+    + '<input id="cp-n" class="form-input" type="number" min="0" step="1" value="' + (c.n ?? '') + '" style="max-width:8rem;"' + dis + '>'
+    + lab(it ? 'Condizioni' : 'Condition')
+    + '<textarea id="cp-condizioni" class="form-input" rows="4"' + dis + '>' + esc(c.condizioni || '') + '</textarea>'
+    + lab(it ? 'Iniziale' : 'Initial')
+    + '<input id="cp-iniziale" class="form-input" type="number" step="any" value="' + (c.iniziale ?? '') + '" style="max-width:10rem;"' + dis + '>'
+    + lab(it ? 'Voto' : 'Rating')   // v7.266 (Franco: «il campo "Qualità" della copia, rinominalo in "Voto"»)
+    + '<select id="cp-qualita" class="form-select" style="max-width:10rem;"' + dis + '><option value="">—</option>'
+      + _COPIA_QUALITA.map(q => '<option value="' + q + '"' + (c.qualita === q ? ' selected' : '') + '>' + _copiaQualitaTesto(q) + '</option>').join('')
+      + (typeof c.qualita === 'number' && !_COPIA_QUALITA.includes(c.qualita) ? '<option value="' + c.qualita + '" selected>' + _copiaQualitaTesto(c.qualita) + '</option>' : '') + '</select>'
+    // gli annunci della copia: la stessa cella della colonna «Annunci» del tab, riempita quando gli annunci sono letti
+    + lab(it ? 'Annunci' : 'Listings')
+    + '<table style="border-collapse:collapse;"><tr>' + _copiaCellaAnnunci(artId, chiave) + '</tr></table>' + _copieAnnunciDopo()
+    + '<div id="cp-stato" style="font-size:0.8rem;min-height:1.2em;margin-top:0.6rem;"></div>'
+    + '<div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.8rem;">'
+      + (sola ? '' : '<button type="button" class="btn-secondary" onclick="document.getElementById(\'copia-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+        + '<button type="button" class="btn-primary" id="cp-salva" onclick="_copiaSalva(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">' + (it ? 'Salva' : 'Save') + '</button>')
+    + '</div></div>';
+  document.body.appendChild(ov);
+}
+async function _copiaSalva(artId, chiave) {
+  const it = currentLang === 'it', v = id => document.getElementById(id);
+  const stato = v('cp-stato'), dire = t => { if (stato) { stato.style.color = 'var(--danger)'; stato.textContent = t; } };
+  const art = _indiceArticoli().get(artId);
+  const copie = (art && Array.isArray(art.copie)) ? art.copie.slice() : [];
+  const i = copie.findIndex((c, j) => _annChiaveCopia(c, j) === chiave);
+  if (!art || i < 0) return dire(it ? '⚠️ Copia non trovata: ricarica la pagina.' : '⚠️ Copy not found.');
+  const numero = (val, intero) => { const n = intero ? parseInt(val, 10) : parseFloat(val); return Number.isFinite(n) ? n : null; };
+  // come `_copieLeggi`: N. copia intero da 0 in su, Iniziale coi decimali, Qualità un numero
+  const n = _mlNumero(v('cp-n').value);
+  const nuova = Object.assign({}, copie[i], {
+    n, condizioni: String(v('cp-condizioni').value || '').trim(), iniziale: numero(v('cp-iniziale').value), qualita: numero(v('cp-qualita').value) });
+  if (nuova.n === null && !nuova.condizioni && nuova.iniziale === null && nuova.qualita === null)
+    return dire(it ? '⚠️ Una copia tutta vuota non si salva: per toglierla, usa la ✕ nel tab «Copie» dell’articolo.' : '⚠️ An empty copy cannot be saved.');
+  copie[i] = nuova;
+  const b = v('cp-salva'); if (b) b.disabled = true;
+  try {
+    await _saveFigurineItem(Object.assign({}, art, { copie }));
+    v('copia-modal')?.remove();
+    toast(it ? '✅ Copia salvata.' : '✅ Copy saved.', 'success');
+    _cdDisegna();
+  } catch (e) {
+    console.error('_copiaSalva', e);
+    if (b) b.disabled = false;
+    dire((it ? '⚠️ NON salvata: ' : '⚠️ NOT saved: ') + (e?.message || e));
+  }
 }
 async function salvaDoppioni() {
   if (!currentUser?.isAdmin) return;
@@ -70747,13 +70865,20 @@ function _copiaRigaHTML(c, artId, chiave) {
 function _copieIntestazione() {
   const it = currentLang === 'it';
   const th = 'padding:4px 6px;font-size:0.76rem;color:var(--info);font-weight:600;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;';
-  return '<tr><th style="' + th + '">n.</th><th style="' + th + '">' + (it ? 'Condizioni' : 'Condition') + '</th><th style="' + th + '">' + (it ? 'Iniziale' : 'Initial') + '</th><th style="' + th + '">' + (it ? 'Qualità' : 'Quality') + '</th><th style="' + th + '">' + (it ? 'Annunci' : 'Listings') + '</th>';   // v7.263
+  return '<tr><th style="' + th + '">n.</th><th style="' + th + '">' + (it ? 'Condizioni' : 'Condition') + '</th><th style="' + th + '">' + (it ? 'Iniziale' : 'Initial') + '</th><th style="' + th + '">' + (it ? 'Voto' : 'Rating') + '</th><th style="' + th + '">' + (it ? 'Annunci' : 'Listings') + '</th>';   // v7.263; v7.266: «Qualità» → «Voto» (Franco)
+}
+// 🆕 v7.266 (Franco: «nel tab Copie di un articolo, le copie devono essere ordinate per campo "n."») - le copie con la loro
+//    posizione nel dato ([copia, indice]: la chiave di una copia senza id, `#indice`, resta quella), in ordine di n.; senza
+//    n. in fondo, nell'ordine in cui sono. In modifica l'ordine si salva così com'è a schermo.
+function _copiePerNumero(f) {
+  return (Array.isArray(f.copie) ? f.copie : []).map((c, i) => [c, i])
+    .sort((a, b) => ((a[0].n ?? Infinity) - (b[0].n ?? Infinity)) || (a[1] - b[1]));
 }
 function _copieEditHTML(f) {
   const it = currentLang === 'it';
   return '<div class="detail-row" style="flex-direction:column;align-items:stretch;gap:0.4rem;"><span class="detail-label">' + (it ? 'Copie' : 'Copies') + '</span>'
     + '<div style="overflow-x:auto;"><table id="fe-copie" data-fig-id="' + esc(f.id || '') + '" style="border-collapse:collapse;">' + _copieIntestazione() + '<th></th></tr>'
-    + (Array.isArray(f.copie) ? f.copie : []).map((c, i) => _copiaRigaHTML(c, f.id, _annChiaveCopia(c, i))).join('') + '</table></div>'
+    + _copiePerNumero(f).map(([c, i]) => _copiaRigaHTML(c, f.id, _annChiaveCopia(c, i))).join('') + '</table></div>'   // v7.266: per n.
     + _copieAnnunciDopo()
     + '<div><button type="button" class="btn-primary btn-admin" style="font-size:0.82rem;padding:0.3rem 0.8rem;" onclick="_copiaAggiungi()">+ ' + (it ? 'Aggiungi copia' : 'Add copy') + '</button></div></div>';
 }
@@ -70783,7 +70908,7 @@ function _copieLetturaHTML(f) {
   const td = _copieCella + 'font-size:0.85rem;color:var(--text);';
   return '<div class="detail-row" style="flex-direction:column;align-items:stretch;gap:0.4rem;">' + lab
     + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' + _copieIntestazione() + '</tr>'
-    + copie.map((c, i) => {
+    + _copiePerNumero(f).map(([c, i]) => {   // v7.266: per n.
       return '<tr><td style="' + td + '">' + esc(String(c.n ?? '')) + '</td>'
         + '<td style="' + td + 'white-space:pre-wrap;">' + esc(c.condizioni || '') + '</td><td style="' + td + '">' + esc(String(c.iniziale ?? '')) + '</td><td style="' + td + '">' + esc(_copiaQualitaTesto(c.qualita)) + '</td>'
         + _copiaCellaAnnunci(f.id, _annChiaveCopia(c, i)) + '</tr>'; }).join('')   // v7.263: + Qualità, + Annunci
@@ -80811,13 +80936,13 @@ function renderAdminFunzioni() {
         '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '9. Collega gli annunci alle copie' : '9. Link the listings to the copies') + '</h4>' +
         '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
           (it ? 'Per ogni <b>annuncio con Articolo e N</b> non ancora collegato, cerca fra le <b>Copie</b> del suo articolo quella con lo stesso <b>n.</b> e lo collega. Se l’articolo non ce l’ha, la <b>crea</b>.<br><br>' +
-                '<b>Niente si perde:</b> i campi vuoti della copia prendono il valore dell’annuncio (Voto → Qualità, Iniziale, Condizioni); poi l’annuncio prende quelli della copia.<br><br>' +
+                '<b>Niente si perde:</b> i campi vuoti della copia prendono il valore dell’annuncio (Voto, Iniziale, Condizioni); poi l’annuncio prende quelli della copia.<br><br>' +
                 '<b>NOTE:</b><br>' +
                 'Gli annunci senza N (lotti misti) restano come sono.<br>' +
                 'Si può <b>rilanciare</b>: un annuncio già collegato viene saltato.<br>' +
                 'Mostra l’anteprima e chiede conferma.'
               : 'For every <b>listing with Item and N</b> not linked yet, finds among its item’s <b>Copies</b> the one with the same <b>n.</b> and links it. If the item has none, it <b>creates</b> it.<br><br>' +
-                '<b>Nothing is lost:</b> the copy’s empty fields take the listing’s value (Rating → Quality, Initial, Condition); then the listing takes the copy’s.<br><br>' +
+                '<b>Nothing is lost:</b> the copy’s empty fields take the listing’s value (Rating, Initial, Condition); then the listing takes the copy’s.<br><br>' +
                 '<b>NOTES:</b><br>Listings without N (mixed lots) stay as they are.<br>It can be <b>re-run</b>: a linked listing is skipped.<br>It previews and asks for confirmation.') + '</p>' +
         '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
           '<button class="btn-primary btn-admin" onclick="anteprimaAnnCopie()">&#128269; ' + (it ? 'Anteprima' : 'Preview') + '</button>' +
@@ -81025,7 +81150,8 @@ async function anteprimaAnnCopie() {
           + (k.nuova ? '<b style="color:var(--success);">' + (it ? 'copia nuova' : 'new copy') + '</b>' : (it ? 'copia esistente' : 'existing copy'))
           + ' <span style="color:var(--muted);">(' + k.voci.length + ' ' + (it ? (k.voci.length === 1 ? 'annuncio' : 'annunci') : (k.voci.length === 1 ? 'listing' : 'listings')) + ')</span></div>'
           + k.voci.map(v => '<div style="padding-left:3.6rem;">' + esc([v.r.account, v.r.sito].filter(Boolean).join(' · ') || '—')
-            + (v.presi.length && !k.nuova ? ' · ' + (it ? 'la copia prende: ' : 'copy takes: ') + esc(v.presi.join(', ')) : '')
+            // v7.266 - i nomi a schermo, non le chiavi (`qualita` si legge «Voto», Franco: «rinominalo in "Voto"»)
+            + (v.presi.length && !k.nuova ? ' · ' + (it ? 'la copia prende: ' : 'copy takes: ') + esc(v.presi.map(p => ({ qualita: it ? 'Voto' : 'Rating', iniziale: it ? 'Iniziale' : 'Initial', condizioni: it ? 'Condizioni' : 'Condition' })[p] || p).join(', ')) : '')
             // un valore diverso fra annuncio e copia: vince la copia, e lo si dice con tutti e due i valori
             + v.diversi.map(d => '<div style="color:var(--warn);padding-left:1.2rem;">⚠️ ' + esc(it ? campoIt[d.campo] : d.campo) + ': '
                 + (it ? 'annuncio ' : 'listing ') + testo(d.annuncio) + ' → ' + (it ? 'resta quello della copia ' : 'the copy’s stays ') + testo(d.copia) + '</div>').join('') + '</div>').join('')).join('')).join('')
