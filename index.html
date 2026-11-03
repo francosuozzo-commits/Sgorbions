@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.266">
+<link rel="stylesheet" href="css/style.css?v=7.267">
 
 
 <style>
@@ -2389,7 +2389,9 @@ button.back-btn { color:#ffffff; }
 <!-- 🆕 v7.120 (Franco) - «Togli macchie»: solo admin, arancio, prima della colonna blu (sotto «Impersona») -->
 <button type="button" id="mac-linguetta" onclick="_cliccaLinguettaMacchie()">🧽 Macchie</button>
 <!-- 🆕 v7.254 (Franco) - «Mancoliste»: solo admin, arancio, sotto «Macchie»; apre la sezione della console -->
-<button type="button" id="ml-linguetta" onclick="showAdminTab('mancoliste')" aria-label="Set doppi"><span class="wz-ling-corta">🧾</span><span class="wz-ling-lunga">🧾 Set doppi</span></button>
+<!-- 🔄 v7.267 (Franco: «lo shortcut a linguetta "set doppi", rinominalo in "copie doppie" e fallo puntare a questa sezione,
+     primo tab») - apre «Copie doppie», che entrando mostra sempre il primo tab -->
+<button type="button" id="ml-linguetta" onclick="showAdminTab('doppioni')" aria-label="Copie doppie"><span class="wz-ling-corta">🧾</span><span class="wz-ling-lunga">🧾 Copie doppie</span></button>
 <!-- 🆕 v7.254 (Franco: «anche per gli annunci») - all'admin e al venditore, come la voce della barra che sul desktop sparisce -->
 <button type="button" id="ann-linguetta" onclick="apriAnnunciNav()" aria-label="Annunci"><span class="wz-ling-corta">📢</span><span class="wz-ling-lunga">📢 Annunci</span></button>
 <button type="button" id="wz-linguetta" class="solo-wz" onclick="apriWizardLista()" aria-label="Riprendi il Questionario Sgorbions">
@@ -4190,10 +4192,8 @@ di tutte le serie</button>
           <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
           <button class="admin-tab" onclick="adminTab('segnalazioni')" data-i18n="admin.segnalazioni">🔔 Segnalazioni</button>
           <button class="admin-tab" onclick="adminTab('series')" data-i18n="admin.series">Series</button>
-          <!-- 🆕 v7.254 (Franco: «mi serve una nuova sezione nella admin console, chiamata Mancoliste»); la disegna
-               `renderAdminMancoliste`. 🔄 v7.255 (Franco: «la sezione MANCOLISTE la rinominiamo come MIEI SET»; poi: «la
-               sezione della admin console deve chiamarsi "Set doppi" (anche la linguetta)») - in ordine alfabetico dopo Serie -->
-          <button class="admin-tab" onclick="adminTab('mancoliste')">🧾 Set doppi</button>
+          <!-- 🗑️ v7.267 (Franco: «la sezione "Set doppi" della admin console falla diventare un secondo tab della sezione
+               "Copie doppie"») - qui stava il tab «🧾 Set doppi» (v7.254 «Mancoliste», v7.255 «Set doppi") -->
           <button class="admin-tab" onclick="adminTab('tipoarticolo')">🧩 Tipologie di articoli</button>
           <button class="admin-tab active" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
         </div>
@@ -4548,23 +4548,31 @@ di tutte le serie</button>
         <div id="admin-caroselli" class="admin-section">
           <div><div id="admin-caroselli-tda"></div></div>
         </div>
-        <!-- 🆕 v7.254 - LA SEZIONE «MANCOLISTE»: la disegna `renderAdminMancoliste` -->
-        <div id="admin-mancoliste" class="admin-section">
-          <!-- 🆕 v7.255 (Franco: «vorrei poi un altro tab; chiamato DETTAGLI SET; il primo tab lo chiami MANCOLISTE») -
-               i due tab li accende `_mlVista`; DETTAGLI SET lo disegna `renderAdminDettagliSet` -->
-          <!-- (Franco: «la sezione MANCOLISTE la rinominiamo come MIEI SET») -->
-          <h3 style="font-family:var(--font-ui);margin:0 0 0.4rem;">🧾 Set doppi</h3>
-          <div class="ml-schede" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin:0.4rem 0 1rem;">
-            <button class="admin-subtab active" data-ml-vista="ml" onclick="_mlVista('ml')">MANCOLISTE</button>
-            <!-- (Franco: «il tab DETTAGLI SET deve chiamarsi DETTAGLI SET DOPPI») -->
-            <button class="admin-subtab" data-ml-vista="ds" onclick="_mlVista('ds')">DETTAGLI SET DOPPI</button>
-          </div>
-          <div><div id="admin-mancoliste-box"></div></div>
-          <div><div id="admin-dettagli-set-box" style="display:none;"></div></div>
-        </div>
-        <!-- 🆕 v7.262 - LA SEZIONE «DOPPIONI»: la disegna `renderAdminDoppioni` -->
+        <!-- 🆕 v7.262 - LA SEZIONE «DOPPIONI» (dalla v7.264 «Copie doppie»): la disegna `renderAdminDoppioni`
+             🔄 v7.267 (Franco: «la sezione "Set doppi" della admin console falla diventare un secondo tab della sezione "Copie
+             doppie"; il primo tab lo chiami "Copie doppie elementi strutturati"») - DUE TAB, accesi da `_cdVista`: il primo
+             è quello di prima (`#admin-doppioni-tda`), il secondo è la vecchia sezione «Set doppi», con dentro i suoi due
+             tab di sempre (MANCOLISTE e DETTAGLI SET DOPPI, `_mlVista`). `#admin-mancoliste` non è più una sezione
+             (niente `admin-section`): è il contenitore del secondo tab, con gli stessi id di prima. -->
         <div id="admin-doppioni" class="admin-section">
-          <div><div id="admin-doppioni-tda"></div></div>
+          <h3 style="font-family:var(--font-ui);margin:0 0 0.4rem;">🧾 Copie doppie</h3>
+          <div class="cd-schede" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin:0.4rem 0 1rem;">
+            <button class="admin-subtab active" data-cd-vista="el" onclick="_cdVista('el')">COPIE DOPPIE ELEMENTI STRUTTURATI</button>
+            <button class="admin-subtab" data-cd-vista="set" onclick="_cdVista('set')">SET DOPPI</button>
+          </div>
+          <div id="cd-vista-el"><div id="admin-doppioni-tda"></div></div>
+          <!-- 🆕 v7.254 - LA SEZIONE «MANCOLISTE» (v7.255 «Set doppi»): la disegna `renderAdminMancoliste` -->
+          <div id="admin-mancoliste" style="display:none;">
+            <!-- 🆕 v7.255 (Franco: «vorrei poi un altro tab; chiamato DETTAGLI SET; il primo tab lo chiami MANCOLISTE») -
+                 i due tab li accende `_mlVista`; DETTAGLI SET lo disegna `renderAdminDettagliSet` -->
+            <div class="ml-schede" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin:0.4rem 0 1rem;">
+              <button class="admin-subtab active" data-ml-vista="ml" onclick="_mlVista('ml')">MANCOLISTE</button>
+              <!-- (Franco: «il tab DETTAGLI SET deve chiamarsi DETTAGLI SET DOPPI») -->
+              <button class="admin-subtab" data-ml-vista="ds" onclick="_mlVista('ds')">DETTAGLI SET DOPPI</button>
+            </div>
+            <div><div id="admin-mancoliste-box"></div></div>
+            <div><div id="admin-dettagli-set-box" style="display:none;"></div></div>
+          </div>
         </div>
         <!-- 🆕 v7.156 - LA SEZIONE «QUESTIONARIO»: la disegna `renderAdminQuestionario` -->
         <div id="admin-questionario" class="admin-section">
@@ -6919,7 +6927,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.266"></script>
+<script src="js/app.js?v=7.267"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6943,7 +6951,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.266'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.267'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
