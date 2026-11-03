@@ -32095,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.262';
+const JS_VERSION = 'v7.263';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32549,6 +32549,52 @@ function _serieVisibili(tutte) {
 // `getData('figurines')`, quindi un articolo che non passa di qui non compare da nessuna parte.
 // ⚠️ La firma entra nella chiave del memo per la ragione scritta sopra: senza, cambiando la
 // visibilita' di una serie le sue figurine resterebbero visibili fino a un ricaricamento.
+// 🆕 v7.263 (Franco: «le slim hanno tutte le informazioni dell'articolo padre al netto dell'attributo del peso e delle
+//    disponibilità»; «minimizzare al massimo l'utilizzo dello spazio a database») - LA SLIM LEGGE DALLA PARENT.
+// 📌 Il sito legge numero, nome, categoria, foto dal record in centinaia di punti: invece di cambiarli, la slim ha per
+//    PROTOTIPO la sua parent (`baseFigurineId`). `f.name` risponde la parent; i campi PROPRI sono solo quelli qui sotto.
+// 🔴 PERCHÉ NEL DATABASE NON FINISCE NIENTE DELLA PARENT: Firestore (`for…in` con `hasOwnProperty`), `JSON.stringify`
+//    (la cache di sessione) e lo spread `{ ...f }` vedono soltanto i campi propri. E un campo che qualcuno scrive
+//    sulla slim fuori da questo elenco (la propagazione dalla base, una form) si toglie: al collegamento e in
+//    `fsSave('series')` / `_saveFigurineItem`, cioè prima di ogni scrittura.
+const SLIM_CAMPI_PROPRI = ['id', 'seriesId', 'section', 'isSlim', 'baseFigurineId',
+                           'disponibili', 'quante', 'copie', 'peso', 'invisibile'];
+// ⚠️ UN CAMPO PROPRIO ASSENTE SI LEGGEREBBE DALLA PARENT: la Disponibilità della slim sarebbe quella della fcr, e il totale
+//    la conterebbe due volte. Per questo in memoria i campi propri ci sono sempre, `undefined` se vuoti (`_collegaSlim`);
+//    alla scrittura gli `undefined` si saltano, e nel database restano solo quelli scritti.
+function _soloCampiSlim(f) {
+  if (!f || !Object.prototype.hasOwnProperty.call(f, 'isSlim') || !f.isSlim) return f;
+  Object.keys(f).forEach(k => { if (SLIM_CAMPI_PROPRI.indexOf(k) < 0 || f[k] === undefined) delete f[k]; });
+  return f;
+}
+// La copia da scrivere: i soli campi propri e valorizzati, senza toccare l'oggetto in memoria.
+function _slimDaScrivere(f) {
+  if (!f || !Object.prototype.hasOwnProperty.call(f, 'isSlim') || !f.isSlim) return f;
+  const o = {};
+  SLIM_CAMPI_PROPRI.forEach(k => { if (Object.prototype.hasOwnProperty.call(f, k) && f[k] !== undefined) o[k] = f[k]; });
+  return o;
+}
+// Collega ogni slim alla parent di questo elenco. Una parent che non c'è (cancellata) lascia la slim scollegata: si vede
+// col solo numero vuoto, e non sparisce in silenzio.
+let _memoSlim = { src: null, n: -1 };
+function _collegaSlim(tutte) {
+  if (!Array.isArray(tutte)) return;
+  _memoSlim = { src: tutte, n: tutte.length };
+  let perId = null;
+  for (const f of tutte) {
+    if (!f || !Object.prototype.hasOwnProperty.call(f, 'isSlim') || !f.isSlim) continue;
+    if (!perId) { perId = new Map(); tutte.forEach(x => { if (x && x.id) perId.set(x.id, x); }); }
+    Object.keys(f).forEach(k => { if (SLIM_CAMPI_PROPRI.indexOf(k) < 0) delete f[k]; });
+    SLIM_CAMPI_PROPRI.forEach(k => { if (!Object.prototype.hasOwnProperty.call(f, k)) f[k] = undefined; });
+    const p = perId.get(f.baseFigurineId);
+    const proto = (p && p !== f && !p.isSlim) ? p : Object.prototype;
+    if (Object.getPrototypeOf(f) !== proto) Object.setPrototypeOf(f, proto);
+  }
+}
+function _collegaSlimSeServe(tutte) {
+  if (_memoSlim.src !== tutte || _memoSlim.n !== tutte.length) _collegaSlim(tutte);
+}
+
 let _memoVisibili = { src: null, firma: null, out: null };
 function _figurineVisibili(tutte) {
   if (currentUser?.isAdmin) return tutte;
@@ -32563,7 +32609,7 @@ function getData(k, def) {
   if (k.startsWith('owned_') || k === 'currentUser' || k === 'lang') {
     return LOCAL.get(k) || def;
   }
-  if (k === 'figurines' && Array.isArray(_cache[k])) return _figurineVisibili(_cache[k]);
+  if (k === 'figurines' && Array.isArray(_cache[k])) { _collegaSlimSeServe(_cache[k]); return _figurineVisibili(_cache[k]); }   // v7.263
   // 🆕 v6.584 - e le serie, dalla stessa porta (v6.080)
   if (k === 'series' && Array.isArray(_cache[k])) return _serieVisibili(_cache[k]);
   return _cache[k] !== undefined ? _cache[k] : def;
@@ -33043,7 +33089,10 @@ async function fsSave(collName, item) {
   const { collection, doc, setDoc, addDoc } = window._fb;
   if (item.id) {
     const ref = doc(db, collName, item.id);
-    const writes = [setDoc(ref, item, { merge: true })];
+    // 🆕 v7.263 - le slim si scrivono coi soli campi propri (`_slimDaScrivere`): l'oggetto in memoria non si tocca
+    const _daScrivere = (collName === 'series' && Array.isArray(item.items) && item.items.some(f => f && f.isSlim))
+      ? Object.assign({}, item, { items: item.items.map(_slimDaScrivere) }) : item;
+    const writes = [setDoc(ref, _daScrivere, { merge: true })];
     if (collName === 'users') writes.push(_syncPublicProfile(item));
     await Promise.all(writes);
     if (collName === 'series') _segnalaSerieCambiata(item.id);   // v6.443
@@ -33266,6 +33315,9 @@ async function _saveFigurineItem(item) {
       catch (e) { console.error('computeFullName dopo la regola del "!"', e); }
     }
   }
+  // 🆕 v7.263 - una slim si scrive coi soli campi propri: tutto il resto è della parent (`_collegaSlim`). Prima del
+  //    controllo degli undefined, che altrimenti avviserebbe dei campi propri vuoti.
+  _soloCampiSlim(item);
   // v6.043 - vedi sopra: via gli undefined, ma detti ad alta voce.
   {
     const r = _sanificaPerFirestore(item);
@@ -33346,6 +33398,8 @@ async function _saveFigurineItem(item) {
   _cache.figurines = _cache.figurines || [];
   const flatIdx = _cache.figurines.findIndex(x => x.id === item.id);
   if (flatIdx >= 0) _cache.figurines[flatIdx] = item; else _cache.figurines.push(item);
+  // 🆕 v7.263 - si ricollegano le slim: questa può essere una slim nuova, o la parent di qualcuna (oggetto nuovo)
+  _collegaSlim(_cache.figurines);
 
   // 🆕 v7.123 - la foto di un retro va anche sul retro in comune dell'altra serie (`_propagaFotoRetroCondiviso`). Un
   //    errore lì non deve far credere fallito il salvataggio di questo articolo, che è riuscito.
@@ -33365,7 +33419,8 @@ async function _deleteFigurineItem(id) {
       // memoria e vivo sul server: e' il guasto della v6.042, dove un oggetto rimasto in
       // `series.items` faceva fallire ogni salvataggio successivo di quella serie.
       if (_serieSorpassata(series.id)) throw _erroreSerieSorpassata(series.id);
-      const itemToRemove = series.items[idx];
+      // v7.263 - una slim si toglie com'è scritta nel database (i soli campi propri), o `arrayRemove` non la trova
+      const itemToRemove = _slimDaScrivere(series.items[idx]);
       series.items.splice(idx, 1);
       _invalidateSessionCache();
       try {
@@ -33671,6 +33726,7 @@ async function loadAllData() {
       _salvaCacheSessione();
     }
     await loadAllOwnedFromFirebase();
+    _collegaSlim(_cache.figurines);   // v7.263 - le slim leggono dalla parent
     _cache.users = _cache.users || [];
     // seed admin if not present (solo quando l'intera lista utenti è caricata, cioè per l'admin)
     if (currentUser?.isAdmin && !_cache.users.find(u => u.username === 'admin')) {
@@ -43747,6 +43803,7 @@ async function _annCarica() {
     // v7.188 - gli annunci salvati quando il sito si chiamava «Subito»: si leggono come «Subito.it» (e si scrivono
     //    così al primo salvataggio), se no la tendina e le pillole non li riconoscerebbero
     _annRighe.forEach(r => { if (r.sito === 'Subito') r.sito = 'Subito.it'; });
+    _annLetti = true;   // v7.263 - le colonne «Annunci» delle copie non li rileggono
     _annDisegna();
   } catch (e) {
     console.error('_annCarica', e);
@@ -43778,7 +43835,7 @@ function _annTitoloPerSito(sito, t) {
 // 🆕 v7.199 (Franco: «aggiungiamo un box filtri chiamato "Serie", che contiene una pillola per ogni serie del sito;
 //    usa i nomi brevi») - il terzo riquadro. La voce è l'id della serie (`campo` = il campo della riga da guardare,
 //    se non è la chiave del riquadro), e a schermo va il nome breve (`etichetta`), come nella colonna Serie.
-const _annFiltro = { sito: new Set(), account: new Set(), serie: new Set(), n: new Set(), tipologia: new Set(), singola: new Set(), valore: new Set() };   // v7.229: + tipologia, singola; v7.242: + valore
+const _annFiltro = { sito: new Set(), account: new Set(), serie: new Set(), n: new Set(), tipologia: new Set(), singola: new Set(), valore: new Set(), articolo: new Set() };   // v7.229: + tipologia, singola; v7.242: + valore; v7.263: + articolo
 // 🔄 v7.202 (Franco: «mettere prima serie, poi account e poi sito; account rinominalo "Venditore"») - l'ordine dei
 //    riquadri è quello dell'elenco; il titolo segue la formula degli altri, «Filtra per venditore» (la chiave resta
 //    `account`, come il campo della riga)
@@ -43808,6 +43865,25 @@ const _ANN_RIQUADRI = [
     voci: () => { const q = _ANN_RIQUADRI.find(x => x.k === 'tipologia');
       return [...new Set(_annRighe.map(q.val).filter(Boolean).concat('famiglia'))].sort((a, b) => _aggNomeTipo(a).localeCompare(_aggNomeTipo(b), 'it', { sensitivity: 'base' })); },
     etichetta: k => k === 'famiglia' ? (currentLang === 'it' ? 'Famiglie' : 'Families') : _aggNomeTipo(k) },
+  // 🆕 v7.263 (Franco: «nella ricerca degli annunci, aggiungere una sezione con dentro il filtro per articolo; le pillole
+  //    devono apparire solo dopo che ho selezionato con le relative pillole Serie e Tipologia di articolo») - una pillola per
+  //    ogni articolo degli annunci delle serie E delle tipologie scelte, per numero e poi per nome («12 · PIPPO»). Senza
+  //    serie o senza tipologia scelte il riquadro non c'è (`nascosto`), e una scelta rimasta fuori si toglie
+  //    (`_annPotaArticolo`): un filtro che non si vede non deve filtrare.
+  { k: 'articolo', campo: 'articoloId', it: 'Filtra per articolo', en: 'Filter by item',
+    nascosto: () => !_annFiltro.serie.size || !_annFiltro.tipologia.size,
+    voci: () => {
+      if (!_annFiltro.serie.size || !_annFiltro.tipologia.size) return [];
+      const tip = _ANN_RIQUADRI.find(x => x.k === 'tipologia').val;
+      const idx = new Map((getData('figurines', []) || []).map(f => [f.id, f]));
+      const num = id => { const f = idx.get(id); const n = f && !f.noNumber ? parseInt(f.number, 10) : NaN; return Number.isFinite(n) ? n : 1e9; };
+      return [...new Set(_annRighe.filter(r => r.articoloId && _annFiltro.serie.has(r.seriesId) && _annFiltro.tipologia.has(tip(r))).map(r => r.articoloId))]
+        .sort((a, b) => (num(a) - num(b)) || _annNomeArticolo(idx.get(a)).localeCompare(_annNomeArticolo(idx.get(b)), 'it'));
+    },
+    etichetta: id => { const f = (getData('figurines', []) || []).find(x => x.id === id);
+      if (!f) return currentLang === 'it' ? 'articolo non trovato' : 'item not found';
+      const n = f.noNumber ? '' : String(f.number ?? '').trim();
+      return (n ? n + ' · ' : '') + _annNomeArticolo(f); } },
   { k: 'singola', it: 'Filtra per figurina singola', en: 'Filter by single sticker',
     val: r => ['figurines', 'attaccare'].includes(_ANN_RIQUADRI.find(x => x.k === 'tipologia').val(r)) ? (r.articoloId ? 'si' : 'no') : '',
     voci: () => ['si', 'no'],
@@ -43822,8 +43898,12 @@ const _ANN_RIQUADRI = [
   //    delle serie: qui l'etichetta è solo un numero. E (Franco: «prima del numero (il valore della pillola) mettici un
   //    #») il conteggio si legge «#3» (`prima`, in `_chipTipoHTML`)
   // 🔄 v7.253 (Franco: «"Filtra per numero" diventa "Filtra per numero articolo"»)
-  { k: 'n', it: 'Filtra per numero articolo', en: 'Filter by item number', stacco: '1.6rem', prima: '#',
-    voci: () => [...new Set(_annRighe.map(r => String(r.n ?? '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true })) },
+  // 🔄 v7.263 (Franco: «"Filtra per numero articolo" diventa "Filtra per copia", perché le copie fanno esattamente lo
+  //    stesso lavoro») - la pillola è il numero della copia: quello della copia collegata (`_annVisto`), se no il campo N
+  //    dell'annuncio (lotti misti, annunci non ancora collegati). La chiave resta `n`.
+  { k: 'n', it: 'Filtra per copia', en: 'Filter by copy', stacco: '1.6rem', prima: '#',
+    val: r => String(_annVisto(r, 'n') ?? '').trim(),
+    voci: () => [...new Set(_annRighe.map(r => String(_annVisto(r, 'n') ?? '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true })) },
   // 🆕 v7.242 (Franco: «aggiungi filtro sul prezzo (campo "Finale")»; «chiamalo "Filtra per valore"») - come il numero:
   //    una pillola per ogni valore di Finale (`prezzo`) fra gli annunci, senza doppioni e senza i vuoti, dal più basso;
   //    a schermo con la virgola. Il nome è già un numero: lo stesso `stacco` e il «#» del numero
@@ -43841,7 +43921,13 @@ function _annFiltra(k, j, aggiungi) {
   if (aggiungi) { if (f.has(v)) f.delete(v); else f.add(v); }
   else if (f.size === 1 && f.has(v)) f.clear();
   else { f.clear(); f.add(v); }
+  _annPotaArticolo();   // v7.263
   _annDisegna();
+}
+// v7.263 - gli articoli scelti che non sono più fra le pillole (cambiate serie o tipologia) escono dal filtro
+function _annPotaArticolo() {
+  const voci = _ANN_RIQUADRI.find(q => q.k === 'articolo').voci();
+  [..._annFiltro.articolo].forEach(id => { if (!voci.includes(id)) _annFiltro.articolo.delete(id); });
 }
 // v7.187 (Franco: «metti il tasto "Azzera filtri"») - lo stesso tasto della ricerca dell'Inventario
 function _annAzzeraFiltri() {
@@ -43853,6 +43939,7 @@ function _annFiltriHTML() {
   return '<div><button type="button" class="btn-primary" onclick="_annAzzeraFiltri()" style="font-size:0.82rem;padding:0.3rem 1rem;">'
     + (it ? 'Azzera filtri' : 'Reset filters') + '</button></div>'
     + _ANN_RIQUADRI.map(q => {
+    if (q.nascosto && q.nascosto()) return '';   // v7.263: l'articolo, finché mancano serie e tipologia
     const voci = q.voci();
     const chips = voci.map((v, j) => _chipTipoHTML({
       etichetta: q.etichetta ? q.etichetta(v) : v, n: _annRighe.filter(r => _annPassa(r, q.k) && (q.val ? q.val(r) : r[q.campo || q.k]) === v).length,   // v7.229: `val`
@@ -43927,7 +44014,7 @@ function _annDisegna() {
     if (k === 'serie') return nomeSerie(serie.get(r.seriesId));
     if (k === 'articolo') { const f = figs.get(r.articoloId); return f ? _annNomeArticolo(f) : ''; }
     if (k === 'tipologia') return tipoDi(r);   // v7.200
-    return r[k] ?? '';
+    return _annVisto(r, k, figs) ?? '';   // v7.263: N, Voto e Iniziale dalla copia, se collegata
   };
   // 🆕 v7.200 (Franco: «prima di articolo, metti una colonna chiamata "Tipologia di articolo"») - quella salvata
   //    nell'annuncio, se no quella del suo articolo (come la finestra, v7.186), col nome a schermo della tipologia
@@ -43997,8 +44084,11 @@ function _annDisegna() {
         //    scendere di 1 euro») - `step="any"`: le frecce vanno di 1 e i centesimi si possono ancora scrivere a mano
         //    (con `step="1"` un 4,50 sarebbe un valore «non valido» per il browser)
         // 🔄 v7.202 (Franco: «il campo voto: dagli una approssimazione di 0,5 (ora è 1)») - il voto va di mezzo in mezzo
+        // 🆕 v7.263 (scelta A) - N, Voto e Iniziale di un annuncio collegato si leggono dalla copia, e lì non si scrivono
+        const daCopia = campo => { const c = _annCopiaDi(r, figs), k = (_ANN_DA_COPIA.find(x => x[0] === campo) || [])[1]; return !!(c && k && !_annVuoto(c[k])); };
         const inp = (campo, tipo, val, st) => '<input class="ann-cella" type="' + tipo + '"' + (tipo === 'number' ? ' min="0" step="' + (campo === 'voto' ? '0.5' : 'any') + '"' : '')
-          + ' value="' + esc(val ?? '') + '" style="' + st + '" onchange="_annCampo(' + i + ',\'' + campo + '\',this)">';
+          + ' value="' + esc(_annVisto(r, campo, figs) ?? '') + '" style="' + st + (daCopia(campo) ? 'opacity:0.65;" readonly title="' + (it ? 'Dalla copia' : 'From the copy') + '"' : '"')
+          + ' onchange="_annCampo(' + i + ',\'' + campo + '\',this)">';
         return '<tr>'
           + '<td style="text-align:center;"><input type="checkbox"' + (_annSpuntati.has(r.id) ? ' checked' : '') + ' onchange="_annSpunta(\'' + esc(r.id || '') + '\',this.checked)"></td>'   // v7.200
           + '<td>' + sel('sito', _FA_SITI.map(x => x.nome)) + '</td>'
@@ -44009,7 +44099,9 @@ function _annDisegna() {
           + '<td style="white-space:nowrap;">' + esc(tipoDi(r)) + '</td>'   // v7.200
           // v7.187 (Franco: «i 2 link non fanno leggere il testo, visto il blu scuro utilizzato; usiamo un azzurro»)
           + '<td>' + (f ? '<a href="#" style="color:var(--info);" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;">' + esc(_annNomeArticolo(f)) + '</a>'
-                       : (r.articoloId ? '<span style="color:var(--warn);">' + (it ? 'articolo non trovato' : 'item not found') + '</span>' : '')) + '</td>'
+                       : (r.articoloId ? '<span style="color:var(--warn);">' + (it ? 'articolo non trovato' : 'item not found') + '</span>' : ''))
+            // v7.263 - sotto l'articolo, la copia messa in vendita
+            + (f && r.copiaId ? '<div style="font-size:0.78rem;color:var(--muted);">' + (it ? 'copia ' : 'copy ') + esc(_annNomeCopia(_annTrovaCopia(f, r.copiaId)) || (it ? 'non trovata' : 'not found')) + '</div>' : '') + '</td>'
           // v7.187 (Franco: «riduci larghezza colonne Prezzo e Costo; allarga colonna Titolo; riduci larghezza colonna N»)
           + '<td>' + inp('n', 'text', r.n, 'width:2.6rem;') + '</td>'
           // v7.200 (Franco: «accorcia il campo "Titolo" di un 20%»; «riduci la larghezza della colonna Costo e Prezzo»)
@@ -44077,13 +44169,89 @@ function _annOpzioniArticolo(seriesId, tipo, scelto) {
   return '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
     + art.map(f => '<option value="' + esc(f.id) + '"' + (f.id === scelto ? ' selected' : '') + '>' + esc((num(f) ? num(f) + ' · ' : '') + _annNomeArticolo(f)) + '</option>').join('');
 }
-// i due cambi a cascata: la serie rifà le tipologie (e svuota gli articoli), la tipologia rifà gli articoli
+// 🆕 v7.263 (Franco: «negli annunci il campo Articolo deve puntare alle copie; prima chiede l'articolo, come oggi, poi la
+//    sua copia; sono le copie che metto in vendita, non l'originale») - LA COPIA DELL'ANNUNCIO. Le copie sono quelle del
+//    tab «Doppi» dell'articolo (`copie`); l'annuncio salva `copiaId`. Una copia salvata prima della v7.263 non ha l'id:
+//    si riconosce dalla posizione (`#0`, `#1`…) finché l'articolo non viene risalvato, che gliene dà uno.
+const _annChiaveCopia = (c, i) => (c && c.id) || ('#' + i);
+function _annTrovaCopia(art, chiave) {
+  const copie = (art && Array.isArray(art.copie)) ? art.copie : [];
+  const i = copie.findIndex((c, j) => _annChiaveCopia(c, j) === chiave);
+  return i < 0 ? null : copie[i];
+}
+// la voce della tendina e della tabella: «n. 3 · 7,5» (v7.263: senza la Versione, tolta dalle copie)
+function _annNomeCopia(c) {
+  if (!c) return '';
+  return [c.n != null ? 'n. ' + c.n : '', _copiaQualitaTesto(c.qualita)].filter(Boolean).join(' · ') || (currentLang === 'it' ? 'copia senza dati' : 'copy without data');
+}
+function _annOpzioniCopia(articoloId, scelta) {
+  const it = currentLang === 'it';
+  if (!articoloId) return '<option value="">' + (it ? '— scegli prima l’articolo —' : '— choose the item first —') + '</option>';
+  const art = (getData('figurines', []) || []).find(f => f.id === articoloId);
+  const copie = (art && Array.isArray(art.copie)) ? art.copie : [];
+  if (!copie.length) return '<option value="">' + (it ? '— l’articolo non ha copie —' : '— the item has no copies —') + '</option>'
+    + (scelta ? '<option value="' + esc(scelta) + '" selected>' + esc(scelta) + ' ⚠️</option>' : '');
+  return '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+    + copie.map((c, i) => { const k = _annChiaveCopia(c, i); return '<option value="' + esc(k) + '"' + (k === scelta ? ' selected' : '') + '>' + esc(_annNomeCopia(c)) + '</option>'; }).join('')
+    // una copia che non c'è più resta scelta, con la sua chiave: si vede e non si perde al Salva
+    + (scelta && !copie.some((c, i) => _annChiaveCopia(c, i) === scelta) ? '<option value="' + esc(scelta) + '" selected>' + esc(scelta) + ' ⚠️</option>' : '');
+}
+// i cambi a cascata: la serie rifà le tipologie (e svuota gli articoli), la tipologia rifà gli articoli, l'articolo le copie
 function _annCambiaSerie(sid) {
   document.getElementById('ann-tipo').innerHTML = _annOpzioniTipologia(sid, null);
   document.getElementById('ann-articolo').innerHTML = _annOpzioniArticolo(sid, null, null);
+  _annCambiaArticolo('');
 }
 function _annCambiaTipo(tipo) {
   document.getElementById('ann-articolo').innerHTML = _annOpzioniArticolo(document.getElementById('ann-serie').value, tipo, null);
+  _annCambiaArticolo('');
+}
+function _annCambiaArticolo(id) {
+  const el = document.getElementById('ann-copia');
+  if (el) el.innerHTML = _annOpzioniCopia(id, null);
+  _annBloccaDaCopia();
+}
+// 🆕 v7.263 (Franco: «potrebbero esistere annunci senza copia (lotti misti); i campi dell'annuncio tienili, ma se
+//    l'annuncio è collegato a una copia che ha questi valori, al momento dell'associazione lo copiamo da lì»; «Qualità e
+//    voto sono la stessa cosa»; dopo il collegamento l'annuncio legge dalla copia, scelta A) - I QUATTRO CAMPI CHE
+//    VENGONO DALLA COPIA: [campo dell'annuncio, campo della copia]. L'Iniziale dell'annuncio è `costo` (v7.231).
+const _ANN_DA_COPIA = [['n', 'n'], ['voto', 'qualita'], ['costo', 'iniziale'], ['condizioni', 'condizioni']];
+const _annVuoto = v => v === null || v === undefined || String(v).trim() === '';
+// il valore della copia scritto come lo tiene l'annuncio: N è un testo
+const _annValCopia = (campoAnn, v) => campoAnn === 'n' ? String(v).trim() : v;
+// l'annuncio con i valori della copia al posto dei suoi, dove la copia li ha; gli altri restano quelli dell'annuncio
+function _annDaCopia(r, c) {
+  const n = Object.assign({}, r);
+  if (c) _ANN_DA_COPIA.forEach(([a, k]) => { if (!_annVuoto(c[k])) n[a] = _annValCopia(a, c[k]); });
+  return n;
+}
+// la copia di un annuncio collegato, se c'è ancora (null se non è collegato o se la copia non si trova)
+function _annCopiaDi(r, idx) {
+  if (!r || !r.copiaId || !r.articoloId) return null;
+  return _annTrovaCopia((idx || _indiceArticoli()).get(r.articoloId), r.copiaId);
+}
+// quello che si legge a schermo (scelta A): dalla copia se è collegata e ce l'ha scritto, se no dall'annuncio
+function _annVisto(r, campo, idx) {
+  const k = (_ANN_DA_COPIA.find(x => x[0] === campo) || [])[1], c = k ? _annCopiaDi(r, idx) : null;
+  return c && !_annVuoto(c[k]) ? _annValCopia(campo, c[k]) : r[campo];
+}
+// nella finestra: scelta una copia, i suoi valori entrano nelle caselle e quelle caselle si bloccano (si cambiano dalla
+//    scheda dell'articolo, tab «Copie»); senza copia, o dove la copia è vuota, la casella resta dell'annuncio
+const _ANN_CASELLE_COPIA = { n: 'ann-n', voto: 'ann-voto', costo: 'ann-costo', condizioni: 'ann-condizioni' };
+function _annBloccaDaCopia() {
+  const it = currentLang === 'it', v = x => document.getElementById(x);
+  const artId = v('ann-articolo')?.value, chiave = v('ann-copia')?.value;
+  const art = artId ? (getData('figurines', []) || []).find(f => f.id === artId) : null;
+  const c = chiave ? _annTrovaCopia(art, chiave) : null;
+  _ANN_DA_COPIA.forEach(([a, k]) => {
+    const el = v(_ANN_CASELLE_COPIA[a]);
+    if (!el) return;
+    const daCopia = !!c && !_annVuoto(c[k]);
+    if (daCopia) el.value = _annValCopia(a, c[k]);
+    el.readOnly = daCopia;
+    el.style.opacity = daCopia ? '0.65' : '';
+    el.title = daCopia ? (it ? 'Viene dalla copia: si cambia nella scheda dell’articolo, tab «Copie»' : 'Comes from the copy: change it in the item’s Copies tab') : '';
+  });
 }
 // 🗑️ v7.201 - via `_annZipScelto` e `_annZipTogli` (v7.186): lo zip degli annunci non c'è più (vedi `_annSalva`).
 // v7.187 - un campo cambiato nella riga della tabella: si salva tutta la lista, la tabella non si ridisegna (il cursore
@@ -44283,9 +44451,12 @@ function _annApriFinestra(i, sola) {
     //    in sola lettura il tasto non c'è
     + (sola ? '<select id="ann-articolo" class="form-select">' + _annOpzioniArticolo(r.seriesId || '', tipoR, r.articoloId) + '</select>'
       : '<div style="display:flex;align-items:center;gap:0.5rem;">'
-        + '<select id="ann-articolo" class="form-select" style="flex:1;min-width:0;">' + _annOpzioniArticolo(r.seriesId || '', tipoR, r.articoloId) + '</select>'
+        + '<select id="ann-articolo" class="form-select" style="flex:1;min-width:0;" onchange="_annCambiaArticolo(this.value)">' + _annOpzioniArticolo(r.seriesId || '', tipoR, r.articoloId) + '</select>'
         + '<button type="button" class="btn-secondary ann-prendi" id="ann-applica-coppia" onclick="_annApplicaCoppia()" style="font-size:0.72rem;padding:0.25rem 0.6rem;flex-shrink:0;">'
         + (it ? 'Applica valori da coppia<br>Venditore - Articolo' : 'Apply values from<br>Seller - Item pair') + '</button></div>')
+    // 🆕 v7.263 (Franco: «prima chiede l'articolo, come oggi, poi la sua copia») - le copie del tab «Doppi» dell'articolo
+    + lab(it ? 'Copia' : 'Copy')
+    + '<select id="ann-copia" class="form-select" onchange="_annBloccaDaCopia()">' + _annOpzioniCopia(r.articoloId || '', r.copiaId || null) + '</select>'
     // v7.187 (Franco: «aggiungere un campo all'annuncio, da esporre in tabella, chiamato N, da mettere dopo Articolo»)
     + lab('N')
     + '<input id="ann-n" class="form-input" type="text" value="' + esc(r.n ?? '') + '" style="max-width:8rem;">'
@@ -44344,6 +44515,7 @@ function _annApriFinestra(i, sola) {
       + '<button type="button" class="btn-primary" id="ann-salva" onclick="_annSalva(' + (i === null ? 'null' : i) + ')">' + (it ? 'Salva' : 'Save') + '</button>'
     + '</div></div>';
   document.body.appendChild(ov);
+  _annBloccaDaCopia();   // v7.263 - un annuncio collegato mostra i valori della sua copia
   // v7.187 (Franco: «un tasto per aprire annuncio in sola lettura») - la stessa finestra, con tutto spento: niente
   //    Salva, niente Clona, e «Annulla» diventa «Chiudi» (v7.201: lo zip non c'è più).
   if (sola) {
@@ -44385,7 +44557,9 @@ function _annClona(i) {
 async function _annScrivi(righe) {
   await fsSave('settings', { id: 'annunci', righe });
   _annRighe = righe;
+  _annLetti = true;   // v7.263
   _annDisegna();
+  _copieAnnunciRiempi();   // v7.263 - se sotto c'è la scheda di un articolo, la sua colonna «Annunci» si aggiorna
 }
 async function _annSalva(i, da, dopo) {
   const it = currentLang === 'it';
@@ -44401,6 +44575,7 @@ async function _annSalva(i, da, dopo) {
     seriesId: v('ann-serie').value || null,
     tipologia: v('ann-tipo').value || null,   // v7.186
     articoloId: v('ann-articolo').value || null,
+    copiaId: (v('ann-articolo').value && v('ann-copia')?.value) || null,   // v7.263: la copia messa in vendita
     titolo: _annTitoloPerSito(v('ann-sito').value, v('ann-titolo').value.trim()),   // v7.187: Vinted, niente tutto maiuscolo
     titoloEn: _annTitoloPerSito(v('ann-sito').value, v('ann-titolo-en').value.trim()),   // v7.199: la stessa regola
     descrizione: v('ann-descrizione').value.trim(),
@@ -44414,6 +44589,8 @@ async function _annSalva(i, da, dopo) {
     // 🗑️ v7.201 (Franco: «il campo foto zip ti dico di cancellarlo … le foto degli annunci sono molto grosse e … stiamo
     //    andando a cercare di ridurre lo spazio di Cloudinary») - niente più `zip`: la riga salvata non se lo porta dietro
   };
+  // v7.263 - collegato a una copia: i suoi valori al posto di quelli dell'annuncio, dove la copia li ha
+  Object.assign(riga, _annDaCopia(riga, _annCopiaDi(riga)));
   if (!riga.seriesId || !riga.titolo) {
     stato.style.color = 'var(--danger, #e5484d)';
     stato.textContent = it ? 'Servono almeno la serie e il titolo.' : 'Series and title are required.';
@@ -45681,13 +45858,15 @@ const _ML_FUORI = ['attaccare'];
 const _mlHaQuante = f => !!f && !_ML_FUORI.includes(_aggTipoDi(f));
 const _mlConta = f => _mlHaQuante(f) && !f.invisibile && _eBase(f);
 const _mlNumero = v => { const n = parseInt(v, 10); return Number.isFinite(n) && n >= 0 ? n : null; };
+// 🆕 v7.263 - il Peso in grammi: accetta la virgola, vuoto o non numero = null
+const _pesoDaTesto = v => { const n = parseFloat(String(v == null ? '' : v).trim().replace(',', '.')); return Number.isFinite(n) && n >= 0 ? n : null; };
 // 🆕 v7.258 (Franco: «un campo chiamato Disponibilità totale, da mostrare solo per le fcr base … in sola lettura … la somma
 //    della disponibilità della versione base + quella delle sue variazioni ufficiali») - null fuori dalle fcr base.
 //    `propria`: la disponibilità della base da usare (la casella mentre si scrive); senza, quella salvata. Vuoto = 0;
 //    le variazioni invisibili non contano (regola dei contatori).
 const _dispTotaleFcr = (f, tutti, propria) => !f || _aggTipoDi(f) !== 'figurines' || !_eBase(f) ? null
   : (propria !== undefined ? propria : f.disponibili || 0)
-    + (tutti || []).filter(x => x && x.isVariation && x.baseFigurineId === f.id && !x.invisibile).reduce((s, x) => s + (x.disponibili || 0), 0);
+    + (tutti || []).filter(x => x && (x.isVariation || x.isSlim) && x.baseFigurineId === f.id && !x.invisibile).reduce((s, x) => s + (x.disponibili || 0), 0);   // v7.263: e le slim (Franco)
 function _feAggiornaDispTotale(el) {
   const out = document.getElementById('fe-disponibili-totale');
   const f = getData('figurines', []).find(x => x.id === el.dataset.figId);
@@ -47287,10 +47466,10 @@ async function salvaVersioniArticolo() {
 //    qui. Silenzio vorrebbe dire «nessuna versione» senza che nessuno l'abbia deciso - percio'
 //    `prova-v6787` conta che le chiavi di qui e quelle di `ARTICOLI` coincidano, e diventa rossa.
 const VERSIONI_PER_TDA = {
-  figurines:   ['variation', 'unofficialVariation', 'change', 'free', 'printError'],
+  figurines:   ['variation', 'unofficialVariation', 'change', 'free', 'printError', 'slim'],
   // 🔄 v7.192 (Franco: «abilita le variazioni ai retro») - per i retro della serie 4 stampati in due spessori: la
   //    variazione è lo stesso retro su un cartoncino diverso. Per serie la governa la casella dei retro nella scheda.
-  retros:      ['variation', 'change', 'free', 'printError'],
+  retros:      ['variation', 'change', 'free', 'printError', 'slim'],   // v7.263: e la slim
   bustine:     ['change', 'free', 'printError'],
   // 🆕 v6.787, a griglia gia' scritta - L'ALBUM HA LA VARIAZIONE. Franco: «mi e' venuto in
   //    mente che vi sono degli album che sono stati prodotti in piu' versioni». 🔴 E porta con
@@ -47851,7 +48030,22 @@ const VERSIONI_ARTICOLO = [
     esportaIt: 'Versioni sigillate', esportaEn: 'sealed versions',
     esportaParolaIt: 'Versioni sigillate', esportaParolaEn: 'sealed versions',
     colore: 'var(--type-sealed)',      badge: 'fig-badge-sealed',      marcatoreEbay: 'SIGILLATO',
-    iconaTab: '🔒' }
+    iconaTab: '🔒' },
+  // 🆕 v7.263 (Franco: «slim diventa una nuova tipologia di versione») - LA SETTIMA VERSIONE, per le figurine con retro e
+  //    i retro della serie 4 stampati su cartoncino sottile. Non è una variazione: «le slim hanno tutte le informazioni
+  //    dell'articolo padre al netto dell'attributo del peso e delle disponibilità». Nel database porta solo i campi
+  //    propri (`SLIM_CAMPI_PROPRI`), il resto lo legge dalla parent (`_collegaSlim`). Senza spunta per serie
+  //    (`sempre`), giallo oro scelto da Franco (il giallo chiaro è della non ufficiale).
+  { chiave: 'slim',                campo: 'isSlim',                it: 'Slim',                     en: 'Slim',
+    filtroIt: 'Slim', filtroEn: 'Slim',
+    pluraleIt: 'Slim', pluraleEn: 'Slim',
+    badgeIt: 'SLIM', badgeEn: 'SLIM',
+    itBreve: 'Slim', enBreve: 'Slim', livello: 'capo', partenza: ['base'],
+    idForm: 'fe-is-slim', sempre: true,
+    esportaIt: 'Slim', esportaEn: 'slim versions',
+    esportaParolaIt: 'Slim', esportaParolaEn: 'slim versions',
+    colore: 'var(--type-slim)',        badge: 'fig-badge-slim',        marcatoreEbay: 'SLIM',
+    iconaTab: '📏' }
 ];
 
 // Le versioni che il codice riconosce OGGI. La quinta entrera' qui con la v6.235, e in quel
@@ -52693,6 +52887,9 @@ function renderCatalogSearch(q) {
     allFigs = allFigs.concat((getData('figurines', []) || []).filter(f => !f.invisibile && _idInArrivo.has(f.seriesId)));
   }
   if (_dentro) allFigs = opts.figs || [];   // v6.994 - gli articoli li ha già scelti chi chiama
+  // 🆕 v7.263 (Franco: «per adesso le slim le lasciamo fuori dalla ricerca globale») - solo nella RG: la ricerca dentro
+  //    la pagina della tipologia riceve gli articoli da chi chiama
+  else allFigs = allFigs.filter(f => !f.isSlim);
   allSeries.sort((a,b) => (a.order??9999)-(b.order??9999));
   // 🆕 v6.965 - l'indice di TUTTI gli articoli, una volta sola: `_comparatoreGriglia` risale dalla
   //    versione alla sua base, e la base può non essere fra i risultati della ricerca.
@@ -68517,7 +68714,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     if (_pagLett) _voci.push({ k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') });
     _voci.push({ k: 'ebay', et: '🏷️ Ebay' });
     const _doppi1 = _doppiTabC(f);   // v7.262 - con tutti e due i campi spenti (Doppioni) il tab non c'è
-    if (_doppi1) _voci.push({ k: 'doppi', et: '🧾 ' + (currentLang === 'it' ? 'Doppi' : 'Duplicates') });   // 🆕 v7.258
+    if (_doppi1) _voci.push({ k: 'doppi', et: '🧾 ' + (currentLang === 'it' ? 'Copie' : 'Copies') });   // 🆕 v7.258; v7.263: «Copie» (Franco)
     const tabNav = _tabNavLettura(_voci);
     // v6.529 - lo scambio si lancia dopo, quando questo markup e' nel DOM (in fondo alla funzione).
   document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + tabNav +
@@ -68541,7 +68738,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     const _doppi2 = !!currentUser?.isAdmin && _doppiTabC(f);   // v7.262 - e se la matrice dei Doppioni accende un campo
     const _voci2 = [{ k: 'generale', et: '📋 ' + (currentLang === 'it' ? 'Generale' : 'General') }];
     if (_pagLett2) _voci2.push({ k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') });
-    if (_doppi2) _voci2.push({ k: 'doppi', et: '🧾 ' + (currentLang === 'it' ? 'Doppi' : 'Duplicates') });
+    if (_doppi2) _voci2.push({ k: 'doppi', et: '🧾 ' + (currentLang === 'it' ? 'Copie' : 'Copies') });   // v7.263: «Copie»
     const _tabLett2 = _tabNavLettura(_voci2);
     document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + _tabLett2
       + '<div id="figdetail-tab-generale">' + rows.join('') + '</div>'
@@ -69739,8 +69936,9 @@ function _fotoFigurina(f, allFigs, _salti) {
   // deve solo caricarla.
   // v6.979 - il doppio NON eredita: il suo fronte è sbagliato anche lui, e la foto è la sua
   const _erroreCheEreditaIlFronte = f.isPrintError && _latoErroreStampa(f, figs) === 'retro' && !f.erroreAncheFronte;
+  // v7.263 - la slim ha il fronte della parent (Franco: «nascono senza foto, quella della parent»)
   const _frontePariAllaBase = f.isVariation || f.isUnofficialVariation
-    || _erroreCheEreditaIlFronte || _staDietro || f.isFreeVersion;
+    || _erroreCheEreditaIlFronte || _staDietro || f.isFreeVersion || f.isSlim;
   // 🆕 v6.358 - LA FIGURINA DA ATTACCARE NON HA UNA FOTO SUA, E NON DEVE AVERLA. Franco: *"la foto
   // della parte frontale (come collegamento, come per le variazioni, cosi' non ingrandiamo
   // Cloudinary)"*. E' lo stesso fronte della figurina con velina: caricarne una copia vorrebbe dire
@@ -70299,8 +70497,8 @@ async function salvaDoppioni() {
   }
 }
 function _dispTotaleHint() {
-  return currentLang === 'it' ? 'La somma della «Disponibilità singole doppie» di questa versione base e delle sue variazioni ufficiali (le invisibili no). Non si scrive: si aggiorna da sola.'
-    : 'The sum of the «Single duplicates available» of this base version and of its official variations (invisible ones excluded). Not editable: it updates by itself.';
+  return currentLang === 'it' ? 'La somma della «Disponibilità singole doppie» di questa versione base, delle sue variazioni ufficiali e delle sue slim (le invisibili no). Non si scrive: si aggiorna da sola.'
+    : 'The sum of the «Single duplicates available» of this base version, of its official variations and of its slim versions (invisible ones excluded). Not editable: it updates by itself.';   // v7.263
 }
 function _bloccoDoppiEdit(f) {
   const it = currentLang === 'it';
@@ -70335,72 +70533,104 @@ function _bloccoDoppiEdit(f) {
 //    valori: L.2000 e OMAGGIO» -, «Condizioni (text multiline)», «Iniziale: numerico»; «la colonna "Numero" la scrivo io»)
 //    - LE COPIE. Campo `copie` dell'articolo: [{ n, versione, condizioni, iniziale }]; `versione` è l'id dell'articolo
 //    base, così un nome cambiato si segue da solo. Si salva col «Salva» della scheda; le righe tutte vuote non entrano.
-// gli articoli base della stessa serie e della stessa tipologia (`_aggTipoDi`), per numero e poi per nome
-function _copieBasi(f) {
-  if (!f || !f.seriesId) return [];
-  const tda = _aggTipoDi(f);
-  return (getData('figurines', []) || []).filter(x => x && String(x.seriesId) === String(f.seriesId) && _aggTipoDi(x) === tda && _eBase(x))
-    .sort((a, b) => ((+a.number || 9999) - (+b.number || 9999)) || String(a.name || '').localeCompare(String(b.name || ''), 'it'));
-}
-const _copiaNomeBase = x => String((x && (x.name || x.fullName || x.number)) || (x && x.id) || '');
+// 🗑️ v7.263 (Franco: «il campo Versione della copia è sbagliato; deve essere preso dall'articolo di cui la copia è tale; se
+//    lo abbiamo creato sulla entità copia, eliminiamolo») - VIA LA COLONNA «VERSIONE» e `_copieBasi` / `_copiaNomeBase`,
+//    che la riempivano: la copia è dell'articolo, e la versione è la sua. Il valore già salvato su qualche copia esce dal
+//    dato al primo «Salva» della scheda (`_copieLeggi` non lo scrive più).
 const _copieCella = 'padding:4px 6px;border-bottom:1px solid var(--border);vertical-align:top;';
-function _copiaRigaHTML(basi, c) {
+// 🆕 v7.263 (Franco: «nella struttura Copie mi serve un campo: Qualità; tendina da 3 a 10 con passo 0,5») - campo `qualita`
+//    della copia, un numero (7.5); a schermo con la virgola in italiano
+const _COPIA_QUALITA = Array.from({ length: 15 }, (_, i) => 3 + i * 0.5);
+const _copiaQualitaTesto = q => (q == null || q === '') ? '' : (currentLang === 'it' ? String(q).replace('.', ',') : String(q));
+// 🆕 v7.263 (Franco: «sulla copia doppia mettiamo ora un link agli annunci») - LA COLONNA «ANNUNCI»: gli annunci che
+//    mettono in vendita quella copia (`copiaId`), uno per riga, «Sito · Venditore»; il clic apre l'annuncio. La cella nasce
+//    vuota col suo indirizzo (articolo e chiave della copia, `_annChiaveCopia`) e la riempie `_copieAnnunciRiempi`, che
+//    legge gli annunci se non sono ancora stati letti: la scheda si apre senza aspettare la rete.
+const _copiaCellaAnnunci = (artId, chiave) => '<td style="' + _copieCella + 'font-size:0.8rem;white-space:nowrap;"'
+  + (artId && chiave ? ' data-ann-art="' + esc(artId) + '" data-ann-chiave="' + esc(chiave) + '"' : '') + '></td>';
+let _annLetti = false;
+async function _copieAnnunciRiempi() {
+  const celle = [...document.querySelectorAll('td[data-ann-art]')];
+  if (!celle.length) return;
+  if (!_annLetti) {
+    try {
+      const d = (await fsGetAll('settings')).find(x => x.id === 'annunci');
+      _annRighe = (d && Array.isArray(d.righe)) ? d.righe : [];
+      _annRighe.forEach(r => { if (r.sito === 'Subito') r.sito = 'Subito.it'; });   // come `_annCarica`
+      _annLetti = true;
+    } catch (e) { console.error('_copieAnnunciRiempi', e); return; }
+  }
+  const it = currentLang === 'it';
+  celle.forEach(td => {
+    const qui = _annRighe.map((r, i) => ({ r, i })).filter(x => x.r.articoloId === td.dataset.annArt && x.r.copiaId === td.dataset.annChiave);
+    td.innerHTML = qui.length
+      ? qui.map(x => '<a href="#" style="color:var(--info);display:block;" onclick="_annApriFinestra(' + x.i + ');return false;">🔗 '
+          + esc([x.r.sito, x.r.account].filter(Boolean).join(' · ') || (it ? 'annuncio' : 'listing')) + '</a>').join('')
+      : '<span style="color:var(--muted);">—</span>';
+  });
+}
+// chi disegna la tabella torna una stringa, che il chiamante mette in pagina subito dopo: le celle si riempiono al giro dopo
+function _copieAnnunciDopo() { setTimeout(() => { _copieAnnunciRiempi(); }, 0); return ''; }
+function _copiaRigaHTML(c, artId, chiave) {
   c = c || {};
   const inp = 'class="form-input" style="padding:0.25rem 0.4rem;font-size:0.85rem;';
-  const opz = '<option value="">—</option>' + basi.map(x => '<option value="' + esc(x.id) + '"' + (x.id === c.versione ? ' selected' : '') + '>' + esc(_copiaNomeBase(x)) + '</option>').join('')
-    // una versione che non c'è più resta scelta, col suo id: si vede e non si perde al Salva
-    + (c.versione && !basi.some(x => x.id === c.versione) ? '<option value="' + esc(c.versione) + '" selected>' + esc(c.versione) + ' ⚠️</option>' : '');
-  return '<tr data-copia>'
+  // 🆕 v7.263 - ogni copia ha un id suo, che resta: l'annuncio punta a lui (`copiaId`), non al numero né alla posizione
+  return '<tr data-copia data-copia-id="' + esc(c.id || ('cp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6))) + '">'
     + '<td style="' + _copieCella + '"><input type="number" min="0" step="1" data-copia-n value="' + (c.n ?? '') + '" ' + inp + 'width:4.2rem;"></td>'
-    + '<td style="' + _copieCella + '"><select data-copia-versione ' + inp + 'max-width:14rem;">' + opz + '</select></td>'
     + '<td style="' + _copieCella + '"><textarea data-copia-condizioni rows="2" ' + inp + 'width:16rem;max-width:100%;resize:vertical;">' + esc(c.condizioni || '') + '</textarea></td>'
-    + '<td style="' + _copieCella + '"><input type="number" step="1" data-copia-iniziale value="' + (c.iniziale ?? '') + '" ' + inp + 'width:5rem;"></td>'
+    // v7.263 - `step="any"`: l'Iniziale portata da un annuncio può avere i decimali, e non si deve perdere
+    + '<td style="' + _copieCella + '"><input type="number" step="any" data-copia-iniziale value="' + (c.iniziale ?? '') + '" ' + inp + 'width:5rem;"></td>'
+    + '<td style="' + _copieCella + '"><select data-copia-qualita ' + inp + 'width:4.8rem;"><option value="">—</option>'   // v7.263
+    + _COPIA_QUALITA.map(q => '<option value="' + q + '"' + (c.qualita === q ? ' selected' : '') + '>' + _copiaQualitaTesto(q) + '</option>').join('')
+    // v7.263 - un voto portato da un annuncio fuori dalla scala (sotto il 3) resta scelto, se no si perderebbe al Salva
+    + (typeof c.qualita === 'number' && !_COPIA_QUALITA.includes(c.qualita) ? '<option value="' + c.qualita + '" selected>' + _copiaQualitaTesto(c.qualita) + '</option>' : '') + '</select></td>'
+    + _copiaCellaAnnunci(artId, chiave)   // v7.263
     + '<td style="' + _copieCella + '"><button type="button" class="tbl-btn tbl-btn-delete" title="' + (currentLang === 'it' ? 'Togli questa copia' : 'Remove this copy') + '" onclick="this.closest(\'tr\').remove()">✕</button></td></tr>';
 }
 function _copieIntestazione() {
   const it = currentLang === 'it';
   const th = 'padding:4px 6px;font-size:0.76rem;color:var(--info);font-weight:600;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;';
-  return '<tr><th style="' + th + '">n.</th><th style="' + th + '">' + (it ? 'Versione' : 'Version') + '</th><th style="' + th + '">' + (it ? 'Condizioni' : 'Condition') + '</th><th style="' + th + '">' + (it ? 'Iniziale' : 'Initial') + '</th>';
+  return '<tr><th style="' + th + '">n.</th><th style="' + th + '">' + (it ? 'Condizioni' : 'Condition') + '</th><th style="' + th + '">' + (it ? 'Iniziale' : 'Initial') + '</th><th style="' + th + '">' + (it ? 'Qualità' : 'Quality') + '</th><th style="' + th + '">' + (it ? 'Annunci' : 'Listings') + '</th>';   // v7.263
 }
 function _copieEditHTML(f) {
   const it = currentLang === 'it';
-  const basi = _copieBasi(f);
   return '<div class="detail-row" style="flex-direction:column;align-items:stretch;gap:0.4rem;"><span class="detail-label">' + (it ? 'Copie' : 'Copies') + '</span>'
     + '<div style="overflow-x:auto;"><table id="fe-copie" data-fig-id="' + esc(f.id || '') + '" style="border-collapse:collapse;">' + _copieIntestazione() + '<th></th></tr>'
-    + (Array.isArray(f.copie) ? f.copie : []).map(c => _copiaRigaHTML(basi, c)).join('') + '</table></div>'
+    + (Array.isArray(f.copie) ? f.copie : []).map((c, i) => _copiaRigaHTML(c, f.id, _annChiaveCopia(c, i))).join('') + '</table></div>'
+    + _copieAnnunciDopo()
     + '<div><button type="button" class="btn-primary btn-admin" style="font-size:0.82rem;padding:0.3rem 0.8rem;" onclick="_copiaAggiungi()">+ ' + (it ? 'Aggiungi copia' : 'Add copy') + '</button></div></div>';
 }
-// la riga nuova, con le versioni della serie e della tipologia dell'articolo della scheda
+// la riga nuova, vuota
 function _copiaAggiungi() {
   const t = document.getElementById('fe-copie');
   if (!t) return;
-  const id = t.dataset.figId, tutti = getData('figurines', []) || [];
-  t.insertAdjacentHTML('beforeend', _copiaRigaHTML(_copieBasi((id && tutti.find(x => x.id === id)) || null), {}));
+  t.insertAdjacentHTML('beforeend', _copiaRigaHTML({}));
 }
 // le righe scritte; quelle tutte vuote non entrano
 function _copieLeggi() {
   const t = document.getElementById('fe-copie');
   if (!t) return [];
   return [...t.querySelectorAll('tr[data-copia]')].map(r => ({
+    id: r.dataset.copiaId || null,   // v7.263
     n: _mlNumero(r.querySelector('[data-copia-n]').value),
-    versione: r.querySelector('[data-copia-versione]').value || null,
     condizioni: String(r.querySelector('[data-copia-condizioni]').value || '').trim(),
-    iniziale: (v => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : null; })(r.querySelector('[data-copia-iniziale]').value),
-  })).filter(c => c.n !== null || c.versione || c.condizioni || c.iniziale !== null);
+    iniziale: (v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; })(r.querySelector('[data-copia-iniziale]').value),   // v7.263: anche coi decimali
+    qualita: (v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; })(r.querySelector('[data-copia-qualita]')?.value),   // v7.263
+  })).filter(c => c.n !== null || c.condizioni || c.iniziale !== null || c.qualita !== null);
 }
 function _copieLetturaHTML(f) {
   const it = currentLang === 'it';
   const copie = Array.isArray(f.copie) ? f.copie : [];
   const lab = '<span class="detail-label">' + (it ? 'Copie' : 'Copies') + '</span>';
   if (!copie.length) return '<div class="detail-row">' + lab + '<span class="detail-value"><span style="color:var(--muted);font-style:italic;">' + (it ? 'nessuna' : 'none') + '</span></span></div>';
-  const tutti = getData('figurines', []) || [];
   const td = _copieCella + 'font-size:0.85rem;color:var(--text);';
   return '<div class="detail-row" style="flex-direction:column;align-items:stretch;gap:0.4rem;">' + lab
     + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' + _copieIntestazione() + '</tr>'
-    + copie.map(c => { const b = c.versione && tutti.find(x => x.id === c.versione);
-      return '<tr><td style="' + td + '">' + esc(String(c.n ?? '')) + '</td><td style="' + td + '">' + esc(b ? _copiaNomeBase(b) : (c.versione || '—')) + '</td>'
-        + '<td style="' + td + 'white-space:pre-wrap;">' + esc(c.condizioni || '') + '</td><td style="' + td + '">' + esc(String(c.iniziale ?? '')) + '</td></tr>'; }).join('')
-    + '</table></div></div>';
+    + copie.map((c, i) => {
+      return '<tr><td style="' + td + '">' + esc(String(c.n ?? '')) + '</td>'
+        + '<td style="' + td + 'white-space:pre-wrap;">' + esc(c.condizioni || '') + '</td><td style="' + td + '">' + esc(String(c.iniziale ?? '')) + '</td><td style="' + td + '">' + esc(_copiaQualitaTesto(c.qualita)) + '</td>'
+        + _copiaCellaAnnunci(f.id, _annChiaveCopia(c, i)) + '</tr>'; }).join('')   // v7.263: + Qualità, + Annunci
+    + '</table></div></div>' + _copieAnnunciDopo();
 }
 // e lo stesso tab in lettura (solo admin)
 function _bloccoDoppiLettura(f) {
@@ -71069,7 +71299,7 @@ function switchToEditMode(figId) {
     _tabPagineBtn(f) +
     '<button type="button" id="fe-tab-btn-ebay" onclick="switchFeTab(\'ebay\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>' +
     // 🆕 v7.258 - il tab «Doppi», su ogni tipologia; v7.262: se la matrice dei Doppioni accende almeno un campo
-    (_doppiTabC(f) ? '<button type="button" id="fe-tab-btn-doppi" onclick="switchFeTab(\'doppi\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🧾 ' + (currentLang === 'it' ? 'Doppi' : 'Duplicates') + '</button>' : '') +
+    (_doppiTabC(f) ? '<button type="button" id="fe-tab-btn-doppi" onclick="switchFeTab(\'doppi\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🧾 ' + (currentLang === 'it' ? 'Copie' : 'Copies') + '</button>' : '') +   // v7.263: era «Doppi» (Franco: «rinominalo in "Copie"»)
     '</div>';
   // 🔄 v7.082 (Franco: «da quando le due foto dell'album, nella sua form, sono andate in basso a
   //    tutto? mettile in alto a dx, come per le altre tda») - con le foto dentro il tab, il tab si
@@ -71317,6 +71547,9 @@ function switchToEditMode(figId) {
 
   // Punteggio
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Rarità':'Rarity') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-score" value="' + (f.score||0) + '" min="0" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
+  // 🆕 v7.263 (Franco: il Peso, in grammi, «su tutti gli articoli») - solo admin; vuoto = null. Sulla slim è suo, non della parent.
+  if (currentUser?.isAdmin)
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Peso (g)':'Weight (g)') + '</span><span class="detail-value"><input class="form-input" type="text" inputmode="decimal" id="fe-peso" value="' + (f.peso != null ? esc(String(f.peso).replace('.', currentLang==='it' ? ',' : '.')) : '') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
 
   if (_extraSerie && _tipoHaTaglia(f.tipoProdotto)) {   // v6.160 - solo se il TIPO la prevede
     // v6.151 - il markup del select viene da `_selectTagliaHTML`, lo stesso che usa la vista
@@ -71369,6 +71602,9 @@ function switchToEditMode(figId) {
     // 🆕 v7.078 - la Versione sigillata (solo album). 🔄 v7.082: ultima, dopo l'errore di stampa, come nel descrittore
     if (_versioneAmmessa('sealed', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('sealed') + '<span class="detail-value"><input type="checkbox" id="fe-is-sealed" onchange="toggleFeBaseFigurineGroup(\'fe-is-sealed\')" ' + (f.isSealed?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+    // 🆕 v7.263 - la Slim (figurine con retro e retro), ultima come nel descrittore
+    if (_versioneAmmessa('slim', f, figSeries))
+    html += '<div class="detail-row">' + _labelVersione('slim') + '<span class="detail-value"><input type="checkbox" id="fe-is-slim" onchange="toggleFeBaseFigurineGroup(\'fe-is-slim\')" ' + (f.isSlim?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   }
   // 🔴 v6.782 (Franco: «nella form della bustina, se setto change=true mi chiede il tipo di
   //    change obbligatorio ma non c'e' il campo») - QUI STAVA UN BIVIO A DUE SEZIONI, e faceva un
@@ -74904,6 +75140,8 @@ async function saveFigFromDetail(figId, opzioni) {
           })() : {}),
       // 🆕 v7.254 - «Quante», solo dove la casella c'è (admin, non fpa); vuota = null
       ...(document.getElementById('fe-quante') ? { quante: _mlNumero(document.getElementById('fe-quante').value) } : {}),
+      // 🆕 v7.263 - il Peso in grammi (Franco: «su tutti gli articoli»), solo dove la casella c'è (admin); vuoto = null
+      ...(document.getElementById('fe-peso') ? { peso: _pesoDaTesto(document.getElementById('fe-peso').value) } : {}),
       invisibile: document.getElementById('fe-invisibile')?.checked || false, // v6.080
       subseries: document.getElementById('fe-subseries')?.value.trim() || '',
       desc: document.getElementById('fe-desc')?.value.trim() || '',
@@ -80384,6 +80622,52 @@ function renderAdminFunzioni() {
         '</div>' +
         '<div id="varretro-esito" style="margin-top:1rem;"></div>' +
       '</div>' +
+      // 🆕 v7.263 (Franco: «per quanto riguarda la creazione delle figurine della serie 4 e dei retro in versione slim ti
+      //    direi di procedere»; «abbiamo solo da gestire come slim le figurine con retro, che sono 256, e il retro base, che
+      //    dovrebbero essere 181») - LA FUNZIONE 8.
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1.25rem;">' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '8. Crea le slim' : '8. Create the slim versions') + '</h4>' +
+        '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
+          (it ? 'Crea una <b>Slim</b> per ogni <b>Figurina con retro base</b> e per ogni <b>Retro base standard</b> (Sottoserie vuota) della serie scelta che ancora non ne ha una.<br><br>' +
+                '<b>Cosa si scrive:</b> solo il legame alla parent. Nome, numero, categoria, foto e tutto il resto la slim li legge dalla parent; suoi sono solo Disponibilità e Peso.<br><br>' +
+                '<b>NOTE:</b><br>' +
+                'Si può <b>rilanciare</b>: un articolo che ha già una slim viene saltato.<br>' +
+                'Mostra l’anteprima e chiede conferma.'
+              : 'Creates a <b>Slim</b> version for every <b>base Figurine with back</b> and every <b>standard base Retro</b> (empty Subseries) of the chosen series that does not have one yet.<br><br>' +
+                '<b>Written:</b> only the link to the parent. Everything else is read from the parent; only Availability and Weight are its own.<br><br>' +
+                '<b>NOTES:</b><br>It can be <b>re-run</b>: an item that already has a slim is skipped.<br>It previews and asks for confirmation.') + '</p>' +
+        '<label class="form-label">' + (it ? 'Serie' : 'Series') + '</label>' +
+        '<select id="slim-serie" class="form-select" style="margin-bottom:0.75rem;"><option value="">—</option>' +
+          serie.filter(x => getData('figurines', []).some(f => f.seriesId === x.id && (f.section === 'retros' || f.section === 'figurines')))
+            .map(x => '<option value="' + x.id + '">' + esc(x.name) + '</option>').join('') +
+        '</select>' +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
+          '<button class="btn-primary btn-admin" onclick="anteprimaSlim()">&#128269; ' + (it ? 'Anteprima' : 'Preview') + '</button>' +
+          '<button class="btn-primary btn-admin" id="slim-applica-btn" onclick="applicaSlim()" style="display:none;">&#9989; ' + (it ? 'Crea' : 'Create') + '</button>' +
+        '</div>' +
+        '<div id="slim-esito" style="margin-top:1rem;"></div>' +
+      '</div>' +
+      // 🆕 v7.263 (Franco: «per fare questa migrazione n articolo annuncio - copia vorrei non perdere informazioni»; poi le
+      //    risposte: l'Iniziale è la stessa, N è sempre un numero, l'annuncio legge dalla copia, le Condizioni sono della
+      //    copia; «via») - LA FUNZIONE 9.
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1.25rem;">' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '9. Collega gli annunci alle copie' : '9. Link the listings to the copies') + '</h4>' +
+        '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
+          (it ? 'Per ogni <b>annuncio con Articolo e N</b> non ancora collegato, cerca fra le <b>Copie</b> del suo articolo quella con lo stesso <b>n.</b> e lo collega. Se l’articolo non ce l’ha, la <b>crea</b>.<br><br>' +
+                '<b>Niente si perde:</b> i campi vuoti della copia prendono il valore dell’annuncio (Voto → Qualità, Iniziale, Condizioni); poi l’annuncio prende quelli della copia.<br><br>' +
+                '<b>NOTE:</b><br>' +
+                'Gli annunci senza N (lotti misti) restano come sono.<br>' +
+                'Si può <b>rilanciare</b>: un annuncio già collegato viene saltato.<br>' +
+                'Mostra l’anteprima e chiede conferma.'
+              : 'For every <b>listing with Item and N</b> not linked yet, finds among its item’s <b>Copies</b> the one with the same <b>n.</b> and links it. If the item has none, it <b>creates</b> it.<br><br>' +
+                '<b>Nothing is lost:</b> the copy’s empty fields take the listing’s value (Rating → Quality, Initial, Condition); then the listing takes the copy’s.<br><br>' +
+                '<b>NOTES:</b><br>Listings without N (mixed lots) stay as they are.<br>It can be <b>re-run</b>: a linked listing is skipped.<br>It previews and asks for confirmation.') + '</p>' +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
+          '<button class="btn-primary btn-admin" onclick="anteprimaAnnCopie()">&#128269; ' + (it ? 'Anteprima' : 'Preview') + '</button>' +
+          '<button class="btn-primary btn-admin" id="anncopie-applica-btn" onclick="applicaAnnCopie()" style="display:none;">&#9989; ' + (it ? 'Collega' : 'Link') + '</button>' +
+        '</div>' +
+        '<div id="anncopie-esito" style="margin-top:1rem;"></div>' +
+      '</div>' +
       // 🗄️ v6.980 - ARCHIVIATE LE FUNZIONI 6 E 7 (Franco: «per me puoi archiviare funzioni 6 e 7»).
       //    La 6 caricava i personaggi dai file (in pensione dal 26 settembre: i dati si toccano solo
       //    dal sito); la 7 trasformava in collegamenti i personaggi scritti nelle Note delle Mega,
@@ -80394,6 +80678,191 @@ function renderAdminFunzioni() {
   _pianoAttacca = null;  // v6.358 - un piano calcolato su un elenco vecchio non si applica
   _pianoCopia = null;    // v7.087
   _pianoVarRetro = null; // v7.192
+  _pianoSlim = null;     // v7.263
+  _pianoAnnCopie = null; // v7.263
+}
+
+// 🆕 v7.263 - LA FUNZIONE 8: una slim per ogni fcr base e ogni retro base standard (Sottoserie vuota, «Retro standard»).
+// 📌 «Ce l'ha già» = esiste una slim col `baseFigurineId` che punta a lui, come la funzione 7.
+// 📌 Il record è il minimo (`SLIM_CAMPI_PROPRI`): id, serie, tipologia, `isSlim`, legame. Il resto lo dà la parent.
+let _pianoSlim = null;
+function _pianoSlimDi(seriesId) {
+  const tutte = getData('figurines', []);
+  const gia = new Set(tutte.filter(f => f.seriesId === seriesId && f.isSlim && f.baseFigurineId).map(f => f.baseFigurineId));
+  return tutte.filter(f => f.seriesId === seriesId && _eBase(f) && !gia.has(f.id)
+      && ((f.section || 'figurines') === 'figurines' || (f.section === 'retros' && !String(f.subseries || '').trim())))
+    .sort((x, y) => String(x.section || '').localeCompare(String(y.section || '')) || ((+x.number || 1e9) - (+y.number || 1e9)))
+    .map(f => ({ id: _generateFigurineId(), seriesId, section: f.section || 'figurines', isSlim: true, baseFigurineId: f.id }));
+}
+function anteprimaSlim() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('slim-esito'), btn = document.getElementById('slim-applica-btn');
+  const sid = document.getElementById('slim-serie')?.value || '';
+  _pianoSlim = null; if (btn) btn.style.display = 'none';
+  if (!esito) return;
+  if (!sid) { esito.innerHTML = '<div style="color:var(--warn);font-size:0.9rem;">' + (it ? 'Scegli la serie.' : 'Choose the series.') + '</div>'; return; }
+  const s = getData('series', []).find(x => x.id === sid);
+  const nuovi = _pianoSlimDi(sid);
+  const idx = new Map(getData('figurines', []).map(f => [f.id, f]));
+  const nFcr = nuovi.filter(n => n.section === 'figurines').length, nRetro = nuovi.length - nFcr;
+  esito.innerHTML = '<div style="font-size:0.9rem;margin-bottom:0.6rem;">'
+    + (it ? '<b>' + nuovi.length + '</b> slim da creare in <b>' + esc(s?.name || '') + '</b>: <b>' + nFcr + '</b> ' + esc(getSectionLabel('figurines')) + ' e <b>' + nRetro + '</b> ' + esc(getSectionLabel('retros')) + '.'
+          : '<b>' + nuovi.length + '</b> slim versions to create in <b>' + esc(s?.name || '') + '</b>: <b>' + nFcr + '</b> ' + esc(getSectionLabel('figurines')) + ' and <b>' + nRetro + '</b> ' + esc(getSectionLabel('retros')) + '.')
+    + '</div>'
+    + (nuovi.length ? '<div style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.8rem;line-height:1.5;">'
+      + nuovi.map(n => { const p = idx.get(n.baseFigurineId) || {};
+          return esc(getSectionLabel(n.section) + ' · ' + (p.number != null && p.number !== '' ? p.number + ' ' : '— ') + (p.name || '')); }).join('<br>') + '</div>' : '');
+  if (nuovi.length) { _pianoSlim = { sid, nuovi }; if (btn) btn.style.display = ''; }
+}
+async function applicaSlim() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('slim-esito'), btn = document.getElementById('slim-applica-btn');
+  if (!_pianoSlim || !_pianoSlim.nuovi.length) { toast(it ? 'Fai prima l’anteprima' : 'Run the preview first', 'error'); return; }
+  const { sid, nuovi } = _pianoSlim;
+  const s = getData('series', []).find(x => x.id === sid);
+  if (!s) return;
+  if (!confirm(it ? `Creare ${nuovi.length} slim in ${s.name}?` : `Create ${nuovi.length} slim versions in ${s.name}?`)) return;
+  if (btn) btn.disabled = true;
+  // UNA scrittura per la serie, come le funzioni 5, 6 e 7
+  s.items = s.items || [];
+  const prima = s.items.slice();
+  s.items = s.items.concat(nuovi);
+  let errore = '';
+  try {
+    await fsSave('series', s);
+    const figs = getData('figurines', []); nuovi.forEach(n => figs.push(n)); _cache.figurines = figs;
+    _collegaSlim(_cache.figurines);
+  } catch (e) { s.items = prima; errore = e.message; }
+  if (btn) { btn.disabled = false; btn.style.display = 'none'; }
+  const restanti = errore ? nuovi.length : _pianoSlimDi(sid).length;
+  _pianoSlim = null;
+  if (esito) esito.innerHTML = '<div style="font-size:0.9rem;color:' + (errore || restanti ? 'var(--warn)' : 'var(--success)') + ';">'
+    + (errore ? '❌ ' + esc(errore) : (it ? '✅ Create <b>' + nuovi.length + '</b> slim in ' + esc(s.name) + '.' : '✅ Created <b>' + nuovi.length + '</b> slim versions in ' + esc(s.name) + '.'))
+    + '<br>' + (it ? 'Ricontate dopo la scrittura: ' : 'Recounted after writing: ') + '<b>' + restanti + '</b> ' + (it ? 'ancora da creare.' : 'still to create.') + '</div>';
+  if (!errore) toast(it ? `✅ ${nuovi.length} slim create in ${s.name}` : `✅ ${nuovi.length} slim versions created`, 'success');
+  try { updateSectionCounts(); } catch (e) {}
+}
+
+// 🆕 v7.263 - LA FUNZIONE 9: il campo N degli annunci diventa il collegamento a una copia dell'articolo.
+// 📌 Si abbina per numero: l'N dell'annuncio (solo cifre: «N è sempre un numero») e il `n.` della copia. Più annunci con
+//    lo stesso articolo e lo stesso N (lo stesso pezzo su due siti) vanno sulla stessa copia.
+// 📌 Niente si perde: un campo vuoto della copia prende quello dell'annuncio; poi l'annuncio prende i valori della copia
+//    (`_annDaCopia`), che da lì in avanti è quella che conta (scelta A). Un valore diverso già scritto sulla copia vince:
+//    è la scelta di Franco («al momento dell'associazione lo copiamo da lì»), e l'anteprima lo elenca prima di scrivere.
+// 📌 Una copia senza id (salvata prima della v7.263) ne riceve uno, e chi la indicava per posizione (`#2`) passa all'id.
+let _pianoAnnCopie = null;
+const _nuovoIdCopia = () => 'cp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+function _pianoAnnCopieDi(righe, idx) {
+  const liste = new Map(), orig = new Map(), voci = [];
+  const conto = { gia: 0, senzaArt: 0, artNonTrovato: 0, senzaN: 0, nonNumero: 0 };
+  const nuove = righe.map(r => {
+    if (r.copiaId) { conto.gia++; return r; }
+    if (!r.articoloId) { conto.senzaArt++; return r; }
+    const art = idx.get(r.articoloId);
+    if (!art) { conto.artNonTrovato++; return r; }
+    const t = String(r.n ?? '').trim();
+    if (!t) { conto.senzaN++; return r; }
+    if (!/^\d+$/.test(t)) { conto.nonNumero++; return r; }
+    const num = parseInt(t, 10);
+    if (!liste.has(art.id)) {
+      const prima = Array.isArray(art.copie) ? art.copie : [];
+      orig.set(art.id, JSON.stringify(prima));
+      liste.set(art.id, prima.map((c, j) => Object.assign({}, c, { _vecchia: _annChiaveCopia(c, j) })));
+    }
+    const lista = liste.get(art.id);
+    let c = lista.find(x => x.n === num), creata = false;
+    if (!c) { c = { id: _nuovoIdCopia(), n: num, condizioni: '', iniziale: null, qualita: null }; lista.push(c); creata = true; }
+    if (!c.id) c.id = _nuovoIdCopia();
+    const presi = [], diversi = [];
+    _ANN_DA_COPIA.forEach(([a, k]) => {
+      if (k === 'n' || _annVuoto(r[a])) return;
+      const va = a === 'condizioni' ? String(r[a]).trim() : r[a];
+      if (_annVuoto(c[k])) { c[k] = va; presi.push(k); }
+      else if (String(c[k]).trim() !== String(va).trim()) diversi.push({ campo: a, annuncio: va, copia: c[k] });
+    });
+    voci.push({ r, art, c, creata, presi, diversi });
+    return Object.assign(_annDaCopia(r, c), { copiaId: c.id });
+  });
+  // chi indicava una copia per posizione la segue col suo id nuovo
+  nuove.forEach((r, i) => {
+    const lista = r.copiaId && liste.get(r.articoloId), c = lista && lista.find(x => x._vecchia === r.copiaId && x.id !== r.copiaId);
+    if (c) nuove[i] = Object.assign({}, r, { copiaId: c.id });
+  });
+  const copie = new Map();
+  liste.forEach((lista, id) => {
+    const pulite = lista.map(c => { const x = Object.assign({}, c); delete x._vecchia; return x; });
+    if (JSON.stringify(pulite) !== orig.get(id)) copie.set(id, pulite);
+  });
+  return { righe: nuove, copie, voci, conto };
+}
+async function anteprimaAnnCopie() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('anncopie-esito'), btn = document.getElementById('anncopie-applica-btn');
+  _pianoAnnCopie = null; if (btn) btn.style.display = 'none';
+  if (!esito) return;
+  if (!_annLetti) {
+    try {
+      const d = (await fsGetAll('settings')).find(x => x.id === 'annunci');
+      _annRighe = (d && Array.isArray(d.righe)) ? d.righe : [];
+      _annRighe.forEach(r => { if (r.sito === 'Subito') r.sito = 'Subito.it'; });   // come `_annCarica`
+      _annLetti = true;
+    } catch (e) { esito.innerHTML = '<div style="color:var(--danger);font-size:0.9rem;">❌ ' + esc(e?.message || e) + '</div>'; return; }
+  }
+  const idx = _indiceArticoli(), p = _pianoAnnCopieDi(_annRighe, idx), k = p.conto;
+  const nCreate = p.voci.filter(v => v.creata).length;
+  const nome = f => ((f.noNumber || f.number == null || f.number === '') ? '' : f.number + ' · ') + _annNomeArticolo(f);
+  const testo = x => esc(_annVuoto(x) ? '—' : String(x).replace(/\s+/g, ' ').slice(0, 60));
+  const campoIt = { voto: 'Voto', costo: 'Iniziale', condizioni: 'Condizioni' };
+  esito.innerHTML = '<div style="font-size:0.9rem;margin-bottom:0.6rem;line-height:1.6;">'
+    + (it ? '<b>' + p.voci.length + '</b> annunci da collegare · <b>' + nCreate + '</b> copie da creare · <b>' + p.copie.size + '</b> articoli da riscrivere.<br>'
+          + 'Restano come sono: <b>' + k.gia + '</b> già collegati, <b>' + k.senzaN + '</b> senza N, <b>' + k.senzaArt + '</b> senza articolo'
+          + (k.nonNumero ? ', <b style="color:var(--warn);">' + k.nonNumero + '</b> con un N che non è un numero' : '')
+          + (k.artNonTrovato ? ', <b style="color:var(--warn);">' + k.artNonTrovato + '</b> con l’articolo che non c’è più' : '') + '.'
+        : '<b>' + p.voci.length + '</b> listings to link · <b>' + nCreate + '</b> copies to create · <b>' + p.copie.size + '</b> items to rewrite.<br>'
+          + 'Unchanged: <b>' + k.gia + '</b> already linked, <b>' + k.senzaN + '</b> without N, <b>' + k.senzaArt + '</b> without item'
+          + (k.nonNumero ? ', <b>' + k.nonNumero + '</b> with a non-numeric N' : '') + (k.artNonTrovato ? ', <b>' + k.artNonTrovato + '</b> with a missing item' : '') + '.')
+    + '</div>'
+    + (p.voci.length ? '<div style="max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.8rem;line-height:1.5;">'
+      + p.voci.map(v => esc((v.r.sito || '') + (v.r.account ? ' · ' + v.r.account : '') + ' — ' + nome(v.art) + ' — n. ' + v.c.n) + ' → '
+          + (v.creata ? '<b style="color:var(--success);">' + (it ? 'copia nuova' : 'new copy') + '</b>' : (it ? 'copia esistente' : 'existing copy'))
+          + (v.presi.length && !v.creata ? ' · ' + (it ? 'la copia prende: ' : 'copy takes: ') + esc(v.presi.join(', ')) : '')
+          // un valore diverso fra annuncio e copia: vince la copia, e lo si dice con tutti e due i valori
+          + v.diversi.map(d => '<div style="color:var(--warn);padding-left:1.2rem;">⚠️ ' + esc(it ? campoIt[d.campo] : d.campo) + ': '
+              + (it ? 'annuncio ' : 'listing ') + testo(d.annuncio) + ' → ' + (it ? 'resta quello della copia ' : 'the copy’s stays ') + testo(d.copia) + '</div>').join('')).join('<br>')
+      + '</div>' : '');
+  if (p.voci.length) { _pianoAnnCopie = p; if (btn) btn.style.display = ''; }
+}
+async function applicaAnnCopie() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('anncopie-esito'), btn = document.getElementById('anncopie-applica-btn');
+  if (!_pianoAnnCopie || !_pianoAnnCopie.voci.length) { toast(it ? 'Fai prima l’anteprima' : 'Run the preview first', 'error'); return; }
+  const p = _pianoAnnCopie;
+  if (!confirm(it ? `Collegare ${p.voci.length} annunci alle copie?` : `Link ${p.voci.length} listings to the copies?`)) return;
+  if (btn) btn.disabled = true;
+  let errore = '';
+  // prima le copie (UNA scrittura per serie, come le altre funzioni), poi gli annunci: se la seconda non riesce, le copie
+  //    ci sono già e rilanciando l'abbinamento per numero le ritrova
+  try {
+    const perSerie = new Map();
+    p.copie.forEach((lista, id) => { const f = _indiceArticoli().get(id); if (f) { if (!perSerie.has(f.seriesId)) perSerie.set(f.seriesId, []); perSerie.get(f.seriesId).push(id); } });
+    for (const [sid, ids] of perSerie) {
+      const s = getData('series', []).find(x => x.id === sid);
+      if (!s) throw new Error((it ? 'serie non trovata: ' : 'series not found: ') + sid);
+      const prima = s.items, nuovi = new Map();
+      s.items = (s.items || []).map(x => { if (!ids.includes(x.id)) return x; const n = Object.assign({}, x, { copie: p.copie.get(x.id) }); nuovi.set(x.id, n); return n; });
+      try { await fsSave('series', s); } catch (e) { s.items = prima; throw e; }
+      _cache.figurines = (_cache.figurines || []).map(f => nuovi.get(f.id) || f);
+      _collegaSlim(_cache.figurines);
+    }
+    await _annScrivi(p.righe);
+  } catch (e) { errore = e?.message || String(e); }
+  if (btn) { btn.disabled = false; btn.style.display = 'none'; }
+  _pianoAnnCopie = null;
+  const restanti = _pianoAnnCopieDi(_annRighe, _indiceArticoli()).voci.length;
+  if (esito) esito.innerHTML = '<div style="font-size:0.9rem;color:' + (errore || restanti ? 'var(--warn)' : 'var(--success)') + ';">'
+    + (errore ? '❌ ' + esc(errore) : (it ? '✅ Collegati <b>' + p.voci.length + '</b> annunci.' : '✅ Linked <b>' + p.voci.length + '</b> listings.'))
+    + '<br>' + (it ? 'Ricontati dopo la scrittura: ' : 'Recounted after writing: ') + '<b>' + restanti + '</b> ' + (it ? 'ancora da collegare.' : 'still to link.') + '</div>';
+  if (!errore) toast(it ? `✅ ${p.voci.length} annunci collegati alle copie` : `✅ ${p.voci.length} listings linked`, 'success');
 }
 
 // 🆕 v7.192 - LA FUNZIONE 7: una variazione ufficiale per ogni retro base con la Sottocategoria vuota.
