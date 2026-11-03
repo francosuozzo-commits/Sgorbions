@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.262">
+<link rel="stylesheet" href="css/style.css?v=7.263">
 
 
 <style>
@@ -116,6 +116,7 @@
   --type-free:       #b98cff;   /* v6.427 - viola */
   --type-printerror: #ff6464;
   --type-sealed:     #3ee0c4;   /* v7.078 - Versione sigillata: turchese, scelto da Franco fra tre proposte */
+  --type-slim:       #ffc61a;   /* v7.263 - Slim: giallo oro, scelto da Franco (il giallo chiaro è della non ufficiale) */
   --danger:          #e8557c;
   /* 🆕 v6.603 — IL TIMBRO «IN ARRIVO !» (v6.585) HA UN NOME SUO, anche se oggi
      vale quanto `--danger`. Proprio perche' la tinta e' la stessa: finche' la
@@ -204,6 +205,7 @@
 :root { --hub-box-ratio: 16/9; }
 .fig-badge-free { background: var(--type-free); }
 .fig-badge-sealed { background: var(--type-sealed); }   /* v7.078 - Versione sigillata */
+.fig-badge-slim { background: var(--type-slim); }   /* v7.263 - Slim */
 
 /* HOME — numeroni ATTORNO al logo su quattro lati (v6.019, chiesto da Franco).
    Fino alla v6.018 erano due sole colonne ai lati, in posizione ASSOLUTA: sinistra le cose del
@@ -6916,7 +6918,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.262"></script>
+<script src="js/app.js?v=7.263"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6940,7 +6942,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.262'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.263'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
