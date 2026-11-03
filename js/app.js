@@ -32095,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.268';
+const JS_VERSION = 'v7.269';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -44272,6 +44272,24 @@ function _annDaCopia(r, c) {
   if (c) _ANN_DA_COPIA.forEach(([a, k]) => { if (!_annVuoto(c[k])) n[a] = _annValCopia(a, c[k]); });
   return n;
 }
+// 🆕 v7.269 (Franco: «gli annunci avranno tutti lo stesso valore; vorrei un controllo in salvataggio di annuncio che
+//    impedisce di salvare un annuncio per un dato articolo se esistono già annunci per quello stesso articolo a differente
+//    valore del campo Finale») - gli ALTRI annunci della stessa copia (stesso articolo e stessa copia: è il pezzo messo in
+//    vendita) con un Finale scritto e diverso da questo; null se non ce ne sono, o se questo annuncio non ha copia (lotti
+//    misti) o non ha il Finale.
+function _annFinaleDiverso(riga, righe) {
+  if (!riga || !riga.articoloId || !riga.copiaId || _annVuoto(riga.prezzo)) return null;
+  const altri = (righe || []).filter(r => r && r.id !== riga.id && r.articoloId === riga.articoloId && r.copiaId === riga.copiaId
+    && !_annVuoto(r.prezzo) && Number(r.prezzo) !== Number(riga.prezzo));
+  return altri.length ? altri : null;
+}
+function _annFinaleDiversoTesto(altri) {
+  const it = currentLang === 'it';
+  const v = [...new Set(altri.map(r => Number(r.prezzo)))].map(p => it ? String(p).replace('.', ',') : String(p)).join(' / ');
+  const dove = altri.map(r => [r.sito, r.account].filter(Boolean).join(' · ')).filter(Boolean).join(', ');
+  return it ? '⚠️ Non salvato: questa copia è già in vendita con Finale ' + v + (dove ? ' (' + dove + ')' : '') + '. Lo stesso pezzo ha un solo Finale.'
+    : '⚠️ Not saved: this copy is already listed with final ' + v + (dove ? ' (' + dove + ')' : '') + '.';
+}
 // la copia di un annuncio collegato, se c'è ancora (null se non è collegato o se la copia non si trova)
 function _annCopiaDi(r, idx) {
   if (!r || !r.copiaId || !r.articoloId) return null;
@@ -44315,6 +44333,11 @@ async function _annCampo(i, campo, el) {
   if (campo === 'titolo' && !val) { el.value = r.titolo || ''; el.style.borderColor = 'var(--danger)'; toast(currentLang === 'it' ? 'Il titolo non può restare vuoto.' : 'The title cannot be empty.', 'error'); return; }
   const righe = _annRighe.slice();
   righe[i] = { ...r, [campo]: val };
+  // v7.269 - il Finale cambiato nella riga: lo stesso controllo del Salva della finestra
+  if (campo === 'prezzo') {
+    const diversi = _annFinaleDiverso(righe[i], righe);
+    if (diversi) { el.value = r.prezzo ?? ''; el.style.borderColor = 'var(--danger)'; toast(_annFinaleDiversoTesto(diversi), 'error'); return; }
+  }
   // v7.187 - per Vinted il titolo tutto maiuscolo si converte anche qui: cambiando il titolo, o il sito in Vinted
   const tit = _annTitoloPerSito(righe[i].sito, righe[i].titolo), titCambia = tit !== righe[i].titolo;
   righe[i].titolo = tit;
@@ -44607,6 +44630,7 @@ async function _annScrivi(righe) {
   _annLetti = true;   // v7.263
   _annDisegna();
   _copieAnnunciRiempi();   // v7.263 - se sotto c'è la scheda di un articolo, la sua colonna «Annunci» si aggiorna
+  _cdDisegna();   // v7.269 - e l'ELENCO COPIE, se c'è: «Filtra per annunci» dipende dagli annunci
 }
 async function _annSalva(i, da, dopo) {
   const it = currentLang === 'it';
@@ -44641,6 +44665,13 @@ async function _annSalva(i, da, dopo) {
   if (!riga.seriesId || !riga.titolo) {
     stato.style.color = 'var(--danger, #e5484d)';
     stato.textContent = it ? 'Servono almeno la serie e il titolo.' : 'Series and title are required.';
+    return;
+  }
+  // v7.269 - lo stesso pezzo non si mette in vendita a due prezzi (vedi `_annFinaleDiverso`)
+  const diversi = _annFinaleDiverso(riga, _annRighe);
+  if (diversi) {
+    stato.style.color = 'var(--danger, #e5484d)';
+    stato.textContent = _annFinaleDiversoTesto(diversi);
     return;
   }
   // v7.189 - durante il salvataggio si spengono tutti e tre i Salva, non solo quello premuto
@@ -70575,7 +70606,7 @@ function _doppioniApri() {
 //    (`_chipTipoHTML`: clic = solo questa, «+» aggiungi, «−» togli). Come «Filtra per copia» negli annunci, ci sono solo le
 //    pillole cliccabili: i valori delle copie che passano gli ALTRI filtri; una scelta rimasta senza pillola si toglie.
 //    L'ordinamento: clic sul titolo, un secondo clic rovescia; i vuoti sempre in fondo; a parità, l'ordine di sempre.
-const _cdFiltro = { serie: new Set(), tipo: new Set(), versione: new Set(), articolo: new Set() };   // v7.267: + articolo
+const _cdFiltro = { serie: new Set(), tipo: new Set(), versione: new Set(), articolo: new Set(), annunci: new Set() };   // v7.267: + articolo; v7.269: + annunci
 let _cdOrdine = { col: null, su: true };
 // v7.268 - le copie come l'ELENCO le mostra adesso (filtri e ordine), [id articolo, chiave copia]: la finestra della copia
 //    ci trova la precedente e la successiva
@@ -70594,12 +70625,27 @@ function _cdDisegna() {
 // le pillole di un filtro, per posizione (niente apici nell'onclick): i valori fra le righe che passano gli altri filtri
 // v7.267 (Franco: «nella sezione ELENCO COPIE aggiungere anche un filtro per il campo Nome/Numero») - + `articolo` (l'id;
 //    a schermo il Nome/Numero della colonna)
-const _CD_FILTRI = ['serie', 'tipo', 'versione', 'articolo'];
+// v7.269 (Franco: «aggiungi il filtro "Con annuncio" e "Senza annuncio"; come titolo, usa "Filtra per annunci"») - + `annunci`
+//    ('si' / 'no'; '' finché gli annunci non sono letti, e allora la pillola non c'è)
+const _CD_FILTRI = ['serie', 'tipo', 'versione', 'articolo', 'annunci'];
 function _cdPassa(x, salta) {
   return _CD_FILTRI.every(k => k === salta || !_cdFiltro[k].size || _cdFiltro[k].has(x[k]));
 }
 function _cdVoci(righe, k) {
-  return [...new Set(righe.filter(x => _cdPassa(x, k)).map(x => x[k]))];
+  const v = [...new Set(righe.filter(x => _cdPassa(x, k)).map(x => x[k]))].filter(x => x !== '');   // v7.269: niente pillola per «non si sa»
+  return k === 'annunci' ? ['si', 'no'].filter(x => v.includes(x)) : v;   // v7.269: prima «Con», poi «Senza»
+}
+// v7.269 - gli annunci servono al filtro «Filtra per annunci»: se non sono ancora letti, si leggono e l'ELENCO si ridisegna
+//    (una volta: dopo `_annLetti` è vero). Come `_copieAnnunciRiempi`.
+async function _cdAnnunciPoi() {
+  if (_annLetti) return;
+  try {
+    const d = (await fsGetAll('settings')).find(x => x.id === 'annunci');
+    _annRighe = (d && Array.isArray(d.righe)) ? d.righe : [];
+    _annRighe.forEach(r => { if (r.sito === 'Subito') r.sito = 'Subito.it'; });   // come `_annCarica`
+    _annLetti = true;
+  } catch (e) { console.error('_cdAnnunciPoi', e); return; }
+  _cdDisegna();
 }
 function _cdFiltra(k, j, aggiungi) {
   const f = _cdFiltro[k], v = _cdVoci(_cdRighe().righe, k)[j];
@@ -70635,7 +70681,13 @@ function _cdRighe() {
   const righe = [];
   (getData('figurines', []) || []).forEach(f => { if (Array.isArray(f.copie)) f.copie.forEach((c, i) => {
     const ver = _chiaveTipo(f);
-    righe.push({ f, c, chiave: _annChiaveCopia(c, i), articolo: f.id, serie: f.seriesId, tipo: _aggTipoDi(f), versione: ver,
+    const chiave = _annChiaveCopia(c, i);
+    righe.push({ f, c, chiave, articolo: f.id, serie: f.seriesId,
+      // v7.269 - con o senza annuncio collegato ('' finché gli annunci non sono letti)
+      annunci: !_annLetti ? '' : (_annRighe.some(r => r.articoloId === f.id && r.copiaId === chiave) ? 'si' : 'no'),
+      // v7.269 (Franco: «aggiungere la colonna Finale, riportante il valore Finale degli annunci») - i Finali diversi fra
+      //    gli annunci della copia (di regola uno solo: lo garantisce `_annFinaleDiverso` al salvataggio)
+      finali: !_annLetti ? [] : [...new Set(_annRighe.filter(r => r.articoloId === f.id && r.copiaId === chiave && !_annVuoto(r.prezzo)).map(r => Number(r.prezzo)))].sort((a, b) => a - b), tipo: _aggTipoDi(f), versione: ver,
       sOrd: sOrd.get(f.seriesId) ?? 9999, tOrd: posto(_aggTipoDi(f)), numOrd: parseInt(num(f), 10) || 1e9,
       nomeSerie: sNome(f.seriesId), nomeTipo: _aggNomeTipo(_aggTipoDi(f)), nomeVer: nomeVer(ver),
       nome: (numVisto(f) ? numVisto(f) + ' · ' : '') + _annNomeArticolo(f) });
@@ -70663,6 +70715,8 @@ const _CD_COLONNE = [
   { k: 'iniziale', it: 'Iniziale', en: 'Initial', val: x => x.c.iniziale == null ? '' : x.c.iniziale, centro: true },
   // v7.267 (Franco: «"Addizionale" … esposto nelle 2 tabelle delle copie, dopo il campo "Iniziale"»)
   { k: 'addizionale', it: 'Addizionale', en: 'Additional', val: x => x.c.addizionale == null ? '' : x.c.addizionale, centro: true },
+  // v7.269 (Franco: «aggiungere la colonna Finale, dopo Addizionale, riportante il valore Finale degli annunci»)
+  { k: 'finale', it: 'Finale', en: 'Final', val: x => x.finali.length ? x.finali[0] : '', centro: true },
   { k: 'condizioni', it: 'Condizioni', en: 'Condition', val: x => String(x.c.condizioni || '').trim() },
 ];
 function _cdInterno() {
@@ -70676,9 +70730,12 @@ function _cdInterno() {
   if (!tutte.length) return testa + '<p style="font-size:0.85rem;color:var(--muted);font-style:italic;">' + (it ? 'Nessuna copia doppia scritta.' : 'No duplicate copies yet.') + '</p>';
   // i riquadri dei filtri, vestiti come quelli degli annunci (titolo azzurro sul bordo)
   const nomeArt = new Map(tutte.map(x => [x.articolo, x.nome]));   // v7.267: il Nome/Numero della colonna
-  const etichetta = { serie: sBreve, tipo: k => _aggNomeTipo(k), versione: nomeVer, articolo: id => nomeArt.get(id) || id };   // v7.267: nomi brevi
+  const etichetta = { serie: sBreve, tipo: k => _aggNomeTipo(k), versione: nomeVer, articolo: id => nomeArt.get(id) || id,   // v7.267: nomi brevi
+    annunci: v => v === 'si' ? (it ? 'Con annuncio' : 'With listing') : (it ? 'Senza annuncio' : 'Without listing') };   // v7.269
   const titolo = { serie: it ? 'Filtra per serie' : 'Filter by series', tipo: it ? 'Filtra per tipologia di articolo' : 'Filter by item type', versione: it ? 'Filtra per versione' : 'Filter by version',
-    articolo: it ? 'Filtra per nome / numero' : 'Filter by name / number' };   // v7.268 (Franco: «diventa "Filtra per nome / numero"»)
+    articolo: it ? 'Filtra per nome / numero' : 'Filter by name / number',   // v7.268 (Franco: «diventa "Filtra per nome / numero"»)
+    annunci: it ? 'Filtra per annunci' : 'Filter by listings' };   // v7.269 (Franco)
+  if (!_annLetti) setTimeout(() => { _cdAnnunciPoi(); }, 0);   // v7.269: gli annunci per il loro filtro
   // v7.266 (Franco: «i box contenitore sopra la tabella sono esageratamente lunghi; direi di stare al 70% di quella
   //    lunghezza») - i riquadri dei filtri al 70% della larghezza della pagina
   const filtri = '<div style="display:flex;flex-direction:column;gap:0.9rem;margin-bottom:1rem;width:70%;">'
@@ -70696,7 +70753,9 @@ function _cdInterno() {
       };
       // v7.268 (Franco: «i filtri "Filtra per tipologia di articolo" e "Filtra per versione" mettili sulla stessa riga») -
       //    serie; tipologia e versione affiancate; nome / numero
-      return box('serie') + '<div style="display:flex;gap:0.9rem;flex-wrap:wrap;">' + box('tipo') + box('versione') + '</div>' + box('articolo');
+      // v7.269 (Franco: «mettilo sulla stessa riga di "Filtra per nome / numero"») - nome / numero e annunci affiancati
+      return box('serie') + '<div style="display:flex;gap:0.9rem;flex-wrap:wrap;">' + box('tipo') + box('versione') + '</div>'
+        + '<div style="display:flex;gap:0.9rem;flex-wrap:wrap;">' + box('articolo') + box('annunci') + '</div>';
     })() + '</div>';
   // l'ordinamento scelto; a parità resta l'ordine di sempre (il sort è stabile)
   const col = _CD_COLONNE.find(c => c.k === _cdOrdine.col);
@@ -70725,6 +70784,10 @@ function _cdInterno() {
       + '<td data-cd="voto" style="' + td + 'text-align:center;white-space:nowrap;">' + esc(_copiaQualitaTesto(x.c.qualita)) + '</td>'
       + '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.iniziale == null ? '' : (it ? String(x.c.iniziale).replace('.', ',') : String(x.c.iniziale))) + '</td>'
       + '<td data-cd="addizionale" style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.addizionale == null ? '' : (it ? String(x.c.addizionale).replace('.', ',') : String(x.c.addizionale))) + '</td>'   // v7.267
+      // v7.269 - il Finale degli annunci della copia; più valori (annunci salvati prima del controllo) in arancio, tutti
+      + '<td data-cd="finale" style="' + td + 'text-align:center;white-space:nowrap;' + (x.finali.length > 1 ? 'color:var(--warn);font-weight:600;' : '') + '"'
+        + (x.finali.length > 1 ? ' title="' + (it ? 'Gli annunci di questa copia hanno Finali diversi' : 'This copy’s listings have different finals') + '"' : '') + '>'
+        + esc(x.finali.map(p => it ? String(p).replace('.', ',') : String(p)).join(' / ')) + '</td>'
       + '<td style="' + td + 'white-space:pre-wrap;min-width:12rem;width:100%;">' + esc(x.c.condizioni || '') + '</td>'
       // 🆕 v7.268 (Franco: «anche nella tabella ELENCO COPIE metti il campo Annunci; se riesci metti gli N link (saranno sempre
       //    al massimo 3) sulla stessa riga») - la stessa cella del tab «Copie» (`_copieAnnunciRiempi`), coi link in riga
@@ -70739,7 +70802,7 @@ function _cdInterno() {
         + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Clona' : 'Clone') + '"'
         + ' onclick="_copiaClona(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">&#10697;</button>'
       + '</td></tr>').join('')
-      : '<tr><td colspan="11" style="' + td + 'font-style:italic;color:var(--muted);">' + (it ? 'Nessuna copia con questi filtri.' : 'No copies match these filters.') + '</td></tr>')
+      : '<tr><td colspan="12" style="' + td + 'font-style:italic;color:var(--muted);">' + (it ? 'Nessuna copia con questi filtri.' : 'No copies match these filters.') + '</td></tr>')
     + '</table></div>' + _copieAnnunciDopo();   // v7.268: le celle Annunci si riempiono al giro dopo
 }
 // 🆕 v7.266 (Franco: «dalla tabella delle copie deve essere possibile aprire in visualizzazione o modifica il record di
