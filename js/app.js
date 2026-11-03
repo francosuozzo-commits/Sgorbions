@@ -32095,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.264';
+const JS_VERSION = 'v7.265';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -70513,42 +70513,131 @@ function renderAdminDoppioni() {
 //    dell'articolo (`_chiaveTipo`), visto che la copia non ne ha una sua (v7.263); Nome/Numero apre la scheda. In ordine di
 //    serie, poi di tipologia (come il descrittore), poi di numero e di nome. Colori delle tabelle della console: titolo e
 //    intestazioni azzurri, prima colonna bianca.
+// 🔄 v7.265 (Franco: «metti qualche filtro sopra la tabella, sempre formato pillole; almeno Serie, Tipologia di articolo»;
+//    «rendi le colonne della tabella ordinabili») - la tabella vive in un riquadro suo (`#copie-doppie-box`), che filtri e
+//    ordinamento ridisegnano da soli (`_cdDisegna`): la tabella di sopra, con le sue spunte magari non salvate, non si tocca.
+//    I filtri: Serie, Tipologia di articolo e Versione (la terza è mia: «almeno»), con le pillole e i gesti di sempre
+//    (`_chipTipoHTML`: clic = solo questa, «+» aggiungi, «−» togli). Come «Filtra per copia» negli annunci, ci sono solo le
+//    pillole cliccabili: i valori delle copie che passano gli ALTRI filtri; una scelta rimasta senza pillola si toglie.
+//    L'ordinamento: clic sul titolo, un secondo clic rovescia; i vuoti sempre in fondo; a parità, l'ordine di sempre.
+const _cdFiltro = { serie: new Set(), tipo: new Set(), versione: new Set() };
+let _cdOrdine = { col: null, su: true };
 function _copieDoppieListaHTML() {
-  const it = currentLang === 'it';
-  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
-  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);vertical-align:top;';
+  return '<div id="copie-doppie-box">' + _cdInterno() + '</div>';
+}
+function _cdDisegna() {
+  const box = document.getElementById('copie-doppie-box');
+  if (box) box.innerHTML = _cdInterno();
+}
+// le pillole di un filtro, per posizione (niente apici nell'onclick): i valori fra le righe che passano gli altri filtri
+const _CD_FILTRI = ['serie', 'tipo', 'versione'];
+function _cdPassa(x, salta) {
+  return _CD_FILTRI.every(k => k === salta || !_cdFiltro[k].size || _cdFiltro[k].has(x[k]));
+}
+function _cdVoci(righe, k) {
+  return [...new Set(righe.filter(x => _cdPassa(x, k)).map(x => x[k]))];
+}
+function _cdFiltra(k, j, aggiungi) {
+  const f = _cdFiltro[k], v = _cdVoci(_cdRighe().righe, k)[j];
+  if (v === undefined) return;
+  if (aggiungi) { if (f.has(v)) f.delete(v); else f.add(v); }
+  else if (f.size === 1 && f.has(v)) f.clear();
+  else { f.clear(); f.add(v); }
+  _cdPota();
+  _cdDisegna();
+}
+function _cdPota() {
+  const righe = _cdRighe().righe;
+  _CD_FILTRI.forEach(k => { const voci = _cdVoci(righe, k); [..._cdFiltro[k]].forEach(v => { if (!voci.includes(v)) _cdFiltro[k].delete(v); }); });
+}
+function _cdAzzera() {
+  _CD_FILTRI.forEach(k => _cdFiltro[k].clear());
+  _cdDisegna();
+}
+function _cdOrdina(col) {
+  _cdOrdine = _cdOrdine.col === col ? { col, su: !_cdOrdine.su } : { col, su: true };
+  _cdDisegna();
+}
+// le righe (una per copia) nell'ordine di sempre, con i valori che servono a filtri, celle e ordinamento
+function _cdRighe() {
   const serie = getData('series', []) || [];
   const sOrd = new Map(serie.map((s, i) => [s.id, s.order ?? i])), sMap = new Map(serie.map(s => [s.id, s]));
   const sNome = id => { const s = sMap.get(id); return s ? ((s.acronimo || '').trim() || _nomeSerieCard(s, true)) : '—'; };
   const ordTipi = Object.keys(ARTICOLI), posto = k => { const i = ordTipi.indexOf(k); return i < 0 ? 9999 : i; };
   const num = f => f.noNumber ? '' : String(f.number ?? '').trim();
-  // 🔄 v7.264 (Franco: «come mai nella colonna Nome/Numero leggo "1 - L.2000"? Da dove arriva quell'1?») - negli album e
-  //    negli altri oggetti `number` è l'ORDINAMENTO in griglia, non un numero: a schermo va solo dove l'articolo ha
-  //    davvero il Numero (`_haNumero`). Per ordinare le righe si usa ancora `num`.
-  const numVisto = f => _haNumero(f) ? num(f) : '';
+  const numVisto = f => _haNumero(f) ? num(f) : '';   // v7.264: negli album `number` è l'ordinamento
+  // v7.265 (Franco: «quando "Versione" vale "Versione base", scrivi solo "Base"»)
+  const nomeVer = ch => ch === 'base' ? 'Base' : _nomeVersione(ch, currentLang);
   const righe = [];
-  (getData('figurines', []) || []).forEach(f => { if (Array.isArray(f.copie)) f.copie.forEach(c => righe.push({ f, c })); });
-  righe.sort((a, b) => ((sOrd.get(a.f.seriesId) ?? 9999) - (sOrd.get(b.f.seriesId) ?? 9999))
-    || (posto(_aggTipoDi(a.f)) - posto(_aggTipoDi(b.f))) || _aggNomeTipo(_aggTipoDi(a.f)).localeCompare(_aggNomeTipo(_aggTipoDi(b.f)), 'it')
-    || ((parseInt(num(a.f), 10) || 1e9) - (parseInt(num(b.f), 10) || 1e9)) || _annNomeArticolo(a.f).localeCompare(_annNomeArticolo(b.f), 'it'));
-  const testa = '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;color:var(--info);">🧾 ' + (it ? 'ELENCO COPIE' : 'COPIES LIST') + ' (' + righe.length + ')</h4>';   // v7.264 (Franco: «diventa "Elenco copie", ma comunque scrivilo tutto maiuscolo»)
-  if (!righe.length) return testa + '<p style="font-size:0.85rem;color:var(--muted);font-style:italic;">' + (it ? 'Nessuna copia doppia scritta.' : 'No duplicate copies yet.') + '</p>';
-  // v7.264 (Franco: «il campo "Condizioni" della tabella ELENCO COPIE fallo più lungo; c'è ancora molto spazio prima di
-  //    arrivare a fine pagina») - la tabella va fino in fondo alla pagina, e lo spazio in più lo prende tutto Condizioni
-  //    (`width:100%` sulla sua cella; le altre colonne restano strette, `nowrap`)
-  return testa + '<div id="copie-doppie-lista" style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'
-    // v7.264 (Franco: «aggiungi una colonna "N. copia" dopo il campo "Nome/Numero"»)
-    + '<tr>' + [it ? 'Serie' : 'Series', it ? 'Tipologia di articolo' : 'Item type', it ? 'Versione' : 'Version', it ? 'Nome/Numero' : 'Name/Number', it ? 'N. copia' : 'Copy no.', it ? 'Iniziale' : 'Initial', it ? 'Condizioni' : 'Condition']
-      .map(t => '<th style="' + th + '">' + t + '</th>').join('') + '</tr>'
-    + righe.map(({ f, c }) => '<tr>'
-      + '<td style="' + td + 'white-space:nowrap;">' + esc(sNome(f.seriesId)) + '</td>'
-      + '<td style="' + td + 'white-space:nowrap;">' + esc(_aggNomeTipo(_aggTipoDi(f))) + '</td>'
-      + '<td style="' + td + 'white-space:nowrap;">' + esc(_nomeVersione(_chiaveTipo(f), currentLang)) + '</td>'
-      + '<td style="' + td + 'white-space:nowrap;"><a href="#" style="color:var(--info);" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;">'
-        + esc((numVisto(f) ? numVisto(f) + ' · ' : '') + _annNomeArticolo(f)) + '</a></td>'
-      + '<td style="' + td + 'text-align:right;white-space:nowrap;">' + esc(c.n == null ? '' : String(c.n)) + '</td>'
-      + '<td style="' + td + 'text-align:right;white-space:nowrap;">' + esc(c.iniziale == null ? '' : (it ? String(c.iniziale).replace('.', ',') : String(c.iniziale))) + '</td>'
-      + '<td style="' + td + 'white-space:pre-wrap;min-width:12rem;width:100%;">' + esc(c.condizioni || '') + '</td></tr>').join('')
+  (getData('figurines', []) || []).forEach(f => { if (Array.isArray(f.copie)) f.copie.forEach(c => {
+    const ver = _chiaveTipo(f);
+    righe.push({ f, c, serie: f.seriesId, tipo: _aggTipoDi(f), versione: ver,
+      sOrd: sOrd.get(f.seriesId) ?? 9999, tOrd: posto(_aggTipoDi(f)), numOrd: parseInt(num(f), 10) || 1e9,
+      nomeSerie: sNome(f.seriesId), nomeTipo: _aggNomeTipo(_aggTipoDi(f)), nomeVer: nomeVer(ver),
+      nome: (numVisto(f) ? numVisto(f) + ' · ' : '') + _annNomeArticolo(f) });
+  }); });
+  righe.sort((a, b) => (a.sOrd - b.sOrd) || (a.tOrd - b.tOrd) || a.nomeTipo.localeCompare(b.nomeTipo, 'it')
+    || (a.numOrd - b.numOrd) || _annNomeArticolo(a.f).localeCompare(_annNomeArticolo(b.f), 'it'));
+  return { righe, sNome, nomeVer };
+}
+// le colonne: chiave, titolo e valore per ordinare (numeri come numeri, testi come testi; '' = vuoto, in fondo)
+const _CD_COLONNE = [
+  { k: 'serie', it: 'Serie', en: 'Series', val: x => x.sOrd },
+  // v7.265 (Franco: «Tipologia di articolo, mettilo su due righe») - il titolo della colonna
+  { k: 'tipo', it: 'Tipologia<br>di articolo', en: 'Item<br>type', val: x => x.nomeTipo },
+  { k: 'versione', it: 'Versione', en: 'Version', val: x => x.nomeVer },
+  { k: 'nome', it: 'Nome/Numero', en: 'Name/Number', val: x => x.numOrd < 1e9 && _haNumero(x.f) ? x.numOrd : _annNomeArticolo(x.f) },
+  { k: 'ncopia', it: 'N. copia', en: 'Copy no.', val: x => x.c.n == null ? '' : x.c.n, centro: true },
+  { k: 'iniziale', it: 'Iniziale', en: 'Initial', val: x => x.c.iniziale == null ? '' : x.c.iniziale, centro: true },
+  { k: 'condizioni', it: 'Condizioni', en: 'Condition', val: x => String(x.c.condizioni || '').trim() },
+];
+function _cdInterno() {
+  const it = currentLang === 'it';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);vertical-align:top;';
+  const { righe: tutte, sNome, nomeVer } = _cdRighe();
+  const righe = tutte.filter(x => _cdPassa(x));
+  const testa = '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;color:var(--info);">🧾 ' + (it ? 'ELENCO COPIE' : 'COPIES LIST') + ' ('
+    + (righe.length === tutte.length ? righe.length : righe.length + ' / ' + tutte.length) + ')</h4>';   // v7.264 (Franco: «diventa "Elenco copie", ma comunque scrivilo tutto maiuscolo»)
+  if (!tutte.length) return testa + '<p style="font-size:0.85rem;color:var(--muted);font-style:italic;">' + (it ? 'Nessuna copia doppia scritta.' : 'No duplicate copies yet.') + '</p>';
+  // i riquadri dei filtri, vestiti come quelli degli annunci (titolo azzurro sul bordo)
+  const etichetta = { serie: sNome, tipo: k => _aggNomeTipo(k), versione: nomeVer };
+  const titolo = { serie: it ? 'Filtra per serie' : 'Filter by series', tipo: it ? 'Filtra per tipologia di articolo' : 'Filter by item type', versione: it ? 'Filtra per versione' : 'Filter by version' };
+  const filtri = '<div style="display:flex;flex-direction:column;gap:0.9rem;margin-bottom:1rem;">'
+    + '<div><button type="button" class="btn-primary" onclick="_cdAzzera()" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button></div>'
+    + _CD_FILTRI.map(k => {
+      const voci = _cdVoci(tutte, k);
+      return '<div style="position:relative;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:1.05rem 0.9rem 0.7rem;">'
+        + '<div style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;white-space:nowrap;">'
+        + '<span style="font-size:0.78rem;font-weight:600;color:var(--info);">' + titolo[k] + '</span></div>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">'
+        + voci.map((v, j) => _chipTipoHTML({ etichetta: etichetta[k](v), n: tutte.filter(x => _cdPassa(x, k) && x[k] === v).length, attiva: _cdFiltro[k].has(v), it,
+            onSet: "_cdFiltra('" + k + "'," + j + ",false)", onAdd: "_cdFiltra('" + k + "'," + j + ",true)", titolo: it ? 'Solo questo' : 'Only this' })).join('')
+        + '</div></div>';
+    }).join('') + '</div>';
+  // l'ordinamento scelto; a parità resta l'ordine di sempre (il sort è stabile)
+  const col = _CD_COLONNE.find(c => c.k === _cdOrdine.col);
+  if (col) righe.sort((a, b) => {
+    const x = col.val(a), y = col.val(b);
+    if (x === '' || y === '') return (x === '') - (y === '');
+    const c = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'it', { numeric: true, sensitivity: 'base' });
+    return _cdOrdine.su ? c : -c;
+  });
+  const al = c => c.centro ? 'text-align:center;' : '';
+  // v7.264 (Franco: «il campo "Condizioni" fallo più lungo») - la tabella fino a fine pagina, lo spazio in più a Condizioni
+  return testa + filtri + '<div id="copie-doppie-lista" style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'
+    + '<tr>' + _CD_COLONNE.map(c => '<th style="' + th + al(c) + 'cursor:pointer;user-select:none;" onclick="_cdOrdina(\'' + c.k + '\')" title="' + (it ? 'Ordina' : 'Sort') + '">'
+      + (it ? c.it : c.en) + (_cdOrdine.col === c.k ? (_cdOrdine.su ? ' ▲' : ' ▼') : '') + '</th>').join('') + '</tr>'
+    + (righe.length ? righe.map(x => '<tr>'
+      + '<td style="' + td + 'white-space:nowrap;">' + esc(x.nomeSerie) + '</td>'
+      + '<td style="' + td + 'white-space:nowrap;">' + esc(x.nomeTipo) + '</td>'
+      + '<td style="' + td + 'white-space:nowrap;">' + esc(x.nomeVer) + '</td>'
+      + '<td style="' + td + 'white-space:nowrap;"><a href="#" style="color:var(--info);" onclick="openFigDetail(\'' + esc(x.f.id) + '\');return false;">' + esc(x.nome) + '</a></td>'
+      // v7.265 (Franco: «N. copia e Iniziale, centra il valore della colonna rispetto all'etichetta della colonna»)
+      + '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.n == null ? '' : String(x.c.n)) + '</td>'
+      + '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.iniziale == null ? '' : (it ? String(x.c.iniziale).replace('.', ',') : String(x.c.iniziale))) + '</td>'
+      + '<td style="' + td + 'white-space:pre-wrap;min-width:12rem;width:100%;">' + esc(x.c.condizioni || '') + '</td></tr>').join('')
+      : '<tr><td colspan="7" style="' + td + 'font-style:italic;color:var(--muted);">' + (it ? 'Nessuna copia con questi filtri.' : 'No copies match these filters.') + '</td></tr>')
     + '</table></div>';
 }
 async function salvaDoppioni() {
