@@ -32095,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.267';
+const JS_VERSION = 'v7.268';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33398,6 +33398,12 @@ async function _saveFigurineItem(item) {
   _cache.figurines = _cache.figurines || [];
   const flatIdx = _cache.figurines.findIndex(x => x.id === item.id);
   if (flatIdx >= 0) _cache.figurines[flatIdx] = item; else _cache.figurines.push(item);
+  // 🐞 v7.268 (Franco: «sto perdendo spesso i dati salvando dalla tabella ELENCO COPIE; non mi trovo la copia creata; il
+  //    tasto Clona a volte dà "Copia non trovata"») - L'INDICE DEGLI ARTICOLI SI BUTTA. `_indiceArticoli` si rifà solo se
+  //    cambia l'elenco o la sua lunghezza: qui l'articolo viene SOSTITUITO al suo posto (stessa lunghezza), e l'indice
+  //    continuava a dare l'oggetto di prima. Chi leggeva da lì (la finestra della copia) lavorava sulle copie vecchie, e
+  //    al Salva riscriveva l'articolo senza le modifiche fatte nel frattempo.
+  _indiceArticoliMap = null;
   // 🆕 v7.263 - si ricollegano le slim: questa può essere una slim nuova, o la parent di qualcuna (oggetto nuovo)
   _collegaSlim(_cache.figurines);
 
@@ -70571,6 +70577,13 @@ function _doppioniApri() {
 //    L'ordinamento: clic sul titolo, un secondo clic rovescia; i vuoti sempre in fondo; a parità, l'ordine di sempre.
 const _cdFiltro = { serie: new Set(), tipo: new Set(), versione: new Set(), articolo: new Set() };   // v7.267: + articolo
 let _cdOrdine = { col: null, su: true };
+// v7.268 - le copie come l'ELENCO le mostra adesso (filtri e ordine), [id articolo, chiave copia]: la finestra della copia
+//    ci trova la precedente e la successiva
+let _cdVisti = [];
+function _cdVicina(artId, chiave, passo) {
+  const k = _cdVisti.findIndex(([a, c]) => a === artId && c === chiave);
+  return k < 0 ? null : (_cdVisti[k + passo] || null);
+}
 function _copieDoppieListaHTML() {
   return '<div id="copie-doppie-box">' + _cdInterno() + '</div>';
 }
@@ -70665,21 +70678,26 @@ function _cdInterno() {
   const nomeArt = new Map(tutte.map(x => [x.articolo, x.nome]));   // v7.267: il Nome/Numero della colonna
   const etichetta = { serie: sBreve, tipo: k => _aggNomeTipo(k), versione: nomeVer, articolo: id => nomeArt.get(id) || id };   // v7.267: nomi brevi
   const titolo = { serie: it ? 'Filtra per serie' : 'Filter by series', tipo: it ? 'Filtra per tipologia di articolo' : 'Filter by item type', versione: it ? 'Filtra per versione' : 'Filter by version',
-    articolo: it ? 'Filtra per nome/numero' : 'Filter by name/number' };
+    articolo: it ? 'Filtra per nome / numero' : 'Filter by name / number' };   // v7.268 (Franco: «diventa "Filtra per nome / numero"»)
   // v7.266 (Franco: «i box contenitore sopra la tabella sono esageratamente lunghi; direi di stare al 70% di quella
   //    lunghezza») - i riquadri dei filtri al 70% della larghezza della pagina
   const filtri = '<div style="display:flex;flex-direction:column;gap:0.9rem;margin-bottom:1rem;width:70%;">'
     + '<div><button type="button" class="btn-primary" onclick="_cdAzzera()" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button></div>'
-    + _CD_FILTRI.map(k => {
-      const voci = _cdVoci(tutte, k);
-      return '<div style="position:relative;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:1.05rem 0.9rem 0.7rem;">'
-        + '<div style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;white-space:nowrap;">'
-        + '<span style="font-size:0.78rem;font-weight:600;color:var(--info);">' + titolo[k] + '</span></div>'
-        + '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">'
-        + voci.map((v, j) => _chipTipoHTML({ etichetta: etichetta[k](v), n: tutte.filter(x => _cdPassa(x, k) && x[k] === v).length, attiva: _cdFiltro[k].has(v), it,
-            onSet: "_cdFiltra('" + k + "'," + j + ",false)", onAdd: "_cdFiltra('" + k + "'," + j + ",true)", titolo: it ? 'Solo questo' : 'Only this' })).join('')
-        + '</div></div>';
-    }).join('') + '</div>';
+    + (() => {
+      const box = k => {
+        const voci = _cdVoci(tutte, k);
+        return '<div style="position:relative;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:1.05rem 0.9rem 0.7rem;flex:1;min-width:0;">'
+          + '<div style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;white-space:nowrap;">'
+          + '<span style="font-size:0.78rem;font-weight:600;color:var(--info);">' + titolo[k] + '</span></div>'
+          + '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">'
+          + voci.map((v, j) => _chipTipoHTML({ etichetta: etichetta[k](v), n: tutte.filter(x => _cdPassa(x, k) && x[k] === v).length, attiva: _cdFiltro[k].has(v), it,
+              onSet: "_cdFiltra('" + k + "'," + j + ",false)", onAdd: "_cdFiltra('" + k + "'," + j + ",true)", titolo: it ? 'Solo questo' : 'Only this' })).join('')
+          + '</div></div>';
+      };
+      // v7.268 (Franco: «i filtri "Filtra per tipologia di articolo" e "Filtra per versione" mettili sulla stessa riga») -
+      //    serie; tipologia e versione affiancate; nome / numero
+      return box('serie') + '<div style="display:flex;gap:0.9rem;flex-wrap:wrap;">' + box('tipo') + box('versione') + '</div>' + box('articolo');
+    })() + '</div>';
   // l'ordinamento scelto; a parità resta l'ordine di sempre (il sort è stabile)
   const col = _CD_COLONNE.find(c => c.k === _cdOrdine.col);
   if (col) righe.sort((a, b) => {
@@ -70688,11 +70706,14 @@ function _cdInterno() {
     const c = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'it', { numeric: true, sensitivity: 'base' });
     return _cdOrdine.su ? c : -c;
   });
+  _cdVisti = righe.map(x => [x.f.id, x.chiave]);   // v7.268: l'ordine a schermo, per «Salva e next / previous»
   const al = c => c.centro ? 'text-align:center;' : '';
   // v7.264 (Franco: «il campo "Condizioni" fallo più lungo») - la tabella fino a fine pagina, lo spazio in più a Condizioni
   return testa + filtri + '<div id="copie-doppie-lista" style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'
     + '<tr>' + _CD_COLONNE.map(c => '<th style="' + th + al(c) + 'cursor:pointer;user-select:none;" onclick="_cdOrdina(\'' + c.k + '\')" title="' + (it ? 'Ordina' : 'Sort') + '">'
-      + (it ? c.it : c.en) + (_cdOrdine.col === c.k ? (_cdOrdine.su ? ' ▲' : ' ▼') : '') + '</th>').join('') + '<th style="' + th + '"></th></tr>'
+      + (it ? c.it : c.en) + (_cdOrdine.col === c.k ? (_cdOrdine.su ? ' ▲' : ' ▼') : '') + '</th>').join('')
+      + '<th style="' + th + '">' + (it ? 'Annunci' : 'Listings') + '</th>'   // v7.268 (non ordinabile: si riempie dopo)
+      + '<th style="' + th + '"></th></tr>'
     + (righe.length ? righe.map(x => '<tr>'
       + '<td style="' + td + 'white-space:nowrap;">' + esc(x.nomeSerie) + '</td>'
       + '<td style="' + td + 'white-space:nowrap;">' + esc(x.nomeTipo) + '</td>'
@@ -70705,6 +70726,9 @@ function _cdInterno() {
       + '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.iniziale == null ? '' : (it ? String(x.c.iniziale).replace('.', ',') : String(x.c.iniziale))) + '</td>'
       + '<td data-cd="addizionale" style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.addizionale == null ? '' : (it ? String(x.c.addizionale).replace('.', ',') : String(x.c.addizionale))) + '</td>'   // v7.267
       + '<td style="' + td + 'white-space:pre-wrap;min-width:12rem;width:100%;">' + esc(x.c.condizioni || '') + '</td>'
+      // 🆕 v7.268 (Franco: «anche nella tabella ELENCO COPIE metti il campo Annunci; se riesci metti gli N link (saranno sempre
+      //    al massimo 3) sulla stessa riga») - la stessa cella del tab «Copie» (`_copieAnnunciRiempi`), coi link in riga
+      + '<td data-ann-art="' + esc(x.f.id) + '" data-ann-chiave="' + esc(x.chiave) + '" data-ann-riga style="' + td + 'white-space:nowrap;font-size:0.8rem;"></td>'
       // 🆕 v7.266 (Franco: «dalla tabella delle copie deve essere possibile aprire in visualizzazione o modifica il record
       //    di copia») - l'occhio e la matita della tabella degli annunci, che aprono la finestra della copia (`_copiaApri`)
       + '<td style="' + td + 'white-space:nowrap;">'
@@ -70715,8 +70739,8 @@ function _cdInterno() {
         + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Clona' : 'Clone') + '"'
         + ' onclick="_copiaClona(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">&#10697;</button>'
       + '</td></tr>').join('')
-      : '<tr><td colspan="10" style="' + td + 'font-style:italic;color:var(--muted);">' + (it ? 'Nessuna copia con questi filtri.' : 'No copies match these filters.') + '</td></tr>')
-    + '</table></div>';
+      : '<tr><td colspan="11" style="' + td + 'font-style:italic;color:var(--muted);">' + (it ? 'Nessuna copia con questi filtri.' : 'No copies match these filters.') + '</td></tr>')
+    + '</table></div>' + _copieAnnunciDopo();   // v7.268: le celle Annunci si riempiono al giro dopo
 }
 // 🆕 v7.266 (Franco: «dalla tabella delle copie deve essere possibile aprire in visualizzazione o modifica il record di
 //    copia») - LA FINESTRA DELLA COPIA, gemella di quella dell'annuncio: in testa l'articolo (serie, tipologia, versione,
@@ -70724,10 +70748,23 @@ function _cdInterno() {
 //    i suoi annunci. In lettura tutto spento e niente Salva. Salva riscrive la copia DENTRO il suo articolo (`copie` è un
 //    campo dell'articolo), passando da `_saveFigurineItem` come la scheda; l'id della copia resta quello che è, così gli
 //    annunci collegati la ritrovano.
+// 🐞 v7.268 - L'ARTICOLO SI PRENDE SEMPRE DALL'ELENCO VIVO, mai da `_indiceArticoli` (vedi la nota in `_saveFigurineItem`):
+//    la finestra della copia legge e riscrive tutte le copie dell'articolo, e deve partire da quelle di adesso.
+function _articoloVivo(id) {
+  return (getData('figurines', []) || []).find(f => f.id === id) || null;
+}
 function _copiaApri(artId, chiave, sola) {
   const it = currentLang === 'it';
-  const art = _indiceArticoli().get(artId), c = _annTrovaCopia(art, chiave);
-  if (!art || !c) { toast(it ? 'Copia non trovata: forse l’articolo è stato cambiato. Ricarica la pagina.' : 'Copy not found.', 'error'); return; }
+  const art = _articoloVivo(artId), c = _annTrovaCopia(art, chiave);
+  // 🐞 v7.268 (Franco: «ho l'errore in dettaglio; dice "Copia non trovata…"») - la causa vera era l'indice vecchio (vedi
+  //    `_saveFigurineItem`). Resta un caso legittimo: l'ELENCO disegnato prima che la scheda dell'articolo riscrivesse le
+  //    sue copie (una copia vecchia senza id si riconosce per posizione, `#i`, e il Salva della scheda le dà un id e le
+  //    rimette in ordine). Allora l'elenco si ridisegna da solo e lo si dice: basta riaprire la copia.
+  if (!art || !c) {
+    _cdDisegna();
+    toast(it ? 'L’elenco delle copie era vecchio: l’ho aggiornato. Riapri la copia.' : 'The copies list was out of date: refreshed. Open the copy again.', 'info');
+    return;
+  }
   const x = _cdRighe().righe.find(y => y.f.id === artId && y.chiave === chiave) || {};
   document.getElementById('copia-modal')?.remove();
   const ov = document.createElement('div');
@@ -70738,22 +70775,29 @@ function _copiaApri(artId, chiave, sola) {
   ov.innerHTML = '<div class="modal" style="max-width:620px;width:94vw;">'
     + '<div class="modal-header"><h2 class="modal-title">' + (sola ? (it ? 'Copia' : 'Copy') : (it ? 'Modifica copia' : 'Edit copy')) + '</h2>'
     + '<button type="button" class="modal-close" onclick="document.getElementById(\'copia-modal\').remove()">✕</button></div>'
+    // 🔄 v7.268 (Franco: «nella form di dettaglio della copia: il numero di copia mettilo in alto a dx») - una riga in testa:
+    //    a sinistra l'articolo, a destra il N. copia
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">'
     + '<div style="font-size:0.9rem;color:var(--text);line-height:1.5;">' + esc([x.nomeSerie, x.nomeTipo, x.nomeVer].filter(Boolean).join(' · ')) + '<br>'
       + '<a href="#" style="color:var(--info);font-weight:600;" onclick="document.getElementById(\'copia-modal\').remove();openFigDetail(\'' + esc(artId) + '\');return false;">' + esc(x.nome || _annNomeArticolo(art)) + '</a></div>'
-    + lab(it ? 'N. copia' : 'Copy no.')
-    + '<input id="cp-n" class="form-input" type="number" min="0" step="1" value="' + (c.n ?? '') + '" style="max-width:8rem;"' + dis + '>'
+    + '<div style="flex-shrink:0;">'
+    + '<label class="detail-label" style="display:block;margin:0 0 0.25rem;">' + (it ? 'N. copia' : 'Copy no.') + '</label>'
+    + '<input id="cp-n" class="form-input" type="number" min="0" step="1" value="' + (c.n ?? '') + '" style="width:6rem;"' + dis + '>'
+    + '</div></div>'
     + lab(it ? 'Condizioni' : 'Condition')
     + '<textarea id="cp-condizioni" class="form-input" rows="4"' + dis + '>' + esc(c.condizioni || '') + '</textarea>'
-    // v7.267 - il Voto prima dell'Iniziale, come nel tab «Copie» (Franco: «il campo "Voto" va prima del campo "Iniziale"»)
-    + lab(it ? 'Voto' : 'Rating')   // v7.266 (Franco: «il campo "Qualità" della copia, rinominalo in "Voto"»)
-    + '<select id="cp-qualita" class="form-select" style="max-width:10rem;"' + dis + '><option value="">—</option>'
+    // 🔄 v7.268 (Franco: «Voto, Iniziale e Addizionale mettili sulla stessa riga») - tre colonne uguali, in quest'ordine
+    //    (v7.267: il Voto prima dell'Iniziale, l'Addizionale dopo; v7.266: «Qualità» si chiama «Voto»)
+    + '<div style="display:flex;gap:0.8rem;flex-wrap:wrap;">'
+    + '<div style="flex:1;min-width:7rem;">' + lab(it ? 'Voto' : 'Rating')
+    + '<select id="cp-qualita" class="form-select"' + dis + '><option value="">—</option>'
       + _COPIA_QUALITA.map(q => '<option value="' + q + '"' + (c.qualita === q ? ' selected' : '') + '>' + _copiaQualitaTesto(q) + '</option>').join('')
-      + (typeof c.qualita === 'number' && !_COPIA_QUALITA.includes(c.qualita) ? '<option value="' + c.qualita + '" selected>' + _copiaQualitaTesto(c.qualita) + '</option>' : '') + '</select>'
-    + lab(it ? 'Iniziale' : 'Initial')
-    + '<input id="cp-iniziale" class="form-input" type="number" step="any" value="' + (c.iniziale ?? '') + '" style="max-width:10rem;"' + dis + '>'
-    // v7.267 (Franco: «un campo, da porre sotto al campo "Iniziale", chiamato "Addizionale", sempre numerico»)
-    + lab(it ? 'Addizionale' : 'Additional')
-    + '<input id="cp-addizionale" class="form-input" type="number" step="any" value="' + (c.addizionale ?? '') + '" style="max-width:10rem;"' + dis + '>'
+      + (typeof c.qualita === 'number' && !_COPIA_QUALITA.includes(c.qualita) ? '<option value="' + c.qualita + '" selected>' + _copiaQualitaTesto(c.qualita) + '</option>' : '') + '</select></div>'
+    + '<div style="flex:1;min-width:7rem;">' + lab(it ? 'Iniziale' : 'Initial')
+    + '<input id="cp-iniziale" class="form-input" type="number" step="any" value="' + (c.iniziale ?? '') + '"' + dis + '></div>'
+    + '<div style="flex:1;min-width:7rem;">' + lab(it ? 'Addizionale' : 'Additional')
+    + '<input id="cp-addizionale" class="form-input" type="number" step="any" value="' + (c.addizionale ?? '') + '"' + dis + '></div>'
+    + '</div>'
     // gli annunci della copia: la stessa cella della colonna «Annunci» del tab, riempita quando gli annunci sono letti
     + '<div id="cp-annunci">' + lab(it ? 'Annunci' : 'Listings')
     + '<table style="border-collapse:collapse;"><tr>' + _copiaCellaAnnunci(artId, chiave) + '</tr></table></div>' + _copieAnnunciDopo()
@@ -70763,22 +70807,33 @@ function _copiaApri(artId, chiave, sola) {
       //    come nella finestra dell'annuncio: arancione, a sinistra, lontano da Salva; solo in modifica
       + (sola ? '' : '<button type="button" class="btn-barra-admin pieno" id="cp-clona" style="margin-right:auto;" onclick="_copiaClonaQui(\'' + esc(artId) + '\')">&#10697; ' + (it ? 'Clona' : 'Clone') + '</button>')
       + (sola ? '' : '<button type="button" class="btn-secondary" onclick="document.getElementById(\'copia-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
-        + '<button type="button" class="btn-primary" id="cp-salva" onclick="_copiaSalva(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">' + (it ? 'Salva' : 'Save') + '</button>')
+        // 🆕 v7.268 (Franco: «quando le copie sono accedute dalla tabella ELENCO COPIE, non vedo i tasti "Salva e next" e
+        //    "Salva e previous"; li metterei») - vestiti come quelli dell'annuncio; spenti ai capi dell'ELENCO (filtri e
+        //    ordine di adesso, `_cdVisti`). Salvano e aprono la copia prima o dopo, sempre in modifica.
+        + (() => {
+            const b = (passo, id, testo) => { const vic = _cdVicina(artId, chiave, passo);
+              return '<button type="button" class="btn-barra-admin pieno" id="' + id + '"' + (vic ? '' : ' disabled style="opacity:0.3;"')
+                + ' onclick="_copiaSalva(\'' + esc(artId) + '\',\'' + esc(chiave) + '\',' + passo + ')">💾 ' + testo + '</button>'; };
+            return b(-1, 'cp-salva-prev', 'Salva e previous') + b(1, 'cp-salva-next', 'Salva e next');
+          })()
+        // v7.268 (Franco: «il pulsante "Salva" della copia deve essere arancio admin»)
+        + '<button type="button" class="btn-barra-admin pieno" id="cp-salva" onclick="_copiaSalva(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">' + (it ? 'Salva' : 'Save') + '</button>')
     + '</div></div>';
   document.body.appendChild(ov);
 }
 // 🆕 v7.267 - LA FINESTRA DIVENTA UNA COPIA NUOVA dello stesso articolo, con dentro quello che c'è scritto (anche non
-//    salvato), come «Clona» dell'annuncio. Il N. copia passa al primo libero dell'articolo (il più alto + 1): due copie
-//    con lo stesso numero si confonderebbero. Gli annunci non vengono dietro: sono della copia di partenza. Salva aggiunge.
+//    salvato), come «Clona» dell'annuncio. Il N. copia resta vuoto, lo scrive Franco (v7.268; nella v7.267 era il primo
+//    libero). Gli annunci non vengono dietro: sono della copia di partenza. Salva aggiunge.
 function _copiaClonaQui(artId) {
   const it = currentLang === 'it', v = id => document.getElementById(id);
-  const art = _indiceArticoli().get(artId);
-  const nn = (art && Array.isArray(art.copie) ? art.copie : []).map(c => c.n).filter(n => typeof n === 'number');
   const t = document.querySelector('#copia-modal .modal-title');
   if (t) t.textContent = it ? 'Nuova copia (clone)' : 'New copy (clone)';
-  if (v('cp-n')) v('cp-n').value = nn.length ? Math.max(...nn) + 1 : 1;
+  // 🔄 v7.268 (Franco: «quando creo una nuova copia per clonazione, la form della copia nuova deve avere il campo "N." vuoto»)
+  //    - prima era il primo libero (v7.267)
+  if (v('cp-n')) v('cp-n').value = '';
   v('cp-annunci')?.remove();
   v('cp-clona')?.remove();
+  ['cp-salva-prev', 'cp-salva-next'].forEach(id => v(id)?.remove());   // v7.268: un clone non ha vicine
   v('cp-salva')?.setAttribute('onclick', '_copiaSalva(\'' + artId + '\',null)');
   const st = v('cp-stato');
   if (st) { st.style.color = 'var(--info)'; st.textContent = it ? 'È un clone: con Salva diventa una copia in più dello stesso articolo.' : 'This is a clone: Save adds a new copy of the same item.'; }
@@ -70789,10 +70844,12 @@ function _copiaClona(artId, chiave) {
   _copiaClonaQui(artId);
 }
 // v7.267 - `chiave` null = copia nuova (un clone): si aggiunge in fondo, con un id suo
-async function _copiaSalva(artId, chiave) {
+// v7.268 - `passo` (-1 / 1): dopo il salvataggio si apre la copia prima / dopo dell'ELENCO, presa PRIMA di ridisegnarlo
+//    (l'ordine può cambiare col valore appena salvato)
+async function _copiaSalva(artId, chiave, passo) {
   const it = currentLang === 'it', v = id => document.getElementById(id);
   const stato = v('cp-stato'), dire = t => { if (stato) { stato.style.color = 'var(--danger)'; stato.textContent = t; } };
-  const art = _indiceArticoli().get(artId);
+  const art = _articoloVivo(artId);   // 🐞 v7.268: le copie di adesso, non quelle dell'indice
   const copie = (art && Array.isArray(art.copie)) ? art.copie.slice() : [];
   const i = chiave === null ? copie.length : copie.findIndex((c, j) => _annChiaveCopia(c, j) === chiave);
   if (!art || i < 0) return dire(it ? '⚠️ Copia non trovata: ricarica la pagina.' : '⚠️ Copy not found.');
@@ -70806,15 +70863,20 @@ async function _copiaSalva(artId, chiave) {
   if (nuova.n === null && !nuova.condizioni && nuova.iniziale === null && nuova.qualita === null && nuova.addizionale === null)
     return dire(it ? '⚠️ Una copia tutta vuota non si salva: per toglierla, usa la ✕ nel tab «Copie» dell’articolo.' : '⚠️ An empty copy cannot be saved.');
   copie[i] = nuova;
-  const b = v('cp-salva'); if (b) b.disabled = true;
+  // v7.268 - durante il salvataggio si spengono tutti i Salva, non solo quello premuto (come nell'annuncio)
+  const salvi = ['cp-salva', 'cp-salva-prev', 'cp-salva-next'].map(v).filter(Boolean);
+  const accesi = salvi.filter(b => !b.disabled);
+  salvi.forEach(b => { b.disabled = true; });
+  const vicina = passo && chiave !== null ? _cdVicina(artId, chiave, passo) : null;
   try {
     await _saveFigurineItem(Object.assign({}, art, { copie }));
     v('copia-modal')?.remove();
     toast(it ? '✅ Copia salvata.' : '✅ Copy saved.', 'success');
     _cdDisegna();
+    if (vicina) _copiaApri(vicina[0], vicina[1]);
   } catch (e) {
     console.error('_copiaSalva', e);
-    if (b) b.disabled = false;
+    accesi.forEach(b => { b.disabled = false; });
     dire((it ? '⚠️ NON salvata: ' : '⚠️ NOT saved: ') + (e?.message || e));
   }
 }
@@ -70898,9 +70960,11 @@ async function _copieAnnunciRiempi() {
   const it = currentLang === 'it';
   celle.forEach(td => {
     const qui = _annRighe.map((r, i) => ({ r, i })).filter(x => x.r.articoloId === td.dataset.annArt && x.r.copiaId === td.dataset.annChiave);
+    // v7.268 - `data-ann-riga`: i link sulla stessa riga (l'ELENCO COPIE), se no uno per riga (il tab «Copie»)
+    const inRiga = td.dataset.annRiga !== undefined;
     td.innerHTML = qui.length
-      ? qui.map(x => '<a href="#" style="color:var(--info);display:block;" onclick="_annApriFinestra(' + x.i + ');return false;">🔗 '
-          + esc([x.r.sito, x.r.account].filter(Boolean).join(' · ') || (it ? 'annuncio' : 'listing')) + '</a>').join('')
+      ? qui.map(x => '<a href="#" style="color:var(--info);' + (inRiga ? 'white-space:nowrap;' : 'display:block;') + '" onclick="_annApriFinestra(' + x.i + ');return false;">🔗 '
+          + esc([x.r.sito, x.r.account].filter(Boolean).join(' · ') || (it ? 'annuncio' : 'listing')) + '</a>').join(inRiga ? '&nbsp;&nbsp; ' : '')
       : '<span style="color:var(--muted);">—</span>';
   });
 }
@@ -70978,16 +71042,16 @@ function _copieEditHTML(f) {
     + '<div><button type="button" class="btn-primary btn-admin" style="font-size:0.82rem;padding:0.3rem 0.8rem;" onclick="_copiaAggiungi()">+ ' + (it ? 'Aggiungi copia' : 'Add copy') + '</button></div></div>';
 }
 // 🆕 v7.267 - il clone di una riga del tab «Copie»: subito sotto, con quello che c'è scritto nella riga (anche non salvato),
-//    un id nuovo (è un'altra copia) e il N. copia al primo libero fra le righe a schermo (il più alto + 1). Si salva col
-//    «Salva» della scheda, come ogni riga.
+//    un id nuovo (è un'altra copia) e il N. copia vuoto (v7.268; nella v7.267 era il primo libero). Si salva col «Salva»
+//    della scheda, come ogni riga.
 function _copiaClonaRiga(btn) {
   const tr = btn && btn.closest('tr'), t = document.getElementById('fe-copie');
   if (!tr || !t) return;
   const leggi = sel => tr.querySelector(sel)?.value ?? '';
-  const nn = [...t.querySelectorAll('[data-copia-n]')].map(el => parseInt(el.value, 10)).filter(Number.isFinite);
   const q = parseFloat(leggi('[data-copia-qualita]')), ini = parseFloat(leggi('[data-copia-iniziale]')), add = parseFloat(leggi('[data-copia-addizionale]'));
+  // v7.268 - il N. copia vuoto anche qui, come nella finestra (Franco: «la copia nuova per clonazione deve avere "N." vuoto»)
   tr.insertAdjacentHTML('afterend', _copiaRigaHTML({
-    n: nn.length ? Math.max(...nn) + 1 : 1, condizioni: leggi('[data-copia-condizioni]'),
+    n: null, condizioni: leggi('[data-copia-condizioni]'),
     iniziale: Number.isFinite(ini) ? ini : null, qualita: Number.isFinite(q) ? q : null, addizionale: Number.isFinite(add) ? add : null }));   // v7.267: + Addizionale
 }
 // la riga nuova, vuota
