@@ -32095,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.266';
+const JS_VERSION = 'v7.267';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -65982,13 +65982,12 @@ function adminTab(tab) {
   if (tab === 'protezione') renderAdminProtezioneTDA();   // v7.104, tab suo dalla v7.121
   if (tab === 'caroselli') renderAdminCaroselliTDA();     // v6.982, tab suo dalla v7.151 (Franco)
   if (tab === 'questionario') renderAdminQuestionario();  // v7.156 (Franco)
-  if (tab === 'doppioni') renderAdminDoppioni();   // v7.262 (Franco)
+  // v7.262 (Franco); 🔄 v7.267 - entrando, sempre il primo tab («la linguetta deve puntare a questa sezione, primo tab»)
+  if (tab === 'doppioni') _cdVista('el');
   if (tab === 'aggiornamenti') renderAdminAggiornamenti();   // v7.170 (Franco)
   if (tab === 'fotoannuncio') renderAdminFotoAnnuncio();     // v7.182 (Franco)
-  // v7.254 (Franco: «all'ingresso in pagina, l'ordinamento deve essere per "Quantità" in ordine decrescente»; prima
-  //    era per numero) - a pari quantità resta l'ordine per numero
-  //    v7.255 - e si riapre sul tab dov'era, MANCOLISTE la prima volta
-  if (tab === 'mancoliste') { _ml.col = 'quante'; _ml.verso = 'giu'; _mlVista(_ml.vista || 'ml'); }
+  // 🗑️ v7.267 - qui c'era il ramo `mancoliste`: Set doppi è diventato il secondo tab di «Copie doppie», e quello che
+  //    faceva entrando (ordine per Quantità, riapertura del suo tab) lo fa `_cdVista('set')`
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
@@ -70539,6 +70538,19 @@ function renderAdminDoppioni() {
     '</div>' +   // v7.266: fine di `#doppioni-config`
     _copieDoppieListaHTML();   // v7.264
 }
+// 🆕 v7.267 (Franco: «la sezione "Set doppi" falla diventare un secondo tab della sezione "Copie doppie"; il primo tab lo
+//    chiami "Copie doppie elementi strutturati"») - I DUE TAB DI «COPIE DOPPIE»: 'el' = gli elementi strutturati (la
+//    configurazione col ⚙️ e l'ELENCO COPIE, `renderAdminDoppioni`), 'set' = Set doppi, con i suoi due tab di sempre.
+//    Entrando in Set doppi fa quello che faceva entrando nella sua sezione (v7.254: ordine per Quantità, dalla più alta;
+//    v7.255: si riapre sul suo tab dov'era, MANCOLISTE la prima volta).
+function _cdVista(v) {
+  document.querySelectorAll('#admin-doppioni .cd-schede .admin-subtab').forEach(b => b.classList.toggle('active', b.dataset.cdVista === v));
+  const el = document.getElementById('cd-vista-el'), set = document.getElementById('admin-mancoliste');
+  if (el) el.style.display = v === 'set' ? 'none' : '';
+  if (set) set.style.display = v === 'set' ? '' : 'none';
+  if (v === 'set') { _ml.col = 'quante'; _ml.verso = 'giu'; _mlVista(_ml.vista || 'ml'); }
+  else renderAdminDoppioni();
+}
 // v7.266 - il ⚙️: apre e chiude la configurazione (le spunte restano quelle che sono: si nasconde, non si ridisegna)
 function _doppioniApri() {
   const el = document.getElementById('doppioni-config');
@@ -70557,7 +70569,7 @@ function _doppioniApri() {
 //    (`_chipTipoHTML`: clic = solo questa, «+» aggiungi, «−» togli). Come «Filtra per copia» negli annunci, ci sono solo le
 //    pillole cliccabili: i valori delle copie che passano gli ALTRI filtri; una scelta rimasta senza pillola si toglie.
 //    L'ordinamento: clic sul titolo, un secondo clic rovescia; i vuoti sempre in fondo; a parità, l'ordine di sempre.
-const _cdFiltro = { serie: new Set(), tipo: new Set(), versione: new Set() };
+const _cdFiltro = { serie: new Set(), tipo: new Set(), versione: new Set(), articolo: new Set() };   // v7.267: + articolo
 let _cdOrdine = { col: null, su: true };
 function _copieDoppieListaHTML() {
   return '<div id="copie-doppie-box">' + _cdInterno() + '</div>';
@@ -70567,7 +70579,9 @@ function _cdDisegna() {
   if (box) box.innerHTML = _cdInterno();
 }
 // le pillole di un filtro, per posizione (niente apici nell'onclick): i valori fra le righe che passano gli altri filtri
-const _CD_FILTRI = ['serie', 'tipo', 'versione'];
+// v7.267 (Franco: «nella sezione ELENCO COPIE aggiungere anche un filtro per il campo Nome/Numero») - + `articolo` (l'id;
+//    a schermo il Nome/Numero della colonna)
+const _CD_FILTRI = ['serie', 'tipo', 'versione', 'articolo'];
 function _cdPassa(x, salta) {
   return _CD_FILTRI.every(k => k === salta || !_cdFiltro[k].size || _cdFiltro[k].has(x[k]));
 }
@@ -70608,7 +70622,7 @@ function _cdRighe() {
   const righe = [];
   (getData('figurines', []) || []).forEach(f => { if (Array.isArray(f.copie)) f.copie.forEach((c, i) => {
     const ver = _chiaveTipo(f);
-    righe.push({ f, c, chiave: _annChiaveCopia(c, i), serie: f.seriesId, tipo: _aggTipoDi(f), versione: ver,
+    righe.push({ f, c, chiave: _annChiaveCopia(c, i), articolo: f.id, serie: f.seriesId, tipo: _aggTipoDi(f), versione: ver,
       sOrd: sOrd.get(f.seriesId) ?? 9999, tOrd: posto(_aggTipoDi(f)), numOrd: parseInt(num(f), 10) || 1e9,
       nomeSerie: sNome(f.seriesId), nomeTipo: _aggNomeTipo(_aggTipoDi(f)), nomeVer: nomeVer(ver),
       nome: (numVisto(f) ? numVisto(f) + ' · ' : '') + _annNomeArticolo(f) });
@@ -70618,7 +70632,10 @@ function _cdRighe() {
   righe.sort((a, b) => (a.sOrd - b.sOrd) || (a.tOrd - b.tOrd) || a.nomeTipo.localeCompare(b.nomeTipo, 'it')
     || (a.numOrd - b.numOrd) || _annNomeArticolo(a.f).localeCompare(_annNomeArticolo(b.f), 'it') || a.f.id.localeCompare(b.f.id)
     || ((a.c.n ?? 1e9) - (b.c.n ?? 1e9)));
-  return { righe, sNome, nomeVer };
+  // v7.267 (Franco: «il filtro "Filtra per serie" della sezione "Copie doppie" deve usare i nomi brevi per le serie; non
+  //    gli acronimi») - per le pillole il nome breve; la colonna Serie resta con l'acronimo
+  const sBreve = id => { const s = sMap.get(id); return s ? _nomeSerieCard(s, true) : '—'; };
+  return { righe, sNome, nomeVer, sBreve };
 }
 // le colonne: chiave, titolo e valore per ordinare (numeri come numeri, testi come testi; '' = vuoto, in fondo)
 const _CD_COLONNE = [
@@ -70628,21 +70645,27 @@ const _CD_COLONNE = [
   { k: 'versione', it: 'Versione', en: 'Version', val: x => x.nomeVer },
   { k: 'nome', it: 'Nome/Numero', en: 'Name/Number', val: x => x.numOrd < 1e9 && _haNumero(x.f) ? x.numOrd : _annNomeArticolo(x.f) },
   { k: 'ncopia', it: 'N. copia', en: 'Copy no.', val: x => x.c.n == null ? '' : x.c.n, centro: true },
+  // v7.267 (Franco: «nella tabella ELENCO COPIE manca il campo "Voto"; mettilo prima del campo "Iniziale"»)
+  { k: 'voto', it: 'Voto', en: 'Rating', val: x => typeof x.c.qualita === 'number' ? x.c.qualita : '', centro: true },
   { k: 'iniziale', it: 'Iniziale', en: 'Initial', val: x => x.c.iniziale == null ? '' : x.c.iniziale, centro: true },
+  // v7.267 (Franco: «"Addizionale" … esposto nelle 2 tabelle delle copie, dopo il campo "Iniziale"»)
+  { k: 'addizionale', it: 'Addizionale', en: 'Additional', val: x => x.c.addizionale == null ? '' : x.c.addizionale, centro: true },
   { k: 'condizioni', it: 'Condizioni', en: 'Condition', val: x => String(x.c.condizioni || '').trim() },
 ];
 function _cdInterno() {
   const it = currentLang === 'it';
   const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);vertical-align:top;';
-  const { righe: tutte, sNome, nomeVer } = _cdRighe();
+  const { righe: tutte, nomeVer, sBreve } = _cdRighe();
   const righe = tutte.filter(x => _cdPassa(x));
   const testa = '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;color:var(--info);">🧾 ' + (it ? 'ELENCO COPIE' : 'COPIES LIST') + ' ('
     + (righe.length === tutte.length ? righe.length : righe.length + ' / ' + tutte.length) + ')</h4>';   // v7.264 (Franco: «diventa "Elenco copie", ma comunque scrivilo tutto maiuscolo»)
   if (!tutte.length) return testa + '<p style="font-size:0.85rem;color:var(--muted);font-style:italic;">' + (it ? 'Nessuna copia doppia scritta.' : 'No duplicate copies yet.') + '</p>';
   // i riquadri dei filtri, vestiti come quelli degli annunci (titolo azzurro sul bordo)
-  const etichetta = { serie: sNome, tipo: k => _aggNomeTipo(k), versione: nomeVer };
-  const titolo = { serie: it ? 'Filtra per serie' : 'Filter by series', tipo: it ? 'Filtra per tipologia di articolo' : 'Filter by item type', versione: it ? 'Filtra per versione' : 'Filter by version' };
+  const nomeArt = new Map(tutte.map(x => [x.articolo, x.nome]));   // v7.267: il Nome/Numero della colonna
+  const etichetta = { serie: sBreve, tipo: k => _aggNomeTipo(k), versione: nomeVer, articolo: id => nomeArt.get(id) || id };   // v7.267: nomi brevi
+  const titolo = { serie: it ? 'Filtra per serie' : 'Filter by series', tipo: it ? 'Filtra per tipologia di articolo' : 'Filter by item type', versione: it ? 'Filtra per versione' : 'Filter by version',
+    articolo: it ? 'Filtra per nome/numero' : 'Filter by name/number' };
   // v7.266 (Franco: «i box contenitore sopra la tabella sono esageratamente lunghi; direi di stare al 70% di quella
   //    lunghezza») - i riquadri dei filtri al 70% della larghezza della pagina
   const filtri = '<div style="display:flex;flex-direction:column;gap:0.9rem;margin-bottom:1rem;width:70%;">'
@@ -70677,16 +70700,22 @@ function _cdInterno() {
       + '<td style="' + td + 'white-space:nowrap;"><a href="#" style="color:var(--info);" onclick="openFigDetail(\'' + esc(x.f.id) + '\');return false;">' + esc(x.nome) + '</a></td>'
       // v7.265 (Franco: «N. copia e Iniziale, centra il valore della colonna rispetto all'etichetta della colonna»)
       + '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.n == null ? '' : String(x.c.n)) + '</td>'
+      // v7.267 - il Voto prima dell'Iniziale (Franco); `data-cd` segna le colonne nate nella v7.267
+      + '<td data-cd="voto" style="' + td + 'text-align:center;white-space:nowrap;">' + esc(_copiaQualitaTesto(x.c.qualita)) + '</td>'
       + '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.iniziale == null ? '' : (it ? String(x.c.iniziale).replace('.', ',') : String(x.c.iniziale))) + '</td>'
+      + '<td data-cd="addizionale" style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.addizionale == null ? '' : (it ? String(x.c.addizionale).replace('.', ',') : String(x.c.addizionale))) + '</td>'   // v7.267
       + '<td style="' + td + 'white-space:pre-wrap;min-width:12rem;width:100%;">' + esc(x.c.condizioni || '') + '</td>'
       // 🆕 v7.266 (Franco: «dalla tabella delle copie deve essere possibile aprire in visualizzazione o modifica il record
       //    di copia») - l'occhio e la matita della tabella degli annunci, che aprono la finestra della copia (`_copiaApri`)
       + '<td style="' + td + 'white-space:nowrap;">'
         + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Apri in sola lettura' : 'Open read-only') + '"'
         + ' onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\',true)">&#128065;</button> '
-        + '<button type="button" class="tbl-btn tbl-btn-edit" title="' + (it ? 'Modifica' : 'Edit') + '" onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">✏️</button>'
+        + '<button type="button" class="tbl-btn tbl-btn-edit" title="' + (it ? 'Modifica' : 'Edit') + '" onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">✏️</button> '
+        // v7.267 (Franco: «nelle copie mettimi un tasto di clone; sia in tabella che nella form di dettaglio») - ⧉ come negli annunci
+        + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Clona' : 'Clone') + '"'
+        + ' onclick="_copiaClona(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">&#10697;</button>'
       + '</td></tr>').join('')
-      : '<tr><td colspan="8" style="' + td + 'font-style:italic;color:var(--muted);">' + (it ? 'Nessuna copia con questi filtri.' : 'No copies match these filters.') + '</td></tr>')
+      : '<tr><td colspan="10" style="' + td + 'font-style:italic;color:var(--muted);">' + (it ? 'Nessuna copia con questi filtri.' : 'No copies match these filters.') + '</td></tr>')
     + '</table></div>';
 }
 // 🆕 v7.266 (Franco: «dalla tabella delle copie deve essere possibile aprire in visualizzazione o modifica il record di
@@ -70715,35 +70744,66 @@ function _copiaApri(artId, chiave, sola) {
     + '<input id="cp-n" class="form-input" type="number" min="0" step="1" value="' + (c.n ?? '') + '" style="max-width:8rem;"' + dis + '>'
     + lab(it ? 'Condizioni' : 'Condition')
     + '<textarea id="cp-condizioni" class="form-input" rows="4"' + dis + '>' + esc(c.condizioni || '') + '</textarea>'
-    + lab(it ? 'Iniziale' : 'Initial')
-    + '<input id="cp-iniziale" class="form-input" type="number" step="any" value="' + (c.iniziale ?? '') + '" style="max-width:10rem;"' + dis + '>'
+    // v7.267 - il Voto prima dell'Iniziale, come nel tab «Copie» (Franco: «il campo "Voto" va prima del campo "Iniziale"»)
     + lab(it ? 'Voto' : 'Rating')   // v7.266 (Franco: «il campo "Qualità" della copia, rinominalo in "Voto"»)
     + '<select id="cp-qualita" class="form-select" style="max-width:10rem;"' + dis + '><option value="">—</option>'
       + _COPIA_QUALITA.map(q => '<option value="' + q + '"' + (c.qualita === q ? ' selected' : '') + '>' + _copiaQualitaTesto(q) + '</option>').join('')
       + (typeof c.qualita === 'number' && !_COPIA_QUALITA.includes(c.qualita) ? '<option value="' + c.qualita + '" selected>' + _copiaQualitaTesto(c.qualita) + '</option>' : '') + '</select>'
+    + lab(it ? 'Iniziale' : 'Initial')
+    + '<input id="cp-iniziale" class="form-input" type="number" step="any" value="' + (c.iniziale ?? '') + '" style="max-width:10rem;"' + dis + '>'
+    // v7.267 (Franco: «un campo, da porre sotto al campo "Iniziale", chiamato "Addizionale", sempre numerico»)
+    + lab(it ? 'Addizionale' : 'Additional')
+    + '<input id="cp-addizionale" class="form-input" type="number" step="any" value="' + (c.addizionale ?? '') + '" style="max-width:10rem;"' + dis + '>'
     // gli annunci della copia: la stessa cella della colonna «Annunci» del tab, riempita quando gli annunci sono letti
-    + lab(it ? 'Annunci' : 'Listings')
-    + '<table style="border-collapse:collapse;"><tr>' + _copiaCellaAnnunci(artId, chiave) + '</tr></table>' + _copieAnnunciDopo()
+    + '<div id="cp-annunci">' + lab(it ? 'Annunci' : 'Listings')
+    + '<table style="border-collapse:collapse;"><tr>' + _copiaCellaAnnunci(artId, chiave) + '</tr></table></div>' + _copieAnnunciDopo()
     + '<div id="cp-stato" style="font-size:0.8rem;min-height:1.2em;margin-top:0.6rem;"></div>'
     + '<div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.8rem;">'
+      // 🆕 v7.267 (Franco: «nelle copie mettimi un tasto di clone; sia in tabella che nella form di dettaglio») - «Clona»
+      //    come nella finestra dell'annuncio: arancione, a sinistra, lontano da Salva; solo in modifica
+      + (sola ? '' : '<button type="button" class="btn-barra-admin pieno" id="cp-clona" style="margin-right:auto;" onclick="_copiaClonaQui(\'' + esc(artId) + '\')">&#10697; ' + (it ? 'Clona' : 'Clone') + '</button>')
       + (sola ? '' : '<button type="button" class="btn-secondary" onclick="document.getElementById(\'copia-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
         + '<button type="button" class="btn-primary" id="cp-salva" onclick="_copiaSalva(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">' + (it ? 'Salva' : 'Save') + '</button>')
     + '</div></div>';
   document.body.appendChild(ov);
 }
+// 🆕 v7.267 - LA FINESTRA DIVENTA UNA COPIA NUOVA dello stesso articolo, con dentro quello che c'è scritto (anche non
+//    salvato), come «Clona» dell'annuncio. Il N. copia passa al primo libero dell'articolo (il più alto + 1): due copie
+//    con lo stesso numero si confonderebbero. Gli annunci non vengono dietro: sono della copia di partenza. Salva aggiunge.
+function _copiaClonaQui(artId) {
+  const it = currentLang === 'it', v = id => document.getElementById(id);
+  const art = _indiceArticoli().get(artId);
+  const nn = (art && Array.isArray(art.copie) ? art.copie : []).map(c => c.n).filter(n => typeof n === 'number');
+  const t = document.querySelector('#copia-modal .modal-title');
+  if (t) t.textContent = it ? 'Nuova copia (clone)' : 'New copy (clone)';
+  if (v('cp-n')) v('cp-n').value = nn.length ? Math.max(...nn) + 1 : 1;
+  v('cp-annunci')?.remove();
+  v('cp-clona')?.remove();
+  v('cp-salva')?.setAttribute('onclick', '_copiaSalva(\'' + artId + '\',null)');
+  const st = v('cp-stato');
+  if (st) { st.style.color = 'var(--info)'; st.textContent = it ? 'È un clone: con Salva diventa una copia in più dello stesso articolo.' : 'This is a clone: Save adds a new copy of the same item.'; }
+}
+// dalla tabella: apre la finestra della copia e la fa subito clone
+function _copiaClona(artId, chiave) {
+  _copiaApri(artId, chiave);
+  _copiaClonaQui(artId);
+}
+// v7.267 - `chiave` null = copia nuova (un clone): si aggiunge in fondo, con un id suo
 async function _copiaSalva(artId, chiave) {
   const it = currentLang === 'it', v = id => document.getElementById(id);
   const stato = v('cp-stato'), dire = t => { if (stato) { stato.style.color = 'var(--danger)'; stato.textContent = t; } };
   const art = _indiceArticoli().get(artId);
   const copie = (art && Array.isArray(art.copie)) ? art.copie.slice() : [];
-  const i = copie.findIndex((c, j) => _annChiaveCopia(c, j) === chiave);
+  const i = chiave === null ? copie.length : copie.findIndex((c, j) => _annChiaveCopia(c, j) === chiave);
   if (!art || i < 0) return dire(it ? '⚠️ Copia non trovata: ricarica la pagina.' : '⚠️ Copy not found.');
+  if (chiave === null) copie.push({ id: _nuovoIdCopia() });
   const numero = (val, intero) => { const n = intero ? parseInt(val, 10) : parseFloat(val); return Number.isFinite(n) ? n : null; };
   // come `_copieLeggi`: N. copia intero da 0 in su, Iniziale coi decimali, Qualità un numero
   const n = _mlNumero(v('cp-n').value);
   const nuova = Object.assign({}, copie[i], {
-    n, condizioni: String(v('cp-condizioni').value || '').trim(), iniziale: numero(v('cp-iniziale').value), qualita: numero(v('cp-qualita').value) });
-  if (nuova.n === null && !nuova.condizioni && nuova.iniziale === null && nuova.qualita === null)
+    n, condizioni: String(v('cp-condizioni').value || '').trim(), iniziale: numero(v('cp-iniziale').value), qualita: numero(v('cp-qualita').value),
+    addizionale: v('cp-addizionale') ? numero(v('cp-addizionale').value) : (copie[i].addizionale ?? null) });   // v7.267
+  if (nuova.n === null && !nuova.condizioni && nuova.iniziale === null && nuova.qualita === null && nuova.addizionale === null)
     return dire(it ? '⚠️ Una copia tutta vuota non si salva: per toglierla, usa la ✕ nel tab «Copie» dell’articolo.' : '⚠️ An empty copy cannot be saved.');
   copie[i] = nuova;
   const b = v('cp-salva'); if (b) b.disabled = true;
@@ -70853,19 +70913,54 @@ function _copiaRigaHTML(c, artId, chiave) {
   return '<tr data-copia data-copia-id="' + esc(c.id || ('cp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6))) + '">'
     + '<td style="' + _copieCella + '"><input type="number" min="0" step="1" data-copia-n value="' + (c.n ?? '') + '" ' + inp + 'width:4.2rem;"></td>'
     + '<td style="' + _copieCella + '"><textarea data-copia-condizioni rows="2" ' + inp + 'width:16rem;max-width:100%;resize:vertical;">' + esc(c.condizioni || '') + '</textarea></td>'
-    // v7.263 - `step="any"`: l'Iniziale portata da un annuncio può avere i decimali, e non si deve perdere
-    + '<td style="' + _copieCella + '"><input type="number" step="any" data-copia-iniziale value="' + (c.iniziale ?? '') + '" ' + inp + 'width:5rem;"></td>'
+    // 🔄 v7.267 (Franco: «il campo "Voto" va prima del campo "Iniziale"») - prima il Voto, poi l'Iniziale
     + '<td style="' + _copieCella + '"><select data-copia-qualita ' + inp + 'width:4.8rem;"><option value="">—</option>'   // v7.263
     + _COPIA_QUALITA.map(q => '<option value="' + q + '"' + (c.qualita === q ? ' selected' : '') + '>' + _copiaQualitaTesto(q) + '</option>').join('')
     // v7.263 - un voto portato da un annuncio fuori dalla scala (sotto il 3) resta scelto, se no si perderebbe al Salva
     + (typeof c.qualita === 'number' && !_COPIA_QUALITA.includes(c.qualita) ? '<option value="' + c.qualita + '" selected>' + _copiaQualitaTesto(c.qualita) + '</option>' : '') + '</select></td>'
+    // v7.263 - `step="any"`: l'Iniziale portata da un annuncio può avere i decimali, e non si deve perdere
+    + '<td style="' + _copieCella + '"><input type="number" step="any" data-copia-iniziale value="' + (c.iniziale ?? '') + '" ' + inp + 'width:5rem;"></td>'
+    // 🆕 v7.267 (Franco) - l'Addizionale, numerico come l'Iniziale
+    + '<td style="' + _copieCella + '"><input type="number" step="any" data-copia-addizionale value="' + (c.addizionale ?? '') + '" ' + inp + 'width:5rem;"></td>'
     + _copiaCellaAnnunci(artId, chiave)   // v7.263
-    + '<td style="' + _copieCella + '"><button type="button" class="tbl-btn tbl-btn-delete" title="' + (currentLang === 'it' ? 'Togli questa copia' : 'Remove this copy') + '" onclick="this.closest(\'tr\').remove()">✕</button></td></tr>';
+    // v7.267 (Franco: «il tasto di clona copia, sia nella tabella delle copie della sezione della admin console, che nella
+    //    tabella della form di dettaglio delle copie») - ⧉ prima della ✕: una riga nuova subito sotto (`_copiaClonaRiga`)
+    + '<td style="' + _copieCella + 'white-space:nowrap;"><button type="button" class="tbl-btn tbl-btn-edit" style="font-weight:bold;" title="' + (currentLang === 'it' ? 'Clona questa copia' : 'Clone this copy') + '" onclick="_copiaClonaRiga(this)">&#10697;</button> '
+    + '<button type="button" class="tbl-btn tbl-btn-delete" title="' + (currentLang === 'it' ? 'Togli questa copia' : 'Remove this copy') + '" onclick="this.closest(\'tr\').remove()">✕</button></td></tr>';
+}
+// 🆕 v7.267 - l'ordinamento della tabellina del tab «Copie», in modifica e in lettura: si spostano le righe che ci sono
+//    (in modifica con quello che c'è scritto, anche non salvato: il «Salva» le legge nell'ordine a schermo). Il valore di
+//    una cella è quello della sua casella, se ce l'ha, se no il testo; i numeri come numeri; i vuoti sempre in fondo.
+//    Il verso sta sulla tabella (`data-ord`): stessa colonna = si rovescia, colonna nuova = dal più piccolo; la freccia
+//    va sul titolo scelto.
+function _copieOrdinaTab(th, k) {
+  const tab = th && th.closest('table');
+  if (!tab) return;
+  const righe = [...tab.querySelectorAll('tr')].slice(1);
+  const su = tab.dataset.ord === k + 'su' ? false : true;
+  tab.dataset.ord = k + (su ? 'su' : 'giu');
+  const val = tr => { const td = tr.children[k]; if (!td) return ''; const el = td.querySelector('input, select, textarea'); return String(el ? el.value : td.textContent).trim(); };
+  righe.sort((a, b) => {
+    const x = val(a), y = val(b);
+    if (x === '' || y === '') return (x === '') - (y === '');
+    const nx = parseFloat(x.replace(',', '.')), ny = parseFloat(y.replace(',', '.'));
+    const c = Number.isFinite(nx) && Number.isFinite(ny) && /^-?[\d.,]+$/.test(x) && /^-?[\d.,]+$/.test(y) ? nx - ny : x.localeCompare(y, 'it', { sensitivity: 'base' });
+    return su ? c : -c;
+  });
+  righe.forEach(tr => tr.parentNode.appendChild(tr));
+  tab.querySelectorAll('tr:first-child th').forEach((h, j) => { h.textContent = h.textContent.replace(/ [▲▼]$/, '') + (j === k ? (su ? ' ▲' : ' ▼') : ''); });
 }
 function _copieIntestazione() {
   const it = currentLang === 'it';
   const th = 'padding:4px 6px;font-size:0.76rem;color:var(--info);font-weight:600;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;';
-  return '<tr><th style="' + th + '">n.</th><th style="' + th + '">' + (it ? 'Condizioni' : 'Condition') + '</th><th style="' + th + '">' + (it ? 'Iniziale' : 'Initial') + '</th><th style="' + th + '">' + (it ? 'Voto' : 'Rating') + '</th><th style="' + th + '">' + (it ? 'Annunci' : 'Listings') + '</th>';   // v7.263; v7.266: «Qualità» → «Voto» (Franco)
+  // 🔄 v7.267 (Franco: «anche quella tabellina lì deve essere ordinata per campo "n." e deve avere le colonne ordinabili
+  //    con un click sulla loro testata») - ogni titolo ordina le righe a schermo (`_copieOrdinaTab`), un secondo clic
+  //    rovescia; in partenza l'ordine è per n. (`_copiePerNumero`, v7.266)
+  const t = (k, testo) => '<th style="' + th + 'cursor:pointer;user-select:none;" title="' + (it ? 'Ordina' : 'Sort') + '" onclick="_copieOrdinaTab(this,' + k + ')">' + testo + '</th>';
+  // 🔄 v7.267 (Franco: «nella tabellina della form di dettaglio, il campo "Voto" va prima del campo "Iniziale"»)
+  // v7.267 (Franco: «un campo, sotto "Iniziale", chiamato "Addizionale", sempre numerico; esposto nelle 2 tabelle delle
+  //    copie, dopo "Iniziale"»)
+  return '<tr>' + t(0, 'n.') + t(1, (it ? 'Condizioni' : 'Condition')) + t(2, (it ? 'Voto' : 'Rating')) + t(3, (it ? 'Iniziale' : 'Initial')) + t(4, (it ? 'Addizionale' : 'Additional')) + t(5, (it ? 'Annunci' : 'Listings'));   // v7.263; v7.266: «Qualità» → «Voto» (Franco)
 }
 // 🆕 v7.266 (Franco: «nel tab Copie di un articolo, le copie devono essere ordinate per campo "n."») - le copie con la loro
 //    posizione nel dato ([copia, indice]: la chiave di una copia senza id, `#indice`, resta quella), in ordine di n.; senza
@@ -70881,6 +70976,19 @@ function _copieEditHTML(f) {
     + _copiePerNumero(f).map(([c, i]) => _copiaRigaHTML(c, f.id, _annChiaveCopia(c, i))).join('') + '</table></div>'   // v7.266: per n.
     + _copieAnnunciDopo()
     + '<div><button type="button" class="btn-primary btn-admin" style="font-size:0.82rem;padding:0.3rem 0.8rem;" onclick="_copiaAggiungi()">+ ' + (it ? 'Aggiungi copia' : 'Add copy') + '</button></div></div>';
+}
+// 🆕 v7.267 - il clone di una riga del tab «Copie»: subito sotto, con quello che c'è scritto nella riga (anche non salvato),
+//    un id nuovo (è un'altra copia) e il N. copia al primo libero fra le righe a schermo (il più alto + 1). Si salva col
+//    «Salva» della scheda, come ogni riga.
+function _copiaClonaRiga(btn) {
+  const tr = btn && btn.closest('tr'), t = document.getElementById('fe-copie');
+  if (!tr || !t) return;
+  const leggi = sel => tr.querySelector(sel)?.value ?? '';
+  const nn = [...t.querySelectorAll('[data-copia-n]')].map(el => parseInt(el.value, 10)).filter(Number.isFinite);
+  const q = parseFloat(leggi('[data-copia-qualita]')), ini = parseFloat(leggi('[data-copia-iniziale]')), add = parseFloat(leggi('[data-copia-addizionale]'));
+  tr.insertAdjacentHTML('afterend', _copiaRigaHTML({
+    n: nn.length ? Math.max(...nn) + 1 : 1, condizioni: leggi('[data-copia-condizioni]'),
+    iniziale: Number.isFinite(ini) ? ini : null, qualita: Number.isFinite(q) ? q : null, addizionale: Number.isFinite(add) ? add : null }));   // v7.267: + Addizionale
 }
 // la riga nuova, vuota
 function _copiaAggiungi() {
@@ -70898,7 +71006,8 @@ function _copieLeggi() {
     condizioni: String(r.querySelector('[data-copia-condizioni]').value || '').trim(),
     iniziale: (v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; })(r.querySelector('[data-copia-iniziale]').value),   // v7.263: anche coi decimali
     qualita: (v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; })(r.querySelector('[data-copia-qualita]')?.value),   // v7.263
-  })).filter(c => c.n !== null || c.condizioni || c.iniziale !== null || c.qualita !== null);
+    addizionale: (v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; })(r.querySelector('[data-copia-addizionale]')?.value),   // v7.267
+  })).filter(c => c.n !== null || c.condizioni || c.iniziale !== null || c.qualita !== null || c.addizionale !== null);
 }
 function _copieLetturaHTML(f) {
   const it = currentLang === 'it';
@@ -70910,7 +71019,9 @@ function _copieLetturaHTML(f) {
     + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' + _copieIntestazione() + '</tr>'
     + _copiePerNumero(f).map(([c, i]) => {   // v7.266: per n.
       return '<tr><td style="' + td + '">' + esc(String(c.n ?? '')) + '</td>'
-        + '<td style="' + td + 'white-space:pre-wrap;">' + esc(c.condizioni || '') + '</td><td style="' + td + '">' + esc(String(c.iniziale ?? '')) + '</td><td style="' + td + '">' + esc(_copiaQualitaTesto(c.qualita)) + '</td>'
+        // v7.267 - il Voto prima dell'Iniziale (Franco)
+        + '<td style="' + td + 'white-space:pre-wrap;">' + esc(c.condizioni || '') + '</td><td style="' + td + '">' + esc(_copiaQualitaTesto(c.qualita)) + '</td><td style="' + td + '">' + esc(String(c.iniziale ?? '')) + '</td>'
+        + '<td style="' + td + '">' + esc(String(c.addizionale ?? '')) + '</td>'   // v7.267: l'Addizionale
         + _copiaCellaAnnunci(f.id, _annChiaveCopia(c, i)) + '</tr>'; }).join('')   // v7.263: + Qualità, + Annunci
     + '</table></div></div>' + _copieAnnunciDopo();
 }
