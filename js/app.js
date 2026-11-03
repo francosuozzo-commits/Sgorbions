@@ -32095,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.263';
+const JS_VERSION = 'v7.264';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -43882,7 +43882,7 @@ const _ANN_RIQUADRI = [
     },
     etichetta: id => { const f = (getData('figurines', []) || []).find(x => x.id === id);
       if (!f) return currentLang === 'it' ? 'articolo non trovato' : 'item not found';
-      const n = f.noNumber ? '' : String(f.number ?? '').trim();
+      const n = _haNumero(f) ? String(f.number ?? '').trim() : '';   // v7.264: niente campo ordine degli album
       return (n ? n + ' · ' : '') + _annNomeArticolo(f); } },
   { k: 'singola', it: 'Filtra per figurina singola', en: 'Filter by single sticker',
     val: r => ['figurines', 'attaccare'].includes(_ANN_RIQUADRI.find(x => x.k === 'tipologia').val(r)) ? (r.articoloId ? 'si' : 'no') : '',
@@ -43901,16 +43901,25 @@ const _ANN_RIQUADRI = [
   // 🔄 v7.263 (Franco: «"Filtra per numero articolo" diventa "Filtra per copia", perché le copie fanno esattamente lo
   //    stesso lavoro») - la pillola è il numero della copia: quello della copia collegata (`_annVisto`), se no il campo N
   //    dell'annuncio (lotti misti, annunci non ancora collegati). La chiave resta `n`.
+  // 🔄 v7.264 (Franco: «il filtro "Filtra per copia" non deve mostrare pillole grigiate; le pillole che mostra devono
+  //    essere tutte cliccabili; vengono calcolate solo quando ci sono gli elementi per farlo; se gli elementi vengono meno,
+  //    le pillole scompaiono; solo per questo filtro») - le voci sono solo i numeri degli annunci che passano GLI ALTRI
+  //    riquadri (`_annPassa(r, 'n')`, lo stesso conto della pillola): così nessuna è a zero. Senza voci il riquadro non
+  //    c'è, e una scelta rimasta senza pillola si toglie (`_annPotaArticolo`): un filtro che non si vede non filtra.
   { k: 'n', it: 'Filtra per copia', en: 'Filter by copy', stacco: '1.6rem', prima: '#',
     val: r => String(_annVisto(r, 'n') ?? '').trim(),
-    voci: () => [...new Set(_annRighe.map(r => String(_annVisto(r, 'n') ?? '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true })) },
+    nascosto: () => !_ANN_RIQUADRI.find(x => x.k === 'n').voci().length,
+    voci: () => [...new Set(_annRighe.filter(r => _annPassa(r, 'n')).map(r => String(_annVisto(r, 'n') ?? '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true })) },
   // 🆕 v7.242 (Franco: «aggiungi filtro sul prezzo (campo "Finale")»; «chiamalo "Filtra per valore"») - come il numero:
   //    una pillola per ogni valore di Finale (`prezzo`) fra gli annunci, senza doppioni e senza i vuoti, dal più basso;
   //    a schermo con la virgola. Il nome è già un numero: lo stesso `stacco` e il «#» del numero
   { k: 'valore', it: 'Filtra per valore', en: 'Filter by value', stacco: '1.6rem', prima: '#',
     val: r => (r.prezzo === null || r.prezzo === undefined || String(r.prezzo).trim() === '') ? '' : String(r.prezzo).trim(),
+    // 🔄 v7.264 (Franco: «anche il filtro per valore va trattato allo stesso modo; solo pillole cliccabili») - come la copia:
+    //    solo i valori degli annunci che passano gli altri riquadri, riquadro nascosto senza voci, scelte orfane potate
+    nascosto: () => !_ANN_RIQUADRI.find(x => x.k === 'valore').voci().length,
     voci: () => { const q = _ANN_RIQUADRI.find(x => x.k === 'valore');
-      return [...new Set(_annRighe.map(q.val).filter(Boolean))].sort((a, b) => Number(a) - Number(b)); },
+      return [...new Set(_annRighe.filter(r => _annPassa(r, 'valore')).map(q.val).filter(Boolean))].sort((a, b) => Number(a) - Number(b)); },
     etichetta: v => currentLang === 'it' ? v.replace('.', ',') : v },
 ];
 function _annPassa(r, salta) {
@@ -43928,6 +43937,12 @@ function _annFiltra(k, j, aggiungi) {
 function _annPotaArticolo() {
   const voci = _ANN_RIQUADRI.find(q => q.k === 'articolo').voci();
   [..._annFiltro.articolo].forEach(id => { if (!voci.includes(id)) _annFiltro.articolo.delete(id); });
+  // v7.264 - e così le copie: un numero scelto che fra le pillole non c'è più esce dal filtro
+  const copie = _ANN_RIQUADRI.find(q => q.k === 'n').voci();
+  [..._annFiltro.n].forEach(v => { if (!copie.includes(v)) _annFiltro.n.delete(v); });
+  // v7.264 - e i valori (Franco: «anche il filtro per valore va trattato allo stesso modo»)
+  const valori = _ANN_RIQUADRI.find(q => q.k === 'valore').voci();
+  [..._annFiltro.valore].forEach(v => { if (!valori.includes(v)) _annFiltro.valore.delete(v); });
 }
 // v7.187 (Franco: «metti il tasto "Azzera filtri"») - lo stesso tasto della ricerca dell'Inventario
 function _annAzzeraFiltri() {
@@ -44113,7 +44128,8 @@ function _annDisegna() {
           + '<td style="padding-left:0.25rem;padding-right:0.25rem;">' + inp('voto', 'number', r.voto, 'width:3.2rem;text-align:right;') + '</td>'   // v7.191
           // v7.231 - Iniziale e Finale: numeri, senza €
           + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('costo', 'number', r.costo, 'width:2.9rem;text-align:right;') + '</td>'
-          + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('prezzo', 'number', r.prezzo, 'width:2.9rem;text-align:right;') + '</td>'
+          // 🔄 v7.264 (Franco: «la colonna Finale della tabella degli annunci va allargata un minimo») - 2,9 → 3,5rem
+          + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('prezzo', 'number', r.prezzo, 'width:3.5rem;text-align:right;') + '</td>'
           // il 🔗 legge il link al clic: così vale anche quello appena cambiato nella casella
           // v7.187 (Franco: «il campo "Link" accorcialo, tanto per aprirlo c'è il bottoncino affianco»)
           // 🆕 v7.202 (Franco: «se il campo Sito è Vinted, il campo url deve contenere la parola "vinted"» - e così eBay e
@@ -44166,8 +44182,11 @@ function _annOpzioniArticolo(seriesId, tipo, scelto) {
       if (na || nb) return na ? -1 : 1;
       return _annNomeArticolo(a).localeCompare(_annNomeArticolo(b), 'it');
     });
+  // 🔄 v7.264 (Franco: «anche la tendina e la pillola dell'articolo non devono riportare il valore del campo ordine») - negli
+  //    album e negli altri oggetti `number` è l'ordinamento: si usa per mettere in fila, a schermo va solo un Numero vero
+  //    (`_haNumero`)
   return '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
-    + art.map(f => '<option value="' + esc(f.id) + '"' + (f.id === scelto ? ' selected' : '') + '>' + esc((num(f) ? num(f) + ' · ' : '') + _annNomeArticolo(f)) + '</option>').join('');
+    + art.map(f => '<option value="' + esc(f.id) + '"' + (f.id === scelto ? ' selected' : '') + '>' + esc((_haNumero(f) && num(f) ? num(f) + ' · ' : '') + _annNomeArticolo(f)) + '</option>').join('');
 }
 // 🆕 v7.263 (Franco: «negli annunci il campo Articolo deve puntare alle copie; prima chiede l'articolo, come oggi, poi la
 //    sua copia; sono le copie che metto in vendita, non l'originale») - LA COPIA DELL'ANNUNCIO. Le copie sono quelle del
@@ -70463,15 +70482,18 @@ function renderAdminDoppioni() {
   const box = document.getElementById('admin-doppioni-tda');
   if (!box) return;
   const it = currentLang === 'it';
-  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  // v7.264 - intestazioni azzurre, come le altre tabelle della console
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
   box.innerHTML =
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🧾 ' + (it ? 'Doppioni: i campi nella scheda dell\'articolo' : 'Duplicates: the fields in the item form') + '</h4>' +
+    // 🔄 v7.264 (Franco: «in admin console, rinomina "Doppioni" in "Copie doppie"») - anche il titolo; e il tab della scheda
+    //    si chiama «Copie» dalla v7.263
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">🧾 ' + (it ? 'Copie doppie: i campi nella scheda dell\'articolo' : 'Duplicate copies: the fields in the item form') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
-      (it ? 'Accesa: il campo compare nel tab «Doppi» della scheda degli articoli di quella tipologia, in lettura e in modifica. ' +
-            'Spenta: il campo non si vede e non si salva, ma il valore già scritto resta. Con tutte spente il tab «Doppi» non c\'è.<br>' +
+      (it ? 'Accesa: il campo compare nel tab «Copie» della scheda degli articoli di quella tipologia, in lettura e in modifica. ' +
+            'Spenta: il campo non si vede e non si salva, ma il valore già scritto resta. Con tutte spente il tab «Copie» non c\'è.<br>' +
             '«' + esc(_doppiEt('tot')) + '» segue «' + esc(_doppiEt('disp')) + '».'
-          : 'Checked: the field shows in the «Duplicates» tab of the items of that type. Unchecked: hidden and not saved; the value stays.') +
+          : 'Checked: the field shows in the «Copies» tab of the items of that type. Unchecked: hidden and not saved; the value stays.') +
     '</p>' +
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
     '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
@@ -70480,8 +70502,54 @@ function renderAdminDoppioni() {
       _DOPPI_CAMPI.map(c => '<td style="' + td + 'text-align:center;"><input type="checkbox" data-doppi="' + esc(c + ':' + k) + '"' + (_doppiAcceso(c, k) ? ' checked' : '') + '></td>').join('') + '</tr>').join('') +
     '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
-      '<button class="btn-primary btn-admin" onclick="salvaDoppioni()">' + (it ? 'Salva i doppioni' : 'Save duplicates') + '</button>' +
-    '</div>';
+      // 🔄 v7.264 (Franco: «il tasto "Salva i doppioni" cambialo in "Salva struttura copie doppie"»)
+      '<button class="btn-primary btn-admin" onclick="salvaDoppioni()">' + (it ? 'Salva struttura copie doppie' : 'Save duplicate copies structure') + '</button>' +
+    '</div>' +
+    _copieDoppieListaHTML();   // v7.264
+}
+// 🆕 v7.264 (Franco: «nel tab "Copie doppie", sotto alla tabella, metti una tabella che elenca le copie doppie; eccone i
+//    campi: Serie, Tipologia di articolo, Versione, Nome/Numero, Iniziale, Condizioni») - UNA RIGA PER COPIA, di tutti gli
+//    articoli (campo `copie`). La Serie come nella colonna degli annunci (acronimo, se no nome breve); la Versione è quella
+//    dell'articolo (`_chiaveTipo`), visto che la copia non ne ha una sua (v7.263); Nome/Numero apre la scheda. In ordine di
+//    serie, poi di tipologia (come il descrittore), poi di numero e di nome. Colori delle tabelle della console: titolo e
+//    intestazioni azzurri, prima colonna bianca.
+function _copieDoppieListaHTML() {
+  const it = currentLang === 'it';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);vertical-align:top;';
+  const serie = getData('series', []) || [];
+  const sOrd = new Map(serie.map((s, i) => [s.id, s.order ?? i])), sMap = new Map(serie.map(s => [s.id, s]));
+  const sNome = id => { const s = sMap.get(id); return s ? ((s.acronimo || '').trim() || _nomeSerieCard(s, true)) : '—'; };
+  const ordTipi = Object.keys(ARTICOLI), posto = k => { const i = ordTipi.indexOf(k); return i < 0 ? 9999 : i; };
+  const num = f => f.noNumber ? '' : String(f.number ?? '').trim();
+  // 🔄 v7.264 (Franco: «come mai nella colonna Nome/Numero leggo "1 - L.2000"? Da dove arriva quell'1?») - negli album e
+  //    negli altri oggetti `number` è l'ORDINAMENTO in griglia, non un numero: a schermo va solo dove l'articolo ha
+  //    davvero il Numero (`_haNumero`). Per ordinare le righe si usa ancora `num`.
+  const numVisto = f => _haNumero(f) ? num(f) : '';
+  const righe = [];
+  (getData('figurines', []) || []).forEach(f => { if (Array.isArray(f.copie)) f.copie.forEach(c => righe.push({ f, c })); });
+  righe.sort((a, b) => ((sOrd.get(a.f.seriesId) ?? 9999) - (sOrd.get(b.f.seriesId) ?? 9999))
+    || (posto(_aggTipoDi(a.f)) - posto(_aggTipoDi(b.f))) || _aggNomeTipo(_aggTipoDi(a.f)).localeCompare(_aggNomeTipo(_aggTipoDi(b.f)), 'it')
+    || ((parseInt(num(a.f), 10) || 1e9) - (parseInt(num(b.f), 10) || 1e9)) || _annNomeArticolo(a.f).localeCompare(_annNomeArticolo(b.f), 'it'));
+  const testa = '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;color:var(--info);">🧾 ' + (it ? 'ELENCO COPIE' : 'COPIES LIST') + ' (' + righe.length + ')</h4>';   // v7.264 (Franco: «diventa "Elenco copie", ma comunque scrivilo tutto maiuscolo»)
+  if (!righe.length) return testa + '<p style="font-size:0.85rem;color:var(--muted);font-style:italic;">' + (it ? 'Nessuna copia doppia scritta.' : 'No duplicate copies yet.') + '</p>';
+  // v7.264 (Franco: «il campo "Condizioni" della tabella ELENCO COPIE fallo più lungo; c'è ancora molto spazio prima di
+  //    arrivare a fine pagina») - la tabella va fino in fondo alla pagina, e lo spazio in più lo prende tutto Condizioni
+  //    (`width:100%` sulla sua cella; le altre colonne restano strette, `nowrap`)
+  return testa + '<div id="copie-doppie-lista" style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'
+    // v7.264 (Franco: «aggiungi una colonna "N. copia" dopo il campo "Nome/Numero"»)
+    + '<tr>' + [it ? 'Serie' : 'Series', it ? 'Tipologia di articolo' : 'Item type', it ? 'Versione' : 'Version', it ? 'Nome/Numero' : 'Name/Number', it ? 'N. copia' : 'Copy no.', it ? 'Iniziale' : 'Initial', it ? 'Condizioni' : 'Condition']
+      .map(t => '<th style="' + th + '">' + t + '</th>').join('') + '</tr>'
+    + righe.map(({ f, c }) => '<tr>'
+      + '<td style="' + td + 'white-space:nowrap;">' + esc(sNome(f.seriesId)) + '</td>'
+      + '<td style="' + td + 'white-space:nowrap;">' + esc(_aggNomeTipo(_aggTipoDi(f))) + '</td>'
+      + '<td style="' + td + 'white-space:nowrap;">' + esc(_nomeVersione(_chiaveTipo(f), currentLang)) + '</td>'
+      + '<td style="' + td + 'white-space:nowrap;"><a href="#" style="color:var(--info);" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;">'
+        + esc((numVisto(f) ? numVisto(f) + ' · ' : '') + _annNomeArticolo(f)) + '</a></td>'
+      + '<td style="' + td + 'text-align:right;white-space:nowrap;">' + esc(c.n == null ? '' : String(c.n)) + '</td>'
+      + '<td style="' + td + 'text-align:right;white-space:nowrap;">' + esc(c.iniziale == null ? '' : (it ? String(c.iniziale).replace('.', ',') : String(c.iniziale))) + '</td>'
+      + '<td style="' + td + 'white-space:pre-wrap;min-width:12rem;width:100%;">' + esc(c.condizioni || '') + '</td></tr>').join('')
+    + '</table></div>';
 }
 async function salvaDoppioni() {
   if (!currentUser?.isAdmin) return;
@@ -70490,7 +70558,7 @@ async function salvaDoppioni() {
   try {
     await fsSave('settings', { id: 'doppioni', voci });
     _impostaDoppioni({ voci });
-    toast(it ? '✅ Doppioni salvati. Valgono dalla prossima scheda che si apre.' : '✅ Duplicates saved.', 'success');
+    toast(it ? '✅ Struttura copie doppie salvata. Vale dalla prossima scheda che si apre.' : '✅ Duplicate copies structure saved.', 'success');   // v7.264
   } catch (e) {
     console.error('salvaDoppioni', e);
     toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
@@ -80753,7 +80821,7 @@ async function applicaSlim() {
 let _pianoAnnCopie = null;
 const _nuovoIdCopia = () => 'cp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 function _pianoAnnCopieDi(righe, idx) {
-  const liste = new Map(), orig = new Map(), voci = [];
+  const liste = new Map(), orig = new Map(), voci = [], create = new Set();
   const conto = { gia: 0, senzaArt: 0, artNonTrovato: 0, senzaN: 0, nonNumero: 0 };
   const nuove = righe.map(r => {
     if (r.copiaId) { conto.gia++; return r; }
@@ -80771,8 +80839,12 @@ function _pianoAnnCopieDi(righe, idx) {
     }
     const lista = liste.get(art.id);
     let c = lista.find(x => x.n === num), creata = false;
-    if (!c) { c = { id: _nuovoIdCopia(), n: num, condizioni: '', iniziale: null, qualita: null }; lista.push(c); creata = true; }
+    if (!c) { c = { id: _nuovoIdCopia(), n: num, condizioni: '', iniziale: null, qualita: null }; lista.push(c); creata = true; create.add(c); }
     if (!c.id) c.id = _nuovoIdCopia();
+    // 🔄 v7.264 (Franco: «come fai a dirmi che per la serie 1 ci sono delle copie esistenti quando in questo momento non c'è
+    //    nessuna copia per la serie 1?») - un secondo annuncio sulla stessa copia appena creata da questo piano NON è su una
+    //    «copia esistente»: la copia nascerà con l'annuncio prima. Si dice così (`giaNuova`).
+    const giaNuova = !creata && create.has(c);
     const presi = [], diversi = [];
     _ANN_DA_COPIA.forEach(([a, k]) => {
       if (k === 'n' || _annVuoto(r[a])) return;
@@ -80780,7 +80852,7 @@ function _pianoAnnCopieDi(righe, idx) {
       if (_annVuoto(c[k])) { c[k] = va; presi.push(k); }
       else if (String(c[k]).trim() !== String(va).trim()) diversi.push({ campo: a, annuncio: va, copia: c[k] });
     });
-    voci.push({ r, art, c, creata, presi, diversi });
+    voci.push({ r, art, c, creata, giaNuova, presi, diversi });
     return Object.assign(_annDaCopia(r, c), { copiaId: c.id });
   });
   // chi indicava una copia per posizione la segue col suo id nuovo
@@ -80794,6 +80866,28 @@ function _pianoAnnCopieDi(righe, idx) {
     if (JSON.stringify(pulite) !== orig.get(id)) copie.set(id, pulite);
   });
   return { righe: nuove, copie, voci, conto };
+}
+// v7.264 - le voci del piano raggruppate per articolo: [{ art, voci }], gli articoli in ordine di serie, tipologia, numero
+//    e nome (così quelli della stessa serie stanno vicini), le voci di ognuno per n., venditore e sito; più `copie`, le voci
+//    dell'articolo divise per copia
+function _annCopieGruppi(voci) {
+  const sOrd = new Map((getData('series', []) || []).map((s, i) => [s.id, s.order ?? i]));
+  const ordTipi = Object.keys(ARTICOLI), posto = k => { const i = ordTipi.indexOf(k); return i < 0 ? 9999 : i; };
+  const num = f => parseInt(f.noNumber ? '' : f.number, 10) || 1e9;
+  const g = new Map();
+  voci.forEach(v => { if (!g.has(v.art.id)) g.set(v.art.id, { art: v.art, voci: [] }); g.get(v.art.id).voci.push(v); });
+  return [...g.values()]
+    .sort((a, b) => ((sOrd.get(a.art.seriesId) ?? 9999) - (sOrd.get(b.art.seriesId) ?? 9999)) || (posto(_aggTipoDi(a.art)) - posto(_aggTipoDi(b.art)))
+      || (num(a.art) - num(b.art)) || _annNomeArticolo(a.art).localeCompare(_annNomeArticolo(b.art), 'it'))
+    .map(x => {
+      x.voci.sort((a, b) => a.c.n - b.c.n || String(a.r.account || '').localeCompare(String(b.r.account || ''), 'it')
+        || String(a.r.sito || '').localeCompare(String(b.r.sito || ''), 'it'));
+      // v7.264 - dentro l'articolo, le sue copie (una per n., in ordine), ognuna coi suoi annunci: [{ c, nuova, voci }]
+      const cc = new Map();
+      x.voci.forEach(v => { if (!cc.has(v.c)) cc.set(v.c, { c: v.c, nuova: false, voci: [] }); const k = cc.get(v.c); k.voci.push(v); if (v.creata || v.giaNuova) k.nuova = true; });
+      x.copie = [...cc.values()];
+      return x;
+    });
 }
 async function anteprimaAnnCopie() {
   const it = currentLang === 'it';
@@ -80810,7 +80904,9 @@ async function anteprimaAnnCopie() {
   }
   const idx = _indiceArticoli(), p = _pianoAnnCopieDi(_annRighe, idx), k = p.conto;
   const nCreate = p.voci.filter(v => v.creata).length;
-  const nome = f => ((f.noNumber || f.number == null || f.number === '') ? '' : f.number + ' · ') + _annNomeArticolo(f);
+  // v7.264 - il numero solo dove l'articolo ce l'ha davvero (`_haNumero`): negli album `number` è l'ordinamento
+  const nome = f => ((!_haNumero(f) || f.number == null || f.number === '') ? '' : f.number + ' · ') + _annNomeArticolo(f);
+  const nomeS = sid => { const s = getData('series', []).find(x => x.id === sid); return s ? ((s.acronimo || '').trim() || _nomeSerieCard(s, true)) : '—'; };   // v7.264
   const testo = x => esc(_annVuoto(x) ? '—' : String(x).replace(/\s+/g, ' ').slice(0, 60));
   const campoIt = { voto: 'Voto', costo: 'Iniziale', condizioni: 'Condizioni' };
   esito.innerHTML = '<div style="font-size:0.9rem;margin-bottom:0.6rem;line-height:1.6;">'
@@ -80823,12 +80919,27 @@ async function anteprimaAnnCopie() {
           + (k.nonNumero ? ', <b>' + k.nonNumero + '</b> with a non-numeric N' : '') + (k.artNonTrovato ? ', <b>' + k.artNonTrovato + '</b> with a missing item' : '') + '.')
     + '</div>'
     + (p.voci.length ? '<div style="max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.8rem;line-height:1.5;">'
-      + p.voci.map(v => esc((v.r.sito || '') + (v.r.account ? ' · ' + v.r.account : '') + ' — ' + nome(v.art) + ' — n. ' + v.c.n) + ' → '
-          + (v.creata ? '<b style="color:var(--success);">' + (it ? 'copia nuova' : 'new copy') + '</b>' : (it ? 'copia esistente' : 'existing copy'))
-          + (v.presi.length && !v.creata ? ' · ' + (it ? 'la copia prende: ' : 'copy takes: ') + esc(v.presi.join(', ')) : '')
-          // un valore diverso fra annuncio e copia: vince la copia, e lo si dice con tutti e due i valori
-          + v.diversi.map(d => '<div style="color:var(--warn);padding-left:1.2rem;">⚠️ ' + esc(it ? campoIt[d.campo] : d.campo) + ': '
-              + (it ? 'annuncio ' : 'listing ') + testo(d.annuncio) + ' → ' + (it ? 'resta quello della copia ' : 'the copy’s stays ') + testo(d.copia) + '</div>').join('')).join('<br>')
+      // v7.264 (Franco: «nella tua anteprima non vedo la serie, puoi metterla?») - la serie, come nella colonna Serie
+      //    degli annunci: l'acronimo, se no il nome breve
+      // 🔄 v7.264 (Franco: «puoi rifare l'anteprima organizzando le righe per Articolo? vorrei vedere tutte le righe di
+      //    annuncio concernenti lo stesso articolo vicine»; «prima organizzi per serie, e all'interno per articolo; solo dopo,
+      //    ancora più dentro, abbiamo venditore e sito») - TRE LIVELLI: la serie (azzurra), dentro i suoi articoli (in ordine
+      //    di tipologia, numero, nome), dentro ancora gli annunci di quell'articolo, «Venditore · Sito — n. della copia»
+      + _annCopieGruppi(p.voci).map((g, j, tutti) => (j === 0 || tutti[j - 1].art.seriesId !== g.art.seriesId
+          ? '<div style="margin:' + (j ? '0.7rem' : '0') + ' 0 0.1rem;font-weight:700;color:var(--info);">' + esc(nomeS(g.art.seriesId)) + '</div>' : '')
+        + '<div style="margin:0.25rem 0 0.1rem;padding-left:1.2rem;font-weight:600;color:var(--text);">' + esc(nome(g.art)) + '</div>'
+        // 🔄 v7.264 (Franco: «per l'annuncio con N. 19 dell'articolo L.1000 della serie 1 stai creando 2 copie, una per
+        //    Fabio-eBay e una per Lendys-Subito.it; perché? La copia dell'album è la stessa: la numero 19») - la copia era
+        //    UNA (lo dicevano i conti), ma ogni riga di annuncio ripeteva «copia nuova» e si leggeva come una copia per
+        //    annuncio. Ora la copia è un livello suo: «n. 19 → copia nuova» UNA volta, e sotto i suoi annunci.
+        + g.copie.map(k => '<div style="padding-left:2.4rem;">' + esc('n. ' + k.c.n) + ' → '
+          + (k.nuova ? '<b style="color:var(--success);">' + (it ? 'copia nuova' : 'new copy') + '</b>' : (it ? 'copia esistente' : 'existing copy'))
+          + ' <span style="color:var(--muted);">(' + k.voci.length + ' ' + (it ? (k.voci.length === 1 ? 'annuncio' : 'annunci') : (k.voci.length === 1 ? 'listing' : 'listings')) + ')</span></div>'
+          + k.voci.map(v => '<div style="padding-left:3.6rem;">' + esc([v.r.account, v.r.sito].filter(Boolean).join(' · ') || '—')
+            + (v.presi.length && !k.nuova ? ' · ' + (it ? 'la copia prende: ' : 'copy takes: ') + esc(v.presi.join(', ')) : '')
+            // un valore diverso fra annuncio e copia: vince la copia, e lo si dice con tutti e due i valori
+            + v.diversi.map(d => '<div style="color:var(--warn);padding-left:1.2rem;">⚠️ ' + esc(it ? campoIt[d.campo] : d.campo) + ': '
+                + (it ? 'annuncio ' : 'listing ') + testo(d.annuncio) + ' → ' + (it ? 'resta quello della copia ' : 'the copy’s stays ') + testo(d.copia) + '</div>').join('') + '</div>').join('')).join('')).join('')
       + '</div>' : '');
   if (p.voci.length) { _pianoAnnCopie = p; if (btn) btn.style.display = ''; }
 }
