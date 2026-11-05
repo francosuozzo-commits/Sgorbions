@@ -32095,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.271';
+const JS_VERSION = 'v7.272';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -44786,7 +44786,8 @@ function _faAlbum() {
       const nome = s.name + ' — ' + (f.name || '');
       // v7.184: `piani` = le caselle del tab Ebay dell'album (`fotoAnnuncio`)
       // 🗑️ v7.199 - qui c'era `sfondi` (le tendine del tab Pagine, v7.185): non lo leggeva nessuno
-      out.push({ nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, piani: f.fotoAnnuncio || {} });
+      // v7.272: `id` = l'album di cui si legge il tab Ebay per «Copia titolo/descrizione annuncio» (`_faTestoAlbum`)
+      out.push({ id: f.id, nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, piani: f.fotoAnnuncio || {} });
     });
   });
   return out;
@@ -44945,7 +44946,7 @@ h1 { font-size:22px; margin:6px 0 4px; }
     <button class="btn" id="demo">Usa le foto del sito</button>
   </div>
   <div id="stato"></div><div id="avvisi"></div>
-  <div class="nota" id="spiega" style="display:none;margin:8px 0;">Le foto sono già in ordine di pagina, girate e ritagliate. Tocca una miniatura per correggere il ritaglio; con ⟲ ⟳ la giri; dal menu cambi la pagina (le due pagine si scambiano).</div>
+  <div class="nota" id="spiega" style="display:none;margin:8px 0;">Le foto sono già in ordine di pagina, girate e ritagliate. Tocca una miniatura per correggere il ritaglio; con ⟲ ⟳ la giri; dal menu cambi la pagina (la foto entra lì e le altre scalano); con 🗑️ la togli.</div>
   <div class="zoom" id="zoom-mini" style="display:none;">🔍 Miniature <button id="mini-meno" title="Più piccole">−</button><button id="mini-piu" title="Più grandi">+</button></div>
   <div class="griglia" id="miniature"></div>
 </section>
@@ -44956,6 +44957,8 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <h2 style="margin-top:14px;">Quale texture di sfondo?</h2><div class="scelte" id="scelta-texture"></div></div></section>
 <section class="passo"><h2>4. Le foto per l'annuncio</h2>
   <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte</button></div>
+  <!-- v7.272 (Franco: «anche nella sezione crea foto per annuncio vorrei avere i due bottoni») - i testi del tab Ebay dell'album, per il venditore scelto -->
+  <div class="scelte" style="margin-top:8px;"><button class="btn" id="copia-titolo">📋 Copia titolo annuncio</button><button class="btn" id="copia-desc">📋 Copia descrizione annuncio</button><span class="nota" id="copia-stato" style="align-self:center;"></span></div>
   <div class="piano" id="piano2"></div><div class="risultati" id="risultati"></div>
 </section></main>
 <div id="editor">
@@ -44978,6 +44981,8 @@ function _faApri() {
   $('demo').onclick = () => _faFotoDelSito().catch(err => _faStato('Errore: ' + err.message));
   $('componi').onclick = () => _faComponi().catch(err => _faStato('Errore: ' + err.message));
   $('scarica').onclick = _faScaricaTutte;
+  $('copia-titolo').onclick = () => _faCopiaTesto('titoloIt');
+  $('copia-desc').onclick = () => _faCopiaTesto('descIt');
   _faEditorEventi();
   _faDisegnaScelte();
   // 🐛 v7.185 (Franco: «quando premo il pulsante … mi mostra la ultima pagina dell'album aperta; dovrebbe reiniziare
@@ -44991,8 +44996,39 @@ const _fa$ = id => _fa.w.document.getElementById(id);
 const _faStato = t => { _fa$('stato').textContent = t || ''; };
 function _faSvuota() {
   _fa.foto = []; _fa.uscite.forEach(u => URL.revokeObjectURL(u.url)); _fa.uscite = [];
-  ['miniature', 'avvisi', 'risultati', 'piano2'].forEach(id => { _fa$(id).innerHTML = ''; });
+  ['miniature', 'avvisi', 'risultati', 'piano2', 'copia-stato'].forEach(id => { _fa$(id).innerHTML = ''; });   // v7.272: anche l'esito della copia
   _fa$('spiega').style.display = 'none'; _fa$('zoom-mini').style.display = 'none'; _fa$('scarica').disabled = true; _fa$('componi').disabled = true; _faStato('');
+}
+// 🆕 v7.272 (Franco: «il primo pulsante deve costruire il titolo prendendo il valore che c'è nel campo titolo italiano
+//    della sezione eBay dell'album selezionato, prendendo quello della sezione avente il nome uguale al nome del
+//    venditore selezionato in questa procedura»; «analogamente, deve prendere il campo descrizione nello stesso modo») -
+//    `testiAccount[venditore].titoloIt` / `.descIt` dell'album del passo 1 (della sua partenza se l'album è una versione
+//    senza, come «Prendi valore» degli annunci: `_annValoreDaAlbum`). { testo } oppure { errore }.
+function _faTestoAlbum(chiave) {
+  const nomeCampo = chiave === 'titoloIt' ? 'Titolo - ITA' : 'Descrizione - ITA';
+  if (!_fa.album) return { errore: 'Scegli prima l’album (passo 1).' };
+  if (!_fa.venditore) return { errore: 'Scegli prima il venditore (passo 3, «Per quale venditore?»).' };
+  const idx = _indiceArticoli(), art = idx.get(_fa.album.id);
+  if (!art) return { errore: 'Non trovo l’album sul sito.' };
+  const testo = String(_annValoreDaAlbum(art, _fa.venditore, chiave, idx) || '').trim();
+  if (!testo) return { errore: 'L’album non ha il campo «' + nomeCampo + '» scritto nel tab ' + _fa.venditore + ' della sezione Ebay.' };
+  return { testo };
+}
+async function _faCopiaTesto(chiave) {
+  const st = _fa$('copia-stato'), r = _faTestoAlbum(chiave);
+  if (r.errore) { st.style.color = '#c0392b'; st.textContent = '⚠️ ' + r.errore; return; }
+  const w = _fa.w;
+  let fatto = false;
+  try { await w.navigator.clipboard.writeText(r.testo); fatto = true; } catch (e) {
+    // ripiego: il vecchio «copia» del browser, da una casella nascosta della finestra (come `_collageCopia`)
+    const ta = w.document.createElement('textarea');
+    ta.value = r.testo; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    w.document.body.appendChild(ta); ta.select();
+    fatto = w.document.execCommand('copy');
+    ta.remove();
+  }
+  st.style.color = fatto ? '' : '#c0392b';
+  st.textContent = fatto ? '📋 Copiato: ' + (r.testo.length > 80 ? r.testo.slice(0, 80) + '…' : r.testo) : '⚠️ Non riesco a copiare';
 }
 function _faDisegnaScelte() {
   const d = _fa.w.document;
