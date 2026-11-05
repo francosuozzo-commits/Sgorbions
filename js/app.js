@@ -32095,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.269';
+const JS_VERSION = 'v7.271';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34247,10 +34247,30 @@ function _etichetteVersioniScritteAMano() {
   });
 }
 
+// 🆕 v7.270 (Franco: «le icone sulle linguette admin si vedono davvero poco; proviamo ad aumentarne la visibilità
+//    mettendo la cornice alla icona») - l'icona in testa a ogni linguetta (quello che sta prima del primo spazio, senza
+//    lettere) va in una `<span class="adm-ico">`, che il css incornicia. Si rifà dopo le traduzioni, che riscrivono il
+//    testo delle linguette con `data-i18n`; una linguetta senza icona («Funzioni», «Series») resta com'è.
+function _linguetteIcone() {
+  document.querySelectorAll('.admin-tab').forEach(b => {
+    if (b.querySelector('.adm-ico')) return;
+    const primo = b.firstChild;
+    if (primo && primo.nodeType === 1 && primo.tagName === 'SPAN') { primo.classList.add('adm-ico'); return; }
+    if (!primo || primo.nodeType !== 3) return;
+    const m = /^\s*(\S+)\s+/.exec(primo.nodeValue);
+    if (!m || /[\p{L}\p{N}]/u.test(m[1])) return;
+    const ico = document.createElement('span');
+    ico.className = 'adm-ico';
+    ico.textContent = m[1];
+    primo.nodeValue = ' ' + primo.nodeValue.slice(m[0].length);
+    b.insertBefore(ico, primo);
+  });
+}
 function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.dataset.i18n);
   });
+  _linguetteIcone();
   document.querySelectorAll('[data-i18n-html]').forEach(el => {
     el.innerHTML = t(el.dataset.i18nHtml);
   });
@@ -41792,7 +41812,7 @@ function renderAdminFotoAnnuncio() {
       '<h4 style="font-family:var(--font-ui);margin:0;">📋 ' + (it ? 'Annunci in corso' : 'Current listings') + '</h4>' +
       '<button type="button" class="btn-primary" onclick="_annApriFinestra(null)">' + (it ? '+ Aggiungi annuncio' : '+ Add listing') + '</button>' +
     '</div>' +
-    '<div id="annunci-filtri" style="display:flex;flex-direction:column;gap:1rem;margin:0.4rem 0 0.9rem;"></div>' +   // v7.187
+    '<div id="annunci-filtri" style="display:flex;flex-direction:column;gap:1rem;margin:0.4rem 0 0.9rem;width:70%;"></div>' +   // v7.187; v7.270: al 70% (Franco: «i box dei filtri della pagina annunci vanno ridotti di un 30% di larghezza»)
     '<div id="annunci-tabella" style="font-size:0.85rem;color:var(--text);">' + (it ? 'Carico gli annunci…' : 'Loading…') + '</div>';
   _annCarica();
 }
@@ -43968,6 +43988,7 @@ function _annFiltriHTML() {
       onSet: "_annFiltra('" + q.k + "'," + j + ",false)", onAdd: "_annFiltra('" + q.k + "'," + j + ",true)",
       titolo: it ? 'Solo questo' : 'Only this',
       stacco: q.stacco, prima: q.prima,
+      sfondo: q.k === 'sito' ? _annColoriSito(v) : null,   // v7.270: il colore del sito, come nella tabella
     })).join('');
     return '<div style="position:relative;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:1.05rem 0.9rem 0.7rem;">'
       + '<div style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;white-space:nowrap;">'
@@ -43993,9 +44014,14 @@ function _annLinkSbagliato(sito, link) {
 //    (ma fai un rosso più scuro); e vinted era verde (ma fai un verde più scuro)») - il colore del sito fa lo SFONDO:
 //    eBay l'azzurro serie con la scritta scura (`--bg`), Subito un rosso scuro e Vinted un verde scuro, tutti e due con
 //    la scritta bianca (tinte mie). Senza sito: come prima.
-function _annStileSito(sito) {
+function _annColoriSito(sito) {
   const sf = ({ eBay: 'var(--info)', Vinted: '#1e7a46', 'Subito.it': '#a8233a' })[sito];
-  return sf ? 'background:' + sf + ';color:' + (sito === 'eBay' ? 'var(--bg)' : '#fff') + ';' : '';
+  return sf ? { bg: sf, fg: sito === 'eBay' ? 'var(--bg)' : '#fff' } : null;
+}
+// v7.270 - i colori stanno in `_annColoriSito`: li usano anche le pillole di «Filtra per sito»
+function _annStileSito(sito) {
+  const c = _annColoriSito(sito);
+  return c ? 'background:' + c.bg + ';color:' + c.fg + ';' : '';
 }
 // v7.187 - l'ordinamento della tabella: le chiavi delle colonne, in fila come i titoli, e la colonna scelta
 const _ANN_COLONNE = ['sito', 'account', 'serie', 'tipologia', 'articolo', 'n', 'titolo', 'voto', 'costo', 'prezzo', 'link'];   // v7.191: + voto; v7.200: + tipologia
@@ -45340,6 +45366,32 @@ function _faNucleo(f) {
   return _faRitaglio({ tela: f.tela, rett: { x: r.x + dx, y: r.y + dy, w: Math.max(1, r.w - 2 * dx), h: Math.max(1, r.h - 2 * dy) } });
 }
 function _faInOrdine() { _fa.foto.sort((a, b) => (a.pagina ?? 999) - (b.pagina ?? 999)); }
+// 🆕 v7.271 - LA FOTO SI INSERISCE NELLA PAGINA SCELTA, LE ALTRE SCALANO (prima si scambiavano).
+//    Dalla pagina 2 alla 5: quelle che stavano su 3, 4, 5 vanno indietro di una (2, 3, 4) e la 2 lasciata libera è coperta.
+//    Dalla 5 alla 2: quelle su 2, 3, 4 vanno avanti di una (3, 4, 5).
+//    Una foto che non aveva pagina spinge avanti le altre fino al primo buco; se il buco non c'è, l'ultima resta senza
+//    pagina («— quale pagina? —») e lo si vede negli avvisi.
+//    Togliere la pagina («— quale pagina? —») lascia il buco: non è uno spostamento, e chiudere il buco farebbe mancare
+//    l'ultima pagina.
+function _faSpostaPagina(f, a) {
+  const N = _fa.album.pagine.length, da = f.pagina;
+  f.dubbia = false;
+  if (a === da) return;
+  const altre = _fa.foto.filter(g => g !== f && g.pagina !== null && g.pagina !== undefined);
+  if (a !== null) {
+    if (da === null || da === undefined) {
+      const prese = new Set(altre.map(g => g.pagina));
+      let buco = a;
+      while (buco < N && prese.has(buco)) buco++;
+      altre.forEach(g => { if (g.pagina >= a && g.pagina < buco) g.pagina = g.pagina + 1 < N ? g.pagina + 1 : null; });
+    } else if (a < da) {
+      altre.forEach(g => { if (g.pagina >= a && g.pagina < da) g.pagina++; });
+    } else {
+      altre.forEach(g => { if (g.pagina > da && g.pagina <= a) g.pagina--; });
+    }
+  }
+  f.pagina = a;
+}
 
 // ---- caricare ----
 async function _faCaricaFile(lista) {
@@ -45399,12 +45451,12 @@ function _faMiniature() {
     const sel = d.createElement('select');
     const vuota = d.createElement('option'); vuota.value = ''; vuota.textContent = '— quale pagina? —'; sel.appendChild(vuota);
     for (let i = 0; i < N; i++) { const o = d.createElement('option'); o.value = i; o.textContent = _faNomePagina(i, N); if (f.pagina === i) o.selected = true; sel.appendChild(o); }
-    // la pagina scelta, se era di un'altra foto, passa a quella la pagina di questa: le due si scambiano
+    // 🔄 v7.271 (Franco: «non deve sostituirla con la foto che sta nel numero indicato dalla nuova posizione
+    //    selezionata, bensì deve inserirla in quella posizione facendo shiftare in avanti tutte le altre foto ed
+    //    ovviamente facendo poi shiftare tutto indietro di una posizione per coprire la posizione appena resa libera»)
+    //    - prima le due foto si scambiavano; ora la foto si inserisce e le altre scalano (`_faSpostaPagina`)
     sel.onchange = () => {
-      const nuova = sel.value === '' ? null : +sel.value;
-      const altra = nuova === null ? null : _fa.foto.find(g => g !== f && g.pagina === nuova);
-      if (altra) altra.pagina = f.pagina;
-      f.pagina = nuova; f.dubbia = false;
+      _faSpostaPagina(f, sel.value === '' ? null : +sel.value);
       _faInOrdine(); _faMiniature();
     };
     const riga = d.createElement('div'); riga.className = 'riga';
@@ -45413,6 +45465,12 @@ function _faMiniature() {
       b.onclick = () => { _faGiraFoto(f, v); _faMiniature(); };
       riga.appendChild(b);
     });
+    // 🆕 v7.271 (Franco: «fammi la possibilità di cancellare una foto dalla anteprima»; il «🗑️ Togli» della v7.243 sta
+    //    sulle foto PRONTE del passo 4, qui mancava) - la foto caricata esce dall'elenco; le altre restano sulle loro
+    //    pagine (la sua resta vuota e gli avvisi lo dicono)
+    const togli = d.createElement('button'); togli.textContent = '🗑️'; togli.title = 'Togli questa foto';
+    togli.onclick = () => { _fa.foto = _fa.foto.filter(g => g !== f); _faMiniature(); };
+    riga.appendChild(togli);
     card.append(c, sel, riga);
     box.appendChild(card);
   });
@@ -45445,14 +45503,12 @@ function _faApriEditor(f) {
   // v7.188 (Franco: «e sempre in quella pagina, vorrei anche la tendina per cambiare il numero della foto») - la stessa
   //    tendina delle miniature, con la stessa regola: la pagina scelta, se era di un'altra foto, passa a quella la
   //    pagina di questa (le due si scambiano)
+  // 🔄 v7.271 - stessa regola nuova delle miniature: la foto si inserisce e le altre scalano (`_faSpostaPagina`)
   const sel = _fa$('ed-pagina');
   sel.innerHTML = '<option value="">— quale pagina? —</option>'
     + Array.from({ length: N }, (_, p) => '<option value="' + p + '"' + (f.pagina === p ? ' selected' : '') + '>' + esc(_faNomePagina(p, N)) + '</option>').join('');
   sel.onchange = () => {
-    const nuova = sel.value === '' ? null : +sel.value;
-    const altra = nuova === null ? null : _fa.foto.find(g => g !== f && g.pagina === nuova);
-    if (altra) altra.pagina = f.pagina;
-    f.pagina = nuova; f.dubbia = false;
+    _faSpostaPagina(f, sel.value === '' ? null : +sel.value);
     f.rett = _fa.ed.r;
     _faInOrdine(); _faMiniature(); _faApriEditor(f);
   };
@@ -62248,8 +62304,12 @@ function _chipTipoHTML(o) {
         // guarda conclude che i dati non ci sono. Accesa resta premibile: si toglie da dov'e'.
         const active = !!o.attiva;
         const _inib = !active && n === 0;
-        const bg = active ? 'var(--accent)' : 'var(--card2)';
-        const fg = active ? 'var(--bg)' : 'var(--text)';
+        // 🆕 v7.270 (Franco: «colora lo sfondo della pillola del filtro "ricerca per sito" usando lo stesso colore usato per
+        //    il campo Sito nella tabella») - `o.sfondo` = { bg, fg }: la pillola porta il colore del suo valore anche da
+        //    accesa, e l'accensione si legge dal bordo lime spesso (il lime è il segno di «acceso» del sito).
+        const sf = o.sfondo || null;
+        const bg = sf ? sf.bg : active ? 'var(--accent)' : 'var(--card2)';
+        const fg = sf ? sf.fg : active ? 'var(--bg)' : 'var(--text)';
         // 🆕 v6.423 (Franco: *"proviamo a colorare anche il testo delle pillole"*) - L'ETICHETTA
         // DELLA PILLOLA PORTA IL COLORE DELLA SUA VERSIONE, dove il colore e' del valore.
         // 📌 SOLO L'ETICHETTA: `fg` continua a vestire il «+»/«−», che e' un COMANDO e non un
@@ -62266,9 +62326,9 @@ function _chipTipoHTML(o) {
         // 5,8:1. Il peggiore sta sopra 4,5:1, e il bianco di prima faceva 14,3:1.
         // ⚠️ «Base» e' #ffffff, cioe' praticamente il bianco di prima: quella pillola non cambia, e
         // non e' un caso da correggere - la base non e' una versione, e' la loro assenza.
-        const fgEtichetta = active ? 'var(--bg)'
+        const fgEtichetta = sf ? sf.fg : active ? 'var(--bg)'
                           : (o.colore || 'var(--text)');
-        const nf = active ? 'var(--bg)' : 'var(--accent)';
+        const nf = sf ? sf.fg : active ? 'var(--bg)' : 'var(--accent)';
         const segno = active ? '−' : '+';
         const titoloPiu = active
           ? (it ? 'Togli questo tipo, lasciando gli altri selezionati' : 'Remove this type, keep the others')
@@ -62278,7 +62338,7 @@ function _chipTipoHTML(o) {
         // senza queste due le pillole si schiaccerebbero e le etichette andrebbero a capo DENTRO la
         // pillola - cioe' il riquadro tornerebbe alto, per un'altra strada. E' la stessa trappola di
         // flexbox della v6.348, dall'altro verso.
-        return `<span style="display:inline-flex;align-items:center;flex-shrink:0;white-space:nowrap;background:${bg};border:1px solid var(--border);border-radius:999px;font-size:0.82rem;line-height:1.4;overflow:hidden;${_inib ? 'opacity:0.45;' : ''}">`
+        return `<span style="display:inline-flex;align-items:center;flex-shrink:0;white-space:nowrap;background:${bg};border:${sf && active ? '2px solid var(--accent)' : '1px solid var(--border)'};border-radius:999px;font-size:0.82rem;line-height:1.4;overflow:hidden;${_inib ? 'opacity:0.45;' : ''}">`
           + `<span ${_inib ? '' : `onclick="${o.onSet}"`} title="${_inib ? (it ? 'Nessun risultato con i filtri accesi adesso' : 'No results with the filters currently on') : (o.titolo || '')}" style="cursor:${_inib ? 'default' : 'pointer'};display:inline-flex;align-items:center;gap:${o.stacco || '0.35rem'};padding:0.15rem 0.5rem 0.15rem 0.6rem;">`
           + `<span style="color:${fgEtichetta};${o.maiuscole ? 'text-transform:uppercase;letter-spacing:0.03em;' : ''}">${esc(o.etichetta)}</span>`
           + `<span style="color:${nf};font-weight:700;">${o.prima || ''}${n}</span></span>`
@@ -71037,7 +71097,10 @@ function _copiaRigaHTML(c, artId, chiave) {
   c = c || {};
   const inp = 'class="form-input" style="padding:0.25rem 0.4rem;font-size:0.85rem;';
   // 🆕 v7.263 - ogni copia ha un id suo, che resta: l'annuncio punta a lui (`copiaId`), non al numero né alla posizione
-  return '<tr data-copia data-copia-id="' + esc(c.id || ('cp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6))) + '">'
+  // 🆕 v7.270 - `data-copia-chiave`: la chiave che la copia aveva all'apertura della scheda (id, o `#indice`); serve al Salva
+  //    per sapere quali copie sono state tolte (`_copieTolte`). Le righe nuove e i cloni non ce l'hanno.
+  return '<tr data-copia data-copia-id="' + esc(c.id || ('cp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6))) + '"'
+    + (chiave ? ' data-copia-chiave="' + esc(chiave) + '"' : '') + '>'
     + '<td style="' + _copieCella + '"><input type="number" min="0" step="1" data-copia-n value="' + (c.n ?? '') + '" ' + inp + 'width:4.2rem;"></td>'
     + '<td style="' + _copieCella + '"><textarea data-copia-condizioni rows="2" ' + inp + 'width:16rem;max-width:100%;resize:vertical;">' + esc(c.condizioni || '') + '</textarea></td>'
     // 🔄 v7.267 (Franco: «il campo "Voto" va prima del campo "Iniziale"») - prima il Voto, poi l'Iniziale
@@ -71125,16 +71188,61 @@ function _copiaAggiungi() {
 }
 // le righe scritte; quelle tutte vuote non entrano
 function _copieLeggi() {
+  return _copieRighe().map(x => x.c);
+}
+// v7.270 - le righe scritte con la loro `<tr>` ({ tr, c }): `_copieLeggi` ne prende le copie, `_copieTolte` le chiavi
+function _copieRighe() {
   const t = document.getElementById('fe-copie');
   if (!t) return [];
-  return [...t.querySelectorAll('tr[data-copia]')].map(r => ({
+  return [...t.querySelectorAll('tr[data-copia]')].map(r => ({ tr: r, c: {
     id: r.dataset.copiaId || null,   // v7.263
     n: _mlNumero(r.querySelector('[data-copia-n]').value),
     condizioni: String(r.querySelector('[data-copia-condizioni]').value || '').trim(),
     iniziale: (v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; })(r.querySelector('[data-copia-iniziale]').value),   // v7.263: anche coi decimali
     qualita: (v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; })(r.querySelector('[data-copia-qualita]')?.value),   // v7.263
     addizionale: (v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; })(r.querySelector('[data-copia-addizionale]')?.value),   // v7.267
-  })).filter(c => c.n !== null || c.condizioni || c.iniziale !== null || c.qualita !== null || c.addizionale !== null);
+  } })).filter(({ c }) => c.n !== null || c.condizioni || c.iniziale !== null || c.qualita !== null || c.addizionale !== null);
+}
+// 🆕 v7.270 (Franco: «cancellando una copia devono cancellarsi tutti i suoi annunci, ovviamente previa notifica con form di
+//    anteprima») - le chiavi delle copie che l'articolo aveva e che nella tabella del tab «Copie» non ci sono più: tolte
+//    con la ✕, o svuotate (una riga tutta vuota non si salva). `prima` = le copie del record all'apertura.
+function _copieTolte(prima) {
+  const tenute = new Set(_copieRighe().map(x => x.tr.dataset.copiaChiave).filter(Boolean));
+  return (Array.isArray(prima) ? prima : []).map((c, i) => _annChiaveCopia(c, i)).filter(k => !tenute.has(k));
+}
+// v7.270 - gli annunci delle copie tolte, mostrati in una finestra prima di salvare. Restituisce gli annunci da cancellare
+//    ([] se non ce ne sono), o null se Franco annulla o se gli annunci non si possono leggere: allora non si salva niente,
+//    perché salvare la scheda senza cancellarli lascerebbe annunci attaccati a una copia che non c'è più.
+async function _copieTolteAnnunci(figId, prima) {
+  const it = currentLang === 'it';
+  const tolte = new Set(_copieTolte(prima));
+  if (!tolte.size) return [];
+  if (!_annLetti) {
+    try {
+      const d = (await fsGetAll('settings')).find(x => x.id === 'annunci');
+      _annRighe = (d && Array.isArray(d.righe)) ? d.righe : [];
+      _annRighe.forEach(r => { if (r.sito === 'Subito') r.sito = 'Subito.it'; });   // come `_annCarica`
+      _annLetti = true;
+    } catch (e) {
+      console.error('_copieTolteAnnunci', e);
+      toast((it ? '⚠️ Non salvato: non riesco a leggere gli annunci delle copie tolte. ' : '⚠️ Not saved: cannot read the listings of the removed copies. ') + (e?.message || e), 'error');
+      return null;
+    }
+  }
+  const via = _annRighe.filter(r => r && r.articoloId === figId && tolte.has(r.copiaId));
+  if (!via.length) return [];
+  const nCopia = k => { const i = (prima || []).findIndex((c, j) => _annChiaveCopia(c, j) === k); return i < 0 ? '' : String(prima[i].n ?? ''); };
+  const ok = await _finestraConferma({
+    titolo: '🗑️ ' + (it ? 'Togliere le copie e i loro annunci?' : 'Remove the copies and their listings?'),
+    testo: it ? 'Hai tolto ' + (tolte.size === 1 ? 'una copia' : tolte.size + ' copie') + ' di questo articolo. Salvando si cancellano anche ' + (via.length === 1 ? 'il suo annuncio' : 'i loro ' + via.length + ' annunci') + ':'
+      : 'You removed ' + tolte.size + ' cop' + (tolte.size === 1 ? 'y' : 'ies') + ' of this item. Saving also deletes ' + via.length + ' listing' + (via.length === 1 ? '' : 's') + ':',
+    colonne: it ? ['N. copia', 'Sito', 'Venditore', 'Titolo', 'Finale'] : ['Copy no.', 'Site', 'Seller', 'Title', 'Final'],
+    righe: via.map(r => [nCopia(r.copiaId) || '—', r.sito || '', r.account || '', r.titolo || '', _annVuoto(r.prezzo) ? '' : String(r.prezzo).replace('.', it ? ',' : '.')]),
+    coda: it ? 'Annulla: la scheda resta aperta e non si salva niente.' : 'Cancel: the item stays open and nothing is saved.',
+    ok: it ? 'Salva e cancella gli annunci' : 'Save and delete the listings', annulla: it ? 'Annulla' : 'Cancel',
+    larghezza: '900px'
+  });
+  return ok ? via : null;
 }
 function _copieLetturaHTML(f) {
   const it = currentLang === 'it';
@@ -75925,6 +76033,15 @@ async function saveFigFromDetail(figId, opzioni) {
       ? (!updates.retroId && !!document.getElementById('fe-retro-bianco')?.checked)
       : false;
 
+    // 🆕 v7.270 (Franco: «cancellando una copia devono cancellarsi tutti i suoi annunci, ovviamente previa notifica con
+    //    form di anteprima») - PRIMA delle foto, che si caricherebbero per niente: se ci sono copie tolte con annunci, la
+    //    finestra li elenca; annullata, non si salva niente. Si cancellano dopo che l'articolo è scritto (sotto).
+    let _annunciDaTogliere = [];
+    if (updates.copie) {
+      _annunciDaTogliere = await _copieTolteAnnunci(figId, (_recordInModifica(figId) || {}).copie);
+      if (_annunciDaTogliere === null) return;
+    }
+
     // Gestione immagini. v6.074 - due slot, un trattamento solo: scrivere due volte lo stesso
     // blocco significa che fra sei mesi uno dei due avra' una correzione che l'altro non ha.
     // 🔄 v7.132 - e il terzo: dove non c'è il riquadro il suo valore resta null e il ciclo non lo tocca
@@ -76033,6 +76150,18 @@ async function saveFigFromDetail(figId, opzioni) {
     if (_cache.figurines) {
       const idx = _cache.figurines.findIndex(x => x.id === figId);
       if (idx >= 0) _cache.figurines[idx] = merged;
+    }
+    // v7.270 - gli annunci delle copie tolte, adesso che l'articolo è scritto. Se questa scrittura non riesce lo dice il
+    //    suo messaggio: l'articolo resta salvato, e gli annunci si tolgono a mano dalla pagina Annunci.
+    if (_annunciDaTogliere.length) {
+      const via = new Set(_annunciDaTogliere);
+      try {
+        await _annScrivi(_annRighe.filter(r => !via.has(r)));
+        toast(currentLang === 'it' ? '🗑️ Cancellati ' + via.size + ' annunci delle copie tolte.' : '🗑️ Deleted ' + via.size + ' listings of the removed copies.', 'success');
+      } catch (e) {
+        console.error('saveFigFromDetail annunci', e);
+        toast((currentLang === 'it' ? '⚠️ Articolo salvato, ma gli annunci delle copie tolte NON sono stati cancellati: ' : '⚠️ Item saved, but the listings of the removed copies were NOT deleted: ') + (e?.message || e), 'error');
+      }
     }
     // v6.053 - i collegati seguono la base
     // v6.116 - o si scrive tutto o non si scrive niente: se la scrittura fallisce si esce sopra,
