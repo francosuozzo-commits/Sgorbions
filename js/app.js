@@ -32095,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.272';
+const JS_VERSION = 'v7.273';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -44956,7 +44956,7 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <div id="venditore-box" style="display:none;"><h2 style="margin-top:14px;">Per quale venditore? <span class="nota">(facoltativo: mette già il suo tessuto)</span></h2><div class="scelte" id="scelta-venditore"></div>
   <h2 style="margin-top:14px;">Quale texture di sfondo?</h2><div class="scelte" id="scelta-texture"></div></div></section>
 <section class="passo"><h2>4. Le foto per l'annuncio</h2>
-  <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte</button></div>
+  <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte</button><span class="nota" id="componi-perche" style="align-self:center;"></span></div>
   <!-- v7.272 (Franco: «anche nella sezione crea foto per annuncio vorrei avere i due bottoni») - i testi del tab Ebay dell'album, per il venditore scelto -->
   <div class="scelte" style="margin-top:8px;"><button class="btn" id="copia-titolo">📋 Copia titolo annuncio</button><button class="btn" id="copia-desc">📋 Copia descrizione annuncio</button><span class="nota" id="copia-stato" style="align-self:center;"></span></div>
   <div class="piano" id="piano2"></div><div class="risultati" id="risultati"></div>
@@ -44979,7 +44979,8 @@ function _faApri() {
   const $ = id => w.document.getElementById(id);
   $('file').onchange = e => { _faCaricaFile(e.target.files).catch(err => _faStato('Errore: ' + err.message)); e.target.value = ''; };
   $('demo').onclick = () => _faFotoDelSito().catch(err => _faStato('Errore: ' + err.message));
-  $('componi').onclick = () => _faComponi().catch(err => _faStato('Errore: ' + err.message));
+  // v7.273 - l'errore anche al passo 4, accanto al tasto: al passo 2 dal telefono non si vedeva
+  $('componi').onclick = () => _faComponi().catch(err => { _faStato('Errore: ' + err.message); _fa$('piano2').innerHTML = '<span style="color:#c0392b">⚠️ Errore: ' + esc(err.message) + '</span>'; });
   $('scarica').onclick = _faScaricaTutte;
   $('copia-titolo').onclick = () => _faCopiaTesto('titoloIt');
   $('copia-desc').onclick = () => _faCopiaTesto('descIt');
@@ -44995,9 +44996,12 @@ function _faApri() {
 const _fa$ = id => _fa.w.document.getElementById(id);
 const _faStato = t => { _fa$('stato').textContent = t || ''; };
 function _faSvuota() {
+  // v7.273: le foto e le miniature di prima liberano subito la memoria (`_faLibera`)
+  _faLibera(..._fa.foto.map(f => f.tela), ..._fa$('miniature').querySelectorAll('canvas'));
   _fa.foto = []; _fa.uscite.forEach(u => URL.revokeObjectURL(u.url)); _fa.uscite = [];
   ['miniature', 'avvisi', 'risultati', 'piano2', 'copia-stato'].forEach(id => { _fa$(id).innerHTML = ''; });   // v7.272: anche l'esito della copia
   _fa$('spiega').style.display = 'none'; _fa$('zoom-mini').style.display = 'none'; _fa$('scarica').disabled = true; _fa$('componi').disabled = true; _faStato('');
+  _faComponiPerche();   // v7.273
 }
 // 🆕 v7.272 (Franco: «il primo pulsante deve costruire il titolo prendendo il valore che c'è nel campo titolo italiano
 //    della sezione eBay dell'album selezionato, prendendo quello della sezione avente il nome uguale al nome del
@@ -45098,6 +45102,7 @@ function _faDisegnaScelte() {
     : s ? 'Sito scelto: <b>' + s.nome + '</b>. Ora scegli l’album (passo 1).'
     : 'Scegli l’album e il sito.';
   _fa$('componi').disabled = !_fa.foto.length || !_fa.sito || !_fa.texture;
+  _faComponiPerche();
   // v7.187 (Franco: «il tasto carica foto non deve essere premibile se prima non ho selezionato l'album allo step 1») -
   //    «Carica le foto» è un'etichetta che apre la casella dei file: si spegne la casella (così il clic non apre niente)
   //    e l'etichetta prende l'aspetto dei tasti spenti. Stessa regola per «Usa le foto del sito».
@@ -45112,6 +45117,24 @@ function _faDisegnaScelte() {
 // ⚠️ Le tele e le immagini nascono nella FINESTRA, non nella scheda del sito: quella resta dietro, e il browser rallenta
 //    le schede nascoste. Provato: preparare 20 foto con le tele del sito ci metteva più di un minuto.
 function _faTela(w, h) { const c = _fa.w.document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+// 🆕 v7.273 (Franco: «il bottone prepara le foto a volte se premuto non fa accadere nulla … questo accade con l'uso dal
+//    telefonino») - LA MEMORIA DELLE TELE. Safari sul telefono dà alle tele (canvas) di una pagina un tetto di memoria
+//    tutto insieme (sull'iPhone ~384 MB), e una tela buttata non lo libera finché il browser non fa pulizia: oltre il
+//    tetto le tele nuove nascono vuote e `toBlob` dà null, e «Prepara le foto» si fermava con l'errore scritto al passo 2,
+//    fuori schermo. Una foto caricata è fino a 2000×1500 = 12 MB; un album di 26 pagine ≈ 310 MB solo di foto, e ogni
+//    ridisegno delle miniature ne ritagliava 26 a piena misura (altri ~300 MB in attesa di pulizia). Ora ogni tela di
+//    passaggio si azzera appena usata (larghezza e altezza 0 = memoria resa subito).
+// v7.273 - accanto a «Prepara le foto» spento, che cosa manca: dal telefono un tasto grigio sembra un tasto che non risponde
+function _faComponiPerche() {
+  const el = _fa$('componi-perche');
+  if (!el) return;
+  el.textContent = !_fa.foto.length ? 'Per preparare le foto: carica prima le foto (passo 2).'
+    : !_fa.sito ? 'Per preparare le foto: scegli il sito (passo 3).'
+    : !_fa.texture ? 'Per preparare le foto: scegli la texture di sfondo (passo 3).' : '';
+}
+function _faLibera(...tele) { tele.forEach(c => { if (c && c.getContext) { c.width = 0; c.height = 0; } }); }
+// v7.273 - dal telefono le foto caricate stanno a 1600 px (il lato delle foto dell'annuncio), dal PC a 2000 come prima
+const _faLatoCarica = () => (_fa.w.matchMedia && _fa.w.matchMedia('(pointer: coarse)').matches) ? _FA_LATO : 2000;
 function _faRiduci(sorgente, w, h, lato) {
   const k = Math.min(1, lato / Math.max(w, h));
   const c = _faTela(w * k, h * k);
@@ -45135,7 +45158,11 @@ function _faGiraRett(r, W, H, volte) {
   for (let i = 0; i < volte; i++) { r = { x: H - (r.y + r.h), y: r.x, w: r.h, h: r.w }; const t = W; W = H; H = t; }
   return r;
 }
-function _faGiraFoto(f, volte) { const W = f.tela.width, H = f.tela.height; f.tela = _faGira(f.tela, volte); f.rett = _faGiraRett(f.rett, W, H, volte); }
+function _faGiraFoto(f, volte) {
+  const W = f.tela.width, H = f.tela.height, prima = f.tela;
+  f.tela = _faGira(f.tela, volte); f.rett = _faGiraRett(f.rett, W, H, volte);
+  if (f.tela !== prima) _faLibera(prima);   // v7.273: la tela di prima si libera subito
+}
 function _faRitaglio(f) {
   const r = f.rett, c = _faTela(r.w, r.h);
   c.getContext('2d').drawImage(f.tela, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
@@ -45209,6 +45236,7 @@ function _faFirma(c) {
   const u = _faTela(W, H), x = u.getContext('2d');
   x.imageSmoothingQuality = 'high'; x.drawImage(t, 0, 0, W, H);
   const d = x.getImageData(0, 0, W, H).data, g = new Float32Array(n), e = new Float32Array(n);
+  _faLibera(t, u);   // v7.273: i numeri sono letti, le due tele di passaggio si liberano
   for (let k = 0; k < n; k++) g[k] = 0.299 * d[k * 4] + 0.587 * d[k * 4 + 1] + 0.114 * d[k * 4 + 2];
   const p = (y, q) => g[y * W + q];
   for (let y = 1; y < H - 1; y++) for (let q = 1; q < W - 1; q++) {
@@ -45340,7 +45368,9 @@ async function _faOrdina() {
     const base = _faNucleo(f);
     tinteFoto[fi] = _faTinta(base);   // v7.185: la tinta non dipende dal verso
     for (let v = 0; v < 4; v++) {
-      const fv = _faFirma(_faGira(base, v));
+      // v7.273: la copia girata (a piena misura) serve solo alla firma, e si libera subito
+      const girata = _faGira(base, v), fv = _faFirma(girata);
+      if (girata !== base) _faLibera(girata);
       const forma = v % 2 ? base.height / base.width : base.width / base.height;
       firme.forEach((fp, pi) => {
         // 🆕 v7.182 (Franco: «12-13 è in realtà la 50-51», «14-15 è 56-57», «16-17 è 38-39») - una foto ritagliata su
@@ -45351,6 +45381,7 @@ async function _faOrdina() {
         coppie.push({ fi, pi, v, s, parte });
       });
     }
+    _faLibera(base);   // v7.273
   });
   // 🔄 v7.185 - tutti i posti insieme, con la tinta dello sfondo (vedi `_faAssegna`, e le misure sopra `_FA_PESO_TINTA`)
   const scelte = _faAssegna(coppie, tinteFoto, _fa.rif.tinte || [], _fa.foto.length, firme.length);
@@ -45391,7 +45422,8 @@ function _faCorreggiForma(f, pi, parte) {
   if (!candidati.length) return;
   const rif = _fa.rif.firme[pi];
   let meglio = null;
-  candidati.forEach(c => { const s = _faSomiglia(_faFirma(_faNucleo({ tela: f.tela, rett: c })), rif); if (!meglio || s > meglio.s) meglio = { c, s }; });
+  // v7.273: il nucleo di ogni candidato si libera dopo la firma
+  candidati.forEach(c => { const nu = _faNucleo({ tela: f.tela, rett: c }), s = _faSomiglia(_faFirma(nu), rif); _faLibera(nu); if (!meglio || s > meglio.s) meglio = { c, s }; });
   f.rett = meglio.c;
 }
 // Il ritaglio senza il margine del 5% (`_faAutoTaglio`): è quello che si confronta con le pagine del sito, che il
@@ -45438,7 +45470,7 @@ async function _faCaricaFile(lista) {
     _faStato('Preparo le foto: ' + (i + 1) + ' di ' + files.length + '…');
     try {
       const bm = await _fa.w.createImageBitmap(files[i], { imageOrientation: 'from-image' });
-      const tela = _faRiduci(bm, bm.width, bm.height, 2000);
+      const tela = _faRiduci(bm, bm.width, bm.height, _faLatoCarica());   // v7.273: 1600 dal telefono
       if (bm.close) bm.close();
       _fa.foto.push({ tela, rett: _faAutoTaglio(tela), pagina: null, dubbia: false });
     } catch (e) { console.error('_faCaricaFile', files[i].name, e); }
@@ -45468,6 +45500,7 @@ async function _faFotoDelSito() {
 // ---- le miniature ----
 function _faMiniature() {
   const d = _fa.w.document, box = _fa$('miniature'), a = _fa.album, N = a.pagine.length;
+  _faLibera(...box.querySelectorAll('canvas'));   // v7.273: le miniature di prima si liberano subito
   box.innerHTML = ''; _fa$('avvisi').innerHTML = '';
   _fa$('spiega').style.display = _fa.foto.length ? '' : 'none';
   _fa$('zoom-mini').style.display = _fa.foto.length ? '' : 'none';
@@ -45481,7 +45514,10 @@ function _faMiniature() {
   avvisi.forEach(t => { const el = d.createElement('div'); el.className = 'avviso'; el.textContent = t; _fa$('avvisi').appendChild(el); });
   _fa.foto.forEach(f => {
     const card = d.createElement('div'); card.className = 'mini' + (f.dubbia ? ' dubbia' : '');
-    const c = _faRiduci(_faRitaglio(f), f.rett.w, f.rett.h, 2 * (_fa.mini || 140));
+    // v7.273: il ritaglio a piena misura serve solo a fare la miniatura, e si libera subito
+    const ritaglio = _faRitaglio(f);
+    const c = _faRiduci(ritaglio, f.rett.w, f.rett.h, 2 * (_fa.mini || 140));
+    _faLibera(ritaglio);
     c.title = 'Correggi il ritaglio';
     c.onclick = () => _faApriEditor(f);
     const sel = d.createElement('select');
@@ -45505,12 +45541,13 @@ function _faMiniature() {
     //    sulle foto PRONTE del passo 4, qui mancava) - la foto caricata esce dall'elenco; le altre restano sulle loro
     //    pagine (la sua resta vuota e gli avvisi lo dicono)
     const togli = d.createElement('button'); togli.textContent = '🗑️'; togli.title = 'Togli questa foto';
-    togli.onclick = () => { _fa.foto = _fa.foto.filter(g => g !== f); _faMiniature(); };
+    togli.onclick = () => { _fa.foto = _fa.foto.filter(g => g !== f); _faLibera(f.tela); _faMiniature(); };   // v7.273: anche la sua memoria
     riga.appendChild(togli);
     card.append(c, sel, riga);
     box.appendChild(card);
   });
   _fa$('componi').disabled = !_fa.foto.length || !_fa.sito || !_fa.texture;
+  _faComponiPerche();
 }
 
 // ---- la correzione del ritaglio ----
@@ -45665,6 +45702,7 @@ function _faAffianca(tele, h) {
   // v7.243 - col tessuto lo spazio fra le pagine resta trasparente: ci si vede il tessuto, e ogni pagina ha la sua ombra
   if (!_fa.tessuto) { x.fillStyle = '#fff'; x.fillRect(0, 0, out.width, out.height); }
   let px = 0; s.forEach(c => { x.drawImage(c, px, 0); px += c.width + _FA_SPAZIO; });
+  _faLibera(...s);   // v7.273
   return out;
 }
 function _faImpila(righe) {
@@ -45672,6 +45710,7 @@ function _faImpila(righe) {
   const out = _faTela(W, righe.reduce((a, c) => a + c.height, 0) + _FA_SPAZIO * (righe.length - 1)), x = out.getContext('2d');
   if (!_fa.tessuto) { x.fillStyle = '#fff'; x.fillRect(0, 0, out.width, out.height); }
   let py = 0; righe.forEach(c => { x.drawImage(c, Math.round((W - c.width) / 2), py); py += c.height + _FA_SPAZIO; });
+  _faLibera(...righe);   // v7.273: le righe sono sempre di passaggio (`_faRiduci`, `_faAffianca`)
   return out;
 }
 function _faComponiGruppo(tele) {
@@ -45703,9 +45742,15 @@ async function _faComponi() {
     const presenti = g.filter(p => perPagina.has(p));
     if (!presenti.length) continue;
     _faStato('Preparo la foto ' + (_fa.uscite.length + 1) + '…');
-    let c = _faComponiGruppo(presenti.map(p => _faRitaglio(perPagina.get(p))));
+    _fa$('piano2').textContent = '⏳ Preparo la foto ' + (_fa.uscite.length + 1) + '…';   // v7.273: anche qui, dove si guarda
+    const ritagli = presenti.map(p => _faRitaglio(perPagina.get(p)));
+    let c = _faComponiGruppo(ritagli);
+    _faLibera(...ritagli.filter(r => r !== c));   // v7.273
     if (_fa.tessuto) c = _faSulTessuto(c, _fa.tessuto);
     const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.9));
+    _faLibera(c);   // v7.273: la foto ora sta nel file
+    // v7.273 - una tela nata oltre il tetto di memoria del telefono non dà il file: lo si dice, invece di fermarsi muti
+    if (!blob) throw new Error('il telefono ha finito la memoria per le foto (foto ' + (_fa.uscite.length + 1) + '). Chiudi le altre schede del browser e riprova; se non basta, carica meno foto alla volta.');
     const n = String(_fa.uscite.length + 1).padStart(2, '0');
     // v7.188: nel nome del file la chiave del sito (`subito`), non il nome a schermo («Subito.it» darebbe «subito.it-1.jpg»)
     _fa.uscite.push({ nome: a.file + '-' + sito.chiave + '-' + n + '.jpg', blob, url: URL.createObjectURL(blob), dida: presenti.map(p => _faNomePagina(p, N)).join(' + '), didaLunga: presenti.map(p => _faNomePagina(p, N, null, true)).join(' + ') });
@@ -45769,7 +45814,11 @@ function _faSulTessuto(c, sfondo) {
   ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14 * s; ctx.shadowOffsetY = 3 * s;
   ctx.drawImage(c, m, m);
   ctx.restore();
-  return _faRiduci(out, W, H, _FA_LATO);
+  // v7.273: le due tele di passaggio si liberano subito
+  _faLibera(c);
+  const fin = _faRiduci(out, W, H, _FA_LATO);
+  _faLibera(out);
+  return fin;
 }
 // 🆕 v7.182 (Franco: «le frecce non le hai messe nelle finestre della sezione "le pagine per l'annuncio"») - la foto
 //    dell'annuncio, toccata, si apre grande con ◀ ▶ (e le frecce della tastiera), «Scarica» e «Chiudi»
@@ -74150,6 +74199,13 @@ function _bloccoPagineEdit(f) {
         ? '<button type="button" class="btn-foto" style="flex:1;" onclick="pagineInverti()">\u2195\uFE0F '
           + (it ? 'Inverti ordine pagine' : 'Reverse page order') + '</button>'
         : '')
+    // 🆕 v7.273 (Franco: «vorrei un nuovo bottone nella pagina dell'album "Scarica foto"; se premuto, scarica tutte le
+    //    foto dell'album, con nomi file che facciano in modo che le foto siano già ordinate»; scelto: nella scheda,
+    //    solo admin) - `pagineScarica`
+    + (pag.length
+        ? '<button type="button" class="btn-foto" style="flex:1;" onclick="pagineScarica()">⬇️ '
+          + (it ? 'Scarica foto' : 'Download photos') + '</button>'
+        : '')
     + '</div>'
     + (righe || '<p style="font-size:0.82rem;color:var(--muted);font-style:italic;margin:0;">'
         + (it ? 'Nessuna pagina ancora.' : 'No pages yet.') + '</p>')
@@ -74386,6 +74442,44 @@ async function pagineAlCapo(i, verso) {
   const [presa] = nuove.splice(i, 1);
   if (verso < 0) nuove.unshift(presa); else nuove.push(presa);
   if (await _salvaPagine(nuove)) _ridisegnaPagine();
+}
+
+// 🆕 v7.273 - «SCARICA FOTO»: tutte le foto delle pagine, nell'ordine dell'album, una dopo l'altra.
+//    Nome del file: serie e album, poi il numero d'ordine a due cifre e il nome della pagina
+//    («serie-1-l-1000-01-copertina.jpg», «…-02-ii-cop-pag-1.jpg»): il numero in testa le mette in ordine in ogni cartella.
+// 📌 Si scarica la foto così com'è a schermo (`url`, la pulita se c'è), senza trasformazioni nuove: a Cloudinary non si
+//    chiede niente che non abbia già. Il download di un file d'un altro sito non prende il nome dato dal link, quindi
+//    la foto si legge (fetch) e si scarica dal browser col suo nome. Una ogni 600 ms (come «Scarica tutte» del collage):
+//    la prima volta Chrome può chiedere se permettere più download dal sito, si risponde «Consenti».
+function _pagineNomeFile(i, urls, prefisso) {
+  const pulito = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const est = (String(urls[i] || '').split('?')[0].match(/\.(jpe?g|png|webp|gif)$/i) || [, 'jpg'])[1].toLowerCase();
+  return [pulito(prefisso), String(i + 1).padStart(2, '0'), pulito(_faNomePagina(i, urls.length, { pagine: urls }, true))].filter(Boolean).join('-') + '.' + est;
+}
+async function pagineScarica() {
+  const it = currentLang === 'it';
+  const f = _figSlotF;
+  const urls = _pagineDi(f).map(p => p.url);
+  if (!urls.length) return;
+  const prefisso = _serieTrattinoAlbum(f) || f.name || 'album';
+  let fatte = 0;
+  for (let i = 0; i < urls.length; i++) {
+    toast((it ? '⬇️ Scarico la foto ' : '⬇️ Downloading photo ') + (i + 1) + ' / ' + urls.length + '...', 'info', null, 2500);
+    try {
+      const r = await fetch(urls[i]);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const u = URL.createObjectURL(await r.blob());
+      const a = document.createElement('a');
+      a.href = u; a.download = _pagineNomeFile(i, urls, prefisso);
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(u), 60000);
+      fatte++;
+    } catch (e) { console.error('pagineScarica', urls[i], e); }
+    if (i < urls.length - 1) await new Promise(ok => setTimeout(ok, 600));
+  }
+  const perse = urls.length - fatte;
+  toast((it ? '✅ ' + fatte + ' foto scaricate' : '✅ ' + fatte + ' photos downloaded')
+    + (perse ? (it ? ' — ' + perse + ' non scaricate' : ' — ' + perse + ' failed') : ''), perse ? 'warn' : 'success');
 }
 
 // 🆕 v6.896 (Franco) - INVERTIRE L'ORDINE DI TUTTE LE PAGINE.
