@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.275">
+<link rel="stylesheet" href="css/style.css?v=7.276">
 
 
 <style>
@@ -796,6 +796,14 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
 #imp-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga, #ml-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga, #ann-linguetta:not(:hover):not(:focus-visible) .wz-ling-lunga { position: absolute; }
 #imp-linguetta:hover .wz-ling-corta, #imp-linguetta:focus-visible .wz-ling-corta, #ml-linguetta:hover .wz-ling-corta, #ml-linguetta:focus-visible .wz-ling-corta, #ann-linguetta:hover .wz-ling-corta, #ann-linguetta:focus-visible .wz-ling-corta { display: none; }
 #imp-linguetta:hover .wz-ling-lunga, #imp-linguetta:focus-visible .wz-ling-lunga, #ml-linguetta:hover .wz-ling-lunga, #ml-linguetta:focus-visible .wz-ling-lunga, #ann-linguetta:hover .wz-ling-lunga, #ann-linguetta:focus-visible .wz-ling-lunga { max-width: 26rem; opacity: 1; }
+/* 🆕 v7.276 (Franco: «io live non vedo la cornice nera alle icone delle linguette admin; se la hai messa, puoi farla più
+   spessa?»; scelto: «le linguette arancio a lato») - la cornice della v7.270 stava sui tab della CONSOLE (arancio, 1,5px).
+   Qui la cornice all'icona delle quattro linguette arancio, quella che si vede da chiuse (`.wz-ling-corta`).
+   🔄 poi (Franco: «è un po' un pugno nell'occhio; prova a usare un bordo più sottile e di colore meno scuro del nero; blu
+   o marrone») - da nera 3px a MARRONE 1.5px (scelta mia fra i due: sull'arancio si accorda, il blu stacca). */
+#imp-linguetta .wz-ling-corta, #mac-linguetta .wz-ling-corta, #ml-linguetta .wz-ling-corta, #ann-linguetta .wz-ling-corta {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 1.7em; line-height: 1.35;
+  padding: 0.1rem 0.2rem; border: 1.5px solid #6b3a12; border-radius: 7px; background: rgba(255,255,255,0.18); }
 /* 🆕 v7.260 (Franco: «lascia i riquadri ma rendili non utilizzabili») - nelle sezioni coi tab (i retro) un riquadro della
    ricerca che nel tab aperto non ha casi resta al suo posto, grigio e non premibile (`_attrSpentoNelTab`) */
 .riquadro-spento-tab { opacity: 0.4; filter: grayscale(1); pointer-events: none; user-select: none; }
@@ -4163,7 +4171,6 @@ di tutte le serie</button>
           <button class="admin-tab" onclick="adminTab('aggiornamenti')">🔁 Aggiornamenti massivi</button>
           <!-- 🆕 v7.182 (Franco: «fai una nuova sezione nella admin console, dedicata allo scopo»); 🔄 v7.184 si chiama
                «Annunci» (Franco), e in ordine alfabetico viene subito dopo Aggiornamenti massivi -->
-          <button class="admin-tab" onclick="adminTab('fotoannuncio')">📢 Annunci</button>
           <button class="admin-tab" onclick="adminTab('caroselli')">🎠 Caroselli</button>
           <!-- 🔄 v7.219 (Franco: «sposta la funzione Collage foto nella sezione "Annunci"») - qui c'era il tab «🖼️ Collage
                foto» della v7.209: ora è un tasto di Annunci che apre una finestra (`apriCollage`) -->
@@ -4541,10 +4548,6 @@ di tutte le serie</button>
         <div id="admin-aggiornamenti" class="admin-section">
           <div><div id="admin-aggiornamenti-box"></div></div>
         </div>
-        <!-- 🆕 v7.182 - LA SEZIONE «FOTO ANNUNCIO»: la disegna `renderAdminFotoAnnuncio`, lo strumento si apre in una finestra sua -->
-        <div id="admin-fotoannuncio" class="admin-section">
-          <div><div id="admin-fotoannuncio-box"></div></div>
-        </div>
         <div id="admin-caroselli" class="admin-section">
           <div><div id="admin-caroselli-tda"></div></div>
         </div>
@@ -4556,9 +4559,18 @@ di tutte le serie</button>
              (niente `admin-section`): è il contenitore del secondo tab, con gli stessi id di prima. -->
         <div id="admin-doppioni" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin:0 0 0.4rem;">🧾 Copie doppie</h3>
+          <!-- 🔄 v7.276 (Franco: «vorrei fondere i due tab degli Annunci e delle Copie doppie; fai un tab unico chiamato
+               "Copie doppie" con dentro 2 tab»; poi: «tutti allo stesso livello») - TRE TAB: ANNUNCI (la vecchia sezione
+               «📢 Annunci», v7.182, stessi id ma non più `admin-section`), poi i due di prima. -->
           <div class="cd-schede" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin:0.4rem 0 1rem;">
+            <button class="admin-subtab" data-cd-vista="ann" onclick="_cdVista('ann')">ANNUNCI</button>
             <button class="admin-subtab active" data-cd-vista="el" onclick="_cdVista('el')">COPIE DOPPIE ELEMENTI STRUTTURATI</button>
             <button class="admin-subtab" data-cd-vista="set" onclick="_cdVista('set')">SET DOPPI</button>
+          </div>
+          <!-- 🆕 v7.182 - «FOTO ANNUNCIO»: la disegna `renderAdminFotoAnnuncio`, lo strumento si apre in una finestra sua.
+               La classe `active` la mette `_cdVista('ann')`: dal telefono la console si vede solo lì (css, v7.221). -->
+          <div id="admin-fotoannuncio" style="display:none;">
+            <div><div id="admin-fotoannuncio-box"></div></div>
           </div>
           <div id="cd-vista-el"><div id="admin-doppioni-tda"></div></div>
           <!-- 🆕 v7.254 - LA SEZIONE «MANCOLISTE» (v7.255 «Set doppi»): la disegna `renderAdminMancoliste` -->
@@ -6927,7 +6939,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.275"></script>
+<script src="js/app.js?v=7.276"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6951,7 +6963,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.275'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.276'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
