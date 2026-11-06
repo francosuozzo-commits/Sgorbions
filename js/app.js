@@ -32095,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.274';
+const JS_VERSION = 'v7.275';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -70872,7 +70872,8 @@ const _CD_COLONNE = [
   { k: 'voto', it: 'Voto', en: 'Rating', val: x => typeof x.c.qualita === 'number' ? x.c.qualita : '', centro: true },
   { k: 'iniziale', it: 'Iniziale', en: 'Initial', val: x => x.c.iniziale == null ? '' : x.c.iniziale, centro: true },
   // v7.267 (Franco: «"Addizionale" … esposto nelle 2 tabelle delle copie, dopo il campo "Iniziale"»)
-  { k: 'addizionale', it: 'Addizionale', en: 'Additional', val: x => x.c.addizionale == null ? '' : x.c.addizionale, centro: true },
+  // 🔄 v7.275 (Franco: «la colonna "Addizionale", nelle tabelle … chiamala "Add +"») - solo il titolo della colonna
+  { k: 'addizionale', it: 'Add +', en: 'Add +', val: x => x.c.addizionale == null ? '' : x.c.addizionale, centro: true },
   // v7.274 (Franco: «mi serve un campo nelle Copie; chiamato "Figurine mancanti"; Numerico; esponilo anche nelle due viste
   //    tabellari delle copie; scrivilo in rosso»)
   { k: 'mancanti', it: 'Figurine<br>mancanti', en: 'Missing<br>stickers', val: x => x.c.mancanti == null ? '' : x.c.mancanti, centro: true },
@@ -71259,8 +71260,8 @@ function _copieIntestazione() {
   // 🔄 v7.267 (Franco: «nella tabellina della form di dettaglio, il campo "Voto" va prima del campo "Iniziale"»)
   // v7.267 (Franco: «un campo, sotto "Iniziale", chiamato "Addizionale", sempre numerico; esposto nelle 2 tabelle delle
   //    copie, dopo "Iniziale"»)
-  return '<tr>' + t(0, 'n.') + t(1, (it ? 'Condizioni' : 'Condition')) + t(2, (it ? 'Voto' : 'Rating')) + t(3, (it ? 'Iniziale' : 'Initial')) + t(4, (it ? 'Addizionale' : 'Additional'))
-    + t(5, (it ? 'Figurine mancanti' : 'Missing stickers')) + t(6, (it ? 'Annunci' : 'Listings'));   // v7.274: + Figurine mancanti   // v7.263; v7.266: «Qualità» → «Voto» (Franco)
+  return '<tr>' + t(0, 'n.') + t(1, (it ? 'Condizioni' : 'Condition')) + t(2, (it ? 'Voto' : 'Rating')) + t(3, (it ? 'Iniziale' : 'Initial')) + t(4, 'Add +')   // v7.275 (Franco: «chiamala "Add +"»; era «Addizionale»)
+    + t(5, (it ? 'Figurine mancanti' : 'Missing stickers')) + t(6, (it ? 'Annunci' : 'Listings'));   // v7.274: + Figurine mancanti; v7.263; v7.266: «Qualità» → «Voto» (Franco)
 }
 // 🆕 v7.266 (Franco: «nel tab Copie di un articolo, le copie devono essere ordinate per campo "n."») - le copie con la loro
 //    posizione nel dato ([copia, indice]: la chiave di una copia senza id, `#indice`, resta quella), in ordine di n.; senza
