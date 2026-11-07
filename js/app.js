@@ -30323,10 +30323,16 @@ function _finestraConferma(opz) {
     box.appendChild(piede);
     // 🆕 v7.129 - `soloOk`: un avviso e basta, che resta finché non si preme OK (niente da annullare)
     if (o.soloOk) bNo.style.display = 'none';
+    // 🔄 v7.278 (Franco: «in tutte le pagine del sito, dove abbiamo "Annulla" se c'è anche la "x" lasciamo solamente la
+    //    "x"») - qui la ✕ c'è sempre: il tasto che dice «Annulla» non si vede più. Quello con un'altra scritta scelta da
+    //    chi chiama («No, lascia così»…) resta: non è un Annulla.
+    // 🔴 E il fuoco, che stava su Annulla perché un Invio d'istinto non facesse partire niente, passa alla ✕.
+    const _soloX = !o.soloOk && /^(Annulla|Cancel)$/.test(bNo.textContent);
+    if (_soloX) bNo.style.display = 'none';
 
     ov.appendChild(box);
     document.body.appendChild(ov);
-    try { if (o.soloOk) bSi.focus(); else bNo.focus(); } catch(e) {}
+    try { if (o.soloOk) bSi.focus(); else if (_soloX) x.focus(); else bNo.focus(); } catch(e) {}
 
     const chiudi = esito => {
       if (chiuso) return;                       // il doppio clic risolverebbe due volte
@@ -32095,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.277';
+const JS_VERSION = 'v7.278';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42737,7 +42743,7 @@ function _collageGrigliaNumeri() {
       : '<div class="form-hint">' + (it ? 'Con queste risposte non ci sono figurine con un numero.' : 'No numbered stickers with these answers.') + '</div>')
     + '<div id="collage-numeri-stato" style="font-size:0.85rem;min-height:1.2rem;margin-top:0.7rem;color:var(--warn);"></div>'
     + '<div style="display:flex;justify-content:flex-end;gap:0.6rem;margin-top:0.4rem;">'
-    + '<button type="button" class="btn-secondary" onclick="document.getElementById(\'collage-numeri-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+    // 🗑️ v7.278 (Franco: «in tutte le pagine del sito, dove abbiamo "Annulla" se c'è anche la "x" lasciamo solamente la "x"»)
     + '<button type="button" class="btn-primary" onclick="_collageNumeriUsa()">' + (it ? 'Usa questi numeri' : 'Use these numbers') + '</button>'
     + '</div></div></div>';
   document.body.appendChild(ov);
@@ -44599,7 +44605,7 @@ function _annApriFinestra(i, sola) {
       // arancione come Modifica (Franco: «il tasto clona deve essere arancione come modifica»)
       //    e vestito come «Clona» nella scheda dell'articolo: stessa classe, stessa icona ⧉
       + (r.id ? '<button type="button" class="btn-barra-admin pieno" id="ann-clona" style="margin-right:auto;" onclick="_annClonaQui(' + i + ')">&#10697; ' + (it ? 'Clona' : 'Clone') + '</button>' : '')
-      + '<button type="button" class="btn-secondary" onclick="document.getElementById(\'annuncio-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+      // 🗑️ v7.278 (Franco: «dove abbiamo "Annulla" se c'è anche la "x" lasciamo solamente la "x"») - via «Annulla»
       // v7.189 (Franco: «"Salva e resta"»; «"Salva e next"») - vestiti come nella scheda dell'articolo, e «next» si
       //    spegne sull'ultimo annuncio della tabella (o su uno nuovo), come lì sull'ultimo articolo
       + '<button type="button" class="btn-barra-admin pieno" id="ann-salva-resta" onclick="_annSalva(' + (i === null ? 'null' : i) + ',null,\'resta\')">💾 ' + (it ? 'Salva e resta' : 'Save and stay') + '</button>'
@@ -57585,7 +57591,7 @@ function apriFinestraFamiglia(el) {
     + '</div>'   // v7.238: chiude il tab «Generale»
     + '<div id="fam-stato" style="font-size:0.85rem;min-height:1.2rem;margin-top:0.8rem;color:var(--warn);"></div>'
     + '<div style="display:flex;justify-content:flex-end;gap:0.6rem;margin-top:0.6rem;">'
-    + '<button type="button" class="btn-secondary" onclick="document.getElementById(\'famiglia-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+    // 🗑️ v7.278 (Franco: «dove abbiamo "Annulla" se c'è anche la "x" lasciamo solamente la "x"») - via «Annulla»
     // 🆕 v7.252 (Franco: «sulla form della famiglia, metti "Salva e next" e "Salva e previous"») - come nella scheda
     //    dell'articolo: prima di «Salva», spenti sulla prima e sull'ultima famiglia; l'ordine è quello delle frecce
     //    della pagina della famiglia (`_famiglieOrdinate`)
@@ -57712,7 +57718,7 @@ function apriTabellaFamiglie() {
     + '</tr></thead><tbody>' + righe + '</tbody></table></div>'
     + '<div id="ft-stato" style="font-size:0.85rem;min-height:1.2rem;margin-top:0.8rem;color:var(--warn);"></div>'
     + '<div style="display:flex;justify-content:flex-end;gap:0.6rem;margin-top:0.6rem;">'
-    + '<button type="button" class="btn-secondary" onclick="document.getElementById(\'famiglie-tabella-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+    // 🗑️ v7.278 (Franco: «dove abbiamo "Annulla" se c'è anche la "x" lasciamo solamente la "x"») - via «Annulla»
     + '<button type="button" id="ft-salva" class="btn-primary" onclick="_ftSalva()">' + (it ? 'Salva' : 'Save') + '</button>'
     + '</div></div></div>';
   document.body.appendChild(ov);
@@ -59189,7 +59195,26 @@ function _wzCoppia(z, sid) {
   }
   const foto = _wzArticoli(sid, z).map(f => _fotoFigurina(f, figs) || f.img).filter(Boolean).slice(0, 2);
   if (!foto.length) return '';
-  return '<span class="wz-popup-coppia' + (foto.length === 1 ? ' una' : '') + '">' + foto.map(u => _wzImg(u, 200, 260, '')).join('') + '</span>';
+  // 🆕 v7.278 (Franco: «nella form "Riepilogo", la miniatura nel caso dei Retro non mi piace; mostra 2 retro tagliati,
+  //    solo perché sono articoli a foto orizzontale; invece che affiancarli l'uno all'altro, mettili uno sopra all'altro;
+  //    ovviamente sempre in modo che si veda parte di ognuno dei 2») - per i Retro il mazzetto è in ORIZZONTALE: le due
+  //    foto stese, la seconda sotto e spostata (`.wz-popup-coppia.orizz`, index). Stessa misura chiesta a Cloudinary
+  //    (200×260, c_fit: un retro orizzontale torna largo 200px), così nessuna trasformazione nuova
+  const orizz = String(z).split('|')[0] === 'retros';
+  return '<span class="wz-popup-coppia' + (foto.length === 1 ? ' una' : '') + (orizz ? ' orizz' : '') + '">' + foto.map(u => _wzImg(u, 200, 260, '')).join('') + '</span>';
+}
+// 🆕 v7.278 (Franco: «la frase sotto alla foto recita "Delle N figurine di questa serie, quante ne hai?" No, mai usare il
+//    verbo avere, nel sito. Cambiare in "Delle N figurine di questo album, quante ce ne sono nella tua lista?"») - LA
+//    DOMANDA «QUANTE?» DELLE SCHERMATE A TRE E A QUATTRO CARTE, in un posto solo (erano due copie). Le figurine per album
+//    con la frase di Franco; le altre tipologie e le versioni la stessa forma, senza «avere» (parole mie, sullo stesso
+//    modello). `nome` arriva già scappato.
+function _wzQuanteDomanda(p, n, nome, ver) {
+  const it = currentLang === 'it', N = '<b>' + nfmtWz(n) + '</b>';
+  if (!it) return ver ? 'Of this version, the series has ' + N + ': how many are in your list?'
+    : 'Of the ' + N + ' ' + nome.toLowerCase() + ' of this ' + (String(p).split('|')[0] === 'attaccare' ? 'album' : 'series') + ', how many are in your list?';
+  if (ver) return 'Di questa versione, nella serie ce ne sono ' + N + ': quante sono nella tua lista?';
+  if (String(p).split('|')[0] === 'attaccare') return 'Delle ' + N + ' figurine di questo album, quante ce ne sono nella tua lista?';
+  return 'Delle ' + N + ' ' + nome.toLowerCase() + ' di questa serie, quante ce ne sono nella tua lista?';
 }
 function _wzImg(url, w, h, cls) {
   if (!url) return '<div class="' + (cls || '') + ' wz-senza-foto">🎴</div>';
@@ -60097,9 +60122,7 @@ function _wzDisegna(tieni) {
         //    figurine per album di questa serie, quante ne hai?" va gialla come le altre domande») - `wz-centro` sulla
         //    foto e sulle due frasi (regole nell'index), `wz-quante` gialla sulla domanda
         corpo += intest + azzerata + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 800, 800, '') + '</div></div></div>'
-          + '<p class="wz-testo wz-sopra-carte wz-centro wz-quante">' + (it
-              ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
-              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>' + giaFrase('wz-sopra-carte wz-centro wz-gia-mie')
+          + '<p class="wz-testo wz-sopra-carte wz-centro wz-quante">' + _wzQuanteDomanda(p, tutti.length, nome, ver) + '</p>' + giaFrase('wz-sopra-carte wz-centro wz-gia-mie')
           + '<div class="wz-scelte">'
           // 🔄 v7.132 (Franco: «il sottotitolo di "Tutte" diventa "Album completo"») - era «il set base completo»
           // v7.156: le quattro carte valgono anche per altre tipologie; lì il sottotitolo è quello delle tre carte
@@ -60127,9 +60150,7 @@ function _wzDisegna(tieni) {
         // v7.132: sulle figurine con retro immagine e frasi al centro, domanda gialla (come le figurine per album)
         // v7.152: per tutte le tipologie
         corpo += intest + azzerata + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 800, 800, '') + '</div></div></div>'
-          + '<p class="wz-testo wz-sopra-carte wz-centro wz-quante">' + (it
-              ? (ver ? 'Di questa versione, nella serie ce ne sono <b>' + nfmtWz(tutti.length) + '</b>: quante ne hai?' : 'Delle <b>' + nfmtWz(tutti.length) + '</b> ' + nome.toLowerCase() + ' di questa serie, quante ne hai?')
-              : 'Of the ' + tutti.length + ' of this series, how many do you have?') + '</p>' + giaFrase('wz-sopra-carte wz-centro wz-gia-mie')
+          + '<p class="wz-testo wz-sopra-carte wz-centro wz-quante">' + _wzQuanteDomanda(p, tutti.length, nome, ver) + '</p>' + giaFrase('wz-sopra-carte wz-centro wz-gia-mie')
           + '<div class="wz-scelte">'
           + carta('tutte', '🏆', it ? 'Tutte' : 'All', ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
           // v7.130 (Franco: «"Alcune" può sembrare che voglia dire "poche"») - «Una parte»; la chiave resta `alcune`
@@ -60231,9 +60252,13 @@ function _wzDisegna(tieni) {
           // 🔄 v7.157 (Franco: «solo da mobile i tasti "mostra solo pagina destra" e "mostra solo pagina sinistra",
           //    chiamali "Zooma pagina destra" e "Zooma pagina sinistra"») - questa riga sul desktop è spenta (lì i tasti
           //    stanno nella colonna a destra dell'album, `.wz-meta-lato`, e restano come sono)
-          + (giu ? '' : '<span class="wz-album-meta">' + (meta === 'tutte'
-              ? bv('sx', it ? 'Zooma pagina sinistra' : 'Zoom left page') + bv('dx', it ? 'Zooma pagina destra' : 'Zoom right page')
-              : bv('tutte', it ? 'Mostra 2 pagine' : 'Show 2 pages')) + '</span>')
+          // 🔄 v7.278 (Franco: «i tasti "Zoom pagina sinistra" e "Zoom pagina destra" metterli sopra alle rispettive pagine
+          //    e chiamarli entrambi "Zoom pagina" e basta») - a due pagine, una riga sopra l'album divisa a metà
+          //    (`.wz-zoom-riga`): ogni «Zoom pagina» al centro della sua pagina, sul telefono e sul desktop (dove prima
+          //    stavano nella colonna a destra). Ingrandita, «Mostra 2 pagine» resta dov'era.
+          + (giu ? '' : meta === 'tutte'
+              ? '<div class="wz-zoom-riga">' + bv('sx', it ? 'Zoom pagina' : 'Zoom page') + bv('dx', it ? 'Zoom pagina' : 'Zoom page') + '</div>'
+              : '<span class="wz-album-meta">' + bv('tutte', it ? 'Mostra 2 pagine' : 'Show 2 pages') + '</span>')
           + '</div>';
         // 🧪 v7.132 (Franco: «PROVA a tirare su tutto partendo dal fatto che il titolo della pagina lo metti in alto, sulla
         //    linea dei due tasti "Torna indietro" e "Prosegui"») - sul desktop il titolo va fra i due tasti in alto
@@ -60251,19 +60276,22 @@ function _wzDisegna(tieni) {
           // v7.130: i tasti ai lati dell'album; e le due righe (sopra e sotto) stanno nella stessa griglia, nella colonna
           //    dell'album, così «Schermata N di M» parte dal suo bordo sinistro (Franco)
           + '<div class="wz-album-riga">' + nav(false) + pagPrec('wz-pag-lato wz-lato-sx', cmdTutte('wz-comandi-lato'))
-          + '<div id="wz-album" class="wz-album' + (meta === 'sx' ? ' meta' : meta === 'dx' ? ' meta dx' : '') + '"><div class="wz-album-foglio">'
+          // 🆕 v7.278 (Franco: «stiamo usando la spunta verde in entrambi i casi; io vorrei usare la spunta verde nel caso
+          //    "ci sono" e una X rossa nel caso "mancano"») - `wz-manca` quando si toccano le mancanti (index)
+          + '<div id="wz-album" class="wz-album' + (meta === 'sx' ? ' meta' : meta === 'dx' ? ' meta dx' : '') + (c.verso === 'ho' ? '' : ' wz-manca') + '"><div class="wz-album-foglio">'
           + '<img src="' + cloudinaryUrl(P.url, 'w_1600,c_limit,q_auto,f_auto') + '" alt="">'
           + P.r.map(([id, x, y, wd, h]) => {
               const f = perId.get(id) || {};
               return '<button type="button" class="wz-punto' + (c.sel.has(id) ? ' on' : '') + '" style="left:' + x + '%;top:' + y + '%;width:' + wd + '%;height:' + h + '%"'
                 + ' aria-label="' + esc((f.number ? f.number + ' ' : '') + (f.name || '')) + '" onclick="_wzTocca(\'' + p + '\',\'' + id + '\',this)"></button>';
             }).join('')
-          + '</div></div>' + pagSucc('wz-pag-lato wz-lato-dx', '<span class="wz-meta-lato">' + (meta === 'tutte'
-              ? bv('sx', it ? 'Mostra solo pagina sinistra' : 'Show left page only') + bv('dx', it ? 'Mostra solo pagina destra' : 'Show right page only')
-              : bv('tutte', it ? 'Mostra 2 pagine' : 'Show 2 pages')) + '</span>') + nav(true) + '</div>'   // v7.130: fine di `.wz-album-riga`
+          // v7.278 - a due pagine la colonna a destra non ha più lo zoom (è sopra le pagine, `.wz-zoom-riga`)
+          + '</div></div>' + pagSucc('wz-pag-lato wz-lato-dx', meta === 'tutte' ? '' : '<span class="wz-meta-lato">'
+              + bv('tutte', it ? 'Mostra 2 pagine' : 'Show 2 pages') + '</span>') + nav(true) + '</div>'   // v7.130: fine di `.wz-album-riga`
           // le figurine della tipologia che nelle pagine non ci sono (es. una versione «White» delle Holidays)
           + (m.fuori.length ? '<p class="wz-testo">' + (it ? 'Queste non sono sulle pagine dell\'album: toccale qui.' : 'These are not on the album pages: tap them here.') + '</p>'
-            + '<div class="wz-griglia">' + m.fuori.map(id => perId.get(id)).filter(Boolean).map(f =>
+            // v7.278: anche qui la ✕ rossa (`wz-manca`)
+            + '<div class="wz-griglia' + (c.verso === 'ho' ? '' : ' wz-manca') + '">' + m.fuori.map(id => perId.get(id)).filter(Boolean).map(f =>
                 '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
                 + _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, '')
                 + '<div class="wz-num">' + esc(String((f.number || f.lettera) ? _numeroAschermo(f) : '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>' : '');
@@ -70867,11 +70895,13 @@ function _cdRighe() {
   //    in fondo il N. copia (le copie senza numero dopo le altre dello stesso articolo)
   // 🔄 v7.277 (Franco: «in ingresso, la tabella delle copie deve essere così ordinata: Serie-TDA-Versione-Nome/Numero-
   //    N.copia») - la Versione fra TDA e Nome/Numero: prima la base, poi nell'ordine di `VERSIONI_ARTICOLO`
+  // 🔄 v7.278 (Franco: «ti ho dato io la regola sbagliata. la correggo: Serie-TDA-Versione-N.copia (in pratica senza
+  //    "Nome/Numero")») - dopo la Versione il N. copia (senza numero in fondo); l'articolo solo a parità di N. copia
   const verOrd = ch => ch === 'base' ? -1 : (i => i < 0 ? 999 : i)(VERSIONI_ARTICOLO.findIndex(v => v.chiave === ch));
   righe.sort((a, b) => (a.sOrd - b.sOrd) || (a.tOrd - b.tOrd) || a.nomeTipo.localeCompare(b.nomeTipo, 'it')
     || (verOrd(a.versione) - verOrd(b.versione))
-    || (a.numOrd - b.numOrd) || _annNomeArticolo(a.f).localeCompare(_annNomeArticolo(b.f), 'it') || a.f.id.localeCompare(b.f.id)
-    || ((a.c.n ?? 1e9) - (b.c.n ?? 1e9)));
+    || ((a.c.n ?? 1e9) - (b.c.n ?? 1e9))
+    || (a.numOrd - b.numOrd) || _annNomeArticolo(a.f).localeCompare(_annNomeArticolo(b.f), 'it') || a.f.id.localeCompare(b.f.id));
   // v7.267 (Franco: «il filtro "Filtra per serie" della sezione "Copie doppie" deve usare i nomi brevi per le serie; non
   //    gli acronimi») - per le pillole il nome breve; la colonna Serie resta con l'acronimo
   const sBreve = id => { const s = sMap.get(id); return s ? _nomeSerieCard(s, true) : '—'; };
@@ -70887,13 +70917,13 @@ const _CD_COLONNE = [
   { k: 'ncopia', it: 'N. copia', en: 'Copy no.', val: x => x.c.n == null ? '' : x.c.n, centro: true },
   // v7.267 (Franco: «nella tabella ELENCO COPIE manca il campo "Voto"; mettilo prima del campo "Iniziale"»)
   { k: 'voto', it: 'Voto', en: 'Rating', val: x => typeof x.c.qualita === 'number' ? x.c.qualita : '', centro: true },
+  // v7.274 (Franco: «"Figurine mancanti"; Numerico; esponilo anche nelle due viste tabellari delle copie; scrivilo in rosso»)
+  // 🔄 v7.278 (Franco: «la colonna "Figurine mancanti" chiamala "Mancanti" e mettila dopo "Voto"»)
+  { k: 'mancanti', it: 'Mancanti', en: 'Missing', val: x => x.c.mancanti == null ? '' : x.c.mancanti, centro: true },
   { k: 'iniziale', it: 'Iniziale', en: 'Initial', val: x => x.c.iniziale == null ? '' : x.c.iniziale, centro: true },
   // v7.267 (Franco: «"Addizionale" … esposto nelle 2 tabelle delle copie, dopo il campo "Iniziale"»)
   // 🔄 v7.275 (Franco: «la colonna "Addizionale", nelle tabelle … chiamala "Add +"») - solo il titolo della colonna
   { k: 'addizionale', it: 'Add +', en: 'Add +', val: x => x.c.addizionale == null ? '' : x.c.addizionale, centro: true },
-  // v7.274 (Franco: «mi serve un campo nelle Copie; chiamato "Figurine mancanti"; Numerico; esponilo anche nelle due viste
-  //    tabellari delle copie; scrivilo in rosso»)
-  { k: 'mancanti', it: 'Figurine<br>mancanti', en: 'Missing<br>stickers', val: x => x.c.mancanti == null ? '' : x.c.mancanti, centro: true },
   // v7.269 (Franco: «aggiungere la colonna Finale, dopo Addizionale, riportante il valore Finale degli annunci»)
   { k: 'finale', it: 'Finale', en: 'Final', val: x => x.finali.length ? x.finali[0] : '', centro: true },
   { k: 'condizioni', it: 'Condizioni', en: 'Condition', val: x => String(x.c.condizioni || '').trim() },
@@ -70961,10 +70991,11 @@ function _cdInterno() {
       + '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.n == null ? '' : String(x.c.n)) + '</td>'
       // v7.267 - il Voto prima dell'Iniziale (Franco); `data-cd` segna le colonne nate nella v7.267
       + '<td data-cd="voto" style="' + td + 'text-align:center;white-space:nowrap;">' + esc(_copiaQualitaTesto(x.c.qualita)) + '</td>'
+      // v7.274 - le Figurine mancanti, in rosso (Franco)
+      // 🔄 v7.278 (Franco: «la colonna "Figurine mancanti" chiamala "Mancanti" e mettila dopo "Voto"»)
+      + '<td data-cd="mancanti" style="' + td + 'text-align:center;white-space:nowrap;color:var(--danger);font-weight:600;">' + esc(x.c.mancanti == null ? '' : String(x.c.mancanti)) + '</td>'
       + '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.iniziale == null ? '' : (it ? String(x.c.iniziale).replace('.', ',') : String(x.c.iniziale))) + '</td>'
       + '<td data-cd="addizionale" style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.addizionale == null ? '' : (it ? String(x.c.addizionale).replace('.', ',') : String(x.c.addizionale))) + '</td>'   // v7.267
-      // v7.274 - le Figurine mancanti, in rosso (Franco)
-      + '<td data-cd="mancanti" style="' + td + 'text-align:center;white-space:nowrap;color:var(--danger);font-weight:600;">' + esc(x.c.mancanti == null ? '' : String(x.c.mancanti)) + '</td>'
       // v7.269 - il Finale degli annunci della copia; più valori (annunci salvati prima del controllo) in arancio, tutti
       + '<td data-cd="finale" style="' + td + 'text-align:center;white-space:nowrap;' + (x.finali.length > 1 ? 'color:var(--warn);font-weight:600;' : '') + '"'
         + (x.finali.length > 1 ? ' title="' + (it ? 'Gli annunci di questa copia hanno Finali diversi' : 'This copy’s listings have different finals') + '"' : '') + '>'
@@ -71053,14 +71084,16 @@ function _copiaApri(artId, chiave, sola) {
     + '<div id="cp-annunci">' + lab(it ? 'Annunci' : 'Listings')
     + '<table style="border-collapse:collapse;"><tr>' + _copiaCellaAnnunci(artId, chiave) + '</tr></table></div>' + _copieAnnunciDopo()
     + '<div id="cp-stato" style="font-size:0.8rem;min-height:1.2em;margin-top:0.6rem;"></div>'
-    + '<div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.8rem;">'
+    // v7.278 (Franco: «nella pagina della copia, tutti i tasti facciamoli meno alti») - `.cp-comandi` (regola nell'index)
+    + '<div class="cp-comandi" style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.8rem;">'
       // 🆕 v7.267 (Franco: «nelle copie mettimi un tasto di clone; sia in tabella che nella form di dettaglio») - «Clona»
       //    come nella finestra dell'annuncio: arancione, a sinistra, lontano da Salva; solo in modifica
       + (sola ? '' : '<button type="button" class="btn-barra-admin pieno" id="cp-clona" onclick="_copiaClonaQui(\'' + esc(artId) + '\')">&#10697; ' + (it ? 'Clona' : 'Clone') + '</button>')
       // 🆕 v7.277 (Franco: «deve essere possibile cancellare una copia di un articolo») - rosso, accanto a Clona, lontano
       //    da Salva; con annunci collegati non cancella e lo dice (`_copiaCancella`)
-      + (sola ? '' : '<button type="button" class="btn-danger" id="cp-cancella" style="margin-right:auto;" onclick="_copiaCancella(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">🗑️ ' + (it ? 'Cancella copia' : 'Delete copy') + '</button>')
-      + (sola ? '' : '<button type="button" class="btn-secondary" onclick="document.getElementById(\'copia-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+      + (sola ? '' : '<button type="button" class="btn-danger" id="cp-cancella" style="margin-right:auto;" onclick="_copiaCancella(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">🗑️ ' + (it ? 'Cancella' : 'Delete') + '</button>')   // v7.278 (Franco: «Cancella copia diventa Cancella»)
+      // 🗑️ v7.278 (Franco: «Annulla non serve; c'è già la x in alto») - via il tasto Annulla
+      + (sola ? '' : ''
         // 🆕 v7.268 (Franco: «quando le copie sono accedute dalla tabella ELENCO COPIE, non vedo i tasti "Salva e next" e
         //    "Salva e previous"; li metterei») - vestiti come quelli dell'annuncio; spenti ai capi dell'ELENCO (filtri e
         //    ordine di adesso, `_cdVisti`). Salvano e aprono la copia prima o dopo, sempre in modifica.
@@ -71169,6 +71202,11 @@ async function _copiaSalva(artId, chiave, passo) {
   //    non riesce, la copia c'è due volte invece di nessuna.
   const dest = v('cp-articolo') ? v('cp-articolo').value : artId;
   if (!dest) return dire(it ? '⚠️ Scegli l’articolo della copia.' : '⚠️ Choose the item of the copy.');
+  // v7.278 (Franco) - N. copia obbligatorio e unico nell'articolo dove la copia va a stare
+  if (nuova.n === null) return dire(it ? '⚠️ Il N. copia è obbligatorio.' : '⚠️ The copy number is required.');
+  const vicine = dest !== artId ? ((_articoloVivo(dest) || {}).copie || []) : copie.filter((c, j) => j !== i);
+  if (vicine.some(c => c.n === nuova.n))
+    return dire(it ? '⚠️ In questo articolo c’è già una copia col N. ' + nuova.n + '.' : '⚠️ This item already has a copy no. ' + nuova.n + '.');
   let artDest = null, annSposta = [];
   if (dest !== artId) {
     artDest = _articoloVivo(dest);
@@ -71281,7 +71319,11 @@ const _copiaQualitaTesto = q => (q == null || q === '') ? '' : (currentLang === 
 //    mettono in vendita quella copia (`copiaId`), uno per riga, «Sito · Venditore»; il clic apre l'annuncio. La cella nasce
 //    vuota col suo indirizzo (articolo e chiave della copia, `_annChiaveCopia`) e la riempie `_copieAnnunciRiempi`, che
 //    legge gli annunci se non sono ancora stati letti: la scheda si apre senza aspettare la rete.
-const _copiaCellaAnnunci = (artId, chiave, stile) => '<td style="' + (stile || _copieCella) + 'font-size:0.8rem;white-space:nowrap;"'   // v7.277: `stile` = la riga dei campi del tab «Copie», senza linea
+// v7.277: `stile` = la riga dei campi del tab «Copie», senza linea
+// 🔄 v7.278 (Franco: «la colonna "Annunci" stringila usando maggiormente le due righe; tipo che metti sempre 2 soli annunci
+//    per riga») - `due`: nel tab «Copie» la cella prende le due righe della copia (`rowspan`) e la linea sotto; i link due
+//    per riga (`data-ann-due`, `_copieAnnunciRiempi`)
+const _copiaCellaAnnunci = (artId, chiave, stile, due) => '<td' + (due ? ' rowspan="2" data-ann-due' : '') + ' style="' + (due ? _copieCella : (stile || _copieCella)) + 'font-size:0.8rem;white-space:nowrap;"'
   + (artId && chiave ? ' data-ann-art="' + esc(artId) + '" data-ann-chiave="' + esc(chiave) + '"' : '') + '></td>';
 let _annLetti = false;
 async function _copieAnnunciRiempi() {
@@ -71300,10 +71342,13 @@ async function _copieAnnunciRiempi() {
     const qui = _annRighe.map((r, i) => ({ r, i })).filter(x => x.r.articoloId === td.dataset.annArt && x.r.copiaId === td.dataset.annChiave);
     // v7.268 - `data-ann-riga`: i link sulla stessa riga (l'ELENCO COPIE), se no uno per riga (il tab «Copie»)
     const inRiga = td.dataset.annRiga !== undefined;
-    td.innerHTML = qui.length
-      ? qui.map(x => '<a href="#" style="color:var(--info);' + (inRiga ? 'white-space:nowrap;' : 'display:block;') + '" onclick="_annApriFinestra(' + x.i + ');return false;">🔗 '
-          + esc([x.r.sito, x.r.account].filter(Boolean).join(' · ') || (it ? 'annuncio' : 'listing')) + '</a>').join(inRiga ? '&nbsp;&nbsp; ' : '')
-      : '<span style="color:var(--muted);">—</span>';
+    // v7.278 - `data-ann-due`: due link per riga (il tab «Copie», Franco)
+    const due = td.dataset.annDue !== undefined;
+    const link = qui.map(x => '<a href="#" style="color:var(--info);' + (inRiga ? 'white-space:nowrap;' : 'display:block;') + '" onclick="_annApriFinestra(' + x.i + ');return false;">🔗 '
+          + esc([x.r.sito, x.r.account].filter(Boolean).join(' · ') || (it ? 'annuncio' : 'listing')) + '</a>');
+    td.innerHTML = !qui.length ? '<span style="color:var(--muted);">—</span>'
+      : due ? '<div style="display:grid;grid-template-columns:repeat(2,auto);column-gap:0.8rem;row-gap:0.15rem;">' + link.join('') + '</div>'
+      : link.join(inRiga ? '&nbsp;&nbsp; ' : '');
   });
 }
 // chi disegna la tabella torna una stringa, che il chiamante mette in pagina subito dopo: le celle si riempiono al giro dopo
@@ -71314,8 +71359,10 @@ function _copieAnnunciDopo() { setTimeout(() => { _copieAnnunciRiempi(); }, 0); 
 //    linea solo lì. Il tbody tiene insieme le due righe per chi le legge (`_copieRighe`), le toglie (✕), le clona e le
 //    ordina (`_copieOrdinaTab`); i titoli stanno in un `<thead>`. Le colonne della tabella sono 7 in modifica, 6 in lettura.
 const _copieCellaSu = 'padding:4px 6px;vertical-align:top;';
-const _copieCondizioniRiga = (dentro, colonne) => '<tr><td colspan="' + colonne + '" style="' + _copieCella + 'padding-top:0;">'
-  + '<span style="font-size:0.76rem;color:var(--info);font-weight:600;">' + (currentLang === 'it' ? 'Condizioni' : 'Condition') + '</span><br>' + dentro + '</td></tr>';
+// v7.278 - `coda`: una cella vuota con la linea in fondo (la colonna dei tasti, in modifica)
+const _copieCondizioniRiga = (dentro, colonne, coda) => '<tr><td colspan="' + colonne + '" style="' + _copieCella + 'padding-top:0;">'
+  + '<span style="font-size:0.76rem;color:var(--info);font-weight:600;">' + (currentLang === 'it' ? 'Condizioni' : 'Condition') + '</span><br>' + dentro + '</td>'
+  + (coda ? '<td style="' + _copieCella + '"></td>' : '') + '</tr>';
 function _copiaRigaHTML(c, artId, chiave) {
   c = c || {};
   const inp = 'class="form-input" style="padding:0.25rem 0.4rem;font-size:0.85rem;';
@@ -71331,19 +71378,21 @@ function _copiaRigaHTML(c, artId, chiave) {
     + _COPIA_QUALITA.map(q => '<option value="' + q + '"' + (c.qualita === q ? ' selected' : '') + '>' + _copiaQualitaTesto(q) + '</option>').join('')
     // v7.263 - un voto portato da un annuncio fuori dalla scala (sotto il 3) resta scelto, se no si perderebbe al Salva
     + (typeof c.qualita === 'number' && !_COPIA_QUALITA.includes(c.qualita) ? '<option value="' + c.qualita + '" selected>' + _copiaQualitaTesto(c.qualita) + '</option>' : '') + '</select></td>'
+    // 🆕 v7.274 (Franco) - le Figurine mancanti, intere, in rosso
+    // 🔄 v7.278 (Franco: «chiamala "Mancanti" e mettila dopo "Voto"»)
+    + '<td style="' + _copieCella + '"><input type="number" min="0" step="1" data-copia-mancanti value="' + (c.mancanti ?? '') + '" ' + inp + 'width:5rem;color:var(--danger);font-weight:600;"></td>'
     // v7.263 - `step="any"`: l'Iniziale portata da un annuncio può avere i decimali, e non si deve perdere
     + '<td style="' + _copieCella + '"><input type="number" step="any" data-copia-iniziale value="' + (c.iniziale ?? '') + '" ' + inp + 'width:5rem;"></td>'
     // 🆕 v7.267 (Franco) - l'Addizionale, numerico come l'Iniziale
     + '<td style="' + _copieCella + '"><input type="number" step="any" data-copia-addizionale value="' + (c.addizionale ?? '') + '" ' + inp + 'width:5rem;"></td>'
-    // 🆕 v7.274 (Franco) - le Figurine mancanti, intere, in rosso
-    + '<td style="' + _copieCella + '"><input type="number" min="0" step="1" data-copia-mancanti value="' + (c.mancanti ?? '') + '" ' + inp + 'width:5rem;color:var(--danger);font-weight:600;"></td>'
-    + _copiaCellaAnnunci(artId, chiave, _copieCellaSu)   // v7.263
+    + _copiaCellaAnnunci(artId, chiave, _copieCellaSu, true)   // v7.263; v7.278: sulle due righe
     // v7.267 (Franco: «il tasto di clona copia, sia nella tabella delle copie della sezione della admin console, che nella
     //    tabella della form di dettaglio delle copie») - ⧉ prima della ✕: una riga nuova subito sotto (`_copiaClonaRiga`)
     + '<td style="' + _copieCella + 'white-space:nowrap;"><button type="button" class="tbl-btn tbl-btn-edit" style="font-weight:bold;" title="' + (currentLang === 'it' ? 'Clona questa copia' : 'Clone this copy') + '" onclick="_copiaClonaRiga(this)">&#10697;</button> '
     + '<button type="button" class="tbl-btn tbl-btn-delete" title="' + (currentLang === 'it' ? 'Togli questa copia' : 'Remove this copy') + '" onclick="this.closest(\'tbody\').remove()">✕</button></td></tr>'   // v7.277: via tutta la copia, due righe
     // v7.277 - le Condizioni sotto, a tutta larghezza
-    + _copieCondizioniRiga('<textarea data-copia-condizioni rows="2" ' + inp + 'width:100%;box-sizing:border-box;resize:vertical;">' + esc(c.condizioni || '') + '</textarea>', 7)
+    // v7.278: 5 colonne (n., Voto, Mancanti, Iniziale, Add +): gli Annunci occupano già questa riga, e i tasti hanno la loro cella vuota
+    + _copieCondizioniRiga('<textarea data-copia-condizioni rows="2" ' + inp + 'width:100%;box-sizing:border-box;resize:vertical;">' + esc(c.condizioni || '') + '</textarea>', 5, true)
     + '</tbody>';
 }
 // 🆕 v7.267 - l'ordinamento della tabellina del tab «Copie», in modifica e in lettura: si spostano le righe che ci sono
@@ -71380,8 +71429,10 @@ function _copieIntestazione() {
   // v7.267 (Franco: «un campo, sotto "Iniziale", chiamato "Addizionale", sempre numerico; esposto nelle 2 tabelle delle
   //    copie, dopo "Iniziale"»)
   // v7.277 - via la colonna Condizioni (sta sotto ogni copia); il `<thead>` lo apre questa funzione e lo chiude chi la chiama
-  return '<thead><tr>' + t(0, 'n.') + t(1, (it ? 'Voto' : 'Rating')) + t(2, (it ? 'Iniziale' : 'Initial')) + t(3, 'Add +')   // v7.275 (Franco: «chiamala "Add +"»; era «Addizionale»)
-    + t(4, (it ? 'Figurine mancanti' : 'Missing stickers')) + t(5, (it ? 'Annunci' : 'Listings'));   // v7.274: + Figurine mancanti; v7.263; v7.266: «Qualità» → «Voto» (Franco)
+  // 🔄 v7.278 (Franco: «la colonna "Figurine mancanti" chiamala "Mancanti" e mettila dopo "Voto"»)
+  return '<thead><tr>' + t(0, 'n.') + t(1, (it ? 'Voto' : 'Rating')) + t(2, (it ? 'Mancanti' : 'Missing')) + t(3, (it ? 'Iniziale' : 'Initial'))
+    + t(4, 'Add +')   // v7.275 (Franco: «chiamala "Add +"»; era «Addizionale»)
+    + t(5, (it ? 'Annunci' : 'Listings'));   // v7.263; v7.266: «Qualità» → «Voto» (Franco)
 }
 // 🆕 v7.266 (Franco: «nel tab Copie di un articolo, le copie devono essere ordinate per campo "n."») - le copie con la loro
 //    posizione nel dato ([copia, indice]: la chiave di una copia senza id, `#indice`, resta quella), in ordine di n.; senza
@@ -71417,6 +71468,18 @@ function _copiaAggiungi() {
   const t = document.getElementById('fe-copie');
   if (!t) return;
   t.insertAdjacentHTML('beforeend', _copiaRigaHTML({}));
+}
+// 🆕 v7.278 (Franco: «nella copia, il campo "n. copia" deve essere obbligatorio; e in salvataggio non deve essere
+//    possibile salvare se esiste già una copia con lo stesso "n. copia" per quell'articolo») - le copie di UN articolo:
+//    '' se vanno bene, se no il messaggio. Lo usano il Salva della scheda (tab «Copie») e la finestra della copia.
+function _copieNumeriProblema(copie) {
+  const it = currentLang === 'it', lista = Array.isArray(copie) ? copie : [];
+  if (lista.some(c => c.n == null)) return it ? '⚠️ Non salvato: il N. copia è obbligatorio.' : '⚠️ Not saved: the copy number is required.';
+  const visti = new Set(), doppi = new Set();
+  lista.forEach(c => { if (visti.has(c.n)) doppi.add(c.n); visti.add(c.n); });
+  if (doppi.size) return it ? '⚠️ Non salvato: in questo articolo c’è già una copia col N. ' + [...doppi].join(', ') + '.'
+    : '⚠️ Not saved: this item already has a copy no. ' + [...doppi].join(', ') + '.';
+  return '';
 }
 // le righe scritte; quelle tutte vuote non entrano
 function _copieLeggi() {
@@ -71528,12 +71591,14 @@ function _copieLetturaHTML(f) {
       const td = _copieCellaSu + 'font-size:0.85rem;color:var(--text);';   // v7.277: la riga dei campi senza linea
       return '<tbody><tr><td style="' + td + '">' + esc(String(c.n ?? '')) + '</td>'
         // v7.267 - il Voto prima dell'Iniziale (Franco)
-        + '<td style="' + td + '">' + esc(_copiaQualitaTesto(c.qualita)) + '</td><td style="' + td + '">' + esc(String(c.iniziale ?? '')) + '</td>'
+        + '<td style="' + td + '">' + esc(_copiaQualitaTesto(c.qualita)) + '</td>'
+        // v7.274: le Figurine mancanti; 🔄 v7.278 (Franco): «Mancanti», dopo il Voto
+        + '<td style="' + td + 'color:var(--danger);font-weight:600;">' + esc(String(c.mancanti ?? '')) + '</td>'
+        + '<td style="' + td + '">' + esc(String(c.iniziale ?? '')) + '</td>'
         + '<td style="' + td + '">' + esc(String(c.addizionale ?? '')) + '</td>'   // v7.267: l'Addizionale
-        + '<td style="' + td + 'color:var(--danger);font-weight:600;">' + esc(String(c.mancanti ?? '')) + '</td>'   // v7.274: le Figurine mancanti
-        + _copiaCellaAnnunci(f.id, _annChiaveCopia(c, i), _copieCellaSu) + '</tr>'   // v7.263: + Qualità, + Annunci
-        // v7.277 - le Condizioni sotto, a tutta larghezza (Franco)
-        + _copieCondizioniRiga('<span style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;">' + (c.condizioni ? esc(c.condizioni) : '<span style="color:var(--muted);">—</span>') + '</span>', 6)
+        + _copiaCellaAnnunci(f.id, _annChiaveCopia(c, i), _copieCellaSu, true) + '</tr>'   // v7.263: + Annunci; v7.278: sulle due righe
+        // v7.277 - le Condizioni sotto, a tutta larghezza (Franco); v7.278: 5 colonne, gli Annunci stanno accanto
+        + _copieCondizioniRiga('<span style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;">' + (c.condizioni ? esc(c.condizioni) : '<span style="color:var(--muted);">—</span>') + '</span>', 5)
         + '</tbody>'; }).join('')
     + '</table></div></div>' + _copieAnnunciDopo();
 }
@@ -76359,6 +76424,9 @@ async function saveFigFromDetail(figId, opzioni) {
     // 🔄 v7.277 (Franco: «cancellandola, se ci sono annunci associati, la cancellazione non deve avvenire e l'admin deve
     //    essere avvisato che deve prima cancellare gli annunci associati») - una copia tolta con annunci ferma il Salva
     //    (la v7.270 cancellava gli annunci insieme a lei).
+    // 🆕 v7.278 (Franco: «nella copia, il campo "n. copia" deve essere obbligatorio; e in salvataggio non deve essere
+    //    possibile salvare se esiste già una copia con lo stesso "n. copia" per quell'articolo») - anche nel tab «Copie»
+    if (updates.copie) { const prob = _copieNumeriProblema(updates.copie); if (prob) { toast(prob, 'error'); return; } }
     if (updates.copie && (await _copieTolteAnnunci(figId, (_recordInModifica(figId) || {}).copie)) === null) return;
 
     // Gestione immagini. v6.074 - due slot, un trattamento solo: scrivere due volte lo stesso
