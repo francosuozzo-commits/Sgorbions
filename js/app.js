@@ -32095,7 +32095,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.276';
+const JS_VERSION = 'v7.277';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34247,30 +34247,13 @@ function _etichetteVersioniScritteAMano() {
   });
 }
 
-// 🆕 v7.270 (Franco: «le icone sulle linguette admin si vedono davvero poco; proviamo ad aumentarne la visibilità
-//    mettendo la cornice alla icona») - l'icona in testa a ogni linguetta (quello che sta prima del primo spazio, senza
-//    lettere) va in una `<span class="adm-ico">`, che il css incornicia. Si rifà dopo le traduzioni, che riscrivono il
-//    testo delle linguette con `data-i18n`; una linguetta senza icona («Funzioni», «Series») resta com'è.
-function _linguetteIcone() {
-  document.querySelectorAll('.admin-tab').forEach(b => {
-    if (b.querySelector('.adm-ico')) return;
-    const primo = b.firstChild;
-    if (primo && primo.nodeType === 1 && primo.tagName === 'SPAN') { primo.classList.add('adm-ico'); return; }
-    if (!primo || primo.nodeType !== 3) return;
-    const m = /^\s*(\S+)\s+/.exec(primo.nodeValue);
-    if (!m || /[\p{L}\p{N}]/u.test(m[1])) return;
-    const ico = document.createElement('span');
-    ico.className = 'adm-ico';
-    ico.textContent = m[1];
-    primo.nodeValue = ' ' + primo.nodeValue.slice(m[0].length);
-    b.insertBefore(ico, primo);
-  });
-}
+// 🗑️ v7.277 - qui stava `_linguetteIcone` (v7.270): metteva in una cornice l'icona dei tab della CONSOLE. Franco: «togli
+//    la cornice alle icone delle sezioni della admin console; non era lì che le volevo; avevo frainteso» - la cornice
+//    voleva quella delle linguette arancio a lato (v7.276, regola nell'index).
 function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.dataset.i18n);
   });
-  _linguetteIcone();
   document.querySelectorAll('[data-i18n-html]').forEach(el => {
     el.innerHTML = t(el.dataset.i18nHtml);
   });
@@ -44543,6 +44526,10 @@ function _annApriFinestra(i, sola) {
     + '<div class="ann-griglia"><div>'
     + lab(it ? 'Sito' : 'Site')
     + '<select id="ann-sito" class="form-select">' + _FA_SITI.map(s => '<option' + (s.nome === r.sito ? ' selected' : '') + '>' + s.nome + '</option>').join('') + '</select>'
+    // v7.187 (Franco) - il link dell'annuncio sul sito dove è pubblicato
+    // 🔄 v7.277 (Franco: «nella form dell'annuncio, il link con l'annuncio mettiamolo sotto a nome del sito») - era dopo Finale
+    + lab('Link')
+    + '<input id="ann-link" class="form-input" type="url" placeholder="https://…" value="' + esc(r.link || '') + '">'
     + lab(it ? 'Venditore' : 'Seller')
     + '<select id="ann-account" class="form-select"><option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
       + _ANN_ACCOUNT.map(a => '<option' + (a === r.account ? ' selected' : '') + '>' + a + '</option>').join('') + '</select>'
@@ -44582,9 +44569,6 @@ function _annApriFinestra(i, sola) {
     + '<input id="ann-costo" class="form-input" type="number" min="0" step="any" value="' + (r.costo ?? '') + '" style="max-width:10rem;">'
     + lab(it ? 'Finale' : 'Final')
     + '<input id="ann-prezzo" class="form-input" type="number" min="0" step="any" value="' + (r.prezzo ?? '') + '" style="max-width:10rem;">'
-    // v7.187 (Franco) - il link dell'annuncio sul sito dove è pubblicato
-    + lab('Link')
-    + '<input id="ann-link" class="form-input" type="url" placeholder="https://…" value="' + esc(r.link || '') + '">'
     // 🆕 v7.274 (Franco: «sugli annunci mettimi un flag "Da eliminare"; mettilo solo sulla form di dettaglio; non in
     //    lista; ma se il flag è true dalla lista lo devi capire») - la casella sta solo qui; nel dato `daEliminare: true`
     //    (spenta = il campo non si scrive). In tabella la riga si legge in rosso (`_annDisegna`).
@@ -58387,7 +58371,12 @@ function _applicaChiusuraTestata() {
   if (!btn || !heroInner) return;
   const it = (currentLang === 'it');
   // v6.059 - il comando c'e' in entrambe le larghezze; serve solo di essere dentro una sezione.
-  const disponibile = !!currentSection;
+  // 🆕 v7.277 (Franco: «adesso abbiamo, anche se non in tutte le serie, la sezione dei box delle famiglie; quindi
+  //    mettilo anche lì») - ANCHE NELLA PAGINA DELLA SERIE, se la serie ha famiglie: sotto i box delle sezioni ci
+  //    sono quelli delle famiglie, e la testata non è più quasi tutta la pagina. Senza famiglie resta la regola
+  //    della v6.001 (chiusa, lascerebbe uno schermo quasi vuoto). Lo stato aperto/chiuso è lo stesso della sezione.
+  const serieQui = (!currentSection && currentSeriesId) ? getData('series', []).find(x => x.id === currentSeriesId) : null;
+  const disponibile = !!currentSection || !!(serieQui && _famiglieOrdinate(serieQui).length);
   btn.style.display = disponibile ? '' : 'none';
   heroInner.appendChild(btn); // sempre ultimo: i nodi qui sopra vengono spostati
   const chiusa = disponibile && _testataChiusa();
@@ -70762,8 +70751,11 @@ function _cdVista(v) {
   else {
     // 🐛 v7.276 (Franco: «dentro al tab COPIE DOPPIE, quando entro c'è sempre il filtro fatto alla visita precedente») -
     //    i filtri dell'ELENCO COPIE (`_cdFiltro`, v7.265) restavano in memoria fino al ricaricamento della pagina: entrando
-    //    nel tab ripartono vuoti. L'ordine scelto sulle colonne resta.
+    //    nel tab ripartono vuoti.
+    // 🔄 v7.277 (Franco: «in ingresso, la tabella delle copie deve essere così ordinata: Serie-TDA-Versione-Nome/Numero-
+    //    N.copia») - e riparte anche l'ordine: un clic su una colonna fatto la volta prima non vale più entrando.
     _CD_FILTRI.forEach(k => _cdFiltro[k].clear());
+    _cdOrdine = { col: null, su: true };
     renderAdminDoppioni();
   }
 }
@@ -70873,7 +70865,11 @@ function _cdRighe() {
   }); });
   // 🔄 v7.266 (Franco: «le righe della tabella devono essere ordinate come segue: Serie - Tda - Nome/Numero - N. copia») -
   //    in fondo il N. copia (le copie senza numero dopo le altre dello stesso articolo)
+  // 🔄 v7.277 (Franco: «in ingresso, la tabella delle copie deve essere così ordinata: Serie-TDA-Versione-Nome/Numero-
+  //    N.copia») - la Versione fra TDA e Nome/Numero: prima la base, poi nell'ordine di `VERSIONI_ARTICOLO`
+  const verOrd = ch => ch === 'base' ? -1 : (i => i < 0 ? 999 : i)(VERSIONI_ARTICOLO.findIndex(v => v.chiave === ch));
   righe.sort((a, b) => (a.sOrd - b.sOrd) || (a.tOrd - b.tOrd) || a.nomeTipo.localeCompare(b.nomeTipo, 'it')
+    || (verOrd(a.versione) - verOrd(b.versione))
     || (a.numOrd - b.numOrd) || _annNomeArticolo(a.f).localeCompare(_annNomeArticolo(b.f), 'it') || a.f.id.localeCompare(b.f.id)
     || ((a.c.n ?? 1e9) - (b.c.n ?? 1e9)));
   // v7.267 (Franco: «il filtro "Filtra per serie" della sezione "Copie doppie" deve usare i nomi brevi per le serie; non
@@ -71026,8 +71022,12 @@ function _copiaApri(artId, chiave, sola) {
     // 🔄 v7.268 (Franco: «nella form di dettaglio della copia: il numero di copia mettilo in alto a dx») - una riga in testa:
     //    a sinistra l'articolo, a destra il N. copia
     + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">'
-    + '<div style="font-size:0.9rem;color:var(--text);line-height:1.5;">' + esc([x.nomeSerie, x.nomeTipo, x.nomeVer].filter(Boolean).join(' · ')) + '<br>'
-      + '<a href="#" style="color:var(--info);font-weight:600;" onclick="document.getElementById(\'copia-modal\').remove();openFigDetail(\'' + esc(artId) + '\');return false;">' + esc(x.nome || _annNomeArticolo(art)) + '</a></div>'
+    + '<div style="font-size:0.9rem;color:var(--text);line-height:1.5;flex:1;min-width:0;">' + esc([x.nomeSerie, x.nomeTipo, x.nomeVer].filter(Boolean).join(' · ')) + '<br>'
+      + '<a href="#" style="color:var(--info);font-weight:600;" onclick="document.getElementById(\'copia-modal\').remove();openFigDetail(\'' + esc(artId) + '\');return false;">' + esc(x.nome || _annNomeArticolo(art)) + '</a>'
+      // 🆕 v7.277 (Franco: «nella copia, sia in clonazione che in fase di modifica, deve essere possibile cambiare
+      //    l'articolo associato») - in modifica le tendine Serie / TDA / Articolo, già sull'articolo di adesso
+      + (sola ? '' : _cpSceltaArticoloHTML(art))
+      + '</div>'
     + '<div style="flex-shrink:0;">'
     + '<label class="detail-label" style="display:block;margin:0 0 0.25rem;">' + (it ? 'N. copia' : 'Copy no.') + '</label>'
     + '<input id="cp-n" class="form-input" type="number" min="0" step="1" value="' + (c.n ?? '') + '" style="width:6rem;"' + dis + '>'
@@ -71056,7 +71056,10 @@ function _copiaApri(artId, chiave, sola) {
     + '<div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.8rem;">'
       // 🆕 v7.267 (Franco: «nelle copie mettimi un tasto di clone; sia in tabella che nella form di dettaglio») - «Clona»
       //    come nella finestra dell'annuncio: arancione, a sinistra, lontano da Salva; solo in modifica
-      + (sola ? '' : '<button type="button" class="btn-barra-admin pieno" id="cp-clona" style="margin-right:auto;" onclick="_copiaClonaQui(\'' + esc(artId) + '\')">&#10697; ' + (it ? 'Clona' : 'Clone') + '</button>')
+      + (sola ? '' : '<button type="button" class="btn-barra-admin pieno" id="cp-clona" onclick="_copiaClonaQui(\'' + esc(artId) + '\')">&#10697; ' + (it ? 'Clona' : 'Clone') + '</button>')
+      // 🆕 v7.277 (Franco: «deve essere possibile cancellare una copia di un articolo») - rosso, accanto a Clona, lontano
+      //    da Salva; con annunci collegati non cancella e lo dice (`_copiaCancella`)
+      + (sola ? '' : '<button type="button" class="btn-danger" id="cp-cancella" style="margin-right:auto;" onclick="_copiaCancella(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">🗑️ ' + (it ? 'Cancella copia' : 'Delete copy') + '</button>')
       + (sola ? '' : '<button type="button" class="btn-secondary" onclick="document.getElementById(\'copia-modal\').remove()">' + (it ? 'Annulla' : 'Cancel') + '</button>'
         // 🆕 v7.268 (Franco: «quando le copie sono accedute dalla tabella ELENCO COPIE, non vedo i tasti "Salva e next" e
         //    "Salva e previous"; li metterei») - vestiti come quelli dell'annuncio; spenti ai capi dell'ELENCO (filtri e
@@ -71072,6 +71075,50 @@ function _copiaApri(artId, chiave, sola) {
     + '</div></div>';
   document.body.appendChild(ov);
 }
+// 🆕 v7.277 (Franco: «nella copia, sia in clonazione che in fase di modifica, deve essere possibile cambiare l'articolo
+//    associato; in questo momento è possibile impostare l'articolo solo in fase di creazione partendo dall'articolo») -
+//    LE TENDINE DELL'ARTICOLO DELLA COPIA, a cascata come nell'annuncio: la serie rifà le TDA, la TDA rifà gli articoli.
+//    Le TDA senza «famiglia» (una famiglia non ha copie); gli articoli di tutte le versioni (le copie stanno anche sulle
+//    variazioni: l'ELENCO ha la colonna Versione), la versione scritta accanto quando non è la base.
+function _cpOpzioniTipologia(sid, scelto) {
+  const it = currentLang === 'it';
+  if (!sid) return '<option value="">' + (it ? '— scegli prima la serie —' : '— choose the series first —') + '</option>';
+  const ordine = Object.keys(ARTICOLI), posto = k => { const i = ordine.indexOf(k); return i < 0 ? 9999 : i; };
+  const tipi = [...new Set((getData('figurines', []) || []).filter(f => f.seriesId === sid).map(_aggTipoDi))]
+    .sort((a, b) => (posto(a) - posto(b)) || _aggNomeTipo(a).localeCompare(_aggNomeTipo(b), 'it'));
+  return '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+    + tipi.map(k => '<option value="' + esc(k) + '"' + (k === scelto ? ' selected' : '') + '>' + esc(_aggNomeTipo(k)) + '</option>').join('');
+}
+function _cpOpzioniArticolo(sid, tipo, scelto) {
+  const it = currentLang === 'it';
+  if (!sid || !tipo) return '<option value="">' + (it ? '— scegli prima la tipologia —' : '— choose the item type first —') + '</option>';
+  const num = f => String(f.noNumber ? '' : (f.number ?? '')).trim();
+  const art = (getData('figurines', []) || []).filter(f => f.seriesId === sid && _aggTipoDi(f) === tipo)
+    .sort((a, b) => ((parseInt(num(a), 10) || 1e9) - (parseInt(num(b), 10) || 1e9)) || _annNomeArticolo(a).localeCompare(_annNomeArticolo(b), 'it')
+      || ((_chiaveTipo(a) === 'base' ? 0 : 1) - (_chiaveTipo(b) === 'base' ? 0 : 1)));
+  return '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+    + art.map(f => { const ver = _chiaveTipo(f);
+      return '<option value="' + esc(f.id) + '"' + (f.id === scelto ? ' selected' : '') + '>'
+        + esc((_haNumero(f) && num(f) ? num(f) + ' · ' : '') + _annNomeArticolo(f) + (ver !== 'base' ? ' (' + _nomeVersione(ver, currentLang) + ')' : '')) + '</option>'; }).join('');
+}
+function _cpSceltaArticoloHTML(art) {
+  const it = currentLang === 'it', sid = art.seriesId || '', tipo = _aggTipoDi(art);
+  const sel = (id, lab, opz, ch) => '<div style="flex:1;min-width:8rem;"><label class="detail-label" style="display:block;margin:0.5rem 0 0.2rem;">' + lab + '</label>'
+    + '<select id="' + id + '" class="form-select"' + (ch ? ' onchange="' + ch + '"' : '') + '>' + opz + '</select></div>';
+  return '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">'
+    + sel('cp-serie', it ? 'Serie' : 'Series', '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+      + _annSerie().map(s => '<option value="' + esc(s.id) + '"' + (s.id === sid ? ' selected' : '') + '>' + esc(_nomeSerie(s)) + '</option>').join(''), '_cpCambiaSerie(this.value)')
+    + sel('cp-tipo', it ? 'Tipologia di articolo' : 'Item type', _cpOpzioniTipologia(sid, tipo), '_cpCambiaTipo(this.value)')
+    + '</div>'
+    + sel('cp-articolo', it ? 'Articolo' : 'Item', _cpOpzioniArticolo(sid, tipo, art.id), '');
+}
+function _cpCambiaSerie(sid) {
+  document.getElementById('cp-tipo').innerHTML = _cpOpzioniTipologia(sid, null);
+  document.getElementById('cp-articolo').innerHTML = _cpOpzioniArticolo(sid, null, null);
+}
+function _cpCambiaTipo(tipo) {
+  document.getElementById('cp-articolo').innerHTML = _cpOpzioniArticolo(document.getElementById('cp-serie').value, tipo, null);
+}
 // 🆕 v7.267 - LA FINESTRA DIVENTA UNA COPIA NUOVA dello stesso articolo, con dentro quello che c'è scritto (anche non
 //    salvato), come «Clona» dell'annuncio. Il N. copia resta vuoto, lo scrive Franco (v7.268; nella v7.267 era il primo
 //    libero). Gli annunci non vengono dietro: sono della copia di partenza. Salva aggiunge.
@@ -71084,6 +71131,7 @@ function _copiaClonaQui(artId) {
   if (v('cp-n')) v('cp-n').value = '';
   v('cp-annunci')?.remove();
   v('cp-clona')?.remove();
+  v('cp-cancella')?.remove();   // v7.277: un clone non salvato non c'è ancora da cancellare
   ['cp-salva-prev', 'cp-salva-next'].forEach(id => v(id)?.remove());   // v7.268: un clone non ha vicine
   v('cp-salva')?.setAttribute('onclick', '_copiaSalva(\'' + artId + '\',null)');
   const st = v('cp-stato');
@@ -71114,16 +71162,54 @@ async function _copiaSalva(artId, chiave, passo) {
     mancanti: v('cp-mancanti') ? _mlNumero(v('cp-mancanti').value) : (copie[i].mancanti ?? null) });   // v7.274
   if (nuova.n === null && !nuova.condizioni && nuova.iniziale === null && nuova.qualita === null && nuova.addizionale === null && nuova.mancanti === null)
     return dire(it ? '⚠️ Una copia tutta vuota non si salva: per toglierla, usa la ✕ nel tab «Copie» dell’articolo.' : '⚠️ An empty copy cannot be saved.');
-  copie[i] = nuova;
+  // 🆕 v7.277 (Franco: «deve essere possibile cambiare l'articolo associato»; gli annunci: «seguono la copia») - UN ALTRO
+  //    ARTICOLO scelto nelle tendine: la copia (stesso id; una vecchia senza id ne prende uno) esce da questo articolo ed
+  //    entra in fondo alle copie dell'altro; i suoi annunci passano con lei (Articolo, Serie, TDA, copia), dopo una
+  //    finestra che li elenca. Si scrive prima l'articolo che la riceve, poi quello che la perde: se la seconda scrittura
+  //    non riesce, la copia c'è due volte invece di nessuna.
+  const dest = v('cp-articolo') ? v('cp-articolo').value : artId;
+  if (!dest) return dire(it ? '⚠️ Scegli l’articolo della copia.' : '⚠️ Choose the item of the copy.');
+  let artDest = null, annSposta = [];
+  if (dest !== artId) {
+    artDest = _articoloVivo(dest);
+    if (!artDest) return dire(it ? '⚠️ Articolo non trovato: ricarica la pagina.' : '⚠️ Item not found.');
+    if (!nuova.id) nuova.id = _nuovoIdCopia();
+    if (chiave !== null) {
+      const via = await _annunciDelleCopie(artId, [chiave]);
+      if (via === null) return;
+      annSposta = via;
+      if (via.length && !await _finestraConferma({
+        titolo: '🔀 ' + (it ? 'Spostare la copia e i suoi annunci?' : 'Move the copy and its listings?'),
+        testo: it ? 'La copia passa a «' + _annNomeArticolo(artDest) + '», e con lei ' + (via.length === 1 ? 'il suo annuncio' : 'i suoi ' + via.length + ' annunci') + ':'
+          : 'The copy moves to «' + _annNomeArticolo(artDest) + '», with its ' + via.length + ' listing' + (via.length === 1 ? '' : 's') + ':',
+        colonne: it ? ['Sito', 'Venditore', 'Titolo', 'Finale'] : ['Site', 'Seller', 'Title', 'Final'],
+        righe: via.map(r => [r.sito || '', r.account || '', r.titolo || '', _annVuoto(r.prezzo) ? '' : String(r.prezzo).replace('.', it ? ',' : '.')]),
+        ok: it ? 'Sposta' : 'Move', annulla: it ? 'Annulla' : 'Cancel', larghezza: '900px'
+      })) return;
+    }
+  }
+  if (artDest) { if (chiave === null) copie.pop(); else copie.splice(i, 1); }
+  else copie[i] = nuova;
   // v7.268 - durante il salvataggio si spengono tutti i Salva, non solo quello premuto (come nell'annuncio)
   const salvi = ['cp-salva', 'cp-salva-prev', 'cp-salva-next'].map(v).filter(Boolean);
   const accesi = salvi.filter(b => !b.disabled);
   salvi.forEach(b => { b.disabled = true; });
   const vicina = passo && chiave !== null ? _cdVicina(artId, chiave, passo) : null;
   try {
-    await _saveFigurineItem(Object.assign({}, art, { copie }));
+    if (artDest) {
+      await _saveFigurineItem(Object.assign({}, artDest, { copie: (Array.isArray(artDest.copie) ? artDest.copie : []).concat([nuova]) }));
+      if (chiave !== null) await _saveFigurineItem(Object.assign({}, _articoloVivo(artId) || art, { copie }));
+      if (annSposta.length) {
+        const sposta = new Set(annSposta);
+        await _annScrivi(_annRighe.map(r => sposta.has(r)
+          ? Object.assign({}, r, { articoloId: artDest.id, seriesId: artDest.seriesId || null, tipologia: _aggTipoDi(artDest), copiaId: nuova.id }) : r));
+      }
+    } else {
+      await _saveFigurineItem(Object.assign({}, art, { copie }));
+    }
     v('copia-modal')?.remove();
-    toast(it ? '✅ Copia salvata.' : '✅ Copy saved.', 'success');
+    toast(artDest ? (it ? '✅ Copia salvata su «' + _annNomeArticolo(artDest) + '»' + (annSposta.length ? ', con ' + annSposta.length + ' annunci.' : '.') : '✅ Copy saved on «' + _annNomeArticolo(artDest) + '».')
+      : (it ? '✅ Copia salvata.' : '✅ Copy saved.'), 'success');
     _cdDisegna();
     if (vicina) _copiaApri(vicina[0], vicina[1]);
   } catch (e) {
@@ -71195,7 +71281,7 @@ const _copiaQualitaTesto = q => (q == null || q === '') ? '' : (currentLang === 
 //    mettono in vendita quella copia (`copiaId`), uno per riga, «Sito · Venditore»; il clic apre l'annuncio. La cella nasce
 //    vuota col suo indirizzo (articolo e chiave della copia, `_annChiaveCopia`) e la riempie `_copieAnnunciRiempi`, che
 //    legge gli annunci se non sono ancora stati letti: la scheda si apre senza aspettare la rete.
-const _copiaCellaAnnunci = (artId, chiave) => '<td style="' + _copieCella + 'font-size:0.8rem;white-space:nowrap;"'
+const _copiaCellaAnnunci = (artId, chiave, stile) => '<td style="' + (stile || _copieCella) + 'font-size:0.8rem;white-space:nowrap;"'   // v7.277: `stile` = la riga dei campi del tab «Copie», senza linea
   + (artId && chiave ? ' data-ann-art="' + esc(artId) + '" data-ann-chiave="' + esc(chiave) + '"' : '') + '></td>';
 let _annLetti = false;
 async function _copieAnnunciRiempi() {
@@ -71222,16 +71308,24 @@ async function _copieAnnunciRiempi() {
 }
 // chi disegna la tabella torna una stringa, che il chiamante mette in pagina subito dopo: le celle si riempiono al giro dopo
 function _copieAnnunciDopo() { setTimeout(() => { _copieAnnunciRiempi(); }, 0); return ''; }
+// 🔄 v7.277 (Franco: «nella form dell'articolo, nel tab "Copie", il campo "Condizioni" mettilo sotto; non incolonnato, come
+//    gli altri, ma sotto, prima della linea di demarcazione che separa quella copia dalla successiva») - OGNI COPIA È UN
+//    `<tbody data-copia>` DI DUE RIGHE: sopra i campi in colonna (senza linea), sotto le Condizioni a tutta larghezza, e la
+//    linea solo lì. Il tbody tiene insieme le due righe per chi le legge (`_copieRighe`), le toglie (✕), le clona e le
+//    ordina (`_copieOrdinaTab`); i titoli stanno in un `<thead>`. Le colonne della tabella sono 7 in modifica, 6 in lettura.
+const _copieCellaSu = 'padding:4px 6px;vertical-align:top;';
+const _copieCondizioniRiga = (dentro, colonne) => '<tr><td colspan="' + colonne + '" style="' + _copieCella + 'padding-top:0;">'
+  + '<span style="font-size:0.76rem;color:var(--info);font-weight:600;">' + (currentLang === 'it' ? 'Condizioni' : 'Condition') + '</span><br>' + dentro + '</td></tr>';
 function _copiaRigaHTML(c, artId, chiave) {
   c = c || {};
   const inp = 'class="form-input" style="padding:0.25rem 0.4rem;font-size:0.85rem;';
+  const _copieCella = _copieCellaSu;   // v7.277: la riga dei campi senza linea; la linea è sotto le Condizioni
   // 🆕 v7.263 - ogni copia ha un id suo, che resta: l'annuncio punta a lui (`copiaId`), non al numero né alla posizione
   // 🆕 v7.270 - `data-copia-chiave`: la chiave che la copia aveva all'apertura della scheda (id, o `#indice`); serve al Salva
   //    per sapere quali copie sono state tolte (`_copieTolte`). Le righe nuove e i cloni non ce l'hanno.
-  return '<tr data-copia data-copia-id="' + esc(c.id || ('cp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6))) + '"'
-    + (chiave ? ' data-copia-chiave="' + esc(chiave) + '"' : '') + '>'
+  return '<tbody data-copia data-copia-id="' + esc(c.id || ('cp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6))) + '"'
+    + (chiave ? ' data-copia-chiave="' + esc(chiave) + '"' : '') + '><tr>'
     + '<td style="' + _copieCella + '"><input type="number" min="0" step="1" data-copia-n value="' + (c.n ?? '') + '" ' + inp + 'width:4.2rem;"></td>'
-    + '<td style="' + _copieCella + '"><textarea data-copia-condizioni rows="2" ' + inp + 'width:16rem;max-width:100%;resize:vertical;">' + esc(c.condizioni || '') + '</textarea></td>'
     // 🔄 v7.267 (Franco: «il campo "Voto" va prima del campo "Iniziale"») - prima il Voto, poi l'Iniziale
     + '<td style="' + _copieCella + '"><select data-copia-qualita ' + inp + 'width:4.8rem;"><option value="">—</option>'   // v7.263
     + _COPIA_QUALITA.map(q => '<option value="' + q + '"' + (c.qualita === q ? ' selected' : '') + '>' + _copiaQualitaTesto(q) + '</option>').join('')
@@ -71243,11 +71337,14 @@ function _copiaRigaHTML(c, artId, chiave) {
     + '<td style="' + _copieCella + '"><input type="number" step="any" data-copia-addizionale value="' + (c.addizionale ?? '') + '" ' + inp + 'width:5rem;"></td>'
     // 🆕 v7.274 (Franco) - le Figurine mancanti, intere, in rosso
     + '<td style="' + _copieCella + '"><input type="number" min="0" step="1" data-copia-mancanti value="' + (c.mancanti ?? '') + '" ' + inp + 'width:5rem;color:var(--danger);font-weight:600;"></td>'
-    + _copiaCellaAnnunci(artId, chiave)   // v7.263
+    + _copiaCellaAnnunci(artId, chiave, _copieCellaSu)   // v7.263
     // v7.267 (Franco: «il tasto di clona copia, sia nella tabella delle copie della sezione della admin console, che nella
     //    tabella della form di dettaglio delle copie») - ⧉ prima della ✕: una riga nuova subito sotto (`_copiaClonaRiga`)
     + '<td style="' + _copieCella + 'white-space:nowrap;"><button type="button" class="tbl-btn tbl-btn-edit" style="font-weight:bold;" title="' + (currentLang === 'it' ? 'Clona questa copia' : 'Clone this copy') + '" onclick="_copiaClonaRiga(this)">&#10697;</button> '
-    + '<button type="button" class="tbl-btn tbl-btn-delete" title="' + (currentLang === 'it' ? 'Togli questa copia' : 'Remove this copy') + '" onclick="this.closest(\'tr\').remove()">✕</button></td></tr>';
+    + '<button type="button" class="tbl-btn tbl-btn-delete" title="' + (currentLang === 'it' ? 'Togli questa copia' : 'Remove this copy') + '" onclick="this.closest(\'tbody\').remove()">✕</button></td></tr>'   // v7.277: via tutta la copia, due righe
+    // v7.277 - le Condizioni sotto, a tutta larghezza
+    + _copieCondizioniRiga('<textarea data-copia-condizioni rows="2" ' + inp + 'width:100%;box-sizing:border-box;resize:vertical;">' + esc(c.condizioni || '') + '</textarea>', 7)
+    + '</tbody>';
 }
 // 🆕 v7.267 - l'ordinamento della tabellina del tab «Copie», in modifica e in lettura: si spostano le righe che ci sono
 //    (in modifica con quello che c'è scritto, anche non salvato: il «Salva» le legge nell'ordine a schermo). Il valore di
@@ -71257,10 +71354,11 @@ function _copiaRigaHTML(c, artId, chiave) {
 function _copieOrdinaTab(th, k) {
   const tab = th && th.closest('table');
   if (!tab) return;
-  const righe = [...tab.querySelectorAll('tr')].slice(1);
+  // v7.277 - si spostano le copie intere (un tbody, due righe); il valore sta nella prima riga
+  const righe = [...tab.tBodies];
   const su = tab.dataset.ord === k + 'su' ? false : true;
   tab.dataset.ord = k + (su ? 'su' : 'giu');
-  const val = tr => { const td = tr.children[k]; if (!td) return ''; const el = td.querySelector('input, select, textarea'); return String(el ? el.value : td.textContent).trim(); };
+  const val = tb => { const td = tb.rows[0] && tb.rows[0].children[k]; if (!td) return ''; const el = td.querySelector('input, select, textarea'); return String(el ? el.value : td.textContent).trim(); };
   righe.sort((a, b) => {
     const x = val(a), y = val(b);
     if (x === '' || y === '') return (x === '') - (y === '');
@@ -71269,7 +71367,7 @@ function _copieOrdinaTab(th, k) {
     return su ? c : -c;
   });
   righe.forEach(tr => tr.parentNode.appendChild(tr));
-  tab.querySelectorAll('tr:first-child th').forEach((h, j) => { h.textContent = h.textContent.replace(/ [▲▼]$/, '') + (j === k ? (su ? ' ▲' : ' ▼') : ''); });
+  tab.querySelectorAll('thead th').forEach((h, j) => { h.textContent = h.textContent.replace(/ [▲▼]$/, '') + (j === k ? (su ? ' ▲' : ' ▼') : ''); });
 }
 function _copieIntestazione() {
   const it = currentLang === 'it';
@@ -71281,8 +71379,9 @@ function _copieIntestazione() {
   // 🔄 v7.267 (Franco: «nella tabellina della form di dettaglio, il campo "Voto" va prima del campo "Iniziale"»)
   // v7.267 (Franco: «un campo, sotto "Iniziale", chiamato "Addizionale", sempre numerico; esposto nelle 2 tabelle delle
   //    copie, dopo "Iniziale"»)
-  return '<tr>' + t(0, 'n.') + t(1, (it ? 'Condizioni' : 'Condition')) + t(2, (it ? 'Voto' : 'Rating')) + t(3, (it ? 'Iniziale' : 'Initial')) + t(4, 'Add +')   // v7.275 (Franco: «chiamala "Add +"»; era «Addizionale»)
-    + t(5, (it ? 'Figurine mancanti' : 'Missing stickers')) + t(6, (it ? 'Annunci' : 'Listings'));   // v7.274: + Figurine mancanti; v7.263; v7.266: «Qualità» → «Voto» (Franco)
+  // v7.277 - via la colonna Condizioni (sta sotto ogni copia); il `<thead>` lo apre questa funzione e lo chiude chi la chiama
+  return '<thead><tr>' + t(0, 'n.') + t(1, (it ? 'Voto' : 'Rating')) + t(2, (it ? 'Iniziale' : 'Initial')) + t(3, 'Add +')   // v7.275 (Franco: «chiamala "Add +"»; era «Addizionale»)
+    + t(4, (it ? 'Figurine mancanti' : 'Missing stickers')) + t(5, (it ? 'Annunci' : 'Listings'));   // v7.274: + Figurine mancanti; v7.263; v7.266: «Qualità» → «Voto» (Franco)
 }
 // 🆕 v7.266 (Franco: «nel tab Copie di un articolo, le copie devono essere ordinate per campo "n."») - le copie con la loro
 //    posizione nel dato ([copia, indice]: la chiave di una copia senza id, `#indice`, resta quella), in ordine di n.; senza
@@ -71294,7 +71393,7 @@ function _copiePerNumero(f) {
 function _copieEditHTML(f) {
   const it = currentLang === 'it';
   return '<div class="detail-row" style="flex-direction:column;align-items:stretch;gap:0.4rem;"><span class="detail-label">' + (it ? 'Copie' : 'Copies') + '</span>'
-    + '<div style="overflow-x:auto;"><table id="fe-copie" data-fig-id="' + esc(f.id || '') + '" style="border-collapse:collapse;">' + _copieIntestazione() + '<th></th></tr>'
+    + '<div style="overflow-x:auto;"><table id="fe-copie" data-fig-id="' + esc(f.id || '') + '" style="border-collapse:collapse;">' + _copieIntestazione() + '<th></th></tr></thead>'
     + _copiePerNumero(f).map(([c, i]) => _copiaRigaHTML(c, f.id, _annChiaveCopia(c, i))).join('') + '</table></div>'   // v7.266: per n.
     + _copieAnnunciDopo()
     + '<div><button type="button" class="btn-primary btn-admin" style="font-size:0.82rem;padding:0.3rem 0.8rem;" onclick="_copiaAggiungi()">+ ' + (it ? 'Aggiungi copia' : 'Add copy') + '</button></div></div>';
@@ -71303,7 +71402,7 @@ function _copieEditHTML(f) {
 //    un id nuovo (è un'altra copia) e il N. copia vuoto (v7.268; nella v7.267 era il primo libero). Si salva col «Salva»
 //    della scheda, come ogni riga.
 function _copiaClonaRiga(btn) {
-  const tr = btn && btn.closest('tr'), t = document.getElementById('fe-copie');
+  const tr = btn && btn.closest('tbody'), t = document.getElementById('fe-copie');   // v7.277: la copia intera
   if (!tr || !t) return;
   const leggi = sel => tr.querySelector(sel)?.value ?? '';
   const q = parseFloat(leggi('[data-copia-qualita]')), ini = parseFloat(leggi('[data-copia-iniziale]')), add = parseFloat(leggi('[data-copia-addizionale]'));
@@ -71327,7 +71426,7 @@ function _copieLeggi() {
 function _copieRighe() {
   const t = document.getElementById('fe-copie');
   if (!t) return [];
-  return [...t.querySelectorAll('tr[data-copia]')].map(r => ({ tr: r, c: {
+  return [...t.querySelectorAll('tbody[data-copia]')].map(r => ({ tr: r, c: {   // v7.277: una copia = un tbody (`tr` è il suo nome storico)
     id: r.dataset.copiaId || null,   // v7.263
     n: _mlNumero(r.querySelector('[data-copia-n]').value),
     condizioni: String(r.querySelector('[data-copia-condizioni]').value || '').trim(),
@@ -71344,13 +71443,12 @@ function _copieTolte(prima) {
   const tenute = new Set(_copieRighe().map(x => x.tr.dataset.copiaChiave).filter(Boolean));
   return (Array.isArray(prima) ? prima : []).map((c, i) => _annChiaveCopia(c, i)).filter(k => !tenute.has(k));
 }
-// v7.270 - gli annunci delle copie tolte, mostrati in una finestra prima di salvare. Restituisce gli annunci da cancellare
-//    ([] se non ce ne sono), o null se Franco annulla o se gli annunci non si possono leggere: allora non si salva niente,
-//    perché salvare la scheda senza cancellarli lascerebbe annunci attaccati a una copia che non c'è più.
-async function _copieTolteAnnunci(figId, prima) {
-  const it = currentLang === 'it';
-  const tolte = new Set(_copieTolte(prima));
-  if (!tolte.size) return [];
+// 🔄 v7.277 (Franco: «deve essere possibile cancellare una copia di un articolo»; «cancellandola, se ci sono annunci
+//    associati, la cancellazione non deve avvenire e l'admin deve essere avvisato che deve prima cancellare gli annunci
+//    associati») - LA COPIA CON ANNUNCI NON SI CANCELLA. Dalla v7.270 alla v7.276 si cancellava insieme ai suoi annunci,
+//    dopo una finestra di conferma: ora la finestra li elenca e dice di cancellarli prima, e non si salva niente.
+// Gli annunci di queste copie dell'articolo (letti se non lo sono ancora), o null se non si possono leggere.
+async function _annunciDelleCopie(figId, chiavi) {
   if (!_annLetti) {
     try {
       const d = (await fsGetAll('settings')).find(x => x.id === 'annunci');
@@ -71358,25 +71456,65 @@ async function _copieTolteAnnunci(figId, prima) {
       _annRighe.forEach(r => { if (r.sito === 'Subito') r.sito = 'Subito.it'; });   // come `_annCarica`
       _annLetti = true;
     } catch (e) {
-      console.error('_copieTolteAnnunci', e);
-      toast((it ? '⚠️ Non salvato: non riesco a leggere gli annunci delle copie tolte. ' : '⚠️ Not saved: cannot read the listings of the removed copies. ') + (e?.message || e), 'error');
+      console.error('_annunciDelleCopie', e);
+      toast((currentLang === 'it' ? '⚠️ Non cancellata: non riesco a leggere gli annunci. ' : '⚠️ Not deleted: cannot read the listings. ') + (e?.message || e), 'error');
       return null;
     }
   }
-  const via = _annRighe.filter(r => r && r.articoloId === figId && tolte.has(r.copiaId));
-  if (!via.length) return [];
-  const nCopia = k => { const i = (prima || []).findIndex((c, j) => _annChiaveCopia(c, j) === k); return i < 0 ? '' : String(prima[i].n ?? ''); };
-  const ok = await _finestraConferma({
-    titolo: '🗑️ ' + (it ? 'Togliere le copie e i loro annunci?' : 'Remove the copies and their listings?'),
-    testo: it ? 'Hai tolto ' + (tolte.size === 1 ? 'una copia' : tolte.size + ' copie') + ' di questo articolo. Salvando si cancellano anche ' + (via.length === 1 ? 'il suo annuncio' : 'i loro ' + via.length + ' annunci') + ':'
-      : 'You removed ' + tolte.size + ' cop' + (tolte.size === 1 ? 'y' : 'ies') + ' of this item. Saving also deletes ' + via.length + ' listing' + (via.length === 1 ? '' : 's') + ':',
+  const k = new Set(chiavi);
+  return _annRighe.filter(r => r && r.articoloId === figId && k.has(r.copiaId));
+}
+// la finestra che lo dice: solo «Ho capito», l'elenco degli annunci da cancellare prima
+function _copieConAnnunciAvviso(via, nCopia) {
+  const it = currentLang === 'it';
+  return _finestraConferma({
+    titolo: '🚫 ' + (it ? 'Copia con annunci: non si cancella' : 'Copy with listings: not deleted'),
+    testo: it ? 'Prima cancella ' + (via.length === 1 ? 'l’annuncio collegato' : 'i ' + via.length + ' annunci collegati') + ' (pagina Annunci), poi cancella la copia:'
+      : 'First delete the ' + via.length + ' linked listing' + (via.length === 1 ? '' : 's') + ' (Listings page), then delete the copy:',
     colonne: it ? ['N. copia', 'Sito', 'Venditore', 'Titolo', 'Finale'] : ['Copy no.', 'Site', 'Seller', 'Title', 'Final'],
     righe: via.map(r => [nCopia(r.copiaId) || '—', r.sito || '', r.account || '', r.titolo || '', _annVuoto(r.prezzo) ? '' : String(r.prezzo).replace('.', it ? ',' : '.')]),
-    coda: it ? 'Annulla: la scheda resta aperta e non si salva niente.' : 'Cancel: the item stays open and nothing is saved.',
-    ok: it ? 'Salva e cancella gli annunci' : 'Save and delete the listings', annulla: it ? 'Annulla' : 'Cancel',
-    larghezza: '900px'
+    coda: it ? 'Non è stato cancellato né salvato niente.' : 'Nothing was deleted or saved.',
+    ok: it ? 'Ho capito' : 'OK', soloOk: true, larghezza: '900px'
   });
-  return ok ? via : null;
+}
+// v7.270 - le copie tolte dal tab «Copie» della scheda (✕ o riga svuotata), al Salva. [] = si può salvare; null = no:
+//    una copia tolta ha annunci (v7.277: avviso, e la scheda resta aperta), o gli annunci non si possono leggere.
+async function _copieTolteAnnunci(figId, prima) {
+  const tolte = _copieTolte(prima);
+  if (!tolte.length) return [];
+  const via = await _annunciDelleCopie(figId, tolte);
+  if (via === null) return null;
+  if (!via.length) return [];
+  const nCopia = k => { const i = (prima || []).findIndex((c, j) => _annChiaveCopia(c, j) === k); return i < 0 ? '' : String(prima[i].n ?? ''); };
+  await _copieConAnnunciAvviso(via, nCopia);
+  return null;
+}
+// 🆕 v7.277 - «🗑️ Cancella copia» nella finestra della copia: con annunci l'avviso e basta; senza, conferma e poi l'articolo
+//    si riscrive senza di lei
+async function _copiaCancella(artId, chiave) {
+  const it = currentLang === 'it';
+  const art = _articoloVivo(artId);
+  const copie = (art && Array.isArray(art.copie)) ? art.copie : [];
+  const i = copie.findIndex((c, j) => _annChiaveCopia(c, j) === chiave);
+  if (!art || i < 0) { toast(it ? '⚠️ Copia non trovata: ricarica la pagina.' : '⚠️ Copy not found.', 'error'); return; }
+  const via = await _annunciDelleCopie(artId, [chiave]);
+  if (via === null) return;
+  const n = String(copie[i].n ?? '');
+  if (via.length) { await _copieConAnnunciAvviso(via, () => n); return; }
+  if (!await _finestraConferma({
+    titolo: '🗑️ ' + (it ? 'Cancellare la copia' + (n ? ' n. ' + n : '') + '?' : 'Delete copy' + (n ? ' no. ' + n : '') + '?'),
+    testo: it ? 'La copia esce dall’articolo «' + _annNomeArticolo(art) + '». Non ha annunci collegati.' : 'The copy is removed from the item «' + _annNomeArticolo(art) + '». It has no linked listings.',
+    ok: it ? 'Cancella' : 'Delete', annulla: it ? 'Annulla' : 'Cancel'
+  })) return;
+  try {
+    await _saveFigurineItem(Object.assign({}, art, { copie: copie.filter((c, j) => j !== i) }));
+    document.getElementById('copia-modal')?.remove();
+    toast(it ? '🗑️ Copia cancellata.' : '🗑️ Copy deleted.', 'success');
+    _cdDisegna();
+  } catch (e) {
+    console.error('_copiaCancella', e);
+    toast((it ? '⚠️ NON cancellata: ' : '⚠️ NOT deleted: ') + (e?.message || e), 'error');
+  }
 }
 function _copieLetturaHTML(f) {
   const it = currentLang === 'it';
@@ -71385,14 +71523,18 @@ function _copieLetturaHTML(f) {
   if (!copie.length) return '<div class="detail-row">' + lab + '<span class="detail-value"><span style="color:var(--muted);font-style:italic;">' + (it ? 'nessuna' : 'none') + '</span></span></div>';
   const td = _copieCella + 'font-size:0.85rem;color:var(--text);';
   return '<div class="detail-row" style="flex-direction:column;align-items:stretch;gap:0.4rem;">' + lab
-    + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' + _copieIntestazione() + '</tr>'
+    + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' + _copieIntestazione() + '</tr></thead>'
     + _copiePerNumero(f).map(([c, i]) => {   // v7.266: per n.
-      return '<tr><td style="' + td + '">' + esc(String(c.n ?? '')) + '</td>'
+      const td = _copieCellaSu + 'font-size:0.85rem;color:var(--text);';   // v7.277: la riga dei campi senza linea
+      return '<tbody><tr><td style="' + td + '">' + esc(String(c.n ?? '')) + '</td>'
         // v7.267 - il Voto prima dell'Iniziale (Franco)
-        + '<td style="' + td + 'white-space:pre-wrap;">' + esc(c.condizioni || '') + '</td><td style="' + td + '">' + esc(_copiaQualitaTesto(c.qualita)) + '</td><td style="' + td + '">' + esc(String(c.iniziale ?? '')) + '</td>'
+        + '<td style="' + td + '">' + esc(_copiaQualitaTesto(c.qualita)) + '</td><td style="' + td + '">' + esc(String(c.iniziale ?? '')) + '</td>'
         + '<td style="' + td + '">' + esc(String(c.addizionale ?? '')) + '</td>'   // v7.267: l'Addizionale
         + '<td style="' + td + 'color:var(--danger);font-weight:600;">' + esc(String(c.mancanti ?? '')) + '</td>'   // v7.274: le Figurine mancanti
-        + _copiaCellaAnnunci(f.id, _annChiaveCopia(c, i)) + '</tr>'; }).join('')   // v7.263: + Qualità, + Annunci
+        + _copiaCellaAnnunci(f.id, _annChiaveCopia(c, i), _copieCellaSu) + '</tr>'   // v7.263: + Qualità, + Annunci
+        // v7.277 - le Condizioni sotto, a tutta larghezza (Franco)
+        + _copieCondizioniRiga('<span style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;">' + (c.condizioni ? esc(c.condizioni) : '<span style="color:var(--muted);">—</span>') + '</span>', 6)
+        + '</tbody>'; }).join('')
     + '</table></div></div>' + _copieAnnunciDopo();
 }
 // e lo stesso tab in lettura (solo admin)
@@ -76213,14 +76355,11 @@ async function saveFigFromDetail(figId, opzioni) {
       ? (!updates.retroId && !!document.getElementById('fe-retro-bianco')?.checked)
       : false;
 
-    // 🆕 v7.270 (Franco: «cancellando una copia devono cancellarsi tutti i suoi annunci, ovviamente previa notifica con
-    //    form di anteprima») - PRIMA delle foto, che si caricherebbero per niente: se ci sono copie tolte con annunci, la
-    //    finestra li elenca; annullata, non si salva niente. Si cancellano dopo che l'articolo è scritto (sotto).
-    let _annunciDaTogliere = [];
-    if (updates.copie) {
-      _annunciDaTogliere = await _copieTolteAnnunci(figId, (_recordInModifica(figId) || {}).copie);
-      if (_annunciDaTogliere === null) return;
-    }
+    // 🆕 v7.270 - PRIMA delle foto, che si caricherebbero per niente: le copie tolte si controllano.
+    // 🔄 v7.277 (Franco: «cancellandola, se ci sono annunci associati, la cancellazione non deve avvenire e l'admin deve
+    //    essere avvisato che deve prima cancellare gli annunci associati») - una copia tolta con annunci ferma il Salva
+    //    (la v7.270 cancellava gli annunci insieme a lei).
+    if (updates.copie && (await _copieTolteAnnunci(figId, (_recordInModifica(figId) || {}).copie)) === null) return;
 
     // Gestione immagini. v6.074 - due slot, un trattamento solo: scrivere due volte lo stesso
     // blocco significa che fra sei mesi uno dei due avra' una correzione che l'altro non ha.
@@ -76331,18 +76470,8 @@ async function saveFigFromDetail(figId, opzioni) {
       const idx = _cache.figurines.findIndex(x => x.id === figId);
       if (idx >= 0) _cache.figurines[idx] = merged;
     }
-    // v7.270 - gli annunci delle copie tolte, adesso che l'articolo è scritto. Se questa scrittura non riesce lo dice il
-    //    suo messaggio: l'articolo resta salvato, e gli annunci si tolgono a mano dalla pagina Annunci.
-    if (_annunciDaTogliere.length) {
-      const via = new Set(_annunciDaTogliere);
-      try {
-        await _annScrivi(_annRighe.filter(r => !via.has(r)));
-        toast(currentLang === 'it' ? '🗑️ Cancellati ' + via.size + ' annunci delle copie tolte.' : '🗑️ Deleted ' + via.size + ' listings of the removed copies.', 'success');
-      } catch (e) {
-        console.error('saveFigFromDetail annunci', e);
-        toast((currentLang === 'it' ? '⚠️ Articolo salvato, ma gli annunci delle copie tolte NON sono stati cancellati: ' : '⚠️ Item saved, but the listings of the removed copies were NOT deleted: ') + (e?.message || e), 'error');
-      }
-    }
+    // 🗑️ v7.277 - qui la v7.270 cancellava gli annunci delle copie tolte. Ora una copia con annunci non si toglie (vedi
+    //    `_copieTolteAnnunci`), quindi non c'è più niente da cancellare.
     // v6.053 - i collegati seguono la base
     // v6.116 - o si scrive tutto o non si scrive niente: se la scrittura fallisce si esce sopra,
     // quindi arrivati qui i collegati sono scritti tutti. Prima un figlio poteva fallire da solo e
