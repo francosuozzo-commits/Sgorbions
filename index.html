@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.277">
+<link rel="stylesheet" href="css/style.css?v=7.278">
 
 
 <style>
@@ -652,6 +652,18 @@
   .wz-popup-coppia img:first-child { left: 2px; top: 6px; transform: rotate(-8deg); }
   .wz-popup-coppia img:nth-child(2) { left: 26px; top: 2px; transform: rotate(7deg); }
   .wz-popup-coppia.una img:first-child { left: 15px; top: 5px; transform: none; }
+  /* 🆕 v7.278 (Franco: «nel caso dei Retro … invece che affiancarli l'uno all'altro, mettili uno sopra all'altro; sempre
+     in modo che si veda parte di ognuno dei 2») - i retro sono orizzontali: foto stese, la seconda sotto e a destra */
+  .wz-popup-coppia.orizz img { width: 72px; height: 50px; }
+  .wz-popup-coppia.orizz img:first-child { left: 2px; top: 2px; transform: rotate(-5deg); }
+  .wz-popup-coppia.orizz img:nth-child(2) { left: 10px; top: 28px; transform: rotate(4deg); }
+  .wz-popup-coppia.orizz.una img:first-child { left: 6px; top: 16px; transform: none; }
+  /* 🆕 v7.278 (Franco: «nella form che inizia con "Prima di procedere, una conferma", i due tasti "Modifica" e "Conferma"
+     devono essere alti e larghi uguale») - nei popup del Questionario i tasti della riga in fondo dividono la riga in
+     parti uguali, con la stessa scritta e lo stesso spazio intorno (vale anche per il Riepilogo, che ha la stessa coppia) */
+  .wz-popup-comandi { align-items: stretch; }
+  .wz-popup-comandi > button { flex: 1 1 0; min-width: 0; font-size: 1.05rem; padding: 0.7rem 1rem; box-sizing: border-box;
+    display: inline-flex; align-items: center; justify-content: center; text-align: center; }
   .wz-popup-lista li:has(.wz-popup-coppia) .wz-popup-foto { display: none; }
   /* 🆕 v7.099 (Franco, fra tre proposte: «proviamo con la C») - I PULSANTI SECONDARI DEL QUESTIONARIO bianchi con la
    scritta viola: «Vai indietro», «Tocca tutte», «Nessuna», le pagine dell'album, «2 pagine / Sinistra / Destra»,
@@ -974,6 +986,24 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
 .wz-punto.on::after { content: "✓"; position: absolute; top: 4%; left: 6%; width: 1.5em; height: 1.5em; display: flex; align-items: center; justify-content: center;
   font: 700 clamp(14px, 3vw, 24px)/1 sans-serif; color: #fff; background: #16a34a; border-radius: 999px; }
 .wz-punto:focus-visible { outline: 3px solid #ffd84d; outline-offset: -3px; }
+/* 🆕 v7.278 (Franco: «la spunta verde nel caso "ci sono" e una X rossa nel caso "mancano"») - quando si toccano le
+   mancanti (`.wz-manca` sull'album e sulla griglia delle figurine fuori dalle pagine) il velo, il bordo e il segno sono
+   rossi, e il segno è una ✕ */
+.wz-album.wz-manca .wz-punto.on { background: rgba(220,38,38,0.3); outline-color: #dc2626; }
+.wz-album.wz-manca .wz-punto.on::after { content: "✕"; background: #dc2626; }
+#wz-overlay .wz-griglia.wz-manca .wz-tile.on { background: rgba(220,38,38,0.25); box-shadow: 0 0 0 2px #dc2626; border-color: #dc2626; }
+.wz-griglia.wz-manca .wz-tile.on::after { content: '✕'; color: #dc2626; }
+/* 🆕 v7.278 (Franco: «nella pagina della copia, tutti i tasti facciamoli tutti meno alti; non è necessario tutto quello
+   spazio sopra e sotto alle icone e testo») - i tasti in fondo alla finestra della copia: poco spazio sopra e sotto */
+#copia-modal .cp-comandi button { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; min-height: 0 !important; height: auto !important; line-height: 1.25; }
+/* 🆕 v7.278 (Franco: «i tasti "Zoom pagina" sopra alle rispettive pagine») - la riga sopra l'album divisa a metà, ogni
+   tasto al centro della sua pagina; gialli come lo zoom di prima */
+.wz-zoom-riga { display: grid; grid-template-columns: 1fr 1fr; flex-basis: 100%; width: 100%; justify-items: center; align-items: end; }
+#wz-overlay .wz-zoom-riga .btn-secondary { background: #ffd84d !important; color: #1a1a1a !important; border-color: #ffd84d !important; }
+#wz-overlay .wz-zoom-riga .btn-secondary:hover { background: #ffe680 !important; }
+@media (min-width: 861px) {
+  .wz-album-riga > .wz-album-nav .wz-zoom-riga { grid-column: 1 / -1; grid-row: 2; margin-top: 0.4rem; }
+}
 /* 🔄 v7.132 (Franco: «la selezione del box interessato non è poi così marcata e visibile; potremmo colorare maggiormente
    lo sfondo dei box selezionati? sempre di verde ma più intenso») - le carte delle risposte e le miniature toccate: il
    verde del foglio (`rgba(181,255,46,…)`, 0,12 e 0,14) sale a 0,32, e un anello dello stesso verde attorno al bordo.
@@ -5132,7 +5162,7 @@ di tutte le serie</button>
     <div style="display:flex;gap:0.6rem;justify-content:space-between;align-items:center;margin-top:1rem;">
       <button class="btn-danger" id="tipo-prodotto-elimina" style="display:none;" onclick="eliminaTipoProdotto()">Elimina</button>
       <div style="display:flex;gap:0.6rem;margin-left:auto;">
-        <button class="btn-secondary btn-admin-ghost" onclick="closeModal('add-tipo-prodotto-modal')">Annulla</button>
+        <!-- 🗑️ v7.278 (Franco: «dove abbiamo "Annulla" se c'è anche la "x" lasciamo solamente la "x"») - via «Annulla» -->
         <button class="btn-primary" onclick="salvaTipoProdotto()">Salva</button>
       </div>
     </div>
@@ -5152,7 +5182,7 @@ di tutte le serie</button>
       <input class="form-input" id="personaggio-crea" placeholder="es. LIVIO BIVIO" onkeydown="if(event.key==='Enter')_creaPersonaggio()">
     </div>
     <div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:1rem;">
-      <button class="btn-secondary btn-admin-ghost" onclick="closeModal('add-personaggio-modal')">Annulla</button>
+      <!-- 🗑️ v7.278 (Franco) - via «Annulla»: c'è la ✕ -->
       <button class="btn-primary" onclick="_creaPersonaggio()">Salva</button>
     </div>
   </div>
@@ -6693,7 +6723,7 @@ di tutte le serie</button>
     </div>
     <div style="display:flex;gap:0.6rem;">
       <button class="btn-primary btn-azione-admin" style="flex:1;" onclick="fotoSceltaConferma()">Applica foto</button>
-      <button class="btn-secondary btn-admin-ghost" style="flex:1;" onclick="fotoSceltaAnnulla()">Annulla</button>
+      <!-- 🗑️ v7.278 (Franco) - via «Annulla»: c'è la ✕, che fa la stessa cosa (`fotoSceltaAnnulla`) -->
     </div>
   </div>
 </div>
@@ -6939,7 +6969,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.277"></script>
+<script src="js/app.js?v=7.278"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6963,7 +6993,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.277'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.278'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
