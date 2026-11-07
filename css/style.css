@@ -1695,14 +1695,8 @@ body {
   cursor: pointer; transition: all 0.2s; white-space: nowrap;
 }
 .admin-tab.active { background: var(--action-admin); border-color: var(--action-admin); color: #ffffff; font-weight: 700; }
-/* 🆕 v7.270 (Franco: «le icone sulle linguette admin si vedono davvero poco; … mettendo la cornice alla icona») -
-   la span la mette `_linguetteIcone` (app.js). Cornice arancio admin su fondo chiaro; sulla linguetta accesa, bianca. */
-.admin-tab .adm-ico {
-  display: inline-flex; align-items: center; justify-content: center; min-width: 1.6em; line-height: 1.35;
-  padding: 0.05rem 0.2rem; margin-right: 0.2rem; border-radius: 6px;
-  border: 1.5px solid var(--action-admin); background: rgba(255,255,255,0.14);
-}
-.admin-tab.active .adm-ico { border-color: #ffffff; background: rgba(255,255,255,0.28); }
+/* 🗑️ v7.277 - qui stava la cornice delle icone dei tab della console (v7.270, `.adm-ico`): tolta (Franco: «non era lì
+   che le volevo; avevo frainteso»). La cornice sta sulle linguette arancio a lato (v7.276, index). */
 .admin-section { display: none; }
 .admin-section.active { display: block; }
 
