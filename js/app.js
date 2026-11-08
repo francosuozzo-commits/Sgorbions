@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.289';
+const JS_VERSION = 'v7.290';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -44809,7 +44809,8 @@ function _faAlbum() {
     const items = s.items || [], posto = new Map(items.map((f, i) => [f.id, i]));
     const capo = f => posto.get(posto.has(f.baseFigurineId) ? f.baseFigurineId : f.id);
     items.slice().sort((a, b) => (capo(a) - capo(b)) || (!!a.baseFigurineId - !!b.baseFigurineId)).forEach(f => {
-      if (f.section !== 'albums') return;
+      // 🔄 v7.290 (Franco: «devono si essere mostrate tutti gli articoli, ma solo quello con il campo Ebay a true»)
+      if (f.section !== 'albums' || !f.forSale) return;
       const base = f.baseFigurineId ? perId.get(f.baseFigurineId) : null;
       let fonte = f;
       const visti = new Set();
