@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.290';
+const JS_VERSION = 'v7.291';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45074,7 +45074,8 @@ function _faDisegnaScelte() {
   const albumBox = _fa$('scelta-album'); albumBox.innerHTML = '';
   _faAlbum().forEach(a => {
     const b = d.createElement('button');
-    b.textContent = a.nome + ' — ' + (a.senzaFoto ? 'senza pagine sul sito' : a.pagine.length + ' pag.');
+    // 🔄 v7.291 (Franco: «se l'articolo non ha pagine sul sito, non scriverlo nel nome; tanto lo capisco dal radio button successivo»)
+    b.textContent = a.nome + (a.senzaFoto ? '' : ' — ' + a.pagine.length + ' pag.');
     // 🔄 v7.287 - si riconosce dall'id: ora due voci possono avere lo stesso nome
     if (_fa.album && a.id === _fa.album.id) b.className = 'on';
     // cambiando album le foto caricate si buttano: erano di un altro album
