@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.279';
+const JS_VERSION = 'v7.280';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -71042,9 +71042,9 @@ const _COPIA_ALBUM = [
   { k: 'centrate', riga: 4, it: 'Figurine centrate', en: 'Centered stickers', tipo: 'tendina', valori: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], dopo: '%' },
   // v7.279 (Franco: «Aggiungi un campo Qualità pagina»; «sulla riga dei campi "Nome in copertina" e "Figurine centrate"») - i valori sono parole
   { k: 'qualitaPagina', riga: 4, it: 'Qualità pagina', en: 'Page quality', tipo: 'parole', valori: ['Bassa', 'Media', 'Medio alta', 'Alta'] },
-  { k: 'scotchTutta', riga: 5, it: 'Pagine con scotch<br>tutta pagina', en: 'Pages with<br>full-page tape', tipo: 'numero', semaforo: 'zero' },
-  { k: 'scotchMezza', riga: 5, it: 'Pagine con scotch<br>mezza pagina', en: 'Pages with<br>half-page tape', tipo: 'numero', semaforo: 'zero' },
-  { k: 'scotchPiccoli', riga: 5, it: 'Pagine con scotch<br>piccoli', en: 'Pages with<br>small tape', tipo: 'numero', semaforo: 'zero' },
+  { k: 'scotchTutta', riga: 5, it: 'Pagine con scotch<br>tutta pagina', en: 'Pages with<br>full-page tape', tipo: 'tendina', valori: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], semaforo: 'zero' },
+  { k: 'scotchMezza', riga: 5, it: 'Pagine con scotch<br>mezza pagina', en: 'Pages with<br>half-page tape', tipo: 'tendina', valori: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], semaforo: 'zero' },
+  { k: 'scotchPiccoli', riga: 5, it: 'Pagine con scotch<br>piccoli', en: 'Pages with<br>small tape', tipo: 'tendina', valori: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], semaforo: 'zero' },
   // v7.279 (Franco: «il campo Copertina rinominalo in Qualità copertina; i valori possibili sono delle %»)
   { k: 'copertina', riga: 6, it: 'Qualità copertina', en: 'Cover quality', tipo: 'tendina', valori: [50, 60, 70, 80, 90, 100], dopo: '%' },
   { k: 'tabelloneScritto', riga: 6, it: 'Tabellone finale scritto', en: 'Final board filled in', tipo: 'sino', semaforo: 'sino' },
@@ -71053,10 +71053,10 @@ function _copiaAlbumHTML(c, dis, visibile) {
   const it = currentLang === 'it';
   const campo = d => {
     const id = 'cp-al-' + d.k, v = c[d.k];
-    const voci = d.tipo === 'sino' ? [[true, it ? 'Sì' : 'Yes'], [false, 'No']] : (d.valori || []).map(x => [x, x + (d.dopo || '')]);
-    const dentro = d.tipo === 'numero'
-      ? '<input id="' + id + '" class="form-input" type="number" min="0" step="1" value="' + (v ?? '') + '"' + dis + '>'
-      : '<select id="' + id + '" class="form-select"' + dis + '><option value="">—</option>'
+    // 🔄 v7.280 (Franco: «i 3 campi pagina con scotch, rendili a tendina»; «con valori da 0 a 10») - un valore già salvato fuori scala resta scelto, se no si perderebbe al Salva
+    const valori = d.valori && v != null && !d.valori.includes(v) ? d.valori.concat([v]) : (d.valori || []);
+    const voci = d.tipo === 'sino' ? [[true, it ? 'Sì' : 'Yes'], [false, 'No']] : valori.map(x => [x, x + (d.dopo || '')]);
+    const dentro = '<select id="' + id + '" class="form-select"' + dis + '><option value="">—</option>'
         + voci.map(([val, testo]) => '<option value="' + val + '"' + (v === val ? ' selected' : '') + '>' + testo + '</option>').join('') + '</select>';
     return '<div style="flex:1;min-width:7rem;"><label class="detail-label" style="display:block;margin:0.7rem 0 0.25rem;">' + (it ? d.it : d.en) + '</label>' + dentro + '</div>';
   };
@@ -71110,7 +71110,7 @@ function _copiaAlbumLeggi(nuova) {
     const el = document.getElementById('cp-al-' + d.k);
     if (!el) return;
     const t = el.value;
-    const val = t === '' ? null : d.tipo === 'sino' ? t === 'true' : d.tipo === 'tendina' ? Number(t) : d.tipo === 'parole' ? t : _mlNumero(t);
+    const val = t === '' ? null : d.tipo === 'sino' ? t === 'true' : d.tipo === 'parole' ? t : Number(t);
     if (val === null) { delete nuova[d.k]; vuoti.push((currentLang === 'it' ? d.it : d.en).replace('<br>', ' ')); } else nuova[d.k] = val;
   });
   return vuoti;
