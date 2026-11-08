@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.286';
+const JS_VERSION = 'v7.287';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -44795,21 +44795,29 @@ async function _annElimina(i) {
     toast((it ? '⚠️ NON eliminato: ' : '⚠️ NOT deleted: ') + (e?.message || e), 'error');
   }
 }
-// Gli album che hanno le pagine. Due album con le stesse foto (l'Omaggio e il L. 1000 della serie 3) sono uno solo.
+// Gli album che hanno le pagine.
+// 🔄 v7.287 (Franco: «alla domanda n.1 mi viene proposta solo una versione per ogni album»; «fai comparire anche le altre
+//    versioni») - anche le versioni senza pagine sue, con le pagine e le caselle del tab Ebay della partenza (`baseFigurineId`),
+//    subito dopo di lei. Via l'unione degli album con le stesse foto (l'Omaggio e il L. 1000 della serie 3 erano uno solo).
 function _faAlbum() {
-  const visti = new Set(), out = [];
-  getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999)).forEach(s => {
-    (s.items || []).forEach(f => {
-      if (f.section !== 'albums' || !Array.isArray(f.pagine) || f.pagine.length < 3) return;
-      const pag = _pagineDi(f), pagine = pag.map(p => p.url);
-      const chiave = pagine.join(' ');
-      if (pagine.length < 3 || visti.has(chiave)) return;
-      visti.add(chiave);
-      const nome = s.name + ' — ' + (f.name || '');
+  const out = [], perId = new Map();
+  const serie = getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  serie.forEach(s => (s.items || []).forEach(f => perId.set(f.id, f)));
+  serie.forEach(s => {
+    const items = s.items || [], posto = new Map(items.map((f, i) => [f.id, i]));
+    const capo = f => posto.get(posto.has(f.baseFigurineId) ? f.baseFigurineId : f.id);
+    items.slice().sort((a, b) => (capo(a) - capo(b)) || (!!a.baseFigurineId - !!b.baseFigurineId)).forEach(f => {
+      if (f.section !== 'albums') return;
+      const base = f.baseFigurineId ? perId.get(f.baseFigurineId) : null;
+      const fonte = _pagineDi(f).length >= 3 ? f : base;
+      const pagine = _pagineDi(fonte).map(p => p.url);
+      if (pagine.length < 3) return;
+      // una versione col nome uguale alla sua partenza si distingue dal nome della versione
+      const nome = s.name + ' — ' + (f.name || '') + (base && f.name === base.name ? ' (' + _nomeVersione(_chiaveTipo(f), 'it') + ')' : '');
       // v7.184: `piani` = le caselle del tab Ebay dell'album (`fotoAnnuncio`)
       // 🗑️ v7.199 - qui c'era `sfondi` (le tendine del tab Pagine, v7.185): non lo leggeva nessuno
       // v7.272: `id` = l'album di cui si legge il tab Ebay per «Copia titolo/descrizione annuncio» (`_faTestoAlbum`)
-      out.push({ id: f.id, nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, piani: f.fotoAnnuncio || {} });
+      out.push({ id: f.id, nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, piani: fonte.fotoAnnuncio || {} });
     });
   });
   return out;
@@ -45062,9 +45070,10 @@ function _faDisegnaScelte() {
   _faAlbum().forEach(a => {
     const b = d.createElement('button');
     b.textContent = a.nome + ' — ' + a.pagine.length + ' pag.';
-    if (_fa.album && a.file === _fa.album.file) b.className = 'on';
+    // 🔄 v7.287 - si riconosce dall'id: ora due voci possono avere lo stesso nome
+    if (_fa.album && a.id === _fa.album.id) b.className = 'on';
     // cambiando album le foto caricate si buttano: erano di un altro album
-    b.onclick = () => { if (_fa.album && a.file === _fa.album.file) return; _fa.album = a; _fa.rif = null; _faSvuota(); _faDisegnaScelte(); };
+    b.onclick = () => { if (_fa.album && a.id === _fa.album.id) return; _fa.album = a; _fa.rif = null; _faSvuota(); _faDisegnaScelte(); };
     albumBox.appendChild(b);
   });
   const sitoBox = _fa$('scelta-sito'); sitoBox.innerHTML = '';
