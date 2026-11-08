@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.287';
+const JS_VERSION = 'v7.288';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41783,7 +41783,7 @@ function renderAdminFotoAnnuncio() {
   const box = document.getElementById('admin-fotoannuncio-box');
   if (!box) return;
   const it = currentLang === 'it';
-  const n = _faAlbum().length;
+  const n = _faAlbum().filter(a => !a.senzaFoto).length;   // v7.288: l'elenco ora ha anche quelli senza pagine
   // 🔄 v7.184 (Franco: «La sezione … rinominala in "Annunci"»; «Il tasto apri rinominalo come "Crea foto per annunci"»;
   //    «Li dentro vorrei creare una sotto sezione che si chiama Annunci in corso … per ora mettila sotto al tasto Apri»)
   box.innerHTML =
@@ -44799,6 +44799,8 @@ async function _annElimina(i) {
 // 🔄 v7.287 (Franco: «alla domanda n.1 mi viene proposta solo una versione per ogni album»; «fai comparire anche le altre
 //    versioni») - anche le versioni senza pagine sue, con le pagine e le caselle del tab Ebay della partenza (`baseFigurineId`),
 //    subito dopo di lei. Via l'unione degli album con le stesse foto (l'Omaggio e il L. 1000 della serie 3 erano uno solo).
+// 🔄 v7.288 (Franco: «non serve avere le foto; se non ha le foto, allora disattiva la opzione "dal sito"») - TUTTI gli album:
+//    `senzaFoto` = nessuna pagina sul sito (né sua né risalendo le partenze). Le pagine le danno le foto caricate (`_faMiniature`).
 function _faAlbum() {
   const out = [], perId = new Map();
   const serie = getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
@@ -44809,15 +44811,16 @@ function _faAlbum() {
     items.slice().sort((a, b) => (capo(a) - capo(b)) || (!!a.baseFigurineId - !!b.baseFigurineId)).forEach(f => {
       if (f.section !== 'albums') return;
       const base = f.baseFigurineId ? perId.get(f.baseFigurineId) : null;
-      const fonte = _pagineDi(f).length >= 3 ? f : base;
-      const pagine = _pagineDi(fonte).map(p => p.url);
-      if (pagine.length < 3) return;
+      let fonte = f;
+      const visti = new Set();
+      while (fonte && _pagineDi(fonte).length < 3 && !visti.has(fonte.id)) { visti.add(fonte.id); fonte = fonte.baseFigurineId ? perId.get(fonte.baseFigurineId) : null; }
+      const pagine = fonte && _pagineDi(fonte).length >= 3 ? _pagineDi(fonte).map(p => p.url) : [];
       // una versione col nome uguale alla sua partenza si distingue dal nome della versione
       const nome = s.name + ' — ' + (f.name || '') + (base && f.name === base.name ? ' (' + _nomeVersione(_chiaveTipo(f), 'it') + ')' : '');
       // v7.184: `piani` = le caselle del tab Ebay dell'album (`fotoAnnuncio`)
       // 🗑️ v7.199 - qui c'era `sfondi` (le tendine del tab Pagine, v7.185): non lo leggeva nessuno
       // v7.272: `id` = l'album di cui si legge il tab Ebay per «Copia titolo/descrizione annuncio» (`_faTestoAlbum`)
-      out.push({ id: f.id, nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, piani: fonte.fotoAnnuncio || {} });
+      out.push({ id: f.id, nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, senzaFoto: !pagine.length, piani: (fonte || f).fotoAnnuncio || {} });
     });
   });
   return out;
@@ -44883,6 +44886,7 @@ function _albumDellaFoto(url) {
 }
 // Quali pagine vanno nella stessa foto: un elenco di gruppi di indici, nell'ordine dell'album.
 function _faPiano(N, limite) {
+  if (N < 2) return N ? [[0]] : [];   // v7.288: un album senza pagine sul sito, con una foto caricata o nessuna
   const gruppi = [[0]], I = N - 2, S = limite - 2;
   if (I <= S) for (let i = 1; i <= I; i++) gruppi.push([i]);
   else {
@@ -45069,7 +45073,7 @@ function _faDisegnaScelte() {
   const albumBox = _fa$('scelta-album'); albumBox.innerHTML = '';
   _faAlbum().forEach(a => {
     const b = d.createElement('button');
-    b.textContent = a.nome + ' — ' + a.pagine.length + ' pag.';
+    b.textContent = a.nome + ' — ' + (a.senzaFoto ? 'senza pagine sul sito' : a.pagine.length + ' pag.');
     // 🔄 v7.287 - si riconosce dall'id: ora due voci possono avere lo stesso nome
     if (_fa.album && a.id === _fa.album.id) b.className = 'on';
     // cambiando album le foto caricate si buttano: erano di un altro album
@@ -45123,7 +45127,9 @@ function _faDisegnaScelte() {
   // 🔄 v7.182 (Franco: «se clicco sulla serie, non succede nulla») - ogni scelta risponde subito con una riga, anche
   //    quando manca l'altra: prima l'album acceso in rosso era l'unico segno, e non si notava
   const a = _fa.album, s = _fa.sito;
-  _fa$('piano').innerHTML = a && s
+  _fa$('piano').innerHTML = a && !a.pagine.length
+    ? 'Album scelto: <b>' + esc(a.nome) + '</b>. Non ha pagine sul sito: carica le foto delle pagine (passo 2), poi scegli il sito.'   // v7.288
+    : a && s
     ? esc(a.nome) + ', ' + a.pagine.length + ' pagine. Su ' + s.nome + ' (massimo ' + s.limite + ' foto) → ' + _faDescriviPiano(_faPianoDi(a, s), a.pagine.length)
       + (_faLeggiPiano(a.piani[s.chiave], a.pagine.length, s.limite).gruppi ? ' Come scritto nella scheda dell’album.' : '')
       + (!_fa.texture ? '<br>Ora scegli la texture di sfondo, qui sotto.'
@@ -45141,7 +45147,9 @@ function _faDisegnaScelte() {
   _fa$('file').disabled = senzaAlbum;
   _fa$('carica').classList.toggle('spento', senzaAlbum);
   _fa$('carica').title = senzaAlbum ? 'Scegli prima l’album (passo 1)' : '';
-  _fa$('demo').disabled = senzaAlbum;
+  // 🔄 v7.288 (Franco: «se non ha le foto, allora disattiva la opzione "dal sito"»)
+  _fa$('demo').disabled = senzaAlbum || _fa.album.senzaFoto;
+  _fa$('demo').title = senzaAlbum ? 'Scegli prima l’album (passo 1)' : _fa.album.senzaFoto ? 'Questo album non ha pagine sul sito' : '';
 }
 
 // ---- le tele ----
@@ -45497,6 +45505,8 @@ async function _faCaricaFile(lista) {
   if (!_fa.album) { _faStato('Scegli prima l’album.'); return; }
   _faSvuota();
   const files = [...lista];
+  // v7.288 - senza pagine sul sito non c'è niente con cui riconoscerle: vale l'ordine dei nomi dei file
+  if (_fa.album.senzaFoto) files.sort((x, y) => x.name.localeCompare(y.name, undefined, { numeric: true }));
   for (let i = 0; i < files.length; i++) {
     _faStato('Preparo le foto: ' + (i + 1) + ' di ' + files.length + '…');
     try {
@@ -45506,6 +45516,7 @@ async function _faCaricaFile(lista) {
       _fa.foto.push({ tela, rett: _faAutoTaglio(tela), pagina: null, dubbia: false });
     } catch (e) { console.error('_faCaricaFile', files[i].name, e); }
   }
+  if (_fa.album.senzaFoto) { _fa.album.pagine = []; _faStato(''); _faMiniature(); _faDisegnaScelte(); return; }   // v7.288
   await _faOrdina();
 }
 // 🔄 v7.182 (Franco: «dove sta la anteprima con le foto che gia abbiamo nel sito?») - LE FOTO DEL SITO, COSÌ COME
@@ -45530,12 +45541,17 @@ async function _faFotoDelSito() {
 
 // ---- le miniature ----
 function _faMiniature() {
+  const a0 = _fa.album;
+  // 🆕 v7.288 - un album senza pagine sul sito: le sue pagine sono le foto caricate. `pagine` ha un posto per foto (vuoto: dal
+  //    sito non si scarica niente), così numeri, piano e nomi delle pagine lavorano come sempre; se una foto si toglie, si rinumera
+  if (a0.senzaFoto && a0.pagine.length !== _fa.foto.length) { a0.pagine = _fa.foto.map(() => ''); _fa.foto.forEach((f, i) => { f.pagina = i; }); _faDisegnaScelte(); }
   const d = _fa.w.document, box = _fa$('miniature'), a = _fa.album, N = a.pagine.length;
   _faLibera(...box.querySelectorAll('canvas'));   // v7.273: le miniature di prima si liberano subito
   box.innerHTML = ''; _fa$('avvisi').innerHTML = '';
   _fa$('spiega').style.display = _fa.foto.length ? '' : 'none';
   _fa$('zoom-mini').style.display = _fa.foto.length ? '' : 'none';
   const avvisi = [];
+  if (a.senzaFoto && _fa.foto.length) avvisi.push('Questo album non ha pagine sul sito: le foto sono nell’ordine dei nomi dei file (la prima è la copertina, l’ultima il retro). Controlla l’ordine.');
   if (_fa.foto.length !== N) avvisi.push('Hai caricato ' + _fa.foto.length + ' foto, ma l’album ha ' + N + ' pagine.');
   const mancano = [];
   for (let i = 0; i < N; i++) if (!_fa.foto.some(f => f.pagina === i)) mancano.push(_faNomePagina(i, N));
@@ -57486,14 +57502,17 @@ function _rendiTestaFamiglia() {
 //    LETTURA, nella pagina della famiglia, solo per l'admin (come il tab Ebay della scheda): il flag e, con le linguette
 //    Franco / Fabio / Lendys (col pallino di chi ha testi), i quattro testi di ogni account; vuoto = «—». Etichette
 //    azzurre (`--info`), valori bianchi; si cambia con «✎ Modifica famiglia».
-function _famEbayLettura(d, it) {
+// 🔄 v7.288 (Franco: «il tab ebay di un articolo mostra i valori solo in modifica; deve mostrarli anche in visualizzazione») - `idBox`:
+//    lo stesso blocco per la scheda dell'articolo (`_bloccoEbayAlbumLettura`), con un id suo e senza la riga «Ebay» e il messaggio finale
+function _famEbayLettura(d, it, idBox) {
   const t = d.testiAccount || {};
   const pieno = a => Object.values(t[a] || {}).some(v => String(v || '').trim());
-  const lin = (a, i) => '<button type="button" class="fam-el-tab" data-account="' + a + '" onclick="_famElTab(\'' + a + '\')" style="padding:0.35rem 0.9rem;border:none;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;font-family:var(--font-ui);'
+  const lin = (a, i) => '<button type="button" class="fam-el-tab" data-account="' + a + '" onclick="_famElTab(\'' + a + '\'' + (idBox ? ',\'' + idBox + '\'' : '') + ')" style="padding:0.35rem 0.9rem;border:none;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;font-family:var(--font-ui);'
     + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + a
     + (pieno(a) ? '<span style="margin-left:0.35rem;color:var(--accent);">●</span>' : '') + '</button>';
-  return '<div id="fam-ebay-lettura" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin:0 0 0.8rem;">'
-    + '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">🏷️ Ebay: <span style="color:var(--text);">' + (d.forSale ? (it ? 'sì' : 'yes') : 'no') + '</span></div>'
+  return '<div id="' + (idBox || 'fam-ebay-lettura') + '" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin:0 0 0.8rem;">'
+    + (idBox ? '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">✍️ ' + (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account') + '</div>'
+      : '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">🏷️ Ebay: <span style="color:var(--text);">' + (d.forSale ? (it ? 'sì' : 'yes') : 'no') + '</span></div>')
     // v7.252 - le linguette nello stesso ordine della finestra: prima chi ha testi (`_testiAccountInOrdine`)
     + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + _testiAccountInOrdine(t).map(lin).join('') + '</div>'
     + _testiAccountInOrdine(t).map((a, i) => '<div class="fam-el-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
@@ -57503,18 +57522,32 @@ function _famEbayLettura(d, it) {
           + '<div style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;">' + (v ? esc(v) : '—') + '</div></div>';
       }).join('')).join('')
       // v7.252 - e il messaggio finale dell'annuncio, come nella finestra
-      + ((v => '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;">' + (it ? 'Messaggio di testo finale annuncio' : 'Closing message of the listing') + '</div>'
+      + (idBox ? '' : (v => '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;">' + (it ? 'Messaggio di testo finale annuncio' : 'Closing message of the listing') + '</div>'
           + '<div style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;">' + (v ? esc(v) : '—') + '</div></div>')(String((t[a] || {}).finale || '').trim()))
       + '</div>').join('')
     + '</div>';
 }
-function _famElTab(a) {
-  document.querySelectorAll('#fam-ebay-lettura .fam-el-tab').forEach(b => {
+function _famElTab(a, idBox) {
+  const box = idBox || 'fam-ebay-lettura';   // v7.288
+  document.querySelectorAll('#' + box + ' .fam-el-tab').forEach(b => {
     const su = b.dataset.account === a;
     b.style.borderBottomColor = su ? 'var(--accent)' : 'transparent';
     b.style.fontWeight = su ? '700' : '400';
   });
-  document.querySelectorAll('#fam-ebay-lettura .fam-el-pannello').forEach(p => { p.style.display = p.dataset.account === a ? '' : 'none'; });
+  document.querySelectorAll('#' + box + ' .fam-el-pannello').forEach(p => { p.style.display = p.dataset.account === a ? '' : 'none'; });
+}
+// 🆕 v7.288 (Franco: «il tab ebay di un articolo mostra i valori solo in modifica; deve mostrarli anche in visualizzazione») - quello
+//    che il tab Ebay in modifica ha in più sugli album (`_sottoTabEbay`): i testi per account e le caselle di «Foto annuncio»
+function _bloccoEbayAlbumLettura(f) {
+  if (!f || f.section !== 'albums') return '';
+  const it = currentLang === 'it', p = f.fotoAnnuncio || {};
+  const foto = !_albumConCaselleFotoAnnuncio(f) ? '' : '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin:0 0 0.8rem;">'
+    + '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">📸 ' + (it ? 'Foto annuncio' : 'Listing photos') + '</div>'
+    + _FA_SITI.map(s => { const v = String(p[s.chiave] || '').trim();
+        return '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;">' + s.nome + ' (' + (it ? 'massimo ' : 'max ') + s.limite + ' foto)</div>'
+          + '<div style="font-size:0.85rem;color:var(--text);">' + (v ? esc(v) : '—') + '</div></div>'; }).join('')
+    + '</div>';
+  return _famEbayLettura({ testiAccount: f.testiAccount }, it, 'fd-ebay-testi') + foto;
 }
 // 🆕 v7.235 (Franco: «da mobile potrebbero servire anche i bottoni per passare alla pagina successiva e alla pagina
 //    precedente»; «la seconda fila … per passare alla coppia di pagine precedente e successiva») - la striscia scorre fino
@@ -68986,6 +69019,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       ebayRows.push('<div id="figdetail-ebay-account"></div>');
       ebayRows.push('<div id="figdetail-ebay-stato" style="margin-top:0.5rem;"></div>');
     }
+    ebayRows.push(_bloccoEbayAlbumLettura(f));   // v7.288 (Franco) - anche senza il flag Ebay: in modifica si vedono comunque
     if (f.section === 'figurines' || f.section === 'retros') {
       ebayRows.push(`<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">📷 ${currentLang === 'it' ? 'Foto Ebay' : 'Ebay photo'}</span><span class="detail-value">${f.ebayImg ? `<img src="${cloudinaryUrl(f.ebayImg,'w_200,h_200,c_fit,q_auto,f_auto')}" style="max-width:140px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'nessuna foto' : 'no photo') + '</span>'}</span></div>`);
     }
@@ -73088,6 +73122,7 @@ function switchToEditMode(figId) {
     // 🗑️ v7.237 (Franco: «puoi cancellare quei 4 campi vecchi per tutte le tda»; «la vista ebay andrà rifatta») - via
     //    Titolo e Descrizione ITA/ENG (`ebayTitleIt` … `ebayDescEn`): gli album hanno i testi per account (v7.199)
     '</div>';
+  html += _prelevaTestiTastoHTML(f);   // v7.288
   html += _sottoTabEbay(f);   // v7.200
   html += '<div style="margin-bottom:0.75rem;' + ((f.section === 'figurines' || f.section === 'retros') ? '' : 'display:none;') + '">' +
     '<label class="detail-label" style="display:block;margin-bottom:0.4rem;">📷 ' + (currentLang==='it'?'Foto per Ebay':'Ebay photo') + '</label>' +
@@ -74306,6 +74341,49 @@ function _bloccoTestiAccountEdit(f) {
 //    DUE LINGUETTE: «Foto annuncio» (`_bloccoFotoAnnuncioEdit`) e «Descrizione» (`_bloccoTestiAccountEdit`). Tutte e due
 //    restano nella pagina (una nascosta): il Salva legge le caselle di entrambe. Se ne esiste una sola (un album senza
 //    pagine sue non ha le foto annuncio) la linguetta non serve: il blocco si mostra e basta.
+// 🆕 v7.288 (Franco: «Aggiungi un tasto sulla form di un articolo, nel pannello Ebay, che si chiama "Preleva descrizioni da altra
+//    versione"»; «viene chiesto quale sia l'articolo dal quale prelevare le descrizioni; devono essere mostrati articoli della stessa
+//    serie e della stessa tda»; «devono essere importati tutti i campi Titolo (ITA-ENG) e Descrizione (ITA-ENG) per tutti e 4 i
+//    venditori») - i testi per account ci sono solo sugli album. Riempie le caselle, anche di vuoto: li scrive il Salva della scheda.
+function _prelevaTestiTastoHTML(f) {
+  if (!f || f.section !== 'albums') return '';
+  return '<div style="margin:0 0 0.75rem;"><button type="button" class="btn-barra-admin pieno" id="fe-preleva-testi" data-id="' + esc(f.id || '') + '" data-serie="' + esc(f.seriesId || '') + '" data-tipo="' + esc(_aggTipoDi(f)) + '" onclick="_prelevaTestiApri(this)">'
+    + (currentLang === 'it' ? 'Preleva descrizioni da altra versione' : 'Copy descriptions from another version') + '</button></div>';
+}
+function _prelevaTestiApri(btn) {
+  const it = currentLang === 'it', d = btn.dataset;
+  const nome = x => _annNomeArticolo(x) + ' — ' + (_chiaveTipo(x) === 'base' ? 'Base' : _nomeVersione(_chiaveTipo(x), currentLang));
+  const pieno = x => Object.values(x.testiAccount || {}).some(t => _TESTI_CAMPI.some(([k]) => ['It', 'En'].some(l => String((t || {})[k + l] || '').trim())));
+  const altri = (getData('figurines', []) || []).filter(x => x.id !== d.id && x.seriesId === d.serie && _aggTipoDi(x) === d.tipo)
+    .sort((a, b) => nome(a).localeCompare(nome(b), 'it', { numeric: true }));
+  if (!altri.length) { toast(it ? 'Non ci sono altri articoli di questa serie e di questa tipologia.' : 'No other items of this series and type.', 'info'); return; }
+  document.getElementById('preleva-testi-modal')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'preleva-testi-modal';
+  const chiudi = 'document.getElementById(\'preleva-testi-modal\').remove()';
+  ov.innerHTML = '<div class="modal" style="max-width:520px;width:94vw;"><div class="modal-header"><h2 class="modal-title">' + (it ? 'Preleva descrizioni' : 'Copy descriptions') + '</h2>'
+    + '<button type="button" class="modal-close" onclick="' + chiudi + '">✕</button></div>'
+    + '<div style="padding:0 1.2rem 1.4rem;"><label class="detail-label" for="preleva-testi-scelta" style="display:block;margin-bottom:0.3rem;">' + (it ? 'Da quale articolo?' : 'From which item?') + '</label>'
+    + '<select id="preleva-testi-scelta" class="form-select">' + altri.map(x => '<option value="' + esc(x.id) + '">' + esc(nome(x)) + (pieno(x) ? ' ●' : '') + '</option>').join('') + '</select>'
+    + '<div style="font-size:0.75rem;color:var(--text);margin:0.4rem 0 0.9rem;">' + (it ? '● = ha testi scritti. I titoli e le descrizioni di questo articolo vengono sostituiti.' : '● = has texts. The titles and descriptions of this item are replaced.') + '</div>'
+    + '<div style="display:flex;gap:0.5rem;justify-content:flex-end;"><button type="button" class="btn-secondary" onclick="' + chiudi + '">' + (it ? 'Annulla' : 'Cancel') + '</button>'
+    + '<button type="button" class="btn-barra-admin pieno" id="preleva-testi-ok" onclick="_prelevaTesti()">' + (it ? 'Preleva' : 'Copy') + '</button></div></div></div>';
+  document.body.appendChild(ov);
+}
+function _prelevaTesti() {
+  const it = currentLang === 'it', v = id => document.getElementById(id);
+  const art = (getData('figurines', []) || []).find(x => x.id === v('preleva-testi-scelta').value);
+  if (!art) return;
+  const t = art.testiAccount || {};
+  _TESTI_ACCOUNT.forEach(a => _TESTI_CAMPI.forEach(([k]) => ['It', 'En'].forEach(l => {
+    const c = v('fe-ta-' + a + '-' + k + l);
+    if (c) c.value = (t[a] || {})[k + l] || '';
+  })));
+  _feTaSegna();
+  v('preleva-testi-modal').remove();
+  toast(it ? 'Descrizioni prelevate: premi Salva per tenerle.' : 'Descriptions copied: press Save to keep them.', 'success');
+}
 function _sottoTabEbay(f) {
   const it = currentLang === 'it';
   // 🔄 v7.238 (Franco: «invertiamo i due sottotab "Foto annuncio" e "Descrizione"») - prima Descrizione, che si apre
