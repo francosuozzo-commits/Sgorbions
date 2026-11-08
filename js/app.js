@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.284';
+const JS_VERSION = 'v7.285';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -44127,6 +44127,7 @@ function _annDisegna() {
     //    nome del campo: passiamo a Iniziale e Finale») - a schermo Iniziale e Finale, senza €; nel dato restano
     //    `costo` e `prezzo`, così gli annunci già salvati si leggono come prima
     // 🔄 v7.242 (Franco, dal telefono: «Iniziale diventa "Mio"») - solo dal telefono, come «Account» e «TDA»
+    // 🔄 v7.285 (Franco: «la colonna Iniziale falla della stessa larghezza della colonna Finale») - i titoli hanno il margine stretto delle celle (regola nell'index, `#annunci-tabella`), così la larghezza la danno le due caselle uguali
     + th(it ? 'Voto' : 'Rating') + th(it ? (tel ? 'Mio' : 'Iniziale') : (tel ? 'Mine' : 'Initial')) + th(it ? 'Finale' : 'Final') + th('Link')
     // v7.200 - sopra i quattro tasti della riga, «Applica valori da album» (agli annunci spuntati)
     // 🔄 v7.202 (Franco: «chiamalo "Applica valori da album e venditore" (vai pure su due righe)») - a capo dopo «album»
@@ -44177,16 +44178,18 @@ function _annDisegna() {
             //    copia e la qualità; tanto ci sono già i campi "N" e "Voto"») - qui la v7.263 scriveva la copia sotto l'articolo
             + '</td>'
           // v7.187 (Franco: «riduci larghezza colonne Prezzo e Costo; allarga colonna Titolo; riduci larghezza colonna N»)
-          + '<td>' + inp('n', 'text', r.n, 'width:2.6rem;') + '</td>'
+          // 🔄 v7.285 (Franco: «anche la colonna N non mi sembra centrata») - cella e numero al centro
+          + '<td style="text-align:center;">' + inp('n', 'text', r.n, 'width:2.6rem;text-align:center;') + '</td>'
           // v7.200 (Franco: «accorcia il campo "Titolo" di un 20%»; «riduci la larghezza della colonna Costo e Prezzo»)
           + '<td>' + inp('titolo', 'text', r.titolo, 'min-width:272px;width:100%;') + '</td>'
           // 🔄 v7.202 (Franco: «le colonne Costo e Prezzo sono ancora troppo larghe; avvicina il simbolo dell'Euro al
           //    valore»; «stringi anche la colonna Voto») - caselle più strette (3,4 → 2,9 e 2,6rem), celle senza il
           //    margine largo della tabella, € attaccato alla casella
           // 🔄 v7.238 (Franco: «la colonna "Voto" va allargata un pochino») - 2,6 → 3,2rem
-          + '<td style="padding-left:0.25rem;padding-right:0.25rem;">' + inp('voto', 'number', r.voto, 'width:3.2rem;text-align:right;') + '</td>'   // v7.191
+          // 🔄 v7.285 (Franco: «la colonna Voto non mi sembra centrata ma giustificata a sx; la vorrei centrata») - cella e numero al centro
+          + '<td style="text-align:center;padding-left:0.25rem;padding-right:0.25rem;">' + inp('voto', 'number', r.voto, 'width:3.2rem;text-align:center;') + '</td>'   // v7.191
           // v7.231 - Iniziale e Finale: numeri, senza €
-          + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('costo', 'number', r.costo, 'width:2.9rem;text-align:right;') + '</td>'
+          + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('costo', 'number', r.costo, 'width:3.5rem;text-align:right;') + '</td>'
           // 🔄 v7.264 (Franco: «la colonna Finale della tabella degli annunci va allargata un minimo») - 2,9 → 3,5rem
           + '<td style="white-space:nowrap;padding-left:0.25rem;padding-right:0.25rem;">' + inp('prezzo', 'number', r.prezzo, 'width:3.5rem;text-align:right;') + '</td>'
           // il 🔗 legge il link al clic: così vale anche quello appena cambiato nella casella
