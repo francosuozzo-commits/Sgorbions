@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.285';
+const JS_VERSION = 'v7.286';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41854,9 +41854,11 @@ const COLLAGE_TEXTURE = [
   { k: 'boucle',    it: 'Bouclé di lana',               en: 'Wool bouclé',        file: '/img/collage/texture-boucle.jpg' },
   { k: 'quadretti', it: 'Tovaglia a quadretti',         en: 'Gingham tablecloth', file: '/img/collage/texture-quadretti.jpg' },
   { k: 'jeans',     it: 'Jeans',                        en: 'Denim',              file: '/img/collage/texture-jeans.jpg' },
+  // 🆕 v7.286 (Franco: «un altro venditore; Nome: Antonio; Texture: usa una non già abbinata agli altri 3 venditori») - il n. 8 del foglio dei tessuti (Poly Haven, `quatrefoil_jacquard_fabric`)
+  { k: 'quadrifogli', it: 'Damascato a quadrifogli',    en: 'Quatrefoil damask',  file: '/img/collage/texture-quadrifogli.jpg' },
 ];
 // il venditore (gli stessi di Annunci, `_ANN_ACCOUNT`) e la sua texture
-const COLLAGE_TEXTURE_VENDITORE = { Lendys: 'boucle', Fabio: 'quadretti', Franco: 'jeans' };
+const COLLAGE_TEXTURE_VENDITORE = { Lendys: 'boucle', Fabio: 'quadretti', Franco: 'jeans', Antonio: 'quadrifogli' };
 const _collageTextureImg = {};   // le texture già lette: k → Promise di Image
 let _collageFoto = [];   // le immagini scelte: { nome, img }
 // 🔄 v7.219 (Franco: «sposta la funzione Collage foto nella sezione "Annunci"») - non più un tab della console
@@ -44398,9 +44400,9 @@ function _annApriLink(i) {
   else toast(currentLang === 'it' ? 'Nessun link da aprire.' : 'No link to open.', 'info');
 }
 // 🆕 v7.186 (Franco: «un campo che si chiama Account, con queste opzioni: Franco, Lendys, Fabio») - chi ha messo l'annuncio
-const _ANN_ACCOUNT = ['Franco', 'Lendys', 'Fabio'];
+const _ANN_ACCOUNT = ['Franco', 'Lendys', 'Fabio', 'Antonio'];   // v7.286: + Antonio (Franco)
 // v7.222 (Franco: «per il venditore, usa una abbreviazione: Fr per franco, Fa per fabio, L per Lendys») - sul telefono
-const _ANN_SIGLA = { Franco: 'Fr', Fabio: 'Fa', Lendys: 'L' };
+const _ANN_SIGLA = { Franco: 'Fr', Fabio: 'Fa', Lendys: 'L', Antonio: 'A' };
 // 🆕 v7.199 - «Prendi valore»: il campo omonimo dell'album scelto come Articolo, per l'Account dell'annuncio (i testi
 //    del tab Ebay dell'album, `testiAccount`). Su una versione vuota si guarda la sua partenza. Se manca qualcosa non
 //    si tocca la casella: si dice cosa manca nella riga di stato della finestra.
@@ -74239,7 +74241,7 @@ function _bloccoFotoAnnuncioEdit(f) {
 //    descrizioni; Franco, Fabio, Lendys; ITA e ENG. Stanno in `testiAccount` = { Franco: { titoloIt, titoloEn, descIt,
 //    descEn }, … }; si scrive solo quello che è scritto, tutto vuoto = null. Indipendenti da «Ebay» e dai titoli eBay
 //    di sempre (`ebayTitleIt` …), che restano dove sono.
-const _TESTI_ACCOUNT = ['Franco', 'Fabio', 'Lendys'];
+const _TESTI_ACCOUNT = ['Franco', 'Fabio', 'Lendys', 'Antonio'];   // v7.286: + Antonio (Franco)
 const _TESTI_CAMPI = [['titolo', 'Titolo', 'Title'], ['desc', 'Descrizione', 'Description']];
 // 🆕 v7.252 - l'ordine delle linguette degli account: prima quelli con almeno un testo scritto, poi gli altri; tutti e
 //    due i gruppi in ordine alfabetico. `t` = `testiAccount` dell'articolo o della famiglia.
