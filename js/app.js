@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.281';
+const JS_VERSION = 'v7.282';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -71268,6 +71268,8 @@ function _copiaClonaQui(artId) {
   if (v('cp-n')) v('cp-n').value = '';
   // v7.279 - il Finale viene dagli annunci, e un clone non ne ha
   if (v('cp-finale')) { v('cp-finale').value = ''; v('cp-finale').dataset.art = ''; }
+  // 🔄 v7.282 (Franco: «con il tasto Clona, non copiare tutti i campi legati alla qualità, ovvero tutti quelli usati per il calcolo del campo Condizioni»; «non copiare nemmeno Voto, Iniziale, Addizionale, Finale») - si ripartono vuoti: la qualità è del singolo pezzo
+  ['cp-qualita', 'cp-iniziale', 'cp-addizionale'].concat(_COPIA_ALBUM.map(d => 'cp-al-' + d.k)).forEach(id => { if (v(id)) v(id).value = ''; });
   v('cp-annunci')?.remove();
   v('cp-clona')?.remove();
   v('cp-cancella')?.remove();   // v7.277: un clone non salvato non c'è ancora da cancellare
@@ -71573,12 +71575,13 @@ function _copiaClonaRiga(btn) {
   const tr = btn && btn.closest('tbody'), t = document.getElementById('fe-copie');   // v7.277: la copia intera
   if (!tr || !t) return;
   const leggi = sel => tr.querySelector(sel)?.value ?? '';
-  const q = parseFloat(leggi('[data-copia-qualita]')), ini = parseFloat(leggi('[data-copia-iniziale]')), add = parseFloat(leggi('[data-copia-addizionale]'));
   // v7.268 - il N. copia vuoto anche qui, come nella finestra (Franco: «la copia nuova per clonazione deve avere "N." vuoto»)
-  // v7.279 - il clone si porta dietro anche i campi degli album
-  tr.insertAdjacentHTML('afterend', _copiaRigaHTML({ ...(tr.dataset.copiaAltri ? JSON.parse(tr.dataset.copiaAltri) : {}),
+  // 🔄 v7.282 (Franco: «non copiare tutti i campi legati alla qualità»; «non copiare nemmeno Voto, Iniziale, Addizionale, Finale») - via i campi degli album (v7.279 li portava con sé), Voto, Iniziale e Addizionale
+  const altri = tr.dataset.copiaAltri ? JSON.parse(tr.dataset.copiaAltri) : {};
+  _COPIA_ALBUM.forEach(d => delete altri[d.k]);
+  tr.insertAdjacentHTML('afterend', _copiaRigaHTML({ ...altri,
     n: null, condizioni: leggi('[data-copia-condizioni]'),
-    iniziale: Number.isFinite(ini) ? ini : null, qualita: Number.isFinite(q) ? q : null, addizionale: Number.isFinite(add) ? add : null,   // v7.267: + Addizionale
+    iniziale: null, qualita: null, addizionale: null,
     mancanti: _mlNumero(leggi('[data-copia-mancanti]')) }));   // v7.274
 }
 // la riga nuova, vuota
