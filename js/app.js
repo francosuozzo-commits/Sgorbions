@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.280';
+const JS_VERSION = 'v7.281';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -71010,7 +71010,7 @@ function _cdInterno() {
       + '<td style="' + td + 'white-space:pre-wrap;min-width:12rem;width:100%;">' + _condColorato(x.c.condizioni) + '</td>'
       // 🆕 v7.268 (Franco: «anche nella tabella ELENCO COPIE metti il campo Annunci; se riesci metti gli N link (saranno sempre
       //    al massimo 3) sulla stessa riga») - la stessa cella del tab «Copie» (`_copieAnnunciRiempi`), coi link in riga
-      + '<td data-ann-art="' + esc(x.f.id) + '" data-ann-chiave="' + esc(x.chiave) + '" data-ann-due style="' + td + 'white-space:nowrap;font-size:0.8rem;"></td>'
+      + '<td data-ann-art="' + esc(x.f.id) + '" data-ann-chiave="' + esc(x.chiave) + '" style="' + td + 'white-space:nowrap;font-size:0.8rem;"></td>'
       // 🆕 v7.266 (Franco: «dalla tabella delle copie deve essere possibile aprire in visualizzazione o modifica il record
       //    di copia») - l'occhio e la matita della tabella degli annunci, che aprono la finestra della copia (`_copiaApri`)
       + '<td style="' + td + 'white-space:nowrap;">'
@@ -71144,16 +71144,17 @@ function _copiaApri(artId, chiave, sola) {
     // 🔄 v7.279 (Franco: «il campo multivalore in testata non serve; usiamo solo campi singoli») - righe 1 e 2: Serie, TDA,
     //    Versione; sotto l'Articolo. Anche in sola lettura (spente); il link all'articolo resta accanto al suo nome
     + _cpSceltaArticoloHTML(art, sola, x.nomeVer || '')
-    // 🔄 v7.279 - riga 3: Iniziale, Addizionale, Finale (dagli annunci, sola lettura), Mancanti; il Voto, non dettato, resta in testa
+    // 🔄 v7.279 - riga 3: Iniziale, Addizionale, Voto, Finale (dagli annunci, sola lettura), Mancanti
+    // 🔄 v7.281 (Franco: «Voto da dopo Addizionale») - prima stava in testa alla riga
     + '<div style="display:flex;gap:0.8rem;flex-wrap:wrap;">'
-    + '<div style="flex:1;min-width:5.5rem;">' + lab(it ? 'Voto' : 'Rating')
-    + '<select id="cp-qualita" class="form-select"' + dis + '><option value="">—</option>'
-      + _COPIA_QUALITA.map(q => '<option value="' + q + '"' + (c.qualita === q ? ' selected' : '') + '>' + _copiaQualitaTesto(q) + '</option>').join('')
-      + (typeof c.qualita === 'number' && !_COPIA_QUALITA.includes(c.qualita) ? '<option value="' + c.qualita + '" selected>' + _copiaQualitaTesto(c.qualita) + '</option>' : '') + '</select></div>'
     + '<div style="flex:1;min-width:5.5rem;">' + lab(it ? 'Iniziale' : 'Initial')
     + '<input id="cp-iniziale" class="form-input" type="number" step="any" value="' + (c.iniziale ?? '') + '"' + dis + '></div>'
     + '<div style="flex:1;min-width:5.5rem;">' + lab(it ? 'Addizionale' : 'Additional')
     + '<input id="cp-addizionale" class="form-input" type="number" step="any" value="' + (c.addizionale ?? '') + '"' + dis + '></div>'
+    + '<div style="flex:1;min-width:5.5rem;">' + lab(it ? 'Voto' : 'Rating')
+    + '<select id="cp-qualita" class="form-select"' + dis + '><option value="">—</option>'
+      + _COPIA_QUALITA.map(q => '<option value="' + q + '"' + (c.qualita === q ? ' selected' : '') + '>' + _copiaQualitaTesto(q) + '</option>').join('')
+      + (typeof c.qualita === 'number' && !_COPIA_QUALITA.includes(c.qualita) ? '<option value="' + c.qualita + '" selected>' + _copiaQualitaTesto(c.qualita) + '</option>' : '') + '</select></div>'
     // v7.279 - il Finale viene dagli annunci della copia: si legge e non si scrive; lo aggiorna `_copieAnnunciRiempi`
     + '<div style="flex:1;min-width:5.5rem;">' + lab(it ? 'Finale' : 'Final')
     + '<input id="cp-finale" class="form-input" type="text" disabled data-art="' + esc(artId) + '" data-chiave="' + esc(chiave) + '" value="' + esc((x.finali || []).map(p => it ? String(p).replace('.', ',') : String(p)).join(' / ')) + '"></div>'
@@ -71429,9 +71430,9 @@ const _copiaQualitaTesto = q => (q == null || q === '') ? '' : (currentLang === 
 // v7.277: `stile` = la riga dei campi del tab «Copie», senza linea
 // 🔄 v7.278 (Franco: «la colonna "Annunci" stringila usando maggiormente le due righe; tipo che metti sempre 2 soli annunci
 //    per riga») - `due`: nel tab «Copie» la cella prende le due righe della copia (`rowspan`) e la linea sotto; i link due
-//    per riga (`data-ann-due`, `_copieAnnunciRiempi`)
+//    per riga (`_copieAnnunciRiempi`; dalla v7.281 uno per riga)
 // 🆕 v7.279 (Franco: «Annunci: scrivili in riga; non incolonnati») - `due` = 'riga': i link in fila (la finestra della copia)
-const _copiaCellaAnnunci = (artId, chiave, stile, due) => '<td' + (due === 'riga' ? ' data-ann-riga' : due ? ' rowspan="2" data-ann-due' : '') + ' style="' + (due ? _copieCella : (stile || _copieCella)) + 'font-size:0.8rem;white-space:nowrap;"'
+const _copiaCellaAnnunci = (artId, chiave, stile, due) => '<td' + (due === 'riga' ? ' data-ann-riga' : due ? ' rowspan="2"' : '') + ' style="' + (due ? _copieCella : (stile || _copieCella)) + 'font-size:0.8rem;white-space:nowrap;"'
   + (artId && chiave ? ' data-ann-art="' + esc(artId) + '" data-ann-chiave="' + esc(chiave) + '"' : '') + '></td>';
 let _annLetti = false;
 async function _copieAnnunciRiempi() {
@@ -71448,13 +71449,11 @@ async function _copieAnnunciRiempi() {
   const it = currentLang === 'it';
   celle.forEach(td => {
     const qui = _annRighe.map((r, i) => ({ r, i })).filter(x => x.r.articoloId === td.dataset.annArt && x.r.copiaId === td.dataset.annChiave);
-    // v7.278 - `data-ann-due`: due link per riga (il tab «Copie», Franco)
-    // 🔄 v7.279 (Franco: «la colonna Annunci, ti avevo chiesto di stringerla, mettendo 2 annunci per riga; oggi sono 3») - due per riga anche nell'ELENCO COPIE, che li teneva tutti in fila (v7.268); senza `data-ann-due`, uno per riga
-    const due = td.dataset.annDue !== undefined, inRiga = td.dataset.annRiga !== undefined;
+    // 🔄 v7.281 (Franco: «nella colonna Annunci, metti un annuncio per riga») - via i due per riga (v7.278, v7.279), nell'ELENCO COPIE e nel tab «Copie»; in fila resta solo la finestra della copia
+    const inRiga = td.dataset.annRiga !== undefined;
     const link = qui.map(x => '<a href="#" style="color:var(--info);' + (inRiga ? '' : 'display:block;') + '" onclick="_annApriFinestra(' + x.i + ');return false;">🔗 '
           + esc([x.r.sito, x.r.account].filter(Boolean).join(' · ') || (it ? 'annuncio' : 'listing')) + '</a>');
     td.innerHTML = !qui.length ? '<span style="color:var(--muted);">—</span>'
-      : due ? '<div style="display:grid;grid-template-columns:repeat(2,auto);column-gap:0.8rem;row-gap:0.15rem;">' + link.join('') + '</div>'
       : link.join(inRiga ? '&nbsp;&nbsp; ' : '');
   });
   // v7.279 - il Finale della finestra della copia, ora che gli annunci sono letti
