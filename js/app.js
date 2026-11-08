@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.283';
+const JS_VERSION = 'v7.284';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -44257,10 +44257,11 @@ function _annTrovaCopia(art, chiave) {
   const i = copie.findIndex((c, j) => _annChiaveCopia(c, j) === chiave);
   return i < 0 ? null : copie[i];
 }
-// la voce della tendina e della tabella: «n. 3 · 7,5» (v7.263: senza la Versione, tolta dalle copie)
+// la voce della tendina: «n. 3» (v7.263: senza la Versione, tolta dalle copie)
+// 🔄 v7.284 (Franco: «non vorrei che sia mostrato anche il campo Voto»)
 function _annNomeCopia(c) {
   if (!c) return '';
-  return [c.n != null ? 'n. ' + c.n : '', _copiaQualitaTesto(c.qualita)].filter(Boolean).join(' · ') || (currentLang === 'it' ? 'copia senza dati' : 'copy without data');
+  return c.n != null ? 'n. ' + c.n : (currentLang === 'it' ? 'copia senza numero' : 'copy without number');
 }
 function _annOpzioniCopia(articoloId, scelta) {
   const it = currentLang === 'it';
@@ -44270,7 +44271,8 @@ function _annOpzioniCopia(articoloId, scelta) {
   if (!copie.length) return '<option value="">' + (it ? '— l’articolo non ha copie —' : '— the item has no copies —') + '</option>'
     + (scelta ? '<option value="' + esc(scelta) + '" selected>' + esc(scelta) + ' ⚠️</option>' : '');
   return '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
-    + copie.map((c, i) => { const k = _annChiaveCopia(c, i); return '<option value="' + esc(k) + '"' + (k === scelta ? ' selected' : '') + '>' + esc(_annNomeCopia(c)) + '</option>'; }).join('')
+    // 🔄 v7.284 (Franco: «le copie mostrate le vorrei in ordine di campo "N. copia"») - la chiave resta quella della posizione nel dato
+    + _copiePerNumero(art).map(([c, i]) => { const k = _annChiaveCopia(c, i); return '<option value="' + esc(k) + '"' + (k === scelta ? ' selected' : '') + '>' + esc(_annNomeCopia(c)) + '</option>'; }).join('')
     // una copia che non c'è più resta scelta, con la sua chiave: si vede e non si perde al Salva
     + (scelta && !copie.some((c, i) => _annChiaveCopia(c, i) === scelta) ? '<option value="' + esc(scelta) + '" selected>' + esc(scelta) + ' ⚠️</option>' : '');
 }
