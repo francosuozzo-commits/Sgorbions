@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.282';
+const JS_VERSION = 'v7.283';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41806,7 +41806,6 @@ function renderAdminFotoAnnuncio() {
     '</div>' +
     '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.8rem;flex-wrap:wrap;margin:2rem 0 0.6rem;">' +
       '<h4 style="font-family:var(--font-ui);margin:0;">📋 ' + (it ? 'Annunci in corso' : 'Current listings') + '</h4>' +
-      '<button type="button" class="btn-primary" onclick="_annApriFinestra(null)">' + (it ? '+ Aggiungi annuncio' : '+ Add listing') + '</button>' +
     '</div>' +
     '<div id="annunci-filtri" style="display:flex;flex-direction:column;gap:1rem;margin:0.4rem 0 0.9rem;width:70%;"></div>' +   // v7.187; v7.270: al 70% (Franco: «i box dei filtri della pagina annunci vanno ridotti di un 30% di larghezza»)
     '<div id="annunci-tabella" style="font-size:0.85rem;color:var(--text);">' + (it ? 'Carico gli annunci…' : 'Loading…') + '</div>';
@@ -43974,8 +43973,13 @@ function _annAzzeraFiltri() {
 }
 function _annFiltriHTML() {
   const it = currentLang === 'it';
-  return '<div><button type="button" class="btn-primary" onclick="_annAzzeraFiltri()" style="font-size:0.82rem;padding:0.3rem 1rem;">'
-    + (it ? 'Azzera filtri' : 'Reset filters') + '</button></div>'
+  // 🔄 v7.283 (Franco: «il tasto "Aggiungi annuncio" mettilo affianco al pulsante Azzera filtri; e rendilo della stessa altezza») - stessa misura e fila che li tiene alti uguali; senza annunci resta solo lui, se no non se ne potrebbe creare il primo
+  const stile = 'font-size:0.82rem;padding:0.3rem 1rem;';
+  const tasti = '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:stretch;">'
+    + (_annRighe.length ? '<button type="button" class="btn-primary" onclick="_annAzzeraFiltri()" style="' + stile + '">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button>' : '')
+    + '<button type="button" class="btn-primary" style="' + stile + '" onclick="_annApriFinestra(null)">' + (it ? '+ Aggiungi annuncio' : '+ Add listing') + '</button></div>';
+  if (!_annRighe.length) return tasti;
+  return tasti
     + _ANN_RIQUADRI.map(q => {
     if (q.nascosto && q.nascosto()) return '';   // v7.263: l'articolo, finché mancano serie e tipologia
     const voci = q.voci();
@@ -44033,7 +44037,7 @@ function _annDisegna() {
   if (!box) return;
   const it = currentLang === 'it';
   const filtri = document.getElementById('annunci-filtri');   // v7.187: i riquadri della ricerca
-  if (filtri) filtri.innerHTML = _annRighe.length ? _annFiltriHTML() : '';
+  if (filtri) filtri.innerHTML = _annFiltriHTML();   // v7.283: anche senza annunci, per il tasto «+ Aggiungi annuncio»
   if (!_annRighe.length) {
     box.innerHTML = '<p style="font-style:italic;margin:0;">' + (it ? 'Nessun annuncio in corso.' : 'No current listings.') + '</p>';
     return;
@@ -70918,8 +70922,6 @@ const _CD_COLONNE = [
   { k: 'nome', it: 'Nome<br>Numero', en: 'Name<br>Number', val: x => x.numOrd < 1e9 && _haNumero(x.f) ? x.numOrd : _annNomeArticolo(x.f) },
   // 🔄 v7.279 (Franco: «stessa cosa per "N.copia": "N." e "copia"») - il titolo su due righe, come «Tipologia di articolo»
   { k: 'ncopia', it: 'N.<br>copia', en: 'Copy<br>no.', val: x => x.c.n == null ? '' : x.c.n, centro: true },
-  // v7.267 (Franco: «nella tabella ELENCO COPIE manca il campo "Voto"; mettilo prima del campo "Iniziale"»)
-  { k: 'voto', it: 'Voto', en: 'Rating', val: x => typeof x.c.qualita === 'number' ? x.c.qualita : '', centro: true },
   // v7.274 (Franco: «"Figurine mancanti"; Numerico; esponilo anche nelle due viste tabellari delle copie; scrivilo in rosso»)
   // 🔄 v7.278 (Franco: «la colonna "Figurine mancanti" chiamala "Mancanti" e mettila dopo "Voto"»)
   // 🔄 v7.279 (Franco: «nella tabella delle copie, "Mancanti" diventa "No", scritto in rosso») - `rosso`: il titolo della colonna
@@ -70928,6 +70930,8 @@ const _CD_COLONNE = [
   // v7.267 (Franco: «"Addizionale" … esposto nelle 2 tabelle delle copie, dopo il campo "Iniziale"»)
   // 🔄 v7.275 (Franco: «la colonna "Addizionale", nelle tabelle … chiamala "Add +"») - solo il titolo della colonna
   { k: 'addizionale', it: 'Add +', en: 'Add +', val: x => x.c.addizionale == null ? '' : x.c.addizionale, centro: true },
+  // v7.267 (Franco: «nella tabella ELENCO COPIE manca il campo "Voto"»); 🔄 v7.283 (Franco: «metti la colonna Voto dopo la colonna Add+»)
+  { k: 'voto', it: 'Voto', en: 'Rating', val: x => typeof x.c.qualita === 'number' ? x.c.qualita : '', centro: true },
   // v7.269 (Franco: «aggiungere la colonna Finale, dopo Addizionale, riportante il valore Finale degli annunci»)
   { k: 'finale', it: 'Finale', en: 'Final', val: x => x.finali.length ? x.finali[0] : '', centro: true },
   { k: 'condizioni', it: 'Condizioni', en: 'Condition', val: x => String(x.c.condizioni || '').trim() },
@@ -70996,13 +71000,13 @@ function _cdInterno() {
       + '<td style="' + td + 'white-space:nowrap;"><a href="#" style="color:var(--info);" onclick="openFigDetail(\'' + esc(x.f.id) + '\');return false;">' + (/^Versione \S+$/.test(x.nome) ? verCella(x.nome) : esc(x.nome)) + '</a></td>'
       // v7.265 (Franco: «N. copia e Iniziale, centra il valore della colonna rispetto all'etichetta della colonna»)
       + '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.n == null ? '' : String(x.c.n)) + '</td>'
-      // v7.267 - il Voto prima dell'Iniziale (Franco); `data-cd` segna le colonne nate nella v7.267
-      + '<td data-cd="voto" style="' + td + 'text-align:center;white-space:nowrap;">' + esc(_copiaQualitaTesto(x.c.qualita)) + '</td>'
       // v7.274 - le Figurine mancanti, in rosso (Franco)
       // 🔄 v7.278 (Franco: «la colonna "Figurine mancanti" chiamala "Mancanti" e mettila dopo "Voto"»)
       + '<td data-cd="mancanti" style="' + td + 'text-align:center;white-space:nowrap;color:var(--danger);font-weight:600;">' + esc(x.c.mancanti == null ? '' : String(x.c.mancanti)) + '</td>'
       + '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.iniziale == null ? '' : (it ? String(x.c.iniziale).replace('.', ',') : String(x.c.iniziale))) + '</td>'
       + '<td data-cd="addizionale" style="' + td + 'text-align:center;white-space:nowrap;">' + esc(x.c.addizionale == null ? '' : (it ? String(x.c.addizionale).replace('.', ',') : String(x.c.addizionale))) + '</td>'   // v7.267
+      // 🔄 v7.283 (Franco: «metti la colonna Voto dopo la colonna Add+»); `data-cd` segna le colonne nate nella v7.267
+      + '<td data-cd="voto" style="' + td + 'text-align:center;white-space:nowrap;">' + esc(_copiaQualitaTesto(x.c.qualita)) + '</td>'
       // v7.269 - il Finale degli annunci della copia; più valori (annunci salvati prima del controllo) in arancio, tutti
       + '<td data-cd="finale" style="' + td + 'text-align:center;white-space:nowrap;' + (x.finali.length > 1 ? 'color:var(--warn);font-weight:600;' : '') + '"'
         + (x.finali.length > 1 ? ' title="' + (it ? 'Gli annunci di questa copia hanno Finali diversi' : 'This copy’s listings have different finals') + '"' : '') + '>'
@@ -71491,25 +71495,24 @@ function _copiaRigaHTML(c, artId, chiave) {
   return '<tbody data-copia data-copia-id="' + esc(c.id || ('cp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6))) + '"'
     + (chiave ? ' data-copia-chiave="' + esc(chiave) + '"' : '') + altriAttr + '><tr>'
     + '<td style="' + _copieCella + '"><input type="number" min="0" step="1" data-copia-n value="' + (c.n ?? '') + '" ' + inp + 'width:4.2rem;"></td>'
-    // 🔄 v7.267 (Franco: «il campo "Voto" va prima del campo "Iniziale"») - prima il Voto, poi l'Iniziale
-    + '<td style="' + _copieCella + '"><select data-copia-qualita ' + inp + 'width:4.8rem;"><option value="">—</option>'   // v7.263
-    + _COPIA_QUALITA.map(q => '<option value="' + q + '"' + (c.qualita === q ? ' selected' : '') + '>' + _copiaQualitaTesto(q) + '</option>').join('')
-    // v7.263 - un voto portato da un annuncio fuori dalla scala (sotto il 3) resta scelto, se no si perderebbe al Salva
-    + (typeof c.qualita === 'number' && !_COPIA_QUALITA.includes(c.qualita) ? '<option value="' + c.qualita + '" selected>' + _copiaQualitaTesto(c.qualita) + '</option>' : '') + '</select></td>'
     // 🆕 v7.274 (Franco) - le Figurine mancanti, intere, in rosso
-    // 🔄 v7.278 (Franco: «chiamala "Mancanti" e mettila dopo "Voto"»)
     + '<td style="' + _copieCella + '"><input type="number" min="0" step="1" data-copia-mancanti value="' + (c.mancanti ?? '') + '" ' + inp + 'width:5rem;color:var(--danger);font-weight:600;"></td>'
     // v7.263 - `step="any"`: l'Iniziale portata da un annuncio può avere i decimali, e non si deve perdere
     + '<td style="' + _copieCella + '"><input type="number" step="any" data-copia-iniziale value="' + (c.iniziale ?? '') + '" ' + inp + 'width:5rem;"></td>'
     // 🆕 v7.267 (Franco) - l'Addizionale, numerico come l'Iniziale
     + '<td style="' + _copieCella + '"><input type="number" step="any" data-copia-addizionale value="' + (c.addizionale ?? '') + '" ' + inp + 'width:5rem;"></td>'
+    // 🔄 v7.283 (Franco: «metti la colonna Voto dopo la colonna Add+»)
+    + '<td style="' + _copieCella + '"><select data-copia-qualita ' + inp + 'width:4.8rem;"><option value="">—</option>'   // v7.263
+    + _COPIA_QUALITA.map(q => '<option value="' + q + '"' + (c.qualita === q ? ' selected' : '') + '>' + _copiaQualitaTesto(q) + '</option>').join('')
+    // v7.263 - un voto portato da un annuncio fuori dalla scala (sotto il 3) resta scelto, se no si perderebbe al Salva
+    + (typeof c.qualita === 'number' && !_COPIA_QUALITA.includes(c.qualita) ? '<option value="' + c.qualita + '" selected>' + _copiaQualitaTesto(c.qualita) + '</option>' : '') + '</select></td>'
     + _copiaCellaAnnunci(artId, chiave, _copieCellaSu, true)   // v7.263; v7.278: sulle due righe
     // v7.267 (Franco: «il tasto di clona copia, sia nella tabella delle copie della sezione della admin console, che nella
     //    tabella della form di dettaglio delle copie») - ⧉ prima della ✕: una riga nuova subito sotto (`_copiaClonaRiga`)
     + '<td style="' + _copieCella + 'white-space:nowrap;"><button type="button" class="tbl-btn tbl-btn-edit" style="font-weight:bold;" title="' + (currentLang === 'it' ? 'Clona questa copia' : 'Clone this copy') + '" onclick="_copiaClonaRiga(this)">&#10697;</button> '
     + '<button type="button" class="tbl-btn tbl-btn-delete" title="' + (currentLang === 'it' ? 'Togli questa copia' : 'Remove this copy') + '" onclick="this.closest(\'tbody\').remove()">✕</button></td></tr>'   // v7.277: via tutta la copia, due righe
     // v7.277 - le Condizioni sotto, a tutta larghezza
-    // v7.278: 5 colonne (n., Voto, Mancanti, Iniziale, Add +): gli Annunci occupano già questa riga, e i tasti hanno la loro cella vuota
+    // v7.278: 5 colonne (n., Mancanti, Iniziale, Add +, Voto): gli Annunci occupano già questa riga, e i tasti hanno la loro cella vuota
     + _copieCondizioniRiga(_condCampoHTML('data-copia-condizioni', c.condizioni, 'padding:0.25rem 0.4rem;font-size:0.85rem;min-height:3.6rem;'), 5, true)
     + '</tbody>';
 }
@@ -71549,8 +71552,10 @@ function _copieIntestazione() {
   // v7.277 - via la colonna Condizioni (sta sotto ogni copia); il `<thead>` lo apre questa funzione e lo chiude chi la chiama
   // 🔄 v7.278 (Franco: «la colonna "Figurine mancanti" chiamala "Mancanti" e mettila dopo "Voto"»)
   // 🔄 v7.279 (Franco: «"Mancanti" diventa "No", scritto in rosso»)
-  return '<thead><tr>' + t(0, 'n.') + t(1, (it ? 'Voto' : 'Rating')) + t(2, '<span style="color:var(--danger);">No</span>') + t(3, (it ? 'Iniziale' : 'Initial'))
-    + t(4, 'Add +')   // v7.275 (Franco: «chiamala "Add +"»; era «Addizionale»)
+  // 🔄 v7.283 (Franco: «metti la colonna Voto dopo la colonna Add+») - i numeri di `t` sono la posizione della colonna: `_copieOrdinaTab` legge la cella a quel posto
+  return '<thead><tr>' + t(0, 'n.') + t(1, '<span style="color:var(--danger);">No</span>') + t(2, (it ? 'Iniziale' : 'Initial'))
+    + t(3, 'Add +')   // v7.275 (Franco: «chiamala "Add +"»; era «Addizionale»)
+    + t(4, (it ? 'Voto' : 'Rating'))
     + t(5, (it ? 'Annunci' : 'Listings'));   // v7.263; v7.266: «Qualità» → «Voto» (Franco)
 }
 // 🆕 v7.266 (Franco: «nel tab Copie di un articolo, le copie devono essere ordinate per campo "n."») - le copie con la loro
@@ -71712,12 +71717,11 @@ function _copieLetturaHTML(f) {
     + _copiePerNumero(f).map(([c, i]) => {   // v7.266: per n.
       const td = _copieCellaSu + 'font-size:0.85rem;color:var(--text);';   // v7.277: la riga dei campi senza linea
       return '<tbody><tr><td style="' + td + '">' + esc(String(c.n ?? '')) + '</td>'
-        // v7.267 - il Voto prima dell'Iniziale (Franco)
-        + '<td style="' + td + '">' + esc(_copiaQualitaTesto(c.qualita)) + '</td>'
-        // v7.274: le Figurine mancanti; 🔄 v7.278 (Franco): «Mancanti», dopo il Voto
+        // v7.274: le Figurine mancanti
         + '<td style="' + td + 'color:var(--danger);font-weight:600;">' + esc(String(c.mancanti ?? '')) + '</td>'
         + '<td style="' + td + '">' + esc(String(c.iniziale ?? '')) + '</td>'
         + '<td style="' + td + '">' + esc(String(c.addizionale ?? '')) + '</td>'   // v7.267: l'Addizionale
+        + '<td style="' + td + '">' + esc(_copiaQualitaTesto(c.qualita)) + '</td>'   // 🔄 v7.283: il Voto dopo Add + (Franco)
         + _copiaCellaAnnunci(f.id, _annChiaveCopia(c, i), _copieCellaSu, true) + '</tr>'   // v7.263: + Annunci; v7.278: sulle due righe
         // v7.277 - le Condizioni sotto, a tutta larghezza (Franco); v7.278: 5 colonne, gli Annunci stanno accanto
         + _copieCondizioniRiga('<span style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;">' + (c.condizioni ? _condColorato(c.condizioni) : '<span style="color:var(--muted);">—</span>') + '</span>', 5)
