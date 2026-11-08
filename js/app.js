@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.291';
+const JS_VERSION = 'v7.292';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -44991,6 +44991,8 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <div id="venditore-box" style="display:none;"><h2 style="margin-top:14px;">Per quale venditore? <span class="nota">(facoltativo: mette già il suo tessuto)</span></h2><div class="scelte" id="scelta-venditore"></div>
   <h2 style="margin-top:14px;">Quale texture di sfondo?</h2><div class="scelte" id="scelta-texture"></div></div></section>
 <section class="passo"><h2>4. Le foto per l'annuncio</h2>
+  <!-- v7.292 (Franco: «una spunta, posta di default a TRUE, dal nome "Pulisci sfondo"») -->
+  <label style="display:inline-flex;align-items:center;gap:6px;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="pulisci" checked>Pulisci sfondo</label>
   <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte</button><span class="nota" id="componi-perche" style="align-self:center;"></span></div>
   <!-- v7.272 (Franco: «anche nella sezione crea foto per annuncio vorrei avere i due bottoni») - i testi del tab Ebay dell'album, per il venditore scelto -->
   <div class="scelte" style="margin-top:8px;"><button class="btn" id="copia-titolo">📋 Copia titolo annuncio</button><button class="btn" id="copia-desc">📋 Copia descrizione annuncio</button><span class="nota" id="copia-stato" style="align-self:center;"></span></div>
@@ -45016,6 +45018,7 @@ function _faApri() {
   $('demo').onclick = () => _faFotoDelSito().catch(err => _faStato('Errore: ' + err.message));
   // v7.273 - l'errore anche al passo 4, accanto al tasto: al passo 2 dal telefono non si vedeva
   $('componi').onclick = () => _faComponi().catch(err => { _faStato('Errore: ' + err.message); _fa$('piano2').innerHTML = '<span style="color:#c0392b">⚠️ Errore: ' + esc(err.message) + '</span>'; });
+  $('pulisci').onchange = () => _faDisegnaScelte();   // v7.292: le foto pronte non valgono più
   $('scarica').onclick = _faScaricaTutte;
   $('copia-titolo').onclick = () => _faCopiaTesto('titoloIt');
   $('copia-desc').onclick = () => _faCopiaTesto('descIt');
@@ -45032,7 +45035,7 @@ const _fa$ = id => _fa.w.document.getElementById(id);
 const _faStato = t => { _fa$('stato').textContent = t || ''; };
 function _faSvuota() {
   // v7.273: le foto e le miniature di prima liberano subito la memoria (`_faLibera`)
-  _faLibera(..._fa.foto.map(f => f.tela), ..._fa$('miniature').querySelectorAll('canvas'));
+  _faLibera(..._fa.foto.map(f => f.tela), ..._fa.foto.map(f => f.pulita && f.pulita.tela), ..._fa$('miniature').querySelectorAll('canvas'));
   _fa.foto = []; _fa.uscite.forEach(u => URL.revokeObjectURL(u.url)); _fa.uscite = [];
   ['miniature', 'avvisi', 'risultati', 'piano2', 'copia-stato'].forEach(id => { _fa$(id).innerHTML = ''; });   // v7.272: anche l'esito della copia
   _fa$('spiega').style.display = 'none'; _fa$('zoom-mini').style.display = 'none'; _fa$('scarica').disabled = true; _fa$('componi').disabled = true; _faStato('');
@@ -45097,9 +45100,9 @@ function _faDisegnaScelte() {
   // 🆕 v7.243 - come nel collage: il venditore (gli stessi, `_ANN_ACCOUNT`) è facoltativo e mette già il suo tessuto
   //    (`COLLAGE_TEXTURE_VENDITORE`); ritoccato si toglie e la texture resta. La texture è obbligatoria (Franco: «avevo
   //    detto di fare come dall'altra parte»); «Nessuna» qui è lo sfondo bianco (la foto è un JPEG, niente trasparenza).
-  //    Solo col sito scelto. Con le foto già pronte, cambiando texture si rifanno subito.
+  //    Solo col sito scelto. 🔄 v7.292 - cambiando texture le foto pronte si buttano (`_faControllaUscite`): si ripreme «Prepara le foto».
   _fa$('venditore-box').style.display = _fa.sito ? '' : 'none';
-  const rifai = () => { _faDisegnaScelte(); if (_fa.uscite.length && _fa.texture) _faComponi().catch(err => _faStato('Errore: ' + err.message)); };
+  const rifai = () => _faDisegnaScelte();
   const vendBox = _fa$('scelta-venditore'); vendBox.innerHTML = '';
   _ANN_ACCOUNT.forEach(v => {
     const b = d.createElement('button');
@@ -45141,6 +45144,8 @@ function _faDisegnaScelte() {
     : s ? 'Sito scelto: <b>' + s.nome + '</b>. Ora scegli l’album (passo 1).'
     : 'Scegli l’album e il sito.';
   _fa$('componi').disabled = !_fa.foto.length || !_fa.sito || !_fa.texture;
+  if (_fa.inCorso) _fa$('componi').disabled = true;   // v7.292
+  _faControllaUscite();   // v7.292
   _faComponiPerche();
   // v7.187 (Franco: «il tasto carica foto non deve essere premibile se prima non ho selezionato l'album allo step 1») -
   //    «Carica le foto» è un'etichetta che apre la casella dei file: si spegne la casella (così il clic non apre niente)
@@ -45174,6 +45179,48 @@ function _faComponiPerche() {
     : !_fa.texture ? 'Per preparare le foto: scegli la texture di sfondo (passo 3).' : '';
 }
 function _faLibera(...tele) { tele.forEach(c => { if (c && c.getContext) { c.width = 0; c.height = 0; } }); }
+// 🆕 v7.292 (Franco: «"Prepara le foto" e "Scarica tutte" devono spegnersi quando viene modificato il valore di un campo
+//    precedentemente popolato e che era prerequisito»; proposta accettata: le foto pronte spariscono e «Scarica tutte» si spegne;
+//    «Prepara le foto» si spegne solo se manca un dato) - la fotografia delle scelte con cui si sono fatte le foto pronte
+function _faStatoScelte() {
+  return [_fa.album && _fa.album.id, _fa.sito && _fa.sito.chiave, _fa.venditore, _fa.texture, _fa$('pulisci').checked,
+    ..._fa.foto.map(f => [f.pagina, f.rett.x, f.rett.y, f.rett.w, f.rett.h, f.giri || 0].join(','))].join('|');
+}
+function _faInvalida() {
+  _fa.uscite.forEach(u => URL.revokeObjectURL(u.url));
+  _fa.uscite = []; _fa.saltate = [];
+  _fa$('risultati').innerHTML = ''; _fa$('piano2').innerHTML = '';
+  _fa$('scarica').disabled = true;
+}
+function _faControllaUscite() {
+  if (_fa.uscite.length && _fa.statoUscite !== _faStatoScelte()) _faInvalida();
+}
+// 🆕 v7.292 (Franco: «una spunta … "Pulisci sfondo"»; «le foto devono essere ripulite dello sfondo, prima di iniziare la loro
+//    elaborazione») - il ritaglio passa dal modello del sito (`_togliSfondoDaBlob`, nel browser: niente Cloudinary). Il risultato
+//    resta sulla foto (`pulita`), legato a tela e ritaglio: si rifà solo se la foto è cambiata.
+async function _faPulisciFoto(f) {
+  const rett = JSON.stringify(f.rett);
+  if (f.pulita && f.pulita.sorg === f.tela && f.pulita.rett === rett) return;
+  if (f.pulita) _faLibera(f.pulita.tela);
+  f.pulita = null;
+  const rit = _faRitaglio(f);
+  const png = await new Promise(ok => rit.toBlob(ok, 'image/png'));
+  _faLibera(rit);
+  if (!png) throw new Error('il telefono ha finito la memoria per le foto. Chiudi le altre schede del browser e riprova.');
+  const out = await _togliSfondoDaBlob(png);
+  const bm = await _fa.w.createImageBitmap(out);
+  const tela = _faTela(bm.width, bm.height);
+  tela.getContext('2d').drawImage(bm, 0, 0);
+  if (bm.close) bm.close();
+  f.pulita = { sorg: f.tela, rett, tela };
+}
+// una copia: chi la riceve la libera dopo averla usata
+function _faRitaglioPronto(f, pulisci) {
+  if (!pulisci || !f.pulita) return _faRitaglio(f);
+  const c = _faTela(f.pulita.tela.width, f.pulita.tela.height);
+  c.getContext('2d').drawImage(f.pulita.tela, 0, 0);
+  return c;
+}
 // v7.273 - dal telefono le foto caricate stanno a 1600 px (il lato delle foto dell'annuncio), dal PC a 2000 come prima
 const _faLatoCarica = () => (_fa.w.matchMedia && _fa.w.matchMedia('(pointer: coarse)').matches) ? _FA_LATO : 2000;
 function _faRiduci(sorgente, w, h, lato) {
@@ -45202,6 +45249,7 @@ function _faGiraRett(r, W, H, volte) {
 function _faGiraFoto(f, volte) {
   const W = f.tela.width, H = f.tela.height, prima = f.tela;
   f.tela = _faGira(f.tela, volte); f.rett = _faGiraRett(f.rett, W, H, volte);
+  f.giri = (f.giri || 0) + volte;   // v7.292: una foto quadrata girata ha lo stesso ritaglio (`_faStatoScelte`)
   if (f.tela !== prima) _faLibera(prima);   // v7.273: la tela di prima si libera subito
 }
 function _faRitaglio(f) {
@@ -45538,7 +45586,8 @@ async function _faFotoDelSito() {
   }
   _faStato('');
   _faMiniature();
-  if (_fa.sito && _fa.texture) await _faComponi();
+  // v7.292 - con «Pulisci sfondo» ci vuole tempo: si parte solo premendo «Prepara le foto» (Franco)
+  if (_fa.sito && _fa.texture && !_fa$('pulisci').checked) await _faComponi();
 }
 
 // ---- le miniature ----
@@ -45596,6 +45645,8 @@ function _faMiniature() {
     box.appendChild(card);
   });
   _fa$('componi').disabled = !_fa.foto.length || !_fa.sito || !_fa.texture;
+  if (_fa.inCorso) _fa$('componi').disabled = true;   // v7.292
+  _faControllaUscite();   // v7.292
   _faComponiPerche();
 }
 
@@ -45774,10 +45825,32 @@ function _faComponiGruppo(tele) {
 async function _faComponi() {
   const a = _fa.album, sito = _fa.sito;
   if (!a || !sito || !_fa.texture) return;
+  if (_fa.inCorso) return;   // v7.292: con «Pulisci sfondo» dura, e un secondo clic non deve partire
+  _fa.inCorso = true;
+  _fa$('componi').disabled = true;
+  try {
   const N = a.pagine.length, d = _fa.w.document;
   const perPagina = new Map(_fa.foto.filter(f => f.pagina !== null).map(f => [f.pagina, f]));
   _fa.uscite.forEach(u => URL.revokeObjectURL(u.url)); _fa.uscite = [];
+  _fa.statoUscite = _faStatoScelte();   // v7.292
+  _fa$('scarica').disabled = true;
   _fa$('risultati').innerHTML = '';
+  // 🆕 v7.292 - prima di tutto lo sfondo, una foto alla volta (il modello ne regge una sola: `_sfondoFila` tiene spenti gli altri bottoni)
+  const pulisci = _fa$('pulisci').checked;
+  if (pulisci) {
+    const daPulire = [...new Set((_faPianoDi(a, sito) || []).flat().filter(p => perPagina.has(p)))].map(p => perPagina.get(p));
+    _sfondoFila = true;
+    try {
+      for (let i = 0; i < daPulire.length; i++) {
+        const t = 'Pulisco lo sfondo: foto ' + (i + 1) + ' di ' + daPulire.length + '… (la prima volta ci vuole di più)';
+        _faStato(t); _fa$('piano2').textContent = '⏳ ' + t;
+        await _faPulisciFoto(daPulire[i]);
+      }
+    } catch (e) {
+      console.error('_faComponi/sfondo', e);
+      throw new Error('non riesco a pulire lo sfondo (' + (e && e.message || e) + '). Togli la spunta «Pulisci sfondo» per preparare le foto senza.');
+    } finally { _sfondoFila = false; _riaccendiBottoniSfondo(); }
+  }
   // v7.243 - la texture scelta, letta una volta sola (come nel collage, `_collageLeggiTexture`)
   const tx = COLLAGE_TEXTURE.find(t => t.k === _fa.texture);
   _fa.tessuto = null;
@@ -45792,10 +45865,12 @@ async function _faComponi() {
     if (!presenti.length) continue;
     _faStato('Preparo la foto ' + (_fa.uscite.length + 1) + '…');
     _fa$('piano2').textContent = '⏳ Preparo la foto ' + (_fa.uscite.length + 1) + '…';   // v7.273: anche qui, dove si guarda
-    const ritagli = presenti.map(p => _faRitaglio(perPagina.get(p)));
+    const ritagli = presenti.map(p => _faRitaglioPronto(perPagina.get(p), pulisci));
     let c = _faComponiGruppo(ritagli);
     _faLibera(...ritagli.filter(r => r !== c));   // v7.273
     if (_fa.tessuto) c = _faSulTessuto(c, _fa.tessuto);
+    // v7.292 - una foto pulita è trasparente: senza tessuto il JPEG la farebbe nera, lo sfondo è il bianco
+    else if (pulisci) { const b = _faTela(c.width, c.height), x = b.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, b.width, b.height); x.drawImage(c, 0, 0); _faLibera(c); c = b; }
     const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.9));
     _faLibera(c);   // v7.273: la foto ora sta nel file
     // v7.273 - una tela nata oltre il tetto di memoria del telefono non dà il file: lo si dice, invece di fermarsi muti
@@ -45805,8 +45880,11 @@ async function _faComponi() {
     _fa.uscite.push({ nome: a.file + '-' + sito.chiave + '-' + n + '.jpg', blob, url: URL.createObjectURL(blob), dida: presenti.map(p => _faNomePagina(p, N)).join(' + '), didaLunga: presenti.map(p => _faNomePagina(p, N, null, true)).join(' + ') });
   }
   if (!_fa$('stato').textContent.startsWith('⚠️')) _faStato('');
+  // v7.292 - una scelta cambiata mentre si lavorava: queste foto non valgono
+  if (_fa.statoUscite !== _faStatoScelte()) { _faInvalida(); return; }
   _fa.saltate = saltate;
   _faRisultati();
+  } finally { _fa.inCorso = false; _faDisegnaScelte(); }
 }
 // 🔄 v7.243 - le foto pronte, ridisegnate anche dopo «Togli» (prima stavano in fondo a `_faComponi`)
 function _faRisultati() {
