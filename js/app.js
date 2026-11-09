@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.292';
+const JS_VERSION = 'v7.293';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -71249,6 +71249,120 @@ function _copiaAlbumLeggi(nuova) {
   });
   return vuoti;
 }
+// 🆕 v7.293 (Franco: «mi serve che sia possibile caricare foto sulla pagina della copia; deve anche essere presente la opzione
+//    per pulire lo sfondo durante il caricamento») - LE FOTO DELLA COPIA, campo foto (elenco di indirizzi; nessuna foto = il
+//    campo non c'è). Si scelgono e si puliscono subito nel browser, e si vedono da lì; vanno su Cloudinary solo col Salva,
+//    così una finestra chiusa senza salvare non lascia foto orfane. La pulizia è quella del sito (modello nel browser, niente
+//    Cloudinary). Di ogni foto: url se è già caricata, blob e anteprima se è ancora solo qui.
+let _cpFoto = [], _cpFotoLavoro = 0;
+const _COPIA_FOTO_LATO = 2000;
+function _cpFotoMiniature(sola) {
+  const it = currentLang === 'it';
+  return _cpFoto.map((f, i) => {
+    const grande = f.anteprima || f.url;
+    const mini = f.anteprima || _urlSenzaScritta(f.url, 'w_160,h_200,c_fit,q_auto,f_auto');
+    return '<div data-cp-foto style="position:relative;width:80px;height:100px;">'
+      + '<a href="' + esc(grande) + '" target="_blank" rel="noopener"><img src="' + esc(mini) + '" alt="" style="width:80px;height:100px;object-fit:contain;border-radius:6px;background:#fff;"></a>'
+      + (sola ? '' : '<button type="button" title="' + (it ? 'Togli la foto' : 'Remove the photo') + '" onclick="_cpFotoTogli(' + i + ')" style="position:absolute;top:2px;right:2px;width:20px;height:20px;padding:0;line-height:1;border:none;border-radius:50%;background:var(--danger);color:#fff;cursor:pointer;">✕</button>')
+      + '</div>';
+  }).join('');
+}
+function _cpFotoHTML(c, sola) {
+  const it = currentLang === 'it';
+  _cpFoto.forEach(f => { if (f.anteprima) URL.revokeObjectURL(f.anteprima); });
+  _cpFoto = (Array.isArray(c.foto) ? c.foto : []).map(url => ({ url }));
+  if (sola && !_cpFoto.length) return '';
+  return '<div id="cp-foto-box"><label class="detail-label" style="display:block;margin:0.7rem 0 0.25rem;">' + (it ? 'Foto' : 'Photos') + '</label>'
+    + '<div id="cp-foto-lista" style="display:flex;flex-wrap:wrap;gap:0.5rem;">' + _cpFotoMiniature(sola) + '</div>'
+    + (sola ? '' : '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:0.8rem;margin-top:0.5rem;">'
+      + '<input type="file" id="cp-foto-input" accept="image/*" multiple style="display:none;" onchange="_cpFotoScelte(this)">'
+      + '<button type="button" class="btn-barra-admin pieno" id="cp-foto-carica" onclick="document.getElementById(\'cp-foto-input\').click()">📷 ' + (it ? 'Carica foto' : 'Upload photos') + '</button>'
+      + '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" id="cp-foto-pulisci">' + (it ? 'Pulisci sfondo' : 'Clean background') + '</label>'
+      + '</div>')
+    + '</div>';
+}
+function _cpFotoDisegna() {
+  const box = document.getElementById('cp-foto-lista');
+  if (box) box.innerHTML = _cpFotoMiniature(false);
+}
+function _cpFotoTogli(i) {
+  const via = _cpFoto.splice(i, 1)[0];
+  if (via && via.anteprima) URL.revokeObjectURL(via.anteprima);
+  _cpFotoDisegna();
+}
+// un clone è un altro pezzo: le foto non vengono dietro
+function _cpFotoSvuota() {
+  _cpFoto.forEach(f => { if (f.anteprima) URL.revokeObjectURL(f.anteprima); });
+  _cpFoto = [];
+  _cpFotoDisegna();
+}
+// le foto oltre la misura caricata di solito sul sito si riducono prima: il modello lavora più in fretta, e il PNG pulito resta
+// sotto i 10 MB che Cloudinary accetta. Un formato che il browser non sa aprire si lascia com'è.
+async function _cpFotoRiduci(blob) {
+  let img;
+  try { img = await createImageBitmap(blob); } catch (e) { return blob; }
+  try {
+    const k = _COPIA_FOTO_LATO / Math.max(img.width, img.height);
+    if (k >= 1) return blob;
+    const tela = document.createElement('canvas');
+    tela.width = Math.round(img.width * k);
+    tela.height = Math.round(img.height * k);
+    tela.getContext('2d').drawImage(img, 0, 0, tela.width, tela.height);
+    return (await new Promise(res => tela.toBlob(res, 'image/jpeg', 0.92))) || blob;
+  } finally { img.close(); }
+}
+async function _cpFotoScelte(input) {
+  const it = currentLang === 'it', file = [...input.files];
+  input.value = '';
+  if (!file.length) return;
+  const modal = document.getElementById('copia-modal'), st = document.getElementById('cp-stato'), tasto = document.getElementById('cp-foto-carica');
+  const pulisci = !!document.getElementById('cp-foto-pulisci')?.checked;
+  const di = (t, col) => { if (st) { st.style.color = col || 'var(--info)'; st.textContent = t; } };
+  if (pulisci && _sfondoInCorso) return di(it ? '⏳ C’è già una pulizia dello sfondo in corso: aspetta che finisca.' : '⏳ A background removal is already running: wait for it to finish.', 'var(--danger)');
+  _cpFotoLavoro++;
+  if (tasto) tasto.disabled = true;
+  if (pulisci) _sfondoFila = true;
+  let fallite = 0;
+  try {
+    for (let i = 0; i < file.length; i++) {
+      if (document.getElementById('copia-modal') !== modal) return;
+      const conto = (it ? 'foto ' + (i + 1) + ' di ' : 'photo ' + (i + 1) + ' of ') + file.length;
+      try {
+        let blob = await _cpFotoRiduci(file[i]);
+        if (pulisci) {
+          di('⏳ ' + (it ? 'Pulisco lo sfondo: ' : 'Cleaning the background: ') + conto);
+          blob = await _togliSfondoDaBlob(blob, (pct, fase) => di(fase === 'libreria'
+            ? '⏳ ' + (it ? 'Scarico il modello…' : 'Loading the model…')
+            : '⏳ ' + (it ? 'Pulisco lo sfondo: ' : 'Cleaning the background: ') + conto + (pct ? ' — ' + pct + '%' : '')));
+        }
+        if (document.getElementById('copia-modal') !== modal) return;
+        _cpFoto.push({ blob, anteprima: URL.createObjectURL(blob) });
+        _cpFotoDisegna();
+      } catch (e) {
+        console.error('_cpFotoScelte', i, e);
+        fallite++;
+      }
+    }
+    if (fallite) di((it ? '⚠️ Non riuscite: ' + fallite + ' foto su ' : '⚠️ Failed: ' + fallite + ' photos of ') + file.length + '.', 'var(--danger)');
+    else di(it ? '✅ Foto pronte: vanno sul sito con Salva.' : '✅ Photos ready: Save uploads them.');
+  } finally {
+    _cpFotoLavoro--;
+    if (tasto) tasto.disabled = false;
+    if (pulisci) { _sfondoFila = false; _riaccendiBottoniSfondo(); }
+  }
+}
+// col Salva: carica quelle ancora solo qui e scrive l'elenco sulla copia. Una caricata resta caricata: se il Salva fallisce
+// e si riprova, non parte due volte.
+async function _cpFotoCarica(nuova) {
+  if (_cpFotoLavoro) throw new Error(currentLang === 'it' ? 'aspetta che le foto siano pronte.' : 'wait for the photos to be ready.');
+  for (const f of _cpFoto) {
+    if (!f.blob) continue;
+    f.url = await uploadToCloudinary(f.blob);
+    delete f.blob;
+  }
+  if (_cpFoto.length) nuova.foto = _cpFoto.map(f => f.url);
+  else delete nuova.foto;
+}
 function _copiaApri(artId, chiave, sola) {
   const it = currentLang === 'it';
   const art = _articoloVivo(artId), c = _annTrovaCopia(art, chiave);
@@ -71301,6 +71415,7 @@ function _copiaApri(artId, chiave, sola) {
     // 🔄 v7.279 - riga 7: le Condizioni
     + lab(it ? 'Condizioni' : 'Condition')
     + _condCampoHTML('id="cp-condizioni"' + dis, c.condizioni, 'min-height:8rem;')
+    + _cpFotoHTML(c, sola)
     // gli annunci della copia: la stessa cella della colonna «Annunci» del tab, riempita quando gli annunci sono letti
     + '<div id="cp-annunci">' + lab(it ? 'Annunci' : 'Listings')
     + '<table style="border-collapse:collapse;"><tr>' + _copiaCellaAnnunci(artId, chiave, null, 'riga') + '</tr></table></div>' + _copieAnnunciDopo()
@@ -71406,6 +71521,7 @@ function _copiaClonaQui(artId) {
   // 🔄 v7.289 (Franco: «si vanno lasciati vuoti anche loro») - anche Condizioni e Mancanti; le Condizioni hanno lo strato colorato da rifare
   ['cp-qualita', 'cp-iniziale', 'cp-addizionale', 'cp-mancanti', 'cp-condizioni'].concat(_COPIA_ALBUM.map(d => 'cp-al-' + d.k)).forEach(id => { if (v(id)) v(id).value = ''; });
   if (v('cp-condizioni')) _condColora(v('cp-condizioni'));
+  _cpFotoSvuota();
   v('cp-annunci')?.remove();
   v('cp-clona')?.remove();
   v('cp-cancella')?.remove();   // v7.277: un clone non salvato non c'è ancora da cancellare
@@ -71480,6 +71596,7 @@ async function _copiaSalva(artId, chiave, passo) {
   salvi.forEach(b => { b.disabled = true; });
   const vicina = passo && chiave !== null ? _cdVicina(artId, chiave, passo) : null;
   try {
+    await _cpFotoCarica(nuova);
     if (artDest) {
       await _saveFigurineItem(Object.assign({}, artDest, { copie: (Array.isArray(artDest.copie) ? artDest.copie : []).concat([nuova]) }));
       if (chiave !== null) await _saveFigurineItem(Object.assign({}, _articoloVivo(artId) || art, { copie }));
@@ -71715,6 +71832,7 @@ function _copiaClonaRiga(btn) {
   // 🔄 v7.282 (Franco: «non copiare tutti i campi legati alla qualità»; «non copiare nemmeno Voto, Iniziale, Addizionale, Finale») - via i campi degli album (v7.279 li portava con sé), Voto, Iniziale e Addizionale
   const altri = tr.dataset.copiaAltri ? JSON.parse(tr.dataset.copiaAltri) : {};
   _COPIA_ALBUM.forEach(d => delete altri[d.k]);
+  delete altri.foto;
   tr.insertAdjacentHTML('afterend', _copiaRigaHTML({ ...altri,
     // 🔄 v7.289 (Franco: «si vanno lasciati vuoti anche loro») - anche Condizioni e Mancanti
     n: null, condizioni: '',
