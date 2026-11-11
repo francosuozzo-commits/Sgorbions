@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.296';
+const JS_VERSION = 'v7.297';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32349,7 +32349,10 @@ const _stileMacchia = (carosello, chiave) => {
 // 🆕 v7.130 - la soglia delle miniature: i 200 del Riepilogo del questionario e tutte le più piccole (righe di tabella,
 //    elenchi, la scheda in modifica non c'entra: è 640). Sopra restano macchiate le schede delle griglie (300) e dei
 //    caroselli (400), la vetrina di chi non è registrato (240) e le foto grandi.
-const MINIATURA_MAX_W = 200;
+// 🔄 v7.297 (Franco: «io direi di scendere a 150 pixel», per macchiare la griglia del questionario; fra le due strade
+//    proposte ha scelto questa) - 200 → 150: ora si macchiano anche la griglia del questionario (200), le miniature del
+//    suo riepilogo (200×260 e 160×200), la foto della finestra «La mia lista Sgorbions» (180) e i personaggi (160)
+const MINIATURA_MAX_W = 150;
 let _adminSenzaMacchie = false;
 try { _adminSenzaMacchie = localStorage.getItem('sgorb.senzaMacchie') === '1'; } catch (e) {}
 function _filigrana(url, opts) {
@@ -59516,8 +59519,11 @@ function _wzQuanteDomanda(p, n, nome, ver) {
 //    (`.wz-tile-due`, index) così le foto restano grandi come le altre. Il retro è quello del sito: per le figurine con
 //    retro il loro (`_retroEffettivo`), per le altre tipologie la foto del retro dell'articolo (`_imgRetroDi`).
 //    📌 La misura chiesta a Cloudinary è 200×260, quella che il riepilogo usa già per i retro.
+// 🔄 v7.297 (Franco: «nel questionario, anche per le fcr omaggio va mostrato il retro») - e gli Omaggio (`isFreeVersion`)
+// 🔄 v7.297 (Franco: «il retro per gli errori di stampa ci sta; per i change teoricamente no, dato che i change sono tali
+//    per via del loro fronte») - e gli errori di stampa (`isPrintError`); i change restano col solo fronte
 function _wzRetroTile(f, figs) {
-  if (!f || !(f.isVariation || f.isUnofficialVariation)) return '';
+  if (!f || !(f.isVariation || f.isUnofficialVariation || f.isFreeVersion || f.isPrintError)) return '';
   if ((f.section || 'figurines') === 'figurines') {
     const id = _retroEffettivo(f, figs), r = id && (figs || []).find(x => x.id === id);
     return (r && (_fotoFigurina(r, figs) || r.img)) || '';
@@ -59530,11 +59536,20 @@ function _wzRetroTile(f, figs) {
 //    quelle dell'articolo dopo partono a capo. Il gruppo è quello dell'Inventario (`_familyKey`). Nel set base ogni
 //    articolo è un gruppo suo, quindi lì niente a capo (sarebbe una card per riga). L'a capo è un elemento largo quanto
 //    tutta la griglia e alto zero (`.wz-a-capo`, index): la riga prima resta com'è, con i suoi posti vuoti.
+// 🔄 v7.297 (Franco: «se il numero massimo di articoli appartenenti alla stessa famiglia … è 1, allora non ha senso andare
+//    a capo»; «si sta vedendo sempre e solo un articolo per riga») - si va a capo solo se nella schermata almeno un
+//    gruppo ha due articoli o più (`_wzACapoMulti`, contato una volta per elenco)
 let _wzACapoIdx = { da: null, idx: null };   // l'indice degli articoli, rifatto solo se cambia l'elenco
+let _wzACapoMulti = { lista: null, si: false };
 function _wzACapo(lista, i, ver, figs) {
   if (!ver || i === 0) return '';
   if (_wzACapoIdx.da !== figs) _wzACapoIdx = { da: figs, idx: typeof _figIndex === 'function' ? _figIndex(figs) : null };
   const idx = _wzACapoIdx.idx;
+  if (_wzACapoMulti.lista !== lista) {
+    const viste = new Set();
+    _wzACapoMulti = { lista, si: lista.some(f => { const k = _familyKey(f, idx); if (viste.has(k)) return true; viste.add(k); return false; }) };
+  }
+  if (!_wzACapoMulti.si) return '';
   return _familyKey(lista[i], idx) === _familyKey(lista[i - 1], idx) ? '' : '<div class="wz-a-capo" aria-hidden="true"></div>';
 }
 function _wzFotoTile(f, figs) {
@@ -60062,8 +60077,10 @@ async function _wzAzzeraDavvero() {
 //    né invisibili. Una riga per tipologia e versione di cui c'è almeno un articolo, «N di M» con la barretta; «(base)»
 //    solo dove la stessa tipologia ha anche una versione in elenco. Parole e forma della riga sono mie.
 let _mlSerie = null;   // il tab aperto
+// 🔄 v7.297 (Franco: «le tda elencate devono seguire il solito ordine») - l'ordine dei box della serie e dell'Inventario
+//    (`PRODOTTI_INVENTARIO`), non più quello del questionario (`_wzSezioni`, che mette l'Album per primo)
 function _mlRighe(s, mie) {
-  const it = currentLang === 'it', gruppi = new Map(), ordine = _wzSezioni();
+  const it = currentLang === 'it', gruppi = new Map(), ordine = typeof PRODOTTI_INVENTARIO !== 'undefined' && Array.isArray(PRODOTTI_INVENTARIO) ? PRODOTTI_INVENTARIO : _wzSezioni();
   for (const f of _articoliDaContareSito()) {
     if (f.seriesId !== s.id) continue;
     const z = f.section || 'figurines', v = _VERSIONI_VIVE.find(x => f[x.campo]), k = z + '|' + (v ? v.chiave : '');
@@ -60357,11 +60374,7 @@ function _wzDisegna(tieni) {
             // v7.129 (Franco) - «Quelli grigi e bloccati…», non più «I quadranti grigi…»
             ? 'Quelli grigi e bloccati si attivano da soli.'
             : 'The grey, locked ones become active by themselves.') + '</p>' : '')
-        // 🆕 v7.130 (Franco: «specificherei che le fpa si specificano una sola volta anche se in lista ci sono più
-        //    album»; «via» sulla frase proposta da Claude) - toccare di nuovo l'Album, pensando al secondo, lo spegne
-        + (w.sezSerie.includes('attaccare') && w.sezSerie.includes('albums') ? '<p class="wz-testo">' + (it
-            ? 'L\'Album è un quadrante solo, anche se hai più album: quali album hai lo dirai nella pagina dopo, e le figurine per album si indicano una volta sola.'
-            : 'The Album is a single tile, even if you have more than one album: you will say which albums you have on the next page, and the album stickers are given only once.') + '</p>' : '')
+        // 🗑️ v7.297 (Franco: «togliamo la frase "L'Album è un quadrante solo…"») - la frase della v7.130 non c'è più
         + '</div></div>'   // v7.089: fine di `wz-due`
         + '<div class="wz-scelte wz-scelte-tda">' + w.sezSerie.map(z => {   // v7.080: classe per lo spazio foto-titolo
             const grigia = z === 'attaccare' && !_wzFpaLibera();
@@ -60771,7 +60784,11 @@ function _wzDisegna(tieni) {
   }
   const _wzConEsci = !['esci', 'uscita', 'azzera1', 'azzera2', 'finale'].includes(w.passo);   // v7.089: e il riepilogo
   const _wzBtnEsci = '<button type="button" class="btn-secondary wz-esci wz-scritta-rossa" onclick="_wzChiediEsci()">🚪 ' + (it ? 'Esci dal questionario' : 'Exit the questionnaire') + '</button>';
-  if (_wzConEsci) corpo = '<div class="wz-esci-alto">' + _wzBtnEsci + '</div>' + corpo;
+  // 🆕 v7.297 (Franco: «mettiamo la bandierina del cambio lingua anche nelle pagine del questionario») - il questionario
+  //    copre la navbar, quindi la sua bandiera non si vede: una copia accanto a «Esci», in tutte le schermate. Mostra la
+  //    lingua attuale come quella della navbar; le lingue sono due, quindi un tocco passa all'altra senza tendina.
+  const _wzBandiera = '<img class="wz-lingua" src="' + flagUrl(it ? 'it' : 'gb') + '" alt="' + (it ? 'Italiano' : 'English') + '" title="' + (it ? 'Cambia lingua' : 'Change language') + '" onclick="_wzCambiaLingua()">';
+  corpo = '<div class="wz-esci-alto">' + _wzBandiera + (_wzConEsci ? _wzBtnEsci : '') + '</div>' + corpo;
   // 🆕 v7.130 - il secondo «Esci» nella riga di «Azzera», se c'è (prima schermata); se no in fondo, come prima
   const _wzEsciInRiga = _wzConEsci && corpo.includes('<!--wz-esci-qui-->');
   if (_wzEsciInRiga) corpo = corpo.replace('<!--wz-esci-qui-->', '<span class="wz-esci-riga">' + _wzBtnEsci + '</span>');
@@ -60790,6 +60807,8 @@ function _wzDisegna(tieni) {
   }
 }
 function nfmtWz(n) { return Number(n || 0).toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US'); }
+// 🆕 v7.297 - la bandierina del questionario: cambia lingua e ridisegna la schermata dov'è (renderAll non la conosce)
+function _wzCambiaLingua() { setLang(currentLang === 'it' ? 'en' : 'it', true); _wzDisegna(true); }
 
 function getOwned() {
   const uid = currentUser?.id || 'guest';
@@ -66320,6 +66339,7 @@ function _aggiornaLinguettaImpersona() {
 //    `_impostaProtezione`). Una scheda già aperta si aggiorna alla prossima apertura.
 function _cliccaLinguettaMacchie() {
   if (!currentUser || !currentUser.isAdmin) return;
+  const _x = window.scrollX, _y = window.scrollY;   // v7.297: dove si era (vedi in fondo)
   _adminSenzaMacchie = !_adminSenzaMacchie;
   try { localStorage.setItem('sgorb.senzaMacchie', _adminSenzaMacchie ? '1' : '0'); } catch (e) {}
   _aggiornaLinguettaImpersona();
@@ -66330,6 +66350,12 @@ function _cliccaLinguettaMacchie() {
   try { if (inVista('sezione-carosello-sez')) renderCaroselloSezione(); } catch (e) { console.error('renderCaroselloSezione', e); }
   try { if (currentSeriesId && currentSection && document.getElementById('items-grid')) renderItems(); } catch (e) { console.error('renderItems', e); }
   try { if (document.getElementById('page-catalog')?.classList.contains('active')) renderCatalog(); } catch (e) { console.error('renderCatalog', e); }
+  // 🐛 v7.297 (Franco: «alla pressione di quel tasto, quantomeno quando non si è nella home, … accade sempre qualcosa,
+  //    quando non dovrebbe accadere nulla») - misurato nella sezione Figurine con retro della serie 1: la pagina saltava
+  //    da 900 a 1160px, perché i ridisegni qui sopra spostano lo scorrimento. Le macchie cambiano solo le foto: la
+  //    pagina torna dov'era, subito e dopo un fotogramma (quando le griglie hanno finito di prendere le loro misure).
+  const _tieniY = () => { if (Math.abs(window.scrollY - _y) > 1) window.scrollTo(_x, _y); };
+  _tieniY(); requestAnimationFrame(_tieniY); setTimeout(_tieniY, 250);
   toast(_adminSenzaMacchie ? '💧 Macchie tolte, solo per te' : '💧 Macchie visibili', 'success');
 }
 function _cliccaLinguettaImpersona() {
