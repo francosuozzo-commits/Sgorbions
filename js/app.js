@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.294';
+const JS_VERSION = 'v7.295';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42366,7 +42366,7 @@ function _collageSitoHTML() {
       '<div style="' + dom + '">' + (it ? 'Numeri specifici ?' : 'Specific numbers?') + '</div>' +
       radio('collage-sito-spec', 'no', 'No', true) + radio('collage-sito-spec', 'si', it ? 'Sì' : 'Yes') +
       '<div id="collage-sito-spec-campo" style="display:none;margin-top:0.35rem;align-items:center;gap:0.5rem;flex-wrap:wrap;">' +
-        '<input type="text" id="collage-sito-spec-numeri" class="form-input" placeholder="3, 7, 12, 15" style="width:16rem;max-width:100%;" oninput="_collageSitoAggiorna()">' +
+        '<input type="text" id="collage-sito-spec-numeri" class="form-input" placeholder="3, 7, 12, 15" style="width:16rem;max-width:100%;" oninput="_collageSpecScritto()">' +
         '<button type="button" class="btn-secondary" onclick="_collageGrigliaNumeri()">' + (it ? 'Scegli dalla griglia' : 'Pick from the grid') + '</button>' +
       '</div>' +
     '</div>' +
@@ -42454,8 +42454,18 @@ function _collageSitoAggiorna() {
   //    risultato è maggiore di 40 mettilo lo stesso, così la procedura si blocca ed io me ne accorgo») - a ogni risposta
   //    cambiata le foto da unire diventano quante ne trova `_collageCandidati`, anche oltre 40 o sotto 2: lì
   //    «Prendi le foto» e «Crea» si fermano e lo dicono. Il numero si può sempre cambiare a mano dopo.
+  _collageContaCandidati();
+}
+// 🆕 v7.295 - «Quante foto devi unire ?» e, con gli stessi candidati, se fra loro c'è una sottocategoria (`_collageConSub`,
+//    che `_collageStato` usa per «Tengo unite le sottocategorie ?»): un calcolo solo per le due cose
+let _collageConSub = false;
+function _collageContaCandidati() {
   const nn = document.getElementById('collage-n');
-  if (nn && _collageModo === 'sito') { nn.value = _collageCandidati().el.length; _collageStato(); }
+  if (!nn || _collageModo !== 'sito') return;
+  const el = _collageCandidati().el;
+  _collageConSub = el.some(f => String(f.subcategory || '').trim());
+  nn.value = el.length;
+  _collageStato();
 }
 // 🆕 v7.214 (Franco: «nel collage, dopo che scelgo la serie, deve chiedermi la tda; solo dopo deve cercare gli articoli»)
 //    - LA TIPOLOGIA DENTRO LA SERIE. Le voci sono le tipologie che in quella serie hanno almeno un articolo base con la foto
@@ -42722,6 +42732,21 @@ function _collageSpecPossibile() {
   if (da === 'serie' && !(document.getElementById('collage-sito-serie') || {}).value) return false;
   return _collageCandidati(true).el.some(f => _collageNumeriDi(f).length > 0);
 }
+// 🆕 v7.295 (Franco: «da mobile il campo "numeri specifici" è molto pesante»; «io scrivo e ciò che scrivo compare dopo») -
+//    il campo rifaceva tutte le domande a ogni tasto (`_collageSitoAggiorna`, ~1,6 s sul PC). Ora mezzo secondo dopo
+//    l'ultimo tasto si rifà solo «Quante foto devi unire ?», l'unica cosa che i numeri cambiano; «Prendi le foto» non
+//    aspetta il mezzo secondo (`_collageSpecScrittoOra` in `_collagePrendi`)
+let _collageSpecTimer = null;
+function _collageSpecScritto() {
+  clearTimeout(_collageSpecTimer);
+  _collageSpecTimer = setTimeout(_collageSpecScrittoOra, 500);
+}
+function _collageSpecScrittoOra() {
+  if (_collageSpecTimer === null) return;
+  clearTimeout(_collageSpecTimer);
+  _collageSpecTimer = null;
+  _collageContaCandidati();
+}
 function _collageSpecAttivo() {
   return _collageSpecPossibile() && (document.querySelector('input[name="collage-sito-spec"]:checked') || {}).value === 'si';
 }
@@ -42856,6 +42881,7 @@ function _collageNumeriUsa() {
 //    I due tasti chiamano `_collagePrendi`, che fa da guardia attorno a `_collagePesca` (il prelievo, com'era).
 let _collagePescaInCorso = false, _collagePescaGiro = 0;
 async function _collagePrendi() {
+  _collageSpecScrittoOra();
   if (_collagePescaInCorso) return;
   _collagePescaInCorso = true;
   _collagePescaTasti();
@@ -43122,8 +43148,10 @@ function _collageStato() {
   if (ub) { const tx = document.querySelector('input[name="collage-texture"]:checked'); ub.style.display = tx && tx.value !== 'nessuna' ? '' : 'none'; }
   _collageRetroMostra();   // v7.224 - cambiando il tipo di collage la spunta dei retro compare o sparisce
   // v7.261 - «Tengo unite le sottocategorie ?» solo dal sito: le foto dal PC non hanno una sottocategoria
+  // 🔄 v7.295 (Franco: «la domanda sulle categorie mostrala solo se ciò che stiamo per estrarre ha le categorie»; «si vede
+  //    per le fcr») - e solo se uno dei candidati ne ha una
   const usb = document.getElementById('collage-unisci-sub-box');
-  if (usb) usb.style.display = _collageModo === 'sito' ? '' : 'none';
+  if (usb) usb.style.display = _collageModo === 'sito' && _collageConSub ? '' : 'none';
 }
 // 🆕 v7.261 - cambiando il tipo di collage, «Quanti articoli in ogni foto ?» torna al massimo del nuovo tipo
 function _collageTipoScelto() {
