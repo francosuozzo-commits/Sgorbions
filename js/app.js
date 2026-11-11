@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.293';
+const JS_VERSION = 'v7.294';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33895,10 +33895,12 @@ function _guastoCaricamentoDati(causa) {
 // ============================================================
 //  CLOUDINARY UPLOAD
 // ============================================================
-async function uploadToCloudinary(file) {
+// 🆕 v7.294 - «etichetta»: la mettono le foto che il lavoro serale può cancellare da solo (strumenti/pulizia-foto-serale.py)
+async function uploadToCloudinary(file, etichetta) {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', CLOUDINARY_PRESET);
+  if (etichetta) formData.append('tags', etichetta);
   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
     method: 'POST', body: formData
   });
@@ -41701,18 +41703,29 @@ function renderAdminQuestionario() {
     '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">📝 ' + (it ? 'Questionario: la domanda «quante ne hai?»' : 'Questionnaire: the «how many?» question') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
-        ? 'Accesa: quattro carte, <strong>Tutte</strong>, <strong>Nessuna</strong>, <strong>Poche</strong> (si toccano quelle che ci sono) e ' +
-          '<strong>Molte</strong> (si toccano quelle che mancano).<br>Spenta: nessuna domanda, si va dritti alla griglia e si toccano quelle che ci sono.<br>' +
+        // 🔄 v7.294 (Franco: «"Accesa" e "Spenta" vanno in azzurro»; «Tutte, Nessuna, Poche e Molte, vanno tra "»)
+        ? '<span style="color:var(--info);">Accesa</span>: quattro carte, "Tutte", "Nessuna", "Poche" (si toccano quelle che ci sono) e ' +
+          '"Molte" (si toccano quelle che mancano).<br><span style="color:var(--info);">Spenta</span>: nessuna domanda, si va dritti alla griglia e si toccano quelle che ci sono.<br>' +
           'Gli album non sono in tabella: hanno la loro schermata con le foto da toccare.'
         : 'Checked: four cards (All, None, A few, Many). Unchecked: no question, straight to the grid. Albums have their own screen.') +
     '</p>' +
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
     '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
       '<th style="' + th + 'text-align:center;">' + (it ? 'Quattro carte' : 'Four cards') + '</th></tr>' +
-    PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez] && sez !== 'albums').map(sez =>
-      '<tr><td style="' + td + '">' + esc(_wzEtichetta(sez)) + '</td>' +
-      '<td style="' + td + 'text-align:center;"><input type="checkbox" data-wz-quattro="' + sez + '"' + (_wzQuattroTDA(sez) ? ' checked' : '') + '></td></tr>').join('') +
+    // 🔄 v7.294 (Franco: «in quella tabella non voglio leggere "altri articoli"; metti tutte le tipologie di articoli
+    //    rimanenti»; scelta 2) - le righe come le altre tabelle della console: le tipologie di serie senza «Altri
+    //    articoli» (e senza gli album), poi i tipi senza serie (chiave «tipo:<id>», salvata come `quattro:tipo:<id>`)
+    PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez] && sez !== 'albums' && sez !== 'extras').map(sez => [sez, _wzEtichetta(sez)])
+      .concat(_tipiProdotto().map(tp => ['tipo:' + tp.id, _nomeTipo(tp) || tp.id])).map(([k, nome]) =>
+      '<tr><td style="' + td + '">' + esc(nome) + '</td>' +
+      '<td style="' + td + 'text-align:center;"><input type="checkbox" data-wz-quattro="' + esc(k) + '"' + (_wzQuattroTDA(k) ? ' checked' : '') + '></td></tr>').join('') +
     '</table></div>' +
+    // v7.294 (Franco: «metti una nota in fondo alla tabella») - le righe dei tipi senza serie oggi non cambiano niente
+    '<p style="font-size:0.8rem;color:var(--text);opacity:0.8;margin:0.5rem 0 0;line-height:1.5;">' +
+      // Franco: «Nota, in azzurro» - la parola, come «Accesa» e «Spenta» sopra
+      '<span style="color:var(--info);">' + (it ? 'Nota' : 'Note') + '</span>' +
+      (it ? ': gli articoli non associati a una serie sono, al momento, esclusi dal questionario.'
+          : ': items not linked to a series are currently left out of the questionnaire.') + '</p>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaQuestionario()">' + (it ? 'Salva il questionario' : 'Save questionnaire') + '</button>' +
     '</div>';
@@ -41798,11 +41811,13 @@ function renderAdminFotoAnnuncio() {
     // 🔄 v7.241 (Franco: «da mobile i due bottoni … si sovrappongono un pochino»; «diminuirne un minimo l'altezza di
     //    entrambi») - in una fila `fa-tasti` (regole nell'index): lo spazio fra i due anche quando vanno a capo, e dal
     //    telefono più bassi
+    // 🔄 v7.294 (Franco: «"Crea foto per annunci" diventa "Crea annuncio album"»; «"Crea collage foto" diventa "Crea
+    //    annuncio da collage"») - i due tasti, qui e nella finestrella del venditore
     '<div class="fa-tasti">' +
-    '<button class="btn-primary btn-admin admin-anche-telefono" onclick="_faApri()">' + (it ? '📸 Crea foto per annunci' : '📸 Create listing photos') + '</button>' +
+    '<button class="btn-primary btn-admin admin-anche-telefono" onclick="_faApri()">' + (it ? '📸 Crea annuncio album' : '📸 Create album listing') + '</button>' +
     // 🆕 v7.219 (Franco: «sposta la funzione Collage foto nella sezione "Annunci"; lì dentro ci metti un tasto, dello stesso
     //    stile del tasto "Crea annuncio", fa iniziare la procedura di creazione collage in una finestra») - `apriCollage`
-    '<button class="btn-primary btn-admin admin-anche-telefono" onclick="apriCollage()">' + (it ? '🖼️ Crea collage foto' : '🖼️ Create photo collage') + '</button>' +
+    '<button class="btn-primary btn-admin admin-anche-telefono" onclick="apriCollage()">' + (it ? '🖼️ Crea annuncio da collage' : '🖼️ Create listing from collage') + '</button>' +
     '</div>' +
     '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.8rem;flex-wrap:wrap;margin:2rem 0 0.6rem;">' +
       '<h4 style="font-family:var(--font-ui);margin:0;">📋 ' + (it ? 'Annunci in corso' : 'Current listings') + '</h4>' +
@@ -41890,15 +41905,16 @@ function apriAnnunciNav() {
     '<div style="padding:0 1.2rem 1.4rem;"><p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it ? 'Le foto si scaricano e basta: sul sito non si salva niente.' : 'Photos are only downloaded: nothing is saved on the site.') + '</p>' +
     '<div class="fa-tasti">' +
-      '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();_faApri()">' + (it ? '📸 Crea foto per annunci' : '📸 Create listing photos') + '</button>' +
-      '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();apriCollage()">' + (it ? '🖼️ Crea collage foto' : '🖼️ Create photo collage') + '</button>' +
+      '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();_faApri()">' + (it ? '📸 Crea annuncio album' : '📸 Create album listing') + '</button>' +
+      '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();apriCollage()">' + (it ? '🖼️ Crea annuncio da collage' : '🖼️ Create listing from collage') + '</button>' +
     '</div></div></div>';
   document.body.appendChild(ov);
 }
 function apriCollage() {
   if (!_puoAnnunci()) return;   // v7.247 - anche il venditore
   _collageBoxDest = null;
-  const ov = _collageApriFinestra('🖼️ ' + (currentLang === 'it' ? 'Collage foto' : 'Photo collage'), false);
+  // 🔄 v7.294 (Franco: i titoli delle finestre come i tasti) - «Crea annuncio da collage»; dal «Cambia foto» della card resta il suo
+  const ov = _collageApriFinestra('🖼️ ' + (currentLang === 'it' ? 'Crea annuncio da collage' : 'Create listing from collage'), false);
   // 🆕 v7.224 (Franco: «alla domanda "Da dove le prendo?" metti a default il sito») - come dal «Cambia foto» di una card
   const da = ov && ov.querySelector('input[name="collage-da"][value="sito"]');
   if (da) { da.checked = true; _collageDa(); }
@@ -42170,7 +42186,8 @@ function chiudiCollageBox() {
 //    col loro peso, i tasti «Scarica» e «Usa come foto della card». Le risposte restano.
 // 🔄 v7.238 - `soloCollage`: le foto prese restano, va via solo il collage creato
 function _collageAzzera(soloCollage) {
-  if (!soloCollage) _collageFoto = [];
+  // v7.294 - una risposta cambiata durante «Prendi le foto»: quel prelievo non vale più (`_collagePescaGiro`)
+  if (!soloCollage) { _collageFoto = []; _collagePescaGiro++; }
   _collageBlob = null;
   ['collage-scarica', 'collage-scarica-retro'].forEach(id => {
     const a = document.getElementById(id);
@@ -42291,17 +42308,13 @@ function _collageSitoHTML() {
       '<div id="collage-sito-serie-tda-box">' +
         '<div style="' + dom + '">' + (it ? 'Quale tipologia di articolo ?' : 'Which item type?') + '</div>' +
         '<select id="collage-sito-serie-tda" style="' + sel + '" onchange="_collageTdaScelta()">' + _collageTdaDellaSerie(sid0) + '</select>' +
-        // 🆕 v7.235 (Franco: «una nuova domanda, dopo la domanda sulla tda, da mostrare se la tda è fcr o FPA»; «se la
-        //    risposta è sì, allora un campo che chiede i numeri, separati da virgola, oppure un pulsante che mostra una
-        //    griglia con le figurine della serie»; «i numeri sono almeno due») - `_collageSitoAggiorna` la mostra
-        '<div id="collage-sito-spec-box" style="display:none;">' +
-          '<div style="' + dom + '">' + (it ? 'Numeri specifici ?' : 'Specific numbers?') + '</div>' +
-          radio('collage-sito-spec', 'no', 'No', true) + radio('collage-sito-spec', 'si', it ? 'Sì' : 'Yes') +
-          '<div id="collage-sito-spec-campo" style="display:none;margin-top:0.35rem;align-items:center;gap:0.5rem;flex-wrap:wrap;">' +
-            '<input type="text" id="collage-sito-spec-numeri" class="form-input" placeholder="3, 7, 12, 15" style="width:16rem;max-width:100%;" oninput="_collageSitoAggiorna()">' +
-            '<button type="button" class="btn-secondary" onclick="_collageGrigliaNumeri()">' + (it ? 'Scegli dalla griglia' : 'Pick from the grid') + '</button>' +
-          '</div>' +
+        // 🆕 v7.294 (Franco: «se la serie ha sotto serie, ci deve essere la domanda obbligatoria sulla sottoserie») - le voci
+        //    le mette `_collageTdaScelta` (`_collageSottoserieDellaSerie`); si vede solo se ce n'è una, e solo da Annunci
+        '<div id="collage-sito-ss-box" style="display:none;">' +
+          '<div style="' + dom + '">' + (it ? 'Quale sottoserie ?' : 'Which subseries?') + '</div>' +
+          '<select id="collage-sito-serie-ss" style="' + sel + '" onchange="_collageSottoserieScelta()"></select>' +
         '</div>' +
+        // 🔄 v7.294 - qui c'era «Numeri specifici ?» (v7.235): ora sta più sotto, al posto del numero particolare
         '<div style="' + dom + '">' + (it ? 'Quale versione ?' : 'Which version?') + '</div>' +
         '<select id="collage-sito-serie-ver" style="' + sel + '" onchange="_collageVerScelta()">' + _collageVersioniDellaSerie(sid0, sez0) + '</select>' +
         // v7.215 - e la famiglia, facoltativa, se gli articoli scelti ne hanno (`_collageFamiglieDellaSerie`)
@@ -42343,11 +42356,19 @@ function _collageSitoHTML() {
         '<select id="collage-sito-tda-sub" style="' + sel + '" onchange="_collageSitoAggiorna()"></select>' +
       '</div>' +
     '</div>' +
-    // v7.235 - in un riquadro suo, che si spegne coi numeri specifici: le due domande direbbero cose diverse
-    '<div id="collage-sito-unnum-box">' +
-    '<div style="' + dom + '">' + (it ? 'C\'è un numero particolare da considerare ?' : 'Any particular number?') + '</div>' +
-    radio('collage-sito-num', 'no', it ? 'No' : 'No', true) + radio('collage-sito-num', 'si', it ? 'Sì' : 'Yes') +
-    '<input type="text" id="collage-sito-numero" class="form-input" placeholder="' + (it ? 'numero' : 'number') + '" maxlength="6" style="display:none;width:6rem;margin-left:0.3rem;" oninput="_collageSitoAggiorna()">' +
+    // 🆕 v7.235 (Franco: «una nuova domanda, dopo la domanda sulla tda, da mostrare se la tda è fcr o FPA»; «se la
+    //    risposta è sì, allora un campo che chiede i numeri, separati da virgola, oppure un pulsante che mostra una
+    //    griglia con le figurine della serie») - `_collageSitoAggiorna` la mostra
+    // 🔄 v7.294 (Franco, «ok per me» alla proposta) - «C'è un numero particolare da considerare ?» (v7.218) è tolta: un
+    //    numero solo scritto qui fa lo stesso filtro. Questa domanda prende il suo posto e vale dovunque gli articoli
+    //    rimasti hanno un numero, dalla serie e dalla tipologia, non più solo con fcr e fpa (`_collageSpecPossibile`)
+    '<div id="collage-sito-spec-box" style="display:none;">' +
+      '<div style="' + dom + '">' + (it ? 'Numeri specifici ?' : 'Specific numbers?') + '</div>' +
+      radio('collage-sito-spec', 'no', 'No', true) + radio('collage-sito-spec', 'si', it ? 'Sì' : 'Yes') +
+      '<div id="collage-sito-spec-campo" style="display:none;margin-top:0.35rem;align-items:center;gap:0.5rem;flex-wrap:wrap;">' +
+        '<input type="text" id="collage-sito-spec-numeri" class="form-input" placeholder="3, 7, 12, 15" style="width:16rem;max-width:100%;" oninput="_collageSitoAggiorna()">' +
+        '<button type="button" class="btn-secondary" onclick="_collageGrigliaNumeri()">' + (it ? 'Scegli dalla griglia' : 'Pick from the grid') + '</button>' +
+      '</div>' +
     '</div>' +
     // v7.218 - in che ordine si prendono: in ordine alfabetico i primi N, o N a caso (`_collagePesca`)
     '<div style="' + dom + '">' + (it ? 'In che ordine le prendo ?' : 'In which order do I pick them?') + '</div>' +
@@ -42373,19 +42394,20 @@ function _collageSitoHTML() {
       // v7.243 - da Annunci divisi in più foto, e (v7.244) senza tetto
       '<input type="number" id="collage-n" class="form-input" min="2"' + (_collageBoxDest ? ' max="' + COLLAGE_MAX_FOTO + '"' : '') + ' step="1" value="3" style="width:6rem;" oninput="_collageStato()">' +
     '</div>' +
-    '<div id="collage-sito-prendi" style="margin-top:0.6rem;"><button type="button" class="btn-primary" onclick="_collagePesca()">🎲 ' + (it ? 'Prendi le foto' : 'Pick the photos') + '</button></div>';
+    '<div id="collage-sito-prendi" style="margin-top:0.6rem;"><button type="button" class="btn-primary" onclick="_collagePrendi()">🎲 ' + (it ? 'Prendi le foto' : 'Pick the photos') + '</button></div>';
 }
 function _collageSitoAggiorna() {
   const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
-  const num = (document.querySelector('input[name="collage-sito-num"]:checked') || {}).value;
-  const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-tda'), n = document.getElementById('collage-sito-numero');
+  const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-tda');   // v7.294: via il numero particolare
   if (s) s.style.display = da === 'serie' ? '' : 'none';
   const st = document.getElementById('collage-sito-serie-tda-box');   // v7.214
   // 🔄 v7.241 (Franco: «la domanda quale tipologia di Articolo … non dovrebbe essere proprio mostrata se non si seleziona
   //    una serie») - e con lei le domande che la seguono (versione, famiglia, categoria, fronte o retro): senza serie non
   //    hanno voci
   if (st) st.style.display = da === 'serie' && s && s.value ? '' : 'none';
-  const lb = document.getElementById('collage-sito-lato-box'), ver = document.getElementById('collage-sito-serie-ver');   // v7.214
+  const ssBox = document.getElementById('collage-sito-ss-box');   // v7.294 - la sottoserie, se la serie ne ha
+  if (ssBox) ssBox.style.display = _collageSottoserieRisposta().chiesta ? '' : 'none';
+  const lb =document.getElementById('collage-sito-lato-box'), ver = document.getElementById('collage-sito-serie-ver');   // v7.214
   if (lb) lb.style.display = da === 'serie' && ver && ver.value && ver.value !== 'base' ? '' : 'none';
   const fb = document.getElementById('collage-sito-fam-box'), fam = document.getElementById('collage-sito-serie-fam');   // v7.215
   if (fb) fb.style.display = da === 'serie' && fam && fam.options.length > 1 ? '' : 'none';
@@ -42417,14 +42439,12 @@ function _collageSitoAggiorna() {
   if (ssb) ssb.style.display = da === 'serie' && ssub && ssub.options.length > 1 ? '' : 'none';
   const tsb = document.getElementById('collage-sito-tda-sub-box'), tsub = document.getElementById('collage-sito-tda-sub');
   if (tsb) tsb.style.display = da === 'tda' && tsub && tsub.options.length > 1 ? '' : 'none';
-  if (n) n.style.display = num === 'si' ? '' : 'none';
-  // v7.235 - «Numeri specifici ?» solo dalla serie e con fcr o fpa; col sì il campo, e la domanda del numero singolo si spegne
-  const spb = document.getElementById('collage-sito-spec-box'), spc = document.getElementById('collage-sito-spec-campo'), unb = document.getElementById('collage-sito-unnum-box');
+  // v7.235 - «Numeri specifici ?», col sì il campo; 🔄 v7.294 - dovunque gli articoli rimasti hanno un numero
+  const spb = document.getElementById('collage-sito-spec-box'), spc = document.getElementById('collage-sito-spec-campo');
   if (spb) {
     const spSi = _collageSpecAttivo();
     spb.style.display = _collageSpecPossibile() ? '' : 'none';
     if (spc) spc.style.display = spSi ? 'flex' : 'none';
-    if (unb) unb.style.display = spSi ? 'none' : '';
   }
   const rb = document.getElementById('collage-sito-retro-box');   // v7.223
   if (rb) rb.style.display = _collageRetroPossibile() ? 'flex' : 'none';
@@ -42468,8 +42488,12 @@ function _collageTdaDellaSerie(sid) {
 function _collageVersioniDellaSerie(sid, sez) {
   const it = currentLang === 'it';
   const conti = {};
+  // v7.294 - scelta la sottoserie, le versioni contano solo lei (prima di sceglierla, tutte)
+  const ssR = typeof _collageSottoserieRisposta === 'function' ? _collageSottoserieRisposta() : null;
+  const ssF = ssR && ssR.valore !== null ? ssR : null;
   _collageArticoliDellaSerie(sid).forEach(f => {
     if ((f.section || 'figurines') !== sez) return;
+    if (ssF && !_collageSottoserieOk(f, ssF)) return;
     const ch = _chiaveTipo(f);
     conti[ch] = (conti[ch] || 0) + 1;
   });
@@ -42500,9 +42524,47 @@ function _collageSerieScelta() {
   _collageTdaScelta();
 }
 function _collageTdaScelta() {
+  const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-serie-tda'), ss = document.getElementById('collage-sito-serie-ss');
+  // v7.294 - la sottoserie dipende da serie e tipologia (i retro hanno il loro elenco): si rifà e riparte da «— scegli —»
+  if (s && t && ss) ss.innerHTML = _collageSottoserieDellaSerie(s.value, t.value);
+  _collageSottoserieScelta();
+}
+// v7.294 - la versione (e dietro la famiglia) conta solo gli articoli della sottoserie scelta
+function _collageSottoserieScelta() {
   const s = document.getElementById('collage-sito-serie'), t = document.getElementById('collage-sito-serie-tda'), v = document.getElementById('collage-sito-serie-ver');
   if (s && t && v) v.innerHTML = _collageVersioniDellaSerie(s.value, t.value);
   _collageVerScelta();
+}
+// 🆕 v7.294 (Franco: «se la serie ha sotto serie, ci deve essere la domanda obbligatoria sulla sottoserie») - LA
+//    SOTTOSERIE DOPO LA TIPOLOGIA. Le voci sono le sottoserie che gli articoli di quella serie e tipologia usano davvero
+//    (`_sottoserieUsate`: per i retro il loro elenco, e il vuoto col suo nome, «Set principale» o «Retro standard»), col
+//    numero. Il valore è «ss:» + il nome, perché anche il vuoto è una risposta e «— scegli —» deve restare diverso da lui.
+//    Nessuna sottoserie con un nome = nessuna domanda. Solo da Annunci: dal «Cambia foto» di una card o di una famiglia
+//    la finestra resta com'era.
+function _collageSottoserieDellaSerie(sid, sez) {
+  if (!sid || !sez || _collageBoxDest) return '';
+  const it = currentLang === 'it';
+  const serie = (getData('series', []) || []).find(x => String(x.id) === String(sid));
+  const art = _collageArticoliDellaSerie(sid).filter(f => (f.section || 'figurines') === sez);
+  const voci = _sottoserieUsate(serie, art);
+  if (!voci.some(v => v)) return '';
+  const conti = {};
+  art.forEach(f => { const k = String(f.subseries || '').trim(); conti[k] = (conti[k] || 0) + 1; });
+  return '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>' +
+    voci.map(v => '<option value="ss:' + esc(v) + '">' + esc(_etichettaSottoserieDi(v, sez)) + ' (' + (conti[v] || 0) + ')</option>').join('');
+}
+// La risposta: `chiesta` se la domanda c'è; `valore` il nome scelto ('' = senza sottoserie), null se non ancora scelta
+function _collageSottoserieRisposta() {
+  if (typeof document === 'undefined') return { chiesta: false, valore: null };
+  const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
+  const ss = document.getElementById('collage-sito-serie-ss');
+  const chiesta = da === 'serie' && !!ss && ss.options.length > 1;
+  const v = chiesta ? String(ss.value || '') : '';
+  return { chiesta, valore: v.startsWith('ss:') ? v.slice(3) : null };
+}
+// un articolo passa se la domanda non c'è, o se è della sottoserie scelta
+function _collageSottoserieOk(f, r) {
+  return !r || !r.chiesta || (r.valore !== null && String(f.subseries || '').trim() === r.valore);
 }
 // 🆕 v7.215 (Franco: «dopo la domanda sulla versione, metti una altra domanda facoltativa, Famiglia, dove mostri l'elenco
 //    delle famiglie degli articoli, se presente») - LA FAMIGLIA DENTRO LA VERSIONE. Le voci sono le famiglie degli articoli
@@ -42511,8 +42573,12 @@ function _collageTdaScelta() {
 function _collageFamiglieDellaSerie(sid, sez, ver) {
   const it = currentLang === 'it';
   const conti = {};
+  // v7.294 - e la sottoserie, se scelta
+  const ssR = typeof _collageSottoserieRisposta === 'function' ? _collageSottoserieRisposta() : null;
+  const ssF = ssR && ssR.valore !== null ? ssR : null;
   _collageArticoliDellaSerie(sid).forEach(f => {
     if ((f.section || 'figurines') !== sez || !_collageVerOk(f, ver)) return;   // v7.229 - «tutte»; v7.255 - e le versioni insieme
+    if (ssF && !_collageSottoserieOk(f, ssF)) return;
     const fam = _collageFamiglia(f);   // v7.218 - anche la fpa senza famiglia scritta
     if (fam) conti[fam] = (conti[fam] || 0) + 1;
   });
@@ -42639,14 +42705,22 @@ function _collageRetroBase(f, tutti) {
   if (!f) return null;
   const b = f.baseFigurineId ? (tutti.find(x => x.id === f.baseFigurineId) || f) : f;
   if ((f.section || 'figurines') !== 'figurines') return _imgRetroDi(f) || _imgRetroDi(b) || null;
-  const r = b.retroId && tutti.find(x => x.id === b.retroId);
+  // 🐛 v7.294 (Franco: «con variazioni, tutte le fcr mostrano lo stesso retro; serie 1, figurina 1: ha 3 variazioni e una
+  //    base, tutte con retro diverso … escono 4 retro uguali») - qui si prendeva SEMPRE il retro della base (v7.223), e
+  //    una variazione, che si distingue proprio dal retro, usciva col retro della base. Ora il retro è quello che il sito
+  //    le dà (`_retroEffettivo`): suo per base e variazioni, della base solo per change ed errori frontali, che il retro
+  //    proprio non ce l'hanno. Se manca, come prima, quello della base.
+  const id = _retroEffettivo(f, tutti) || b.retroId, r = id && tutti.find(x => x.id === id);
   return r ? _fotoFigurina(r, tutti) : null;
 }
-// 🆕 v7.235 - I NUMERI SPECIFICI (vedi `_collageSitoHTML`): la domanda vale dalla serie, con le fcr o le fpa
-const _COLLAGE_SPEC_TDA = ['figurines', 'attaccare'];
+// 🆕 v7.235 - I NUMERI SPECIFICI (vedi `_collageSitoHTML`): la domanda valeva dalla serie, con le fcr o le fpa
+// 🔄 v7.294 - prende il posto del numero particolare: vale dalla serie e dalla tipologia, quando almeno uno degli articoli
+//    che le risposte di sopra lasciano ha un numero (`_collageCandidati(true)`: senza il filtro dei numeri, quindi senza giri)
 function _collageSpecPossibile() {
   const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
-  return da === 'serie' && _COLLAGE_SPEC_TDA.includes((document.getElementById('collage-sito-serie-tda') || {}).value);
+  if (da !== 'serie' && da !== 'tda') return false;
+  if (da === 'serie' && !(document.getElementById('collage-sito-serie') || {}).value) return false;
+  return _collageCandidati(true).el.some(f => _collageNumeriDi(f).length > 0);
 }
 function _collageSpecAttivo() {
   return _collageSpecPossibile() && (document.querySelector('input[name="collage-sito-spec"]:checked') || {}).value === 'si';
@@ -42664,8 +42738,8 @@ function _collageCandidati(senzaNumeri, finoAllaFamiglia) {
   const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
   const spec = !senzaNumeri && _collageSpecAttivo();
   const numeri = spec ? _collageSpecNumeri((document.getElementById('collage-sito-spec-numeri') || {}).value) : [];
-  const conNum = !spec && (document.querySelector('input[name="collage-sito-num"]:checked') || {}).value === 'si';
-  const numero = String((document.getElementById('collage-sito-numero') || {}).value || '').trim().toUpperCase();
+  // 🗑️ v7.294 - via il numero particolare (lo fa «Numeri specifici ?» con un numero solo): restano nell'uscita, spenti
+  const conNum = false, numero = '';
   const tutti = getData('figurines', []);
   let el = _articoliDaContareSito().filter(f => _fotoFigurina(f, tutti));
   if (da === 'serie') {
@@ -42674,6 +42748,9 @@ function _collageCandidati(senzaNumeri, finoAllaFamiglia) {
     const ver = (document.getElementById('collage-sito-serie-ver') || {}).value;   // v7.214 - e la versione
     // v7.229 - retro compresi; con «tutte» ogni versione
     el = el.filter(f => String(f.seriesId) === String(sid) && (f.section || 'figurines') === sez && _collageVerOk(f, ver));
+    // v7.294 - la sottoserie: obbligatoria dove la domanda c'è, quindi finché manca non passa nessuno
+    const ssR = typeof _collageSottoserieRisposta === 'function' ? _collageSottoserieRisposta() : null;
+    if (ssR && ssR.chiesta) el = ssR.valore === null ? [] : el.filter(f => _collageSottoserieOk(f, ssR));
     const fam = (document.getElementById('collage-sito-serie-fam') || {}).value;   // v7.215 - la famiglia, se scelta
     if (fam) el = el.filter(f => _collageFamiglia(f) === fam);
   } else {
@@ -42691,7 +42768,6 @@ function _collageCandidati(senzaNumeri, finoAllaFamiglia) {
   // v7.245 - la sottocategoria, se scelta (c'è solo con la categoria scelta)
   const sub = cat ? (document.getElementById(da === 'serie' ? 'collage-sito-serie-sub' : 'collage-sito-tda-sub') || {}).value || '' : '';
   if (sub) el = el.filter(f => String(f.subcategory || '').trim() === sub);
-  if (conNum) el = el.filter(f => String(_numeroAschermo(f) ?? '').split(' - ').some(x => x.trim().toUpperCase() === numero));
   // v7.235 - coi numeri specifici, gli articoli con uno di quei numeri; `mancano` = i numeri che non hanno nessuno
   let mancano = [];
   if (spec) {
@@ -42772,11 +42848,45 @@ function _collageNumeriUsa() {
   _collageRispostaCambiata();   // v7.236 - la griglia scrive il campo da sé: anche questa è una risposta cambiata
   _collageSitoAggiorna();
 }
+// 🆕 v7.294 (Franco: «quando premo il tasto "Prendi le foto", il tasto deve diventare non premibile sino a che il prelevamento
+//    non è terminato»; «se lo prendo due volte, magari cambiando anche i parametri precedenti, vengono fatti due prelievi») -
+//    UN PRELIEVO ALLA VOLTA. Mentre legge, «Prendi le foto» e «Rimescola» sono spenti e un secondo clic non fa niente
+//    (`_collagePescaInCorso`). E se nel frattempo cambia una risposta, `_collageAzzera` alza `_collagePescaGiro`: le foto
+//    lette con le risposte di prima si buttano invece di finire nel collage.
+//    I due tasti chiamano `_collagePrendi`, che fa da guardia attorno a `_collagePesca` (il prelievo, com'era).
+let _collagePescaInCorso = false, _collagePescaGiro = 0;
+async function _collagePrendi() {
+  if (_collagePescaInCorso) return;
+  _collagePescaInCorso = true;
+  _collagePescaTasti();
+  try { await _collagePesca(); }
+  finally { _collagePescaInCorso = false; _collagePescaTasti(); }
+}
+function _collagePescaTasti() {
+  const it = currentLang === 'it';
+  const prendi = document.querySelector('#collage-sito-prendi button');
+  if (prendi) {
+    if (!prendi.dataset.testo) prendi.dataset.testo = prendi.textContent;
+    prendi.textContent = _collagePescaInCorso ? '⏳ ' + (it ? 'Prendo le foto…' : 'Picking the photos…') : prendi.dataset.testo;
+    prendi.style.opacity = _collagePescaInCorso ? '0.55' : '';
+  }
+  document.querySelectorAll('button[onclick="_collagePrendi()"]').forEach(b => {
+    if (b.dataset.primaSpento === undefined) b.dataset.primaSpento = b.disabled ? '1' : '';
+    b.disabled = _collagePescaInCorso || b.dataset.primaSpento === '1';
+    b.style.cursor = _collagePescaInCorso ? 'wait' : '';
+    if (!_collagePescaInCorso) delete b.dataset.primaSpento;
+  });
+}
 async function _collagePesca() {
   const it = currentLang === 'it';
+  // v7.294 - se il giro cambia, una risposta è cambiata durante la lettura (il `typeof` per i banchi di prova)
+  const giroOra = () => typeof _collagePescaGiro === 'undefined' ? 0 : _collagePescaGiro;
+  const giro = giroOra();
   const n = Number((document.getElementById('collage-n') || {}).value);
   const { el, conNum, numero, lato, fam, spec, numeri, mancano } = _collageCandidati();
-  if (conNum && !numero) { toast(it ? 'Scrivi il numero' : 'Type the number', 'error'); return; }
+  // v7.294 - la sottoserie è obbligatoria dove la domanda c'è
+  const ssR = _collageSottoserieRisposta();
+  if (ssR.chiesta && ssR.valore === null) { toast(it ? 'Rispondi a «Quale sottoserie ?»' : 'Answer «Which subseries?»', 'error'); return; }
   // v7.235 - coi numeri specifici: tutti nella serie; se no ci si ferma prima di leggere le foto
   // 🔄 v7.236 (Franco: «consenti anche un solo numero») - ne basta uno (erano almeno due)
   if (spec && (!numeri.length || mancano.length)) {
@@ -42847,12 +42957,14 @@ async function _collagePesca() {
   const lette = await Promise.all(a.slice(0, n).map(f =>
     _collageLeggiFoto(_collageFotoCandidato(f, tutti, lato), (_numeroAschermo(f) ? _numeroAschermo(f) + ' ' : '') + (f.name || ''))
       .then(x => x && Object.assign(x, { fig: f.id }))));
+  if (giro !== giroOra()) return;   // v7.294 - risposte cambiate mentre leggeva: queste foto non valgono più
   _collageFoto = lette.filter(Boolean);
   if (_collageFoto.length !== n) toast(it ? '⚠️ Alcune foto non si sono caricate: riprova con «Rimescola»' : '⚠️ Some photos did not load', 'error');
   // v7.236 - un articolo solo: accanto al fronte il SUO retro (`_retroEffettivo`), segnato `diRetro`. Senza retro si dice.
   if (coppia && _collageFoto.length === 1) {
     const f = a[0], src = _collageFotoCandidato(f, tutti, 'retro');
     const r = src ? await _collageLeggiFoto(src, _collageFoto[0].nome + (it ? ' (retro)' : ' (back)')) : null;
+    if (giro !== giroOra()) return;   // v7.294
     if (r) _collageFoto.push(Object.assign(r, { fig: f.id, diRetro: true }));
     else {
       _collageFoto = [];
@@ -42936,7 +43048,7 @@ function _collageMostraScelte() {
   //    l'altezza fissa le orizzontali venivano più grandi
   box.innerHTML = _collageFoto.map(x => '<img src="' + x.url + '" alt="" title="' + esc(x.nome) + '" style="' + COLLAGE_ANT_STILE + 'object-fit:contain;">').join('') +
     (_collageFoto.length ? (_collageModo === 'sito'   // v7.212: dal sito si ripesca, dal PC si riscelgono i file
-      ? '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;' + (alfa ? 'opacity:0.5;' : '') + '"' + (alfa ? ' disabled title="' + (it ? 'In ordine alfabetico le foto sono sempre le stesse' : 'Alphabetical order: always the same photos') + '"' : '') + ' onclick="_collagePesca()">🔀 ' + (it ? 'Rimescola' : 'Shuffle') + '</button>'
+      ? '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;' + (alfa ? 'opacity:0.5;' : '') + '"' + (alfa ? ' disabled title="' + (it ? 'In ordine alfabetico le foto sono sempre le stesse' : 'Alphabetical order: always the same photos') + '"' : '') + ' onclick="_collagePrendi()">🔀 ' + (it ? 'Rimescola' : 'Shuffle') + '</button>'
       : '<button type="button" class="btn-primary" style="font-size:0.8rem;padding:0.25rem 0.7rem;" onclick="_collageScegli()">' + (it ? 'Cambia le foto' : 'Change photos') + '</button>') : '') +
     _collageScelteRetro();
 }
@@ -44922,8 +45034,9 @@ function _faDescriviPiano(g, N) {
   return '<b>' + g.length + ' foto</b>: ' + (capi ? 'copertina, ' + pezzi.join(', ') + ', retro' : pezzi.join(', ')) + coda + '.';
 }
 
+// 🔄 v7.294 (Franco: i titoli delle finestre come i tasti) - «Crea annuncio album», nel <title> e nell'<h1>
 const _FA_HTML = `<!doctype html><html lang="it"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>Foto annuncio</title><style>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Crea annuncio album</title><style>
 * { box-sizing:border-box; }
 body { margin:0; background:#f4f1ea; color:#222; font:15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
 main { max-width:1100px; margin:0 auto; padding:16px; }
@@ -44971,8 +45084,10 @@ h1 { font-size:22px; margin:6px 0 4px; }
 #vista .barra .btn { background:#fff; }
 #vista .barra .btn.primario { background:#c0392b; }
 .risultati img { cursor:zoom-in; }
+.testa { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.esci { flex:none; width:40px; height:40px; border:1px solid #ddd; background:#fff; border-radius:8px; font-size:20px; line-height:1; cursor:pointer; color:#222; }
 </style></head><body><main>
-<h1>📸 Foto annuncio</h1>
+<div class="testa"><h1>📸 Crea annuncio album</h1><button type="button" class="esci" id="esci" title="Chiudi">✕</button></div>
 <div class="nota">Le foto restano in questa finestra: sul sito non si salva niente.</div>
 <section class="passo"><h2>1. Quale album?</h2><div class="scelte" id="scelta-album"></div></section>
 <section class="passo"><h2>2. Le foto delle pagine</h2>
@@ -45022,6 +45137,9 @@ function _faApri() {
   $('scarica').onclick = _faScaricaTutte;
   $('copia-titolo').onclick = () => _faCopiaTesto('titoloIt');
   $('copia-desc').onclick = () => _faCopiaTesto('descIt');
+  // 🆕 v7.294 (Franco: «dalla finestra "Crea annuncio album" non si può uscire … si deve poter uscire») - la ✕ in alto
+  //    chiude la scheda (l'ha aperta il sito, quindi il browser lo permette) e torna al sito
+  $('esci').onclick = _faEsci;
   _faEditorEventi();
   _faDisegnaScelte();
   // 🐛 v7.185 (Franco: «quando premo il pulsante … mi mostra la ultima pagina dell'album aperta; dovrebbe reiniziare
@@ -45030,6 +45148,12 @@ function _faApri() {
   w.scrollTo(0, 0);
   if (w.document.documentElement) w.document.documentElement.scrollTop = 0;
   w.focus();
+}
+function _faEsci() {
+  const w = _fa && _fa.w;
+  if (!w) return;
+  try { window.focus(); } catch (e) { console.warn('_faEsci', e); }
+  w.close();
 }
 const _fa$ = id => _fa.w.document.getElementById(id);
 const _faStato = t => { _fa$('stato').textContent = t || ''; };
@@ -59345,10 +59469,49 @@ function _wzQuanteDomanda(p, n, nome, ver) {
   const it = currentLang === 'it', N = '<b>' + nfmtWz(n) + '</b>';
   if (!it) return ver ? 'Of this version, the series has ' + N + ': how many are in your list?'
     : 'Of the ' + N + ' ' + nome.toLowerCase() + ' of this ' + (String(p).split('|')[0] === 'attaccare' ? 'album' : 'series') + ', how many are in your list?';
-  if (ver) return 'Di questa versione, nella serie ce ne sono ' + N + ': quante sono nella tua lista?';
+  // 🔄 v7.294 (Franco: «Retro è maschile»; «stessa per Album») - il genere del descrittore: «Dei 212 retro…, quanti…»;
+  //    davanti a un numero che si legge con una vocale (8, 11, 80…, 800…) «Degli»
+  if (ver) return 'Di questa versione, nella serie ce ne sono ' + N + ': ' + _wzG(p, 'quante', 'quanti') + ' sono nella tua lista?';
   if (String(p).split('|')[0] === 'attaccare') return 'Delle ' + N + ' figurine di questo album, quante ce ne sono nella tua lista?';
-  return 'Delle ' + N + ' ' + nome.toLowerCase() + ' di questa serie, quante ce ne sono nella tua lista?';
+  const art = _wzMasc(p) ? (/^(8|11(\d{3})*$)/.test(String(n)) ? 'Degli ' : 'Dei ') : 'Delle ';
+  return art + N + ' ' + nome.toLowerCase() + ' di questa serie, ' + _wzG(p, 'quante', 'quanti') + ' ce ne sono nella tua lista?';
 }
+// 🆕 v7.294 (Franco: «Retro è maschile; ma nel questionario a volte ci si riferisce al femminile»; «stessa per Album: è
+//    maschile») - IL GENERE DI UNA SCHERMATA, dal descrittore della sua tipologia (`genere: 'm'`, come `_wzParolaConto`);
+//    chi non lo dichiara resta al femminile, com'era. `_wzG(p, femminile, maschile)` sceglie la parola.
+// 🐛 v7.294 (Franco: «In caso di variazioni, deve essere sempre mostrato anche il retro. Altrimenti mostriamo articoli
+//    identici») - LE CARD DELLA GRIGLIA DEL QUESTIONARIO: una variazione (ufficiale o no) ha lo stesso fronte della base,
+//    e la differenza sta dietro. La sua card mostra il fronte e accanto il retro, e prende due colonne della griglia
+//    (`.wz-tile-due`, index) così le foto restano grandi come le altre. Il retro è quello del sito: per le figurine con
+//    retro il loro (`_retroEffettivo`), per le altre tipologie la foto del retro dell'articolo (`_imgRetroDi`).
+//    📌 La misura chiesta a Cloudinary è 200×260, quella che il riepilogo usa già per i retro.
+function _wzRetroTile(f, figs) {
+  if (!f || !(f.isVariation || f.isUnofficialVariation)) return '';
+  if ((f.section || 'figurines') === 'figurines') {
+    const id = _retroEffettivo(f, figs), r = id && (figs || []).find(x => x.id === id);
+    return (r && (_fotoFigurina(r, figs) || r.img)) || '';
+  }
+  return (typeof _imgRetroDi === 'function' && _imgRetroDi(f)) || '';
+}
+// 🆕 v7.294 (Franco: «nella griglia che mostra gli articoli, andiamo sempre a capo (nuova riga) quando c'è un nuovo
+//    capogruppo»; «usiamo la stessa logica della griglia dell'inventario»; «del questionario») - NELLE SCHERMATE DELLE
+//    VERSIONI (`ver`) ogni gruppo comincia da una riga nuova: le variazioni dello stesso articolo base stanno insieme, e
+//    quelle dell'articolo dopo partono a capo. Il gruppo è quello dell'Inventario (`_familyKey`). Nel set base ogni
+//    articolo è un gruppo suo, quindi lì niente a capo (sarebbe una card per riga). L'a capo è un elemento largo quanto
+//    tutta la griglia e alto zero (`.wz-a-capo`, index): la riga prima resta com'è, con i suoi posti vuoti.
+let _wzACapoIdx = { da: null, idx: null };   // l'indice degli articoli, rifatto solo se cambia l'elenco
+function _wzACapo(lista, i, ver, figs) {
+  if (!ver || i === 0) return '';
+  if (_wzACapoIdx.da !== figs) _wzACapoIdx = { da: figs, idx: typeof _figIndex === 'function' ? _figIndex(figs) : null };
+  const idx = _wzACapoIdx.idx;
+  return _familyKey(lista[i], idx) === _familyKey(lista[i - 1], idx) ? '' : '<div class="wz-a-capo" aria-hidden="true"></div>';
+}
+function _wzFotoTile(f, figs) {
+  const fronte = _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, ''), retro = _wzRetroTile(f, figs);
+  return retro ? '<span class="wz-tile-coppia">' + fronte + _wzImg(retro, 200, 260, '') + '</span>' : fronte;
+}
+function _wzMasc(p) { return ((typeof _art === 'function' && _art(String(p).split('|')[0])) || {}).genere === 'm'; }
+function _wzG(p, f, m) { return _wzMasc(p) ? m : f; }
 function _wzImg(url, w, h, cls) {
   if (!url) return '<div class="' + (cls || '') + ' wz-senza-foto">🎴</div>';
   const u = /^https?:\/\/res\.cloudinary/.test(url) || !/^https?:/.test(url) ? cloudinaryUrl(url, 'w_' + w + ',h_' + h + ',c_fit,q_auto,f_auto') : url;
@@ -59484,7 +59647,12 @@ function _wzQuattro(p) { return _wzQuattroTDA(String(p).split('|')[0]); }
 //    semplicemente tutto quello che c'è a schermo») - LE ALTRE VANNO DRITTE ALLA GRIGLIA: niente domanda, niente
 //    «Confermi?», si toccano quelle che si hanno partendo dalla lista. Gli album hanno già la loro schermata di foto.
 //    ⚠️ Le bustine Franco non le ha nominate: stanno fra «le altre» (detto a lui).
-function _wzDiretta(p) { return _wzAScelta(String(p).split('|')[0]) && !_wzQuattro(p); }
+// 🐛 v7.294 (Franco: «quando si passa agli album non base, viene fatta una domanda circa in quanti ne hai»; «tutti gli album
+//    devono essere semplicemente selezionati manualmente») - le versioni degli album («albums|…», per Esperto e
+//    Collezionista) prima cadevano nelle tre carte, perché `_wzAScelta` escludeva solo la chiave «albums» intera: ora
+//    vanno dritte alla griglia anche loro. Gli album base restano sulla loro schermata di foto.
+//    ⚠️ Una riga sola: prova-v7014, v7132 e v7156 la prendono così (`unaRiga`).
+function _wzDiretta(p) { const z = String(p).split('|')[0]; return z === 'albums' ? String(p) !== 'albums' : _wzAScelta(z) && !_wzQuattro(p); }
 // 🆕 v7.065 (Franco: «la doppia possibilità per spuntare le figurine mancanti o quelle che hai, attraverso due
 //    modalità: 1 il clic sulle pagine, 2 una normale griglia a selezione multipla») - LE MAPPE DEGLI ALBUM.
 //    Per ogni foto delle pagine, i riquadri (in % della foto) di ogni figurina, legati al suo id. Le hanno fatte
@@ -60244,7 +60412,12 @@ function _wzDisegna(tieni) {
         piede = indietro + avanti("_wzConfermaGia('" + p + "')");
       } else if (!c.modo && _wzQuattro(p)) {
         // 🆕 v7.059 - le quattro carte delle Figurine album (vedi `_wzModo4`)
-        const prop = _wzScelta4(c);
+        // 🔄 v7.294 (Franco: «le opzioni sono 4 (tutte, nessuna, poche, molte) solo per gli articoli in versione base; per
+        //    le altre versioni lasciamo solo due opzioni: "nessuna" e "alcune"»; «"Alcune" è come "Poche"») - in una
+        //    versione (`ver`) due carte: «Nessuna» e «Alcune», che è la carta `poche` (si toccano quelle nella lista).
+        //    La proposta «Tutte» o «Molte» lì diventa «Alcune», con la griglia che parte dalla lista.
+        const dueCarte = !!ver;
+        const prop = (sc => dueCarte && sc !== 'nessuna' ? 'poche' : sc)(_wzScelta4(c));
         const carta4 = (sc, emoji, tit, sotto) => '<button type="button" class="wz-carta' + (prop === sc ? ' on' : '') + '" onclick="' + (sc === 'tutte' || sc === 'nessuna' ? '_wzProponi' : '_wzModo4') + '(\'' + p + '\',\'' + sc + '\')">'
           + (prop === sc ? giaTua : '')
           + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
@@ -60257,19 +60430,30 @@ function _wzDisegna(tieni) {
         corpo += intest + azzerata + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 800, 800, '') + '</div></div></div>'
           + '<p class="wz-testo wz-sopra-carte wz-centro wz-quante">' + _wzQuanteDomanda(p, tutti.length, nome, ver) + '</p>' + giaFrase('wz-sopra-carte wz-centro wz-gia-mie')
           + '<div class="wz-scelte">'
+          + (dueCarte
+            ? carta4('nessuna', '😢', it ? _wzG(p, 'Nessuna', 'Nessuno') : 'None', '')
+              + carta4('poche', '🧩', it ? _wzG(p, 'Alcune', 'Alcuni') : 'Some', _isMobileViewport()
+                ? (it ? 'Indica quali ci sono' : 'Tell us which are there')
+                : (it ? 'Indica quali sono nella tua lista' : 'Tell us which are in your list'))
+            : '')
+          + (dueCarte ? '' : ''
           // 🔄 v7.132 (Franco: «il sottotitolo di "Tutte" diventa "Album completo"») - era «il set base completo»
           // v7.156: le quattro carte valgono anche per altre tipologie; lì il sottotitolo è quello delle tre carte
-          + carta4('tutte', '🏆', it ? 'Tutte' : 'All', String(p).split('|')[0] === 'attaccare' ? (it ? 'Album completo' : 'Complete album')
-              : ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
-          + carta4('nessuna', '😢', it ? 'Nessuna' : 'None', '')
+          // 🔄 v7.294 (Franco: «Retro è maschile; ma nel questionario a volte ci si riferisce al femminile»; «stessa per Album»)
+          //    - le parole seguono il genere del descrittore (`_wzG`): Tutti, Nessuno, Pochi, Molti per retro, album e gli altri maschili
+          + carta4('tutte', '🏆', it ? _wzG(p, 'Tutte', 'Tutti') : 'All', String(p).split('|')[0] === 'attaccare' ? (it ? 'Album completo' : 'Complete album')
+              : ver ? (it ? _wzG(p, 'tutte quante', 'tutti quanti') : 'every one') : (it ? 'il set base completo' : 'the full base set'))
+          + carta4('nessuna', '😢', it ? _wzG(p, 'Nessuna', 'Nessuno') : 'None', '')
           // 🔄 v7.132 (Franco: «il sottotitolo di "Poche" diventa "Indica quali sono nella tua lista"», «di "Molte" diventa
           //    "Indica quali mancano dalla tua lista"», «queste 2 frasi, per mobile non cambiarle») - le nuove sul desktop
-          + carta4('poche', '🤏', it ? 'Poche' : 'A few', _isMobileViewport()
-              ? (it ? 'Indica quali ci sono' : 'Tell us which you have')
+          // 🔄 v7.294 (Franco: «le domande che utilizzano la parola mancare, devono cambiare; il concetto non è mancare ma è
+          //    non essere presente nella tua lista»; «anche per l'inglese»; «sistema anche le gemelle col verbo avere»)
+          + carta4('poche', '🤏', it ? _wzG(p, 'Poche', 'Pochi') : 'A few', _isMobileViewport()
+              ? (it ? 'Indica quali ci sono' : 'Tell us which are there')
               : (it ? 'Indica quali sono nella tua lista' : 'Tell us which are in your list'))
-          + carta4('molte', '📚', it ? 'Molte' : 'Many', _isMobileViewport()
-              ? (it ? 'Indica quali mancano' : 'Tell us which are missing')
-              : (it ? 'Indica quali mancano dalla tua lista' : 'Tell us which are missing from your list'))
+          + carta4('molte', '📚', it ? _wzG(p, 'Molte', 'Molti') : 'Many', _isMobileViewport()
+              ? (it ? 'Indica quali non ci sono' : 'Tell us which are not there')
+              : (it ? 'Indica quali non sono nella tua lista' : 'Tell us which are not in your list')))   // v7.294: fine delle quattro carte (solo base)
           + '</div>';
         piede = indietro + avanti("_wzModoConferma('" + p + "','" + prop + "',true)");   // v7.130: Tutte / Nessuna col popup
       } else if (!c.modo) {
@@ -60285,10 +60469,10 @@ function _wzDisegna(tieni) {
         corpo += intest + azzerata + '<div class="wz-due wz-centro"><div class="wz-due-sx"><div class="wz-grande-foto">' + _wzImg(_wzFotoSez(p, s.id), 800, 800, '') + '</div></div></div>'
           + '<p class="wz-testo wz-sopra-carte wz-centro wz-quante">' + _wzQuanteDomanda(p, tutti.length, nome, ver) + '</p>' + giaFrase('wz-sopra-carte wz-centro wz-gia-mie')
           + '<div class="wz-scelte">'
-          + carta('tutte', '🏆', it ? 'Tutte' : 'All', ver ? (it ? 'tutte quante' : 'every one') : (it ? 'il set base completo' : 'the full base set'))
+          + carta('tutte', '🏆', it ? _wzG(p, 'Tutte', 'Tutti') : 'All', ver ? (it ? _wzG(p, 'tutte quante', 'tutti quanti') : 'every one') : (it ? 'il set base completo' : 'the full base set'))   // v7.294: il genere
           // v7.130 (Franco: «"Alcune" può sembrare che voglia dire "poche"») - «Una parte»; la chiave resta `alcune`
           + carta('alcune', '🧩', it ? 'Una parte' : 'Part of them', it ? 'scegli quali' : 'choose which')
-          + carta('nessuna', '😢', it ? 'Nessuna' : 'None', '')
+          + carta('nessuna', '😢', it ? _wzG(p, 'Nessuna', 'Nessuno') : 'None', '')
           + '</div>';
         piede = indietro + avanti("_wzModoConferma('" + p + "','" + c.pModo + "',false)");   // v7.130: Tutte / Nessuna col popup
       } else if (!c.verso) {
@@ -60296,11 +60480,12 @@ function _wzDisegna(tieni) {
           + (c.pVerso === verso ? giaTua : '')
           + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
         // v7.130 (Franco) - la domanda è sua; le carte «Poche» / «Tante» (erano «Ne ho di meno» / «Me ne mancano di meno»)
-        corpo += intest + '<p class="wz-testo">' + (it ? 'La tua lista ne ha molte o poche?' : 'Does your list have many or few of them?') + '</p>'
+        // v7.294 - il genere (`_wzG`): «molti o pochi», «Pochi», «Tanti», «quelli» per i maschili
+        corpo += intest + '<p class="wz-testo">' + (it ? 'La tua lista ne ha ' + _wzG(p, 'molte o poche', 'molti o pochi') + '?' : 'Does your list have many or few of them?') + '</p>'
           + '<div class="wz-scelte">'
           // v7.130 (Franco) - anche le righe sotto: «Tocca quelle già nella tua lista» / «… mancanti nella tua lista»
-          + carta('ho', '✅', it ? 'Poche' : 'Few', it ? 'Tocca quelle già nella tua lista' : 'Tap the ones already in your list')
-          + carta('manca', '❔', it ? 'Tante' : 'Many', it ? 'Tocca quelle mancanti nella tua lista' : 'Tap the ones missing from your list')
+          + carta('ho', '✅', it ? _wzG(p, 'Poche', 'Pochi') : 'Few', it ? 'Tocca ' + _wzG(p, 'quelle', 'quelli') + ' già nella tua lista' : 'Tap the ones already in your list')
+          + carta('manca', '❔', it ? _wzG(p, 'Tante', 'Tanti') : 'Many', it ? 'Tocca ' + _wzG(p, 'quelle', 'quelli') + ' non ancora nella tua lista' : 'Tap the ones not yet in your list')   // v7.294
           + '</div>';
         piede = indietro + avanti("_wzVerso('" + p + "','" + c.pVerso + "')");
       } else if (!c.vista && _wzMappa(s.id, p)) {
@@ -60326,8 +60511,9 @@ function _wzDisegna(tieni) {
         corpo += intest + '<div class="wz-domanda">' + (c.verso === 'ho'
             // 🔄 v7.097 (Franco: «"Come vuoi selezionare le figurine che hai?" diventa "Come vuoi indicare…"») - e così
             //    anche la gemella «…che ti mancano?», che è la stessa domanda dall'altro verso
-            ? (it ? 'Come vuoi indicare le figurine che hai?' : 'How do you want to mark the stickers you have?')
-            : (it ? 'Come vuoi indicare le figurine che ti mancano?' : 'How do you want to mark the stickers you are missing?')) + '</div>'
+            // v7.294 - niente «mancare» e niente verbo avere (Franco)
+            ? (it ? 'Come vuoi indicare le figurine che sono nella tua lista?' : 'How do you want to mark the stickers that are in your list?')
+            : (it ? 'Come vuoi indicare le figurine che non sono nella tua lista?' : 'How do you want to mark the stickers that are not in your list?')) + '</div>'
           + '<div class="wz-scelte">'
           // 🔄 v7.067 (Franco: «il titolo diventa "Cliccando direttamente sulle pagine"; niente sottotitolo»)
           + carta('album', '📖', it ? 'Cliccando direttamente sulle pagine' : 'Clicking directly on the pages', '')
@@ -60363,22 +60549,29 @@ function _wzDisegna(tieni) {
         // 🔄 v7.132 (Franco: «anche "seleziona tutte" su due righe») - nella colonna i due vanno a capo nello stesso punto,
         //    scritto (`<br>`): «Deseleziona tutte» ci andava da solo, «Seleziona tutte» no, e i due erano alti diversi
         const cmdTutte = cls => { const a = cls === 'wz-comandi-lato' ? '<br>' : ' ';
-          return '<div class="wz-comandi ' + cls + '"><button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'tutte' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Seleziona' + a + 'tutte' : 'Select' + a + 'all') + '</button>'
-          + '<button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'nessuna' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Deseleziona' + a + 'tutte' : 'Deselect' + a + 'all') + '</button></div>'; };
-        const pagPrec = (cls, prima) => '<span class="' + cls + '">' + (prima || '') + bPag(-1, it ? 'Pagina precedente' : 'Previous page', '←', pg === 0) + bPag(-9999, it ? 'Prima pagina' : 'First page', '⇤', pg === 0) + '</span>';
-        // 🔄 v7.132 (Franco: «per alzare ancora la finestra, sposta a dx del box album i due tasti "Mostra solo pagina
-        //    sinistra" e destra, contrapposti ai due tasti blu») - sul desktop lo zoom sta in cima alla colonna di destra
-        //    (`prima` di pagSucc), alla stessa altezza dei blu a sinistra; nella riga sopra l'album resta per il telefono
-        const pagSucc = (cls, prima) => '<span class="' + cls + '">' + (prima || '') + bPag(1, it ? 'Pagina successiva' : 'Next page', '→', ultima) + bPag(9999, it ? 'Ultima pagina' : 'Last page', '⇥', ultima) + '</span>';
+          return '<div class="wz-comandi ' + cls + '"><button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'tutte' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Seleziona' + a + _wzG(p, 'tutte', 'tutti') : 'Select' + a + 'all') + '</button>'
+          + '<button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'nessuna' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Deseleziona' + a + _wzG(p, 'tutte', 'tutti') : 'Deselect' + a + 'all') + '</button></div>'; };
+        // 🗑️ v7.294 - qui c'erano `pagPrec` e `pagSucc` (v7.130): i tasti di pagina ai lati e nelle righe del telefono.
+        //    Ora stanno nella riga sotto l'album (`pagRiga`); ai lati restano i blu e lo zoom (`lato`, qui sotto)
+        // 🔄 v7.294 (Franco: «il tasto "pagina precedente" lo metti sotto alla pagina di sx; il tasto "prima pagina" lo metti
+        //    sotto quest'ultimo; il tasto "pagina successiva" lo metti sotto alla pagina di dx; il tasto "ultima pagina" lo
+        //    metti sotto quest'ultimo») - SOTTO L'ALBUM, UNA RIGA DIVISA A METÀ (`.wz-pag-riga`, come lo zoom sopra): a
+        //    sinistra Precedente e sotto Prima, a destra Successiva e sotto Ultima; poi «Schermata N di M». Sul telefono e
+        //    sul desktop: le colonne ai lati non hanno più i tasti di pagina, tengono solo i blu e «Torna a 2 pagine».
+        const pagRiga = () => '<div class="wz-pag-riga">'
+          + '<span class="wz-pag-col">' + bPag(-1, it ? 'Pagina precedente' : 'Previous page', '←', pg === 0) + bPag(-9999, it ? 'Prima pagina' : 'First page', '⇤', pg === 0) + '</span>'
+          + '<span class="wz-pag-col">' + bPag(1, it ? 'Pagina successiva' : 'Next page', '→', ultima) + bPag(9999, it ? 'Ultima pagina' : 'Last page', '⇥', ultima) + '</span></div>';
+        const lato = (cls, dentro) => '<span class="' + cls + '">' + (dentro || '') + '</span>';
         const nav = (giu) => '<div class="wz-album-nav">'
-          + pagPrec('wz-pag-nav wz-pag-sx')
+          + (giu ? pagRiga() : '')
           // 🔄 v7.130 (Franco: «"pagina 1 di N" è fuorviante, lo user potrebbe pensare al numero di pagina dell'album;
           //    chiamalo "Schermata 1 di N"»)
           // 🆕 v7.185 (Franco: «farei lo stesso nella procedura del questionario») - e le pagine dell'album nella foto,
           //    come in «Sfoglia album» (`_nomeFotoAlbum`), se la foto si ritrova fra quelle di un album
-          + '<span class="wz-album-dove">' + (it ? 'Schermata ' : 'Screen ') + (pg + 1) + (it ? ' di ' : ' of ') + m.pagine.length
-          + (_qui ? '<br>' + _nomeFotoAlbum(_qui.i, _qui.urls) : '') + '</span>'
-          + pagSucc('wz-pag-nav')
+          // 🔄 v7.294 (Franco: «il numero delle pagine non serve (sia sopra che sotto la finestra dell'album)»; «schermata
+          //    1 di n scrivilo solo sotto») - via le pagine dell'album (`_nomeFotoAlbum`), e sopra la riga non dice niente:
+          //    resta lo spazio vuoto, così i tasti del telefono non cambiano posto
+          + (giu ? '<span class="wz-album-dove">' + (it ? 'Schermata ' : 'Screen ') + (pg + 1) + (it ? ' di ' : ' of ') + m.pagine.length + '</span>' : '')
           // 🔄 v7.130 (Franco: «"2 pagine" diventa "mostra 2 pagine", "sinistra" "mostra solo pagina sinistra", "destra"
           //    "mostra solo pagina destra"; mostra "mostra 2 pagine" in modalità una pagina, e gli altri 2 in modalità 2
           //    pagine») - si vede solo quello che cambia la vista; da una pagina all'altra si passa dalle due
@@ -60391,7 +60584,8 @@ function _wzDisegna(tieni) {
           //    stavano nella colonna a destra). Ingrandita, «Mostra 2 pagine» resta dov'era.
           + (giu ? '' : meta === 'tutte'
               ? '<div class="wz-zoom-riga">' + bv('sx', it ? 'Zoom pagina' : 'Zoom page') + bv('dx', it ? 'Zoom pagina' : 'Zoom page') + '</div>'
-              : '<span class="wz-album-meta">' + bv('tutte', it ? 'Mostra 2 pagine' : 'Show 2 pages') + '</span>')
+              // 🔄 v7.294 (Franco: «il tasto "mostra 2 pagine" chiamalo "torna a 2 pagine"»)
+              : '<span class="wz-album-meta">' + bv('tutte', it ? 'Torna a 2 pagine' : 'Back to 2 pages') + '</span>')
           + '</div>';
         // 🧪 v7.132 (Franco: «PROVA a tirare su tutto partendo dal fatto che il titolo della pagina lo metti in alto, sulla
         //    linea dei due tasti "Torna indietro" e "Prosegui"») - sul desktop il titolo va fra i due tasti in alto
@@ -60399,8 +60593,9 @@ function _wzDisegna(tieni) {
         titoloAlto = intest;
         c.visibili = null;   // v7.168 - nell'album «Seleziona / Deseleziona tutte» valgono per tutte (il limite è della griglia)
         corpo += '<div class="wz-tit-basso">' + intest + '</div>' + '<p class="wz-testo">' + (c.verso === 'ho'
-            ? (it ? 'Sfoglia l\'album e tocca le figurine che <b>hai</b>.' : 'Leaf through the album and tap the stickers you <b>have</b>.')
-            : (it ? 'Sfoglia l\'album e tocca le figurine che <b>ti mancano</b>: le altre entreranno nella tua lista.' : 'Leaf through the album and tap the stickers you are <b>missing</b>.')) + '</p>'
+            // v7.294 - niente «mancare» e niente verbo avere (Franco)
+            ? (it ? 'Sfoglia l\'album e tocca le figurine che <b>sono nella tua lista</b>.' : 'Leaf through the album and tap the stickers that are <b>in your list</b>.')
+            : (it ? 'Sfoglia l\'album e tocca le figurine che <b>non sono nella tua lista</b>: le altre ci entreranno.' : 'Leaf through the album and tap the stickers that are <b>not in your list</b>: the others will be added to it.')) + '</p>'
           // 🔄 v7.130 (Franco: «"Tocca tutte" diventa "Seleziona tutte", "Nessuna" diventa "Deseleziona tutte"; questi 2
           //    bottoni sono azione, quindi vanno in blu») - `.btn-primary`; premuti restano verdi (`.wz-cmd-on`, v7.072)
           + cmdTutte('wz-comandi-sopra')   // v7.132: sul telefono qui; sul desktop nella colonna di sinistra
@@ -60408,7 +60603,7 @@ function _wzDisegna(tieni) {
           + (_qui ? '<div class="wz-album-nome" style="text-align:center;font-family:var(--font-ui);font-weight:700;margin:0.2rem 0 0.4rem;">' + esc(_serieTrattinoAlbum(_qui.album)) + '</div>' : '')
           // v7.130: i tasti ai lati dell'album; e le due righe (sopra e sotto) stanno nella stessa griglia, nella colonna
           //    dell'album, così «Schermata N di M» parte dal suo bordo sinistro (Franco)
-          + '<div class="wz-album-riga">' + nav(false) + pagPrec('wz-pag-lato wz-lato-sx', cmdTutte('wz-comandi-lato'))
+          + '<div class="wz-album-riga">' + nav(false) + lato('wz-pag-lato wz-lato-sx', cmdTutte('wz-comandi-lato'))   // v7.294: senza i tasti di pagina
           // 🆕 v7.278 (Franco: «stiamo usando la spunta verde in entrambi i casi; io vorrei usare la spunta verde nel caso
           //    "ci sono" e una X rossa nel caso "mancano"») - `wz-manca` quando si toccano le mancanti (index)
           + '<div id="wz-album" class="wz-album' + (meta === 'sx' ? ' meta' : meta === 'dx' ? ' meta dx' : '') + (c.verso === 'ho' ? '' : ' wz-manca') + '"><div class="wz-album-foglio">'
@@ -60419,14 +60614,14 @@ function _wzDisegna(tieni) {
                 + ' aria-label="' + esc((f.number ? f.number + ' ' : '') + (f.name || '')) + '" onclick="_wzTocca(\'' + p + '\',\'' + id + '\',this)"></button>';
             }).join('')
           // v7.278 - a due pagine la colonna a destra non ha più lo zoom (è sopra le pagine, `.wz-zoom-riga`)
-          + '</div></div>' + pagSucc('wz-pag-lato wz-lato-dx', meta === 'tutte' ? '' : '<span class="wz-meta-lato">'
-              + bv('tutte', it ? 'Mostra 2 pagine' : 'Show 2 pages') + '</span>') + nav(true) + '</div>'   // v7.130: fine di `.wz-album-riga`
+          + '</div></div>' + lato('wz-pag-lato wz-lato-dx', meta === 'tutte' ? '' : '<span class="wz-meta-lato">'
+              + bv('tutte', it ? 'Torna a 2 pagine' : 'Back to 2 pages') + '</span>') + nav(true) + '</div>'   // v7.130: fine di `.wz-album-riga`; v7.294: «Torna a 2 pagine»
           // le figurine della tipologia che nelle pagine non ci sono (es. una versione «White» delle Holidays)
           + (m.fuori.length ? '<p class="wz-testo">' + (it ? 'Queste non sono sulle pagine dell\'album: toccale qui.' : 'These are not on the album pages: tap them here.') + '</p>'
             // v7.278: anche qui la ✕ rossa (`wz-manca`)
             + '<div class="wz-griglia' + (c.verso === 'ho' ? '' : ' wz-manca') + '">' + m.fuori.map(id => perId.get(id)).filter(Boolean).map(f =>
-                '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
-                + _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, '')
+                '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + (_wzRetroTile(f, figs) ? ' wz-tile-due' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
+                + _wzFotoTile(f, figs)   // v7.294: le variazioni col retro accanto
                 + '<div class="wz-num">' + esc(String((f.number || f.lettera) ? _numeroAschermo(f) : '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>' : '');
         // la pagina dopo si scarica mentre si tocca questa
         if (m.pagine[pg + 1]) { const im = new Image(); im.src = cloudinaryUrl(m.pagine[pg + 1].url, 'w_1600,c_limit,q_auto,f_auto'); }
@@ -60447,19 +60642,21 @@ function _wzDisegna(tieni) {
         const visibili = sub ? tutti.filter(f => String(f.subseries || '').trim() === sub.nome) : tutti;
         c.visibili = sub ? visibili.map(f => f.id) : null;
         corpo += intest + '<p class="wz-testo">' + (c.verso === 'ho'
-            ? (it ? 'Tocca quelle che <b>hai</b>.' : 'Tap the ones you <b>have</b>.')
-            : (it ? 'Tocca quelle che <b>ti mancano</b>: tutte le altre entrano nella tua lista.' : 'Tap the ones you are <b>missing</b>.')) + '</p>'
+            // v7.294 - niente «mancare» e niente verbo avere (Franco)
+            //    e il genere (`_wzG`): «quelli», «tutti gli altri» per retro, album e gli altri maschili
+            ? (it ? 'Tocca ' + _wzG(p, 'quelle', 'quelli') + ' che <b>sono nella tua lista</b>.' : 'Tap the ones that are <b>in your list</b>.')
+            : (it ? 'Tocca ' + _wzG(p, 'quelle', 'quelli') + ' che <b>non sono nella tua lista</b>: ' + _wzG(p, 'tutte le altre', 'tutti gli altri') + ' ci entrano.' : 'Tap the ones that are <b>not in your list</b>: all the others go into it.')) + '</p>'
           // 🔄 v7.130 (Franco: «"Tocca tutte" diventa "Seleziona tutte", "Nessuna" diventa "Deseleziona tutte"; questi 2
           //    bottoni sono azione, quindi vanno in blu») - `.btn-primary`; premuti restano verdi (`.wz-cmd-on`, v7.072)
           // 🔄 v7.157 (Franco: «i pulsanti seleziona tutto e deseleziona tutto mostriamoli solo per le tipologie per le quali
           //    hai fatto la domanda con le quattro opzioni») - nelle griglie dirette (`c.diretta`, v7.156) non ci sono
-          + (c.diretta ? '' : '<div class="wz-comandi"><button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'tutte' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Seleziona tutte' : 'Select all') + '</button>'
-          + '<button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'nessuna' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Deseleziona tutte' : 'Deselect all') + '</button></div>')
+          + (c.diretta ? '' : '<div class="wz-comandi"><button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'tutte' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',true)">' + (it ? 'Seleziona ' + _wzG(p, 'tutte', 'tutti') : 'Select all') + '</button>'
+          + '<button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'nessuna' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Deseleziona ' + _wzG(p, 'tutte', 'tutti') : 'Deselect all') + '</button></div>')
           + _wzTestaSottoserie(sub)
-          + '<div class="wz-griglia">' + visibili.map(f =>
-              '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
+          + '<div class="wz-griglia">' + visibili.map((f, i) => _wzACapo(visibili, i, ver, figs)
+              + '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + (_wzRetroTile(f, figs) ? ' wz-tile-due' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
               + (mie.has(f.id) ? '<span class="wz-mia">' + (it ? 'già tua' : 'yours') + '</span>' : '')
-              + _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, '')
+              + _wzFotoTile(f, figs)   // v7.294: le variazioni col retro accanto
               + '<div class="wz-num">' + esc(String((f.number || f.lettera) ? _numeroAschermo(f) : '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
         // v7.168: fra le sottoserie «Indietro» e «Prosegui» passano dall'una all'altra; ai due capi fanno quello di sempre
         piede = (sub && sub.i > 0 ? indietro.replace('onclick="_wzIndietro()"', 'onclick="_wzSottoseriePasso(\'' + p + '\',-1)"') : indietro)
@@ -60528,10 +60725,14 @@ function _wzDisegna(tieni) {
       : [agg ? 'adding ' + _nq(agg) : '', tolte ? 'removing ' + _nq(tolte) : '']).filter(Boolean).join(it ? ' e ' : ' and ');
     corpo += '<div class="wz-popup-sfondo"><div class="wz-popup">'
       + '<p class="wz-testo">' + (it ? 'Prima di procedere, una conferma:' : 'Before going on, a confirmation:') + '</p>'
-      + (_conto ? '<p class="wz-testo">' + (it ? 'Con questo questionario stai ' : 'With this questionnaire you are ') + _conto + '.</p>' : '')
+      // 🔄 v7.294 (Franco: «"Con questo questionario stai aggiungendo n figurine." cambiamo in "Stai aggiungendo n
+      //    figurine."»; «"La tua lista arriverà quindi a n figurine." cambiamo in "La tua lista arriva a n."»; «non andiamo
+      //    a ripetere il nome della tda») - il nome l'ha già detto la riga sopra. Senza cambiamenti la riga sopra non
+      //    c'è, quindi «resta a» tiene il nome (scelta mia: se no il numero resterebbe senza di cosa)
+      + (_conto ? '<p class="wz-testo">' + (it ? 'Stai ' : 'You are ') + _conto + '.</p>' : '')
       + '<p class="wz-testo">' + (_conto
-        ? (it ? 'La tua lista arriverà quindi a ' : 'Your list will then reach ')
-        : (it ? 'La tua lista resta a ' : 'Your list stays at ')) + _nq(n) + '.</p>'
+        ? (it ? 'La tua lista arriva a ' : 'Your list reaches ') + '<b>' + nfmtWz(n) + '</b>'
+        : (it ? 'La tua lista resta a ' : 'Your list stays at ') + _nq(n)) + '.</p>'
       + '<p class="wz-testo wz-confermi">' + (it ? 'Confermi ?' : 'Do you confirm ?') + '</p>'
       + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzModificaPasso()">← ' + (it ? 'Modifica' : 'Change') + '</button>'
       + '<button type="button" class="btn-primary wz-grande wz-conferma" onclick="_wzConfermaPasso()">' + (it ? 'Confermo 👍' : 'Confirm 👍') + '</button></div>'
@@ -66343,6 +66544,134 @@ function adminTab(tab) {
   // 🗑️ v7.267 - qui c'era il ramo `mancoliste`: Set doppi è diventato il secondo tab di «Copie doppie», e quello che
   //    faceva entrando (ordine per Quantità, riapertura del suo tab) lo fa `_cdVista('set')`
   if (tab === 'punteggi') renderAdminPunteggi();
+  if (tab === 'orfani') renderAdminOrfani();   // v7.294 (Franco)
+}
+// 🆕 v7.294 (Franco: «un reminder che mi ricordi che vanno cancellate le foto orfane ma questa cancellazione vorrei poterla
+//    richiedere e gestire direttamente dal sito senza doverti interpellare») - LA SEZIONE «FOTO ORFANE». Dal browser non si può
+//    cancellare (serve la chiave segreta di Cloudinary): l'elenco lo pubblica ogni sera il PC (strumenti/pulizia-foto-serale.py),
+//    qui si sceglie, e la richiesta va in settings/orfaniRichiesta, che il PC esegue alla sera dopo aver ricontrollato ogni foto.
+//    Il promemoria si accende dopo 30 giorni dall'ultima pulizia, se ci sono orfani.
+const _ORFANI_URL = 'https://res.cloudinary.com/' + CLOUDINARY_CLOUD + '/raw/upload/orfani-elenco.json';
+const _ORFANI_GIORNI = 30;
+let _orfaniAvvisato = false, _orfaniScelti = new Set(), _orfaniRep = null, _orfaniAttesa = [];
+async function _orfaniLeggi() {
+  const r = await fetch(_ORFANI_URL, { cache: 'no-store' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+function _orfaniGiorni(iso, ora) {
+  return Math.floor((ora - new Date(iso).getTime()) / 86400000);
+}
+function _orfaniDaGuardare(rep, ora) {
+  return !!rep && Array.isArray(rep.orfani) && rep.orfani.length > 0 && _orfaniGiorni(rep.ultimaPulizia, ora) >= _ORFANI_GIORNI;
+}
+function _orfaniSegnaTab(acceso) {
+  const p = document.getElementById('orfani-punto');
+  if (p) p.style.display = acceso ? 'inline-block' : 'none';
+}
+async function _orfaniAvviso() {
+  if (_orfaniAvvisato || !currentUser || !currentUser.isAdmin) return;
+  _orfaniAvvisato = true;
+  try {
+    const rep = await _orfaniLeggi();
+    const acceso = _orfaniDaGuardare(rep, Date.now());
+    _orfaniSegnaTab(acceso);
+    if (acceso) toast(currentLang === 'it'
+      ? '🗑️ Sono passati ' + _orfaniGiorni(rep.ultimaPulizia, Date.now()) + ' giorni dall’ultima pulizia: ci sono ' + rep.orfani.length + ' foto orfane da guardare (console, «Foto orfane»).'
+      : '🗑️ ' + rep.orfani.length + ' orphan photos to review (console, «Orphan photos»).', 'warn');
+  } catch (e) { console.warn('_orfaniAvviso', e); }
+}
+async function renderAdminOrfani() {
+  const box = document.getElementById('admin-orfani-box');
+  if (!box) return;
+  const it = currentLang === 'it';
+  box.textContent = it ? 'Leggo l’elenco…' : 'Reading the list…';
+  let rep;
+  try { rep = await _orfaniLeggi(); }
+  catch (e) {
+    console.warn('renderAdminOrfani', e);
+    box.textContent = it ? 'L’elenco non è ancora pronto: lo prepara il PC ogni sera.' : 'The list is not ready yet: the PC prepares it every evening.';
+    return;
+  }
+  let ric = null;
+  try { ric = (await fsGetAllDalServer('settings')).find(x => x.id === 'orfaniRichiesta') || null; }
+  catch (e) { console.error('renderAdminOrfani', e); }
+  _orfaniRep = rep;
+  _orfaniAttesa = ric && Array.isArray(ric.ids) && String(ric.quando || '') > String(rep.generato || '') ? ric.ids : [];
+  _orfaniScelti = new Set();
+  _orfaniDisegna();
+}
+function _orfaniDisegna() {
+  const box = document.getElementById('admin-orfani-box'), rep = _orfaniRep;
+  if (!box || !rep) return;
+  const it = currentLang === 'it', ora = Date.now(), lista = rep.orfani || [];
+  const data = iso => iso ? new Date(iso).toLocaleDateString(it ? 'it-IT' : 'en-GB') : '—';
+  const mb = b => (b / 1e6).toFixed(1).replace('.', it ? ',' : '.');
+  const peso = lista.reduce((s, o) => s + (o.byte || 0), 0);
+  const fermo = _orfaniGiorni(rep.generato, ora);
+  const avviso = (t, col) => '<p style="margin:0.4rem 0;color:' + col + ';font-weight:600;">' + t + '</p>';
+  let h = '<p style="margin:0.4rem 0;">' + (it ? 'Ultimo controllo: ' : 'Last check: ') + data(rep.generato) + ' · ' + (it ? 'Ultima pulizia: ' : 'Last cleanup: ') + data(rep.ultimaPulizia) + '</p>'
+    + '<p style="margin:0.4rem 0;"><b>' + lista.length + '</b> ' + (it ? 'foto orfane con più di ' + _ORFANI_GIORNI + ' giorni' : 'orphan photos older than ' + _ORFANI_GIORNI + ' days') + ', ' + mb(peso) + ' MB.'
+    + (rep.recenti ? ' ' + (it ? 'Altre ' + rep.recenti + ' sono più recenti e restano: possono essere foto appena caricate.' : 'Another ' + rep.recenti + ' are newer and stay.') : '') + '</p>';
+  if (fermo >= 3) h += avviso('⚠️ ' + (it ? 'Il PC non controlla da ' + fermo + ' giorni.' : 'The PC has not checked for ' + fermo + ' days.'), 'var(--danger)');
+  if (rep.fermato) h += avviso('⚠️ ' + esc(rep.fermato), 'var(--danger)');
+  if (_orfaniAttesa.length) h += avviso('⏳ ' + (it ? _orfaniAttesa.length + ' foto in attesa: le cancella il PC stasera, o alla prossima accensione.' : _orfaniAttesa.length + ' photos waiting: the PC deletes them this evening.'), 'var(--info)');
+  if (!lista.length) { box.innerHTML = h + '<p>' + (it ? '✅ Niente da cancellare.' : '✅ Nothing to delete.') + '</p>'; return; }
+  h += '<div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin:0.7rem 0;">'
+    + '<button type="button" class="btn-barra-admin pieno" onclick="_orfaniTutte(true)">' + (it ? 'Seleziona tutte' : 'Select all') + '</button>'
+    + '<button type="button" class="btn-barra-admin pieno" onclick="_orfaniTutte(false)">' + (it ? 'Deseleziona tutte' : 'Deselect all') + '</button>'
+    + '<button type="button" class="btn-danger" id="orfani-cancella" onclick="_orfaniChiedi()"></button></div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:0.7rem;">' + lista.map(o => {
+      const attesa = _orfaniAttesa.includes(o.id);
+      const foto = o.tipo === 'image' && o.url
+        ? '<img src="' + esc(_urlSenzaScritta(o.url, 'w_160,h_200,c_fit,q_auto,f_auto')) + '" alt="" loading="lazy" style="width:100px;height:125px;object-fit:contain;border-radius:6px;background:#fff;display:block;">'
+        : '<span style="display:block;width:100px;">' + esc(o.tipo + ': ' + o.id) + '</span>';
+      return '<div style="width:110px;font-size:0.72rem;' + (attesa ? 'opacity:0.45;' : '') + '"><label style="cursor:pointer;display:block;">'
+        + '<input type="checkbox" data-orfano data-id="' + esc(o.id) + '"' + (attesa ? ' disabled' : '') + ' onchange="_orfaniSpunta(this)"> ' + (attesa ? (it ? 'in attesa' : 'waiting') : '')
+        + foto + '</label>' + data(o.creato) + ' · ' + mb(o.byte || 0) + ' MB'
+        + (o.url ? ' <a href="' + esc(o.url) + '" target="_blank" rel="noopener" style="color:var(--info);">↗</a>' : '') + '</div>';
+    }).join('') + '</div>';
+  box.innerHTML = h;
+  _orfaniConto();
+}
+function _orfaniConto() {
+  const b = document.getElementById('orfani-cancella');
+  if (!b) return;
+  const n = _orfaniScelti.size;
+  b.disabled = !n;
+  b.style.opacity = n ? '' : '0.4';
+  b.textContent = '🗑️ ' + (currentLang === 'it' ? 'Cancella ' + n + ' foto' : 'Delete ' + n + ' photos');
+}
+function _orfaniSpunta(el) {
+  if (el.checked) _orfaniScelti.add(el.dataset.id); else _orfaniScelti.delete(el.dataset.id);
+  _orfaniConto();
+}
+function _orfaniTutte(si) {
+  document.querySelectorAll('#admin-orfani-box input[data-orfano]:not(:disabled)').forEach(el => { el.checked = si; _orfaniSpunta(el); });
+}
+async function _orfaniChiedi() {
+  if (!currentUser || !currentUser.isAdmin || !_orfaniScelti.size) return;
+  const it = currentLang === 'it', n = _orfaniScelti.size;
+  const ok = await _finestraConferma({
+    titolo: '🗑️ ' + (it ? 'Cancellare ' + n + ' foto orfane?' : 'Delete ' + n + ' orphan photos?'),
+    testo: it ? 'Il sito non le usa. Le cancella il PC stasera, o alla prossima accensione, ricontrollando prima ognuna: una foto tornata in uso resta. Ne salva una copia in «Backup sito», che resta 90 giorni.'
+      : 'The site does not use them. The PC deletes them this evening, checking each one first, and keeps a copy for 90 days.',
+    ok: it ? 'Cancella' : 'Delete', annulla: it ? 'Annulla' : 'Cancel'
+  });
+  if (!ok) return;
+  const ids = [...new Set([..._orfaniAttesa, ..._orfaniScelti])];
+  try {
+    await fsSave('settings', { id: 'orfaniRichiesta', ids, quando: new Date().toISOString() });
+  } catch (e) {
+    console.error('_orfaniChiedi', e);
+    toast((it ? '⚠️ Richiesta NON salvata: ' : '⚠️ Request NOT saved: ') + (e?.message || e), 'error');
+    return;
+  }
+  _orfaniAttesa = ids;
+  _orfaniScelti = new Set();
+  _orfaniSegnaTab(false);
+  _orfaniDisegna();
+  toast(it ? '✅ Richiesta salvata: ci pensa il PC stasera.' : '✅ Request saved: the PC will handle it this evening.', 'success');
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
 // Sono l'unica cosa nel sito che esiste ma non si vede, quindi senza un posto dove guardarli si
@@ -67581,6 +67910,7 @@ async function toggleWishlist(figId) {
 }
 
 function updateMsgBadge() {
+  _orfaniAvviso();   // v7.294: il promemoria delle foto orfane, una volta per caricamento
   const badge = document.getElementById('nav-msg-badge');
   const btn = document.getElementById('nav-msg-btn');
   if (!badge || !btn) return;
@@ -71254,7 +71584,7 @@ function _copiaAlbumLeggi(nuova) {
 //    campo non c'è). Si scelgono e si puliscono subito nel browser, e si vedono da lì; vanno su Cloudinary solo col Salva,
 //    così una finestra chiusa senza salvare non lascia foto orfane. La pulizia è quella del sito (modello nel browser, niente
 //    Cloudinary). Di ogni foto: url se è già caricata, blob e anteprima se è ancora solo qui.
-let _cpFoto = [], _cpFotoLavoro = 0;
+let _cpFoto = [], _cpFotoLavoro = 0, _cpFotoDi = null;
 const _COPIA_FOTO_LATO = 2000;
 function _cpFotoMiniature(sola) {
   const it = currentLang === 'it';
@@ -71267,10 +71597,11 @@ function _cpFotoMiniature(sola) {
       + '</div>';
   }).join('');
 }
-function _cpFotoHTML(c, sola) {
+function _cpFotoHTML(c, sola, artId, chiave) {
   const it = currentLang === 'it';
   _cpFoto.forEach(f => { if (f.anteprima) URL.revokeObjectURL(f.anteprima); });
   _cpFoto = (Array.isArray(c.foto) ? c.foto : []).map(url => ({ url }));
+  _cpFotoDi = artId ? { artId, chiave } : null;
   if (sola && !_cpFoto.length) return '';
   return '<div id="cp-foto-box"><label class="detail-label" style="display:block;margin:0.7rem 0 0.25rem;">' + (it ? 'Foto' : 'Photos') + '</label>'
     + '<div id="cp-foto-lista" style="display:flex;flex-wrap:wrap;gap:0.5rem;">' + _cpFotoMiniature(sola) + '</div>'
@@ -71285,15 +71616,40 @@ function _cpFotoDisegna() {
   const box = document.getElementById('cp-foto-lista');
   if (box) box.innerHTML = _cpFotoMiniature(false);
 }
-function _cpFotoTogli(i) {
-  const via = _cpFoto.splice(i, 1)[0];
-  if (via && via.anteprima) URL.revokeObjectURL(via.anteprima);
+// 🔄 v7.294 (Franco: «la pressione della X sulla singola foto va considerata una richiesta di cancellazione immediata») - una
+//    foto già sul sito esce subito dalla copia, senza Salva; il file su Cloudinary lo toglie il lavoro serale. Gli altri campi
+//    della finestra, anche se cambiati e non salvati, non si toccano.
+async function _cpFotoTogli(i) {
+  const via = _cpFoto[i];
+  if (!via) return;
+  if (via.url && _cpFotoDi) {
+    const art = _articoloVivo(_cpFotoDi.artId);
+    const copie = art && Array.isArray(art.copie) ? art.copie.slice() : [];
+    const j = copie.findIndex((c, k) => _annChiaveCopia(c, k) === _cpFotoDi.chiave);
+    if (j >= 0 && Array.isArray(copie[j].foto) && copie[j].foto.includes(via.url)) {
+      const nuova = Object.assign({}, copie[j]), resto = nuova.foto.filter(u => u !== via.url);
+      if (resto.length) nuova.foto = resto; else delete nuova.foto;
+      copie[j] = nuova;
+      try {
+        await _saveFigurineItem(Object.assign({}, art, { copie }));
+      } catch (e) {
+        console.error('_cpFotoTogli', e);
+        const st = document.getElementById('cp-stato');
+        if (st) { st.style.color = 'var(--danger)'; st.textContent = (currentLang === 'it' ? '⚠️ Foto NON tolta: ' : '⚠️ Photo NOT removed: ') + (e?.message || e); }
+        return;
+      }
+    }
+  }
+  const dove = _cpFoto.indexOf(via);
+  if (dove >= 0) _cpFoto.splice(dove, 1);
+  if (via.anteprima) URL.revokeObjectURL(via.anteprima);
   _cpFotoDisegna();
 }
 // un clone è un altro pezzo: le foto non vengono dietro
 function _cpFotoSvuota() {
   _cpFoto.forEach(f => { if (f.anteprima) URL.revokeObjectURL(f.anteprima); });
   _cpFoto = [];
+  _cpFotoDi = null;
   _cpFotoDisegna();
 }
 // le foto oltre la misura caricata di solito sul sito si riducono prima: il modello lavora più in fretta, e il PNG pulito resta
@@ -71357,7 +71713,7 @@ async function _cpFotoCarica(nuova) {
   if (_cpFotoLavoro) throw new Error(currentLang === 'it' ? 'aspetta che le foto siano pronte.' : 'wait for the photos to be ready.');
   for (const f of _cpFoto) {
     if (!f.blob) continue;
-    f.url = await uploadToCloudinary(f.blob);
+    f.url = await uploadToCloudinary(f.blob, 'copia');
     delete f.blob;
   }
   if (_cpFoto.length) nuova.foto = _cpFoto.map(f => f.url);
@@ -71415,7 +71771,7 @@ function _copiaApri(artId, chiave, sola) {
     // 🔄 v7.279 - riga 7: le Condizioni
     + lab(it ? 'Condizioni' : 'Condition')
     + _condCampoHTML('id="cp-condizioni"' + dis, c.condizioni, 'min-height:8rem;')
-    + _cpFotoHTML(c, sola)
+    + _cpFotoHTML(c, sola, artId, chiave)
     // gli annunci della copia: la stessa cella della colonna «Annunci» del tab, riempita quando gli annunci sono letti
     + '<div id="cp-annunci">' + lab(it ? 'Annunci' : 'Listings')
     + '<table style="border-collapse:collapse;"><tr>' + _copiaCellaAnnunci(artId, chiave, null, 'riga') + '</tr></table></div>' + _copieAnnunciDopo()
