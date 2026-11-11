@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.296">
+<link rel="stylesheet" href="css/style.css?v=7.297">
 
 
 <style>
@@ -1247,7 +1247,9 @@ span.ml-mini { background: none; }
 .wz-sottoserie { text-align: center; font-family: var(--font-ui); font-size: 1.05rem; color: var(--text); margin: 0.2rem 0 0.7rem; }
 .wz-sottoserie-dove { opacity: 0.8; font-size: 0.9rem; }
 /* 🆕 v7.055 (Franco) - «Esci dal questionario» in cima a ogni schermata, piccolo e a destra */
-.wz-esci-alto { text-align: right; margin: 0 0 0.3rem; }
+.wz-esci-alto { text-align: right; margin: 0 0 0.3rem; display: flex; justify-content: flex-end; align-items: center; gap: 0.6rem; }
+/* 🆕 v7.297 (Franco) - la bandierina della lingua accanto a «Esci», come quella della navbar (32×21) */
+.wz-lingua { width: 32px; height: 21px; border-radius: 3px; object-fit: cover; cursor: pointer; display: block; }
 .wz-esci-alto .wz-esci { font-size: 0.8rem; padding: 0.35rem 0.8rem; }   /* v7.058: era .btn-secondary, ora rosso */
 /* 🆕 v7.129 (Franco: «la pagina del questionario non ha la navbar, quindi può iniziare più in alto»; «il tasto Esci dal
    questionario è più in alto: è da quella altezza che inizierei») - la schermata parte all'altezza di «Esci», non sotto.
@@ -1261,6 +1263,12 @@ span.ml-mini { background: none; }
    imbottitura erano già uguali. La larghezza: la stessa larghezza minima, che sul desktop basta alla scritta più lunga. */
 .wz-piede .wz-passo, .wz-piede .wz-grande { border-width: 1.5px; border-style: solid; box-sizing: border-box; justify-content: center; text-align: center; }
 .wz-piede .wz-grande { border-color: transparent; }
+/* 🆕 v7.297 (Franco: «il tasto "Torna indietro" deve essere alto quanto il tasto "Prosegui", in tutte le schermate del
+   questionario») - misure uguali non bastavano: quando una scritta va a capo, o porta un'emoji, quel tasto cresce da solo.
+   Ora la riga allunga i tasti fino al più alto (`stretch`), e il resto della riga (il conto, «Salta») resta al centro. */
+.wz-piede, .wz-popup-comandi { align-items: stretch; }
+.wz-piede > :not(button), .wz-piede > .wz-centro, .wz-popup-comandi > :not(button) { align-self: center; }
+.wz-piede > button, .wz-popup-comandi > button { display: inline-flex; align-items: center; justify-content: center; }
 @media (min-width: 861px) {
   /* 📏 «← Torna indietro» a 1,05rem con 1,4rem di imbottitura per lato: circa 190px, cioè meno di 12,5rem */
   /* 🔄 v7.132 (Franco: «tasti che comunque sia farei un po' meno larghi e un po' meno alti») - imbottitura 0,7×1,4 →
@@ -1280,8 +1288,9 @@ span.ml-mini { background: none; }
   .wz-pannello { position: relative; }
   .wz-esci-alto { position: absolute; top: 1.2rem; right: 1rem; margin: 0; z-index: 1; }
   /* 📏 13rem: «🚪 Esci dal questionario» a 0,8rem è largo circa 195px (12,2rem), più un po' d'aria */
-  .wz-esci-alto + .wz-titolo { padding: 0 13rem; }
-  .wz-esci-alto + .wz-testa { padding-right: 13rem; }
+  /* 🔄 v7.297: 13 → 15rem, per la bandierina accanto (32px più lo spazio) */
+  .wz-esci-alto + .wz-titolo { padding: 0 15rem; }
+  .wz-esci-alto + .wz-testa { padding-right: 15rem; }
 }
 /* 🆕 v7.058 (Franco) - «Esci dal questionario» rosso (`btn-danger`, il rosso dei comandi di uscita); «Conferma 👍»
    del riepilogo verde, perché è il passo in più chiesto apposta */
@@ -7005,7 +7014,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.296"></script>
+<script src="js/app.js?v=7.297"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7029,7 +7038,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.296'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.297'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
