@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.295';
+const JS_VERSION = 'v7.296';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42521,8 +42521,11 @@ function _collageVersioniDellaSerie(sid, sez) {
     ['base+uff', it ? 'Base + variazioni ufficiali' : 'Base + official variations', conti.base && conti.variation],
     ['base+var', it ? 'Base + variazioni' : 'Base + variations', conti.base && conti.unofficialVariation],
   ].filter(x => x[2]);
-  return vive.map(ch => '<option value="' + esc(ch) + '">' + esc(ch === 'base' ? 'Base' : _nomeVersione(ch, it ? 'it' : 'en')) + ' (' + conti[ch] + ')</option>').join('') +
-    insieme.map(([v, nome]) => '<option value="' + v + '">' + nome + ' (' + conta(v) + ')</option>').join('') +
+  // v7.296 (Franco: «al posto di "variazione" usiamo "variaz."»; «solo da mobile») - anche «variazioni»
+  const corto = typeof _isMobileViewport === 'function' && _isMobileViewport()
+    ? s => String(s).replace(/([Vv])ariazion[ei]/g, '$1ariaz.') : s => s;
+  return vive.map(ch => '<option value="' + esc(ch) + '">' + esc(corto(ch === 'base' ? 'Base' : _nomeVersione(ch, it ? 'it' : 'en'))) + ' (' + conti[ch] + ')</option>').join('') +
+    insieme.map(([v, nome]) => '<option value="' + v + '">' + corto(nome) + ' (' + conta(v) + ')</option>').join('') +
     (vive.length > 1 ? '<option value="tutte">' + (it ? 'Tutte' : 'All') + ' (' + tot + ')</option>' : '');
 }
 // v7.255 - le risposte che mettono insieme più versioni; «tutte» non filtra
