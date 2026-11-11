@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.297';
+const JS_VERSION = 'v7.298';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -59522,8 +59522,9 @@ function _wzQuanteDomanda(p, n, nome, ver) {
 // 🔄 v7.297 (Franco: «nel questionario, anche per le fcr omaggio va mostrato il retro») - e gli Omaggio (`isFreeVersion`)
 // 🔄 v7.297 (Franco: «il retro per gli errori di stampa ci sta; per i change teoricamente no, dato che i change sono tali
 //    per via del loro fronte») - e gli errori di stampa (`isPrintError`); i change restano col solo fronte
+// 🔄 v7.298 (Franco: «nelle versioni errore di stampa e sigillate, mostriamo anche il retro») - e le sigillate (`isSealed`)
 function _wzRetroTile(f, figs) {
-  if (!f || !(f.isVariation || f.isUnofficialVariation || f.isFreeVersion || f.isPrintError)) return '';
+  if (!f || !(f.isVariation || f.isUnofficialVariation || f.isFreeVersion || f.isPrintError || f.isSealed)) return '';
   if ((f.section || 'figurines') === 'figurines') {
     const id = _retroEffettivo(f, figs), r = id && (figs || []).find(x => x.id === id);
     return (r && (_fotoFigurina(r, figs) || r.img)) || '';
@@ -59552,9 +59553,19 @@ function _wzACapo(lista, i, ver, figs) {
   if (!_wzACapoMulti.si) return '';
   return _familyKey(lista[i], idx) === _familyKey(lista[i - 1], idx) ? '' : '<div class="wz-a-capo" aria-hidden="true"></div>';
 }
+// 🆕 v7.298 (Franco: «e le foto devono essere più grandi, del 100%», per errori di stampa e sigillate) - LE CARD GRANDI:
+//    la card prende il doppio delle colonne (fronte e retro: 4 invece di 2; il solo fronte: 2 invece di 1), così ogni
+//    foto è larga il doppio. A Cloudinary si chiede il doppio (400×400 e 400×520), se no la foto ingrandita sgrana.
+//    📏 Stima del 12/11: 49 errori di stampa e 16 sigillate, 107 foto, tutte protette: ~110-220 trasformazioni.
+function _wzTileGrande(f) { return !!(f && (f.isPrintError || f.isSealed)); }
+function _wzClasseTile(f, figs) {
+  const due = !!_wzRetroTile(f, figs), grande = _wzTileGrande(f);
+  return due ? (grande ? ' wz-tile-quattro' : ' wz-tile-due') : (grande ? ' wz-tile-due' : '');
+}
 function _wzFotoTile(f, figs) {
-  const fronte = _wzImg(_fotoFigurina(f, figs) || f.img, 200, 200, ''), retro = _wzRetroTile(f, figs);
-  return retro ? '<span class="wz-tile-coppia">' + fronte + _wzImg(retro, 200, 260, '') + '</span>' : fronte;
+  const k = _wzTileGrande(f) ? 2 : 1;
+  const fronte = _wzImg(_fotoFigurina(f, figs) || f.img, 200 * k, 200 * k, ''), retro = _wzRetroTile(f, figs);
+  return retro ? '<span class="wz-tile-coppia">' + fronte + _wzImg(retro, 200 * k, 260 * k, '') + '</span>' : fronte;
 }
 function _wzMasc(p) { return ((typeof _art === 'function' && _art(String(p).split('|')[0])) || {}).genere === 'm'; }
 function _wzG(p, f, m) { return _wzMasc(p) ? m : f; }
@@ -60052,7 +60063,7 @@ function _wzTabellaFinale() {
   // una riga sotto la tabella dice cos'è il verde (parole mie), solo se c'è
   return (righe ? '<table class="wz-ft-tab"><tbody>' + righe + '</tbody></table>' : '')
     + (righe.includes('wz-ft-nuovi">+') ? '<p class="wz-nota">' + (it ? 'In verde, quelli aggiunti con questo questionario.' : 'In green, the ones added with this questionnaire.') + '</p>' : '')
-    + (vuote ? '<p class="wz-nota">' + (it ? (vuote === 1 ? 'Di 1 serie non hai ancora niente nella tua lista.' : 'Di ' + vuote + ' serie non hai ancora niente nella tua lista.')
+    + (vuote ? '<p class="wz-nota">' + (it ? (vuote === 1 ? 'Di 1 serie non c\'è ancora niente nella tua lista.' : 'Di ' + vuote + ' serie non c\'è ancora niente nella tua lista.')
                                          : (vuote === 1 ? 'You have nothing yet from 1 series.' : 'You have nothing yet from ' + vuote + ' series.')) + '</p>' : '');
 }
 async function _wzAzzeraDavvero() {
@@ -60245,14 +60256,16 @@ function _wzDisegna(tieni) {
       + '<div class="wz-mosaico wz-mosaico-intro" style="--wz-col:' + Math.max(1, Math.ceil(w.serie.length / 2)) + ';">' + w.serie.map(s => '<div class="wz-mosaico-voce">' + _wzImg(s.img, 300, 300, '') + '<div>' + esc(_nomeSerieCard(s)) + '</div></div>').join('') + '</div>'
       + '<p class="wz-nota wz-nota-intro">' + (it
         // v7.129 (Franco): «Ogni volta riparte da dove lo hai lasciato tu.» - nel senso che ti propone già quello che hai
-        ? '📌 Puoi rifare il questionario quante volte vuoi.<br>Ogni volta riparte da dove lo hai lasciato tu.<br>Se vuoi, puoi anche resettarlo e cominciare da capo.'
+        // v7.298 (Franco): «Ogni volta riparte da dove lo hai lasciato.», senza «tu»
+        ? '📌 Puoi rifare il questionario quante volte vuoi.<br>Ogni volta riparte da dove lo hai lasciato.<br>Se vuoi, puoi anche resettarlo e cominciare da capo.'
         : '📌 You can take the questionnaire as many times as you like.<br>Each time it picks up from where you left it.<br>If you like, you can also reset it and start over.') + '</p>';
     const nMie = getOwned().length;
     // 🔄 v7.130 (Franco: «la pagina dovrebbe finire con la fine del tasto "Azzera la mia lista…"; il tasto "Esci dal
     //    questionario" me lo aspettavo a quella altezza») - una riga a tre colonne: «Azzera» al centro, a destra il
     //    secondo «Esci» (lo mette `_wzDisegna` al posto del segnaposto, e allora in fondo non ce n'è un altro)
     if (nMie || _wzFatto) corpo += '<div class="wz-azzera-riga"><span></span><button type="button" class="btn-secondary wz-azzera" onclick="_wzAzzera(\'azzera1\')">🗑️ '
-      + (it ? 'Azzera la mia lista e ricomincia il questionario' : 'Reset my list and restart the questionnaire') + '</button><!--wz-esci-qui--></div>';
+      // v7.298 (Franco): «Ricomincia da capo il questionario (resetta la mia lista)»; l'inglese è mio
+      + (it ? 'Ricomincia da capo il questionario (resetta la mia lista)' : 'Restart the questionnaire from scratch (reset my list)') + '</button><!--wz-esci-qui--></div>';
     // v7.050: «Inizia» è salito nel corpo; v7.088: e l'uscita sta in cima e in fondo come nelle altre schermate
     piede = '';
   } else if (w.passo === 'esci') {
@@ -60330,7 +60343,7 @@ function _wzDisegna(tieni) {
                  : 'You added none with the questionnaire.<br><br>Here they are, series by series.')
                : 'Your list is still empty.')) + '</p>'
       + blocchi
-      + (tot && vuote ? '<p class="wz-nota">' + (it ? (vuote === 1 ? 'Di 1 serie non hai ancora niente nella tua lista.' : 'Di ' + vuote + ' serie non hai ancora niente nella tua lista.')
+      + (tot && vuote ? '<p class="wz-nota">' + (it ? (vuote === 1 ? 'Di 1 serie non c\'è ancora niente nella tua lista.' : 'Di ' + vuote + ' serie non c\'è ancora niente nella tua lista.')
                                                   : (vuote === 1 ? 'You have nothing yet from 1 series.' : 'You have nothing yet from ' + vuote + ' series.')) + '</p>' : '');
     piede = '<button type="button" class="btn-secondary" onclick="_wzChiudi()">' + (it ? 'Chiudi' : 'Close') + '</button>'
       + '<button type="button" class="btn-primary wz-grande" onclick="_wzChiudi();showPage(\'lamialista\')">' + (it ? 'Vai alla tua lista →' : 'Go to your list →') + '</button>';
@@ -60360,7 +60373,7 @@ function _wzDisegna(tieni) {
         + '<div class="wz-salta-foto"><button type="button" class="btn-secondary wz-scritta-rossa" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta serie' : 'Skip series') + '</button></div>'
         + '<div class="wz-grande-foto">' + _wzImg(s.img, 600, 600, '') + '</div>'
         + '</div><div class="wz-due-dx">'
-        + '<div class="wz-domanda wz-rosa">' + (it ? 'Cosa hai di questa serie?' : 'What do you have from this series?') + '</div>'
+        + '<div class="wz-domanda wz-rosa">' + (it ? 'Cosa c\'è di questa serie nella tua lista?' : 'What do you have from this series?') + '</div>'
         // 🔄 v7.089 (Franco, telefono e desktop) - la frase nuova; l'inglese è mio
         + '<p class="wz-testo">' + (it ? 'Clicca sul quadrante che raffigura gli articoli per la tua lista.' : 'Click on the tiles showing the items for your list.') + '</p>'
         // 🔄 v7.129 (Franco) - «Quelli già accesi…», non più «I quadranti già accesi…»
@@ -60408,10 +60421,10 @@ function _wzDisegna(tieni) {
       const alb = _wzArticoli(s.id, 'albums'), figs = getData('figurines', []);
       // 🔄 v7.132 (Franco: «nella pagina Quali album hai? la miniatura dell'album non serve perché c'è sempre almeno un
       //    album da mostrare») - via la foto della sezione accanto alla domanda: le foto degli album stanno subito sotto
-      corpo += '<div class="wz-domanda">' + (it ? 'Quali album hai?' : 'Which albums do you have?') + '</div>'
+      corpo += '<div class="wz-domanda">' + (it ? 'Quali album ci sono nella tua lista?' : 'Which albums do you have?') + '</div>'
         // v7.058: la frase di Franco. 🔄 v7.087 (Franco: «le tre frasi, mettile ognuna su una riga dedicata»), e il
         //    `</p>` torna: stava dopo un commento a metà riga, quindi non veniva mai scritto.
-        + '<p class="wz-testo">' + (it ? 'Tocca quelli che hai.<br>Se non ne hai, vai avanti.<br>Se non sai quale selezionare, scegli il primo.' : 'Tap the ones you have.<br>If you have none, go on.<br>If you do not know which one to select, choose the first one.') + '</p>'
+        + '<p class="wz-testo">' + (it ? 'Tocca quelli della tua lista.<br>Se non ce ne sono, vai avanti.<br>Se non sai quale selezionare, scegli il primo.' : 'Tap the ones you have.<br>If you have none, go on.<br>If you do not know which one to select, choose the first one.') + '</p>'
         + '<div class="wz-scelte wz-scelte-album">' + alb.map(f =>
             '<button type="button" class="wz-carta' + (w.scelte.albums.has(f.id) ? ' on' : '') + '" onclick="_wzTocca(\'albums\',\'' + f.id + '\',this)">'
             + _wzImg(_fotoFigurina(f, figs) || f.img, 400, 400, '') + '<div class="wz-carta-titolo">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
@@ -60525,7 +60538,7 @@ function _wzDisegna(tieni) {
           + '<div class="wz-emoji">' + emoji + '</div><div class="wz-carta-titolo">' + tit + '</div>' + (sotto ? '<div class="wz-carta-sotto">' + sotto + '</div>' : '') + '</button>';
         // v7.130 (Franco) - la domanda è sua; le carte «Poche» / «Tante» (erano «Ne ho di meno» / «Me ne mancano di meno»)
         // v7.294 - il genere (`_wzG`): «molti o pochi», «Pochi», «Tanti», «quelli» per i maschili
-        corpo += intest + '<p class="wz-testo">' + (it ? 'La tua lista ne ha ' + _wzG(p, 'molte o poche', 'molti o pochi') + '?' : 'Does your list have many or few of them?') + '</p>'
+        corpo += intest + '<p class="wz-testo">' + (it ? 'Nella tua lista ce ne sono ' + _wzG(p, 'molte o poche', 'molti o pochi') + '?' : 'Does your list have many or few of them?') + '</p>'
           + '<div class="wz-scelte">'
           // v7.130 (Franco) - anche le righe sotto: «Tocca quelle già nella tua lista» / «… mancanti nella tua lista»
           + carta('ho', '✅', it ? _wzG(p, 'Poche', 'Pochi') : 'Few', it ? 'Tocca ' + _wzG(p, 'quelle', 'quelli') + ' già nella tua lista' : 'Tap the ones already in your list')
@@ -60664,7 +60677,7 @@ function _wzDisegna(tieni) {
           + (m.fuori.length ? '<p class="wz-testo">' + (it ? 'Queste non sono sulle pagine dell\'album: toccale qui.' : 'These are not on the album pages: tap them here.') + '</p>'
             // v7.278: anche qui la ✕ rossa (`wz-manca`)
             + '<div class="wz-griglia' + (c.verso === 'ho' ? '' : ' wz-manca') + '">' + m.fuori.map(id => perId.get(id)).filter(Boolean).map(f =>
-                '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + (_wzRetroTile(f, figs) ? ' wz-tile-due' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
+                '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + _wzClasseTile(f, figs) + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
                 + _wzFotoTile(f, figs)   // v7.294: le variazioni col retro accanto
                 + '<div class="wz-num">' + esc(String((f.number || f.lettera) ? _numeroAschermo(f) : '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>' : '');
         // la pagina dopo si scarica mentre si tocca questa
@@ -60698,7 +60711,7 @@ function _wzDisegna(tieni) {
           + '<button type="button" class="btn-primary wz-cmd' + (c.ultimo === 'nessuna' ? ' wz-cmd-on' : '') + '" onclick="_wzTutte(\'' + p + '\',false)">' + (it ? 'Deseleziona ' + _wzG(p, 'tutte', 'tutti') : 'Deselect all') + '</button></div>')
           + _wzTestaSottoserie(sub)
           + '<div class="wz-griglia">' + visibili.map((f, i) => _wzACapo(visibili, i, ver, figs)
-              + '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + (_wzRetroTile(f, figs) ? ' wz-tile-due' : '') + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
+              + '<button type="button" class="wz-tile' + (c.sel.has(f.id) ? ' on' : '') + _wzClasseTile(f, figs) + '" onclick="_wzTocca(\'' + p + '\',\'' + f.id + '\',this)">'
               + (mie.has(f.id) ? '<span class="wz-mia">' + (it ? 'già tua' : 'yours') + '</span>' : '')
               + _wzFotoTile(f, figs)   // v7.294: le variazioni col retro accanto
               + '<div class="wz-num">' + esc(String((f.number || f.lettera) ? _numeroAschermo(f) : '')) + '</div><div class="wz-nome">' + esc(f.name || '') + '</div></button>').join('') + '</div>';
