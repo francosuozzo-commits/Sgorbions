@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.293">
+<link rel="stylesheet" href="css/style.css?v=7.294">
 
 
 <style>
@@ -927,7 +927,9 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
      dettano coi loro 7,5rem), e bassi, col solo padding che serve alla scritta. */
   .wz-comandi-sopra { display: none; }
   .wz-comandi.wz-comandi-lato { display: flex; flex-direction: column; gap: 0.35rem; margin: 0 0 0.6rem; width: 100%; }
-  .wz-comandi-lato .btn-primary { width: 100%; max-width: 7.5rem; padding: 0.2rem 0.4rem; font-size: 0.8rem; line-height: 1.2; white-space: normal; min-height: 0; }
+  /* 🔄 v7.294 (Franco: «i bottoni SELEZIONA TUTTE e DESELEZIONA TUTTE falli meno alti, ma senza cambiare la dimensione del
+     testo») - imbottitura 0.2rem → 0.08rem e interlinea 1.2 → 1.05; il corpo resta 0.8rem */
+  .wz-comandi-lato .btn-primary { width: 100%; max-width: 7.5rem; padding: 0.08rem 0.4rem; font-size: 0.8rem; line-height: 1.05; white-space: normal; min-height: 0; }
   /* 🔄 v7.132 (Franco: «i due tasti blu portali in alto in modo che il tetto del primo dei due coincida col profilo alto
      della finestra che contiene la pagina»; «sposta a dx del box album i due tasti "Mostra solo pagina sinistra" e
      destra, contrapposti ai due tasti blu») - le due colonne ai lati si allungano quanto l'album (`stretch`); i tasti
@@ -947,6 +949,9 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
 }
 /* 🆕 v7.072 (Franco) - «Tocca tutte» / «Nessuna» verdi dopo averli premuti, finché non si tocca una figurina */
 .wz-comandi .wz-cmd-on { background: #16a34a !important; border-color: #16a34a !important; color: #ffffff !important; }
+/* 🔄 v7.294 (Franco: «meno alti, ma senza cambiare la dimensione del testo») - sul telefono, sopra l'album: solo
+   l'imbottitura in alto e in basso, il corpo della scritta resta quello del tasto */
+#wz-overlay .wz-comandi-sopra .wz-cmd { padding-top: 0.25rem; padding-bottom: 0.25rem; min-height: 0; line-height: 1.2; }
 /* 🆕 v7.066 (Franco: «da mobile il tasto "torna indietro" diventa "vai indietro"») - il gemello di .wz-solo-desktop */
 .wz-solo-tel { display: none; }
 @media (max-width: 860px) { .wz-solo-tel { display: inline; } }
@@ -1003,6 +1008,29 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
 #wz-overlay .wz-zoom-riga .btn-secondary:hover { background: #ffe680 !important; }
 @media (min-width: 861px) {
   .wz-album-riga > .wz-album-nav .wz-zoom-riga { grid-column: 1 / -1; grid-row: 2; margin-top: 0.4rem; }
+}
+/* 🐛 v7.294 (Franco: «In caso di variazioni, deve essere sempre mostrato anche il retro») - la card di una variazione
+   nella griglia del questionario: fronte e retro affiancati, su due colonne della griglia, così ogni foto resta
+   grande quanto quella delle altre card */
+.wz-tile.wz-tile-due { grid-column: span 2; }
+/* 🆕 v7.294 (Franco: «andiamo sempre a capo quando c'è un nuovo capogruppo») - nelle versioni ogni gruppo da riga nuova */
+.wz-griglia > .wz-a-capo { grid-column: 1 / -1; height: 0; margin: 0; padding: 0; }
+.wz-tile-coppia { display: flex; gap: 0.3rem; }
+.wz-tile .wz-tile-coppia img, .wz-tile .wz-tile-coppia .wz-senza-foto { width: calc(50% - 0.15rem); aspect-ratio: 1; object-fit: contain; }
+/* 🆕 v7.294 (Franco: «"pagina precedente" sotto alla pagina di sx, "prima pagina" sotto quest'ultimo; "pagina
+   successiva" sotto alla pagina di dx, "ultima pagina" sotto quest'ultimo») - sotto l'album una riga divisa a metà
+   come lo zoom sopra: in ogni metà i due tasti uno sotto l'altro, larghi uguali, la freccia accanto alla scritta.
+   «Schermata N di M» sotto, al centro. Le colonne ai lati restano larghe 7,5rem (prima le dettavano i tasti di
+   pagina): ci stanno i blu e «Torna a 2 pagine», e l'album resta al centro. */
+.wz-pag-riga { display: grid; grid-template-columns: 1fr 1fr; flex-basis: 100%; width: 100%; justify-items: center; align-items: start; }
+.wz-pag-col { display: flex; flex-direction: column; gap: 0.35rem; min-width: 11rem; }
+.wz-pag-col .btn-secondary { width: 100%; }
+.wz-pag-col .btn-secondary:disabled { opacity: 0.4; cursor: default; }
+.wz-album-nav .wz-pag-riga .wz-freccia { display: inline; margin-left: 0.35rem; }
+@media (min-width: 861px) {
+  .wz-album-riga > .wz-album-nav .wz-pag-riga { grid-column: 1 / -1; grid-row: 1; }
+  .wz-album-riga > .wz-album-nav:last-child .wz-album-dove { grid-column: 1 / -1; grid-row: 2; justify-self: center; text-align: center; margin-top: 0.5rem; }
+  .wz-album-riga > .wz-pag-lato { width: 7.5rem; }
 }
 /* 🔄 v7.132 (Franco: «la selezione del box interessato non è poi così marcata e visibile; potremmo colorare maggiormente
    lo sfondo dei box selezionati? sempre di verde ma più intenso») - le carte delle risposte e le miniature toccate: il
@@ -4220,6 +4248,8 @@ di tutte le serie</button>
                tenuti d'occhio: sono l'unica cosa nel sito che esiste ma non si vede, e senza un
                posto dove guardarli si dimenticano. -->
           <button class="admin-tab" onclick="adminTab('figurine')">🫥 Figurine</button>
+          <!-- 🆕 v7.294 (Franco) - la disegna renderAdminOrfani; il pallino rosso è il promemoria dopo 30 giorni -->
+          <button class="admin-tab" onclick="adminTab('orfani')">🗑️ Foto orfane<span id="orfani-punto" style="display:none;width:0.6rem;height:0.6rem;border-radius:50%;background:var(--danger);margin-left:0.35rem;"></span></button>
           <button class="admin-tab" onclick="adminTab('funzioni')" data-i18n="admin.funzioni">Funzioni</button>
           <button class="admin-tab" onclick="adminTab('gsc')">🔍 Google Search Console</button>
           <button class="admin-tab" onclick="adminTab('griglie')">&#128208; Griglie</button>
@@ -4622,6 +4652,9 @@ di tutte le serie</button>
         <!-- 🆕 v7.156 - LA SEZIONE «QUESTIONARIO»: la disegna `renderAdminQuestionario` -->
         <div id="admin-questionario" class="admin-section">
           <div><div id="admin-questionario-tda"></div></div>
+        </div>
+        <div id="admin-orfani" class="admin-section">
+          <div><div id="admin-orfani-box"></div></div>
         </div>
         <div id="admin-protezione" class="admin-section">
           <div><div id="admin-protezione-tda"></div></div>   <!-- v7.122: senza tetto, gli esempi degli stili (320px) occupano la larghezza del pannello -->
@@ -6972,7 +7005,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.293"></script>
+<script src="js/app.js?v=7.294"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -6996,7 +7029,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.293'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.294'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
