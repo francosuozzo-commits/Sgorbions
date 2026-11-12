@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.300">
+<link rel="stylesheet" href="css/style.css?v=7.301">
 
 
 <style>
@@ -1318,6 +1318,12 @@ span.ml-mini { background: none; }
    larghezza minima per tutti e due, come sul desktop (10,5rem lì): «Prosegui →» a 0,85rem ne misura circa 105px, e
    con «Salta serie» in mezzo la riga sta ancora in 390px */
 @media (max-width: 860px) { .wz-piede .wz-passo, .wz-piede .wz-grande { min-width: 7rem; } }
+/* 🐛 v7.301 (Franco: «i bottoni indietro, prosegui e salta serie tutti della stessa altezza: l'altezza più bassa dei tre,
+   quella che avevano già indietro e prosegui») - sul desktop «Salta serie» (`wz-centro`) aveva la misura di ogni
+   `.btn-secondary` (1,15rem, imbottitura 0,75rem): era il più alto, e la riga (`stretch`) allungava gli altri due fino a
+   lui. Ora ha la scritta, l'imbottitura e il bordo dei due tasti, e non va a capo. */
+.wz-piede .wz-centro { white-space: nowrap; border-width: 1.5px !important; box-sizing: border-box; }
+@media (min-width: 861px) { .wz-piede .wz-centro { font-size: 1rem; padding: 0.5rem 1.1rem; } }
 @media (min-width: 861px) {
   .wz-pannello { position: relative; }
   .wz-esci-alto { position: absolute; top: 1.2rem; right: 1rem; margin: 0; z-index: 1; }
@@ -7048,7 +7054,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.300"></script>
+<script src="js/app.js?v=7.301"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7072,7 +7078,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.300'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.301'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
