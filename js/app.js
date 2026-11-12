@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.299';
+const JS_VERSION = 'v7.300';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32566,8 +32566,13 @@ function _serieVisibili(tutte) {
 //    (la cache di sessione) e lo spread `{ ...f }` vedono soltanto i campi propri. E un campo che qualcuno scrive
 //    sulla slim fuori da questo elenco (la propagazione dalla base, una form) si toglie: al collegamento e in
 //    `fsSave('series')` / `_saveFigurineItem`, cioè prima di ogni scrittura.
+// 🔄 v7.300 (Franco: «tutti i campi della sezione eBay sono propri dell'articolo quindi non vengono ereditati dal padre») -
+//    + il tab Ebay intero: la spunta, prezzi, quantità, condizione, account, la coda, la foto dedicata e lo stato scritto
+//    dal programma sul PC (`ebay`, con i listingId). Ereditando lo stato, il programma aggiornerebbe l'annuncio del padre.
+//    Le slim già nel database non hanno questi campi: risultano non in vendita finché non si spunta Ebay sulla loro scheda.
+const SLIM_CAMPI_EBAY = ['forSale', 'price', 'priceUsd', 'quantity', 'condition', 'ebayAccounts', 'daPubblicare', 'ebay', 'ebayImg'];
 const SLIM_CAMPI_PROPRI = ['id', 'seriesId', 'section', 'isSlim', 'baseFigurineId',
-                           'disponibili', 'quante', 'copie', 'peso', 'invisibile'];
+                           'disponibili', 'quante', 'copie', 'peso', 'invisibile'].concat(SLIM_CAMPI_EBAY);
 // ⚠️ UN CAMPO PROPRIO ASSENTE SI LEGGEREBBE DALLA PARENT: la Disponibilità della slim sarebbe quella della fcr, e il totale
 //    la conterebbe due volte. Per questo in memoria i campi propri ci sono sempre, `undefined` se vuoti (`_collegaSlim`);
 //    alla scrittura gli `undefined` si saltano, e nel database restano solo quelli scritti.
@@ -60207,11 +60212,18 @@ function _wzTesta(s) {
   // 🆕 v7.087 (Franco: «il tasto "Salta serie" mettilo in alto, nella stessa riga del nome della serie, sulla dx; il
   //    suo lato dx finisca con la fine della barra "Serie N di M"») - nella colonna della barra, quindi i due bordi
   //    destri coincidono. Solo nella schermata della serie, e il foglio lo accende solo sul desktop (`.wz-salta-alto`).
-  const salta = w.passo === 'serie'
-    ? '<button type="button" class="btn-secondary wz-scritta-rossa wz-salta-alto" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta serie' : 'Skip series') + '</button>' : '';
+  // 🗑️ v7.300 (Franco: «il pulsante salta serie mettilo sempre alla stessa altezza dei bottoni prosegui e indietro») -
+  //    via quello accanto al nome: «Salta serie» sta al centro dei due piedi, in alto e in basso
+  // 🔄 v7.300 (Franco: «il titolo della schermata vorrei provare a spostarlo nella parte superiore, dove abbiamo il nome
+  //    della serie»; «il numero della serie corrente rispetto al totale sulla stessa riga del nome della serie; l'attuale
+  //    titolo della pagina sotto al nome della serie») - «Serie N di M» a destra del nome, e sotto il nome della
+  //    tipologia della schermata (`wz-tit-pagina`). La schermata della serie e quella finale non hanno una tipologia.
+  const p = w.passo;
+  const titolo = (p && p !== 'serie' && p !== 'fine') ? '<div class="wz-tit-pagina">' + esc(_wzNome(p)) + '</div>' : '';
   return '<div class="wz-testa">' + _wzImg(s.img, 200, 200, 'wz-copertina-piccola')
-    + '<div style="flex:1;min-width:0;"><div class="wz-serie-riga"><div class="wz-serie-nome">' + esc(_nomeSerieCard(s)) + '</div>' + salta + '</div>'
-    + '<div class="wz-avanzamento">' + (it ? 'Serie ' + (w.i + 1) + ' di ' + w.serie.length : 'Series ' + (w.i + 1) + ' of ' + w.serie.length) + '</div>'
+    + '<div style="flex:1;min-width:0;"><div class="wz-serie-riga"><div class="wz-serie-nome">' + esc(_nomeSerieCard(s)) + '</div>'
+    + '<div class="wz-avanzamento">' + (it ? 'Serie ' + (w.i + 1) + ' di ' + w.serie.length : 'Series ' + (w.i + 1) + ' of ' + w.serie.length) + '</div></div>'
+    + titolo
     + '<div class="wz-barra"><span style="width:' + pct + '%;"></span></div></div></div>';
 }
 // «+3 −1», «+3», «−1»: quello che cambia
@@ -60271,7 +60283,8 @@ function _wzDisegna(tieni) {
     //    secondo «Esci» (lo mette `_wzDisegna` al posto del segnaposto, e allora in fondo non ce n'è un altro)
     if (nMie || _wzFatto) corpo += '<div class="wz-azzera-riga"><span></span><button type="button" class="btn-secondary wz-azzera" onclick="_wzAzzera(\'azzera1\')">🗑️ '
       // v7.298 (Franco): «Ricomincia da capo il questionario (resetta la mia lista)»; l'inglese è mio
-      + (it ? 'Ricomincia da capo il questionario (resetta la mia lista)' : 'Restart the questionnaire from scratch (reset my list)') + '</button><!--wz-esci-qui--></div>';
+      // v7.300 (Franco: «la frase tra parentesi, scrivila a capo»)
+      + (it ? 'Ricomincia da capo il questionario<br>(resetta la mia lista)' : 'Restart the questionnaire from scratch<br>(reset my list)') + '</button><!--wz-esci-qui--></div>';
     // v7.050: «Inizia» è salito nel corpo; v7.088: e l'uscita sta in cima e in fondo come nelle altre schermate
     piede = '';
   } else if (w.passo === 'esci') {
@@ -60376,7 +60389,7 @@ function _wzDisegna(tieni) {
         //    della serie») - un secondo «Salta questa serie», uguale a quello del piede; `.wz-salta-foto` si vede
         //    solo sotto gli 861px (regola nell'index).
         // 🔄 v7.089 (Franco: «il tasto "Salta serie" mettilo sopra alla foto della serie, centrato») - prima della foto
-        + '<div class="wz-salta-foto"><button type="button" class="btn-secondary wz-scritta-rossa" onclick="_wzIniziaSerie(' + (w.i + 1) + ')">' + (it ? 'Salta serie' : 'Skip series') + '</button></div>'
+        // 🗑️ v7.300 (Franco: «alla stessa altezza dei bottoni prosegui e indietro») - via anche quello sopra la foto
         + '<div class="wz-grande-foto">' + _wzImg(s.img, 600, 600, '') + '</div>'
         + '</div><div class="wz-due-dx">'
         + '<div class="wz-domanda wz-rosa">' + (it ? 'Cosa c\'è di questa serie nella tua lista?' : 'What do you have from this series?') + '</div>'
@@ -60418,7 +60431,7 @@ function _wzDisegna(tieni) {
             : '<p class="wz-testo">' + (it ? 'Non hai selezionato nessun quadrante di questa serie.' : 'You did not select any tile from this series.') + '</p>')
           // v7.130 (Franco: «"Confermi ?" deve essere giallo, dello stesso giallo delle altre domande») - `.wz-confermi`
           + '<p class="wz-testo wz-confermi">' + (it ? 'Confermi ?' : 'Do you confirm ?') + '</p>'
-          + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzRiepilogoTda(false)">← ' + (it ? 'Modifica la selezione' : 'Change the selection') + '</button>'   // v7.299 (Franco)
+          + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzRiepilogoTda(false)">← ' + (it ? 'Modifica selezione' : 'Change selection') + '</button>'   // v7.299, v7.300 (Franco)
           // 🔄 v7.058 (Franco: «è un tasto in più che chiediamo appositamente: lo farei verde, e al posto della freccia un pollice»)
           + '<button type="button" class="btn-primary wz-grande wz-conferma" onclick="_wzConfermaTda()">' + (it ? 'Confermo 👍' : 'Confirm 👍') + '</button></div>'
           + '</div></div>';
@@ -60427,7 +60440,9 @@ function _wzDisegna(tieni) {
       const alb = _wzArticoli(s.id, 'albums'), figs = getData('figurines', []);
       // 🔄 v7.132 (Franco: «nella pagina Quali album hai? la miniatura dell'album non serve perché c'è sempre almeno un
       //    album da mostrare») - via la foto della sezione accanto alla domanda: le foto degli album stanno subito sotto
-      corpo += '<div class="wz-domanda">' + (it ? 'Quali album ci sono nella tua lista?' : 'Which albums do you have?') + '</div>'
+      // 🔄 v7.300 (Franco: «il titolo ci deve essere sempre») - il nome della tipologia sta nella testata (`_wzTesta`),
+      //    come in tutte le schermate; la domanda gialla come nelle versioni (`wz-quante`)
+      corpo += '<p class="wz-testo wz-quante">' + (it ? 'Quali album ci sono nella tua lista?' : 'Which albums do you have?') + '</p>'
         // v7.058: la frase di Franco. 🔄 v7.087 (Franco: «le tre frasi, mettile ognuna su una riga dedicata»), e il
         //    `</p>` torna: stava dopo un commento a metà riga, quindi non veniva mai scritto.
         + '<p class="wz-testo">' + (it ? 'Tocca quelli della tua lista.<br>Se non ce ne sono, vai avanti.<br>Se non sai quale selezionare, scegli il primo.' : 'Tap the ones you have.<br>If you have none, go on.<br>If you do not know which one to select, choose the first one.') + '</p>'
@@ -60442,10 +60457,14 @@ function _wzDisegna(tieni) {
       //    sulle figurine per album niente foto della sezione accanto al titolo; le altre tipologie la tengono
       // 🔄 v7.132 (Franco: «anche nella pagina delle figurine con retro, leva la miniatura, metti immagine e domanda al
       //    centro e fai domanda in giallo») - e le figurine con retro: senza miniatura, e `_alCentro` qui sotto
-      const _senzaMini = ['attaccare', 'figurines'].includes(String(p).split('|')[0]);
+      // 🔄 v7.300 (Franco: «quella piccolissima miniatura che mostri negli errori di stampa e negli album sigillati, non
+      //    serve, toglila pure») - niente miniatura per nessuna tipologia: c'è già la foto grande sotto il titolo
+      const _senzaMini = true;
       // 🔄 v7.152 (Franco: «sì, uguale alle quattro») - il centrato e la domanda gialla delle tre carte valgono per
       //    TUTTE le tipologie (carte, tatuaggi…), non più per le sole figurine con retro: via `_alCentro`
-      const intest = '<div class="wz-domanda">' + (_senzaMini ? '' : _wzImg(_wzFotoSez(p, s.id), 120, 120, 'wz-icona-sez')) + nome + '</div>';
+      // 🔄 v7.300 (Franco: «il titolo della schermata… sotto al nome della serie») - il titolo è salito nella testata
+      //    (`_wzTesta`): qui resta vuoto, così le schermate che lo mettevano in cima non lo ripetono
+      const intest = _senzaMini ? '' : '<div class="wz-domanda">' + _wzImg(_wzFotoSez(p, s.id), 120, 120, 'wz-icona-sez') + nome + '</div>';
       // 🆕 v7.130 (Franco: «in ogni pagina nella quale chiediamo quanti articoli lo user ha, indicherei il numero di
       //    articoli che il sito già sa che l'utente ha»; la frase è sua) - sotto la domanda «quante ne hai?», con lo
       //    stesso conto della proposta (`_wzProposta`); «1 figurina» / «12 figurine» lo accorda `_wzPerTipo`. Con
@@ -60763,7 +60782,9 @@ function _wzDisegna(tieni) {
     //    testa. Solo i due pulsanti: il conto delle selezionate e «Salta serie» restano in basso (quello in alto
     //    ha già il suo, accanto al nome della serie), e la copia non ha id, così non ci sono doppioni.
     const testa = _wzTesta(s);
-    const copia = piede.replace(/<span class="wz-conto-testo">[\s\S]*?<\/span><\/span>/, '').replace(/<button[^>]*wz-centro[\s\S]*?<\/button>/, '')
+    // 🔄 v7.300 (Franco: «il pulsante salta serie mettilo sempre alla stessa altezza dei bottoni prosegui e indietro») -
+    //    la copia in alto tiene anche «Salta serie» (`wz-centro`), che prima toglieva
+    const copia = piede.replace(/<span class="wz-conto-testo">[\s\S]*?<\/span><\/span>/, '')
       .replace('id="wz-salva" class="', 'class="wz-salva-copia ');
     // 🧪 v7.132 - e dove c'è `titoloAlto` (album da sfogliare), il titolo fra i due tasti: sul desktop sta lì (index)
     const copiaT = (titoloAlto && copia.startsWith(indietro)) ? indietro + '<div class="wz-tit-alto">' + titoloAlto + '</div>' + copia.slice(indietro.length) : copia;
