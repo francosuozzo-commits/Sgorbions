@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.299">
+<link rel="stylesheet" href="css/style.css?v=7.300">
 
 
 <style>
@@ -665,6 +665,9 @@
   .wz-popup-comandi > button { flex: 1 1 0; min-width: 0; font-size: 1.05rem; padding: 0.7rem 1rem; box-sizing: border-box;
     display: inline-flex; align-items: center; justify-content: center; text-align: center; }
   .wz-popup-lista li:has(.wz-popup-coppia) .wz-popup-foto { display: none; }
+  /* 🔄 v7.300 (Franco: «si vedono le etichette accanto alle miniature sforare un po' il margine di destra; ridurre lo
+     spazio che le separa dalla relativa miniatura») - lo spazio fra mazzetto ed etichetta da 0,7rem a 0,25rem */
+  .wz-popup-lista li:has(.wz-popup-coppia) { gap: 0.25rem; }
   /* 🆕 v7.099 (Franco, fra tre proposte: «proviamo con la C») - I PULSANTI SECONDARI DEL QUESTIONARIO bianchi con la
    scritta viola: «Vai indietro», «Tocca tutte», «Nessuna», le pagine dell'album, «2 pagine / Sinistra / Destra»,
    «Modifica»… Stessa forma di «Esci» e «Salta» (`.wz-scritta-rossa`, che restano rossi), col viola del titolo del
@@ -856,12 +859,20 @@ body:has(#imp-linguetta[style*="flex"]) #linguette { top: 130px; }
 .wz-serie-riga { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
 .wz-serie-riga .wz-serie-nome { flex: 1; min-width: 0; }
 .wz-salta-alto { display: none; }
+/* 🔄 v7.300 (Franco: «il numero della serie corrente rispetto al totale sulla stessa riga del nome della serie; l'attuale
+   titolo della pagina sotto al nome della serie») - «Serie N di M» a destra del nome, e sotto il titolo della schermata,
+   giallo come le domande del questionario ma più piccolo del nome della serie */
+.wz-serie-riga .wz-avanzamento { flex-shrink: 0; margin: 0; white-space: nowrap; }
+.wz-tit-pagina { font-family: var(--font-ui); font-weight: 800; font-size: 1.05rem; color: #ffd84d; margin: 0.1rem 0 0.35rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wz-serie-riga + .wz-barra { margin-top: 0.35rem; }
 @media (min-width: 861px) {
   .wz-salta-alto { display: inline-block; flex-shrink: 0; font-size: 0.8rem; padding: 0.35rem 0.8rem; }
   /* l'«Esci» fisso in fondo a destra non deve coprire «Prosegui» quando si arriva in fondo.
      v7.088: ora sta nel flusso, sotto il piede, quindi basta poco spazio (era 4.5rem) */
   .wz-piede { padding-bottom: 1rem; }
-  .wz-piede .wz-centro { visibility: hidden; }
+  /* 🗑️ v7.300 (Franco: «il pulsante salta serie mettilo sempre alla stessa altezza dei bottoni prosegui e indietro») -
+     via la regola che sul desktop nascondeva `.wz-centro` nel piede: «Salta serie» si vede al centro anche lì */
   /* 🆕 v7.087 (Franco: «nella pagina che mostra i quadranti della serie, mostra i quadranti usando una sola riga»)
      - tutti sulla stessa riga, larghi uguali */
   .wz-scelte.wz-scelte-tda { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); grid-template-columns: none; }
@@ -1303,6 +1314,10 @@ span.ml-mini { background: none; }
   .wz-tit-basso { display: none; }
 }
 @media (max-width: 860px) { .wz-tit-alto { display: none; } }
+/* 🆕 v7.300 (Franco: «il tasto indietro fallo della stessa larghezza del tasto prosegui») - sul telefono la stessa
+   larghezza minima per tutti e due, come sul desktop (10,5rem lì): «Prosegui →» a 0,85rem ne misura circa 105px, e
+   con «Salta serie» in mezzo la riga sta ancora in 390px */
+@media (max-width: 860px) { .wz-piede .wz-passo, .wz-piede .wz-grande { min-width: 7rem; } }
 @media (min-width: 861px) {
   .wz-pannello { position: relative; }
   .wz-esci-alto { position: absolute; top: 1.2rem; right: 1rem; margin: 0; z-index: 1; }
@@ -7033,7 +7048,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.299"></script>
+<script src="js/app.js?v=7.300"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7057,7 +7072,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.299'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.300'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
