@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.300';
+const JS_VERSION = 'v7.301';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -59862,7 +59862,7 @@ function _wzPerTipo(ids, grassetto) {
   const parti = [...gruppi.values()].sort((a, b) => ordine.indexOf(a.z) - ordine.indexOf(b.z)).map(g => {
     const a = _art(g.z) || {};
     const plur = _wzEtichetta(g.z), sing = g.z === 'attaccare' ? (it ? 'Figurina album' : 'Album sticker') : ((it ? a.itSing : a.enSing) || plur);
-    const nome = (g.n === 1 ? sing : plur).toLowerCase() + (g.v ? ' (' + (it ? g.v.it : g.v.en) + ')' : '');
+    const nome = (g.n === 1 ? sing : plur).toLowerCase() + _wzVersioneInFrase(g.v);   // v7.301: senza parentesi
     return (grassetto ? '<b>' + nfmtWz(g.n) + '</b>' : nfmtWz(g.n)) + ' ' + nome;
   });
   if (parti.length < 2) return parti.join('');
@@ -59881,7 +59881,24 @@ function _wzNomeQuanti(chiave, n) {
   const it = currentLang === 'it', [z, ver] = String(chiave).split('|'), a = _art(z) || {};
   const v = ver && _VERSIONI_VIVE.find(x => x.chiave === ver);
   const plur = _wzEtichetta(z), sing = z === 'attaccare' ? (it ? 'Figurina album' : 'Album sticker') : ((it ? a.itSing : a.enSing) || plur);
-  return (n === 1 ? sing : plur).toLowerCase() + (v ? ' (' + (it ? v.it : v.en) + ')' : '');
+  return (n === 1 ? sing : plur).toLowerCase() + _wzVersioneInFrase(v);   // v7.301: senza parentesi
+}
+// 🆕 v7.301 (Franco: «la frase deve scorrere, non vorrei parti della frase tra parentesi»; «album e poi tra parentesi
+//    versioni sigillate») - LA VERSIONE DENTRO LA FRASE: «3 album in versione sigillata», «2 figurine con errore di
+//    stampa». Le parole sono mie; una versione che qui non c'è prende «in versione» + il suo nome.
+const _WZ_VERSIONE_FRASE = {
+  variation:           ['in variazione ufficiale',     'in official variation'],
+  unofficialVariation: ['in variazione non ufficiale', 'in unofficial variation'],
+  change:              ['in versione change',          'in the change version'],
+  free:                ['in versione omaggio',         'in the free version'],
+  printError:          ['con errore di stampa',        'with a print error'],
+  sealed:              ['in versione sigillata',       'in the sealed version'],
+  slim:                ['in versione slim',            'in the slim version'],
+};
+function _wzVersioneInFrase(v) {
+  if (!v) return '';
+  const it = currentLang === 'it', f = _WZ_VERSIONE_FRASE[v.chiave];
+  return ' ' + (f ? f[it ? 0 : 1] : (it ? 'in versione ' + String(v.it).toLowerCase() : 'in the ' + String(v.en).toLowerCase() + ' version'));
 }
 function _wzAggTolte(chiave, ids) {
   const mie = new Set(getOwned()), dopo = new Set(ids), tutti = _wzArticoli(_wz.serie[_wz.i].id, chiave).map(f => f.id);
