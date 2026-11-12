@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.298">
+<link rel="stylesheet" href="css/style.css?v=7.299">
 
 
 <style>
@@ -672,10 +672,16 @@
    `.wz-on`, che hanno già i loro `!important`. */
 #wz-overlay .btn-secondary:not(.wz-scritta-rossa):not(.wz-on):not(.wz-cmd-on) { background: #ffffff; color: #8a2bc2; border-color: #c84bff; font-weight: 700; }
 #wz-overlay .btn-secondary:not(.wz-scritta-rossa):not(.wz-on):not(.wz-cmd-on):hover:not(:disabled) { background: #f3e8ff; color: #6d1f9c; }
-/* 🆕 v7.096 (Franco) - le Figurine con retro: quattro foto in una griglia 2×2 (due fronti sopra, due retro sotto),
-     nello stesso spazio del mazzetto; diritte e senza sovrapporsi, come un'immagine sola */
-  .wz-popup-coppia.wz-popup-quattro { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: 46px 32px; gap: 3px; height: auto; }
-  .wz-popup-coppia.wz-popup-quattro img { position: static; transform: none; width: 100%; height: 100%; }
+/* 🆕 v7.096 (Franco) - le Figurine con retro: quattro foto (due fronti, due retro), nello stesso spazio del mazzetto */
+/* 🔄 v7.299 (Franco: «le due figurine e i due retro non si sovrappongono … fai in modo che ci sia una sovrapposizione,
+     come fai per le altre tipologie»; «mi aspetto che la miniatura sia meno larga … non si legge completamente
+     l'etichetta») - via la griglia 2×2: UN MAZZETTO DI QUATTRO nello stesso riquadro 84×82 degli altri. I due fronti in
+     alto, ruotati come nel mazzetto; i due retro (orizzontali) sotto, stesi, coperti in parte dai fronti (`z-index`). */
+  .wz-popup-coppia.wz-popup-quattro img { width: 40px; height: 54px; }
+  .wz-popup-coppia.wz-popup-quattro img:nth-child(1) { left: 6px; top: 2px; transform: rotate(-8deg); z-index: 2; }
+  .wz-popup-coppia.wz-popup-quattro img:nth-child(2) { left: 32px; top: 0; transform: rotate(7deg); z-index: 2; }
+  .wz-popup-coppia.wz-popup-quattro img:nth-child(3) { width: 50px; height: 36px; left: 0; top: 42px; transform: rotate(-5deg); z-index: 1; }
+  .wz-popup-coppia.wz-popup-quattro img:nth-child(4) { width: 50px; height: 36px; left: 30px; top: 45px; transform: rotate(4deg); z-index: 1; }
 }
 /* 🆕 v7.082 (Franco: «le due foto dell'album, nella sua form [...] mettile in alto a dx, come per le altre tda»)
    - nella scheda dell'album in modifica il tab Generale si divide: campi a sinistra, foto a destra in cima.
@@ -7027,7 +7033,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.298"></script>
+<script src="js/app.js?v=7.299"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7051,7 +7057,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.298'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.299'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
