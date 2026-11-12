@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.298';
+const JS_VERSION = 'v7.299';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -60230,7 +60230,12 @@ function _wzDisegna(tieni) {
   //    non ha più il suo pulsante nel piede: prende i due di tutte le altre (`_wzBtnEsci`, in fondo a questa funzione).
   // 🔄 v7.129 (Franco: «"Torna indietro" è più largo e più alto di "Prosegui"; devono avere le stesse dimensioni») -
   //    `wz-passo`: le misure di `.wz-grande` (vedi l'index)
-  const indietro = '<button type="button" class="btn-secondary wz-passo" onclick="_wzIndietro()">← ' + (it ? '<span class="wz-solo-desktop">Torna</span><span class="wz-solo-tel">Vai</span> indietro' : 'Go back') + '</button>';
+  // 🔄 v7.299 (Franco: «il bottone "vai indietro" nella versione mobile etichettalo solo come "indietro"») - dal telefono
+  //    «Indietro» (in inglese «Back», scelta mia); sul PC resta «Torna indietro». La frase intera dentro ogni span: niente
+  //    spazio fra due span da perdere (la «Tornaindietro» della v7.298)
+  const _wzIndietroTesto = it ? '<span class="wz-solo-desktop">Torna indietro</span><span class="wz-solo-tel">Indietro</span>'
+    : '<span class="wz-solo-desktop">Go back</span><span class="wz-solo-tel">Back</span>';
+  const indietro = '<button type="button" class="btn-secondary wz-passo" onclick="_wzIndietro()">← ' + _wzIndietroTesto + '</button>';
   // 🔄 v7.052 (Franco: «Cambia "Avanti" con "Prosegui"»)
   const avanti = (azione) => '<button type="button" class="btn-primary wz-grande" onclick="' + azione + '">' + (it ? 'Prosegui →' : 'Next →') + '</button>';
   const giaTua = '<div class="wz-proposta">' + (it ? 'la tua risposta' : 'your answer') + '</div>';
@@ -60241,9 +60246,10 @@ function _wzDisegna(tieni) {
       + '<p class="wz-testo">' + (it
         ? '<span class="wz-riga-sola">Col <strong style="color:#ffd84d;">Questionario Sgorbions</strong> costruisci in pochi minuti una tua lista degli articoli della collezione.</span><br>'   // v7.025: la riga vuota voluta da Franco; v7.056: la frase riscritta da Franco; v7.129: via la riga vuota (Franco: «togli spazio tra le prime due frasi»)
         // v7.129 (Franco: «affiancale una coppa»)
-        + 'Completalo e scala la vetta della <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Classifica</a> ! 🏆'
+        // v7.299 (Franco): «completalo e scala la classifica», senza «la vetta della»
+        + 'Completalo e scala la <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Classifica</a> ! 🏆'
         : 'With the <strong style="color:#ffd84d;">Sgorbions Questionnaire</strong> you build, in a few minutes, your own list of the items of the collection.<br>'
-        + 'Complete it and climb to the top of the <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Leaderboard</a> ! 🏆') + '</p>'
+        + 'Complete it and climb the <a href="#classifica" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Leaderboard</a> ! 🏆') + '</p>'
       // 🆕 v7.050 - «Inizia il questionario !» grande e al centro (era nell'angolo, in basso a destra)
       // 🔄 v7.130 (Franco: «mettilo sopra a questo stesso box, al centro») - sopra le copertine, prima della loro frase
       // 🔄 v7.130 (Franco: «deve avere l'etichetta dinamica, "riprendi" e non "inizia"») - la stessa domanda dei pulsanti
@@ -60296,7 +60302,7 @@ function _wzDisegna(tieni) {
       + carta('esperto', '⭐', it ? 'Intenditore' : 'Connoisseur', it ? 'Aggiungiamo le variazioni ufficiali degli articoli.' : "Let's add the official variations of the items.")
       + carta('collezionista', '🏆', it ? 'Collezionista' : 'Collector', it ? 'Aggiungiamo le variazioni non ufficiali ed altri articoli rari.' : "Let's add the unofficial variations and other rare items.")
       + '</div>';
-    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">← ' + (it ? '<span class="wz-solo-desktop">Torna</span><span class="wz-solo-tel">Vai</span> indietro' : 'Go back') + '</button>'
+    piede = '<button type="button" class="btn-secondary" onclick="_wzAzzera(\'intro\')">← ' + _wzIndietroTesto + '</button>'
       + (w.livello ? avanti('_wzConfermaLivello()') : '');
   } else if (w.passo === 'azzera1' || w.passo === 'azzera2') {
     const n = getOwned().length, primo = w.passo === 'azzera1';
@@ -60412,7 +60418,7 @@ function _wzDisegna(tieni) {
             : '<p class="wz-testo">' + (it ? 'Non hai selezionato nessun quadrante di questa serie.' : 'You did not select any tile from this series.') + '</p>')
           // v7.130 (Franco: «"Confermi ?" deve essere giallo, dello stesso giallo delle altre domande») - `.wz-confermi`
           + '<p class="wz-testo wz-confermi">' + (it ? 'Confermi ?' : 'Do you confirm ?') + '</p>'
-          + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzRiepilogoTda(false)">← ' + (it ? 'Modifica' : 'Change') + '</button>'
+          + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzRiepilogoTda(false)">← ' + (it ? 'Modifica la selezione' : 'Change the selection') + '</button>'   // v7.299 (Franco)
           // 🔄 v7.058 (Franco: «è un tasto in più che chiediamo appositamente: lo farei verde, e al posto della freccia un pollice»)
           + '<button type="button" class="btn-primary wz-grande wz-conferma" onclick="_wzConfermaTda()">' + (it ? 'Confermo 👍' : 'Confirm 👍') + '</button></div>'
           + '</div></div>';
@@ -60490,8 +60496,8 @@ function _wzDisegna(tieni) {
           + (dueCarte
             ? carta4('nessuna', '😢', it ? _wzG(p, 'Nessuna', 'Nessuno') : 'None', '')
               + carta4('poche', '🧩', it ? _wzG(p, 'Alcune', 'Alcuni') : 'Some', _isMobileViewport()
-                ? (it ? 'Indica quali ci sono' : 'Tell us which are there')
-                : (it ? 'Indica quali sono nella tua lista' : 'Tell us which are in your list'))
+                ? (it ? 'Indica quali <b>ci sono</b>' : 'Tell us which are <b>there</b>')
+                : (it ? 'Indica quali <b>sono nella tua lista</b>' : 'Tell us which are <b>in your list</b>'))
             : '')
           + (dueCarte ? '' : ''
           // 🔄 v7.132 (Franco: «il sottotitolo di "Tutte" diventa "Album completo"») - era «il set base completo»
@@ -60506,11 +60512,11 @@ function _wzDisegna(tieni) {
           // 🔄 v7.294 (Franco: «le domande che utilizzano la parola mancare, devono cambiare; il concetto non è mancare ma è
           //    non essere presente nella tua lista»; «anche per l'inglese»; «sistema anche le gemelle col verbo avere»)
           + carta4('poche', '🤏', it ? _wzG(p, 'Poche', 'Pochi') : 'A few', _isMobileViewport()
-              ? (it ? 'Indica quali ci sono' : 'Tell us which are there')
-              : (it ? 'Indica quali sono nella tua lista' : 'Tell us which are in your list'))
+              ? (it ? 'Indica quali <b>ci sono</b>' : 'Tell us which are <b>there</b>')
+              : (it ? 'Indica quali <b>sono nella tua lista</b>' : 'Tell us which are <b>in your list</b>'))
           + carta4('molte', '📚', it ? _wzG(p, 'Molte', 'Molti') : 'Many', _isMobileViewport()
-              ? (it ? 'Indica quali non ci sono' : 'Tell us which are not there')
-              : (it ? 'Indica quali non sono nella tua lista' : 'Tell us which are not in your list')))   // v7.294: fine delle quattro carte (solo base)
+              ? (it ? 'Indica quali <b>non ci sono</b>' : 'Tell us which are <b>not there</b>')
+              : (it ? 'Indica quali <b>non sono nella tua lista</b>' : 'Tell us which are <b>not in your list</b>')))   // v7.294: fine delle quattro carte (solo base)
           + '</div>';
         piede = indietro + avanti("_wzModoConferma('" + p + "','" + prop + "',true)");   // v7.130: Tutte / Nessuna col popup
       } else if (!c.modo) {
@@ -60541,8 +60547,12 @@ function _wzDisegna(tieni) {
         corpo += intest + '<p class="wz-testo">' + (it ? 'Nella tua lista ce ne sono ' + _wzG(p, 'molte o poche', 'molti o pochi') + '?' : 'Does your list have many or few of them?') + '</p>'
           + '<div class="wz-scelte">'
           // v7.130 (Franco) - anche le righe sotto: «Tocca quelle già nella tua lista» / «… mancanti nella tua lista»
-          + carta('ho', '✅', it ? _wzG(p, 'Poche', 'Pochi') : 'Few', it ? 'Tocca ' + _wzG(p, 'quelle', 'quelli') + ' già nella tua lista' : 'Tap the ones already in your list')
-          + carta('manca', '❔', it ? _wzG(p, 'Tante', 'Tanti') : 'Many', it ? 'Tocca ' + _wzG(p, 'quelle', 'quelli') + ' non ancora nella tua lista' : 'Tap the ones not yet in your list')   // v7.294
+          // 🔄 v7.299 (Franco: «lo metterei in tutte le pagine in modo da usare un approccio coerente») - IL GRASSETTO DEL
+          //    «SONO / NON SONO NELLA TUA LISTA» in ogni frase del questionario che distingue i due versi: queste carte,
+          //    quelle a quattro (anche le forme brevi del telefono), la domanda «Come vuoi indicare…», oltre alle frasi
+          //    delle griglie e dell'album che lo avevano già
+          + carta('ho', '✅', it ? _wzG(p, 'Poche', 'Pochi') : 'Few', it ? 'Tocca ' + _wzG(p, 'quelle', 'quelli') + ' <b>già nella tua lista</b>' : 'Tap the ones <b>already in your list</b>')
+          + carta('manca', '❔', it ? _wzG(p, 'Tante', 'Tanti') : 'Many', it ? 'Tocca ' + _wzG(p, 'quelle', 'quelli') + ' <b>non ancora nella tua lista</b>' : 'Tap the ones <b>not yet in your list</b>')   // v7.294
           + '</div>';
         piede = indietro + avanti("_wzVerso('" + p + "','" + c.pVerso + "')");
       } else if (!c.vista && _wzMappa(s.id, p)) {
@@ -60569,8 +60579,8 @@ function _wzDisegna(tieni) {
             // 🔄 v7.097 (Franco: «"Come vuoi selezionare le figurine che hai?" diventa "Come vuoi indicare…"») - e così
             //    anche la gemella «…che ti mancano?», che è la stessa domanda dall'altro verso
             // v7.294 - niente «mancare» e niente verbo avere (Franco)
-            ? (it ? 'Come vuoi indicare le figurine che sono nella tua lista?' : 'How do you want to mark the stickers that are in your list?')
-            : (it ? 'Come vuoi indicare le figurine che non sono nella tua lista?' : 'How do you want to mark the stickers that are not in your list?')) + '</div>'
+            ? (it ? 'Come vuoi indicare le figurine che <b>sono nella tua lista</b>?' : 'How do you want to mark the stickers that are <b>in your list</b>?')
+            : (it ? 'Come vuoi indicare le figurine che <b>non sono nella tua lista</b>?' : 'How do you want to mark the stickers that are <b>not in your list</b>?')) + '</div>'
           + '<div class="wz-scelte">'
           // 🔄 v7.067 (Franco: «il titolo diventa "Cliccando direttamente sulle pagine"; niente sottotitolo»)
           + carta('album', '📖', it ? 'Cliccando direttamente sulle pagine' : 'Clicking directly on the pages', '')
@@ -60788,7 +60798,8 @@ function _wzDisegna(tieni) {
       //    c'è, quindi «resta a» tiene il nome (scelta mia: se no il numero resterebbe senza di cosa)
       + (_conto ? '<p class="wz-testo">' + (it ? 'Stai ' : 'You are ') + _conto + '.</p>' : '')
       + '<p class="wz-testo">' + (_conto
-        ? (it ? 'La tua lista arriva a ' : 'Your list reaches ') + '<b>' + nfmtWz(n) + '</b>'
+        // v7.299 (Franco): «"La tua lista arriva a N" cambiamola in "la tua lista ne conterà N"»; l'inglese è mio
+        ? (it ? 'La tua lista ne conterà ' : 'Your list will contain ') + '<b>' + nfmtWz(n) + '</b>'
         : (it ? 'La tua lista resta a ' : 'Your list stays at ') + _nq(n)) + '.</p>'
       + '<p class="wz-testo wz-confermi">' + (it ? 'Confermi ?' : 'Do you confirm ?') + '</p>'
       + '<div class="wz-popup-comandi"><button type="button" class="btn-secondary" onclick="_wzModificaPasso()">← ' + (it ? 'Modifica' : 'Change') + '</button>'
@@ -66309,8 +66320,17 @@ function _riempiTendinaImpersona() {
   // migliore invece di costringere a un compromesso.
   sel.innerHTML = utenti.map(u =>
     `<option value="${u.id}">${esc(u.username || u.email || '(senza nome)')}</option>`).join('');
-  if (scelto && utenti.some(u => u.id === scelto)) sel.value = scelto;
+  _impersonaScelta(sel, utenti, scelto);   // v7.299
   wrap.style.display = '';
+}
+// 🆕 v7.299 (Franco: «quando uso la funzione di impersonificazione, l'utente impostato come default sia "frasuo"») - per
+//    le due tendine (profilo dal telefono, linguetta sul PC). Una scelta già fatta resta; se no «frasuo»; se non c'è,
+//    la prima come prima.
+const IMPERSONA_PREDEFINITO = 'frasuo';
+function _impersonaScelta(sel, utenti, scelto) {
+  if (scelto && utenti.some(u => u.id === scelto)) { sel.value = scelto; return; }
+  const def = utenti.find(u => String(u.username || '').trim().toLowerCase() === IMPERSONA_PREDEFINITO);
+  if (def) sel.value = def.id;
 }
 function impersonaDaProfilo() {
   const id = document.getElementById('profile-impersona-select')?.value;
@@ -66384,7 +66404,7 @@ function _cliccaLinguettaImpersona() {
   const scelto = sel.value;
   sel.innerHTML = utenti.map(u =>
     `<option value="${u.id}">${esc(u.username || u.email || '(senza nome)')}</option>`).join('');
-  if (scelto && utenti.some(u => u.id === scelto)) sel.value = scelto;
+  _impersonaScelta(sel, utenti, scelto);   // v7.299
   pan.style.display = 'flex';
 }
 function _impersonaDalPannello() {
