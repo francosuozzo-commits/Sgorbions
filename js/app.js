@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.301';
+const JS_VERSION = 'v7.302';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -39682,6 +39682,8 @@ function openAddSeriesModal(seriesId) {
                                         // v6.751 - e con la serie: l'elenco dipende da lei
   if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
   document.getElementById('edit-series-id').value = seriesId || '';
+  // 🆕 v7.302 (Franco) - chi ha articoli di questa serie nella sua *Mia lista*; una serie nuova non ne ha
+  { const p = document.getElementById('series-chi-ce-lha'); if (p) p.innerHTML = seriesId ? _pannelloChiCeLHa(null, seriesId) : ''; }
   // v6.162 - la form si riusa fra creazione e modifica: i due campi si azzerano sempre, e in
   // modifica vengono riempiti sotto. Senza, creando una serie dopo averne modificata un'altra si
   // ereditavano le sue colonne senza che nessuno l'avesse chiesto.
@@ -59608,11 +59610,16 @@ function apriWizardLista() {
   const serie = _wzSerie().filter(s => _wzSezioni().some(z => _wzArticoli(s.id, z).length));
   _wz = { serie, i: -1, passo: 'intro', passi: [], k: 0, scelte: null, aggiunti: 0, tolti: 0, fatte: [] };
   _wz.inizio = new Set(getOwned());   // v7.089: la lista all'apertura, per il riepilogo dell'uscita
+  _registraAttivita('q_inizio', { ripresa: !!_wzFatto });   // v7.302 - il registro «Attività utenti»
   _wzDisegna();
 }
 function _wzIniziaSerie(i) {
   const w = _wz;
-  if (i >= w.serie.length) { w.passo = 'finale'; _wzDisegna(); return; }
+  // v7.302 - arrivato in fondo all'ultima serie: una riga nel registro, una volta sola anche se si torna indietro
+  if (i >= w.serie.length) {
+    if (!w.fineRegistrata) { w.fineRegistrata = true; _registraAttivita('q_fine', { serie: w.fatte.length, aggiunti: w.aggiunti, tolti: w.tolti }); }
+    w.passo = 'finale'; _wzDisegna(); return;
+  }
   const s = w.serie[i], mie = new Set(getOwned());
   w.i = i; w.passo = 'serie'; w.k = 0; w.riepilogo = false;   // v7.052: il riepilogo si chiude cambiando serie
   w.conferma = null;   // v7.130: e il popup di conferma di «Prosegui»
@@ -60887,7 +60894,8 @@ async function toggleOwned(figId) {
   if (!_cache.ownedMap) _cache.ownedMap = {};
   _cache.ownedMap[currentUser.id] = owned;
   LOCAL.set('owned_' + currentUser.id, owned);
-  await saveOwnedToFirebase(currentUser.id, owned);
+  // v7.302 - il registro «Attività utenti», solo se la lista è stata salvata davvero
+  if (await saveOwnedToFirebase(currentUser.id, owned)) _registraSpunta('lista', figId, owned.includes(figId));
   renderItems(); renderProfile();
   refreshSeriesMeta();   // i contatori in alto seguono la lista (v5.709)
 }
@@ -66649,6 +66657,7 @@ function adminTab(tab) {
   if (tab === 'users') renderAdminUsers();
   if (tab === 'segnalazioni') renderAdminSegnalazioni();
   if (tab === 'eventi') renderAdminEventi();
+  if (tab === 'attivita') renderAdminAttivita();   // v7.302 (Franco)
   if (tab === 'risorse') renderAdminRisorse();
   if (tab === 'foto') renderAdminFoto();
   if (tab === 'funzioni') renderAdminFunzioni(); // v6.055
@@ -67868,6 +67877,168 @@ async function markEventRead(id) {
 }
 
 // ============================================================
+//  🆕 v7.302 - IL REGISTRO «👣 ATTIVITÀ UTENTI» (Franco: «Vorrei un registro eventi, sulle attività svolte dagli
+//  utenti … Queste informazioni non le voglio nell'attuale registro eventi. Ne vorrei uno dedicato e strutturato,
+//  organizzato per tipologia di evento, in formato tabellare»). Quattro tipi, uno per sotto-scheda:
+//    cerco     - la spunta «Ciò che cerco» su una card, messa o tolta
+//    lista     - la spunta *Mia lista* su una card, messa o tolta
+//    q_inizio  - il questionario aperto
+//    q_fine    - il questionario arrivato in fondo all'ultima serie
+//  Le risposte di Franco (12/11): anche le spunte tolte; fuori l'admin e chi impersona; le righe durano tre mesi.
+//  📌 LA COLLEZIONE È SUA (`attivita`), non `eventi`: ognuno crea solo righe col proprio authUid, legge e cancella
+//     solo l'admin (sicurezza/firestore.rules). Si legge quando si apre il tab, non a ogni accesso dell'admin: è il
+//     registro che cresce di più, e leggerlo a ogni caricamento costerebbe letture anche quando non lo si guarda.
+//  📌 Le scelte del questionario NON passano da qui: sono a serie intera, non su una card. Il questionario ha le
+//     sue due righe (inizio e fine), con i totali.
+// ============================================================
+const ATTIVITA_RETENTION_MONTHS = 3;
+const ATTIVITA_PURGE_MAX_PER_RUN = 40;
+const _ATTIVITA_TIPI = [
+  { k: 'cerco',    it: 'CIÒ CHE CERCO',          en: 'WHAT I\'M LOOKING FOR' },
+  { k: 'lista',    it: '<em>MIA LISTA</em>',     en: '<em>MY LIST</em>' },
+  { k: 'q_inizio', it: 'QUESTIONARI INIZIATI',   en: 'QUESTIONNAIRES STARTED' },
+  { k: 'q_fine',   it: 'QUESTIONARI COMPLETATI', en: 'QUESTIONNAIRES COMPLETED' },
+];
+let _attivitaVista = 'cerco';
+let _attivitaCaricate = false;
+
+// Scrive una riga. Non si aspetta e non ferma niente: se non riesce, la spunta resta fatta.
+function _registraAttivita(tipo, dati) {
+  if (!currentUser || currentUser.isAdmin || isImpersonating()) return;
+  const riga = Object.assign({ tipo, date: new Date().toISOString(), userId: currentUser.id,
+    authUid: currentUser.authUid || null, username: currentUser.username || currentUser.email || '' }, dati || {});
+  Promise.resolve().then(() => fsSave('attivita', riga)).catch(e => console.warn('registro attività', e && e.message));
+}
+// La riga di una spunta su una card: l'articolo, la sua serie, e se la spunta è stata messa o tolta
+function _registraSpunta(tipo, figId, messa) {
+  const f = getData('figurines', []).find(x => x.id === figId);
+  _registraAttivita(tipo, { figId, seriesId: (f && f.seriesId) || null, azione: messa ? 'messa' : 'tolta' });
+}
+
+async function renderAdminAttivita(ricarica) {
+  if (!currentUser || !currentUser.isAdmin) return;
+  const box = document.getElementById('admin-attivita-box');
+  if (!box) return;
+  if (!_attivitaCaricate || ricarica) {
+    box.innerHTML = '<p style="color:var(--text);">' + (currentLang === 'it' ? 'Caricamento…' : 'Loading…') + '</p>';
+    _cache.attivita = await fsGetAll('attivita');
+    _attivitaCaricate = true;
+    purgeOldAttivita();
+  }
+  _attivitaDisegna();
+}
+function _attivitaScheda(k) { _attivitaVista = k; _attivitaDisegna(); }
+
+// Il nome dell'utente, col suo «Chi è?» fra parentesi come nel registro eventi (v7.252)
+function _attivitaUtente(r) {
+  const u = getData('users', []).find(x => x.id === r.userId);
+  const nome = (u && (u.username || u.email)) || r.username || '?';
+  const chi = u && String(u.chiE || '').trim();
+  return bold(nome) + (chi ? ' (' + esc(chi) + ')' : '');
+}
+// L'articolo in tre pezzi: serie, tipologia (con la versione) e nome
+function _attivitaArticolo(r) {
+  const f = getData('figurines', []).find(x => x.id === r.figId);
+  const s = getData('series', []).find(x => x.id === ((f && f.seriesId) || r.seriesId));
+  if (!f) return { serie: esc(_nomeSerie(s)), tipo: '', nome: '<span style="color:var(--text);font-style:italic;">' + (currentLang === 'it' ? 'articolo non più presente' : 'item no longer present') + '</span>' };
+  const v = _VERSIONI_VIVE.find(x => x.chiave === _chiaveTipo(f));
+  const tipo = _titoloTipoScheda(f) + (v ? ' · ' + (currentLang === 'it' ? v.it : v.en) : '');
+  const num = (f.number !== undefined && f.number !== null && f.number !== '') ? String(f.number).padStart(2, '0') + ' ' : '';
+  return { serie: esc(_nomeSerie(s)), tipo: esc(tipo), nome: esc(num + (f.fullName || f.name || '')) };
+}
+
+function _attivitaDisegna() {
+  const box = document.getElementById('admin-attivita-box');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const tutte = getData('attivita', []);
+  const th = 'color:var(--info);';
+  const schede = '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin:0.4rem 0 1rem;">'
+    + _ATTIVITA_TIPI.map(t => '<button class="admin-subtab' + (t.k === _attivitaVista ? ' active' : '') + '" onclick="_attivitaScheda(\'' + t.k + '\')">'
+      + (it ? t.it : t.en) + ' (' + tutte.filter(r => r.tipo === t.k).length + ')</button>').join('')
+    + '<button class="tbl-btn tbl-btn-edit" style="margin-left:auto;" onclick="renderAdminAttivita(true)">🔄 ' + (it ? 'Aggiorna' : 'Refresh') + '</button></div>';
+  const nota = '<p style="color:var(--info);font-size:0.85rem;margin:0 0 0.75rem;">' + (it
+    ? 'Le righe più nuove in alto. Si tengono ' + ATTIVITA_RETENTION_MONTHS + ' mesi, poi si cancellano da sole. Non ci sono le tue azioni, né quelle fatte impersonando un utente.'
+    : 'Newest rows at the top. They are kept for ' + ATTIVITA_RETENTION_MONTHS + ' months, then deleted automatically. Your own actions, and those made while impersonating a user, are not here.') + '</p>';
+  const righe = tutte.filter(r => r.tipo === _attivitaVista).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const quando = r => { const d = new Date(r.date); return d.toLocaleDateString('it-IT') + ' ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }); };
+  const td1 = '<td style="white-space:nowrap;font-size:0.78rem;color:var(--text);">';
+  let tab;
+  if (!righe.length) tab = '<p style="color:var(--text);">' + (it ? 'Nessuna riga ancora.' : 'No rows yet.') + '</p>';
+  else if (_attivitaVista === 'cerco' || _attivitaVista === 'lista') {
+    tab = '<table class="data-table compact"><thead><tr><th style="' + th + '">' + (it ? 'Data' : 'Date') + '</th><th style="' + th + '">' + (it ? 'Utente' : 'User') + '</th>'
+      + '<th style="' + th + '">' + (it ? 'Spunta' : 'Tick') + '</th><th style="' + th + '">' + (it ? 'Serie' : 'Series') + '</th>'
+      + '<th style="' + th + '">' + (it ? 'Tipologia' : 'Type') + '</th><th style="' + th + '">' + (it ? 'Articolo' : 'Item') + '</th></tr></thead><tbody>'
+      + righe.map(r => { const a = _attivitaArticolo(r);
+        const az = r.azione === 'tolta' ? '<span style="color:var(--danger);">➖ ' + (it ? 'tolta' : 'removed') + '</span>' : '<span style="color:var(--accent);">➕ ' + (it ? 'messa' : 'added') + '</span>';
+        return '<tr>' + td1 + quando(r) + '</td><td>' + _attivitaUtente(r) + '</td><td style="white-space:nowrap;">' + az + '</td><td>' + a.serie + '</td><td>' + a.tipo + '</td><td>' + a.nome + '</td></tr>'; }).join('')
+      + '</tbody></table>';
+  } else if (_attivitaVista === 'q_inizio') {
+    tab = '<table class="data-table compact"><thead><tr><th style="' + th + '">' + (it ? 'Data' : 'Date') + '</th><th style="' + th + '">' + (it ? 'Utente' : 'User') + '</th>'
+      + '<th style="' + th + '">' + (it ? 'Volta' : 'Time') + '</th></tr></thead><tbody>'
+      + righe.map(r => '<tr>' + td1 + quando(r) + '</td><td>' + _attivitaUtente(r) + '</td><td>' + (r.ripresa ? (it ? 'ripreso' : 'resumed') : (it ? 'prima volta' : 'first time')) + '</td></tr>').join('')
+      + '</tbody></table>';
+  } else {
+    tab = '<table class="data-table compact"><thead><tr><th style="' + th + '">' + (it ? 'Data' : 'Date') + '</th><th style="' + th + '">' + (it ? 'Utente' : 'User') + '</th>'
+      + '<th style="' + th + '">' + (it ? 'Serie salvate' : 'Series saved') + '</th><th style="' + th + '">' + (it ? 'Articoli aggiunti' : 'Items added') + '</th>'
+      + '<th style="' + th + '">' + (it ? 'Articoli tolti' : 'Items removed') + '</th></tr></thead><tbody>'
+      + righe.map(r => '<tr>' + td1 + quando(r) + '</td><td>' + _attivitaUtente(r) + '</td><td>' + (r.serie || 0) + '</td><td>' + (r.aggiunti || 0) + '</td><td>' + (r.tolti || 0) + '</td></tr>').join('')
+      + '</tbody></table>';
+  }
+  box.innerHTML = schede + nota + tab;
+}
+
+// La scadenza a tre mesi: gira quando si apre il tab (il sito è statico, non c'è un processo notturno), a lotti
+// come `purgeOldEventi`, per non consumare la quota in un colpo solo.
+async function purgeOldAttivita() {
+  try {
+    const limite = new Date();
+    limite.setMonth(limite.getMonth() - ATTIVITA_RETENTION_MONTHS);
+    const scadute = getData('attivita', []).filter(r => r.date && new Date(r.date) < limite);
+    if (!scadute.length) return;
+    const lotto = scadute.slice(0, ATTIVITA_PURGE_MAX_PER_RUN);
+    const via = new Set();
+    for (const r of lotto) {
+      try { await fsDelete('attivita', r.id); via.add(r.id); }
+      catch (err) { console.warn('[retention] attività non cancellata', r.id, err.message); }
+    }
+    if (via.size) {
+      _cache.attivita = getData('attivita', []).filter(r => !via.has(r.id));
+      _attivitaDisegna();
+    }
+  } catch (e) { console.warn('[retention] purgeOldAttivita', e.message); }
+}
+
+// 🆕 v7.302 - IL PANNELLO «👥 NELLA MIA LISTA DI» (Franco: «In ogni scheda (serie, card, etc) un pannello che indica chi
+//    ha quell'articolo, in caso di articoli, o qualcosa di quella serie, in caso di serie»; risposta 4: nella finestra
+//    di modifica). Solo per l'admin, che ha già in memoria le liste di tutti (`_cache.ownedMap`, letta all'accesso).
+//    Fuori gli admin, come nel registro. Per una serie: chi ha almeno un suo articolo, e quanti, dal più al meno.
+function _pannelloChiCeLHa(figId, seriesId) {
+  if (!currentUser || !currentUser.isAdmin) return '';
+  const it = currentLang === 'it';
+  const mappa = _cache.ownedMap || {};
+  const utenti = getData('users', []).filter(u => !u.isAdmin);
+  const nome = u => bold(u.username || u.email || '?') + (String(u.chiE || '').trim() ? ' (' + esc(String(u.chiE).trim()) + ')' : '');
+  let corpo;
+  if (figId) {
+    const chi = utenti.filter(u => (mappa[u.id] || []).includes(figId));
+    corpo = chi.length
+      ? '<div style="display:flex;flex-wrap:wrap;gap:0.3rem 1rem;">' + chi.map(u => '<span>' + nome(u) + '</span>').join('') + '</div>'
+      : '<span style="color:var(--text);">' + (it ? 'Non è nella <em>Mia lista</em> di nessuno.' : 'It is in nobody\'s <em>My list</em>.') + '</span>';
+  } else {
+    const ids = new Set(getData('figurines', []).filter(f => f.seriesId === seriesId).map(f => f.id));
+    const chi = utenti.map(u => ({ u, n: (mappa[u.id] || []).filter(id => ids.has(id)).length })).filter(x => x.n).sort((a, b) => b.n - a.n);
+    corpo = chi.length
+      ? '<table class="data-table compact"><thead><tr><th style="color:var(--info);">' + (it ? 'Utente' : 'User') + '</th><th style="color:var(--info);">' + (it ? 'Articoli della serie' : 'Items of the series') + '</th></tr></thead><tbody>'
+        + chi.map(x => '<tr><td style="color:var(--text);">' + nome(x.u) + '</td><td>' + x.n + '</td></tr>').join('') + '</tbody></table>'
+      : '<span style="color:var(--text);">' + (it ? 'Nessuno ha articoli di questa serie nella <em>Mia lista</em>.' : 'Nobody has items of this series in <em>My list</em>.') + '</span>';
+  }
+  return '<div class="pannello-chi-ce-lha" style="margin-top:1.1rem;padding:0.75rem 0.9rem;border:1px solid var(--border);border-radius:var(--radius);">'
+    + '<div style="font-family:var(--font-ui);font-weight:700;color:var(--info);margin-bottom:0.5rem;">👥 ' + (it ? 'Nella <em>Mia lista</em> di' : 'In the <em>My list</em> of') + '</div>'
+    + corpo + '</div>';
+}
+
+// ============================================================
 //  SEGNALAZIONI
 // ============================================================
 function isImpersonating() {
@@ -68034,6 +68205,7 @@ async function toggleWishlist(figId) {
     btn.title = currentLang === 'it' ? (inWishlist ? 'Togli da "Ciò che cerco"' : 'Aggiungi a "Ciò che cerco"') : (inWishlist ? 'Remove from "What I\'m looking for"' : 'Add to "What I\'m looking for"');
   });
   saveWishlist(); // fire-and-forget, non blocchiamo il thread UI
+  _registraSpunta('cerco', figId, inWishlist);   // v7.302 - il registro «Attività utenti»
   if (document.getElementById('page-wishlist')?.classList.contains('active')) renderWishlist();
 }
 
@@ -73738,6 +73910,8 @@ function switchToEditMode(figId) {
 
   // Figurine collegate (variazioni/change di cui questa è la base) — tab
   html += buildLinkedFiguresTabsHTML(f.id);
+  // 🆕 v7.302 (Franco) - chi ha questo articolo nella sua *Mia lista*; una bozza non è ancora di nessuno
+  if (f.id) html += _pannelloChiCeLHa(f.id, null);
 
   // 🔄 v6.891 (Franco: «mettile subito dopo la fine dei campi, lascia chiaramente uno spazio»)
   //    - LE FOTO STANNO IN FONDO AL TAB, NON IN CIMA. La v6.886 le aveva messe sopra i campi:
@@ -87324,6 +87498,7 @@ async function toggleWishlistFromDetail(figId) {
     gridBtn.style.color = inWishlist ? 'var(--danger)' : 'var(--muted)';
   });
   saveWishlist(); // fire-and-forget
+  _registraSpunta('cerco', figId, inWishlist);   // v7.302 - il registro «Attività utenti»
   if (document.getElementById('page-wishlist')?.classList.contains('active')) renderWishlist();
 }
 
