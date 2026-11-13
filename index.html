@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.301">
+<link rel="stylesheet" href="css/style.css?v=7.302">
 
 
 <style>
@@ -4279,6 +4279,9 @@ di tutte le serie</button>
           <!-- 🆕 v7.170 (Franco: «nella admin console, in una nuova sezione chiamata aggiornamenti massivi») - in ordine
                alfabetico è la prima -->
           <button class="admin-tab" onclick="adminTab('aggiornamenti')">🔁 Aggiornamenti massivi</button>
+          <!-- 🆕 v7.302 (Franco: «Vorrei un registro eventi, sulle attività svolte dagli utenti … Ne vorrei uno dedicato e
+               strutturato») - lo disegna `renderAdminAttivita`; in ordine alfabetico viene dopo Aggiornamenti massivi -->
+          <button class="admin-tab" onclick="adminTab('attivita')">👣 Attività utenti</button>
           <!-- 🆕 v7.182 (Franco: «fai una nuova sezione nella admin console, dedicata allo scopo»); 🔄 v7.184 si chiama
                «Annunci» (Franco), e in ordine alfabetico viene subito dopo Aggiornamenti massivi -->
           <button class="admin-tab" onclick="adminTab('caroselli')">🎠 Caroselli</button>
@@ -4701,6 +4704,10 @@ di tutte le serie</button>
         <!-- 🆕 v7.156 - LA SEZIONE «QUESTIONARIO»: la disegna `renderAdminQuestionario` -->
         <div id="admin-questionario" class="admin-section">
           <div><div id="admin-questionario-tda"></div></div>
+        </div>
+        <div id="admin-attivita" class="admin-section">
+          <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;color:var(--info);">👣 Attività utenti</h3>
+          <div id="admin-attivita-box"></div>
         </div>
         <div id="admin-orfani" class="admin-section">
           <div><div id="admin-orfani-box"></div></div>
@@ -5639,6 +5646,8 @@ di tutte le serie</button>
     <!-- v6.220 — DI QUI LA COPERTINA E' SALITA accanto ai due nomi, in cima al tab. Era arrivata
          qui nella v6.217 dal fondo della form, e nella v6.219 aveva perso il riquadro finto di
          trascinamento: ridotta a due pulsanti, non aveva piu' bisogno di una riga tutta sua. -->
+    <!-- 🆕 v7.302 (Franco) - «👥 Nella Mia lista di»: lo riempie `openAddSeriesModal` con `_pannelloChiCeLHa` -->
+    <div id="series-chi-ce-lha"></div>
     </div><!-- chiude il tab Serie -->
 
     <!-- 🆕 v6.681 - IL TAB SOTTOSERIE. Stessa mossa della v6.218 qui sotto: il riquadro
@@ -7054,7 +7063,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.301"></script>
+<script src="js/app.js?v=7.302"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7078,7 +7087,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.301'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.302'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
