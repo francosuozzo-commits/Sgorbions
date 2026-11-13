@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.302';
+const JS_VERSION = 'v7.303';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42288,6 +42288,7 @@ function _collageDa() {
   // v7.222 - «Quante foto devi unire?» va sopra «Prendi le foto» o, dal PC, sotto la spunta dello sfondo
   const nb = document.getElementById('collage-n-box'), prendi = document.getElementById('collage-sito-prendi');
   if (nb && prendi && opz) { if (_collageModo === 'pc') opz.after(nb); else prendi.before(nb); }
+  if (nb && _collageModo === 'pc') nb.style.display = '';   // v7.303 - dal sito «Un articolo solo ?» può averla nascosta
   _collageFoto = [];
   _collageMostraScelte();
   _collageStato();
@@ -42327,6 +42328,16 @@ function _collageSitoHTML() {
         // 🔄 v7.294 - qui c'era «Numeri specifici ?» (v7.235): ora sta più sotto, al posto del numero particolare
         '<div style="' + dom + '">' + (it ? 'Quale versione ?' : 'Which version?') + '</div>' +
         '<select id="collage-sito-serie-ver" style="' + sel + '" onchange="_collageVerScelta()">' + _collageVersioniDellaSerie(sid0, sez0) + '</select>' +
+        // 🆕 v7.303 - «Un articolo solo ?» e «Quale articolo ?»: le voci e quando si vedono li decide `_collageSitoAggiorna`
+        //    (`_collageUnoVoci`)
+        '<div id="collage-sito-uno-box" style="display:none;">' +
+          '<div style="' + dom + '">' + (it ? 'Un articolo solo ?' : 'A single item?') + '</div>' +
+          radio('collage-sito-uno', 'no', 'No', true) + radio('collage-sito-uno', 'si', it ? 'Sì' : 'Yes') +
+          '<div id="collage-sito-uno-scelta" style="display:none;">' +
+            '<div style="' + dom + '">' + (it ? 'Quale articolo ?' : 'Which item?') + '</div>' +
+            '<select id="collage-sito-uno-art" style="' + sel + '" onchange="_collageSitoAggiorna()"></select>' +
+          '</div>' +
+        '</div>' +
         // v7.215 - e la famiglia, facoltativa, se gli articoli scelti ne hanno (`_collageFamiglieDellaSerie`)
         '<div id="collage-sito-fam-box" style="display:none;">' +
           '<div style="' + dom + '">' + (it ? 'Quale famiglia ? <span style="font-weight:400;opacity:0.7;">(facoltativa)</span>' : 'Which family? <span style="font-weight:400;opacity:0.7;">(optional)</span>') + '</div>' +
@@ -42381,12 +42392,14 @@ function _collageSitoHTML() {
       '</div>' +
     '</div>' +
     // v7.218 - in che ordine si prendono: in ordine alfabetico i primi N, o N a caso (`_collagePesca`)
+    '<div id="collage-sito-ordine-box">' +   // v7.303 - il contenitore, per nasconderla con «Un articolo solo ?»
     '<div style="' + dom + '">' + (it ? 'In che ordine le prendo ?' : 'In which order do I pick them?') + '</div>' +
     ['alfabetico', 'casuale'].map(v => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
       // 🔄 v7.222 (Franco: «il default della domanda sull'ordine lascialo ad alfabetico») - era Casuale (v7.218)
       '<input type="radio" name="collage-sito-ordine" value="' + v + '"' + (v === 'alfabetico' ? ' checked' : '') + ' onchange="_collageMostraScelte()">' +
       // v7.231 - «Numerico / Alfabetico»: prima il numero, poi il nome (`_collagePesca`); il valore resta 'alfabetico'
       (v === 'alfabetico' ? (it ? 'Numerico / Alfabetico' : 'Numeric / Alphabetical') : (it ? 'Casuale' : 'Random')) + '</label>').join('') +
+    '</div>' +
     // v7.216 - con o senza le macchie (`_collageUrlFoto`); cambiando, le foto già prese si rileggono
     '<div style="' + dom + '">' + (it ? 'Con le macchie o senza ?' : 'With or without watermark?') + '</div>' +
     ['con', 'senza'].map(v => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
@@ -42417,10 +42430,29 @@ function _collageSitoAggiorna() {
   if (st) st.style.display = da === 'serie' && s && s.value ? '' : 'none';
   const ssBox = document.getElementById('collage-sito-ss-box');   // v7.294 - la sottoserie, se la serie ne ha
   if (ssBox) ssBox.style.display = _collageSottoserieRisposta().chiesta ? '' : 'none';
+  // 🆕 v7.303 - «Un articolo solo ?» (`_collageUnoVoci`): col sì, la tendina «Quale articolo ?», e le domande che non
+  //    servono più si nascondono (fronte o retro, famiglia, categoria, numeri specifici, ordine, quante foto)
+  let uno = false;
+  const unoBox = document.getElementById('collage-sito-uno-box');
+  if (unoBox) {
+    const voci = da === 'serie' && s && s.value ? _collageUnoVoci() : null;
+    unoBox.style.display = voci ? '' : 'none';
+    const art = document.getElementById('collage-sito-uno-art');
+    if (art && voci) {
+      const prima = art.value;
+      art.innerHTML = '<option value="">' + (currentLang === 'it' ? '— scegli —' : '— choose —') + '</option>'
+        + voci.map(v => '<option value="' + esc(v.f.id) + '">' + esc(v.et) + '</option>').join('');
+      if ([...art.options].some(o => o.value === prima)) art.value = prima;
+    }
+    uno = _collageUnoAttivo();
+    const usc = document.getElementById('collage-sito-uno-scelta');
+    if (usc) usc.style.display = uno ? '' : 'none';
+  }
+  ['collage-sito-ordine-box', 'collage-n-box'].forEach(id => { const x = document.getElementById(id); if (x) x.style.display = uno ? 'none' : ''; });
   const lb =document.getElementById('collage-sito-lato-box'), ver = document.getElementById('collage-sito-serie-ver');   // v7.214
-  if (lb) lb.style.display = da === 'serie' && ver && ver.value && ver.value !== 'base' ? '' : 'none';
+  if (lb) lb.style.display = !uno && da === 'serie' && ver && ver.value && ver.value !== 'base' ? '' : 'none';
   const fb = document.getElementById('collage-sito-fam-box'), fam = document.getElementById('collage-sito-serie-fam');   // v7.215
-  if (fb) fb.style.display = da === 'serie' && fam && fam.options.length > 1 ? '' : 'none';
+  if (fb) fb.style.display = !uno && da === 'serie' && fam && fam.options.length > 1 ? '' : 'none';
   if (t) t.style.display = da === 'tda' ? '' : 'none';
   const tfb = document.getElementById('collage-sito-tda-fam-box'), tfam = document.getElementById('collage-sito-tda-fam');   // v7.218
   if (tfb) tfb.style.display = da === 'tda' && tfam && tfam.options.length > 1 ? '' : 'none';
@@ -42433,7 +42465,7 @@ function _collageSitoAggiorna() {
     if ([...ccat.options].some(o => o.value === prima)) ccat.value = prima;
   }
   const scb = document.getElementById('collage-sito-serie-cat-box'), scat = document.getElementById('collage-sito-serie-cat');
-  if (scb) scb.style.display = da === 'serie' && scat && scat.options.length > 1 ? '' : 'none';
+  if (scb) scb.style.display = !uno && da === 'serie' && scat && scat.options.length > 1 ? '' : 'none';
   const tcb = document.getElementById('collage-sito-tda-cat-box'), tcat = document.getElementById('collage-sito-tda-cat');
   if (tcb) tcb.style.display = da === 'tda' && tcat && tcat.options.length > 1 ? '' : 'none';
   // 🆕 v7.245 (Franco: «bisogna aggiungere anche la domanda sulla sottocategoria, da mostrare quando viene selezionata la
@@ -42446,15 +42478,15 @@ function _collageSitoAggiorna() {
     if ([...csub.options].some(o => o.value === prima)) csub.value = prima;
   }
   const ssb = document.getElementById('collage-sito-serie-sub-box'), ssub = document.getElementById('collage-sito-serie-sub');
-  if (ssb) ssb.style.display = da === 'serie' && ssub && ssub.options.length > 1 ? '' : 'none';
+  if (ssb) ssb.style.display = !uno && da === 'serie' && ssub && ssub.options.length > 1 ? '' : 'none';
   const tsb = document.getElementById('collage-sito-tda-sub-box'), tsub = document.getElementById('collage-sito-tda-sub');
   if (tsb) tsb.style.display = da === 'tda' && tsub && tsub.options.length > 1 ? '' : 'none';
   // v7.235 - «Numeri specifici ?», col sì il campo; 🔄 v7.294 - dovunque gli articoli rimasti hanno un numero
   const spb = document.getElementById('collage-sito-spec-box'), spc = document.getElementById('collage-sito-spec-campo');
   if (spb) {
     const spSi = _collageSpecAttivo();
-    spb.style.display = _collageSpecPossibile() ? '' : 'none';
-    if (spc) spc.style.display = spSi ? 'flex' : 'none';
+    spb.style.display = !uno && _collageSpecPossibile() ? '' : 'none';
+    if (spc) spc.style.display = !uno && spSi ? 'flex' : 'none';
   }
   const rb = document.getElementById('collage-sito-retro-box');   // v7.223
   if (rb) rb.style.display = _collageRetroPossibile() ? 'flex' : 'none';
@@ -42706,8 +42738,53 @@ function _collageFotoCandidato(f, tutti, lato) {
 //    esportando; utilizza il retro della figurina in versione base») - LA FOTO DEI RETRO. Le stesse figurine, nello
 //    stesso ordine e con lo stesso tipo di collage, ognuna col retro della sua base (`baseFigurineId`, come
 //    `_basePosterDi`; la base è sé stessa). Solo da Annunci, solo dal sito, e non quando le foto sono già i retro.
+// 🆕 v7.303 (Franco: «nel caso in cui la tda sia tale da avere, per quella serie, meno di 10 articoli, deve esserci
+//    un'altra domanda … una tendina che mostra il campo Nome degli articoli»; poi, dal «Cambia foto» della card degli
+//    album: «mi permetti di avere la domanda "Un articolo solo"; così che io seleziono l'album che mi interessa e creo la
+//    foto unica con le 2 foto affiancate») - UN ARTICOLO SCELTO A MANO, FRONTE E RETRO AFFIANCATI. La domanda c'è dalla
+//    serie, da Annunci e dal «Cambia foto», quando gli articoli che restano dopo serie, tipologia, sottoserie e versione
+//    sono meno di `COLLAGE_UNO_SOGLIA`; la tendina elenca solo quelli con la foto del retro (senza, non c'è niente da
+//    affiancare). Nomi uguali: accanto la versione fra parentesi. Il prelievo è quello dell'articolo solo delle fcr
+//    (v7.236, `_collagePesca`), ora per ogni tipologia.
+const COLLAGE_UNO_SOGLIA = 10;
+function _collageUnoVoci() {
+  const sid = (document.getElementById('collage-sito-serie') || {}).value;
+  const sez = (document.getElementById('collage-sito-serie-tda') || {}).value;
+  const ver = (document.getElementById('collage-sito-serie-ver') || {}).value;
+  if (!sid || !sez || !ver) return null;
+  const ssR = _collageSottoserieRisposta();
+  if (ssR.chiesta && ssR.valore === null) return null;
+  const tutti = getData('figurines', []);
+  const el = _collageArticoliDellaSerie(sid).filter(f => (f.section || 'figurines') === sez && _collageVerOk(f, ver) && _collageSottoserieOk(f, ssR));
+  if (!el.length || el.length >= COLLAGE_UNO_SOGLIA) return null;
+  const con = el.filter(f => _collageFotoCandidato(f, tutti, 'retro'));
+  if (!con.length) return null;
+  const num = f => String(_numeroAschermo(f) ?? '').trim();
+  const nome = f => String(f.name || '').trim() || String(f.id);
+  con.sort((x, y) => (!num(x) - !num(y)) || num(x).localeCompare(num(y), 'it', { numeric: true })
+    || nome(x).localeCompare(nome(y), 'it', { sensitivity: 'base', numeric: true }));
+  const quanti = {};
+  con.forEach(f => { const k = nome(f).toLowerCase(); quanti[k] = (quanti[k] || 0) + 1; });
+  const it = currentLang === 'it';
+  return con.map(f => {
+    const ch = _chiaveTipo(f);
+    const doppio = quanti[nome(f).toLowerCase()] > 1;
+    return { f, et: nome(f) + (doppio ? ' (' + (ch === 'base' ? 'Base' : _nomeVersione(ch, it ? 'it' : 'en')) + ')' : '') };
+  });
+}
+// la risposta è sì, e la domanda si vede (la mostra `_collageSitoAggiorna`)
+function _collageUnoAttivo() {
+  if (typeof document === 'undefined') return false;
+  const box = document.getElementById('collage-sito-uno-box');
+  return !!box && box.style.display !== 'none' && (document.querySelector('input[name="collage-sito-uno"]:checked') || {}).value === 'si';
+}
+function _collageUnoScelto() {
+  const id = (document.getElementById('collage-sito-uno-art') || {}).value;
+  return id ? (getData('figurines', []).find(f => String(f.id) === String(id)) || null) : null;
+}
 function _collageRetroPossibile() {
   if (_collageBoxDest || _collageModo !== 'sito') return false;
+  if (typeof _collageUnoAttivo === 'function' && _collageUnoAttivo()) return false;   // v7.303 - il retro è già accanto
   // v7.236 - con un articolo solo il retro è già nella foto, accanto al fronte
   if (_collageFoto.length === 2 && _collageFoto[1] && _collageFoto[1].diRetro) return false;
   // v7.224 (Franco: «per ora stiamo ragionando solo per la griglia»; con ruota e mazzo «spunta nascosta») - solo la griglia
@@ -42774,6 +42851,11 @@ const _collageNumeriDi = f => String(_numeroAschermo(f) ?? '').split(' - ').map(
 // v7.240 - `finoAllaFamiglia`: gli articoli appena dopo la famiglia, da cui si contano le categorie
 function _collageCandidati(senzaNumeri, finoAllaFamiglia) {
   const da = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
+  // v7.303 - «Un articolo solo ?»: il candidato è quello scelto nella tendina, e basta
+  if (typeof _collageUnoAttivo === 'function' && _collageUnoAttivo()) {
+    const f = _collageUnoScelto();
+    return { el: f ? [f] : [], conNum: false, numero: '', lato: 'fronte', fam: '', cat: '', sub: '', spec: false, numeri: [], mancano: [], uno: true };
+  }
   const spec = !senzaNumeri && _collageSpecAttivo();
   const numeri = spec ? _collageSpecNumeri((document.getElementById('collage-sito-spec-numeri') || {}).value) : [];
   // 🗑️ v7.294 - via il numero particolare (lo fa «Numeri specifici ?» con un numero solo): restano nell'uscita, spenti
@@ -42922,7 +43004,7 @@ async function _collagePesca() {
   const giroOra = () => typeof _collagePescaGiro === 'undefined' ? 0 : _collagePescaGiro;
   const giro = giroOra();
   const n = Number((document.getElementById('collage-n') || {}).value);
-  const { el, conNum, numero, lato, fam, spec, numeri, mancano } = _collageCandidati();
+  const { el, conNum, numero, lato, fam, spec, numeri, mancano, uno } = _collageCandidati();
   // v7.294 - la sottoserie è obbligatoria dove la domanda c'è
   const ssR = _collageSottoserieRisposta();
   if (ssR.chiesta && ssR.valore === null) { toast(it ? 'Rispondi a «Quale sottoserie ?»' : 'Answer «Which subseries?»', 'error'); return; }
@@ -42943,7 +43025,16 @@ async function _collagePesca() {
   //    e il retro della fcr») - UN ARTICOLO SOLO: con le fcr e il fronte basta 1, e sotto si prende anche il suo retro
   const daSc = (document.querySelector('input[name="collage-sito-da"]:checked') || {}).value;
   const sezSc = (document.getElementById(daSc === 'serie' ? 'collage-sito-serie-tda' : 'collage-sito-tda') || {}).value;
-  const coppia = n === 1 && lato === 'fronte' && sezSc === 'figurines';
+  // 🔄 v7.303 - e con «Un articolo solo ?» per ogni tipologia (l'articolo scelto ha il retro: la tendina elenca solo quelli)
+  if (uno && !el.length) {
+    _collageFoto = [];
+    _collageMostraScelte();
+    _collageStato();
+    const av = document.getElementById('collage-avviso');
+    if (av) av.textContent = it ? 'Scegli l\'articolo in «Quale articolo ?».' : 'Choose the item in «Which item?».';
+    return;
+  }
+  const coppia = n === 1 && lato === 'fronte' && (sezSc === 'figurines' || !!uno);
   if (!Number.isInteger(n) || n < (coppia ? 1 : 2)) { _collageStato(); return; }
   // v7.222 - oltre 40 si ferma qui, prima di leggere le foto (il numero può arrivare da `_collageSitoAggiorna`)
   // 🔄 v7.234 - il tetto è quello del tipo scelto (griglia 50, mazzo e ruota 40), o `COLLAGE_MAX_FOTO` se il tipo non
@@ -59393,6 +59484,16 @@ let _wzCambioT = 0;
 // 🆕 «Riprendi il questionario» (Franco: «se il questionario è stato già fatto almeno una volta»). Il segno
 //    sta nel documento `owned` (campo `questionario`, scritto con merge: la lista non si tocca).
 let _wzFatto = false;
+// 🐛 v7.303 (Franco: «da desktop non vedo il tasto per resettare il questionario. sto impersonando "frasuo"») - impersonando,
+//    `_wzFatto` e `_wzLivello` restavano quelli dell'admin. Ora l'admin tiene il segno di ogni utente (`_wzSegniDi`, letto con
+//    tutte le `owned`), e `impersonateUser` / `stopImpersonation` lo rileggono per l'utente giusto (`_wzLeggiSegno`).
+const _wzSegniDi = {};
+function _wzLeggiSegno() {
+  const q = (currentUser && _wzSegniDi[currentUser.id]) || null;
+  _wzFatto = !!(q && q.fatto);
+  _wzLivello = (q && q.livello) || null;
+  _wzNomePulsanti();
+}
 // 🆕 v7.034 - il livello («Che collezionista sei ?»): letto col segno, salvato con lui
 let _wzLivello = null;
 const _WZ_LIVELLI = {
@@ -59409,6 +59510,7 @@ function _wzVersioni() {
 async function _wzSalvaLivello(l) {
   if (_wzLivello === l) return;
   _wzLivello = l;
+  if (currentUser) _wzSegniDi[currentUser.id] = Object.assign({}, _wzSegniDi[currentUser.id], { livello: l });   // v7.303
   try {   // merge: il segno «fatto» resta com'è
     await fsSave('owned', { id: currentUser.id, userId: currentUser.id, authUid: currentUser.authUid || null, questionario: { livello: l } });
   } catch (e) { console.warn('livello del questionario', e); }
@@ -59423,6 +59525,7 @@ function _wzNomePulsanti() {
 }
 async function _wzSegna(fatto) {
   _wzFatto = fatto;
+  if (currentUser) _wzSegniDi[currentUser.id] = fatto ? { fatto: true, livello: _wzLivello } : null;   // v7.303
   _wzNomePulsanti();
   try {
     await fsSave('owned', { id: currentUser.id, userId: currentUser.id, authUid: currentUser.authUid || null,
@@ -60225,6 +60328,7 @@ function _wzChiudi() {
   const ov = document.getElementById('wz-overlay');
   if (ov) ov.remove();
   document.body.style.overflow = '';
+  document.documentElement.style.overflow = '';   // v7.303: anche la pagina intera, bloccata all'apertura (vedi l'index)
   _wz = null;
   try { renderProfile(); } catch (e) {}
   try { refreshSeriesMeta(); } catch (e) {}
@@ -60258,7 +60362,7 @@ function _wzDisegna(tieni) {
   const w = _wz; if (!w) return;
   const it = currentLang === 'it';
   let ov = document.getElementById('wz-overlay');
-  if (!ov) { ov = document.createElement('div'); ov.id = 'wz-overlay'; ov.className = 'wz-overlay'; document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+  if (!ov) { ov = document.createElement('div'); ov.id = 'wz-overlay'; ov.className = 'wz-overlay'; document.body.appendChild(ov); document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden';
     ov.addEventListener('click', e => { if (Date.now() - _wzCambioT < WZ_TOCCHI_FERMI_MS) { e.stopPropagation(); e.preventDefault(); } }, true); }   // v7.130
   if (!tieni) _wzCambioT = Date.now();   // v7.130: pagina nuova (vedi `WZ_TOCCHI_FERMI_MS`)
   // 🔄 v7.050 (Franco: «il tasto Esci chiamalo Esci dal questionario, e chiedi conferma per uscire»)
@@ -60305,7 +60409,8 @@ function _wzDisegna(tieni) {
     // 🔄 v7.130 (Franco: «la pagina dovrebbe finire con la fine del tasto "Azzera la mia lista…"; il tasto "Esci dal
     //    questionario" me lo aspettavo a quella altezza») - una riga a tre colonne: «Azzera» al centro, a destra il
     //    secondo «Esci» (lo mette `_wzDisegna` al posto del segnaposto, e allora in fondo non ce n'è un altro)
-    if (nMie || _wzFatto) corpo += '<div class="wz-azzera-riga"><span></span><button type="button" class="btn-secondary wz-azzera" onclick="_wzAzzera(\'azzera1\')">🗑️ '
+    // 🔄 v7.303 (Franco: «se la lista è vuota il tasto non ha senso») - solo con la lista non vuota, anche a questionario già fatto
+    if (nMie) corpo += '<div class="wz-azzera-riga"><span></span><button type="button" class="btn-secondary wz-azzera" onclick="_wzAzzera(\'azzera1\')">🗑️ '
       // v7.298 (Franco): «Ricomincia da capo il questionario (resetta la mia lista)»; l'inglese è mio
       // v7.300 (Franco: «la frase tra parentesi, scrivila a capo»)
       + (it ? 'Ricomincia da capo il questionario<br>(resetta la mia lista)' : 'Restart the questionnaire from scratch<br>(reset my list)') + '</button><!--wz-esci-qui--></div>';
@@ -61009,6 +61114,7 @@ async function loadAllOwnedFromFirebase() {
       const allOwned = await fsGetAll('owned');
       for (const doc of allOwned) {
         _cache.ownedMap[doc.userId] = doc.owned || [];
+        _wzSegniDi[doc.userId] = doc.questionario || null;   // v7.303: il segno di ogni utente, per l'impersona
         if (doc.userId === currentUser.id) { _wzFatto = !!(doc.questionario && doc.questionario.fatto); _wzLivello = (doc.questionario && doc.questionario.livello) || null; }   // v7.014, v7.034
       }
     } else if (currentUser) {
@@ -64042,12 +64148,21 @@ function _soloQuestoRaggr(chiave) {
 // v6.096 - SOSTITUISCE la selezione. Il riclick azzera solo se quel tipo era l'unico acceso: se ce
 // ne sono altri, il clic sull'etichetta vuol dire "voglio vedere solo questo", che e' un'intenzione
 // diversa da "ho finito di guardarlo".
+// 🆕 v7.303 (Franco: «quando viene aperto il selettore "Filtra per versione" e poi viene premuta una pillola, sarebbe
+//    opportuno aprire in automatico il collassatore del box di ricerca direttamente collegato a quella pillola … se clicco
+//    la pillola CHANGE, allora apro in automatico il filtro "Filtra per tipologia di change"») - accendendo una pillola
+//    delle versioni, la barra del riquadro dei tipi di quella versione (`_VERSIONI_CON_TIPO`: change, omaggio, errore di
+//    stampa) si apre. Solo si apre: spegnendo la pillola il riquadro resta com'è.
+function _apriRiquadroDellaVersione(chiave, val) {
+  if (chiave !== 'versione' || !_VERSIONI_CON_TIPO.some(v => v.chiave === val)) return;
+  _bmAperti['raggr-' + val] = true;
+}
 function _setRaggrFiltro(chiave, i) {
   const s = _raggr(chiave);
   const val = s.vals[i];
   if (val === undefined) return;
   if (s.filtro.size === 1 && s.filtro.has(val)) s.filtro = new Set();
-  else { s.filtro = new Set([val]); _soloQuestoRaggr(chiave); }
+  else { s.filtro = new Set([val]); _soloQuestoRaggr(chiave); _apriRiquadroDellaVersione(chiave, val); }
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (_setRaggrFiltro)', e); }
 }
@@ -64077,7 +64192,7 @@ function _addRaggrFiltro(chiave, i) {
   const val = s.vals[i];
   if (val === undefined) return;
   if (s.filtro.has(val)) s.filtro.delete(val);
-  else { s.filtro.add(val); _soloQuestoRaggr(chiave); }
+  else { s.filtro.add(val); _soloQuestoRaggr(chiave); _apriRiquadroDellaVersione(chiave, val); }   // v7.303
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (_addRaggrFiltro)', e); }
 }
@@ -68063,6 +68178,7 @@ function impersonateUser(userId) {
   if (!confirm(msg)) return;
   _realAdmin = { ...currentUser };
   currentUser = { ...user };
+  _wzLeggiSegno();   // v7.303: «Inizia» / «Riprendi» e il livello dell'utente impersonato
   _showImpersonateBanner();
   showPage('home');
   renderAll();
@@ -68074,6 +68190,7 @@ function stopImpersonation() {
   if (!_realAdmin) return;
   currentUser = { ..._realAdmin };
   _realAdmin = null;
+  _wzLeggiSegno();   // v7.303: torna il segno dell'admin
   _hideImpersonateBanner();
   showPage('profile');
   setTimeout(() => adminTab('users'), 200);
