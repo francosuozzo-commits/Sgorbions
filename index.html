@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.303">
+<link rel="stylesheet" href="css/style.css?v=7.304">
 
 
 <style>
@@ -436,6 +436,8 @@
    del telefono resta, perché lì le linguette non ci sono e sarebbe l'unica strada per gli Annunci. */
 @media (min-width:861px) {
   .nav-links #nav-annunci { display:none !important; }}
+/* 🆕 v7.304 - «Cerca variazioni» solo nel panino (il suo posto, dopo Annunci, lo dà `order` in style.css) */
+@media (min-width:861px) { .nav-links #nav-cerca-var { display:none !important; } }
 /* ⬜ E SOTTO I 1500px LA CASELLA SPARISCE, AL SUO POSTO UN TASTO 🔍 che apre la finestrella del
    telefono. 📏 Misurato: da admin, a 1440px le voci da sole arrivano già dove comincia la bandiera,
    quindi una casella lì non ci sta comunque - stringerla a 26px non è «più stretta», è illeggibile.
@@ -1938,6 +1940,13 @@ button.back-btn { color:#ffffff; }
 }
 .admin-subtab:hover { border-color: var(--accent); }
 .admin-subtab.active { background: var(--accent2); border-color: var(--accent2); font-weight: 700; }
+/* 🆕 v7.304 (Franco: «le due sottosezioni della sezione "SET DOPPI" … farli di colore e/o font diversi dalla sezione a
+   cui appartengono») - MANCOLISTE e DETTAGLI SET DOPPI sono un livello più sotto: più piccoli, a rettangolo invece che
+   a pillola, in azzurro (`--info`) invece del viola, e rientrati sotto SET DOPPI. Colore e corpo li ho scelti io. */
+.ml-schede { margin-left: 1rem !important; padding-left: 0.7rem; border-left: 2px solid var(--info); }
+.ml-schede .admin-subtab { font-size: 0.76rem; letter-spacing: 0.03em; border-radius: 6px; padding: 0.28rem 0.7rem; border-color: var(--info); color: var(--info); }
+.ml-schede .admin-subtab:hover { border-color: var(--text); }
+.ml-schede .admin-subtab.active { background: var(--info); border-color: var(--info); color: #0e0a1a; }
 
 /* 🆕 v6.218 (Franco) — LE RIGHE DELLE SPUNTE DEL TAB "ARTICOLI NON BASE": la spunta a sinistra, il
    suo conteggio spinto a destra, il numero ultimo a destra.
@@ -2632,6 +2641,10 @@ button.back-btn { color:#ffffff; }
     <!-- 🔄 v7.187 (Franco: «il tasto Annunci della navbar mettilo tutto a dx, prima della buca di ricerca») - sta
          subito prima della casella, e sul desktop il `margin-left:auto` lo spinge a destra (regola in testa). Nel
          panino del telefono il posto lo decide `order` (style.css): resta fra Newsletter e Contatti. -->
+    <!-- 🆕 v7.304 (Franco: «richiamabile anche da mobile, solo per admin») - «Cerca variazioni» nel panino del telefono:
+         la console lì non si vede. Sul desktop no (regola in testa): c'è il tab della console. Nel markup sta PRIMA di
+         Annunci, che deve restare attaccato alla casella di ricerca (v7.187); nel panino va dopo (`order` 11). -->
+    <a onclick="apriCercaVariazioni()" id="nav-cerca-var" style="display:none;">🔍 Cerca variazioni</a>
     <a onclick="apriAnnunciNav()" id="nav-annunci" style="display:none;">📢 Annunci</a>
     <div id="nav-search" style="display:none;">
       <!-- 🆕 v6.852 (Franco: «il messaggio da mostrare non deve starci tutto dentro; deve apparire
@@ -4294,6 +4307,10 @@ di tutte le serie</button>
           <!-- 🆕 v7.182 (Franco: «fai una nuova sezione nella admin console, dedicata allo scopo»); 🔄 v7.184 si chiama
                «Annunci» (Franco), e in ordine alfabetico viene subito dopo Aggiornamenti massivi -->
           <button class="admin-tab" onclick="adminTab('caroselli')">🎠 Caroselli</button>
+          <!-- 🆕 v7.304 (Franco: «una nuova funzionalità chiamata "Cerca variazioni" da mettere nella admin console») - in
+               ordine alfabetico dopo Caroselli; il tasto apre la finestra (`apriCercaVariazioni`), che dal telefono si apre
+               dalla voce del panino `#nav-cerca-var` -->
+          <button class="admin-tab" onclick="adminTab('variazioni')">🔍 Cerca variazioni</button>
           <!-- 🔄 v7.219 (Franco: «sposta la funzione Collage foto nella sezione "Annunci"») - qui c'era il tab «🖼️ Collage
                foto» della v7.209: ora è un tasto di Annunci che apre una finestra (`apriCollage`) -->
           <button class="admin-tab" onclick="adminTab('email')" data-i18n="admin.email.tab">✉️ Comunicazioni</button>
@@ -4717,6 +4734,12 @@ di tutte le serie</button>
         <div id="admin-attivita" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;color:var(--info);">👣 Attività utenti</h3>
           <div id="admin-attivita-box"></div>
+        </div>
+        <!-- 🆕 v7.304 - «Cerca variazioni»: un tasto che apre la finestra (`apriCercaVariazioni`) -->
+        <div id="admin-variazioni" class="admin-section">
+          <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🔍 Cerca variazioni</h3>
+          <p style="font-size:0.85rem;color:var(--text);margin-bottom:1rem;line-height:1.5;max-width:900px;">Due foto di un gruppo di figurine: i fronti e, nella stessa posizione, i loro retro. Il sito riconosce ogni coppia e dice quali sono variazioni non ufficiali già nell'Inventario e quali hanno un retro mai registrato per quel fronte.</p>
+          <button type="button" class="btn-primary btn-admin" onclick="apriCercaVariazioni()">🔍 Cerca variazioni</button>
         </div>
         <div id="admin-orfani" class="admin-section">
           <div><div id="admin-orfani-box"></div></div>
@@ -7072,7 +7095,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.303"></script>
+<script src="js/app.js?v=7.304"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7096,7 +7119,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.303'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.304'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
