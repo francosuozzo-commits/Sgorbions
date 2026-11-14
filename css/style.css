@@ -226,7 +226,13 @@ body {
     display: flex; gap: 0.25rem; align-items: center;
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
     white-space: nowrap;
+    /* 🐛 v7.307 (Franco: «si è rotta la navbar; pulsanti non più premibili») - la casella (`#nav-search`, `position:
+       relative` e `flex: 1 1 auto` nell'index) si allargava su tutto lo spazio dopo il logo e, posizionata e dopo nel
+       markup, si disegnava SOPRA il gruppo: trasparente, ma si prendeva i clic. Il gruppo sta sopra, e la casella
+       non cresce più oltre la sua misura. */
+    z-index: 2;
   }
+  .nav-links #nav-search { flex: 0 1 auto; }
 }
 /* 🔄 v6.704 (Franco: «usiamo la b)», dopo tre prove iniettate nel sito vero) — LE VOCI
    DELLA NAVBAR SONO BIANCHE A RIPOSO. Erano `--muted`, che non e' un grigio: e' #8b7aaa, un
