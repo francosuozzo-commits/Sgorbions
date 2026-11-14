@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.305';
+const JS_VERSION = 'v7.306';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34923,7 +34923,10 @@ function _aggiornaLogoNavbar() {
   const nome = document.querySelector('#navbar .nav-nome-sito');
   if (!nome) return;
   nome.style.display = '';
-  if (typeof currentUser !== 'undefined' && currentUser) _nomeSitoSeCiSta(nome);
+  // 🔄 v7.306 - IL CONTROLLO VALE PER TUTTI, non solo da loggati: le voci della navbar ora stanno al centro della barra
+  //    (Franco: «il blocco di opzioni centrale, preso tutto assieme, deve essere centrato orizzontalmente rispetto
+  //    all'hero»), cioè proprio dove sta il nome. Senza, da non loggato il nome finirebbe sopra Home e Contatti.
+  _nomeSitoSeCiSta(nome);
 }
 // 🆕 v7.149 (Franco: «nella versione mobile quando nella navbar viene visualizzato il logo, non è al centro») - SUL
 //    TELEFONO IL LOGO STA AL CENTRO DELLA BARRA. Prima veniva subito dopo il panino e la versione, cioè a sinistra.
@@ -51073,18 +51076,28 @@ function renderPaginaPersonaggio(grid, pid) {
   //    suo alter ego) è il personaggio, poi quelli che ci sono per il retro. Viene prima dell'alter ego.
   const _tuttiSuoi = _conAlterEgo(pid);
   const _perIlRetro = f => personaggiDiArticolo(f, ix).some(x => _tuttiSuoi.includes(x)) ? 0 : 1;
-  const ord = arts.slice().sort((a, b) => (_gruppoPersonaggio(a) - _gruppoPersonaggio(b))
-    || (_perIlRetro(a) - _perIlRetro(b))
-    || (_dellAlterEgo(a) - _dellAlterEgo(b))
-    || (ordSerie(a.seriesId) - ordSerie(b.seriesId))
-    || (ordSez(a.section || 'figurines') - ordSez(b.section || 'figurines'))
-    || (ordSs(a) - ordSs(b))
-    || compDi(a)(a, b));
+  // 🔄 v7.306 (Franco: «nella scheda del personaggio, non separare mai le versioni di un articolo; vanno sulla stessa
+  //    riga; vedo, per esempio, che le slim le mandi a capo anche da sole») - LE CHIAVI SONO QUELLE DEL CAPOGRUPPO
+  //    (`_familyKey`, il gruppo dell'Inventario). Prima ogni articolo si ordinava per sé: una slim senza il personaggio
+  //    scritto sopra finiva fra i «presenti per il retro», lontano dalla sua base. Ora tutte le versioni seguono il capo;
+  //    dentro il gruppo decide il comparatore della griglia, che già ordina per il capo (v6.799).
+  const _famDi = f => _familyKey(f, ix.perId);
+  const _capoMemo = new Map();
+  const _capo = f => { const k = _famDi(f); if (!_capoMemo.has(k)) _capoMemo.set(k, ix.perId.get(k) || f); return _capoMemo.get(k); };
+  const ord = arts.slice().sort((a, b) => { const ca = _capo(a), cb = _capo(b);
+    return (_gruppoPersonaggio(ca) - _gruppoPersonaggio(cb))
+    || (_perIlRetro(ca) - _perIlRetro(cb))
+    || (_dellAlterEgo(ca) - _dellAlterEgo(cb))
+    || (ordSerie(ca.seriesId) - ordSerie(cb.seriesId))
+    || (ordSez(ca.section || 'figurines') - ordSez(cb.section || 'figurines'))
+    || (ordSs(ca) - ordSs(cb))
+    || compDi(a)(a, b); });
   _elencoPersonaggio = ord.map(f => f.id);
   // 🔄 v6.969 (Franco: «le card della pagina del personaggio devono essere grandi il doppio; tanto ce
   //    ne saranno poche») - le colonne della griglia così come sono (l'hub ne usa il doppio), cioè
   //    card larghe il doppio di quelle dell'hub. 📱 Sul telefono due invece di tre: la metà
   //    esatta non esiste, e a una colonna sola la foto riempirebbe lo schermo.
+  let _colonne = 2;   // v7.306 - quante card per riga: serve all'a capo dei gruppi, qui sotto
   if (grid) {
     grid.style.gridTemplateColumns = '';
     // 🆕 v6.972 (Franco: «le foto della griglia personaggio sono più piccole, pur tenendo lo stesso
@@ -51098,7 +51111,20 @@ function renderPaginaPersonaggio(grid, pid) {
     // 🔄 v6.972 (Franco: «diminuirei un 20% la dimensione delle card degli articoli») - un quarto di
     //    colonne in più (4 → 5): ogni card larga l'80%. 📱 Sul telefono restano due: tre sarebbe -33%.
     grid.style.gridTemplateColumns = 'repeat(' + (n ? Math.round(n * 1.25) : 2) + ', minmax(0, 1fr))';
+    _colonne = n ? Math.round(n * 1.25) : 2;
     grid.style.gap = '0.75rem';
+  }
+  // 🆕 v7.306 - UN GRUPPO NON SI SPEZZA FRA DUE RIGHE: se nella riga non ci sta tutto, comincia dalla riga dopo (la sua
+  //    prima card prende `grid-column-start: 1`). Un gruppo più lungo di una riga va a capo per forza, ma parte da capo.
+  const _aCapo = new Set();
+  for (let i = 0, pos = 0; i < ord.length;) {
+    const k = _famDi(ord[i]);
+    let j = i + 1;
+    while (j < ord.length && _famDi(ord[j]) === k) j++;
+    const quanti = j - i;
+    if (pos > 0 && pos + quanti > _colonne) { _aCapo.add(ord[i].id); pos = 0; }
+    pos = (pos + quanti) % _colonne;
+    i = j;
   }
   // 📌 con le card doppie anche il testo cresce: 0,68 → 0,8rem (il nome 0,78 → 0,95rem)
   const riga = (testo, stile) => '<div style="font-size:0.8rem;line-height:1.3;' + stile + '">' + testo + '</div>';
@@ -51159,7 +51185,7 @@ function renderPaginaPersonaggio(grid, pid) {
     const _foto = _ff
       ? (_ff.fronte || _ff.retro ? '<div id="' + _pcId + '" style="display:flex;flex-direction:row;width:100%;height:100%;align-items:center;justify-content:center;">' + _mezza(_ff.fronte, 'fronte') + _mezza(_ff.retro, 'retro') + '</div>' : '')
       : (u ? '<img src="' + cloudinaryUrl(u, 'w_600,h_600,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;padding:4px;">' : '');
-    return '<div class="card personaggio-articolo" style="display:flex;flex-direction:column;cursor:pointer;" onclick="openFigDetail(\'' + f.id + '\', _elencoPersonaggio)">'
+    return '<div class="card personaggio-articolo" style="display:flex;flex-direction:column;cursor:pointer;' + (_aCapo.has(f.id) ? 'grid-column-start:1;' : '') + '" onclick="openFigDetail(\'' + f.id + '\', _elencoPersonaggio)">'
       + '<div style="aspect-ratio:1;background:var(--card2);display:flex;align-items:center;justify-content:center;">'
       + (_foto || _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.7rem;padding:4px;'))   // v6.977
       + '</div>'
@@ -69053,7 +69079,21 @@ function _tabNavLettura(voci) {
         + ';font-size:0.85rem;cursor:pointer;">' + v.et + '</button>').join('')
     + '</div>';
 }
+// 🆕 v7.306 (Franco: «i 3 tab siano tutti affiancati, andando ad usare tutta la larghezza della pagina … la parte
+//    sottostante inizia sotto all'ultimo campo») - i tab collegati vanno in `#fig-detail-collegati`, la riga sotto le
+//    due colonne, in lettura e in modifica. Stavano in fondo al tab Generale: si vedono solo con il Generale scelto.
+function _collegatiInRiga(html) {
+  const el = document.getElementById('fig-detail-collegati');
+  if (!el) return;
+  el.innerHTML = html || '';
+  el.style.display = '';
+}
+function _collegatiSoloNelGenerale(tab) {
+  const el = document.getElementById('fig-detail-collegati');
+  if (el) el.style.display = (tab === 'generale') ? '' : 'none';
+}
 function switchFigDetailTab(tab) {
+  _collegatiSoloNelGenerale(tab);   // v7.306
   _FD_TAB.forEach(k => {
     const div = document.getElementById('figdetail-tab-' + k);
     const btn = document.getElementById('figdetail-tab-btn-' + k);
@@ -69831,6 +69871,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   // Reset contenuto modal (evita residui da aperture precedenti)
   document.getElementById('fig-detail-content').innerHTML = '';
   document.getElementById('fig-detail-photo').innerHTML = '';
+  _collegatiInRiga('');   // v7.306
 
   // Build content
   const rows = [];
@@ -70403,7 +70444,8 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   }
 
   // Figurine collegate (variazioni/change di cui questa è la base) — tab
-  rows.push(buildLinkedFiguresTabsHTML(f.id));
+  // 🔄 v7.306 - non più in fondo alle righe: nella riga sotto le due colonne (`_collegatiInRiga`, dopo i due rami)
+  const _collegatiLettura = buildLinkedFiguresTabsHTML(f.id);
 
   // Bottom buttons (tenuti fuori dai tab, sempre visibili)
   // v6.079 (Franco) - MODIFICA, CLONA ED ELIMINA SALGONO IN CIMA, appiccicati, esattamente come i
@@ -70557,6 +70599,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       + (_doppi2 ? '<div id="figdetail-tab-doppi" style="display:none;">' + _bloccoDoppiLettura(f) + '</div>' : '')
       + _sfogliaCodaDetail() + _codaAzioniDetail(bottomButtons);
   }
+  _collegatiInRiga(_collegatiLettura);   // v7.306 - per tutti e due i rami
   // 🆕 v6.966 - il markup c'e' (in tutti e due i rami): si riempie il campo Personaggio.
   try { _riempiRigaPersonaggi(f); } catch (e) { console.error('_riempiRigaPersonaggi', e); }
   // 🆕 v6.529 - il markup c'e': si caricano le foto grandi di lato e si scambiano quando
@@ -71371,6 +71414,30 @@ function _tipoOmaggio(f, allFigs, indice) {
   return ((r && r.freeVersionType) || '').trim();
 }
 
+// 🆕 v7.306 (Franco: «nel tab delle versioni omaggio, metti la miniatura anche del retro e scrivi il nome del retro,
+//    più la sua tipologia omaggio») - la riga di un omaggio nei tab collegati porta il retro. Solo per gli omaggi di
+//    figurina: un omaggio che è un retro non ha un retro suo.
+function _omaggioColRetro(chiaveTab, item) {
+  return chiaveTab === 'free' && !!item && (item.section || 'figurines') === 'figurines';
+}
+// Il retro dell'omaggio: il suo, se no quello della figurina di partenza (un retro bianco non si censisce).
+function _retroDellOmaggio(item, allFigs) {
+  const figs = allFigs || getData('figurines', []);
+  if (!item || item.retroBianco) return null;
+  let rid = item.retroId;
+  if (!rid && item.baseFigurineId) { const b = figs.find(x => x.id === item.baseFigurineId); rid = b && b.retroId; }
+  return (rid && figs.find(x => x.id === rid)) || null;
+}
+// Il campo Nome del retro (non il Nome completo); un retro che è una versione può averlo vuoto: allora quello della sua base.
+function _nomeRetroDellOmaggio(r, allFigs) {
+  const figs = allFigs || getData('figurines', []);
+  if (!r) return '';
+  const n = (r.name || '').trim();
+  if (n || !r.baseFigurineId) return n;
+  const b = figs.find(x => x.id === r.baseFigurineId);
+  return ((b && b.name) || '').trim();
+}
+
 function _tipoChange(f, allFigs, indice) {
   if (!f) return '';
   if (!_changeDiRetro(f, allFigs, indice)) return (f.changeType || '').trim();
@@ -72085,7 +72152,8 @@ function buildLinkedFiguresTabsHTML(baseId) {
   // l'unica cosa dichiarata. Quanti ce ne stiano lo decide la larghezza.
   // 📌 align-items:end perche' un nome lungo va a capo e uno corto no: senza, le
   // sottolineature dei tab non sarebbero in fila.
-  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:end;gap:0.4rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem;">';
+  // 🔄 v7.306 - la classe `linked-fig-barra`: sotto le due colonne, sul desktop, una riga sola (style.css)
+  html += '<div class="linked-fig-barra" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:end;gap:0.4rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem;">';
   groups.forEach((g, i) => {
     html += `<button class="linked-fig-tab-btn" data-tab="${g.key}" onclick="switchLinkedFigTab('${g.key}')" style="min-width:0;white-space:normal;text-align:left;line-height:1.2;font-size:0.8rem;padding:6px 12px;border:none;border-bottom:2px solid ${i===0?'var(--accent)':'transparent'};background:transparent;color:${i===0?'var(--accent)':'var(--muted)'};cursor:pointer;font-weight:${i===0?'600':'400'};">${g.icon} ${g.label} (${g.items.length})</button>`;
   });
@@ -72097,10 +72165,12 @@ function buildLinkedFiguresTabsHTML(baseId) {
     // virgolette doppie; il browser decodifica le entita' prima di dare la stringa a JS.
     const _idsGruppo = JSON.stringify(g.items.map(x => x.id)).replace(/"/g, '&quot;');
     html += `<div class="linked-fig-tab-panel" data-tab="${g.key}" style="${i===0?'':'display:none;'}">`;
-    html += '<div style="display:flex;flex-direction:column;gap:0.4rem;">';
+    // 🔄 v7.306 - la classe `linked-fig-elenco`: sul desktop le righe in colonne, su tutta la larghezza (style.css)
+    html += '<div class="linked-fig-elenco" style="display:flex;flex-direction:column;gap:0.4rem;">';
     g.items.forEach(item => {
       let label;
       let labelExtra = ''; // v6.030 - seconda riga (oggi: il sottonome del retro)
+      let labelSopra = ''; // v7.306 - una riga sopra il nome (oggi: serie e sottoserie, nello stesso personaggio)
       if (g.key === 'usaRetro') {
         // v6.023 - Numero + Nome completo (scelta di Franco). Il Nome completo e' il campo SALVATO,
         // con ripiego su computeFullName(): la stessa coppia di _retroNomeCompleto, per non tenere
@@ -72133,7 +72203,20 @@ function buildLinkedFiguresTabsHTML(baseId) {
         // Il "(dalla base)" non e' un dettaglio estetico: dice che quella riga viene da un dato che
         // sul record NON c'e', e che quindi cambia da sola se si cambia il retro della base.
         if (g.ereditati && g.ereditati.has(item.id)) label += currentLang === 'it' ? ' (dalla base)' : ' (from base)';
-      } else if (g.key === 'stessoPersonaggio' || g.key === 'fcrDellaFpa') {   // v7.113: la stessa riga per la fcr della fpa
+      } else if (g.key === 'stessoPersonaggio') {
+        // 🔄 v7.306 (Franco: «nel tab "Articoli dello stesso personaggio", in riga 1 mettere la serie (+ eventuale
+        //    sottoserie); in riga 2 il nome / numero; in riga 3 il nome completo del(l'eventuale) retro») - tre righe
+        //    sue; la fcr della fpa tiene quelle di prima (ramo qui sotto).
+        const _s = getData('series', []).find(x => x.id === item.seriesId);
+        const _ss = String(item.subseries || '').trim();
+        const _riga1 = [_s ? _nomeSerieCard(_s, true) : '', _ss].filter(Boolean).join(' · ');
+        if (_riga1) labelSopra = `<div style="font-size:0.78rem;color:var(--info);margin-bottom:1px;">${esc(_riga1)}</div>`;
+        const _num = (!item.noNumber && (item.number || item.lettera)) ? _numeroAschermo(item) + ' — ' : '';
+        label = _num + (item.name || '');
+        const _rid = (item.section || 'figurines') === 'figurines' ? _retroEffettivo(item, allFigs) : null;
+        const _rs = _rid ? allFigs.find(x => x.id === _rid) : null;
+        if (_rs) labelExtra = `<div style="margin-top:1px;">${esc(_retroNomeCompleto(_rs))}</div>`;
+      } else if (g.key === 'fcrDellaFpa') {   // v7.113: la stessa riga per la fcr della fpa; v7.306: ora solo sua
         // 🆕 v7.090 - il nome completo, e sotto serie e tipologia: lo stesso personaggio sta in serie e tipologie
         //    diverse, ed è quello che distingue le righe
         label = (item.fullName && item.fullName.trim()) ? item.fullName : computeFullName(item, allFigs);
@@ -72160,6 +72243,16 @@ function buildLinkedFiguresTabsHTML(baseId) {
         label = (item.fullName && item.fullName.trim()) ? item.fullName : computeFullName(item, allFigs);
         const _s = getData('series', []).find(x => x.id === item.seriesId);
         if (_s) labelExtra = `<div style="font-size:0.78rem;color:var(--info);margin-top:1px;">${esc(_nomeSerieCard(_s, true))}</div>`;
+      } else if (_omaggioColRetro(g.key, item)) {
+        // 🆕 v7.306 (Franco: «nel tab delle versioni omaggio, metti la miniatura anche del retro e scrivi il nome del
+        //    retro, più la sua tipologia omaggio») - sulla prima riga il NOME del retro, non il Nome completo (Franco:
+        //    «ho detto il nome non il nome completo; tanto la tipologia di omaggio la abbiamo già scritta a parte; ed
+        //    anche il fatto che è omaggio è già indicato nel tab»), sotto la tipologia di omaggio in azzurro. La
+        //    miniatura del retro la mette `_retroMini`.
+        const _r = _retroDellOmaggio(item, allFigs);
+        label = _r ? _nomeRetroDellOmaggio(_r, allFigs) : (currentLang === 'it' ? 'Nessun Retro collegato' : 'No Retro linked');
+        const _to = _tipoOmaggio(item, allFigs);
+        if (_to) labelExtra = `<div style="font-size:0.78rem;color:var(--info);margin-top:1px;">${esc(_to)}</div>`;
       } else if (_campoTipoDelTab(g.key)) {
         // Mostriamo il TIPO (più utile del Nome, che coincide con quello della base).
         // v5.779 — vale sia per i Change di Retro sia per quelli di figurina, entrambi con Tipo.
@@ -72214,13 +72307,16 @@ function buildLinkedFiguresTabsHTML(baseId) {
       // 🆕 v7.305 (Franco: «quando un articolo è mostrato per via del suo retro, oltre alla miniatura del fronte
       //    dell'articolo, mettiamo anche quella del suo retro») - il retro effettivo (`_retroEffettivo`), stessa misura
       //    e stessa foto chiesta (w_120): niente trasformazioni nuove
-      const _retroMini = (g.key === 'stessoPersonaggio' && _stessoPersPerRetro.has(item.id)) ? (() => {
-        const rid = _retroEffettivo(item, allFigs), r = rid && allFigs.find(x => x.id === rid), u = r && _fotoFigurina(r, allFigs);
+      // 🔄 v7.306 - e accanto a ogni omaggio di figurina, il suo retro (`_retroDellOmaggio`)
+      const _miniOmaggio = _omaggioColRetro(g.key, item);
+      const _retroMini = ((g.key === 'stessoPersonaggio' && _stessoPersPerRetro.has(item.id)) || _miniOmaggio) ? (() => {
+        const r = _miniOmaggio ? _retroDellOmaggio(item, allFigs) : (rid => rid && allFigs.find(x => x.id === rid))(_retroEffettivo(item, allFigs));
+        const u = r && _fotoFigurina(r, allFigs);
         return u ? `<img src="${cloudinaryUrl(u,'w_120,h_120,c_fit,q_auto,f_auto')}" alt="" title="${currentLang === 'it' ? 'Il suo retro' : 'Its back'}" style="width:${_lato}px;height:${_lato}px;flex-shrink:0;object-fit:contain;border-radius:4px;background:var(--card);margin-left:-0.35rem;">` : '';
       })() : '';
       html += `<a href="#" onclick="openFigDetail('${item.id}', ${_idsGruppo});return false;" style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;border-radius:8px;background:var(--card2);text-decoration:none;color:var(--text);font-size:0.85rem;">
         ${_foto ? `<img src="${cloudinaryUrl(_foto,'w_120,h_120,c_fit,q_auto,f_auto')}" style="width:${_lato}px;height:${_lato}px;flex-shrink:0;object-fit:contain;border-radius:4px;background:var(--card);">` : `<span style="width:${_lato}px;height:${_lato}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">🖼️</span>`}${_retroMini}
-        <span>${esc(label)}${labelExtra}</span>
+        <span>${labelSopra}${esc(label)}${labelExtra}</span>
       </a>`;
     });
     html += '</div></div>';
@@ -73460,6 +73556,7 @@ function _bloccoDoppiLettura(f) {
   return h;
 }
 function switchFeTab(tab) {
+  _collegatiSoloNelGenerale(tab);   // v7.306
   _FE_TAB.forEach(k => {
     const div = document.getElementById('fe-tab-' + k);
     const btn = document.getElementById('fe-tab-btn-' + k);
@@ -73930,6 +74027,7 @@ function _apriSchedaSuBozza(bozza) {
   });
   const cont = document.getElementById('fig-detail-content'); if (cont) cont.innerHTML = '';
   const ph = document.getElementById('fig-detail-photo'); if (ph) ph.innerHTML = '';
+  _collegatiInRiga('');   // v7.306
   modal.classList.remove('hidden');
   switchToEditMode('');
   return true;
@@ -74716,7 +74814,7 @@ function switchToEditMode(figId) {
   }
 
   // Figurine collegate (variazioni/change di cui questa è la base) — tab
-  html += buildLinkedFiguresTabsHTML(f.id);
+  // 🔄 v7.306 - non più qui: nella riga sotto le due colonne (`_collegatiInRiga`, dopo `content.innerHTML`)
   // 🆕 v7.302 (Franco) - chi ha questo articolo nella sua *Mia lista*; una bozza non è ancora di nessuno
   if (f.id) html += _pannelloChiCeLHa(f.id, null);
 
@@ -74892,6 +74990,7 @@ function switchToEditMode(figId) {
 
   content.innerHTML = barra + html;
   try { _aggiornaNumeroEreditato(); } catch (e) {}   // 🆕 v6.965 - il N. ereditato, già all'apertura
+  _collegatiInRiga(f.id ? buildLinkedFiguresTabsHTML(f.id) : '');   // v7.306 - una bozza non ha ancora collegati
   // 🆕 v7.091 - il personaggio riparte dai dati a ogni apertura in modifica: una scelta non salvata non sopravvive
   try { _iniziaPersMod(f); } catch (e) { console.error('_iniziaPersMod', e); }
   // 🔄 v7.103 (Franco: «nella maschera della card, il campo Numero deve essere sopra al campo Nome») - nelle Carte
