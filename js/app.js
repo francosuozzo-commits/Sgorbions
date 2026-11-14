@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.303';
+const JS_VERSION = 'v7.304';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34414,6 +34414,10 @@ let _senzaPersonaggioFilter = false;   // v6.980
 //    niente da rivedere - si rivede la base.
 let _conNomiAlternativiFilter = false;   // v6.987
 let _conCommentoFilter = false;   // v7.179 - «Con commento album», fpa e fcr
+// 🆕 v7.304 (Franco: «nelle form di ricerca - tutte - aggiungi un filtro admin "Con doppie" che restituisce solo gli
+//    articoli per i quali sono censite nel sito delle disponibilità a livello di singolo articolo») - `disponibili` > 0,
+//    la «Disponibilità singole doppie» della scheda; nella ricerca di sezione e in quella della pagina tipologia (`_rt`)
+let _conDoppieFilter = false;
 let _ristampaFilter = 'tutte';    // v7.181 - riquadro «Ristampe»: 'tutte' | 'ristampe' | 'originali'
 // 🆕 v6.992 (Franco: «un campo per la ricerca admin che trovi gli articoli con questo campo
 //    popolato; chiamalo "Con Nome carosello mobile alterato"») - gemello di quello sopra: il
@@ -36090,6 +36094,7 @@ function _rtNuovo() {
   return { testo: '', cat: '', sottocat: '', serie: new Set(), versioni: new Set(),
            _fotoFilter: null, _noteFilter: false, _senzaRaritaFilter: false, _senzaPersonaggioFilter: false,
            _conNomiAlternativiFilter: false, _conNomeCaroselloFilter: false, _visibilitaFilter: 'all',
+           _conDoppieFilter: false,   // v7.304
            _ownedFilter: 'all', _wishlistFilter: false };   // 🆕 v7.009 - la tua lista
 }
 function _rtAcceso() {
@@ -36097,6 +36102,7 @@ function _rtAcceso() {
   return !!(x && (x.testo.trim() || x.cat.trim() || x.sottocat.trim() || x.serie.size || x.versioni.size
     || x._fotoFilter || x._noteFilter || x._senzaRaritaFilter || x._senzaPersonaggioFilter
     || x._conNomiAlternativiFilter || x._conNomeCaroselloFilter || x._visibilitaFilter !== 'all'
+    || x._conDoppieFilter   // v7.304
     || x._ownedFilter !== 'all' || x._wishlistFilter));   // v7.009
 }
 // La versione di un articolo: 'base' o la chiave della sua versione (le chiavi di `VERSIONI_ARTICOLO`).
@@ -36116,7 +36122,7 @@ function _rtFiltrati(esclusa) {
     _fotoFilter: x._fotoFilter, _noteFilter: x._noteFilter, _senzaRaritaFilter: x._senzaRaritaFilter,
     _ixPersFiltro: (x._senzaPersonaggioFilter && _personaggiDati) ? _indiciPersonaggi() : null,
     _conNomiAlternativiFilter: x._conNomiAlternativiFilter, _conNomeCaroselloFilter: x._conNomeCaroselloFilter,
-    _visibilitaFilter: x._visibilitaFilter } : null;
+    _visibilitaFilter: x._visibilitaFilter, _conDoppieFilter: x._conDoppieFilter } : null;   // v7.304: + Con doppie
   // 🆕 v7.009 - la lista e ciò che cerchi si leggono una volta, e solo a filtro acceso
   const mia = (currentUser && x._ownedFilter !== 'all') ? getOwned() : null;
   const cerco = (currentUser && x._wishlistFilter) ? getWishlist() : null;
@@ -36240,13 +36246,14 @@ function renderRicercaTipologia() {
   // 🔄 v6.999 (Franco: «volevo che nascessero tutti collassati») - chiudibile anche lui, e il conto
   //    da chiuso sono i filtri admin accesi
   const _nAdmin = [x._fotoFilter, x._noteFilter, x._senzaRaritaFilter, x._senzaPersonaggioFilter,
-    x._conNomiAlternativiFilter, x._conNomeCaroselloFilter, x._visibilitaFilter !== 'all'].filter(Boolean).length;
+    x._conNomiAlternativiFilter, x._conNomeCaroselloFilter, x._visibilitaFilter !== 'all', x._conDoppieFilter].filter(Boolean).length;   // v7.304
   const adminHTML = !adm ? '' : chiudibile('admin', it ? 'Filtri aggiuntivi admin' : 'Admin filters', _nAdmin,
     '<div style="display:flex;flex-wrap:wrap;gap:0.6rem 1.2rem;">'
     + bott(x._fotoFilter === 'senza', "_rtFoto('senza')", it ? 'Senza foto' : 'Without photo')
     + bott(x._fotoFilter === 'con', "_rtFoto('con')", it ? 'Con foto' : 'With photo')
     + bott(x._fotoFilter === 'nonDisp', "_rtFoto('nonDisp')", it ? 'Con foto non disponibile' : 'Marked photo unavailable')
     + bott(x._noteFilter, "_rtToggle('_noteFilter')", it ? 'Con note' : 'With notes')
+    + bott(x._conDoppieFilter, "_rtToggle('_conDoppieFilter')", it ? 'Con doppie' : 'With duplicates')   // v7.304
     + bott(x._senzaRaritaFilter, "_rtToggle('_senzaRaritaFilter')", it ? 'Senza rarità' : 'Without rarity')
     + bott(x._senzaPersonaggioFilter, "_rtToggle('_senzaPersonaggioFilter')", it ? 'Senza personaggio' : 'Without character')
     + bott(x._conNomiAlternativiFilter, "_rtToggle('_conNomiAlternativiFilter')", it ? 'Con nomi alternativi' : 'With alternative names')
@@ -37612,7 +37619,7 @@ function updateNavUser() {
   // 📌 Ognuno di questi viene riacceso piu' sotto da chi ne ha il diritto - `nav-reply-btn` per
   //    l'utente NON admin, gli altri per l'admin - e `nav-quota-warning-btn` da
   //    `_checkReadQuotaWarning()`, che gira dopo.
-  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-quota-warning-btn',
+  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-cerca-var' /* v7.304 */, 'nav-quota-warning-btn',
    'admin-add-series-btn', 'nav-wantlist', 'nav-js-version-wrap'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
@@ -37667,6 +37674,9 @@ function updateNavUser() {
     // v7.247 - e al venditore (`_puoAnnunci`), per cui apre la finestrella coi due tasti (`apriAnnunciNav`)
     const annBtn = document.getElementById('nav-annunci');
     if (annBtn) annBtn.style.display = _puoAnnunci() ? '' : 'none';    if (btnCollect) btnCollect.style.display = 'none';
+    // 🆕 v7.304 - «Cerca variazioni» nel panino del telefono, solo all'admin (sul desktop la spegne la regola dell'index)
+    const cvBtn = document.getElementById('nav-cerca-var');
+    if (cvBtn) cvBtn.style.display = currentUser.isAdmin ? '' : 'none';
     const homeContent = document.getElementById('home-logged-in-content');
     if (homeContent) homeContent.style.display = '';
     // 🗄️ v6.913 — qui c'era `mostraNumeroniHero(true)` (v5.935): è salita fuori dall'`if`, perché
@@ -46619,6 +46629,8 @@ function _mlScarti(valori) {
 // v7.255 (Franco: «la tabella con la mancolista … chiamala MANCOLISTA; deve risultare alla stessa altezza di MANCANZE») -
 //    i due titoli hanno lo stesso stile e la stessa altezza, quella del tasto «Resetta» che sta accanto a MANCANTI
 const _ML_TITOLO = 'display:flex;align-items:center;min-height:1.8rem;font-family:var(--font-ui);font-weight:700;font-size:0.9rem;margin-bottom:0.3rem;';
+// v7.304 - la misura di «Applica a tutti», per i due tasti «Aumenta / Diminuisci di 1 il n. di set»
+const _ML_TASTO_SET = 'padding:0.3rem 0.9rem;font-size:0.85rem;width:100%;margin:0;';
 function _mlRiepilogo(cas) {
   const box = document.getElementById('ml-scarti');
   if (!box) return;
@@ -46637,9 +46649,13 @@ function _mlRiepilogo(cas) {
     + _mlScarti(cas.map(el => el.dataset.iniziale)).map(r => '<tr' + (r.manca === _ml.filtro ? ' style="background:rgba(var(--action-admin-rgb),0.3);"' : '') + '><td style="' + td + '">' + r.manca + '</td>'
       + '<td style="' + td + '"><button type="button" onclick="_mlFiltra(' + r.manca + ')" title="' + (it ? 'Mostra solo questi articoli' : 'Show only these items') + '" style="' + link + '">' + r.quanti + '</button></td></tr>').join('')
     + '</table>'
-    + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_mlAumentaTutti()" style="margin-top:0.8rem;">' + (it ? 'Aumenti di 1 il n. di set' : 'Add 1 to the number of sets') + '</button>'
+    // 🔄 v7.304 (Franco: «"Aumenti di 1..." … deve essere "Aumenta di 1..."; fai quel tasto largo quanto il tasto sottostante
+    //    "Diminuisci di 1..."; ed entrambi falli alti quanto i tasti "Applica a tutti"») - una griglia di una colonna li
+    //    allarga tutti e due al più largo; corpo e imbottitura sono quelli di «Applica a tutti» (`_mlRigaMassivaHTML`)
+    + '<div style="display:inline-grid;gap:0.5rem;margin-top:0.8rem;">'
+    + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_mlAumentaTutti()" style="' + _ML_TASTO_SET + '">' + (it ? 'Aumenta di 1 il n. di set' : 'Add 1 to the number of sets') + '</button>'
     // 🆕 v7.259 (Franco: «mi serve anche il pulsante "Diminuisci di 1 il n. di set"; mettilo sotto al suo omologo»)
-    + '<br><button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_mlDiminuisciTutti()" style="margin-top:0.5rem;">' + (it ? 'Diminuisci di 1 il n. di set' : 'Remove 1 from the number of sets') + '</button>';
+    + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" onclick="_mlDiminuisciTutti()" style="' + _ML_TASTO_SET + '">' + (it ? 'Diminuisci di 1 il n. di set' : 'Remove 1 from the number of sets') + '</button></div>';
 }
 // le righe filtrate restano nella pagina, solo nascoste: il massimo, l'arancio e la tabellina si contano su tutte
 function _mlFiltra(m) {
@@ -46744,8 +46760,12 @@ function renderAdminMancoliste() {
   if (!s) { box.innerHTML = html; return; }
   if (!_ml.tipo) { box.innerHTML = html + '<p style="color:var(--text);">' + (it ? 'Questa serie non ha articoli da contare.' : 'No items to count in this series.') + '</p>'; return; }
   // l'aggiornamento massivo, un tasto per tipologia (Franco: «serve un tasto per ogni tda»)
-  html += '<h4 style="font-family:var(--font-ui);margin:0 0 0.6rem;">🔁 ' + (it ? 'Aggiornamento massivo' : 'Bulk update') + '</h4>'
-    + '<div style="margin-bottom:1.6rem;">' + tipi.map(k => _mlRigaMassivaHTML(s, k)).join('') + '</div>';
+  // 🔄 v7.304 (Franco: «la sezione "Aggiornamento massivo" rendila collassabile, con default collassato») - un `<details>`
+  //    come «Incolla valori» e «Sposta set» del tab accanto: chiuso finché non lo apri, e resta come l'hai lasciato
+  //    finché non ricarichi la pagina (`_ml.massivoAperto`)
+  html += '<details style="margin-bottom:1.6rem;"' + (_ml.massivoAperto ? ' open' : '') + ' ontoggle="_ml.massivoAperto = this.open">'
+    + '<summary style="cursor:pointer;font-family:var(--font-ui);font-weight:700;font-size:1rem;">🔁 ' + (it ? 'Aggiornamento massivo' : 'Bulk update') + '</summary>'
+    + '<div style="margin-top:0.6rem;">' + tipi.map(k => _mlRigaMassivaHTML(s, k)).join('') + '</div></details>';
   // poi gli articoli di una tipologia, da cambiare a mano
   html += '<div style="margin-bottom:0.8rem;"><label style="' + et + '">' + (it ? 'Tipologia' : 'Item type') + '</label><select id="ml-tipo" onchange="_mlScegli(\'tipo\', this.value)" style="' + sel + '">'
     + tipi.map(k => '<option value="' + esc(k) + '"' + (k === _ml.tipo ? ' selected' : '') + '>' + esc(_aggNomeTipo(k)) + '</option>').join('') + '</select></div>';
@@ -50575,6 +50595,23 @@ function _indiciPersonaggi() {
   return { figs, perId: _indiceArticoli(), figliDi, perRetro };
 }
 
+// 🆕 v7.304 - l'ordine del tab «Articoli dello stesso personaggio» (vedi `buildLinkedFiguresTabsHTML`): il gruppo
+//    (0 fcr col personaggio nel fronte, 1 retro, 2 fcr col personaggio nel retro, 3 il resto), poi serie, sottoserie, nome.
+function _gruppoStessoPersonaggio(a, pids, suoi) {
+  const sez = a.section || 'figurines';
+  if (sez === 'retros') return 1;
+  if (sez !== 'figurines') return 3;
+  return suoi(a).some(p => pids.has(p)) ? 0 : 2;
+}
+function _ordinaStessoPersonaggio(arts, pids, ordSerie, suoi) {
+  const g = new Map(arts.map(a => [a.id, _gruppoStessoPersonaggio(a, pids, suoi)]));
+  const txt = (a, b) => String(a || '').localeCompare(String(b || ''), 'it', { numeric: true, sensitivity: 'base' });
+  return arts.slice().sort((a, b) => (g.get(a.id) - g.get(b.id))
+    || (ordSerie.get(a.seriesId) ?? 1e9) - (ordSerie.get(b.seriesId) ?? 1e9)
+    || txt(a.subseries, b.subseries)
+    || txt(a.name || a.fullName, b.name || b.fullName));
+}
+
 // I personaggi DI UN ARTICOLO (i suoi, non quelli del suo retro). Una figurina ne ha sempre UNO.
 function personaggiDiArticolo(f, ix) {
   if (!f || !_personaggiDati) return [];
@@ -50987,6 +51024,8 @@ function _gruppoPersonaggio(f) {
   const sec = f.section || 'figurines';
   return sec === 'figurines' ? 0 : sec === 'retros' ? 1 : 2;
 }
+// 🆕 v7.304 - le tipologie che nella pagina del personaggio mostrano anche il retro preso dal record (vedi `_ff` sotto)
+const _PERS_RETRO_SUL_RECORD = ['carte', 'olografiche'];
 function renderPaginaPersonaggio(grid, pid) {
   const it = currentLang === 'it';
   pid = _principale(pid);   // v6.972 - la pagina è sempre del principale
@@ -51103,7 +51142,11 @@ function renderPaginaPersonaggio(grid, pid) {
       // 🔄 v6.977 - dal riquadro unico (`_senzaFotoHTML`), col flag di chi possiede la faccia
       : _senzaFotoHTML(lato === 'retro' ? !!(_ff && _ff.retroRec && _ff.retroRec.fotoNonDisponibile) : !!f.fotoNonDisponibile,
           'position:relative;width:50%;aspect-ratio:1.38;flex:0 0 auto;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.62rem;line-height:1.15;padding:4px;box-sizing:border-box;');
-    const _ff = sec === 'figurines' ? _dueFacce(f, figs) : null;
+    // 🔄 v7.304 (Franco: «è voluto che nella scheda personaggio il retro viene mostrato solo per le fcr e non per le card?»;
+    //    «sì, aggiungilo per queste tda: carte, olografiche») - lì il retro è la seconda foto del record (`imgRetro`): con
+    //    quella, fronte e retro affiancati come le fcr; senza, la foto sola come prima
+    const _ff = sec === 'figurines' ? _dueFacce(f, figs)
+      : (_PERS_RETRO_SUL_RECORD.includes(sec) && f.imgRetro) ? { fronte: u, retro: f.imgRetro, retroRec: null } : null;
     if (_ff && (_ff.fronte || _ff.retro)) {
       if (!_ff.fronte) _pcOrientamento(_pcId, 'fronte', false);
       if (!_ff.retro) _pcOrientamento(_pcId, 'retro', false);
@@ -53245,7 +53288,20 @@ function _campiRicercaFigurina(f) {
                  // v6.247
                  _etichettaTipo(f, false)];                           // v6.247 - la Versione
   if (currentUser?.isAdmin) campi.push(f.note);
+  // 🆕 v7.304 (Franco: «come mai scrivendo "basilio" non esce il retro della serie 4 "Dita del naso"?»; «aggiungi il campo
+  //    personaggio dell'articolo») - i nomi dei personaggi dell'articolo (`personaggiDiArticolo`: i suoi; per una fcr il
+  //    personaggio del fronte). Solo quando i personaggi sono già arrivati: la ricerca globale li chiede da sé
+  //    (`_rgPersonaggiHTML`) e poi si rifà.
+  campi.push(..._nomiPersonaggiDi(f));
   return campi;
+}
+// l'indice dei personaggi si fa una volta per elenco di articoli, non una per articolo: la ricerca gira su migliaia
+let _memoIxRicerca = { figs: null, d: null, ix: null };
+function _nomiPersonaggiDi(f) {
+  if (!f || typeof _personaggiDati === 'undefined' || !_personaggiDati) return [];
+  const figs = getData('figurines', []);
+  if (_memoIxRicerca.figs !== figs || _memoIxRicerca.d !== _personaggiDati) _memoIxRicerca = { figs, d: _personaggiDati, ix: _indiciPersonaggi() };
+  return personaggiDiArticolo(f, _memoIxRicerca.ix).map(pid => { const p = _personaggiDati.perId.get(pid); return p && p.nome; }).filter(Boolean);
 }
 
 // 🆕 v6.969 (Franco: «serve ottimizzare l'algoritmo di ordinamento dei risultati della RG… le fcr
@@ -54543,6 +54599,56 @@ function _prefissoInvisibile(f) {
   // tipo di nome» invece di «questo articolo e' nascosto».
   return '<span style="color:var(--text);font-weight:700;font-size:0.85rem;">('
     + (currentLang === 'it' ? 'INVISIBILE' : 'HIDDEN') + ')</span> ';
+}
+
+// 🆕 v7.304 - «D1» sulla card: la «Disponibilità singole doppie» (`disponibili`), solo admin, solo se il campo ha un
+//    numero (anche 0) e se la matrice di «Copie doppie» lo accende per quella tipologia (`_doppiAccesoPer('disp', f)`).
+//    Pallino grigio, scritta bianca; il `title` dice il nome del campo.
+function _pallinoDisponibili(f) {
+  if (!f || !currentUser?.isAdmin) return '';
+  const n = f.disponibili;
+  if (typeof n !== 'number' || !isFinite(n)) return '';
+  if (typeof _doppiAccesoPer === 'function' && !_doppiAccesoPer('disp', f)) return '';
+  return '<span class="fig-disp-doppie" title="' + esc(_doppiEt('disp')) + ': ' + n + '" style="display:inline-flex;align-items:center;'
+    + 'justify-content:center;min-width:1.6rem;height:1.25rem;padding:0 0.35rem;border-radius:999px;background:#6b6b78;color:#fff;'
+    + 'font-family:var(--font-ui);font-size:0.72rem;font-weight:700;line-height:1;flex-shrink:0;">D' + n + '</span>';
+}
+
+// 🆕 v7.304 (Franco: «sulle card degli articoli, metti un bottone "rendi visibile", admin visible, solo quando l'articolo
+//    è invisibile. deve chiedere conferma, prima di salvare») - in basso al centro della foto, sotto il timbro INVISIBILE.
+//    Stessa guardia del timbro (`_timbroInvisibile`): solo admin, solo `invisibile`.
+function _btnRendiVisibile(f) {
+  if (!f || !f.invisibile || !currentUser?.isAdmin) return '';
+  const it = currentLang === 'it';
+  return '<button class="tbl-btn tbl-btn-edit fig-rendi-visibile" onclick="event.stopPropagation();_rendiVisibile(\'' + f.id + '\')"'
+    + ' style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:3;white-space:nowrap;'
+    + 'font-size:0.75rem;font-weight:700;padding:3px 8px;">👁️ ' + (it ? 'Rendi visibile' : 'Make visible') + '</button>';
+}
+// 📌 Si salva l'oggetto in memoria stesso, non una copia: per una slim `{...f}` perderebbe il collegamento alla parent
+//    (`_collegaSlim`). Si scrive una copia, e solo a scrittura riuscita si spegne il campo sull'originale e lo si rimette
+//    nella serie al posto della copia (`_saveFigurineItem` ce l'ha messa, e per una slim la riduce ai campi propri).
+async function _rendiVisibile(id) {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const tutte = Array.isArray(_cache.figurines) ? _cache.figurines : [];
+  const f = tutte.find(x => x && x.id === id);
+  if (!f || !f.invisibile) return;
+  const nome = (f.fullName && f.fullName.trim()) ? f.fullName : (f.name || '');
+  if (!confirm(it ? 'Rendere visibile a tutti «' + nome + '»?' : 'Make «' + nome + '» visible to everyone?')) return;
+  try {
+    await fsSave('figurines', Object.assign(Object.create(Object.getPrototypeOf(f)), f, { invisibile: false }));
+  } catch (e) {
+    console.error('_rendiVisibile', e);
+    toast((it ? '❌ Non salvato: ' : '❌ Not saved: ') + (e && e.message || e), 'error');
+    return;
+  }
+  f.invisibile = false;
+  const s = getData('series', []).find(x => x.id === f.seriesId);
+  const i = (s && Array.isArray(s.items)) ? s.items.findIndex(x => x && x.id === id) : -1;
+  if (i >= 0) s.items[i] = f;
+  toast(it ? '✅ «' + nome + '» ora è visibile' : '✅ «' + nome + '» is now visible', 'success');
+  _ridisegnaCaroselliInVista();
+  try { if (currentSeriesId && currentSection && document.getElementById('items-grid')) renderItems(); } catch (e) { console.error('renderItems (_rendiVisibile)', e); }
 }
 
 // 🆕 v7.195 - le numeriche delle card delle serie sul telefono: uno stato per tutte, chiuso a ogni caricamento.
@@ -61190,6 +61296,12 @@ function toggleConCommentoFilter() {
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (toggleConCommentoFilter)', e); }
 }
+// 🆕 v7.304 - «Con doppie», copiato da «Con commento album»
+function toggleConDoppieFilter() {
+  _conDoppieFilter = !_conDoppieFilter;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleConDoppieFilter)', e); }
+}
 // 🆕 v7.181 - il riquadro «Ristampe»: tre voci che si escludono, «Tutte» è il filtro spento
 function setRistampaFilter(v) {
   _ristampaFilter = v;
@@ -61373,6 +61485,7 @@ function renderItemTypeFilters() {
       _conNomiAlternativiFilter = false;   // v6.987 - e l'ultimo arrivato
       _conNomeCaroselloFilter = false;   // v6.992 - e il suo gemello
       _conCommentoFilter = false;   // v7.179
+      _conDoppieFilter = false;     // v7.304
       _visibilitaFilter = 'all';    // v6.545 - e questo e' quel punto
     } else {
       const itl = (currentLang === 'it');
@@ -61427,6 +61540,8 @@ function renderItemTypeFilters() {
       // posto da cui si puo' spegnere, ed e' anche la ragione per cui va azzerato quando chi guarda
       // non e' admin (vedi sopra, lezione della v6.095).
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_noteFilter ? 'on' : ''}" onclick="toggleNoteFilter()" title="${itl ? 'Con note' : 'With notes'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con note' : 'With notes'}</span></div>`;
+      // 🆕 v7.304 - «Con doppie», subito dopo «Con note»
+      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_conDoppieFilter ? 'on' : ''}" onclick="toggleConDoppieFilter()" title="${itl ? 'Con disponibilità singole doppie' : 'With single duplicates available'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con doppie' : 'With duplicates'}</span></div>`;
       // 🆕 v6.502 - "Senza rarità". La stringa e' COPIATA da quella qui sopra e cambiano
       // solo la variabile, la funzione e le due parole: due pulsanti gemelli scritti in
       // due modi somiglianti si confrontano male a occhio (lezione v6.164).
@@ -61985,6 +62100,8 @@ const _FILTRI = [
                                   acceso: () => _conNomiAlternativiFilter },
   { nome: 'con commento album',   azzera: () => { _conCommentoFilter = false; },   // v7.179
                                   acceso: () => _conCommentoFilter },
+  { nome: 'con doppie',           azzera: () => { _conDoppieFilter = false; },   // v7.304
+                                  acceso: () => _conDoppieFilter },
   { nome: 'ristampe',             azzera: () => { _ristampaFilter = 'tutte'; },   // v7.181
                                   acceso: () => _ristampaFilter !== 'tutte' },
   { nome: 'con nome carosello',   azzera: () => { _conNomeCaroselloFilter = false; },   // v6.992
@@ -62083,7 +62200,9 @@ function _aggiornaBottoneAzzera() {
 //    tipologia i suoi. `_ixPersFiltro` è l'indice dei personaggi, o null se il filtro è spento.
 function _passaFiltriAdmin(f, allFigs, stato) {
   const { _fotoFilter, _noteFilter, _senzaRaritaFilter, _ixPersFiltro,
-          _conNomiAlternativiFilter, _conNomeCaroselloFilter, _visibilitaFilter, _lettoreCommentoFiltro } = stato;
+          _conNomiAlternativiFilter, _conNomeCaroselloFilter, _visibilitaFilter, _lettoreCommentoFiltro, _conDoppieFilter } = stato;
+  // 🆕 v7.304 - «Con doppie»: la «Disponibilità singole doppie» scritta sull'articolo, sopra lo zero
+  if (_conDoppieFilter && !(Number(f.disponibili) > 0)) return false;
   // v6.086 (Franco) - si chiede `_fotoFigurina()`, non `f.img`. Il filtro guardava la foto
   // PROPRIA del record mentre la griglia disegna col ripiego sulla base: una variazione senza
   // foto sua, che a schermo la foto ce l'ha eccome, passava per "senza foto". E' la stessa
@@ -62185,7 +62304,8 @@ function getCurrentlyFilteredItems(opts) {
   // 🆕 v6.994 - lo stato dei filtri admin della sezione, per `_passaFiltriAdmin`
   const _statoFiltriAdmin = { _fotoFilter, _noteFilter, _senzaRaritaFilter, _ixPersFiltro,
                               _conNomiAlternativiFilter, _conNomeCaroselloFilter, _visibilitaFilter,
-                              _lettoreCommentoFiltro: _conCommentoFilter ? _lettoreCommentoAlbum(allFigs) : null };   // v7.179
+                              _lettoreCommentoFiltro: _conCommentoFilter ? _lettoreCommentoAlbum(allFigs) : null,   // v7.179
+                              _conDoppieFilter };   // v7.304
   return allFigs.filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
     // 🆕 v6.651 - LA SOTTOSERIE CHE SI STA GUARDANDO. Sta qui e non in un secondo modo di
@@ -65463,7 +65583,20 @@ function renderItems() {
       // Su telefono, nelle card Figurina, il punteggio e' gia' in cima accanto al numero (v5.829)
       // e qui non si ripete: resta il div vuoto, che tiene "Mia lista" nella sua colonna.
       const _scoreInActions = _mobileFigCard ? '' : scoreHTML;
-      const slotSinistraHTML = _scoreInActions || '<div></div>';
+      // 🆕 v7.304 (Franco: «il campo "Disponibilità singole doppie" mostralo anche sulle card, solo per admin, con un
+      //    pallino grigio, anteceduto da una D (esempio "D1" significa che il campo vale 1); mettilo nella riga in basso
+      //    a tutto (altezza rarità) sulla estrema sinistra») - vedi `_pallinoDisponibili`
+      const _dispCard = _pallinoDisponibili(f);
+      //    📌 Un elemento suo col `margin-right:auto`: sul desktop la riga è spinta a destra (`justify-content: flex-end`),
+      //    e solo così il pallino va al bordo sinistro lasciando la rarità dov'era. Sul telefono la riga è in colonna:
+      //    il pallino sta in cima, a sinistra.
+      // 🔄 v7.304 (Franco: «il pulsante "Mostra composizione varianti" deve chiamarsi "Mostra varianti"; deve essere sulla
+      //    stessa riga della bandiera "errore", e tutto a sx») - era una riga sua, centrata, sopra questa. Sta prima del
+      //    pallino «D», nello stesso gruppo spinto a sinistra.
+      const _radVar = _retriFam ? _radiceFamiglia(f, _idx) : null;
+      const _tastoVar = _radVar ? _tastoComposizioneVarianti(_radVar.id, _retriFam.get(_radVar.id)) : '';
+      const slotSinistraHTML = ((_tastoVar || _dispCard) ? '<div class="fig-act-disp" style="margin-right:auto;display:flex;align-items:center;gap:0.4rem;">' + _tastoVar + _dispCard + '</div>' : '')
+        + (_scoreInActions || '<div></div>');
     // v5.828 — col filtro "Solo base" attivo, su telefono NON si mostra il nome del retro
   // associato: sono tutte figurine base, quindi la riga e' ridondante e ruba spazio.
   // Guardia di viewport: sul desktop il nome del retro resta sempre.
@@ -65580,7 +65713,7 @@ function renderItems() {
            modi diversi (_retroViewMode): scrivere la cornice dentro ognuno voleva dire
            dieci punti da tenere allineati. Qui c'e' il FATTO, il disegno lo fa il CSS. -->
       <div class="fig-img-placeholder"${_latoErrCard ? ` data-lato-errore="${_latoErrCard}"` : ''} style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;container-type:inline-size;">
-        ${imgHTML}${_timbroInvisibile(f)}${_segnoAnnuncio(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}${f.section === 'attaccare' && _commentoAlbumCard(f) ? `<div class="fig-commento-album">${esc(_commentoAlbumCard(f))}</div>` : ''}
+        ${imgHTML}${_timbroInvisibile(f)}${_btnRendiVisibile(f)}${_segnoAnnuncio(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}${f.section === 'attaccare' && _commentoAlbumCard(f) ? `<div class="fig-commento-album">${esc(_commentoAlbumCard(f))}</div>` : ''}
       </div>
       <div class="fig-body">
         ${/* 🔄 v7.179 (Franco: «per le fcr avevo detto che lo volevo fisso, non in mouse-hovering; lascialo in mouse hovering
@@ -65602,8 +65735,7 @@ function renderItems() {
              salta i clic che arrivano da un `<button>` (`event.target.closest('button')`), e
              questo e' un button. La regola c'era gia', vale anche per questo. */''}
         ${_bottoneSfogliaSuArticolo(f) ? `<div style="display:flex;justify-content:center;margin:0.35rem 0 0.15rem;">${_bottoneSfogliaSuArticolo(f)}</div>` : ''}
-        ${/* 🆕 v7.214 - «Mostra composizione varianti»: i retro della famiglia (`_retriDelleFamiglie`) */''}
-        ${_retriFam ? (() => { const r = _radiceFamiglia(f, _idx); return r ? _tastoComposizioneVarianti(r.id, _retriFam.get(r.id)) : ''; })() : ''}
+        ${/* 🔄 v7.304 - «Mostra varianti» (v7.214 «Mostra composizione varianti») è passato nella riga qui sotto, a sinistra: vedi `_tastoVar` */''}
         <div class="fig-actions">
         ${slotSinistraHTML}
         <div class="fig-act fig-act-mylist"><span class="fig-act-label">${t('owned.toggle')}</span><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista \u2014 clicca per toglierla':'In your list \u2014 click to remove') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="event.stopPropagation();toggleOwned('${f.id}')">\u2713</button></div>
@@ -66740,6 +66872,461 @@ function renderMyCollection(ownedFigs) {
       </div>
     </div>`;
   }).join('');
+}
+
+// ============================================================
+//  🆕 v7.304 — CERCA VARIAZIONI (Franco, 14/11)
+// ============================================================
+// Franco: «mi serve una nuova funzionalità chiamata "Cerca variazioni" da mettere nella admin console; ma richiamabile
+// anche da mobile, solo per admin … un pulsante, chiamato "Cerca variazioni" che apre una finestra che chiede di
+// inserire 2 foto … il fronte di un set di figurine e il retro delle stesse figurine … nella stessa posizione … l'admin
+// preme un tasto chiamato "fai verifica" e il sito deve individuare all'interno dell'inventario le figurine che - stando
+// alla coppia fronte-retro - sono delle variazioni non ufficiali; se le trova lo deve dire all'admin».
+// Risposte del 14/11: (1) tutte e due le cose, separate: le coppie che sono variazioni non ufficiali già nell'Inventario e
+// i retro mai registrati per quel fronte; (2) righe e colonne le scrive l'admin; (3) «Come sono girate ?»: sul posto
+// (stessa casella), a libro (colonne a specchio), non so («o sono a libro o sono sul posto; ma certamente non sono state
+// mischiate»): il sito prova le due e tiene quella con più coppie già note.
+// 📌 COME RICONOSCE: la foto si rifila sullo sfondo, si taglia in righe × colonne uguali, ogni casella si rifila di
+//    nuovo e se ne fa la firma (luce, contorni e tinta, come «Crea annuncio album»: `_faFirma`). Si confronta con le
+//    firme delle foto del sito della serie scelta: i fronti delle figurine BASE (le variazioni hanno per definizione lo
+//    stesso fronte, `_fotoFigurina`) e i retro. Le foto del sito si chiedono nella misura delle card (`cloudinaryUrl`
+//    senza opzioni): sono le stesse della griglia, quindi di solito già pronte su Cloudinary.
+// 📌 IL VERDETTO di una coppia (fronte della base B, retro R) lo dà `_retroEffettivo` sulla famiglia di B (B e le sue
+//    variazioni, ufficiali e non): chi ha il retro R dice cos'è la coppia; se nessuno, il retro non è mai stato
+//    registrato per quel fronte.
+// ⚠️ Non misurato su foto vere: la soglia del «dubbio» (`_CV_DUBBIO`) è una stima. Le tue foto non vanno su Cloudinary.
+const _CV_DUBBIO = 0.03;   // il secondo candidato a meno di tanto dal primo: il riconoscimento è dubbio
+const _cv = { firme: {}, inCorso: false };   // firme: per serie, le firme delle foto del sito (restano finché non ricarichi)
+function _cvTela(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+function _cvLibera(...tele) { tele.forEach(c => { if (c && c.getContext) { c.width = 0; c.height = 0; } }); }
+// in bianco sotto: i fronti del sito sono ritagliati, col trasparente intorno
+function _cvRiduci(src, w, h, lato) {
+  const k = Math.min(1, lato / Math.max(w, h)), c = _cvTela(w * k, h * k), x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(src, 0, 0, c.width, c.height);
+  return c;
+}
+function _cvRitaglio(tela, r) { const c = _cvTela(r.w, r.h); c.getContext('2d').drawImage(tela, r.x, r.y, r.w, r.h, 0, 0, c.width, c.height); return c; }
+// Il riquadro che si stacca dallo sfondo, dentro `r`: il colore dello sfondo si legge sul bordo (mediana), e si tengono
+// dalla prima all'ultima riga (colonna) che ne ha almeno il 15% diverso. Se resta meno di un quarto, `r` com'era.
+function _cvRifila(tela, r) {
+  const p = _cvRitaglio(tela, r), q = _cvRiduci(p, p.width, p.height, 120);
+  _cvLibera(p);
+  const W = q.width, H = q.height, d = q.getContext('2d').getImageData(0, 0, W, H).data;
+  _cvLibera(q);
+  const b = Math.max(1, Math.round(Math.min(W, H) * 0.04)), R = [], G = [], B = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (x >= b && x < W - b && y >= b && y < H - b) continue;
+    const i = (y * W + x) * 4; R.push(d[i]); G.push(d[i + 1]); B.push(d[i + 2]);
+  }
+  const med = a => { const s = a.slice().sort((u, v) => u - v); return s[s.length >> 1]; };
+  const fr = med(R), fg = med(G), fb = med(B), m = new Uint8Array(W * H);
+  for (let k = 0; k < W * H; k++) m[k] = (Math.abs(d[k * 4] - fr) + Math.abs(d[k * 4 + 1] - fg) + Math.abs(d[k * 4 + 2] - fb)) > 60 ? 1 : 0;
+  const estremi = (n, fraz) => { let a = -1, z = -1; for (let i = 0; i < n; i++) if (fraz(i) > 0.15) { if (a < 0) a = i; z = i; } return a < 0 ? null : [a, z]; };
+  const ry = estremi(H, y => { let s = 0; for (let x = 0; x < W; x++) s += m[y * W + x]; return s / W; });
+  const rx = estremi(W, x => { let s = 0; for (let y = 0; y < H; y++) s += m[y * W + x]; return s / H; });
+  if (!ry || !rx) return r;
+  const kx = r.w / W, ky = r.h / H;
+  const out = { x: Math.round(r.x + rx[0] * kx), y: Math.round(r.y + ry[0] * ky), w: Math.round((rx[1] - rx[0] + 1) * kx), h: Math.round((ry[1] - ry[0] + 1) * ky) };
+  return out.w * out.h < r.w * r.h * 0.25 ? r : out;
+}
+// la firma: la stessa ricetta di `_faFirma` (45×60, luce a mezzo peso, contorni pieni, tinta), sempre col colore:
+// i retro di una serie spesso si distinguono proprio per quello
+function _cvFirma(c) {
+  const W = 45, H = 60, n = W * H;
+  const t = _cvTela(W * 2, H * 2); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+  const u = _cvTela(W, H), x = u.getContext('2d');
+  x.imageSmoothingQuality = 'high'; x.drawImage(t, 0, 0, W, H);
+  const d = x.getImageData(0, 0, W, H).data, g = new Float32Array(n), e = new Float32Array(n);
+  _cvLibera(t, u);
+  for (let k = 0; k < n; k++) g[k] = 0.299 * d[k * 4] + 0.587 * d[k * 4 + 1] + 0.114 * d[k * 4 + 2];
+  const p = (y, q) => g[y * W + q];
+  for (let y = 1; y < H - 1; y++) for (let q = 1; q < W - 1; q++) {
+    const gx = p(y - 1, q + 1) + 2 * p(y, q + 1) + p(y + 1, q + 1) - p(y - 1, q - 1) - 2 * p(y, q - 1) - p(y + 1, q - 1);
+    const gy = p(y + 1, q - 1) + 2 * p(y + 1, q) + p(y + 1, q + 1) - p(y - 1, q - 1) - 2 * p(y - 1, q) - p(y - 1, q + 1);
+    e[y * W + q] = Math.sqrt(gx * gx + gy * gy);
+  }
+  const cr = new Float32Array(n), cg = new Float32Array(n);
+  for (let k = 0; k < n; k++) { const s = d[k * 4] + d[k * 4 + 1] + d[k * 4 + 2] + 1; cr[k] = d[k * 4] / s; cg[k] = d[k * 4 + 1] / s; }
+  const strati = [[g, 0.5, 0], [e, 1, n], [cr, 0.8, 2 * n], [cg, 0.8, 3 * n]], v = new Float32Array(4 * n);
+  strati.forEach(([a, peso, da]) => {
+    let s = 0, s2 = 0;
+    for (let k = 0; k < n; k++) { s += a[k]; s2 += a[k] * a[k]; }
+    const media = s / n, dev = Math.sqrt(Math.max(1, s2 / n - media * media));
+    for (let k = 0; k < n; k++) v[da + k] = peso * (a[k] - media) / dev;
+  });
+  return v;
+}
+function _cvSomiglia(a, b) { let s = 0; for (let k = 0; k < a.length; k++) s += a[k] * b[k]; return s / a.length; }
+function _cvImg(src) {
+  return new Promise((ok, ko) => {
+    const tempo = setTimeout(() => ko(new Error('la foto non arriva')), 30000), i = new Image();
+    i.crossOrigin = 'anonymous';
+    i.onload = () => { clearTimeout(tempo); ok(i); };
+    i.onerror = () => { clearTimeout(tempo); ko(new Error('foto non caricata')); };
+    i.src = src;
+  });
+}
+// I candidati di una serie: i fronti delle figurine base con la foto, e i retro con la foto
+function _cvCandidati(sid, tutte) {
+  return {
+    fronti: tutte.filter(f => f && f.seriesId === sid && (f.section || 'figurines') === 'figurines' && _chiaveTipo(f) === 'base' && f.img),
+    // 🔄 v7.304 (Franco: «devi considerare solo gli articoli retro in versione base, per ogni serie»; nella serie 1 sono
+    //    72, prima ne entravano 203) - fuori le versioni dei retro e le slim (che hanno la foto della loro parent)
+    retri: tutte.filter(f => f && f.seriesId === sid && f.section === 'retros' && f.img && _chiaveTipo(f) === 'base' && !f.isSlim),
+  };
+}
+async function _cvFirmeSerie(sid, stato) {
+  if (_cv.firme[sid]) return _cv.firme[sid];
+  const cand = _cvCandidati(sid, getData('figurines', []));
+  const lista = cand.fronti.map(f => ({ f, lato: 'fronti' })).concat(cand.retri.map(f => ({ f, lato: 'retri' })));
+  const out = { fronti: [], retri: [], saltate: 0 };
+  let fatte = 0;
+  const una = async v => {
+    try {
+      const img = await _cvImg(cloudinaryUrl(v.f.img));
+      const c = _cvRiduci(img, img.naturalWidth, img.naturalHeight, 200);
+      out[v.lato].push({ f: v.f, firma: _cvFirma(c), forma: img.naturalWidth / img.naturalHeight });
+      _cvLibera(c);
+    } catch (e) { out.saltate++; console.warn('_cvFirmeSerie', v.f.id, e && e.message); }
+    // (Franco: «che numero è 363, per la serie 1?») - il totale si dice per esteso: fronti delle base più retro della serie
+    stato((currentLang === 'it'
+      ? 'Leggo le foto del sito (' + cand.fronti.length + ' fronti e ' + cand.retri.length + ' retro base della serie): '
+      : 'Reading the site photos (' + cand.fronti.length + ' fronts and ' + cand.retri.length + ' backs): ') + (++fatte) + ' di ' + lista.length + '…');
+  };
+  // sei alla volta: dal telefono centinaia di richieste insieme si piantano
+  for (let k = 0; k < lista.length; k += 6) await Promise.all(lista.slice(k, k + 6).map(una));
+  _cv.firme[sid] = out;
+  return out;
+}
+// 🆕 v7.304 (Franco: «come ti comporti se la foto ha sì una griglia NxM ma con qualche casella vuota?»; «vai») - LE CASELLE
+//    VUOTE E I BORDI VUOTI. (1) Una casella è vuota se nel suo centro (il 70%) meno del `_CV_VUOTA` dei punti si stacca dal
+//    colore dello sfondo della foto intera: non si confronta, e la coppia esce dal risultato. (2) Una riga o una colonna
+//    di bordo tutta vuota sparisce con la rifilatura, e la griglia si taglierebbe a cavallo delle figurine: si confronta
+//    la forma delle caselle con quella mediana delle foto del sito (`_cvBordoMancante`) e lo si dice; e c'è la spunta
+//    «Non rifilare la foto» per chi la porta già stretta sulla griglia. Le due soglie sono stime, non misure.
+const _CV_VUOTA = 0.12;
+// il colore dello sfondo: la mediana del bordo della foto intera (il bordo di una casella può toccare le vicine)
+function _cvSfondo(tela) {
+  const q = _cvRiduci(tela, tela.width, tela.height, 160), W = q.width, H = q.height, d = q.getContext('2d').getImageData(0, 0, W, H).data;
+  _cvLibera(q);
+  const b = Math.max(1, Math.round(Math.min(W, H) * 0.03)), R = [], G = [], B = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (x >= b && x < W - b && y >= b && y < H - b) continue;
+    const i = (y * W + x) * 4; R.push(d[i]); G.push(d[i + 1]); B.push(d[i + 2]);
+  }
+  const med = a => { const s = a.slice().sort((u, v) => u - v); return s[s.length >> 1]; };
+  return [med(R), med(G), med(B)];
+}
+// quanta parte del centro della casella si stacca dallo sfondo (da 0 a 1)
+function _cvPieno(tela, cella, sfondo) {
+  const dx = Math.round(cella.w * 0.15), dy = Math.round(cella.h * 0.15);
+  const p = _cvRitaglio(tela, { x: cella.x + dx, y: cella.y + dy, w: Math.max(1, cella.w - 2 * dx), h: Math.max(1, cella.h - 2 * dy) });
+  const q = _cvRiduci(p, p.width, p.height, 60);
+  _cvLibera(p);
+  const d = q.getContext('2d').getImageData(0, 0, q.width, q.height).data, n = q.width * q.height;
+  _cvLibera(q);
+  let pieni = 0;
+  for (let k = 0; k < n; k++) if (Math.abs(d[k * 4] - sfondo[0]) + Math.abs(d[k * 4 + 1] - sfondo[1]) + Math.abs(d[k * 4 + 2] - sfondo[2]) > 60) pieni++;
+  return pieni / n;
+}
+// la forma delle caselle (larghezza / altezza) contro quella delle figurine: molto più strette = manca una colonna,
+// molto più basse = manca una riga. Le caselle hanno anche lo spazio fra le figurine, quindi il margine è largo.
+function _cvBordoMancante(area, righe, colonne, forma) {
+  if (!forma || !(area.w > 0) || !(area.h > 0)) return null;
+  const k = (area.w / colonne) / (area.h / righe) / forma;
+  return k < 0.77 ? 'colonna' : k > 1.3 ? 'riga' : null;
+}
+const _cvMediana = a => { const s = a.filter(x => x > 0).sort((u, v) => u - v); return s.length ? s[s.length >> 1] : null; };
+// Le caselle di una tua foto, riga per riga: firma e miniatura, o `vuota`; e l'eventuale bordo mancante
+async function _cvCaselle(file, righe, colonne, opz) {
+  opz = opz || {};
+  const bm = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  const tela = _cvRiduci(bm, bm.width, bm.height, 1600);
+  if (bm.close) bm.close();
+  const tutta = { x: 0, y: 0, w: tela.width, h: tela.height };
+  const sfondo = _cvSfondo(tela);
+  // 🔄 v7.304 (Franco: «escono tutti casi dubbi, e nelle miniature non c'è mai un retro intero ma sembrano due parti di
+  //    retro») - LA GRIGLIA SI CERCA NELLA FOTO: le colonne e le righe di figurine sono le strisce piene fra gli spazi
+  //    vuoti (`_cvGriglia`). Prima si divideva la zona rifilata in parti uguali, e bastava un margine o uno spazio
+  //    irregolare perché le caselle cadessero a cavallo di due figurine. Se la foto non ne mostra esattamente righe ×
+  //    colonne, si torna alle parti uguali e lo si dice (`out.griglia = false`).
+  const g = opz.nonRifilare ? null : _cvGriglia(tela, sfondo, righe, colonne);
+  const area = opz.nonRifilare ? tutta : (g ? null : _cvRifila(tela, tutta));
+  const cw = area ? area.w / colonne : 0, ch = area ? area.h / righe : 0, out = [];
+  for (let r = 0; r < righe; r++) for (let c = 0; c < colonne; c++) {
+    const cella = g
+      ? { x: g.x[c][0], y: g.y[r][0], w: Math.max(1, g.x[c][1] - g.x[c][0]), h: Math.max(1, g.y[r][1] - g.y[r][0]) }
+      : { x: Math.round(area.x + c * cw), y: Math.round(area.y + r * ch), w: Math.max(1, Math.round(cw)), h: Math.max(1, Math.round(ch)) };
+    const vuota = _cvPieno(tela, cella, sfondo) < _CV_VUOTA;
+    // con la griglia trovata la casella è già stretta sulla figurina: rifilarla ancora mangerebbe i bordi chiari
+    const t = _cvRitaglio(tela, (vuota || g) ? cella : _cvRifila(tela, cella));
+    const mini = _cvRiduci(t, t.width, t.height, 90);
+    out.push({ r, c, vuota, firma: vuota ? null : _cvFirma(t), mini: mini.toDataURL('image/jpeg', 0.75) });
+    _cvLibera(t, mini);
+  }
+  _cvLibera(tela);
+  out.griglia = !!g;
+  out.bordo = (opz.nonRifilare || g) ? null : _cvBordoMancante(area, righe, colonne, opz.forma);
+  return out;
+}
+// 🆕 v7.304 - le strisce piene di un profilo (per ogni colonna, o riga, la parte che si stacca dallo sfondo): si tengono
+//    quelle sopra la soglia, si buttano le briciole (meno del 2% della lunghezza), e finché sono più di `n` si unisce
+//    la coppia separata dallo spazio più stretto (una figurina col bianco in mezzo). Meno di `n`: null.
+function _cvBande(prof, n) {
+  const L = prof.length, max = Math.max(...prof);
+  if (!(max > 0)) return null;
+  const soglia = Math.max(0.04, max * 0.2);
+  let bande = [], a = -1;
+  for (let i = 0; i <= L; i++) {
+    const pieno = i < L && prof[i] > soglia;
+    if (pieno && a < 0) a = i;
+    if (!pieno && a >= 0) { bande.push([a, i]); a = -1; }
+  }
+  bande = bande.filter(b => b[1] - b[0] >= L * 0.02);
+  while (bande.length > n) {
+    let k = 0;
+    for (let j = 1; j < bande.length - 1; j++) if (bande[j + 1][0] - bande[j][1] < bande[k + 1][0] - bande[k][1]) k = j;
+    bande.splice(k, 2, [bande[k][0], bande[k + 1][1]]);
+  }
+  return bande.length === n ? bande : null;
+}
+// la griglia della foto: le bande delle colonne e delle righe, nella misura della tela, con un margine del 3%
+function _cvGriglia(tela, sfondo, righe, colonne) {
+  const q = _cvRiduci(tela, tela.width, tela.height, 400), W = q.width, H = q.height, d = q.getContext('2d').getImageData(0, 0, W, H).data;
+  _cvLibera(q);
+  const m = new Uint8Array(W * H);
+  for (let k = 0; k < W * H; k++) m[k] = (Math.abs(d[k * 4] - sfondo[0]) + Math.abs(d[k * 4 + 1] - sfondo[1]) + Math.abs(d[k * 4 + 2] - sfondo[2])) > 45 ? 1 : 0;
+  const px = [], py = [];
+  for (let x = 0; x < W; x++) { let s = 0; for (let y = 0; y < H; y++) s += m[y * W + x]; px.push(s / H); }
+  for (let y = 0; y < H; y++) { let s = 0; for (let x = 0; x < W; x++) s += m[y * W + x]; py.push(s / W); }
+  const bx = _cvBande(px, colonne), by = _cvBande(py, righe);
+  if (!bx || !by) return null;
+  const k = tela.width / W, allarga = (b, lim) => b.map(([a, z]) => { const p = (z - a) * 0.03; return [Math.max(0, Math.round((a - p) * k)), Math.min(lim, Math.round((z + p) * k))]; });
+  return { x: allarga(bx, tela.width), y: allarga(by, tela.height) };
+}
+// il più somigliante, e se il secondo gli sta troppo vicino
+function _cvMigliore(firma, elenco) {
+  let a = null, b = null;
+  for (const e of elenco) {
+    const s = _cvSomiglia(firma, e.firma);
+    if (!a || s > a.s) { b = a; a = { f: e.f, s }; } else if (!b || s > b.s) b = { f: e.f, s };
+  }
+  return a ? { f: a.f, s: a.s, dubbio: !!b && (a.s - b.s) < _CV_DUBBIO } : null;
+}
+// la colonna del retro che sta dietro al fronte in colonna `c`, su `C` colonne
+function _cvColonnaRetro(c, C, modo) { return modo === 'libro' ? C - 1 - c : c; }
+// cos'è la coppia (fronte della base `B`, retro `R`) per l'Inventario
+function _cvVerdetto(B, R, tutte) {
+  if (!B || !R) return { tipo: 'ignoto' };
+  const famiglia = tutte.filter(x => x && (x.id === B.id || (x.baseFigurineId === B.id && (x.isVariation || x.isUnofficialVariation))));
+  // 🔄 v7.304 - i candidati sono solo i retro base: se un articolo della famiglia ha come retro una VERSIONE di retro,
+  //    conta la sua base (`baseFigurineId` del retro). Prima si cerca l'uguaglianza esatta, poi quella per base.
+  const eff = x => _retroEffettivo(x, tutte);
+  const baseDelRetro = id => { const r = id && tutte.find(y => y && y.id === id); return (r && r.baseFigurineId) || id; };
+  const art = famiglia.find(x => eff(x) === R.id) || famiglia.find(x => baseDelRetro(eff(x)) === R.id);
+  if (!art) return { tipo: 'nuova' };
+  return { tipo: art.isUnofficialVariation ? 'nonUfficiale' : art.isVariation ? 'ufficiale' : 'base', art };
+}
+// le coppie di una disposizione: fronti e retro già riconosciuti, casella per casella
+function _cvAccoppia(fronti, retri, C, modo, tutte) {
+  return fronti.map((fr, k) => {
+    const r = Math.floor(k / C), c = k % C, re = retri[r * C + _cvColonnaRetro(c, C, modo)];
+    // v7.304 - una casella vuota (fronte o retro) non fa coppia
+    if (fr.vuota || !re || re.vuota) return { r, c, fr, re, v: { tipo: 'vuota' } };
+    return { r, c, fr, re, v: _cvVerdetto(fr.ric && fr.ric.f, re && re.ric && re.ric.f, tutte) };
+  });
+}
+// «non so»: la disposizione con più coppie già note all'Inventario (a parità, sul posto)
+function _cvScegliModo(fronti, retri, C, tutte) {
+  const note = m => _cvAccoppia(fronti, retri, C, m, tutte).filter(x => x.v.tipo !== 'nuova' && x.v.tipo !== 'ignoto' && x.v.tipo !== 'vuota').length;
+  return note('libro') > note('posto') ? 'libro' : 'posto';
+}
+
+function apriCercaVariazioni() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  document.getElementById('cv-modal')?.remove();
+  const tutte = getData('figurines', []);
+  const conRetri = new Set(tutte.filter(f => f && f.section === 'retros').map(f => f.seriesId));
+  const serie = getData('series', []).filter(s => conRetri.has(s.id)).sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  const et = 'display:block;font-size:0.88rem;color:var(--info);margin:0.7rem 0 0.25rem;';
+  // (Franco: «non mettere un default alle domande "numero righe" e "numero colonne"») - nascono vuote
+  const num = id => '<input type="number" id="' + id + '" min="1" max="20" step="1" value="" class="form-input" style="width:5rem;">';
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'cv-modal';
+  ov.innerHTML = '<div class="modal" style="max-width:760px;width:94vw;">'
+    + '<div class="modal-header"><h2 class="modal-title">🔍 ' + (it ? 'Cerca variazioni' : 'Find variations') + '</h2>'
+    + '<button type="button" class="modal-close" onclick="document.getElementById(\'cv-modal\').remove()">✕</button></div>'
+    + '<div style="padding:0 1.2rem 1.4rem;">'
+    + '<p style="font-size:0.85rem;color:var(--text);line-height:1.5;margin-bottom:0.4rem;">'
+    + (it ? 'Due foto: nella prima i fronti, nella seconda i retro delle stesse figurine, in righe e colonne. Le foto restano sul telefono o sul PC: non si salva niente.'
+          : 'Two photos: the fronts in the first, the backs of the same stickers in the second, in rows and columns. Nothing is saved.') + '</p>'
+    + '<label style="' + et + '" for="cv-serie">' + (it ? 'Serie' : 'Series') + '</label>'
+    + '<select id="cv-serie" class="form-select" style="max-width:100%;">' + serie.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name || s.id) + '</option>').join('') + '</select>'
+    + '<div style="display:flex;gap:1.2rem;flex-wrap:wrap;">'
+    + '<div><label style="' + et + '" for="cv-righe">' + (it ? 'Righe' : 'Rows') + '</label>' + num('cv-righe') + '</div>'
+    + '<div><label style="' + et + '" for="cv-colonne">' + (it ? 'Colonne' : 'Columns') + '</label>' + num('cv-colonne') + '</div>'
+    + '<div><label style="' + et + '" for="cv-modo">' + (it ? 'Come sono girate ?' : 'How were they turned?') + '</label>'
+    + '<select id="cv-modo" class="form-select">'
+    + '<option value="posto">' + (it ? 'Sul posto' : 'In place') + '</option>'
+    + '<option value="libro">' + (it ? 'A libro' : 'Like a book page') + '</option>'
+    + '<option value="nonso">' + (it ? 'Non so' : 'Not sure') + '</option></select></div></div>'
+    + _cvZonaHTML('fronte', it ? 'Foto dei fronti' : 'Photo of the fronts', et, it)
+    + _cvZonaHTML('retro', it ? 'Foto dei retro' : 'Photo of the backs', et, it)
+    // v7.304 - per le foto già strette sulla griglia, con una riga o una colonna di bordo vuota
+    + '<label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;color:var(--text);margin-top:0.8rem;cursor:pointer;">'
+    + '<input type="checkbox" id="cv-non-rifilare"> ' + (it ? 'Non rifilare le foto (sono già strette sulla griglia)' : 'Do not trim the photos (already tight on the grid)') + '</label>'
+    + '<div style="margin-top:1rem;"><button type="button" id="cv-verifica" class="btn-primary btn-admin admin-anche-telefono" onclick="_cvFaiVerifica()">'
+    + (it ? 'Fai verifica' : 'Check') + '</button></div>'
+    + '<div id="cv-stato" style="font-size:0.85rem;color:var(--text);margin-top:0.7rem;"></div>'
+    + '<div id="cv-risultato" style="margin-top:0.8rem;"></div>'
+    + '</div></div>';
+  _cv.file = { fronte: null, retro: null };
+  // v7.304 - il Ctrl+V vale in tutta la finestra (vedi `_cvIncolla`)
+  ov.addEventListener('paste', _cvIncolla);
+  document.body.appendChild(ov);
+  if (!serie.length) document.getElementById('cv-stato').textContent = it ? 'Nessuna serie ha dei retro nell’Inventario.' : 'No series has backs in the catalogue.';
+}
+// 🆕 v7.304 (Franco: «sarebbe possibile le 2 foto metterle nella finestra col copia di Windows, invece che selezionarle dal
+//    disco del pc?»; «sì procedi anche con il ctrl+v») - IL RIQUADRO DELLA FOTO: si clicca e si preme Ctrl+V, o ci si
+//    trascina sopra la foto; sotto resta «oppure scegli dal disco» (dal telefono il Ctrl+V non c'è). Una foto nuova
+//    sostituisce quella di prima. Le foto stanno in `_cv.file`, non nei campi: un riquadro non ha `files`.
+function _cvZonaHTML(lato, titolo, et, it) {
+  return '<label style="' + et + '">' + titolo + '</label>'
+    + '<div id="cv-zona-' + lato + '" class="cv-zona" tabindex="0" data-lato="' + lato + '" onclick="this.focus()"'
+    + ' ondragover="event.preventDefault()" ondrop="_cvTrascina(event, \'' + lato + '\')"'
+    + ' style="display:flex;align-items:center;gap:0.8rem;min-height:4.5rem;padding:0.6rem 0.8rem;border:2px dashed var(--border2);'
+    + 'border-radius:8px;cursor:pointer;font-size:0.85rem;color:var(--text);outline-offset:2px;">'
+    + '<span class="cv-zona-testo">' + (it ? 'Clicca qui e premi <b>Ctrl+V</b>, oppure trascina qui la foto.' : 'Click here and press <b>Ctrl+V</b>, or drop the photo here.') + '</span></div>'
+    + '<label style="display:inline-block;font-size:0.8rem;color:var(--info);text-decoration:underline;cursor:pointer;margin-top:0.25rem;">'
+    + (it ? 'oppure scegli dal disco' : 'or choose from disk')
+    + '<input type="file" id="cv-foto-' + lato + '" accept="image/*" style="display:none;" onchange="_cvMettiFile(\'' + lato + '\', this.files && this.files[0])"></label>';
+}
+function _cvMettiFile(lato, file) {
+  if (!file || !/^image\//.test(file.type || '')) {
+    const st = document.getElementById('cv-stato');
+    if (st && file) st.textContent = currentLang === 'it' ? 'Quello che hai incollato non è una foto.' : 'That is not a photo.';
+    return;
+  }
+  _cv.file = _cv.file || { fronte: null, retro: null };
+  _cv.file[lato] = file;
+  const z = document.getElementById('cv-zona-' + lato);
+  if (!z) return;
+  const vecchia = z.querySelector('img');
+  if (vecchia && vecchia.src.startsWith('blob:')) URL.revokeObjectURL(vecchia.src);
+  z.innerHTML = '<img src="' + URL.createObjectURL(file) + '" alt="" style="height:64px;width:auto;border-radius:4px;">'
+    + '<span>✅ ' + esc(file.name || (currentLang === 'it' ? 'foto incollata' : 'pasted photo')) + '</span>';
+  z.style.borderStyle = 'solid';
+  const st = document.getElementById('cv-stato');
+  if (st) st.textContent = '';
+}
+// Ctrl+V: va nel riquadro su cui hai cliccato; se non hai cliccato su nessuno, nel primo ancora vuoto (fronti, poi retro)
+function _cvIncolla(ev) {
+  const dati = ev.clipboardData;
+  if (!dati) return;
+  let file = dati.files && dati.files[0];
+  if (!file) for (const it of (dati.items || [])) if (it.kind === 'file' && /^image\//.test(it.type)) { file = it.getAsFile(); break; }
+  if (!file) return;   // testo: si lascia incollare nelle caselle
+  ev.preventDefault();
+  const att = document.activeElement && document.activeElement.closest && document.activeElement.closest('.cv-zona');
+  const lato = att ? att.dataset.lato : (!(_cv.file && _cv.file.fronte) ? 'fronte' : 'retro');
+  _cvMettiFile(lato, file);
+}
+function _cvTrascina(ev, lato) {
+  ev.preventDefault();
+  const f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+  if (f) _cvMettiFile(lato, f);
+}
+
+async function _cvFaiVerifica() {
+  if (!currentUser?.isAdmin || _cv.inCorso) return;
+  const it = currentLang === 'it', $ = id => document.getElementById(id);
+  const stato = t => { const el = $('cv-stato'); if (el) el.textContent = t; };
+  const sid = $('cv-serie')?.value, R = parseInt($('cv-righe')?.value, 10), C = parseInt($('cv-colonne')?.value, 10);
+  const fF = _cv.file && _cv.file.fronte, fR = _cv.file && _cv.file.retro, modoChiesto = $('cv-modo')?.value || 'posto';   // v7.304: incollate o scelte
+  if (!sid) { stato(it ? 'Scegli la serie.' : 'Choose the series.'); return; }
+  if (!(R >= 1 && R <= 20 && C >= 1 && C <= 20)) { stato(it ? 'Righe e colonne: da 1 a 20.' : 'Rows and columns: 1 to 20.'); return; }
+  if (!fF || !fR) { stato(it ? 'Carica le due foto.' : 'Load both photos.'); return; }
+  _cv.inCorso = true;
+  const btn = $('cv-verifica');
+  if (btn) btn.disabled = true;
+  $('cv-risultato').innerHTML = '';
+  try {
+    const firme = await _cvFirmeSerie(sid, stato);
+    if (!firme.fronti.length || !firme.retri.length) { stato(it ? 'In questa serie mancano le foto dei fronti o dei retro.' : 'This series lacks front or back photos.'); return; }
+    stato(it ? 'Taglio le tue foto…' : 'Cutting your photos…');
+    const nonRifilare = !!$('cv-non-rifilare')?.checked;
+    const fronti = await _cvCaselle(fF, R, C, { nonRifilare, forma: _cvMediana(firme.fronti.map(x => x.forma)) });
+    const retri = await _cvCaselle(fR, R, C, { nonRifilare, forma: _cvMediana(firme.retri.map(x => x.forma)) });
+    stato(it ? 'Riconosco le figurine…' : 'Recognising the stickers…');
+    fronti.forEach(x => { x.ric = x.vuota ? null : _cvMigliore(x.firma, firme.fronti); });
+    retri.forEach(x => { x.ric = x.vuota ? null : _cvMigliore(x.firma, firme.retri); });
+    const tutte = getData('figurines', []);
+    const modo = modoChiesto === 'nonso' ? _cvScegliModo(fronti, retri, C, tutte) : modoChiesto;
+    _cvDisegna(_cvAccoppia(fronti, retri, C, modo, tutte), modo, modoChiesto === 'nonso', firme.saltate, { fronti: fronti.bordo, retri: retri.bordo, senzaGriglia: [fronti.griglia || nonRifilare ? '' : 'fronti', retri.griglia || nonRifilare ? '' : 'retri'].filter(Boolean) });
+    stato('');
+  } catch (e) {
+    console.error('_cvFaiVerifica', e);
+    stato((it ? '❌ Verifica non riuscita: ' : '❌ Check failed: ') + (e && e.message || e));
+  } finally {
+    _cv.inCorso = false;
+    if (btn) btn.disabled = false;
+  }
+}
+
+// v7.304 - l'avviso del bordo vuoto (`_cvBordoMancante`), una riga per foto
+function _cvAvvisoBordo(bordi, it) {
+  const frase = (quale, cosa) => it
+    ? '⚠️ Nella foto dei ' + quale + ' mi sembra che manchi ' + (cosa === 'colonna' ? 'una colonna' : 'una riga') + ': forse quella di bordo è vuota, e le caselle sono tagliate a cavallo delle figurine. Rifai la foto con almeno una figurina in ogni riga e colonna di bordo, oppure stringila sulla griglia e spunta «Non rifilare le foto».'
+    : '⚠️ In the ' + quale + ' photo a ' + (cosa === 'colonna' ? 'column' : 'row') + ' seems to be missing: maybe the edge one is empty. Retake the photo, or crop it to the grid and tick «Do not trim».';
+  const st = '<p style="font-size:0.85rem;color:var(--warning,#ffb020);line-height:1.5;margin-bottom:0.5rem;">';
+  // v7.304 - la griglia non trovata nella foto (`_cvGriglia`): si è divisa in parti uguali, e lo si dice
+  const griglia = ((bordi && bordi.senzaGriglia) || []).map(k => st + (it
+    ? '⚠️ Nella foto dei ' + k + ' non ho trovato le righe e le colonne che hai scritto: l’ho divisa in parti uguali, e le caselle possono essere tagliate male (guarda le miniature). Prova con uno sfondo uniforme e un po’ di spazio fra le figurine.'
+    : '⚠️ In the ' + (k === 'fronti' ? 'fronts' : 'backs') + ' photo I could not find the rows and columns: it was split evenly.') + '</p>').join('');
+  return griglia + ['fronti', 'retri'].filter(k => bordi && bordi[k]).map(k => st
+    + frase(it ? k : (k === 'fronti' ? 'fronts' : 'backs'), bordi[k]) + '</p>').join('');
+}
+function _cvDisegna(coppie, modo, sceltoDalSito, saltate, bordi) {
+  const it = currentLang === 'it', box = document.getElementById('cv-risultato');
+  if (!box) return;
+  const nomeModo = modo === 'libro' ? (it ? 'a libro' : 'like a book page') : (it ? 'sul posto' : 'in place');
+  const nomeArt = f => f ? ((_haNumero(f) && f.number ? 'n. ' + esc(String(_numeroAschermo(f))) + ' ' : '') + esc((f.fullName && f.fullName.trim()) ? f.fullName : (f.name || ''))) : '—';
+  const apri = f => f ? '<a href="#" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;" style="color:var(--info);text-decoration:underline;">' + nomeArt(f) + '</a>' : '—';
+  const dubbio = ric => ric && ric.dubbio ? ' <span title="' + (it ? 'Un altro candidato somiglia quasi uguale' : 'Another candidate is almost as close') + '" style="color:var(--warning,#ffb020);">⚠️ ' + (it ? 'dubbio' : 'unsure') + '</span>' : '';
+  const mini = src => '<img src="' + src + '" alt="" style="height:64px;width:auto;border-radius:4px;background:var(--bg2);">';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--accent2);font-weight:600;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);vertical-align:middle;';
+  // 🔄 v7.304 (Franco: «vanno segnalate queste 2 casistiche: 1: figurina con retro non ufficiale … 2: figurina con retro non
+  //    noto») - i nomi sono i suoi
+  const nomeVerdetto = v => ({ nonUfficiale: it ? 'Figurina con retro non ufficiale' : 'Sticker with unofficial back', ufficiale: it ? 'Variazione ufficiale' : 'Official variation',
+    base: it ? 'Base' : 'Base', nuova: it ? 'Figurina con retro non noto' : 'Sticker with unknown back', ignoto: it ? 'Non riconosciuta' : 'Not recognised',
+    vuota: it ? 'Casella vuota' : 'Empty cell' })[v.tipo];
+  const tabella = (righe, conArt) => '<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;"><tr>'
+    + '<th style="' + th + '">' + (it ? 'Posto' : 'Place') + '</th><th style="' + th + '">' + (it ? 'Fronte' : 'Front') + '</th><th style="' + th + '">Retro</th>'
+    + '<th style="' + th + '">' + (it ? 'Riconosciuto' : 'Recognised') + '</th>' + (conArt ? '<th style="' + th + '">' + (it ? 'Nell’Inventario' : 'In the catalogue') + '</th>' : '') + '</tr>'
+    + righe.map(x => '<tr><td style="' + td + 'white-space:nowrap;">' + (it ? 'riga ' : 'row ') + (x.r + 1) + ', ' + (it ? 'col. ' : 'col. ') + (x.c + 1) + '</td>'
+      + '<td style="' + td + '">' + mini(x.fr.mini) + '</td><td style="' + td + '">' + (x.re ? mini(x.re.mini) : '—') + '</td>'
+      + '<td style="' + td + '">' + apri(x.fr.ric && x.fr.ric.f) + dubbio(x.fr.ric) + '<br>' + apri(x.re && x.re.ric && x.re.ric.f) + dubbio(x.re && x.re.ric) + '</td>'
+      + (conArt ? '<td style="' + td + '">' + (x.v.art ? apri(x.v.art) : nomeVerdetto(x.v)) + '</td>' : '') + '</tr>').join('')
+    + '</table></div>';
+  const tit = 'font-family:var(--font-ui);font-weight:700;font-size:1rem;margin:1rem 0 0.4rem;';
+  const nonUff = coppie.filter(x => x.v.tipo === 'nonUfficiale'), nuove = coppie.filter(x => x.v.tipo === 'nuova');
+  const nVuote = coppie.filter(x => x.v.tipo === 'vuota').length;
+  box.innerHTML = _cvAvvisoBordo(bordi, it)
+    + (nVuote ? '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Caselle vuote, saltate: ' : 'Empty cells, skipped: ') + nVuote + '</p>' : '')
+    + '<p style="font-size:0.85rem;color:var(--text);">' + (it ? 'Disposizione dei retro: ' : 'Backs layout: ') + '<b>' + nomeModo + '</b>'
+    + (sceltoDalSito ? (it ? ' (scelta dal sito: è quella con più coppie già note)' : ' (chosen by the site: the one with more known pairs)') : '') + '.'
+    + (saltate ? ' ' + (it ? saltate + ' foto del sito non si sono caricate: quelle figurine non si possono riconoscere.' : saltate + ' site photos did not load.') : '') + '</p>'
+    + '<div style="' + tit + '">🎨 ' + (it ? '1. Figurine con retro non ufficiale' : '1. Stickers with unofficial back') + ' (' + nonUff.length + ')</div>'
+    + '<p style="font-size:0.8rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Coppie fronte-retro che nell’Inventario sono una variazione non ufficiale di quel fronte.' : 'Front-back pairs that are an unofficial variation of that front in the catalogue.') + '</p>'
+    + (nonUff.length ? tabella(nonUff, true) : '<p style="font-size:0.85rem;color:var(--text);">' + (it ? 'Nessuna.' : 'None.') + '</p>')
+    + '<div style="' + tit + '">🆕 ' + (it ? '2. Figurine con retro non noto' : '2. Stickers with unknown back') + ' (' + nuove.length + ')</div>'
+    + (nuove.length ? '<p style="font-size:0.8rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Coppie fronte-retro che nel sito non ci sono. Il retro scritto è il retro base della serie più somigliante.' : 'Front-back pairs the site does not have. The back shown is the closest base back of the series.') + '</p>' + tabella(nuove, false)
+      : '<p style="font-size:0.85rem;color:var(--text);">' + (it ? 'Nessuno.' : 'None.') + '</p>')
+    + '<details style="margin-top:1rem;"><summary style="cursor:pointer;font-family:var(--font-ui);font-weight:700;font-size:0.9rem;">'
+    + (it ? 'Tutte le caselle' : 'All cells') + ' (' + coppie.length + ')</summary>' + tabella(coppie, true) + '</details>';
 }
 
 // ============================================================
@@ -71287,13 +71874,16 @@ function buildLinkedFiguresTabsHTML(baseId) {
       //    fronte della loro fcr, che nel tab c'è già
       const _serieFpaDiverse = new Set(getData('series', []).filter(s => s.hasSizes).map(s => s.id));
       const _entra = a => a.id !== baseId && _eBase(a) && (a.section !== 'attaccare' || _serieFpaDiverse.has(a.seriesId));
-      personaggiDiArticolo(_self, ix).forEach(pid => articoliDelPersonaggio(pid, ix).forEach(a => { if (_entra(a)) visti.set(a.id, a); }));
-      // nell'ordine dell'Inventario: serie, poi tipologia, poi numero
+      const _pids = personaggiDiArticolo(_self, ix);
+      _pids.forEach(pid => articoliDelPersonaggio(pid, ix).forEach(a => { if (_entra(a)) visti.set(a.id, a); }));
       // `_serieOrdinate` e non l'ordine di `getData`, che per chi non è admin non è quello dell'Inventario (v6.947)
       const ordSerie = new Map(_serieOrdinate(getData('series', [])).map((s, i) => [s.id, i]));
-      _stessoPers = [...visti.values()].sort((a, b) => (ordSerie.get(a.seriesId) ?? 1e9) - (ordSerie.get(b.seriesId) ?? 1e9)
-        || String(a.section || 'figurines').localeCompare(String(b.section || 'figurines'))
-        || (parseInt(a.number, 10) || 0) - (parseInt(b.number, 10) || 0));
+      // 🔄 v7.304 (Franco: «va rivisto l'ordine degli articoli mostrati: 1. figurine con retro aventi il personaggio nel
+      //    fronte 2. retro 3. figurine con retro aventi il personaggio nel retro; all'interno dei 3 punti, si va per
+      //    Serie-Sottoserie-Nome») - prima era serie, tipologia, numero. Gli altri articoli (fpa diverse, extra…) vengono
+      //    dopo i tre gruppi, con lo stesso ordine. Il personaggio «nel fronte» è uno dei suoi (alter ego compresi,
+      //    come `articoliDelPersonaggio`) fra quelli della figurina stessa (`personaggiDiArticolo`).
+      _stessoPers = _ordinaStessoPersonaggio([...visti.values()], new Set(_pids.flatMap(p => _conAlterEgo(p))), ordSerie, a => personaggiDiArticolo(a, ix));
     }
   }
   // 🆕 v7.113 (Franco: «nella scheda di una fpa, aggiungere un tab che mostra la figurina con retro (base) associata»)
@@ -71532,8 +72122,11 @@ function buildLinkedFiguresTabsHTML(baseId) {
       } else {
         _foto = _fotoFigurina(item, allFigs); // v6.024 - foto propria, o della base
       }
+      // 🔄 v7.304 (Franco: «aumentiamo del 20% la dimensione della miniatura usata nel tab "Articoli dello stesso
+      //    personaggio"») - 32 → 38px, solo in quel tab. La foto chiesta resta la stessa (w_120): niente trasformazioni nuove.
+      const _lato = g.key === 'stessoPersonaggio' ? 38 : 32;
       html += `<a href="#" onclick="openFigDetail('${item.id}', ${_idsGruppo});return false;" style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;border-radius:8px;background:var(--card2);text-decoration:none;color:var(--text);font-size:0.85rem;">
-        ${_foto ? `<img src="${cloudinaryUrl(_foto,'w_120,h_120,c_fit,q_auto,f_auto')}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;background:var(--card);">` : '<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">🖼️</span>'}
+        ${_foto ? `<img src="${cloudinaryUrl(_foto,'w_120,h_120,c_fit,q_auto,f_auto')}" style="width:${_lato}px;height:${_lato}px;flex-shrink:0;object-fit:contain;border-radius:4px;background:var(--card);">` : `<span style="width:${_lato}px;height:${_lato}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">🖼️</span>`}
         <span>${esc(label)}${labelExtra}</span>
       </a>`;
     });
@@ -74861,11 +75454,12 @@ function _retriDelleFamiglie(figs, idx) {
   });
   return m;
 }
+// 🔄 v7.304 (Franco) - «Mostra varianti», e senza il suo `<div>` centrato: la card lo mette nella riga di «Errore?», a sinistra
 function _tastoComposizioneVarianti(radice, retri) {
   if (!retri || retri.size < 2) return '';
-  return '<div style="display:flex;justify-content:center;margin:0.35rem 0 0.15rem;"><button type="button" class="btn-primary" ' +
-    'style="font-size:0.7rem;padding:0.3rem 0.6rem;" onclick="apriComposizioneVarianti(\'' + radice + '\')">' +
-    (currentLang === 'it' ? 'Mostra composizione varianti' : 'Show variant composition') + '</button></div>';
+  return '<button type="button" class="btn-primary" ' +
+    'style="font-size:0.7rem;padding:0.3rem 0.6rem;white-space:nowrap;" onclick="apriComposizioneVarianti(\'' + radice + '\')">' +
+    (currentLang === 'it' ? 'Mostra varianti' : 'Show variants') + '</button>';
 }
 function apriComposizioneVarianti(radice) {
   const it = currentLang === 'it';
@@ -74879,12 +75473,21 @@ function apriComposizioneVarianti(radice) {
   ov.className = 'modal-overlay';
   ov.id = 'composizione-modal';
   ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  // 🔄 v7.304 (Franco: «quando mostra dei change, errore di stampa, o omaggio, deve dirne anche la tipologia (esempio:
+  //    "omaggio nero" e non solamente "omaggio"); usa pure 2 righe») - la versione sopra, la sua tipologia sotto: la
+  //    stessa che scrive la card (`_tipoOmaggio`, `_tipoChange`, `_tipoErroreStampaTesto`). Più articoli con lo stesso
+  //    retro: un'etichetta per uno, senza doppioni.
+  const tipoDi = a => (a.isFreeVersion ? _tipoOmaggio(a, figs, idx) : a.isChange ? _tipoChange(a, figs, idx)
+    : a.isPrintError ? _tipoErroreStampaTesto(a, figs, idx) : '') || '';
   const voci = [...retri.entries()].map(([img, arts]) => {
-    const versioni = [...new Set(arts.map(a => _nomeVersione(_chiaveTipo(a), it ? 'it' : 'en')))].join(' · ');
+    const versioni = [...new Set(arts.map(a => {
+      const v = esc(_nomeVersione(_chiaveTipo(a), it ? 'it' : 'en')), tp = String(tipoDi(a)).trim();
+      return tp ? v + '<br><b>' + esc(tp.toUpperCase()) + '</b>' : v;
+    }))].map(x => '<div>' + x + '</div>').join('');
     return '<figure style="margin:0;display:flex;flex-direction:column;gap:0.3rem;">' +
       '<div style="aspect-ratio:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow:hidden;">' +
         '<img src="' + cloudinaryUrl(img) + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:4px;box-sizing:border-box;"></div>' +
-      '<figcaption style="font-size:0.75rem;color:var(--text);text-align:center;line-height:1.3;">' + esc(versioni) + '</figcaption></figure>';
+      '<figcaption style="font-size:0.75rem;color:var(--text);text-align:center;line-height:1.3;display:flex;flex-direction:column;gap:0.25rem;">' + versioni + '</figcaption></figure>';
   }).join('');
   ov.innerHTML = '<div class="modal" style="max-width:1000px;width:96vw;">' +
     '<div class="modal-header"><h2 class="modal-title">' + esc((_numeroAschermo(base) ? _numeroAschermo(base) + ' ' : '') + (base.name || '')) +
