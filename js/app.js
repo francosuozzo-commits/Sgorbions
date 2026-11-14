@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.304';
+const JS_VERSION = 'v7.305';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -46712,6 +46712,11 @@ function _mlTogliDaCasella(idQuante, el) {
   if (m && q) q.value = _mlMeno(_mlNumero(q.value), m);
   el.value = '';
 }
+// 🆕 v7.305 - il tasto «Togli una / uno» della scheda: uno in meno nella casella, mai sotto zero
+function _mlTogliUnaDaCasella(idQuante) {
+  const q = document.getElementById(idQuante);
+  if (q) q.value = _mlMeno(_mlNumero(q.value), 1);
+}
 // 🆕 v7.254 (Franco: «la tabella deve essere ordinabile per "Quante"») - il clic sull'intestazione gira fra dal più basso,
 //    dal più alto e di nuovo per numero; a pari «Quante» resta l'ordine per numero (`sort` è stabile). Salvando una riga
 //    la tabella non si riordina: la riga scapperebbe da sotto il mouse.
@@ -52980,6 +52985,9 @@ function _perRicerca(s) {
     .normalize('NFD').replace(/\p{M}/gu, '')
     .replace(/[’‘‛`´']/g, '')
     .replace(/[\-‐-―_]+/g, '')
+    // 🆕 v7.305 (Franco: «la RG deve filtrare il carattere "."; se cerco "CRETINO" deve essere come se cerco
+    //    "C.R.E.T.I.N.O."») - i punti spariscono come i trattini, nel testo cercato e nei campi: vale per tutte le ricerche
+    .replace(/\./g, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
@@ -53274,12 +53282,17 @@ function _impostaPosizioni(d) {
 }
 
 function _campiRicercaFigurina(f) {
+  // v7.305 - il secondo argomento facoltativo, per la ricerca dentro una serie (la firma resta quella di sempre: le prove la cercano così)
+  const senzaNomeCompleto = !!arguments[1];
   // 🔄 v6.792 - il tipo di change entra DEDOTTO. 🔴 Se restasse `f.changeType` nudo, la
   //    ricerca funzionerebbe **per sbaglio**: trova quelle 114 figurine solo finché la copia è
   //    ancora scritta addosso, e smette il giorno che la form la ripulisce. Cercare «mosca nera»
   //    deve trovare le figurine perché il loro retro è una mosca nera, non perché qualcuno
   //    gliel'aveva copiato.
-  const campi = [f.name, f.subseries, f.desc, f.category, f.subcategory, f.subname, f.fullName,
+  // 🗑️ v7.305 (Franco: «togli categoria e sottocategoria, in quanto per questi 2 campi c'è apposito filtro») - via da
+  //    tutte le ricerche (usano tutte questo elenco). ⚠️ Il Nome completo resta, e per retro e figurine con retro
+  //    contiene già categoria e sottocategoria del retro (`_retroFullName`): lì l'esito cambia poco o niente.
+  const campi = [f.name, f.subseries, f.desc, f.subname, senzaNomeCompleto ? '' : f.fullName,
                  ..._nomiAlternativi(f),                             // 🆕 v6.986 - per tutti, anche se non si vede
                  f.famiglia,                                         // 🆕 v6.994 (Franco: «devi cercare anche per famiglia»)
                  (f.isChange ? _tipoChange(f) : f.changeType),        // v6.792
@@ -53332,10 +53345,15 @@ function _ordinaPerAttinenzaRG(items, qn, chiaveGruppo) {
   return items.slice().sort((a, b) => grado.get(chiaveGruppo(a)) - grado.get(chiaveGruppo(b)));
 }
 
+// 🔄 v7.305 (Franco: «io allora toglierei la ricerca nel campo nome completo, tanto le cose che contiene o sono campi già
+//    inclusi o sono campi per i quali ci sono le pillole; sto parlando della form di ricerca») - `senzaNomeCompleto`: la
+//    ricerca dentro una serie (`getCurrentlyFilteredItems`) non guarda il Nome completo; la ricerca globale e quella della
+//    pagina tipologia sì, come prima.
 function _figMatchRicerca(f, qn) {
   if (!qn) return true;
   if (String(_numeroAschermo(f) || '').includes(qn)) return true;   // v7.198 - anche la 16 di «2 - 16»
-  return _campiRicercaFigurina(f).some(v => _matchRicerca(v, qn));   // v6.264
+  // v7.305 - il terzo argomento facoltativo (`senzaNomeCompleto`): la firma resta quella di sempre
+  return _campiRicercaFigurina(f, !!arguments[2]).some(v => _matchRicerca(v, qn));   // v6.264
 }
 
 // v6.093 (Franco) - IL ROSSO DI "INVISIBILE" SEGUE LA SPUNTA, nelle due form.
@@ -62423,7 +62441,8 @@ function getCurrentlyFilteredItems(opts) {
     // direttamente non dipende dall'aggiornamento di un altro.
     // v6.096 - stessa funzione della ricerca globale: `desc` mancava proprio qui, e le Note per
     // l'admin entrano in tutte e due insieme perche' l'elenco dei campi e' uno solo.
-    return _figMatchRicerca(f, searchQ);
+    // 🔄 v7.305 (Franco) - qui senza il Nome completo (vedi `_figMatchRicerca`)
+    return _figMatchRicerca(f, searchQ, true);
   });
 }
 
@@ -67059,10 +67078,13 @@ async function _cvCaselle(file, righe, colonne, opz) {
       : { x: Math.round(area.x + c * cw), y: Math.round(area.y + r * ch), w: Math.max(1, Math.round(cw)), h: Math.max(1, Math.round(ch)) };
     const vuota = _cvPieno(tela, cella, sfondo) < _CV_VUOTA;
     // con la griglia trovata la casella è già stretta sulla figurina: rifilarla ancora mangerebbe i bordi chiari
-    const t = _cvRitaglio(tela, (vuota || g) ? cella : _cvRifila(tela, cella));
+    //    (v7.305: con le valli la casella ha ancora un po' di bordo, e si rifila)
+    const t = _cvRitaglio(tela, (vuota || (g && !g.valli)) ? cella : _cvRifila(tela, cella));
     const mini = _cvRiduci(t, t.width, t.height, 90);
-    out.push({ r, c, vuota, firma: vuota ? null : _cvFirma(t), mini: mini.toDataURL('image/jpeg', 0.75) });
-    _cvLibera(t, mini);
+    // 🆕 v7.305 - e una copia grande della casella, da aprire col clic sulla miniatura (`_cvMostraFoto`)
+    const grande = _cvRiduci(t, t.width, t.height, 600);
+    out.push({ r, c, vuota, firma: vuota ? null : _cvFirma(t), mini: mini.toDataURL('image/jpeg', 0.75), grande: grande.toDataURL('image/jpeg', 0.85) });
+    _cvLibera(t, mini, grande);
   }
   _cvLibera(tela);
   out.griglia = !!g;
@@ -67099,10 +67121,35 @@ function _cvGriglia(tela, sfondo, righe, colonne) {
   const px = [], py = [];
   for (let x = 0; x < W; x++) { let s = 0; for (let y = 0; y < H; y++) s += m[y * W + x]; px.push(s / H); }
   for (let y = 0; y < H; y++) { let s = 0; for (let x = 0; x < W; x++) s += m[y * W + x]; py.push(s / W); }
-  const bx = _cvBande(px, colonne), by = _cvBande(py, righe);
+  // 🔄 v7.305 (Franco: «ho sempre questo messaggio: Nella foto dei fronti non ho trovato le righe e le colonne…») - se gli
+  //    spazi netti non ci sono (figurine attaccate, sfondo non uniforme), la seconda strada: le valli (`_cvValli`)
+  const bxN = _cvBande(px, colonne), byN = _cvBande(py, righe);
+  const bx = bxN || _cvValli(px, colonne), by = byN || _cvValli(py, righe);
   if (!bx || !by) return null;
   const k = tela.width / W, allarga = (b, lim) => b.map(([a, z]) => { const p = (z - a) * 0.03; return [Math.max(0, Math.round((a - p) * k)), Math.min(lim, Math.round((z + p) * k))]; });
-  return { x: allarga(bx, tela.width), y: allarga(by, tela.height) };
+  return { x: allarga(bx, tela.width), y: allarga(by, tela.height), valli: !bxN || !byN };
+}
+// 🆕 v7.305 - LA SECONDA STRADA: la zona piena va dalla prima all'ultima colonna (riga) sopra il 15% del massimo; ogni
+//    taglio cade nel punto più vuoto (profilo lisciato su 5) entro un quarto di casella da dove cadrebbe dividendo in
+//    parti uguali. Le caselle tengono un po' di bordo: si rifilano dopo, una per una (vedi `_cvCaselle`).
+function _cvValli(prof, n) {
+  const L = prof.length, max = Math.max(...prof);
+  if (!(max > 0) || n < 1) return null;
+  const s = max * 0.15;
+  let a = 0, z = L - 1;
+  while (a < L && prof[a] <= s) a++;
+  while (z > a && prof[z] <= s) z--;
+  if (z - a + 1 < n * 3) return null;
+  const lis = prof.map((_, i) => { let t = 0, c = 0; for (let j = i - 2; j <= i + 2; j++) if (j >= 0 && j < L) { t += prof[j]; c++; } return t / c; });
+  const w = (z - a + 1) / n, tagli = [a];
+  for (let q = 1; q < n; q++) {
+    const atteso = a + q * w, r = w * 0.25;
+    let meglio = Math.round(atteso), v = Infinity;
+    for (let i = Math.max(a + 1, Math.round(atteso - r)); i <= Math.min(z - 1, Math.round(atteso + r)); i++) if (lis[i] < v) { v = lis[i]; meglio = i; }
+    tagli.push(meglio);
+  }
+  tagli.push(z + 1);
+  return tagli.slice(0, -1).map((t, q) => [t, tagli[q + 1]]);
 }
 // il più somigliante, e se il secondo gli sta troppo vicino
 function _cvMigliore(firma, elenco) {
@@ -67185,7 +67232,11 @@ function apriCercaVariazioni() {
   _cv.file = { fronte: null, retro: null };
   // v7.304 - il Ctrl+V vale in tutta la finestra (vedi `_cvIncolla`)
   ov.addEventListener('paste', _cvIncolla);
-  document.body.appendChild(ov);
+  // 🐛 v7.305 (Franco: «cliccando l'articolo non si apre. forse si apre dietro?») - sì: le due finestre hanno la stessa
+  //    altezza (`modal-overlay`) e vince chi viene dopo nella pagina, e questa veniva in fondo. Ora sta PRIMA della scheda
+  //    dell'articolo, così la scheda aperta da un link del risultato le si apre sopra
+  const _scheda = document.getElementById('fig-detail-modal');
+  if (_scheda && _scheda.parentNode === document.body) document.body.insertBefore(ov, _scheda); else document.body.appendChild(ov);
   if (!serie.length) document.getElementById('cv-stato').textContent = it ? 'Nessuna serie ha dei retro nell’Inventario.' : 'No series has backs in the catalogue.';
 }
 // 🆕 v7.304 (Franco: «sarebbe possibile le 2 foto metterle nella finestra col copia di Windows, invece che selezionarle dal
@@ -67203,6 +67254,25 @@ function _cvZonaHTML(lato, titolo, et, it) {
     + (it ? 'oppure scegli dal disco' : 'or choose from disk')
     + '<input type="file" id="cv-foto-' + lato + '" accept="image/*" style="display:none;" onchange="_cvMettiFile(\'' + lato + '\', this.files && this.files[0])"></label>';
 }
+// 🆕 v7.305 (Franco: «vorrei che sia possibile anche riaprire una delle due foto caricate oppure la foto della miniatura
+//    della singola foto dubbia») - la foto grande in una finestrella sopra tutto (in fondo alla pagina, quindi sopra
+//    «Cerca variazioni»); si chiude con la ✕, col clic fuori dalla foto o con Esc
+function _cvMostraFoto(src) {
+  if (!src) return;
+  document.getElementById('cv-foto-grande')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'cv-foto-grande';
+  const chiudi = () => { ov.remove(); document.removeEventListener('keydown', tasto); };
+  const tasto = e => { if (e.key === 'Escape') chiudi(); };
+  ov.onclick = e => { if (e.target === ov) chiudi(); };
+  ov.innerHTML = '<div style="position:relative;max-width:96vw;max-height:92vh;">'
+    + '<button type="button" class="modal-close" style="position:absolute;top:-0.4rem;right:-0.4rem;z-index:2;background:var(--card);border-radius:50%;">✕</button>'
+    + '<img src="' + src + '" alt="" style="display:block;max-width:96vw;max-height:92vh;object-fit:contain;border-radius:6px;background:var(--bg2);"></div>';
+  ov.querySelector('button').onclick = chiudi;
+  document.addEventListener('keydown', tasto);
+  document.body.appendChild(ov);
+}
 function _cvMettiFile(lato, file) {
   if (!file || !/^image\//.test(file.type || '')) {
     const st = document.getElementById('cv-stato');
@@ -67215,7 +67285,8 @@ function _cvMettiFile(lato, file) {
   if (!z) return;
   const vecchia = z.querySelector('img');
   if (vecchia && vecchia.src.startsWith('blob:')) URL.revokeObjectURL(vecchia.src);
-  z.innerHTML = '<img src="' + URL.createObjectURL(file) + '" alt="" style="height:64px;width:auto;border-radius:4px;">'
+  // v7.305 - il clic sulla miniatura riapre la foto grande (e non mette a fuoco il riquadro)
+  z.innerHTML = '<img src="' + URL.createObjectURL(file) + '" alt="" title="' + (currentLang === 'it' ? 'Apri la foto' : 'Open the photo') + '" onclick="event.stopPropagation();_cvMostraFoto(this.src)" style="height:64px;width:auto;border-radius:4px;cursor:zoom-in;">'
     + '<span>✅ ' + esc(file.name || (currentLang === 'it' ? 'foto incollata' : 'pasted photo')) + '</span>';
   z.style.borderStyle = 'solid';
   const st = document.getElementById('cv-stato');
@@ -67292,10 +67363,21 @@ function _cvDisegna(coppie, modo, sceltoDalSito, saltate, bordi) {
   const it = currentLang === 'it', box = document.getElementById('cv-risultato');
   if (!box) return;
   const nomeModo = modo === 'libro' ? (it ? 'a libro' : 'like a book page') : (it ? 'sul posto' : 'in place');
-  const nomeArt = f => f ? ((_haNumero(f) && f.number ? 'n. ' + esc(String(_numeroAschermo(f))) + ' ' : '') + esc((f.fullName && f.fullName.trim()) ? f.fullName : (f.name || ''))) : '—';
+  // 🔄 v7.305 (Franco: «n. 23 VIVI SEZIONE - PERMESSO DI FICCARE IL NASO ⚠️ dubbio / CERTIFICATO DI ANTIPATICO») - per una
+  //    figurina il Nome completo porta il retro della BASE, che qui confonde: accanto c'è il retro riconosciuto nella foto.
+  //    Le figurine si scrivono «Fronte: n. 23 VIVI SEZIONE», i retro «Retro: <nome completo>»
+  const nomeArt = f => f ? ((_haNumero(f) && f.number ? 'n. ' + esc(String(_numeroAschermo(f))) + ' ' : '')
+    + esc((f.section || 'figurines') === 'figurines' ? (f.name || '') : ((f.fullName && f.fullName.trim()) ? f.fullName : (f.name || '')))) : '—';
   const apri = f => f ? '<a href="#" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;" style="color:var(--info);text-decoration:underline;">' + nomeArt(f) + '</a>' : '—';
   const dubbio = ric => ric && ric.dubbio ? ' <span title="' + (it ? 'Un altro candidato somiglia quasi uguale' : 'Another candidate is almost as close') + '" style="color:var(--warning,#ffb020);">⚠️ ' + (it ? 'dubbio' : 'unsure') + '</span>' : '';
-  const mini = src => '<img src="' + src + '" alt="" style="height:64px;width:auto;border-radius:4px;background:var(--bg2);">';
+  // 🔄 v7.305 (Franco: «vorrei che sia possibile anche riaprire … la foto della miniatura della singola foto dubbia») - il
+  //    clic apre la casella grande. Le foto stanno in `_cv.grandi`, non nell'attributo: sono lunghe
+  _cv.grandi = [];
+  const mini = (src, grande) => {
+    const k = grande ? _cv.grandi.push(grande) - 1 : -1;
+    return '<img src="' + src + '" alt=""' + (k >= 0 ? ' title="' + (it ? 'Apri la foto' : 'Open the photo') + '" onclick="_cvMostraFoto(_cv.grandi[' + k + '])"' : '')
+      + ' style="height:64px;width:auto;border-radius:4px;background:var(--bg2);' + (k >= 0 ? 'cursor:zoom-in;' : '') + '">';
+  };
   const th = 'padding:5px 8px;font-size:0.76rem;color:var(--accent2);font-weight:600;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);vertical-align:middle;';
   // 🔄 v7.304 (Franco: «vanno segnalate queste 2 casistiche: 1: figurina con retro non ufficiale … 2: figurina con retro non
@@ -67307,8 +67389,8 @@ function _cvDisegna(coppie, modo, sceltoDalSito, saltate, bordi) {
     + '<th style="' + th + '">' + (it ? 'Posto' : 'Place') + '</th><th style="' + th + '">' + (it ? 'Fronte' : 'Front') + '</th><th style="' + th + '">Retro</th>'
     + '<th style="' + th + '">' + (it ? 'Riconosciuto' : 'Recognised') + '</th>' + (conArt ? '<th style="' + th + '">' + (it ? 'Nell’Inventario' : 'In the catalogue') + '</th>' : '') + '</tr>'
     + righe.map(x => '<tr><td style="' + td + 'white-space:nowrap;">' + (it ? 'riga ' : 'row ') + (x.r + 1) + ', ' + (it ? 'col. ' : 'col. ') + (x.c + 1) + '</td>'
-      + '<td style="' + td + '">' + mini(x.fr.mini) + '</td><td style="' + td + '">' + (x.re ? mini(x.re.mini) : '—') + '</td>'
-      + '<td style="' + td + '">' + apri(x.fr.ric && x.fr.ric.f) + dubbio(x.fr.ric) + '<br>' + apri(x.re && x.re.ric && x.re.ric.f) + dubbio(x.re && x.re.ric) + '</td>'
+      + '<td style="' + td + '">' + mini(x.fr.mini, x.fr.grande) + '</td><td style="' + td + '">' + (x.re ? mini(x.re.mini, x.re.grande) : '—') + '</td>'
+      + '<td style="' + td + '">' + (it ? 'Fronte: ' : 'Front: ') + apri(x.fr.ric && x.fr.ric.f) + dubbio(x.fr.ric) + '<br>' + (it ? 'Retro: ' : 'Back: ') + apri(x.re && x.re.ric && x.re.ric.f) + dubbio(x.re && x.re.ric) + '</td>'
       + (conArt ? '<td style="' + td + '">' + (x.v.art ? apri(x.v.art) : nomeVerdetto(x.v)) + '</td>' : '') + '</tr>').join('')
     + '</table></div>';
   const tit = 'font-family:var(--font-ui);font-weight:700;font-size:1rem;margin:1rem 0 0.4rem;';
@@ -71859,6 +71941,7 @@ function buildLinkedFiguresTabsHTML(baseId) {
   //    personaggi, meno questo. I personaggi arrivano dopo la scheda: se non ci sono ancora si caricano, e il
   //    blocco dei tab si ridisegna da solo (`#linked-fig-tabs`).
   let _stessoPers = [];
+  const _stessoPersPerRetro = new Set();   // v7.305
   if (_self) {
     if (!_personaggiDati) {
       caricaPersonaggi().then(() => {
@@ -71883,7 +71966,10 @@ function buildLinkedFiguresTabsHTML(baseId) {
       //    Serie-Sottoserie-Nome») - prima era serie, tipologia, numero. Gli altri articoli (fpa diverse, extra…) vengono
       //    dopo i tre gruppi, con lo stesso ordine. Il personaggio «nel fronte» è uno dei suoi (alter ego compresi,
       //    come `articoliDelPersonaggio`) fra quelli della figurina stessa (`personaggiDiArticolo`).
-      _stessoPers = _ordinaStessoPersonaggio([...visti.values()], new Set(_pids.flatMap(p => _conAlterEgo(p))), ordSerie, a => personaggiDiArticolo(a, ix));
+      const _pidsSet = new Set(_pids.flatMap(p => _conAlterEgo(p))), _suoi = a => personaggiDiArticolo(a, ix);
+      _stessoPers = _ordinaStessoPersonaggio([...visti.values()], _pidsSet, ordSerie, _suoi);
+      // 🆕 v7.305 - chi è qui per il suo retro (gruppo 2): la riga mostra anche la miniatura del retro (vedi sotto)
+      _stessoPers.forEach(a => { if (_gruppoStessoPersonaggio(a, _pidsSet, _suoi) === 2) _stessoPersPerRetro.add(a.id); });
     }
   }
   // 🆕 v7.113 (Franco: «nella scheda di una fpa, aggiungere un tab che mostra la figurina con retro (base) associata»)
@@ -72125,8 +72211,15 @@ function buildLinkedFiguresTabsHTML(baseId) {
       // 🔄 v7.304 (Franco: «aumentiamo del 20% la dimensione della miniatura usata nel tab "Articoli dello stesso
       //    personaggio"») - 32 → 38px, solo in quel tab. La foto chiesta resta la stessa (w_120): niente trasformazioni nuove.
       const _lato = g.key === 'stessoPersonaggio' ? 38 : 32;
+      // 🆕 v7.305 (Franco: «quando un articolo è mostrato per via del suo retro, oltre alla miniatura del fronte
+      //    dell'articolo, mettiamo anche quella del suo retro») - il retro effettivo (`_retroEffettivo`), stessa misura
+      //    e stessa foto chiesta (w_120): niente trasformazioni nuove
+      const _retroMini = (g.key === 'stessoPersonaggio' && _stessoPersPerRetro.has(item.id)) ? (() => {
+        const rid = _retroEffettivo(item, allFigs), r = rid && allFigs.find(x => x.id === rid), u = r && _fotoFigurina(r, allFigs);
+        return u ? `<img src="${cloudinaryUrl(u,'w_120,h_120,c_fit,q_auto,f_auto')}" alt="" title="${currentLang === 'it' ? 'Il suo retro' : 'Its back'}" style="width:${_lato}px;height:${_lato}px;flex-shrink:0;object-fit:contain;border-radius:4px;background:var(--card);margin-left:-0.35rem;">` : '';
+      })() : '';
       html += `<a href="#" onclick="openFigDetail('${item.id}', ${_idsGruppo});return false;" style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;border-radius:8px;background:var(--card2);text-decoration:none;color:var(--text);font-size:0.85rem;">
-        ${_foto ? `<img src="${cloudinaryUrl(_foto,'w_120,h_120,c_fit,q_auto,f_auto')}" style="width:${_lato}px;height:${_lato}px;flex-shrink:0;object-fit:contain;border-radius:4px;background:var(--card);">` : `<span style="width:${_lato}px;height:${_lato}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">🖼️</span>`}
+        ${_foto ? `<img src="${cloudinaryUrl(_foto,'w_120,h_120,c_fit,q_auto,f_auto')}" style="width:${_lato}px;height:${_lato}px;flex-shrink:0;object-fit:contain;border-radius:4px;background:var(--card);">` : `<span style="width:${_lato}px;height:${_lato}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">🖼️</span>`}${_retroMini}
         <span>${esc(label)}${labelExtra}</span>
       </a>`;
     });
@@ -73012,7 +73105,11 @@ function _bloccoDoppiEdit(f) {
     h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('quante') + '</span>'
       + '<span class="detail-value" style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">'
       + '<input type="number" min="0" step="1" class="form-input" id="fe-quante" value="' + (f.quante ?? '') + '" style="max-width:6rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
-      + '<input type="number" min="1" step="1" class="form-input" id="fe-quante-mancano" onchange="_mlTogliDaCasella(\'fe-quante\', this)" placeholder="' + (it ? 'Quante ne mancano ?' : 'How many missing?') + '" style="max-width:12rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
+      // 🔄 v7.305 (Franco: «il campo "Quante ne mancano?" … invece di un campo, mettiamo un tasto "Togli una" (o uno a
+      //    seconda del genere della tda), che, se premuto, abbassa di 1 il campo "Disponibilità in set doppi"») - come
+      //    prima, il numero cambia nella casella e si salva col «Salva» della scheda; mai sotto zero
+      + '<button type="button" class="btn-secondary" id="fe-quante-togli" onclick="_mlTogliUnaDaCasella(\'fe-quante\')" style="padding:0.3rem 0.8rem;font-size:0.85rem;">'
+      + (it ? 'Togli ' + (_wzMasc(_aggTipoDi(f)) ? 'uno' : 'una') : 'Remove one') + '</button>'
       + '</span></div>';
   }
   if (_doppiAccesoPer('disp', f)) {   // v7.262 - e con lei il totale
