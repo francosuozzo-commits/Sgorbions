@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.305">
+<link rel="stylesheet" href="css/style.css?v=7.306">
 
 
 <style>
@@ -2603,6 +2603,10 @@ button.back-btn { color:#ffffff; }
       </div>
     </div>
     <div class="nav-links">
+    <!-- 🆕 v7.306 (Franco: «il blocco di opzioni centrale, preso tutto assieme, deve essere centrato orizzontalmente
+         rispetto all'hero») - le voci da Home a Contatti in un contenitore: sul desktop si centra sulla barra (style.css),
+         sul telefono è `display: contents` e il panino resta com'era (`order` sulle voci). -->
+    <div class="nav-voci">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
     <a onclick="showPage('catalog')" data-page="catalog" data-i18n="nav.catalog" id="nav-catalog" style="display:none;">Inventario</a>
     <a onclick="showPage('blog')" data-page="blog" id="nav-blog" style="display:none;" data-i18n="nav.blog">Blog</a>
@@ -2620,6 +2624,7 @@ button.back-btn { color:#ffffff; }
     <a onclick="showPage('classifica')" data-page="classifica" id="nav-classifica" style="display:none;" data-i18n="nav.classifica">🏆 Classifica</a>
     <a onclick="showPage('newsletter')" id="nav-newsletter-btn" style="display:none;">📧 Newsletter</a>
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contatti</a>
+    </div>
     <!-- 🆕 v6.341 (Franco) — LA RICERCA GLOBALE IN NAVBAR, dopo Contatti. Solo admin, solo desktop.
          📌 NON È UNA SECONDA RICERCA: scrive nella casella dell'Inventario e chiama `renderCatalog()`,
          cioè accende quella che c'è già. Una seconda implementazione della stessa ricerca avrebbe
@@ -6781,6 +6786,10 @@ di tutte le serie</button>
       <div id="fig-detail-top"></div>
       <div id="fig-detail-content"></div>
       <div id="fig-detail-photo" style="flex-shrink:0;overflow:visible;"></div>
+      <!-- 🆕 v7.306 (Franco: «i 3 tab siano tutti affiancati, andando ad usare tutta la larghezza della pagina …
+           la parte sottostante (quella coi 3 tab) inizia sotto all'ultimo campo») - i tab collegati escono dalla
+           colonna dei campi: una riga sotto le due colonne, larga quanto la scheda. Lo riempie `_collegatiInRiga`. -->
+      <div id="fig-detail-collegati" style="grid-column:1 / -1;min-width:0;"></div>
     </div>
   </div>
 </div>
@@ -7095,7 +7104,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.305"></script>
+<script src="js/app.js?v=7.306"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7119,7 +7128,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.305'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.306'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
