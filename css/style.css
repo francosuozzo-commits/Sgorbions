@@ -199,6 +199,35 @@ body {
 .nav-logo span { color: var(--accent2); }
 .nav-brand { display: flex; flex-direction: column; justify-content: center; flex-shrink: 0; margin-right: 1.5rem; }
 .nav-links { display: flex; gap: 0.25rem; align-items: center; }
+/* 🆕 v7.306 (Franco: «possiamo centrare i tasti della navbar rispetto allo spazio a disposizione nella navbar? ora
+   abbiamo i tasti che iniziano alla estrema sx ma rimane dello spazio nero a dx») - sul desktop le voci prendono lo
+   spazio fra il logo e la parte di destra e ci stanno al centro. Sul telefono c'è il panino: non si tocca.
+   🔄 Seconda stesura (Franco: «riesci a centrare il set di bottoni visibili rispetto allo spazio a disposizione?
+   Parlo dei pulsanti che precedono la buca di ricerca»): la prima non bastava, perché la casella (`#nav-search`,
+   `flex:1 1 auto` nell'index, v6.854) si prendeva tutto lo spazio libero e le voci restavano a sinistra. Ora la
+   casella non cresce, e lo spazio libero si divide a metà fra prima di «Home» e dopo «Contatti» (margini
+   automatici): le voci stanno al centro fra il logo e la casella, la casella (o il 🔍) resta attaccata a destra.
+   Senza casella, al centro di tutto lo spazio. 📌 «Contatti» è l'ultima voce visibile prima della casella sul
+   desktop: quelle che la seguono nel markup sul desktop sono spente (Annunci, Cerca variazioni, Ricerca, La mia
+   lista Sgorbions, Logout). */
+/* 🔄 Quarta stesura, LA REGOLA GIUSTA (Franco: «usi una regola sbagliata. sa questa regola: il blocco di opzioni
+   centrale, preso tutto assieme, deve essere centrato orizzontalmente rispetto all'hero») - le stesure prima
+   centravano le voci nello spazio fra logo e casella, che dipende da quanto sono larghi i due. Ora il gruppo
+   (`.nav-voci`, da Home a Contatti) ha il suo centro al centro della barra, che è larga quanto la pagina e quindi
+   quanto l'hero: `position: absolute` sulla barra (`#navbar` è `fixed`, quindi è lei il riferimento), metà a sinistra
+   e mezzo gruppo indietro. Fuori dal flusso, il gruppo non sposta niente: la casella (o il 🔍) resta in fondo a
+   destra (`justify-content: flex-end`). Il nome del sito, che stava proprio lì al centro, si spegne quando tocca
+   (`_nomeSitoSeCiSta`, ora per tutti). ⚠️ Su finestre strette il gruppo può arrivare al logo o alla casella: il
+   centro è una regola, non un ripiego. Sul telefono `display: contents`: il panino vede le voci come prima. */
+.nav-voci { display: contents; }
+@media (min-width: 861px) {
+  .nav-links { justify-content: flex-end; }
+  .nav-voci {
+    display: flex; gap: 0.25rem; align-items: center;
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    white-space: nowrap;
+  }
+}
 /* 🔄 v6.704 (Franco: «usiamo la b)», dopo tre prove iniettate nel sito vero) — LE VOCI
    DELLA NAVBAR SONO BIANCHE A RIPOSO. Erano `--muted`, che non e' un grigio: e' #8b7aaa, un
    viola smorto, e su una voce di menu legge come «disattivata» invece che «secondaria».
@@ -1784,6 +1813,8 @@ footer {
     border-bottom: 1px solid var(--border);
   }
   .nav-links a:last-child { border-bottom: none; }
+  /* v7.306 - «Contatti» è l'ultima del contenitore `.nav-voci`, non del panino: il bordo lo tiene */
+  .nav-links .nav-voci a:last-child { border-bottom: 1px solid var(--border); }
 
   /* 🆕 v6.876 (Franco) — L'ORDINE DELLE VOCI NEL PANINO, dettato da lui una per una:
      Home, Inventario, Ricerca, Blog, Mia lista, Ciò che cerco, Liste, Classifica, Esci.
@@ -2673,6 +2704,23 @@ footer {
 
 /* sul desktop il contenitore delle righe "sopra la foto" non esiste proprio */
 #fig-detail-top:empty { display: none; }
+
+/* 🆕 v7.306 (Franco: «i 3 tab siano tutti affiancati, andando ad usare tutta la larghezza della pagina»;
+   «ogni tab, quando selezionato, può usare tutta la larghezza della scheda») - I TAB COLLEGATI SOTTO LE DUE
+   COLONNE. Vuoto non occupa la riga (e la sua distanza). Sul desktop i bottoni stanno sempre su una riga, in
+   parti uguali. Sul telefono resta com'era: un tab per riga quando non ci stanno.
+   ⚠️ `!important` perché la barra ha le colonne nello stile in linea.
+   📌 Gli articoli del tab restano uno sotto l'altro (Franco: «devono continuare ad essere presentati in
+   verticale … ogni articolo può usare tutta la larghezza della riga, ora maggiore»): una prima stesura li
+   metteva in colonne affiancate, ed era sbagliata. */
+#fig-detail-collegati:empty { display: none; }
+@media (min-width: 861px) {
+  #fig-detail-collegati .linked-fig-barra {
+    grid-template-columns: none !important;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+}
 
 /* 🆕 v6.440 (Franco) — IL GRIGIO DELLE STRUTTURE, SOLO DOVE SEI AMMINISTRATORE.
    Franco, in preview: *"la pagina «Modifica tipo di articolo» la vedo ancora con del grigio"* e
