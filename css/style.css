@@ -1179,6 +1179,10 @@ body {
    delle foto (fronte/retro ruotati). */
 /* v5.872 — placeholder "FOTO NON DISPONIBILE" (grigio pieno, testo bianco) quando manca la foto:
    riempie tutto il riquadro immagine come una foto vera, per non rompere l'uniformità delle card. */
+/* 🆕 v7.308 - il riquadro della foto «in arrivo» (`_senzaFotoHTML`): il timbro dentro misura il corpo in `cqw`, quindi
+   il riquadro dichiara la sua larghezza come contenitore; e il timbro, centrato in assoluto, ha bisogno di un genitore
+   posizionato (`.fig-noimg` lo è già, `absolute` o lo stile in linea `relative`). */
+.fig-noimg.fig-noimg-in-arrivo { container-type: inline-size; }
 .fig-noimg {
   position: absolute; inset: 0;
   background: #7a7a7a; color: #fff;
