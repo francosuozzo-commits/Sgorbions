@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.307';
+const JS_VERSION = 'v7.308';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -50725,6 +50725,7 @@ let _personaggiAlterEgo = false;   // 🆕 v6.972 - l'interruttore admin «Alter
 //    "Senza foto" che mostra i personaggi che nella griglia non hanno una foto») - la foto è quella della card,
 //    cioè `_fotoPersonaggio`: «senza foto» vuol dire che la card mostra il segnaposto.
 let _personaggiSenzaFoto = false;
+let _personaggiConFoto = false;   // 🆕 v7.308 (Franco) - il contrario di «Senza foto», nei «Filtri admin»
 // 🆕 v6.980 (Franco: «nella maschera di ricerca PERS mettiamo un rettangolo per la ricerca nelle serie;
 //    dentro al rettangolo metti dei selettori a pillola, uno per serie; premendoli si cercano PERS
 //    coinvolti nella serie o nelle selezionate; il rettangolo ha il nome "Filtra per serie"») - LE
@@ -50781,7 +50782,8 @@ function _personaggiTipoAggiungi(k) {
 function _haFigurineSue(pid, arts, ix) {
   const suoi = _conAlterEgo(pid);   // v6.972 - anche la figurina di un suo alter ego è sua
   // 🔄 v7.192 (Franco: «e deve escludere i personaggi legati ad una card») - contano anche le Carte
-  return arts.some(a => ['figurines', 'attaccare', 'carte'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).some(x => suoi.includes(x)));
+  // 🔄 v7.308 - e le Olografiche (Franco: «Personaggi senza Figurine / Carte / Olografiche»)
+  return arts.some(a => ['figurines', 'attaccare', 'carte', 'olografiche'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).some(x => suoi.includes(x)));
 }
 
 function renderCatalogPersonaggi(grid) {
@@ -50819,7 +50821,8 @@ function renderCatalogPersonaggi(grid) {
   const senzaSerie = _personaggiDati.elenco.filter(p => (soloAlterEgo ? principaleDi.has(p.id) : !principaleDi.has(p.id))
     && (!q || (soloAlterEgo ? [p.nome] : nomiDi(p)).some(n => _perRicerca(n).includes(q)))
     && (!_personaggiSenzaFigurine || !_haFigurineSue(p.id, articoliDelPersonaggio(p.id, ix), ix))
-    && (!(currentUser?.isAdmin && _personaggiSenzaFoto) || !_fotoPersonaggio(articoliDelPersonaggio(p.id, ix), p.id, ix)));   // v7.088
+    && (!(currentUser?.isAdmin && _personaggiSenzaFoto) || !_fotoPersonaggio(articoliDelPersonaggio(p.id, ix), p.id, ix))   // v7.088
+    && (!(currentUser?.isAdmin && _personaggiConFoto) || !!_fotoPersonaggio(articoliDelPersonaggio(p.id, ix), p.id, ix)));   // v7.308
   // 🔄 v7.189 - i riquadri delle pillole sono due (serie e tipologie): ognuno conta i suoi numeri sui personaggi che
   //    passano TUTTO il resto, l'altro riquadro compreso - così ogni pillola dice quanti ne troveresti accendendo lei
   const _passaSerie = p => !_personaggiSerie.size || [..._seriePersonaggio(p.id, ix)].some(s => _personaggiSerie.has(s));
@@ -50867,7 +50870,7 @@ function renderCatalogPersonaggi(grid) {
     // 🔄 v7.191 (Franco: «da mobile, "Imposta i criteri per la tua ricerca" diventa "Imposta dei criteri di ricerca"»;
     //    «da mobile, il bottone "Azzera filtri" prova a scriverlo su due righe») - le due frasi del telefono
     + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? (_isMobileViewport() ? 'Imposta dei criteri di ricerca' : 'Imposta i criteri per la tua ricerca') : 'Set your search criteria') + '</div>'
-    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiSenzaFoto=false;_personaggiSerie=new Set();_personaggiTipi=new Set();_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;line-height:1.15;">' + t('items.resetFiltersHtml') + '</button>'
+    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiSenzaFoto=false;_personaggiConFoto=false;_personaggiSerie=new Set();_personaggiTipi=new Set();_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;line-height:1.15;">' + t('items.resetFiltersHtml') + '</button>'
     + '</div>'
     + '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;">'
     + '<span style="' + _etichettaBordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + t('items.searchHint')   /* v6.972 (Franco): la stessa etichetta delle form di serie e TDA */ + '</span>'
@@ -50891,19 +50894,23 @@ function renderCatalogPersonaggi(grid) {
     + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);">'
     + '<button type="button" class="toggle-btn-blue ' + (_personaggiSenzaFigurine ? 'on' : '') + '" onclick="_personaggiSenzaFigurine=!_personaggiSenzaFigurine;_personaggiPagina=1;renderCatalog();"></button>'
     // 🔄 v7.192 (Franco: «il filtro "senza figurine" chiamalo "Personaggi senza figurine o card"»)
-    + (it ? 'Personaggi senza figurine o card' : 'Characters without stickers or cards') + '</label>'
+    // 🔄 v7.308 (Franco: «"Personaggi senza figurine o card" diventa "Personaggi senza Figurine / Carte / Olografiche"»)
+    //    - e il conto segue la scritta: anche le olografiche (`_haFigurineSue`)
+    + (it ? 'Personaggi senza Figurine / Carte / Olografiche' : 'Characters without Stickers / Cards / Holographic') + '</label>'
     + '</div>'
     // 🆕 v7.088 (Franco) - «Filtri admin», un riquadro suo, dopo quello dei filtri per tutti: dentro «Senza foto»
     //    e «Alter ego» (v6.972), che stava fra i filtri per tutti con la scritta «(admin)» accanto.
     + (currentUser?.isAdmin ? '<div id="personaggi-filtri-admin" style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
       + '<div style="' + _etichettaBordo + '">' + (it ? 'Filtri admin' : 'Admin filters') + '</div>'
       + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);">'
-      + '<button type="button" class="toggle-btn-blue ' + (_personaggiSenzaFoto ? 'on' : '') + '" onclick="_personaggiSenzaFoto=!_personaggiSenzaFoto;_personaggiPagina=1;renderCatalog();"></button>'
+      + '<button type="button" class="toggle-btn-blue ' + (_personaggiSenzaFoto ? 'on' : '') + '" onclick="_personaggiSenzaFoto=!_personaggiSenzaFoto;if(_personaggiSenzaFoto)_personaggiConFoto=false;_personaggiPagina=1;renderCatalog();"></button>'
       + (it ? 'Senza foto' : 'Without photo') + '</label>'
-      // 🆕 v6.972 (Franco: «solo l'admin può cercare [gli alter ego], mediante apposito flag "Alter ego"»)
+      // 🗑️ v7.308 (Franco: «nel filtro admin dei personaggi, cancelliamo "alter ego", che non serve più e aggiungiamo
+      //    "Con foto"») - qui stava l'interruttore «Alter ego» (v6.972). `_personaggiAlterEgo` resta, sempre spento.
+      //    «Con foto» è il contrario di «Senza foto»: accendendone uno l'altro si spegne (insieme non troverebbero nessuno).
       + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);margin-left:1.4rem;">'
-      + '<button type="button" class="toggle-btn-blue ' + (_personaggiAlterEgo ? 'on' : '') + '" onclick="_personaggiAlterEgo=!_personaggiAlterEgo;_personaggiPagina=1;renderCatalog();"></button>'
-      + 'Alter ego</label></div>' : '')
+      + '<button type="button" class="toggle-btn-blue ' + (_personaggiConFoto ? 'on' : '') + '" onclick="_personaggiConFoto=!_personaggiConFoto;if(_personaggiConFoto)_personaggiSenzaFoto=false;_personaggiPagina=1;renderCatalog();"></button>'
+      + (it ? 'Con foto' : 'With photo') + '</label></div>' : '')
     + '</div>'
     // 🔄 v6.972 (Franco: «prima di esporre i risultati manca anche questa sezione, che per figurine e
     //    TDA abbiamo: I risultati della tua ricerca: 2 articoli trovati») - la forma di
@@ -64450,9 +64457,19 @@ function _azzeraTuttiIRaggr(section) {
 //    Lo usano la griglia, la scheda in lettura, la scheda in modifica e la pagina del personaggio.
 // ⚠️ Il retro NON collegato non passa di qui: è un riquadro vuoto apposta (v6.098), perché lì manca
 //    un collegamento, non una foto.
+// 🆕 v7.308 (Franco: «mettiamo una foto con disclaimer "in arrivo"»; poi «ok» a: il timbro «IN ARRIVO !» delle serie, il
+//    riquadro grigio di oggi sotto, l'admin che continua a vedere «FOTO DA CARICARE») - IL TERZO STATO, PER IL VISITATORE:
+//    flag spento = la foto deve ancora arrivare, e lo dice col timbro rosso (`_timbroHTML`, lo stesso delle copertine
+//    delle serie in arrivo). Flag acceso = «FOTO NON DISPONIBILE», come prima. Nessuna foto nuova: niente Cloudinary.
+//    Nacque al posto di una proposta scartata: rendere invisibili i 1.442 articoli senza foto (contati il 15/11).
 function _senzaFotoHTML(nonDisp, stile, id) {   // `id`: la scheda in modifica sostituisce il riquadro per id
   const daCaricare = !nonDisp && !!currentUser?.isAdmin;
   const it = currentLang === 'it';
+  if (!nonDisp && !daCaricare) {
+    return '<div' + (id ? ' id="' + id + '"' : '') + ' class="fig-noimg fig-noimg-in-arrivo"' + (stile ? ' style="' + stile + '"' : '')
+      + ' title="' + (it ? 'Foto in arrivo' : 'Photo coming soon') + '">'
+      + _timbroHTML(it ? 'IN ARRIVO !' : 'COMING SOON !', 'var(--in-arrivo)') + '</div>';
+  }
   const testo = daCaricare ? (it ? 'FOTO DA CARICARE' : 'PHOTO TO UPLOAD') : (it ? 'FOTO NON DISPONIBILE' : 'PHOTO NOT AVAILABLE');
   return '<div' + (id ? ' id="' + id + '"' : '') + ' class="fig-noimg' + (daCaricare ? ' fig-noimg-da-caricare' : '') + '"' + (stile ? ' style="' + stile + '"' : '') + '>' + testo + '</div>';
 }
