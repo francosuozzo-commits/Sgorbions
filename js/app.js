@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.309';
+const JS_VERSION = 'v7.310';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -44829,13 +44829,17 @@ function _annApriFinestra(i, sola) {
           + f(p, '◀', it ? 'Annuncio precedente' : 'Previous listing') + f(s, '▶', it ? 'Annuncio successivo' : 'Next listing') + '</div>';
       })() : '')
     + '<button type="button" class="modal-close" onclick="document.getElementById(\'annuncio-modal\').remove()">✕</button></div>'
+    // v7.187 (Franco) - il link dell'annuncio sul sito dove è pubblicato
+    // 🔄 v7.277 (Franco: «nella form dell'annuncio, il link con l'annuncio mettiamolo sotto a nome del sito») - era dopo Finale
+    // 🔄 v7.310 (Franco: «il campo link mettilo come primo campo e largo tutta la finestra (in pratica inizia dove
+    //    inizia "Sito" e finisce dove finisce "Descrizione IT")») - fuori dalla griglia, sopra le due colonne
+    + '<div class="ann-link-riga">'
+    + lab('Link')
+    + '<input id="ann-link" class="form-input" type="url" placeholder="https://…" value="' + esc(r.link || '') + '">'
+    + '</div>'
     + '<div class="ann-griglia"><div>'
     + lab(it ? 'Sito' : 'Site')
     + '<select id="ann-sito" class="form-select">' + _FA_SITI.map(s => '<option' + (s.nome === r.sito ? ' selected' : '') + '>' + s.nome + '</option>').join('') + '</select>'
-    // v7.187 (Franco) - il link dell'annuncio sul sito dove è pubblicato
-    // 🔄 v7.277 (Franco: «nella form dell'annuncio, il link con l'annuncio mettiamolo sotto a nome del sito») - era dopo Finale
-    + lab('Link')
-    + '<input id="ann-link" class="form-input" type="url" placeholder="https://…" value="' + esc(r.link || '') + '">'
     + lab(it ? 'Venditore' : 'Seller')
     + '<select id="ann-account" class="form-select"><option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
       + _ANN_ACCOUNT.map(a => '<option' + (a === r.account ? ' selected' : '') + '>' + a + '</option>').join('') + '</select>'
@@ -45090,7 +45094,12 @@ async function _annElimina(i) {
 //    subito dopo di lei. Via l'unione degli album con le stesse foto (l'Omaggio e il L. 1000 della serie 3 erano uno solo).
 // 🔄 v7.288 (Franco: «non serve avere le foto; se non ha le foto, allora disattiva la opzione "dal sito"») - TUTTI gli album:
 //    `senzaFoto` = nessuna pagina sul sito (né sua né risalendo le partenze). Le pagine le danno le foto caricate (`_faMiniature`).
-function _faAlbum() {
+// 🆕 v7.310 - le serie in cui gli album base hanno le stesse pagine (cambia solo la copertina posteriore): Sgorbions serie 1
+//    e Sgorbions serie 2 (id letti sul sito il 16/11). NON la serie 3: lì può cambiare il colore delle pagine, che il
+//    riconoscimento usa.
+const _FA_PAGINE_DI_SERIE = ['B8YNfd4pqHtf3UIqcvef', 'jHhmIp2y5duQseZcRHsK'];
+// 🔄 v7.310 - `tutti`: anche gli album senza la spunta Ebay (partendo dalla copia l'album è il suo, spunta o no)
+function _faAlbum(tutti) {
   const out = [], perId = new Map();
   const serie = getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
   serie.forEach(s => (s.items || []).forEach(f => perId.set(f.id, f)));
@@ -45099,12 +45108,22 @@ function _faAlbum() {
     const capo = f => posto.get(posto.has(f.baseFigurineId) ? f.baseFigurineId : f.id);
     items.slice().sort((a, b) => (capo(a) - capo(b)) || (!!a.baseFigurineId - !!b.baseFigurineId)).forEach(f => {
       // 🔄 v7.290 (Franco: «devono si essere mostrate tutti gli articoli, ma solo quello con il campo Ebay a true»)
-      if (f.section !== 'albums' || !f.forSale) return;
+      if (f.section !== 'albums' || (!f.forSale && !tutti)) return;
       const base = f.baseFigurineId ? perId.get(f.baseFigurineId) : null;
       let fonte = f;
       const visti = new Set();
       while (fonte && _pagineDi(fonte).length < 3 && !visti.has(fonte.id)) { visti.add(fonte.id); fonte = fonte.baseFigurineId ? perId.get(fonte.baseFigurineId) : null; }
-      const pagine = fonte && _pagineDi(fonte).length >= 3 ? _pagineDi(fonte).map(p => p.url) : [];
+      let pagine = fonte && _pagineDi(fonte).length >= 3 ? _pagineDi(fonte).map(p => p.url) : [];
+      // 🆕 v7.310 (Franco: «per la serie 1 gli unici due album (base) sono identici, nelle pagine, in quanto cambia solo una
+      //    scritta nella copertina posteriore; per la Serie 2 anche: le pagine sono identiche e cambia solo, ma qui
+      //    interamente, la copertina posteriore; per la serie 3, invece, può cambiare anche il colore delle pagine … lì dobbiamo
+      //    avere le foto dell'album indicato»; «per le serie 1 e 2 vanno benissimo le foto di un qualsiasi album base di quella
+      //    serie») - nelle serie di `_FA_PAGINE_DI_SERIE`, senza pagine né sue né della partenza, prende quelle del primo album
+      //    BASE della serie che le ha. Il retro, diverso, si riconosce lo stesso: è l'ultima pagina.
+      if (!pagine.length && _FA_PAGINE_DI_SERIE.includes(s.id)) {
+        const altro = items.find(g => g.section === 'albums' && !g.baseFigurineId && _pagineDi(g).length >= 3);
+        if (altro) pagine = _pagineDi(altro).map(p => p.url);
+      }
       // una versione col nome uguale alla sua partenza si distingue dal nome della versione
       const nome = s.name + ' — ' + (f.name || '') + (base && f.name === base.name ? ' (' + _nomeVersione(_chiaveTipo(f), 'it') + ')' : '');
       // v7.184: `piani` = le caselle del tab Ebay dell'album (`fotoAnnuncio`)
@@ -45271,10 +45290,14 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <div class="scelte">
     <label class="btn primario" id="carica">Carica le foto<input type="file" id="file" accept="image/*" multiple hidden></label>
     <button class="btn" id="demo">Usa le foto del sito</button>
+    <!-- v7.310 (Franco) - solo partendo dalla copia: le sue foto Originali; le altre due strade si spengono -->
+    <button class="btn" id="copia-foto" style="display:none;">Usa le foto della copia</button>
   </div>
   <div id="stato"></div><div id="avvisi"></div>
   <div class="nota" id="spiega" style="display:none;margin:8px 0;">Le foto sono già in ordine di pagina, girate e ritagliate. Tocca una miniatura per correggere il ritaglio; con ⟲ ⟳ la giri; dal menu cambi la pagina (la foto entra lì e le altre scalano); con 🗑️ la togli.</div>
   <div class="zoom" id="zoom-mini" style="display:none;">🔍 Miniature <button id="mini-meno" title="Più piccole">−</button><button id="mini-piu" title="Più grandi">+</button></div>
+  <!-- v7.310 (Franco) - la pulizia dello sfondo qui, una volta per foto (era la spunta del passo 4); per una foto sola, il 🧽 della miniatura -->
+  <div class="scelte" id="pulisci-box" style="display:none;margin:4px 0 10px;"><button class="btn" id="pulisci-tutte">🧽 Pulisci lo sfondo di tutte le foto</button></div>
   <div class="griglia" id="miniature"></div>
 </section>
 <!-- v7.185 (Franco: «dovremmo invertire gli step 2 e 3; prima si caricano le foto e dopo si sceglie il sito») -->
@@ -45283,8 +45306,6 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <div id="venditore-box" style="display:none;"><h2 style="margin-top:14px;">Per quale venditore? <span class="nota">(facoltativo: mette già il suo tessuto)</span></h2><div class="scelte" id="scelta-venditore"></div>
   <h2 style="margin-top:14px;">Quale texture di sfondo?</h2><div class="scelte" id="scelta-texture"></div></div></section>
 <section class="passo"><h2>4. Le foto per l'annuncio</h2>
-  <!-- v7.292 (Franco: «una spunta, posta di default a TRUE, dal nome "Pulisci sfondo"») -->
-  <label style="display:inline-flex;align-items:center;gap:6px;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="pulisci" checked>Pulisci sfondo</label>
   <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte</button><span class="nota" id="componi-perche" style="align-self:center;"></span></div>
   <!-- v7.272 (Franco: «anche nella sezione crea foto per annuncio vorrei avere i due bottoni») - i testi del tab Ebay dell'album, per il venditore scelto -->
   <div class="scelte" style="margin-top:8px;"><button class="btn" id="copia-titolo">📋 Copia titolo annuncio</button><button class="btn" id="copia-desc">📋 Copia descrizione annuncio</button><span class="nota" id="copia-stato" style="align-self:center;"></span></div>
@@ -45298,7 +45319,8 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <div class="barra"><span id="vi-dove" style="align-self:center;font-size:14px;min-width:12em;text-align:center;white-space:pre-line;"></span><a class="btn" id="vi-scarica" style="text-decoration:none;">Scarica</a><button class="btn primario" id="vi-chiudi">Chiudi</button></div>
 </div></body></html>`;
 
-function _faApri() {
+// 🔄 v7.310 - `parti` (facoltativo, dalla copia: `_cpCreaAnnuncioAlbum`): { albumId, sito (la chiave), copia: { artId, chiave, campo } }
+function _faApri(parti) {
   if (!_puoAnnunci()) return;   // v7.247 - anche il venditore
   const it = currentLang === 'it';
   const w = window.open('', 'foto-annuncio');
@@ -45310,7 +45332,8 @@ function _faApri() {
   $('demo').onclick = () => _faFotoDelSito().catch(err => _faStato('Errore: ' + err.message));
   // v7.273 - l'errore anche al passo 4, accanto al tasto: al passo 2 dal telefono non si vedeva
   $('componi').onclick = () => _faComponi().catch(err => { _faStato('Errore: ' + err.message); _fa$('piano2').innerHTML = '<span style="color:#c0392b">⚠️ Errore: ' + esc(err.message) + '</span>'; });
-  $('pulisci').onchange = () => _faDisegnaScelte();   // v7.292: le foto pronte non valgono più
+  // 🔄 v7.310 - la spunta «Pulisci sfondo» del passo 4 non c'è più: il tasto per tutte le foto sta sopra le miniature
+  $('pulisci-tutte').onclick = () => _faPulisciTutte();
   $('scarica').onclick = _faScaricaTutte;
   $('copia-titolo').onclick = () => _faCopiaTesto('titoloIt');
   $('copia-desc').onclick = () => _faCopiaTesto('descIt');
@@ -45318,7 +45341,25 @@ function _faApri() {
   //    chiude la scheda (l'ha aperta il sito, quindi il browser lo permette) e torna al sito
   $('esci').onclick = _faEsci;
   _faEditorEventi();
+  // 🆕 v7.310 - dalla copia: album e sito già scelti, e le foto pronte vanno sulla copia
+  if (parti && parti.copia) {
+    _fa.copia = parti.copia;
+    _fa.allegate = [];
+    _fa.album = _faAlbum(true).find(a => a.id === parti.albumId) || null;
+    _fa.sito = _FA_SITI.find(s => s.chiave === parti.sito) || null;
+    const nomeSito = _fa.sito ? _fa.sito.nome : parti.sito;
+    _faStato(_fa.album
+      ? 'Dalla copia: a foto pronte, le allego alla copia (linguetta ' + nomeSito + ').'
+      : '⚠️ Non trovo l’album di questa copia.');
+    // 🆕 v7.310 (Franco: «alla domanda "2. Le foto delle pagine" … le foto le deve prendere direttamente dal tab "Originali"
+    //    della copia»; «le 2 opzioni attuali devono essere grigiate e mettine una terza già selezionata chiamata "Usa le foto
+    //    della copia"») - `_faFotoDellaCopia`; con l'album già scelto parte da sola
+    //    (le altre due le spegne `_faDisegnaScelte`, che a ogni giro le riaccenderebbe)
+    $('copia-foto').style.display = ''; $('copia-foto').classList.add('primario');
+    $('copia-foto').onclick = () => _faFotoDellaCopia().catch(err => _faStato('Errore: ' + err.message));
+  }
   _faDisegnaScelte();
+  if (_fa.copia && _fa.album) _faFotoDellaCopia().catch(err => _faStato('Errore: ' + err.message));
   // 🐛 v7.185 (Franco: «quando premo il pulsante … mi mostra la ultima pagina dell'album aperta; dovrebbe reiniziare
   //    sempre daccapo») - la finestra ha un nome, quindi se era rimasta aperta il browser riusa QUELLA: il contenuto si
   //    riscrive da zero, ma lo scorrimento restava dov'era, in fondo. Si riparte dall'alto.
@@ -45376,8 +45417,14 @@ async function _faCopiaTesto(chiave) {
 function _faDisegnaScelte() {
   const d = _fa.w.document;
   const albumBox = _fa$('scelta-album'); albumBox.innerHTML = '';
-  _faAlbum().forEach(a => {
+  // 🔄 v7.310 (Franco: «quando avvio la procedura di creazione annuncio dai sotto tab foto … anche alla domanda 1 non devo poter
+  //    cambiare album; e la opzione già selezionata non deve essere cliccabile») - dalla copia tutti spenti, il suo acceso ma
+  //    grigio (come i siti del passo 3); senza la spunta Ebay non sarebbe nell'elenco, e allora si aggiunge in fondo
+  const elenco = _faAlbum();
+  if (_fa.copia && _fa.album && !elenco.some(a => a.id === _fa.album.id)) elenco.push(_fa.album);
+  elenco.forEach(a => {
     const b = d.createElement('button');
+    b.disabled = !!_fa.copia;
     // 🔄 v7.291 (Franco: «se l'articolo non ha pagine sul sito, non scriverlo nel nome; tanto lo capisco dal radio button successivo»)
     b.textContent = a.nome + (a.senzaFoto ? '' : ' — ' + a.pagine.length + ' pag.');
     // 🔄 v7.287 - si riconosce dall'id: ora due voci possono avere lo stesso nome
@@ -45393,7 +45440,9 @@ function _faDisegnaScelte() {
     const b = d.createElement('button');
     const usabile = !s.soloScritto || (!!_fa.album && !!_faPianoDi(_fa.album, s));
     b.textContent = s.nome + ' (' + s.limite + ' foto)' + (usabile ? '' : (_fa.album ? ' — pagine da scegliere nella scheda dell’album' : ' — scegli prima l’album'));
-    b.disabled = !usabile;
+    // 🔄 v7.310 (Franco: «se la procedura l'ho avviata dal tab ebay … deve essere spento Vinted, ed ebay selezionato ma
+    //    grigiato») - partendo dalla copia il sito lo dà la linguetta: tutti spenti, quello scelto resta acceso ma grigio
+    b.disabled = !usabile || !!_fa.copia;
     if (s === _fa.sito) b.className = 'on';
     b.onclick = () => { _fa.sito = s; _faDisegnaScelte(); };
     sitoBox.appendChild(b);
@@ -45458,6 +45507,19 @@ function _faDisegnaScelte() {
   // 🔄 v7.288 (Franco: «se non ha le foto, allora disattiva la opzione "dal sito"»)
   _fa$('demo').disabled = senzaAlbum || _fa.album.senzaFoto;
   _fa$('demo').title = senzaAlbum ? 'Scegli prima l’album (passo 1)' : _fa.album.senzaFoto ? 'Questo album non ha pagine sul sito' : '';
+  // 🆕 v7.310 - partendo dalla copia le foto sono le sue (`_faFotoDellaCopia`): le altre due strade restano grigie
+  if (_fa.copia) {
+    _fa$('file').disabled = true;
+    // v7.310 (Franco: «"carica le foto" sebbene sia in sola lettura è rosso … deve presentarsi come "Usa le foto del sito":
+    //    non selezionabile e non colorato») - via il rosso di `primario`
+    _fa$('carica').classList.remove('primario');
+    _fa$('carica').classList.add('spento');
+    _fa$('carica').style.pointerEvents = 'none';
+    _fa$('demo').disabled = true;
+    _fa$('carica').title = _fa$('demo').title = 'Si parte dalla copia: le foto sono quelle della sua linguetta Originali';
+    // v7.310 (Franco: «la opzione già selezionata non deve essere cliccabile») - parte da sola all'apertura: accesa ma spenta
+    _fa$('copia-foto').disabled = true;
+  }
 }
 
 // ---- le tele ----
@@ -45483,9 +45545,10 @@ function _faLibera(...tele) { tele.forEach(c => { if (c && c.getContext) { c.wid
 // 🆕 v7.292 (Franco: «"Prepara le foto" e "Scarica tutte" devono spegnersi quando viene modificato il valore di un campo
 //    precedentemente popolato e che era prerequisito»; proposta accettata: le foto pronte spariscono e «Scarica tutte» si spegne;
 //    «Prepara le foto» si spegne solo se manca un dato) - la fotografia delle scelte con cui si sono fatte le foto pronte
+// 🔄 v7.310 - al posto della spunta «Pulisci sfondo» (tolta), se ogni foto è pulita: pulirne una dopo cambia le foto pronte
 function _faStatoScelte() {
-  return [_fa.album && _fa.album.id, _fa.sito && _fa.sito.chiave, _fa.venditore, _fa.texture, _fa$('pulisci').checked,
-    ..._fa.foto.map(f => [f.pagina, f.rett.x, f.rett.y, f.rett.w, f.rett.h, f.giri || 0].join(','))].join('|');
+  return [_fa.album && _fa.album.id, _fa.sito && _fa.sito.chiave, _fa.venditore, _fa.texture,
+    ..._fa.foto.map(f => [f.pagina, f.rett.x, f.rett.y, f.rett.w, f.rett.h, f.giri || 0, _faPulitaValida(f) ? 1 : 0].join(','))].join('|');
 }
 function _faInvalida() {
   _fa.uscite.forEach(u => URL.revokeObjectURL(u.url));
@@ -45499,9 +45562,13 @@ function _faControllaUscite() {
 // 🆕 v7.292 (Franco: «una spunta … "Pulisci sfondo"»; «le foto devono essere ripulite dello sfondo, prima di iniziare la loro
 //    elaborazione») - il ritaglio passa dal modello del sito (`_togliSfondoDaBlob`, nel browser: niente Cloudinary). Il risultato
 //    resta sulla foto (`pulita`), legato a tela e ritaglio: si rifà solo se la foto è cambiata.
+// 🆕 v7.310 - la foto pulita vale finché la foto non cambia (girata: tela nuova; ritaglio corretto: rett nuovo)
+function _faPulitaValida(f) {
+  return !!(f && f.pulita && f.pulita.sorg === f.tela && f.pulita.rett === JSON.stringify(f.rett));
+}
 async function _faPulisciFoto(f) {
   const rett = JSON.stringify(f.rett);
-  if (f.pulita && f.pulita.sorg === f.tela && f.pulita.rett === rett) return;
+  if (_faPulitaValida(f)) return;
   if (f.pulita) _faLibera(f.pulita.tela);
   f.pulita = null;
   const rit = _faRitaglio(f);
@@ -45515,9 +45582,37 @@ async function _faPulisciFoto(f) {
   if (bm.close) bm.close();
   f.pulita = { sorg: f.tela, rett, tela };
 }
+// 🆕 v7.310 (Franco: «metterei un tasto sopra alla tabella con le miniature delle pagine già preparate (ritaglio, ordinamento,
+//    rotazione); lì metterei un tasto unico che pulisce tutte le foto; e poi metterei un tastino per ogni foto, come il tasto
+//    "elimina"; lo metterei proprio accanto ad elimina») - LA PULIZIA AL PASSO 2: una volta per foto, qualunque sito si scelga
+//    dopo. Una foto alla volta: il modello ne regge una sola (`_sfondoFila` tiene spenti gli altri bottoni). `quali`: le foto
+//    da pulire (tutte, o una sola dal 🧽 della miniatura); quelle già pulite e non cambiate si saltano.
+async function _faPulisciTutte(quali) {
+  if (_fa.inCorso || _sfondoInCorso || _sfondoFila) { _faStato('⏳ C’è già un lavoro in corso: aspetta che finisca.'); return; }
+  const daPulire = (quali || _fa.foto).filter(f => !_faPulitaValida(f));
+  if (!daPulire.length) { _faStato('Le foto sono già pulite.'); return; }
+  _fa.inCorso = true;
+  _sfondoFila = true;
+  _faMiniature();
+  try {
+    for (let i = 0; i < daPulire.length; i++) {
+      _faStato('⏳ Pulisco lo sfondo: foto ' + (i + 1) + ' di ' + daPulire.length + '… (la prima volta ci vuole di più)');
+      await _faPulisciFoto(daPulire[i]);
+    }
+    _faStato('');
+  } catch (e) {
+    console.error('_faPulisciTutte', e);
+    _faStato('⚠️ Non riesco a pulire lo sfondo: ' + (e && e.message || e));
+  } finally {
+    _fa.inCorso = false;
+    _sfondoFila = false; _riaccendiBottoniSfondo();
+    _faMiniature();
+  }
+}
 // una copia: chi la riceve la libera dopo averla usata
-function _faRitaglioPronto(f, pulisci) {
-  if (!pulisci || !f.pulita) return _faRitaglio(f);
+// 🔄 v7.310 - la pulita se c'è ed è valida (prima: solo con la spunta «Pulisci sfondo» del passo 4)
+function _faRitaglioPronto(f) {
+  if (!_faPulitaValida(f)) return _faRitaglio(f);
   const c = _faTela(f.pulita.tela.width, f.pulita.tela.height);
   c.getContext('2d').drawImage(f.pulita.tela, 0, 0);
   return c;
@@ -45888,7 +45983,27 @@ async function _faFotoDelSito() {
   _faStato('');
   _faMiniature();
   // v7.292 - con «Pulisci sfondo» ci vuole tempo: si parte solo premendo «Prepara le foto» (Franco)
-  if (_fa.sito && _fa.texture && !_fa$('pulisci').checked) await _faComponi();
+  // 🔄 v7.310 - la pulizia ora si chiede a parte (passo 2), quindi qui si prepara sempre
+  if (_fa.sito && _fa.texture) await _faComponi();
+}
+
+// 🆕 v7.310 - LE FOTO DELLA COPIA (linguetta Originali, campo `foto`): sono foto vere delle pagine, come quelle caricate dal
+//    disco, quindi fanno la stessa strada (`_faCaricaFile`: riconoscimento, ordine, ritaglio). Si scaricano intere, senza
+//    trasformazioni Cloudinary; il nome numerato tiene il loro ordine dove conta (album senza pagine sul sito).
+async function _faFotoDellaCopia() {
+  if (!_fa.album) { _faStato('Scegli prima l’album.'); return; }
+  const { artId, chiave } = _fa.copia;
+  const copia = _annTrovaCopia(_articoloVivo(artId), chiave);
+  const urls = copia && Array.isArray(copia.foto) ? copia.foto : [];
+  if (!urls.length) { _faStato('⚠️ La copia non ha foto nella linguetta Originali: caricale lì, poi riapri «Crea annuncio album».'); return; }
+  const file = [];
+  for (let i = 0; i < urls.length; i++) {
+    _faStato('Scarico le foto della copia: ' + (i + 1) + ' di ' + urls.length + '…');
+    const r = await fetch(urls[i]);
+    if (!r.ok) throw new Error('foto ' + (i + 1) + ' della copia: HTTP ' + r.status);
+    file.push(new File([await r.blob()], 'copia-' + String(i + 1).padStart(3, '0') + '.jpg', { type: 'image/jpeg' }));
+  }
+  await _faCaricaFile(file);
 }
 
 // ---- le miniature ----
@@ -45902,6 +46017,11 @@ function _faMiniature() {
   box.innerHTML = ''; _fa$('avvisi').innerHTML = '';
   _fa$('spiega').style.display = _fa.foto.length ? '' : 'none';
   _fa$('zoom-mini').style.display = _fa.foto.length ? '' : 'none';
+  // v7.310 - il tasto «Pulisci lo sfondo di tutte le foto»: c'è con le foto; spento mentre si lavora o se sono già tutte pulite
+  _fa$('pulisci-box').style.display = _fa.foto.length ? '' : 'none';
+  const tuttePulite = _fa.foto.length && _fa.foto.every(_faPulitaValida);
+  _fa$('pulisci-tutte').disabled = !!_fa.inCorso || !!tuttePulite;
+  _fa$('pulisci-tutte').title = tuttePulite ? 'Sono già tutte pulite' : '';
   const avvisi = [];
   if (a.senzaFoto && _fa.foto.length) avvisi.push('Questo album non ha pagine sul sito: le foto sono nell’ordine dei nomi dei file (la prima è la copertina, l’ultima il retro). Controlla l’ordine.');
   if (_fa.foto.length !== N) avvisi.push('Hai caricato ' + _fa.foto.length + ' foto, ma l’album ha ' + N + ' pagine.');
@@ -45914,8 +46034,9 @@ function _faMiniature() {
   _fa.foto.forEach(f => {
     const card = d.createElement('div'); card.className = 'mini' + (f.dubbia ? ' dubbia' : '');
     // v7.273: il ritaglio a piena misura serve solo a fare la miniatura, e si libera subito
-    const ritaglio = _faRitaglio(f);
-    const c = _faRiduci(ritaglio, f.rett.w, f.rett.h, 2 * (_fa.mini || 140));
+    // v7.310: una foto pulita si vede pulita (`_faRitaglioPronto`: la pulita se è valida)
+    const ritaglio = _faRitaglioPronto(f);
+    const c = _faRiduci(ritaglio, ritaglio.width, ritaglio.height, 2 * (_fa.mini || 140));
     _faLibera(ritaglio);
     c.title = 'Correggi il ritaglio';
     c.onclick = () => _faApriEditor(f);
@@ -45942,6 +46063,14 @@ function _faMiniature() {
     const togli = d.createElement('button'); togli.textContent = '🗑️'; togli.title = 'Togli questa foto';
     togli.onclick = () => { _fa.foto = _fa.foto.filter(g => g !== f); _faLibera(f.tela); _faMiniature(); };   // v7.273: anche la sua memoria
     riga.appendChild(togli);
+    // 🆕 v7.310 (Franco: «un tastino per ogni foto, come il tasto "elimina"; lo metterei proprio accanto ad elimina») - 🧽
+    //    pulisce lo sfondo di questa foto; già pulita (e non cambiata dopo) è spento, con ✓
+    const pulita = _faPulitaValida(f);
+    const pul = d.createElement('button'); pul.textContent = pulita ? '🧽✓' : '🧽';
+    pul.title = pulita ? 'Sfondo già pulito' : 'Pulisci lo sfondo di questa foto';
+    pul.disabled = pulita || !!_fa.inCorso;
+    pul.onclick = () => _faPulisciTutte([f]);
+    riga.appendChild(pul);
     card.append(c, sel, riga);
     box.appendChild(card);
   });
@@ -45981,10 +46110,15 @@ function _faApriEditor(f) {
   const sel = _fa$('ed-pagina');
   sel.innerHTML = '<option value="">— quale pagina? —</option>'
     + Array.from({ length: N }, (_, p) => '<option value="' + p + '"' + (f.pagina === p ? ' selected' : '') + '>' + esc(_faNomePagina(p, N)) + '</option>').join('');
+  // 🔄 v7.310 (Franco: «se apro la foto 5 e la sposto in posizione 20, dopo che lo spostamento viene effettuato vorrei essere
+  //    spostato alla foto successiva … scorro il set fotografico una volta, in modo lineare; ora, invece, sono sempre
+  //    catapultato in un altro punto della sequenza») - si apre la foto che veniva DOPO quella spostata (presa prima dello
+  //    spostamento: dopo, il suo posto può essere cambiato); sull'ultima si resta sulla foto spostata
   sel.onchange = () => {
+    const dopo = _fa.foto[_fa.foto.indexOf(f) + 1] || f;
     _faSpostaPagina(f, sel.value === '' ? null : +sel.value);
     f.rett = _fa.ed.r;
-    _faInOrdine(); _faMiniature(); _faApriEditor(f);
+    _faInOrdine(); _faMiniature(); _faApriEditor(dopo);
   };
   _fa$('editor').classList.add('aperto');
   _faDisegnaEditor();
@@ -46136,22 +46270,10 @@ async function _faComponi() {
   _fa.statoUscite = _faStatoScelte();   // v7.292
   _fa$('scarica').disabled = true;
   _fa$('risultati').innerHTML = '';
-  // 🆕 v7.292 - prima di tutto lo sfondo, una foto alla volta (il modello ne regge una sola: `_sfondoFila` tiene spenti gli altri bottoni)
-  const pulisci = _fa$('pulisci').checked;
-  if (pulisci) {
-    const daPulire = [...new Set((_faPianoDi(a, sito) || []).flat().filter(p => perPagina.has(p)))].map(p => perPagina.get(p));
-    _sfondoFila = true;
-    try {
-      for (let i = 0; i < daPulire.length; i++) {
-        const t = 'Pulisco lo sfondo: foto ' + (i + 1) + ' di ' + daPulire.length + '… (la prima volta ci vuole di più)';
-        _faStato(t); _fa$('piano2').textContent = '⏳ ' + t;
-        await _faPulisciFoto(daPulire[i]);
-      }
-    } catch (e) {
-      console.error('_faComponi/sfondo', e);
-      throw new Error('non riesco a pulire lo sfondo (' + (e && e.message || e) + '). Togli la spunta «Pulisci sfondo» per preparare le foto senza.');
-    } finally { _sfondoFila = false; _riaccendiBottoniSfondo(); }
-  }
+  // 🗑️ v7.310 (Franco: «quel pulsante, in questa procedura, non lo metterei come opzione della trasformazione per siti; perché
+  //    così facendo facciamo la pulizia n volte (una per ogni sito)») - qui stava la pulizia della spunta «Pulisci sfondo» del
+  //    passo 4. Ora si pulisce al passo 2, sulle foto (`_faPulisciTutte`, il 🧽 di ogni miniatura); qui si usa la foto pulita
+  //    se c'è ed è ancora valida (`_faPulitaValida`).
   // v7.243 - la texture scelta, letta una volta sola (come nel collage, `_collageLeggiTexture`)
   const tx = COLLAGE_TEXTURE.find(t => t.k === _fa.texture);
   _fa.tessuto = null;
@@ -46166,12 +46288,14 @@ async function _faComponi() {
     if (!presenti.length) continue;
     _faStato('Preparo la foto ' + (_fa.uscite.length + 1) + '…');
     _fa$('piano2').textContent = '⏳ Preparo la foto ' + (_fa.uscite.length + 1) + '…';   // v7.273: anche qui, dove si guarda
-    const ritagli = presenti.map(p => _faRitaglioPronto(perPagina.get(p), pulisci));
+    const ritagli = presenti.map(p => _faRitaglioPronto(perPagina.get(p)));
+    // v7.310 - c'è almeno una foto pulita nel gruppo
+    const pulite = presenti.some(p => _faPulitaValida(perPagina.get(p)));
     let c = _faComponiGruppo(ritagli);
     _faLibera(...ritagli.filter(r => r !== c));   // v7.273
     if (_fa.tessuto) c = _faSulTessuto(c, _fa.tessuto);
     // v7.292 - una foto pulita è trasparente: senza tessuto il JPEG la farebbe nera, lo sfondo è il bianco
-    else if (pulisci) { const b = _faTela(c.width, c.height), x = b.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, b.width, b.height); x.drawImage(c, 0, 0); _faLibera(c); c = b; }
+    else if (pulite) { const b = _faTela(c.width, c.height), x = b.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, b.width, b.height); x.drawImage(c, 0, 0); _faLibera(c); c = b; }
     const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.9));
     _faLibera(c);   // v7.273: la foto ora sta nel file
     // v7.273 - una tela nata oltre il tetto di memoria del telefono non dà il file: lo si dice, invece di fermarsi muti
@@ -46185,7 +46309,46 @@ async function _faComponi() {
   if (_fa.statoUscite !== _faStatoScelte()) { _faInvalida(); return; }
   _fa.saltate = saltate;
   _faRisultati();
+  if (_fa.copia) await _faAllegaAllaCopia();   // v7.310
   } finally { _fa.inCorso = false; _faDisegnaScelte(); }
+}
+// 🆕 v7.310 (Franco: «completata la trasformazione, le foto generate devono essere direttamente allegate alla copia») - le foto
+//    pronte vanno su Cloudinary (etichetta «copia», come quelle caricate a mano) e si scrivono subito sulla copia, nel campo
+//    della linguetta da cui si è partiti. Un secondo «Prepara le foto» SOSTITUISCE quelle allegate dal giro prima (le altre
+//    foto della linguetta restano): le vecchie, non più nominate, le toglie la pulizia serale. Se la finestra della copia è
+//    aperta su quella copia, la sua linguetta si aggiorna (se no il suo Salva le butterebbe).
+async function _faAllegaAllaCopia() {
+  const { artId, chiave, campo } = _fa.copia, it = currentLang === 'it';
+  const scrivi = (t, rosso) => _fa$('piano2').insertAdjacentHTML('beforeend', '<br><span style="color:' + (rosso ? '#c0392b' : '#2e7d32') + '">' + esc(t) + '</span>');
+  if (!_fa.uscite.length) return;
+  try {
+    const nuove = [];
+    for (let i = 0; i < _fa.uscite.length; i++) {
+      _faStato('Allego alla copia: foto ' + (i + 1) + ' di ' + _fa.uscite.length + '…');
+      nuove.push(await uploadToCloudinary(_fa.uscite[i].blob, 'copia'));
+    }
+    const art = _articoloVivo(artId);
+    const copie = art && Array.isArray(art.copie) ? art.copie.slice() : [];
+    const j = copie.findIndex((c, k) => _annChiaveCopia(c, k) === chiave);
+    if (j < 0) throw new Error(it ? 'non trovo più la copia' : 'copy not found');
+    const prima = Array.isArray(copie[j][campo]) ? copie[j][campo] : [];
+    const elenco = prima.filter(u => !_fa.allegate.includes(u)).concat(nuove);
+    copie[j] = Object.assign({}, copie[j], { [campo]: elenco });
+    await _saveFigurineItem(Object.assign({}, art, { copie }));
+    _fa.allegate = nuove;
+    // la finestra della copia, se è aperta su questa copia: le foto già sul sito diventano quelle scritte, quelle ancora da salvare restano
+    if (_cpFotoDi && _cpFotoDi.artId === artId && _cpFotoDi.chiave === chiave) {
+      const daSalvare = _cpFotoElenco(campo).filter(f => !f.url);
+      _cpFoto[campo] = elenco.map(url => ({ url })).concat(daSalvare);
+      _cpFotoDisegna(campo);
+    }
+    _faStato('');
+    scrivi('✅ ' + nuove.length + ' foto allegate alla copia.');
+  } catch (e) {
+    console.error('_faAllegaAllaCopia', e);
+    _faStato('');
+    scrivi('⚠️ Foto NON allegate alla copia: ' + (e && e.message || e), true);
+  }
 }
 // 🔄 v7.243 - le foto pronte, ridisegnate anche dopo «Togli» (prima stavano in fondo a `_faComponi`)
 function _faRisultati() {
@@ -72913,51 +73076,159 @@ function _copiaAlbumLeggi(nuova) {
 //    campo non c'è). Si scelgono e si puliscono subito nel browser, e si vedono da lì; vanno su Cloudinary solo col Salva,
 //    così una finestra chiusa senza salvare non lascia foto orfane. La pulizia è quella del sito (modello nel browser, niente
 //    Cloudinary). Di ogni foto: url se è già caricata, blob e anteprima se è ancora solo qui.
-let _cpFoto = [], _cpFotoLavoro = 0, _cpFotoDi = null;
+// 🔄 v7.310 (Franco: «il tab foto a sua volta deve avere 4 tab: Originali, Ebay, Vinted, Subito; in ogni tab deve esserci la
+//    possibilità di caricare le foto») - QUATTRO ELENCHI, uno per linguetta (`_CP_FOTO_CANALI`). Le Originali restano nel campo
+//    di sempre (`foto`), così le foto già caricate non si spostano; le altre in `fotoEbay`, `fotoVinted`, `fotoSubito`.
+//    `_cpFoto` è un oggetto: per ogni campo, l'elenco della sua linguetta. Ogni linguetta ha il suo «Carica foto» e la sua
+//    «Pulisci sfondo». La pulizia serale di Cloudinary cerca le foto in tutto il testo del database: i campi nuovi li vede.
+const _CP_FOTO_CANALI = [
+  { k: 'foto', it: 'Originali', en: 'Originals' },
+  { k: 'fotoEbay', it: 'Ebay', en: 'Ebay', sito: 'ebay' },
+  { k: 'fotoVinted', it: 'Vinted', en: 'Vinted', sito: 'vinted' },
+  { k: 'fotoSubito', it: 'Subito', en: 'Subito', sito: 'subito' },
+];
+let _cpFoto = {}, _cpFotoLavoro = 0, _cpFotoDi = null;
 const _COPIA_FOTO_LATO = 2000;
-function _cpFotoMiniature(sola) {
+const _cpFotoDelCanale = campo => _CP_FOTO_CANALI.find(d => d.k === campo) || {};
+// 🆕 v7.310 (Franco: «nei 3 sotto tab del tab foto, serve un tasto per scaricare tutte le foto; anche la singola foto deve
+//    essere scaricabile») - il file intero (niente trasformazioni Cloudinary): quella ancora da salvare dal browser, le altre
+//    lette dal loro indirizzo. Nome: copia-<N. copia>-<sito>-<nn>.<estensione>.
+async function _cpFotoFile(campo, i) {
+  const f = _cpFotoElenco(campo)[i];
+  if (!f) return null;
+  const blob = f.blob || await (await fetch(f.url)).blob();
+  const est = /png/.test(blob.type) ? 'png' : 'jpg';
+  const n = (document.getElementById('cp-n')?.value || '').trim();
+  return { blob, nome: 'copia' + (n ? '-' + n : '') + '-' + (_cpFotoDelCanale(campo).sito || campo) + '-' + String(i + 1).padStart(2, '0') + '.' + est };
+}
+function _cpFotoSalvaFile(x) {
+  const url = URL.createObjectURL(x.blob), a = document.createElement('a');
+  a.href = url; a.download = x.nome;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+async function _cpFotoScarica(campo, i) {
+  const it = currentLang === 'it', st = document.getElementById('cp-stato');
+  try { const x = await _cpFotoFile(campo, i); if (x) _cpFotoSalvaFile(x); }
+  catch (e) { console.error('_cpFotoScarica', e); if (st) { st.style.color = 'var(--danger)'; st.textContent = (it ? '⚠️ Non riesco a scaricare la foto: ' : '⚠️ Cannot download the photo: ') + (e?.message || e); } }
+}
+// tutte: con la scelta della cartella dove il browser la offre (come «Scarica tutte» di «Crea annuncio album»), se no una dopo l'altra
+async function _cpFotoScaricaTutte(campo) {
+  const it = currentLang === 'it', st = document.getElementById('cp-stato'), n = _cpFotoElenco(campo).length;
+  const di = (t, col) => { if (st) { st.style.color = col || 'var(--info)'; st.textContent = t; } };
+  if (!n) return di(it ? 'Nessuna foto da scaricare.' : 'No photos to download.');
+  try {
+    let cartella = null;
+    if (typeof window.showDirectoryPicker === 'function') {
+      try { cartella = await window.showDirectoryPicker({ mode: 'readwrite', id: 'foto-copia' }); }
+      catch (e) { if (e && e.name === 'AbortError') return di(it ? 'Nessuna cartella scelta: non ho scaricato niente.' : 'No folder chosen: nothing downloaded.'); }
+    }
+    for (let i = 0; i < n; i++) {
+      di('⏳ ' + (it ? 'Scarico la foto ' : 'Downloading photo ') + (i + 1) + (it ? ' di ' : ' of ') + n + '…');
+      const x = await _cpFotoFile(campo, i);
+      if (cartella) { const w = await (await cartella.getFileHandle(x.nome, { create: true })).createWritable(); await w.write(x.blob); await w.close(); }
+      else { _cpFotoSalvaFile(x); await new Promise(ok => setTimeout(ok, 400)); }
+    }
+    di('✅ ' + n + (it ? ' foto scaricate' : ' photos downloaded') + (cartella ? (it ? ' nella cartella «' : ' into the folder «') + cartella.name + '».' : '.'));
+  } catch (e) {
+    console.error('_cpFotoScaricaTutte', e);
+    di((it ? '⚠️ Non sono riuscito a scaricare tutte le foto: ' : '⚠️ Could not download all the photos: ') + (e?.message || e), 'var(--danger)');
+  }
+}
+function _cpFotoElenco(campo) {
+  if (!_cpFoto[campo]) _cpFoto[campo] = [];
+  return _cpFoto[campo];
+}
+function _cpFotoMiniature(sola, campo) {
   const it = currentLang === 'it';
-  return _cpFoto.map((f, i) => {
+  const elenco = _cpFotoElenco(campo);
+  if (sola && !elenco.length) return '<div>' + (it ? 'Nessuna foto.' : 'No photos.') + '</div>';
+  return elenco.map((f, i) => {
     const grande = f.anteprima || f.url;
     const mini = f.anteprima || _urlSenzaScritta(f.url, 'w_160,h_200,c_fit,q_auto,f_auto');
     return '<div data-cp-foto style="position:relative;width:80px;height:100px;">'
       + '<a href="' + esc(grande) + '" target="_blank" rel="noopener"><img src="' + esc(mini) + '" alt="" style="width:80px;height:100px;object-fit:contain;border-radius:6px;background:#fff;"></a>'
-      + (sola ? '' : '<button type="button" title="' + (it ? 'Togli la foto' : 'Remove the photo') + '" onclick="_cpFotoTogli(' + i + ')" style="position:absolute;top:2px;right:2px;width:20px;height:20px;padding:0;line-height:1;border:none;border-radius:50%;background:var(--danger);color:#fff;cursor:pointer;">✕</button>')
+      + (sola ? '' : '<button type="button" title="' + (it ? 'Togli la foto' : 'Remove the photo') + '" onclick="_cpFotoTogli(' + i + ',\'' + campo + '\')" style="position:absolute;top:2px;right:2px;width:20px;height:20px;padding:0;line-height:1;border:none;border-radius:50%;background:var(--danger);color:#fff;cursor:pointer;">✕</button>')
+      // 🆕 v7.310 (Franco: «anche la singola foto deve essere scaricabile; metti un pulsantino nella sua cella») - nelle linguette
+      //    dei siti, anche in sola lettura: ⬇ in basso a destra (`_cpFotoScarica`)
+      + (_cpFotoDelCanale(campo).sito ? '<button type="button" title="' + (it ? 'Scarica la foto' : 'Download the photo') + '" onclick="_cpFotoScarica(\'' + campo + '\',' + i + ')" style="position:absolute;bottom:2px;right:2px;width:20px;height:20px;padding:0;line-height:1;border:none;border-radius:50%;background:var(--info);color:#fff;cursor:pointer;font-size:0.7rem;">⬇</button>' : '')
       + '</div>';
   }).join('');
 }
-function _cpFotoHTML(c, sola, artId, chiave) {
+// 🔄 v7.310 - `album`: la copia è di un album; allora nelle linguette dei siti c'è anche «Crea annuncio album»
+function _cpFotoHTML(c, sola, artId, chiave, album) {
   const it = currentLang === 'it';
-  _cpFoto.forEach(f => { if (f.anteprima) URL.revokeObjectURL(f.anteprima); });
-  _cpFoto = (Array.isArray(c.foto) ? c.foto : []).map(url => ({ url }));
+  Object.values(_cpFoto).forEach(el => el.forEach(f => { if (f.anteprima) URL.revokeObjectURL(f.anteprima); }));
+  _cpFoto = {};
+  _CP_FOTO_CANALI.forEach(d => { _cpFoto[d.k] = (Array.isArray(c[d.k]) ? c[d.k] : []).map(url => ({ url })); });
   _cpFotoDi = artId ? { artId, chiave } : null;
-  if (sola && !_cpFoto.length) return '';
-  return '<div id="cp-foto-box"><label class="detail-label" style="display:block;margin:0.7rem 0 0.25rem;">' + (it ? 'Foto' : 'Photos') + '</label>'
-    + '<div id="cp-foto-lista" style="display:flex;flex-wrap:wrap;gap:0.5rem;">' + _cpFotoMiniature(sola) + '</div>'
+  // le linguette, vestite come quelle della copia ma più piccole; il numero delle foto accanto al nome
+  const barra = '<div style="display:flex;gap:0.4rem;flex-wrap:wrap;border-bottom:1px solid var(--border);margin:0.4rem 0 0.5rem;">'
+    + _CP_FOTO_CANALI.map((d, n) => '<button type="button" id="cp-foto-tab-btn-' + d.k + '" onclick="_cpFotoTab(\'' + d.k + '\')" '
+      + 'style="padding:0.3rem 0.75rem;border:none;border-bottom:2px solid ' + (n === 0 ? 'var(--accent)' : 'transparent')
+      + ';background:transparent;color:' + (n === 0 ? 'var(--accent)' : 'var(--text)') + ';font-weight:' + (n === 0 ? '600' : '400')
+      + ';font-size:0.8rem;cursor:pointer;">' + (it ? d.it : d.en) + ' (<span id="cp-foto-conto-' + d.k + '">' + _cpFoto[d.k].length + '</span>)</button>').join('')
+    + '</div>';
+  const pannello = (d, n) => '<div id="cp-foto-tab-' + d.k + '"' + (n === 0 ? '' : ' style="display:none;"') + '>'
+    // v7.310 - «Scarica tutte» sopra le foto delle linguette dei siti, anche in sola lettura (`_cpFotoScaricaTutte`)
+    + (d.sito ? '<div style="margin-bottom:0.5rem;"><button type="button" class="btn-secondary" id="cp-foto-scarica-' + d.k + '" onclick="_cpFotoScaricaTutte(\'' + d.k + '\')" style="font-size:0.8rem;padding:0.25rem 0.8rem;">⬇️ ' + (it ? 'Scarica tutte' : 'Download all') + '</button></div>' : '')
+    + '<div id="cp-foto-lista-' + d.k + '" style="display:flex;flex-wrap:wrap;gap:0.5rem;">' + _cpFotoMiniature(sola, d.k) + '</div>'
     + (sola ? '' : '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:0.8rem;margin-top:0.5rem;">'
-      + '<input type="file" id="cp-foto-input" accept="image/*" multiple style="display:none;" onchange="_cpFotoScelte(this)">'
-      + '<button type="button" class="btn-barra-admin pieno" id="cp-foto-carica" onclick="document.getElementById(\'cp-foto-input\').click()">📷 ' + (it ? 'Carica foto' : 'Upload photos') + '</button>'
-      + '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" id="cp-foto-pulisci">' + (it ? 'Pulisci sfondo' : 'Clean background') + '</label>'
+      + '<input type="file" id="cp-foto-input-' + d.k + '" accept="image/*" multiple style="display:none;" onchange="_cpFotoScelte(this,\'' + d.k + '\')">'
+      + '<button type="button" class="btn-barra-admin pieno" id="cp-foto-carica-' + d.k + '" onclick="document.getElementById(\'cp-foto-input-' + d.k + '\').click()">📷 ' + (it ? 'Carica foto' : 'Upload photos') + '</button>'
+      + '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" id="cp-foto-pulisci-' + d.k + '">' + (it ? 'Pulisci sfondo' : 'Clean background') + '</label>'
+      // 🆕 v7.310 (Franco: «nei 3 tab Ebay, Vinted, Subito, deve essere presente un tasto che avvia la procedura "Crea annuncio
+      //    album"»; album dall'articolo, sito dalla linguetta; «completata la trasformazione, le foto generate devono essere
+      //    direttamente allegate alla copia») - `_cpCreaAnnuncioAlbum`
+      + (album && d.sito ? '<button type="button" class="btn-barra-admin pieno" id="cp-crea-annuncio-' + d.k + '" onclick="_cpCreaAnnuncioAlbum(\'' + d.k + '\')">📸 ' + (it ? 'Crea annuncio album' : 'Create album listing') + '</button>' : '')
       + '</div>')
     + '</div>';
+  return '<div id="cp-foto-box">' + barra + _CP_FOTO_CANALI.map(pannello).join('') + '</div>';
 }
-function _cpFotoDisegna() {
-  const box = document.getElementById('cp-foto-lista');
-  if (box) box.innerHTML = _cpFotoMiniature(false);
+// 🆕 v7.310 - «Crea annuncio album» dalla linguetta di un sito: la finestra parte con l'album della copia (passo 1) e il sito
+//    della linguetta (passo 3); a foto pronte, `_faAllegaAllaCopia` le carica e le scrive sulla copia, in quella linguetta.
+//    Una copia non ancora salvata (un clone) non ha dove ricevere le foto.
+function _cpCreaAnnuncioAlbum(campo) {
+  const it = currentLang === 'it', d = _CP_FOTO_CANALI.find(x => x.k === campo);
+  if (!d || !d.sito) return;
+  if (!_cpFotoDi) { toast(it ? 'Salva prima la copia: le foto pronte si allegano a una copia salvata.' : 'Save the copy first: the photos are attached to a saved copy.', 'info'); return; }
+  _faApri({ albumId: _cpFotoDi.artId, sito: d.sito, copia: { artId: _cpFotoDi.artId, chiave: _cpFotoDi.chiave, campo } });
+}
+function _cpFotoTab(campo) {
+  _CP_FOTO_CANALI.forEach(d => {
+    const div = document.getElementById('cp-foto-tab-' + d.k), btn = document.getElementById('cp-foto-tab-btn-' + d.k);
+    if (div) div.style.display = d.k === campo ? '' : 'none';
+    if (btn) {
+      btn.style.borderBottomColor = d.k === campo ? 'var(--accent)' : 'transparent';
+      btn.style.color = d.k === campo ? 'var(--accent)' : 'var(--text)';
+      btn.style.fontWeight = d.k === campo ? '600' : '400';
+    }
+  });
+}
+function _cpFotoDisegna(campo) {
+  const box = document.getElementById('cp-foto-lista-' + campo);
+  if (box) box.innerHTML = _cpFotoMiniature(false, campo);
+  const conto = document.getElementById('cp-foto-conto-' + campo);
+  if (conto) conto.textContent = _cpFotoElenco(campo).length;
+  // v7.310 - il 📷 del tab «Foto»: tutte e quattro le linguette, anche le foto non ancora salvate
+  const segno = document.getElementById('cp-tab-segno-foto');
+  if (segno) segno.textContent = _cpSegnoFoto(Object.values(_cpFoto).reduce((t, el) => t + el.length, 0));
 }
 // 🔄 v7.294 (Franco: «la pressione della X sulla singola foto va considerata una richiesta di cancellazione immediata») - una
 //    foto già sul sito esce subito dalla copia, senza Salva; il file su Cloudinary lo toglie il lavoro serale. Gli altri campi
 //    della finestra, anche se cambiati e non salvati, non si toccano.
-async function _cpFotoTogli(i) {
-  const via = _cpFoto[i];
+// 🔄 v7.310 - `campo`: la linguetta della foto (`_CP_FOTO_CANALI`)
+async function _cpFotoTogli(i, campo) {
+  campo = campo || 'foto';
+  const elenco = _cpFotoElenco(campo), via = elenco[i];
   if (!via) return;
   if (via.url && _cpFotoDi) {
     const art = _articoloVivo(_cpFotoDi.artId);
     const copie = art && Array.isArray(art.copie) ? art.copie.slice() : [];
     const j = copie.findIndex((c, k) => _annChiaveCopia(c, k) === _cpFotoDi.chiave);
-    if (j >= 0 && Array.isArray(copie[j].foto) && copie[j].foto.includes(via.url)) {
-      const nuova = Object.assign({}, copie[j]), resto = nuova.foto.filter(u => u !== via.url);
-      if (resto.length) nuova.foto = resto; else delete nuova.foto;
+    if (j >= 0 && Array.isArray(copie[j][campo]) && copie[j][campo].includes(via.url)) {
+      const nuova = Object.assign({}, copie[j]), resto = nuova[campo].filter(u => u !== via.url);
+      if (resto.length) nuova[campo] = resto; else delete nuova[campo];
       copie[j] = nuova;
       try {
         await _saveFigurineItem(Object.assign({}, art, { copie }));
@@ -72969,17 +73240,17 @@ async function _cpFotoTogli(i) {
       }
     }
   }
-  const dove = _cpFoto.indexOf(via);
-  if (dove >= 0) _cpFoto.splice(dove, 1);
+  const dove = elenco.indexOf(via);
+  if (dove >= 0) elenco.splice(dove, 1);
   if (via.anteprima) URL.revokeObjectURL(via.anteprima);
-  _cpFotoDisegna();
+  _cpFotoDisegna(campo);
 }
-// un clone è un altro pezzo: le foto non vengono dietro
+// un clone è un altro pezzo: le foto non vengono dietro, di nessuna linguetta
 function _cpFotoSvuota() {
-  _cpFoto.forEach(f => { if (f.anteprima) URL.revokeObjectURL(f.anteprima); });
-  _cpFoto = [];
+  Object.values(_cpFoto).forEach(el => el.forEach(f => { if (f.anteprima) URL.revokeObjectURL(f.anteprima); }));
+  _cpFoto = {};
   _cpFotoDi = null;
-  _cpFotoDisegna();
+  _CP_FOTO_CANALI.forEach(d => _cpFotoDisegna(d.k));
 }
 // le foto oltre la misura caricata di solito sul sito si riducono prima: il modello lavora più in fretta, e il PNG pulito resta
 // sotto i 10 MB che Cloudinary accetta. Un formato che il browser non sa aprire si lascia com'è.
@@ -72996,12 +73267,14 @@ async function _cpFotoRiduci(blob) {
     return (await new Promise(res => tela.toBlob(res, 'image/jpeg', 0.92))) || blob;
   } finally { img.close(); }
 }
-async function _cpFotoScelte(input) {
+// 🔄 v7.310 - `campo`: la linguetta in cui si carica (`_CP_FOTO_CANALI`)
+async function _cpFotoScelte(input, campo) {
+  campo = campo || 'foto';
   const it = currentLang === 'it', file = [...input.files];
   input.value = '';
   if (!file.length) return;
-  const modal = document.getElementById('copia-modal'), st = document.getElementById('cp-stato'), tasto = document.getElementById('cp-foto-carica');
-  const pulisci = !!document.getElementById('cp-foto-pulisci')?.checked;
+  const modal = document.getElementById('copia-modal'), st = document.getElementById('cp-stato'), tasto = document.getElementById('cp-foto-carica-' + campo);
+  const pulisci = !!document.getElementById('cp-foto-pulisci-' + campo)?.checked;
   const di = (t, col) => { if (st) { st.style.color = col || 'var(--info)'; st.textContent = t; } };
   if (pulisci && _sfondoInCorso) return di(it ? '⏳ C’è già una pulizia dello sfondo in corso: aspetta che finisca.' : '⏳ A background removal is already running: wait for it to finish.', 'var(--danger)');
   _cpFotoLavoro++;
@@ -73021,8 +73294,8 @@ async function _cpFotoScelte(input) {
             : '⏳ ' + (it ? 'Pulisco lo sfondo: ' : 'Cleaning the background: ') + conto + (pct ? ' — ' + pct + '%' : '')));
         }
         if (document.getElementById('copia-modal') !== modal) return;
-        _cpFoto.push({ blob, anteprima: URL.createObjectURL(blob) });
-        _cpFotoDisegna();
+        _cpFotoElenco(campo).push({ blob, anteprima: URL.createObjectURL(blob) });
+        _cpFotoDisegna(campo);
       } catch (e) {
         console.error('_cpFotoScelte', i, e);
         fallite++;
@@ -73040,13 +73313,44 @@ async function _cpFotoScelte(input) {
 // e si riprova, non parte due volte.
 async function _cpFotoCarica(nuova) {
   if (_cpFotoLavoro) throw new Error(currentLang === 'it' ? 'aspetta che le foto siano pronte.' : 'wait for the photos to be ready.');
-  for (const f of _cpFoto) {
-    if (!f.blob) continue;
-    f.url = await uploadToCloudinary(f.blob, 'copia');
-    delete f.blob;
+  // 🔄 v7.310 - per ogni linguetta: carica le sue e scrive il suo campo; una linguetta vuota toglie il campo
+  for (const d of _CP_FOTO_CANALI) {
+    const elenco = _cpFotoElenco(d.k);
+    for (const f of elenco) {
+      if (!f.blob) continue;
+      f.url = await uploadToCloudinary(f.blob, 'copia');
+      delete f.blob;
+    }
+    if (elenco.length) nuova[d.k] = elenco.map(f => f.url);
+    else delete nuova[d.k];
   }
-  if (_cpFoto.length) nuova.foto = _cpFoto.map(f => f.url);
-  else delete nuova.foto;
+}
+// 🆕 v7.310 - LE LINGUETTE DELLA COPIA (Generale, Foto, Annunci), vestite come quelle della scheda dell'articolo
+const _CP_TAB = ['generale', 'foto', 'annunci'];
+// 🆕 v7.310 (Franco: «metti anche un marker al tab "Foto" atto a indicare che in uno dei suoi 4 tab ci sono delle foto») -
+//    📷 accanto a «Foto» (`cp-tab-segno-foto`), come accanto agli annunci; `c` = la copia; lo tiene giusto `_cpFotoDisegna`
+const _cpSegnoFoto = n => n ? ' 📷' : '';
+function _cpTabBarra(c) {
+  const it = currentLang === 'it';
+  const nFoto = _CP_FOTO_CANALI.reduce((t, d) => t + (c && Array.isArray(c[d.k]) ? c[d.k].length : 0), 0);
+  const et = { generale: it ? 'Generale' : 'General', foto: (it ? 'Foto' : 'Photos') + '<span id="cp-tab-segno-foto" title="' + (it ? 'Ci sono foto' : 'There are photos') + '">' + _cpSegnoFoto(nFoto) + '</span>', annunci: it ? 'Annunci' : 'Listings' };
+  return '<div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">'
+    + _CP_TAB.map((k, n) => '<button type="button" id="cp-tab-btn-' + k + '" onclick="_cpTab(\'' + k + '\')" '
+      + 'style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid ' + (n === 0 ? 'var(--accent)' : 'transparent')
+      + ';background:transparent;color:' + (n === 0 ? 'var(--accent)' : 'var(--text)') + ';font-weight:' + (n === 0 ? '600' : '400')
+      + ';font-size:0.85rem;cursor:pointer;">' + et[k] + '</button>').join('')
+    + '</div>';
+}
+function _cpTab(tab) {
+  _CP_TAB.forEach(k => {
+    const div = document.getElementById('cp-tab-' + k), btn = document.getElementById('cp-tab-btn-' + k);
+    if (div) div.style.display = k === tab ? '' : 'none';
+    if (btn) {
+      btn.style.borderBottomColor = k === tab ? 'var(--accent)' : 'transparent';
+      btn.style.color = k === tab ? 'var(--accent)' : 'var(--text)';
+      btn.style.fontWeight = k === tab ? '600' : '400';
+    }
+  });
 }
 function _copiaApri(artId, chiave, sola) {
   const it = currentLang === 'it';
@@ -73074,6 +73378,10 @@ function _copiaApri(artId, chiave, sola) {
     + '<label for="cp-n" class="detail-label" style="margin:0;white-space:nowrap;">' + (it ? 'N. copia' : 'Copy no.') + '</label>'
     + '<input id="cp-n" class="form-input" type="number" min="0" step="1" value="' + (c.n ?? '') + '" style="width:5rem;"' + dis + '>'
     + '<button type="button" class="modal-close" onclick="document.getElementById(\'copia-modal\').remove()">✕</button></div></div>'
+    // 🆕 v7.310 (Franco: «nella scheda della copia di un articolo, Foto e Annunci devono essere 2 tab a parte; metti tutti
+    //    gli altri campi in un primo tab di nome "Generale"») - `_cpTab`; si apre sul Generale
+    + _cpTabBarra(c)
+    + '<div id="cp-tab-generale">'
     // 🔄 v7.279 (Franco: «il campo multivalore in testata non serve; usiamo solo campi singoli») - righe 1 e 2: Serie, TDA,
     //    Versione; sotto l'Articolo. Anche in sola lettura (spente); il link all'articolo resta accanto al suo nome
     + _cpSceltaArticoloHTML(art, sola, x.nomeVer || '')
@@ -73100,10 +73408,17 @@ function _copiaApri(artId, chiave, sola) {
     // 🔄 v7.279 - riga 7: le Condizioni
     + lab(it ? 'Condizioni' : 'Condition')
     + _condCampoHTML('id="cp-condizioni"' + dis, c.condizioni, 'min-height:8rem;')
-    + _cpFotoHTML(c, sola, artId, chiave)
+    + '</div>'
+    // v7.310 - tab Foto, con le sue quattro linguette (Originali, Ebay, Vinted, Subito)
+    + '<div id="cp-tab-foto" style="display:none;">'
+    + _cpFotoHTML(c, sola, artId, chiave, _aggTipoDi(art) === 'albums')
+    + '</div>'
     // gli annunci della copia: la stessa cella della colonna «Annunci» del tab, riempita quando gli annunci sono letti
+    // v7.310 - tab Annunci
+    + '<div id="cp-tab-annunci" style="display:none;">'
     + '<div id="cp-annunci">' + lab(it ? 'Annunci' : 'Listings')
     + '<table style="border-collapse:collapse;"><tr>' + _copiaCellaAnnunci(artId, chiave, null, 'riga') + '</tr></table></div>' + _copieAnnunciDopo()
+    + '</div>'
     + '<div id="cp-stato" style="font-size:0.8rem;min-height:1.2em;margin-top:0.6rem;"></div>'
     // v7.278 (Franco: «nella pagina della copia, tutti i tasti facciamoli meno alti») - `.cp-comandi` (regola nell'index)
     + '<div class="cp-comandi" style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.8rem;">'
@@ -73208,6 +73523,10 @@ function _copiaClonaQui(artId) {
   if (v('cp-condizioni')) _condColora(v('cp-condizioni'));
   _cpFotoSvuota();
   v('cp-annunci')?.remove();
+  // v7.310 - un clone non ha annunci: via anche il loro tab, e si torna sul Generale
+  v('cp-tab-annunci')?.remove();
+  v('cp-tab-btn-annunci')?.remove();
+  _cpTab('generale');
   v('cp-clona')?.remove();
   v('cp-cancella')?.remove();   // v7.277: un clone non salvato non c'è ancora da cancellare
   ['cp-salva-prev', 'cp-salva-next'].forEach(id => v(id)?.remove());   // v7.268: un clone non ha vicine
@@ -73379,6 +73698,14 @@ const _copiaQualitaTesto = q => (q == null || q === '') ? '' : (currentLang === 
 const _copiaCellaAnnunci = (artId, chiave, stile, due) => '<td' + (due === 'riga' ? ' data-ann-riga' : due ? ' rowspan="2"' : '') + ' style="' + (due ? _copieCella : (stile || _copieCella)) + 'font-size:0.8rem;white-space:nowrap;"'
   + (artId && chiave ? ' data-ann-art="' + esc(artId) + '" data-ann-chiave="' + esc(chiave) + '"' : '') + '></td>';
 let _annLetti = false;
+// 🆕 v7.310 - le foto della copia nella linguetta del sito di un annuncio: il «Sito» dell'annuncio è il nome a schermo di
+//    `_FA_SITI` («eBay», «Vinted», «Subito.it»), la sua chiave è il `sito` della linguetta in `_CP_FOTO_CANALI`. { n, tab }
+function _cpFotoDelSito(copia, nomeSito) {
+  const s = _FA_SITI.find(x => x.nome === nomeSito);
+  const d = s && _CP_FOTO_CANALI.find(x => x.sito === s.chiave);
+  if (!copia || !d) return { n: 0, tab: '' };
+  return { n: Array.isArray(copia[d.k]) ? copia[d.k].length : 0, tab: currentLang === 'it' ? d.it : d.en };
+}
 async function _copieAnnunciRiempi() {
   const celle = [...document.querySelectorAll('td[data-ann-art]')];
   if (!celle.length) return;
@@ -73395,9 +73722,25 @@ async function _copieAnnunciRiempi() {
     const qui = _annRighe.map((r, i) => ({ r, i })).filter(x => x.r.articoloId === td.dataset.annArt && x.r.copiaId === td.dataset.annChiave);
     // 🔄 v7.281 (Franco: «nella colonna Annunci, metti un annuncio per riga») - via i due per riga (v7.278, v7.279), nell'ELENCO COPIE e nel tab «Copie»; in fila resta solo la finestra della copia
     const inRiga = td.dataset.annRiga !== undefined;
-    const link = qui.map(x => '<a href="#" style="color:var(--info);' + (inRiga ? '' : 'display:block;') + '" onclick="_annApriFinestra(' + x.i + ');return false;">🔗 '
-          + esc([x.r.sito, x.r.account].filter(Boolean).join(' · ') || (it ? 'annuncio' : 'listing')) + '</a>');
-    td.innerHTML = !qui.length ? '<span style="color:var(--muted);">—</span>'
+    // 🆕 v7.310 (Franco: «alle copie che hanno foto, metti … una qualsiasi icona che faccia capire che sono state caricate
+    //    delle foto nel tab associato all'annuncio; la relazione annuncio tab è data dalla domanda "Sito" dell'annuncio e dal
+    //    nome del tab») - 📷 dopo il link, se la linguetta del sito dell'annuncio (`_cpFotoDelSito`) ha almeno una foto
+    const copia = _annTrovaCopia(_articoloVivo(td.dataset.annArt), td.dataset.annChiave);
+    const link = qui.map(x => {
+      const ff = _cpFotoDelSito(copia, x.r.sito);
+      return '<a href="#" style="color:var(--info);' + (inRiga ? '' : 'display:block;') + '" onclick="_annApriFinestra(' + x.i + ');return false;">🔗 '
+        + esc([x.r.sito, x.r.account].filter(Boolean).join(' · ') || (it ? 'annuncio' : 'listing'))
+        + (ff.n ? ' <span title="' + esc((it ? 'Foto caricate nel tab ' : 'Photos uploaded in the tab ') + ff.tab + ': ' + ff.n) + '">📷</span>' : '') + '</a>';
+    });
+    // 🆕 v7.310 (Franco: «la icona della macchina fotografica, mettila anche se non c'è un annuncio ancora. se l'annuncio non
+    //    c'è, prima della icona della macchina fotografica, metti il nome del sito») - i siti con foto nella loro linguetta e
+    //    nessun annuncio della copia: «Sito 📷», testo semplice (non c'è un annuncio da aprire)
+    const conAnnuncio = new Set(qui.map(x => x.r.sito));
+    _FA_SITI.filter(s => !conAnnuncio.has(s.nome)).forEach(s => {
+      const ff = _cpFotoDelSito(copia, s.nome);
+      if (ff.n) link.push('<span style="' + (inRiga ? '' : 'display:block;') + '" title="' + esc((it ? 'Nessun annuncio; foto caricate nel tab ' : 'No listing; photos uploaded in the tab ') + ff.tab + ': ' + ff.n) + '">' + esc(s.nome) + ' 📷</span>');
+    });
+    td.innerHTML = !link.length ? '<span style="color:var(--muted);">—</span>'
       : link.join(inRiga ? '&nbsp;&nbsp; ' : '');
   });
   // v7.279 - il Finale della finestra della copia, ora che gli annunci sono letti
@@ -73521,7 +73864,7 @@ function _copiaClonaRiga(btn) {
   // 🔄 v7.282 (Franco: «non copiare tutti i campi legati alla qualità»; «non copiare nemmeno Voto, Iniziale, Addizionale, Finale») - via i campi degli album (v7.279 li portava con sé), Voto, Iniziale e Addizionale
   const altri = tr.dataset.copiaAltri ? JSON.parse(tr.dataset.copiaAltri) : {};
   _COPIA_ALBUM.forEach(d => delete altri[d.k]);
-  delete altri.foto;
+  _CP_FOTO_CANALI.forEach(d => delete altri[d.k]);   // v7.310: le foto di tutte e quattro le linguette (Originali = `foto`)
   tr.insertAdjacentHTML('afterend', _copiaRigaHTML({ ...altri,
     // 🔄 v7.289 (Franco: «si vanno lasciati vuoti anche loro») - anche Condizioni e Mancanti
     n: null, condizioni: '',
