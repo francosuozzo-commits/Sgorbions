@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.314';
+const JS_VERSION = 'v7.315';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45146,16 +45146,24 @@ function _faAlbum(tutti) {
       //    avere le foto dell'album indicato»; «per le serie 1 e 2 vanno benissimo le foto di un qualsiasi album base di quella
       //    serie») - nelle serie di `_FA_PAGINE_DI_SERIE`, senza pagine né sue né della partenza, prende quelle del primo album
       //    BASE della serie che le ha. Il retro, diverso, si riconosce lo stesso: è l'ultima pagina.
+      // 🐛 v7.315 (Franco: «se lancio la procedura dal tab Subito, il tasto Subito è spento; mi dice "pagine da scegliere nella
+      //    scheda dell'album" ma questa scelta è stata fatta; solamente che sta nell'altra versione dell'album; ti ho detto che
+      //    la serie 1 e 2 condividono la struttura dell'album») - insieme alle pagine si prendono anche le SCELTE DELLE PAGINE
+      //    PER SITO (`fotoAnnuncio`, il tab Ebay di quell'album): le pagine sono le stesse, quindi anche i numeri. Un sito che
+      //    l'album ha scritto per conto suo tiene la sua scelta.
+      let pianiPresi = null;
       if (!pagine.length && _FA_PAGINE_DI_SERIE.includes(s.id)) {
         const altro = items.find(g => g.section === 'albums' && !g.baseFigurineId && _pagineDi(g).length >= 3);
-        if (altro) pagine = _pagineDi(altro).map(p => p.url);
+        if (altro) { pagine = _pagineDi(altro).map(p => p.url); pianiPresi = altro.fotoAnnuncio || {}; }
       }
+      const pianiSuoi = (fonte || f).fotoAnnuncio || {};
+      const piani = pianiPresi ? Object.assign({}, pianiPresi, Object.fromEntries(Object.entries(pianiSuoi).filter(([, v]) => String(v || '').trim()))) : pianiSuoi;
       // una versione col nome uguale alla sua partenza si distingue dal nome della versione
       const nome = s.name + ' — ' + (f.name || '') + (base && f.name === base.name ? ' (' + _nomeVersione(_chiaveTipo(f), 'it') + ')' : '');
       // v7.184: `piani` = le caselle del tab Ebay dell'album (`fotoAnnuncio`)
       // 🗑️ v7.199 - qui c'era `sfondi` (le tendine del tab Pagine, v7.185): non lo leggeva nessuno
       // v7.272: `id` = l'album di cui si legge il tab Ebay per «Copia titolo/descrizione annuncio» (`_faTestoAlbum`)
-      out.push({ id: f.id, nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, senzaFoto: !pagine.length, piani: (fonte || f).fotoAnnuncio || {} });
+      out.push({ id: f.id, nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, senzaFoto: !pagine.length, piani });
     });
   });
   return out;
@@ -51438,8 +51446,9 @@ function renderCatalogPersonaggi(grid) {
   _bmApplica(document.getElementById('personaggi-filtro-tipi'), 'pers-tipi');   // v7.189
   _bmApplica(document.getElementById('personaggi-filtri-agg'), 'pers-agg');
 }
-// LA CARD DI UN PERSONAGGIO (hub; v7.314: anche «Personaggi collegati»)
-function _cardPersonaggioHTML(p, ix) {
+// LA CARD DI UN PERSONAGGIO (hub; v7.314: anche «Personaggi collegati»; v7.315: `da` = il personaggio di partenza, che la
+// pagina aperta dal clic ricorda per segnare i retro in comune)
+function _cardPersonaggioHTML(p, ix, da) {
   const it = currentLang === 'it';
   const { principaleDi, perId } = _personaggiDati;
     const arts = articoliDelPersonaggio(p.id, ix);
@@ -51459,7 +51468,7 @@ function _cardPersonaggioHTML(p, ix) {
     //    piedi, che decide l'altezza della riga, non ha spazio libero e non si muove.
     //    📌 Per questo il testo non si allunga più (`flex:0 0 auto` invece di `1 1 auto`): era lui a
     //    prendersi tutto lo spazio, e la foto restava incollata in cima. Il conto resta in fondo.
-    return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="apriPersonaggio(\'' + p.id + '\')">'
+    return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="apriPersonaggio(\'' + p.id + '\'' + (da ? ', \'' + da + '\'' : '') + ')">'
       // 🆕 v7.192 - `_persSdraiata` al caricamento: una foto sdraiata sul desktop allarga la card a due colonne
       + '<div class="card-img-placeholder" style="margin-top:auto;">' + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="' + esc(p.nome) + '" style="width:100%;height:100%;object-fit:contain;" onload="_persSdraiata(this)">' : '') + '</div>'
       // 🔄 v6.968 — card a un quarto: testo e margini scalati con lei (titolo 1,35 → 0,85rem).
@@ -51506,18 +51515,20 @@ function _paginazionePersonaggi(tot) {
 function _vaiPaginaPersonaggi(p) { _personaggiPagina = p; renderCatalog(); try { document.getElementById('catalog-grid').scrollIntoView({ block: 'start' }); } catch (e) {} }
 
 // Apre la pagina di un personaggio: dalla sua card, o dal campo «Personaggio» di una scheda.
-function apriPersonaggio(pid) {
+// v7.315: `da` = il personaggio da cui si arriva, dal tab «Personaggi collegati» (`_persDa`); senza, la pagina è quella di sempre
+function apriPersonaggio(pid, da) {
   try { closeModal('fig-detail-modal'); } catch (e) {}
   _taglioInventario = 'personaggi';
   try { localStorage.setItem('sgb_taglio', 'personaggi'); } catch (e) {}
   _personaggioAperto = _principale(pid);   // v6.972 - un alter ego apre il suo principale (Franco: «1. ok»)
+  _persDa = da ? { pid: _personaggioAperto, da: _principale(da) } : null;
   // la casella della ricerca globale si svuota: piena, `renderCatalog` mostrerebbe i risultati
   const _casellaRG = document.getElementById('series-search'); if (_casellaRG) _casellaRG.value = '';
   showPage('catalog');
   renderCatalog();
   window.scrollTo(0, 0);
 }
-function chiudiPersonaggio() { _personaggioAperto = null; renderCatalog(); }
+function chiudiPersonaggio() { _personaggioAperto = null; _persDa = null; renderCatalog(); }
 
 // LA PAGINA DI UN PERSONAGGIO.
 // 🔄 v6.969 (Franco: «così come è non mi piace… mostriamo la foto di tutti gli articoli che lo
@@ -51587,15 +51598,24 @@ function renderPaginaPersonaggio(grid, pid) {
   // 🆕 v7.314 (Franco: «nella scheda di un personaggio vorrei una barra con dei filtri che permettano di rimuovere alcuni
   //    articoli, in funzione di serie, tda, tipologia di versione (tdv); un meccanismo semplice (non è una ricerca) ma
   //    efficace; lo scopo è ridurre il numero degli articoli della schermata») - I FILTRI: tre file di pillole (serie,
-  //    tipologie, versioni), tutte accese; un clic spegne una pillola e i suoi articoli escono (`_persFiltro`). Ogni pillola
-  //    conta i suoi articoli fra quelli che passano le altre due file. Una fila con un valore solo non si mostra: non
-  //    toglierebbe niente che non tolga già la pagina vuota. Valgono per il personaggio aperto (`_persFiltriDi`).
-  if (_persFiltriDi !== pid) { _persFiltriDi = pid; _persFiltriVia = { serie: new Set(), tipi: new Set(), tdv: new Set() }; _persTab = 'articoli'; }
+  //    tipologie, versioni). Ogni pillola conta i suoi articoli fra quelli che passano le altre due file. Una fila con un
+  //    valore solo non si mostra. Valgono per il personaggio aperto (`_persFiltriDi`).
+  // 🔄 v7.315 (Franco: «li hai fatti a logica passiva (se clicco tolgo) invece che con una logica attiva tipo quella delle
+  //    pillole delle form di ricerca; come mai?»; «sì, rifalli attivi») - LE PILLOLE DELLE FORM DI RICERCA (`_chipTipoHTML`):
+  //    il nome = solo questa (di nuovo: spenta), «+»/«−» = aggiungi/togli; una fila senza pillole accese vale tutto; quella a
+  //    zero si spegne da sola. `_persFiltriSi` = le accese.
+  if (_persFiltriDi !== pid) { _persFiltriDi = pid; _persFiltriSi = { serie: new Set(), tipi: new Set(), tdv: new Set() }; _persTab = 'articoli'; }
   const _chiaviPers = { serie: f => f.seriesId || '', tipi: f => f.section || 'figurines', tdv: f => _chiaveTipo(f) || 'base' };
-  const _passaPers = (f, salta) => Object.keys(_chiaviPers).every(g => g === salta || !_persFiltriVia[g].has(_chiaviPers[g](f)));
+  const _passaPers = (f, salta) => Object.keys(_chiaviPers).every(g => g === salta || !_persFiltriSi[g].size || _persFiltriSi[g].has(_chiaviPers[g](f)));
   const vis = ord.filter(f => _passaPers(f));
   _elencoPersonaggio = vis.map(f => f.id);
   const collegati = _personaggiCollegati(pid, ix);   // v7.314, il secondo tab
+  // 🆕 v7.315 (Franco: «quando apro un personaggio dalla scheda "PERSONAGGI COLLEGATI" metti in evidenza gli articoli che hanno
+  //    creato quel collegamento; metti un marker, e metti una frase sopra ai personaggi che lo dice») - ARRIVANDO DA UN
+  //    COLLEGATO (`_persDa`), i retro in comune col personaggio di partenza hanno il segno «🔗 In comune» e il bordo; sopra
+  //    gli articoli una frase dice da chi si arriva e quanti sono. Aprendo il personaggio in altro modo, niente segno.
+  const _daColl = _persDa && _persDa.pid === pid ? _persDa.da : null;
+  const _inComune = _daColl ? new Set(_retriInComune(pid, _daColl, ix)) : new Set();
   // 🔄 v6.969 (Franco: «le card della pagina del personaggio devono essere grandi il doppio; tanto ce
   //    ne saranno poche») - le colonne della griglia così come sono (l'hub ne usa il doppio), cioè
   //    card larghe il doppio di quelle dell'hub. 📱 Sul telefono due invece di tre: la metà
@@ -51689,7 +51709,10 @@ function renderPaginaPersonaggio(grid, pid) {
     const _foto = _ff
       ? (_ff.fronte || _ff.retro ? '<div id="' + _pcId + '" style="display:flex;flex-direction:row;width:100%;height:100%;align-items:center;justify-content:center;">' + _mezza(_ff.fronte, 'fronte') + _mezza(_ff.retro, 'retro') + '</div>' : '')
       : (u ? '<img src="' + cloudinaryUrl(u, 'w_600,h_600,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;padding:4px;">' : '');
-    return '<div class="card personaggio-articolo" style="display:flex;flex-direction:column;cursor:pointer;' + (_aCapo.has(f.id) ? 'grid-column-start:1;' : '') + '" onclick="openFigDetail(\'' + f.id + '\', _elencoPersonaggio)">'
+    const _comune = _inComune.has(f.id);   // v7.315
+    return '<div class="card personaggio-articolo' + (_comune ? ' pers-in-comune' : '') + '" style="position:relative;display:flex;flex-direction:column;cursor:pointer;' + (_aCapo.has(f.id) ? 'grid-column-start:1;' : '')
+      + (_comune ? 'box-shadow:0 0 0 3px var(--accent);' : '') + '" onclick="openFigDetail(\'' + f.id + '\', _elencoPersonaggio)">'
+      + (_comune ? '<div style="position:absolute;top:6px;left:6px;z-index:1;background:var(--accent);color:#111;font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:999px;">🔗 ' + (it ? 'In comune' : 'Shared') + '</div>' : '')
       + '<div style="aspect-ratio:1;background:var(--card2);display:flex;align-items:center;justify-content:center;">'
       + (_foto || _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.7rem;padding:4px;'))   // v6.977
       + '</div>'
@@ -51733,9 +51756,18 @@ function renderPaginaPersonaggio(grid, pid) {
     + '<div style="color:var(--accent);margin-top:0.3rem;">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div></div>'
     + _persTabBarra(arts.length, collegati.length, it)
     + (_persTab === 'collegati'
-      ? (collegati.length ? collegati.map(c => _cardPersonaggioHTML(c, ix)).join('')
+      ? (collegati.length
+        // v7.315 - la frase sopra ai collegati, e il clic che si ricorda da chi si arriva
+        ? '<div id="pers-collegati-frase" style="grid-column:1/-1;color:var(--text);font-size:0.9rem;padding:0.3rem 0 0.1rem;">'
+          + ((nomeB => it ? 'Questi personaggi hanno almeno un retro in comune con ' + nomeB + '. Aprine uno: i retro in comune sono segnati con <b style="color:var(--accent);">🔗 In comune</b>.'
+            : 'These characters share at least one back with ' + nomeB + '. Open one: the shared backs are marked <b style="color:var(--accent);">🔗 Shared</b>.')('<b style="color:var(--nome-entita);">' + esc(p.nome) + '</b>'))
+          // 🔄 v7.315 (Franco: «le card dei personaggi collegati mi sembrano troppo grandi; riduci del 30%») - una griglia loro,
+          //    con le colonne della pagina diviso 0,7 (5 → 7 sul desktop, 2 → 3 sul telefono): ogni card larga il 70%
+          + '</div><div id="pers-collegati" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(' + Math.round(_colonne / 0.7) + ', minmax(0, 1fr));gap:0.75rem;">'
+          + collegati.map(c => _cardPersonaggioHTML(c, ix, pid)).join('') + '</div>'
         : '<div style="grid-column:1/-1;color:var(--text);padding:1rem 0;">' + (it ? 'Nessun personaggio ha un retro in comune con lui.' : 'No character shares a back with this one.') + '</div>')
-      : _persFiltriHTML(ord, vis, _chiaviPers, _passaPers, serieDi, ordSerie, ordSez, it)
+      : (_daColl ? _persArrivoHTML(_daColl, _inComune.size, it) : '')
+        + _persFiltriHTML(ord, vis, _chiaviPers, _passaPers, serieDi, ordSerie, ordSez, it)
         + (vis.length ? vis.map(card).join('') : '<div style="grid-column:1/-1;color:var(--text);padding:1rem 0;">' + (it ? 'Nessun articolo con questi filtri.' : 'No item with these filters.') + '</div>')
         + _posterDelPersonaggioHTML(pid, arts, ix, ordSerie, serieDi));
 }
@@ -51744,7 +51776,7 @@ function renderPaginaPersonaggio(grid, pid) {
 //    PERSONAGGI COLLEGATI; la prima sezione la chiamerei ARTICOLI DEL PERSONAGGIO; le due sezioni le farei a tab con la
 //    sezione ARTICOLI aperta») - I DUE TAB della pagina del personaggio, col numero accanto. `_persTab` torna ad
 //    «articoli» quando si apre un altro personaggio (`_persFiltriDi`).
-let _persTab = 'articoli', _persFiltriDi = null, _persFiltriVia = { serie: new Set(), tipi: new Set(), tdv: new Set() };
+let _persTab = 'articoli', _persFiltriDi = null, _persFiltriSi = { serie: new Set(), tipi: new Set(), tdv: new Set() };
 function _persTabBarra(nArt, nColl, it) {
   const b = (k, testo) => '<button type="button" id="pers-tab-' + k + '" onclick="_persApriTab(\'' + k + '\')" style="padding:0.45rem 1rem;border:none;border-bottom:2px solid '
     + (_persTab === k ? 'var(--accent)' : 'transparent') + ';background:transparent;color:' + (_persTab === k ? 'var(--accent)' : 'var(--text)')
@@ -51755,6 +51787,25 @@ function _persTabBarra(nArt, nColl, it) {
     + '</div>';
 }
 function _persApriTab(k) { _persTab = k; renderCatalog(); }
+// 🆕 v7.315 - da dove si arriva (`apriPersonaggio(pid, da)`): { pid aperto, da }, o null
+let _persDa = null;
+// I retro dove compaiono tutti e due i personaggi (ognuno coi suoi alter ego): sono loro che fanno il collegamento.
+function _retriInComune(pid, altro, ix) {
+  ix = ix || _indiciPersonaggi();
+  const a = _conAlterEgo(pid), b = _conAlterEgo(altro);
+  return articoliDelPersonaggio(pid, ix).filter(r => r.section === 'retros')
+    .filter(r => { const chi = personaggiDiArticolo(r, ix); return chi.some(x => a.includes(x)) && chi.some(x => b.includes(x)); })
+    .map(r => r.id);
+}
+// La frase sopra gli articoli, arrivando da un collegato: da chi, e quanti articoli sono segnati.
+function _persArrivoHTML(da, n, it) {
+  const q = _personaggiDati.perId.get(da), nome = '<b style="color:var(--nome-entita);">' + (q ? esc(q.nome) : '') + '</b>';
+  return '<div id="pers-arrivo" style="grid-column:1/-1;color:var(--text);font-size:0.9rem;background:var(--card);border:1px solid var(--accent);border-radius:var(--radius-lg);padding:0.55rem 0.85rem;">'
+    + '<b style="color:var(--accent);">🔗</b> ' + (it
+      ? 'Arrivi da ' + nome + ': ' + (n === 1 ? 'è segnato con «🔗 In comune» il retro che li collega.' : 'sono segnati con «🔗 In comune» i ' + n + ' retro che li collegano.')
+      : 'You came from ' + nome + ': ' + (n === 1 ? 'the back that links them is marked «🔗 Shared».' : 'the ' + n + ' backs that link them are marked «🔗 Shared».'))
+    + '</div>';
+}
 // I personaggi che hanno almeno un retro in comune con lui (lui e i suoi alter ego esclusi; un alter ego conta come il
 // suo principale), in ordine di nome.
 function _personaggiCollegati(pid, ix) {
@@ -51768,8 +51819,8 @@ function _personaggiCollegati(pid, ix) {
   return [...trovati].map(id => _personaggiDati.perId.get(id)).filter(Boolean)
     .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'it'));
 }
-// LA BARRA DEI FILTRI (vedi `_persFiltriVia` in `renderPaginaPersonaggio`): una fila per serie, tipologie e versioni, solo
-// se ha almeno due valori; pillola spenta = barrata e sbiadita. «Mostra tutti» riaccende tutto.
+// LA BARRA DEI FILTRI (vedi `_persFiltriSi` in `renderPaginaPersonaggio`): una fila per serie, tipologie e versioni, solo
+// se ha almeno due valori. 🔄 v7.315: le pillole delle form di ricerca (`_chipTipoHTML`); «Azzera filtri» le spegne tutte.
 function _persFiltriHTML(ord, vis, chiavi, passa, serieDi, ordSerie, ordSez, it) {
   const etichette = {
     serie: v => serieDi.get(v) ? _nomeSerieCard(serieDi.get(v)) : '—',
@@ -51785,27 +51836,38 @@ function _persFiltriHTML(ord, vis, chiavi, passa, serieDi, ordSerie, ordSez, it)
   const file = Object.keys(chiavi).map(g => {
     const valori = [...new Set(ord.map(chiavi[g]))].sort(ordina[g]);
     if (valori.length < 2) return '';
-    return '<div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">'
+    return '<div class="pers-filtri-fila" style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">'
       + '<span style="font-size:0.8rem;color:var(--text);min-width:5.5rem;">' + titoli[g] + '</span>'
-      + valori.map(v => {
-        const via = _persFiltriVia[g].has(v), n = ord.filter(f => chiavi[g](f) === v && passa(f, g)).length;
-        return '<button type="button" class="pers-filtro" data-gruppo="' + g + '" data-valore="' + esc(v) + '" onclick="_persFiltro(this.dataset.gruppo, this.dataset.valore)"'
-          + ' title="' + (via ? (it ? 'Rimetti questi articoli' : 'Show these items again') : (it ? 'Togli questi articoli' : 'Hide these items')) + '"'
-          + ' style="padding:0.2rem 0.65rem;border-radius:999px;border:1px solid var(--border2);background:var(--card2);color:var(--text);font-size:0.78rem;cursor:pointer;'
-          + (via ? 'opacity:0.45;text-decoration:line-through;' : '') + '">' + esc(etichette[g](v)) + ' <span style="color:var(--accent);">' + n + '</span></button>';
-      }).join('') + '</div>';
+      + valori.map(v => _chipTipoHTML({
+        etichetta: etichette[g](v), n: ord.filter(f => chiavi[g](f) === v && passa(f, g)).length, attiva: _persFiltriSi[g].has(v), it,
+        onSet: '_persFiltroSolo(\'' + g + '\',\'' + esc(v) + '\')', onAdd: '_persFiltroAggiungi(\'' + g + '\',\'' + esc(v) + '\')',
+        titolo: it ? 'Solo questi' : 'Only these',
+        // le versioni col loro colore, come nelle form di ricerca
+        colore: g === 'tdv' ? (_COLORE_TIPO[v] || '') : '',
+        // 🔄 v7.315 (Franco: «distinguere nettamente il numero del risultato dal numero finale del nome della serie; ora
+        //    abbiamo "Sgorbions serie 1 3"; forse è meglio "Sgorbions serie 1 #3"») - come le pillole degli Annunci con un
+        //    nome che è già un numero: il conto staccato, col «#»
+        stacco: '1.6rem', prima: '#'
+      })).join('') + '</div>';
   }).filter(Boolean);
   if (!file.length) return '';
-  const spenti = Object.values(_persFiltriVia).some(s => s.size);
+  const spenti = Object.values(_persFiltriSi).some(s => s.size);
   return '<div id="pers-filtri" style="grid-column:1/-1;display:flex;flex-direction:column;gap:0.45rem;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.7rem 0.85rem;">'
     + file.join('')
     + '<div style="display:flex;align-items:center;gap:0.8rem;font-size:0.8rem;color:var(--text);">'
     + (it ? 'Mostrati ' : 'Showing ') + '<b style="color:var(--accent);">' + vis.length + '</b>' + (it ? ' di ' : ' of ') + ord.length
-    + (spenti ? ' <button type="button" class="btn-secondary" onclick="_persFiltriAzzera()" style="font-size:0.75rem;padding:0.15rem 0.7rem;">' + (it ? 'Mostra tutti' : 'Show all') + '</button>' : '')
+    + (spenti ? ' <button type="button" class="btn-secondary" onclick="_persFiltriAzzera()" style="font-size:0.75rem;padding:0.15rem 0.7rem;">' + t('items.resetFiltersHtml') + '</button>' : '')
     + '</div></div>';
 }
-function _persFiltro(g, v) { const s = _persFiltriVia[g]; if (!s) return; if (s.has(v)) s.delete(v); else s.add(v); renderCatalog(); }
-function _persFiltriAzzera() { Object.values(_persFiltriVia).forEach(s => s.clear()); renderCatalog(); }
+// come `_personaggiTipoSolo` / `_personaggiTipoAggiungi` dell'hub
+function _persFiltroSolo(g, v) {
+  const s = _persFiltriSi[g];
+  if (!s) return;
+  _persFiltriSi[g] = (s.size === 1 && s.has(v)) ? new Set() : new Set([v]);
+  renderCatalog();
+}
+function _persFiltroAggiungi(g, v) { const s = _persFiltriSi[g]; if (!s) return; if (s.has(v)) s.delete(v); else s.add(v); renderCatalog(); }
+function _persFiltriAzzera() { Object.values(_persFiltriSi).forEach(s => s.clear()); renderCatalog(); }
 // 🆕 v6.980 (Franco: «mostri direttamente il poster; magari lo fai in fondo, dopo aver mostrato tutti
 //    gli articoli; prima ci scrivi Poster, nello stesso font di "ARTICOLI"») - un poster per serie
 //    (uno per personaggio per serie), in ordine di serie; il nome della serie sopra solo se sono più
