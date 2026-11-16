@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.312';
+const JS_VERSION = 'v7.313';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45338,7 +45338,7 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <div class="piano" id="piano2"></div><div class="risultati" id="risultati"></div>
 </section></main>
 <div id="editor">
-  <div class="barra" style="margin:0 0 8px;"><span id="ed-dove" style="align-self:center;font-size:14px;min-width:9em;text-align:center;"></span><button class="btn" id="ed-meno" title="Rimpicciolisci (tasto −)">🔍 −</button><span id="ed-zoom" style="align-self:center;font-size:14px;min-width:3.5em;text-align:center;"></span><button class="btn" id="ed-piu" title="Ingrandisci (tasto +)">🔍 +</button><select id="ed-pagina" title="Quale pagina è questa foto" style="font:inherit;font-size:14px;border-radius:6px;padding:4px 6px;"></select><button class="btn" id="ed-sx" title="Gira a sinistra" style="margin-left:12px;">⟲</button><button class="btn" id="ed-dx" title="Gira a destra">⟳</button><button class="btn" id="ed-auto" style="margin-left:12px;">Ritaglio automatico</button><button class="btn" id="ed-tutta">Tutta la foto</button><button class="btn primario" id="ed-ok">Fatto</button></div>
+  <div class="barra" style="margin:0 0 8px;"><span id="ed-dove" style="align-self:center;font-size:14px;min-width:9em;text-align:center;"></span><button class="btn" id="ed-meno" title="Rimpicciolisci (tasto −)">🔍 −</button><span id="ed-zoom" style="align-self:center;font-size:14px;min-width:3.5em;text-align:center;"></span><button class="btn" id="ed-piu" title="Ingrandisci (tasto +)">🔍 +</button><select id="ed-pagina" title="Quale pagina è questa foto" style="font:inherit;font-size:14px;border-radius:6px;padding:4px 6px;"></select><button class="btn" id="ed-sx" title="Gira a sinistra" style="margin-left:12px;">⟲</button><button class="btn" id="ed-dx" title="Gira a destra">⟳</button><button class="btn" id="ed-auto" style="margin-left:12px;">Ritaglio automatico</button><button class="btn" id="ed-tutta">Tutta la foto</button><button class="btn" id="ed-pulisci" style="margin-left:12px;"></button><button class="btn primario" id="ed-ok">Fatto</button></div>
   <div class="riga-fr"><button class="freccia" id="ed-prec" title="Pagina precedente (tasto ←)">◀</button><div id="ed-scorri"><canvas id="ed-tela" title="Trascina i bordi del riquadro, oppure trascinalo da dentro per spostarlo"></canvas></div><button class="freccia" id="ed-succ" title="Pagina successiva (tasto →)">▶</button></div>
 </div>
 <div id="vista"><div class="riga-fr"><button class="freccia" id="vi-prec" title="Foto precedente (tasto ←)">◀</button><img id="vi-img" alt=""><button class="freccia" id="vi-succ" title="Foto successiva (tasto →)">▶</button></div>
@@ -45597,14 +45597,24 @@ async function _faPulisciFoto(f) {
   if (_faPulitaValida(f)) return;
   if (f.pulita) _faLibera(f.pulita.tela);
   f.pulita = null;
-  const rit = _faRitaglio(f);
+  // 🔄 v7.313 (Franco: «la funzione di pulizia sfondo non lavora bene quando c'è poco margine dopo l'oggetto fotografato;
+  //    la rimozione dello sfondo, in quei casi, mi mangia anche parte dell'articolo; occhio che risolvendo un problema ne
+  //    creiamo un altro») - il ritaglio ora è stretto (margine 1,5%, `_FA_MARGINE`): al modello si dà una zona più larga,
+  //    l'8% per lato in più finché c'è foto (`_FA_RESPIRO`), e dal risultato si ritaglia il riquadro scelto.
+  const r = f.rett, W = f.tela.width, H = f.tela.height;
+  const lx = Math.max(0, Math.round(r.x - r.w * _FA_RESPIRO)), ly = Math.max(0, Math.round(r.y - r.h * _FA_RESPIRO));
+  const largo = { x: lx, y: ly, w: Math.min(W, Math.round(r.x + r.w + r.w * _FA_RESPIRO)) - lx, h: Math.min(H, Math.round(r.y + r.h + r.h * _FA_RESPIRO)) - ly };
+  const rit = _faRitaglio({ tela: f.tela, rett: largo });
   const png = await new Promise(ok => rit.toBlob(ok, 'image/png'));
   _faLibera(rit);
   if (!png) throw new Error('il telefono ha finito la memoria per le foto. Chiudi le altre schede del browser e riprova.');
-  const out = await _togliSfondoDaBlob(png);
+  // `intera`: senza il ritaglio della trasparenza, che cambiava la forma della pagina (v7.313)
+  const out = await _togliSfondoDaBlob(png, null, true);
   const bm = await _fa.w.createImageBitmap(out);
-  const tela = _faTela(bm.width, bm.height);
-  tela.getContext('2d').drawImage(bm, 0, 0);
+  // il modello può restituire un'altra misura: si riporta alla zona larga, poi si prende il riquadro
+  const kx = bm.width / largo.w, ky = bm.height / largo.h;
+  const tela = _faTela(r.w, r.h);
+  tela.getContext('2d').drawImage(bm, (r.x - largo.x) * kx, (r.y - largo.y) * ky, r.w * kx, r.h * ky, 0, 0, r.w, r.h);
   if (bm.close) bm.close();
   f.pulita = { sorg: f.tela, rett, tela };
 }
@@ -45681,56 +45691,170 @@ function _faRitaglio(f) {
 }
 
 // ---- il ritaglio automatico ----
-// Il colore dello sfondo si legge sul bordo della foto; si tiene la zona che se ne stacca, più un margine del 5%.
+// 🔄 v7.313 (Franco: «su 19 foto 7 sono ruotate di 90 gradi; 4 sono ruotate di 180 gradi»; «margini ancora troppo alti»;
+//    «le foto che faccio io hanno quasi sempre le fughe delle piastrelle … l'album è più grande di una singola piastrella;
+//    riesci a tenerlo a mente che c'è una fuga e che quindi c'è una trappola da evitare?») - IL RITAGLIO SUI LATI
+//    DELL'ALBUM. 📏 Misurato il 16 novembre sulla copia n.3 del L. 2000 della serie 1 (19 foto quadrate, album su un
+//    pavimento a piastrelle): col ritaglio di prima (colore del bordo + 5%) le fughe scure passavano per «album» e il
+//    ritaglio arrivava fino al bordo della foto; il confronto con le pagine lavorava sul pavimento (punteggi 0,04–0,06,
+//    rumore) e sbagliava verso e pagina. Con questo ritaglio, più il verso comune (`_faVersoComune`): 19 su 19.
+//    Come lavora, sulla foto ridotta a 260 px:
+//    1. I CONTORNI (Sobel): quelli medi per cercare le linee, quelli forti per la trama (la puntinatura delle piastrelle
+//       sta sotto).
+//    2. LE LINEE DRITTE (`segs`): si seguono in verticale e in orizzontale, un pixel di spostamento per passo (l'album è
+//       un po' storto). Una linea che tocca il bordo della foto è una FUGA (anche corta: il pezzo di fuga fra il bordo
+//       della foto e l'album); una linea lunga che non lo tocca, e non sta sulla retta di una fuga, è un LATO
+//       DELL'ALBUM, che finisce agli angoli dell'album.
+//    3. IL CUORE: tolte le linee, resta la trama fitta di figurine e disegni; la macchia fitta più grande è l'album.
+//    4. Ogni lato del cuore si aggancia al lato dell'album più vicino; se oltre il cuore, a mezza pagina di distanza,
+//       c'è un altro lato, il cuore era mezza doppia pagina (una facciata di solo testo): si prende anche l'altra.
+//    5. Un album liscio (il retro blu) ha poca trama: lì vince la macchia di colore (`_faTaglioColore`), se contiene il
+//       cuore ed è poco più grande.
+//    Il margine attorno è dell'1,5% (`_FA_MARGINE`; era il 5%).
+const _FA_MARGINE = 0.015, _FA_RESPIRO = 0.08;
 function _faAutoTaglio(tela) {
   const tutta = { x: 0, y: 0, w: tela.width, h: tela.height };
-  const p = _faRiduci(tela, tela.width, tela.height, 260);
-  const W = p.width, H = p.height;
+  const p = _faRiduci(tela, tela.width, tela.height, 260), W = p.width, H = p.height;
   const d = p.getContext('2d').getImageData(0, 0, W, H).data;
-  const b = Math.max(2, Math.round(Math.min(W, H) * 0.03));
-  const R = [], G = [], B = [];
+  _faLibera(p);
+  let a = _faTaglioLati(d, W, H);
+  const b = _faTaglioColore(d, W, H);
+  if (!a) a = b;
+  else if (b) {
+    const ix = Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)), iy = Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+    const areaA = (a.x1 - a.x0) * (a.y1 - a.y0), piu = (b.x1 - b.x0) * (b.y1 - b.y0) / areaA;
+    if (ix * iy / areaA > 0.9 && piu > 1.1 && piu < 1.8 && b.x1 - b.x0 < W * 0.97 && b.y1 - b.y0 < H * 0.97) a = b;
+  }
+  if (!a || (a.x1 - a.x0) * (a.y1 - a.y0) < W * H * 0.08) return tutta;
+  const k = tela.width / W, mx = (a.x1 - a.x0) * _FA_MARGINE, my = (a.y1 - a.y0) * _FA_MARGINE;
+  const x0 = Math.max(0, a.x0 - mx), x1 = Math.min(W, a.x1 + mx), y0 = Math.max(0, a.y0 - my), y1 = Math.min(H, a.y1 + my);
+  return { x: Math.round(x0 * k), y: Math.round(y0 * k), w: Math.round((x1 - x0) * k), h: Math.round((y1 - y0) * k) };
+}
+// La macchia più grande di una maschera (vicini a 4): { n, x0, x1, y0, y1 } (x1, y1 compresi), o null.
+function _faMacchia(m, W, H) {
+  const lab = new Uint8Array(W * H), st = [];
+  let best = null;
+  for (let k0 = 0; k0 < W * H; k0++) {
+    if (!m[k0] || lab[k0]) continue;
+    lab[k0] = 1; st.push(k0);
+    let n = 0, x0 = W, x1 = 0, y0 = H, y1 = 0;
+    while (st.length) {
+      const q = st.pop(), x = q % W, y = (q / W) | 0;
+      n++;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      if (x > 0 && m[q - 1] && !lab[q - 1]) { lab[q - 1] = 1; st.push(q - 1); }
+      if (x < W - 1 && m[q + 1] && !lab[q + 1]) { lab[q + 1] = 1; st.push(q + 1); }
+      if (y > 0 && m[q - W] && !lab[q - W]) { lab[q - W] = 1; st.push(q - W); }
+      if (y < H - 1 && m[q + W] && !lab[q + W]) { lab[q + W] = 1; st.push(q + W); }
+    }
+    if (!best || n > best.n) best = { n, x0, x1, y0, y1 };
+  }
+  return best;
+}
+// I passi 1–4 (vedi sopra `_FA_MARGINE`): { x0, x1, y0, y1 } nella foto ridotta, o null. `d` = i pixel RGBA.
+function _faTaglioLati(d, W, H) {
+  const g = new Float32Array(W * H);
+  for (let k = 0; k < W * H; k++) g[k] = 0.299 * d[k * 4] + 0.587 * d[k * 4 + 1] + 0.114 * d[k * 4 + 2];
+  const ex = new Uint8Array(W * H), ey = new Uint8Array(W * H), forte = new Uint8Array(W * H);
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+    const q = (yy, xx) => g[yy * W + xx];
+    const gx = q(y - 1, x + 1) + 2 * q(y, x + 1) + q(y + 1, x + 1) - q(y - 1, x - 1) - 2 * q(y, x - 1) - q(y + 1, x - 1);
+    const gy = q(y + 1, x - 1) + 2 * q(y + 1, x) + q(y + 1, x + 1) - q(y - 1, x - 1) - 2 * q(y - 1, x) - q(y - 1, x + 1);
+    const k = y * W + x, m = Math.hypot(gx, gy);
+    if (m > 90) { if (Math.abs(gx) > Math.abs(gy)) ex[k] = 1; else ey[k] = 1; }
+    if (m > 140) forte[k] = 1;
+  }
+  // le linee dritte: lunghe almeno il 20% della foto, o almeno il 5% se partono dal bordo della foto (un pezzo di fuga)
+  const segs = [];
+  [true, false].forEach(vert => {
+    const L = vert ? W : H, M = vert ? H : W, on = (a, b) => vert ? ex[b * W + a] : ey[a * W + b], usato = new Uint8Array(W * H);
+    for (let a = 0; a < L; a++) for (let b = 0; b < M; b++) {
+      if (!on(a, b) || usato[vert ? b * W + a : a * W + b]) continue;
+      let pos = a, bb = b, buchi = 0, fine = b, somma = 0, n = 0;
+      const pts = [];
+      while (bb < M) {
+        let t = -1;
+        for (const dd of [0, -1, 1]) { const pp = pos + dd; if (pp >= 0 && pp < L && on(pp, bb)) { t = pp; break; } }
+        if (t >= 0) { pos = t; fine = bb; buchi = 0; somma += pos; n++; usato[vert ? bb * W + pos : pos * W + bb] = 1; pts.push(pos, bb); }
+        else if (++buchi > 3) break;
+        bb++;
+      }
+      if (fine - b > M * 0.2 || ((b <= 3 || fine >= M - 4) && fine - b > M * 0.05)) segs.push({ vert, pos: somma / n, a: b, b: fine, pts });
+    }
+  });
+  // la trama, senza le linee (un pixel attorno)
+  const tr = forte;
+  segs.forEach(s => {
+    for (let i = 0; i < s.pts.length; i += 2) for (let dd = -1; dd <= 1; dd++) {
+      const x = s.vert ? s.pts[i] + dd : s.pts[i + 1], y = s.vert ? s.pts[i + 1] : s.pts[i] + dd;
+      if (x >= 0 && x < W && y >= 0 && y < H) tr[y * W + x] = 0;
+    }
+  });
+  // fitta = più del 10% di contorni in una finestra di 17 px
+  const r = 8, I = new Float64Array((W + 1) * (H + 1)), m = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) I[(y + 1) * (W + 1) + x + 1] = tr[y * W + x] + I[y * (W + 1) + x + 1] + I[(y + 1) * (W + 1) + x] - I[y * (W + 1) + x];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const x0 = Math.max(0, x - r), x1 = Math.min(W, x + r + 1), y0 = Math.max(0, y - r), y1 = Math.min(H, y + r + 1);
+    m[y * W + x] = (I[y1 * (W + 1) + x1] - I[y0 * (W + 1) + x1] - I[y1 * (W + 1) + x0] + I[y0 * (W + 1) + x0]) / ((x1 - x0) * (y1 - y0)) > 0.1 ? 1 : 0;
+  }
+  const c = _faMacchia(m, W, H);
+  if (!c) return null;
+  // fughe e lati dell'album
+  const tocca = s => s.a <= 3 || s.b >= (s.vert ? H : W) - 4;
+  const fughe = segs.filter(tocca);
+  const lati = segs.filter(s => !tocca(s) && !fughe.some(f => f.vert === s.vert && Math.abs(f.pos - s.pos) < 3));
+  const aggancia = (vert, dir, v, s0, s1, M) => {
+    const cand = lati.filter(s => s.vert === vert && Math.min(s.b, s1) - Math.max(s.a, s0) > (s1 - s0) * 0.3
+      && (s.pos - v) * dir > -M * 0.04 && (s.pos - v) * dir < M * 0.15);
+    if (!cand.length) return v;
+    cand.sort((u, w) => Math.abs(u.pos - v) - Math.abs(w.pos - v));
+    return cand[0].pos;
+  };
+  const out = { x0: aggancia(true, -1, c.x0, c.y0, c.y1, W), x1: aggancia(true, 1, c.x1, c.y0, c.y1, W),
+                y0: aggancia(false, -1, c.y0, c.x0, c.x1, H), y1: aggancia(false, 1, c.y1, c.x0, c.x1, H) };
+  // l'altra metà dell'album aperto: un lato a mezza pagina di distanza, lungo almeno il 60% del cuore
+  const w = out.x1 - out.x0, h = out.y1 - out.y0;
+  const prove = [{ vert: false, pos: out.y0 - h, lato: 'y0', M: H, s0: out.x0, s1: out.x1 }, { vert: false, pos: out.y1 + h, lato: 'y1', M: H, s0: out.x0, s1: out.x1 },
+                 { vert: true, pos: out.x0 - w, lato: 'x0', M: W, s0: out.y0, s1: out.y1 }, { vert: true, pos: out.x1 + w, lato: 'x1', M: W, s0: out.y0, s1: out.y1 }];
+  let meglio = null;
+  prove.forEach(pr => lati.filter(s => s.vert === pr.vert && Math.abs(s.pos - pr.pos) < pr.M * 0.1 && Math.min(s.b, pr.s1) - Math.max(s.a, pr.s0) > (pr.s1 - pr.s0) * 0.6)
+    .forEach(s => { const punti = (s.b - s.a) - Math.abs(s.pos - pr.pos) * 3; if (!meglio || punti > meglio.punti) meglio = { punti, lato: pr.lato, pos: s.pos }; }));
+  if (meglio) out[meglio.lato] = meglio.pos;
+  out.x1 += 1; out.y1 += 1;
+  return out;
+}
+// Il passo 5: la macchia che si stacca dal colore del bordo della foto (colorata, o più chiara), tolte le linee sottili
+// (un'erosione e una dilatazione di 7 px). { x0, x1, y0, y1 } nella foto ridotta, o null.
+function _faTaglioColore(d, W, H) {
+  const b = Math.max(2, Math.round(Math.min(W, H) * 0.03)), R = [], G = [], B = [];
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     if (x >= b && x < W - b && y >= b && y < H - b) continue;
     const i = (y * W + x) * 4; R.push(d[i]); G.push(d[i + 1]); B.push(d[i + 2]);
   }
   const med = a => { const s = a.slice().sort((u, v) => u - v); return s[s.length >> 1]; };
   const fr = med(R), fg = med(G), fb = med(B);
-  const scarti = R.map((r, k) => Math.max(Math.abs(r - fr), Math.abs(G[k] - fg), Math.abs(B[k] - fb)));
-  // un bordo di tanti colori vuol dire che l'album arriva al bordo: niente sfondo da togliere
-  if (scarti.filter(s => s < 40).length < scarti.length * 0.7) return tutta;
-  const soglia = Math.max(32, med(scarti) * 3 + 14);
-  const m = new Uint8Array(W * H);
+  let m = new Uint8Array(W * H);
   for (let k = 0; k < W * H; k++) {
-    const i = k * 4;
-    m[k] = Math.max(Math.abs(d[i] - fr), Math.abs(d[i + 1] - fg), Math.abs(d[i + 2] - fb)) > soglia ? 1 : 0;
+    const i = k * 4, r = d[i], g = d[i + 1], bl = d[i + 2];
+    const dist = Math.max(Math.abs(r - fr), Math.abs(g - fg), Math.abs(bl - fb)), sat = Math.max(r, g, bl) - Math.min(r, g, bl);
+    m[k] = dist > 40 && (sat > 28 || r + g + bl > fr + fg + fb + 60) ? 1 : 0;
   }
-  // le strisce di righe (o colonne) piene, tollerando buchi di tre; si tiene dalla prima all'ultima striscia lunga
-  // almeno l'8%. 🔄 v7.182 (Franco: «come mai mostri solo una pagina, nella miniatura?») - prima si teneva la sola
-  // striscia più lunga, e la piega in mezzo all'album aperto spezzava le due facciate: ne restava una.
-  const corsa = (n, frazione) => {
-    const strisce = [];
-    let inizio = -1, buchi = 0;
-    for (let i = 0; i <= n; i++) {
-      const pieno = i < n && frazione(i) > 0.18;
-      if (pieno) { if (inizio < 0) inizio = i; buchi = 0; }
-      else if (inizio >= 0) {
-        buchi++;
-        if (buchi > 3 || i === n) { strisce.push([inizio, i - buchi]); inizio = -1; buchi = 0; }
+  const e = 3;
+  const passa = (src, val) => {
+    const out = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let tiene = true;
+      for (let dy = -e; dy <= e && tiene; dy++) for (let dx = -e; dx <= e; dx++) {
+        const yy = y + dy, xx = x + dx, v = (yy < 0 || yy >= H || xx < 0 || xx >= W) ? 0 : src[yy * W + xx];
+        if (v !== val) { tiene = false; break; }
       }
+      out[y * W + x] = tiene ? val : 1 - val;
     }
-    const lunghe = strisce.filter(s => s[1] - s[0] + 1 >= n * 0.08);
-    return lunghe.length ? [lunghe[0][0], lunghe[lunghe.length - 1][1]] : null;
+    return out;
   };
-  const righe = corsa(H, y => { let s = 0; for (let x = 0; x < W; x++) s += m[y * W + x]; return s / W; });
-  if (!righe) return tutta;
-  const colonne = corsa(W, x => { let s = 0; for (let y = righe[0]; y <= righe[1]; y++) s += m[y * W + x]; return s / (righe[1] - righe[0] + 1); });
-  if (!colonne) return tutta;
-  // 🔄 v7.182 (Franco: «aumenta il margine ambientale attorno alla pagina nuda e cruda dell'album») - dal 2% al 5%
-  const k = tela.width / W, mx = W * 0.05, my = H * 0.05;
-  const x0 = Math.max(0, colonne[0] - mx), x1 = Math.min(W, colonne[1] + 1 + mx);
-  const y0 = Math.max(0, righe[0] - my), y1 = Math.min(H, righe[1] + 1 + my);
-  if ((x1 - x0) * (y1 - y0) < W * H * 0.2) return tutta;
-  return { x: Math.round(x0 * k), y: Math.round(y0 * k), w: Math.round((x1 - x0) * k), h: Math.round((y1 - y0) * k) };
+  m = passa(passa(m, 1), 0);
+  const c = _faMacchia(m, W, H);
+  return c ? { x0: c.x0, x1: c.x1 + 1, y0: c.y0, y1: c.y1 + 1 } : null;
 }
 
 // ---- riconoscere le pagine ----
@@ -45827,9 +45951,59 @@ function _faUngherese(M) {
   for (let j = 1; j <= n; j++) a[p[j] - 1] = j - 1;
   return a;
 }
+// 🆕 v7.313 - LE FOTO IN FILA (Franco: «io fotografo sempre in ordine, quindi se hai info circa il timestamp di creazione
+//    della foto, è fatta!»). Se le foto sono in ordine di scatto, le loro pagine crescono: la prima foto è la copertina,
+//    l'ultima il retro. Allora non si sceglie più ogni posto da solo, ma la FILA migliore: a ogni foto una pagina dopo
+//    quella della foto prima (una pagina mancante si salta, una foto doppia resta senza posto, `_FA_FILA_SALTA`).
+//    Quando vale: solo con l'ora di scatto letta da tutte le foto (`scatto`, `_faInOrdineDiScatto`).
+//    Lasciare una foto senza posto costa 0,1 (`_FA_FILA_SALTA`): sulle foto vere la pagina giusta vale 0,07–0,19 e una
+//    sbagliata poco sopra lo zero; con un costo più alto, per non lasciare fuori una foto doppia, la fila preferiva far
+//    scivolare di un posto tutte le foto fino alla pagina mancante.
+//    🔄 v7.313 - ANCHE AL CONTRARIO (misurato sulla copia n.3 del L. 2000 della serie 1: le foto della copia andavano
+//    dal retro alla copertina): si prova la fila nei due versi e vince quella col punteggio più alto.
+const _FA_FILA_SALTA = -0.1;
+function _faInFila(punti, F, P, scatto) {
+  // SENZA ORA DI SCATTO NIENTE FILA. 📏 Sulla copia n.3 del L. 2000 le foto della copia erano quasi in ordine inverso
+  //    (16 su 19): una regola provata prima (la scelta libera già in fila per il 60%) le ha messe in fila, e le tre fuori
+  //    ordine (4, 8, 19) sono finite fuori posto, mentre la scelta libera le aveva giuste. Una sequenza «quasi in ordine»
+  //    non dice quali foto sono le eccezioni.
+  if (!scatto) return null;
+  let meglio = null;
+  [false, true].forEach(rovescio => {
+    const pp = rovescio ? punti.slice().reverse() : punti;
+    // m[i][j] = il punteggio migliore delle foto da i in poi, con le pagine da j in poi ancora libere
+    const m = Array.from({ length: F + 1 }, () => Array(P + 1).fill(0)), via = Array.from({ length: F }, () => Array(P + 1).fill(null));
+    for (let i = F - 1; i >= 0; i--) for (let j = P; j >= 0; j--) {
+      let best = _FA_FILA_SALTA + m[i + 1][j], k0 = null;
+      for (let k = j; k < P; k++) { const s = pp[i][k] + m[i + 1][k + 1]; if (s > best) { best = s; k0 = k; } }
+      m[i][j] = best; via[i][j] = k0;
+    }
+    const out = Array(F).fill(null);
+    for (let i = 0, j = 0; i < F; i++) { const k = via[i][j]; if (k !== null) { out[i] = k; j = k + 1; } }
+    if (!meglio || m[0][0] > meglio.s) meglio = { s: m[0][0], out: rovescio ? out.reverse() : out };
+  });
+  return meglio ? meglio.out : null;
+}
+// 🆕 v7.313 - IL VERSO COMUNE (misurato sulla copia n.3 del L. 2000 della serie 1: la 19 aveva la pagina giusta ma era
+//    capovolta, 0,060 contro 0,057 del verso giusto). Il telefono si tiene sempre nello stesso modo: il verso scelto da
+//    più foto è quello della serie. Una foto girata al contrario di quel verso (180°), se il verso comune le dà almeno
+//    l'80% del suo punteggio, prende il verso comune. I quarti di giro (una copertina fotografata dritta) non si toccano.
+function _faVersoComune(scelte, coppie) {
+  const conta = [0, 0, 0, 0];
+  scelte.forEach(x => { if (x) conta[x.c.v]++; });
+  const vm = conta.indexOf(Math.max(...conta));
+  if (conta[vm] < 3) return;
+  scelte.forEach((x, fi) => {
+    if (!x || (x.c.v + 2) % 4 !== vm) return;
+    let alt = null;
+    coppie.forEach(c => { if (c.fi === fi && c.pi === x.c.pi && c.v === vm && (!alt || c.s > alt.s)) alt = c; });
+    if (alt && alt.s >= x.c.s - Math.abs(x.c.s) * 0.2) x.c = alt;
+  });
+}
 // Il posto di ogni tua foto: per ognuna { c (la coppia: pagina, verso, parte), prima (la pagina che preferiva da sola) },
 // o null se resta senza posto (più foto che pagine). `tinteFoto[fi]` e `tinteSito[pi]` = [rosso, verde].
-function _faAssegna(coppie, tinteFoto, tinteSito, F, P) {
+// v7.313: `scatto` = le foto sono in ordine di scatto (`_faInFila`)
+function _faAssegna(coppie, tinteFoto, tinteSito, F, P, scatto) {
   const media = a => [a.reduce((s, x) => s + x[0], 0) / a.length, a.reduce((s, x) => s + x[1], 0) / a.length];
   let tf = tinteFoto;
   if (F && P && F >= P * 0.8) {
@@ -45840,12 +46014,16 @@ function _faAssegna(coppie, tinteFoto, tinteSito, F, P) {
   coppie.forEach(c => { const x = coppia[c.fi][c.pi]; if (!x || c.s > x.s) coppia[c.fi][c.pi] = c; });
   const punti = coppia.map((r, fi) => r.map((c, pi) => c ? c.s - _FA_PESO_TINTA * Math.hypot(tf[fi][0] - tinteSito[pi][0], tf[fi][1] - tinteSito[pi][1]) : -9));
   const n = Math.max(F, P), M = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i < F && j < P) ? punti[i][j] : -9));
-  const a = _faUngherese(M);
-  return punti.map((r, fi) => {
+  let a = _faUngherese(M);
+  const fila = _faInFila(punti, F, P, scatto);
+  if (fila) a = fila;
+  const scelte = punti.map((r, fi) => {
     const pi = a[fi];
     if (pi == null || pi >= P || !coppia[fi][pi]) return null;
     return { c: coppia[fi][pi], prima: r.indexOf(Math.max(...r)) };
   });
+  _faVersoComune(scelte, coppie);   // v7.313
+  return scelte;
 }
 // le foto del sito in una larghezza data (Cloudinary la fa da sé)
 const _faCld = (url, w) => url.includes('/image/upload/') ? url.replace('/image/upload/', '/image/upload/w_' + w + '/') : url;
@@ -45895,7 +46073,7 @@ async function _faOrdina() {
     _faLibera(base);   // v7.273
   });
   // 🔄 v7.185 - tutti i posti insieme, con la tinta dello sfondo (vedi `_faAssegna`, e le misure sopra `_FA_PESO_TINTA`)
-  const scelte = _faAssegna(coppie, tinteFoto, _fa.rif.tinte || [], _fa.foto.length, firme.length);
+  const scelte = _faAssegna(coppie, tinteFoto, _fa.rif.tinte || [], _fa.foto.length, firme.length, !!_fa.scatto);
   _fa.foto.forEach((f, fi) => {
     const x = scelte[fi];
     if (!x) { f.pagina = null; f.dubbia = true; return; }
@@ -45937,11 +46115,11 @@ function _faCorreggiForma(f, pi, parte) {
   candidati.forEach(c => { const nu = _faNucleo({ tela: f.tela, rett: c }), s = _faSomiglia(_faFirma(nu), rif); _faLibera(nu); if (!meglio || s > meglio.s) meglio = { c, s }; });
   f.rett = meglio.c;
 }
-// Il ritaglio senza il margine del 5% (`_faAutoTaglio`): è quello che si confronta con le pagine del sito, che il
+// Il ritaglio senza il margine (`_faAutoTaglio`): è quello che si confronta con le pagine del sito, che il
 // margine non ce l'hanno. Confrontando anche il tavolo, col margine passato dal 2 al 5% le dubbie sulla serie 2 erano
-// salite a 24 su 35.
+// salite a 24 su 35. 🔄 v7.313: il margine è dell'1,5% (`_FA_MARGINE`)
 function _faNucleo(f) {
-  const r = f.rett, dx = Math.round(r.w * 0.05 / 1.1), dy = Math.round(r.h * 0.05 / 1.1);
+  const r = f.rett, dx = Math.round(r.w * _FA_MARGINE / (1 + 2 * _FA_MARGINE)), dy = Math.round(r.h * _FA_MARGINE / (1 + 2 * _FA_MARGINE));
   return _faRitaglio({ tela: f.tela, rett: { x: r.x + dx, y: r.y + dy, w: Math.max(1, r.w - 2 * dx), h: Math.max(1, r.h - 2 * dy) } });
 }
 function _faInOrdine() { _fa.foto.sort((a, b) => (a.pagina ?? 999) - (b.pagina ?? 999)); }
@@ -45972,13 +46150,69 @@ function _faSpostaPagina(f, a) {
   f.pagina = a;
 }
 
+// ---- l'ora di scatto ----
+// 🆕 v7.313 (Franco: «io fotografo sempre in ordine») - L'ORA DI SCATTO si legge dall'EXIF del JPEG: DateTimeOriginal, coi
+//    millesimi di SubSecTimeOriginal (due foto nello stesso secondo); di ripiego DateTime. Torna una stringa che si ordina
+//    da sola («2026:11:16 10:22:31.450»), o null: foto senza EXIF (WhatsApp lo toglie), PNG, file illeggibile.
+async function _faOraScatto(file) {
+  try { return _faOraDaExif(new DataView(await file.slice(0, 196608).arrayBuffer())); } catch (e) { return null; }
+}
+function _faOraDaExif(v) {
+  if (v.byteLength < 4 || v.getUint16(0) !== 0xFFD8) return null;
+  let p = 2;
+  while (p + 4 <= v.byteLength) {
+    const m = v.getUint16(p), len = v.getUint16(p + 2);
+    if ((m & 0xFF00) !== 0xFF00 || m === 0xFFDA) return null;
+    if (m === 0xFFE1 && p + 10 <= v.byteLength && v.getUint32(p + 4) === 0x45786966) return _faOraDaTiff(v, p + 10, len - 8);
+    p += 2 + len;
+  }
+  return null;
+}
+function _faOraDaTiff(v, t, lung) {
+  const fine = Math.min(v.byteLength, t + lung), le = v.getUint16(t) === 0x4949;
+  const u16 = o => v.getUint16(t + o, le), u32 = o => v.getUint32(t + o, le);
+  const voci = ifd => {
+    const out = {};
+    if (t + ifd + 2 > fine) return out;
+    const n = u16(ifd);
+    for (let i = 0; i < n; i++) { const e = ifd + 2 + i * 12; if (t + e + 12 > fine) break; out[u16(e)] = { tipo: u16(e + 2), n: u32(e + 4), o: e + 8 }; }
+    return out;
+  };
+  const testo = x => {
+    if (!x || x.tipo !== 2) return '';
+    const da = x.n > 4 ? u32(x.o) : x.o;
+    let s = '';
+    for (let i = 0; i < x.n && t + da + i < fine; i++) { const c = v.getUint8(t + da + i); if (!c) break; s += String.fromCharCode(c); }
+    return s.trim();
+  };
+  const zero = voci(u32(4)), exif = zero[0x8769] ? voci(u32(zero[0x8769].o)) : {};
+  const ora = testo(exif[0x9003]) || testo(zero[0x0132]);
+  if (!/^\d{4}:\d\d:\d\d \d\d:\d\d:\d\d/.test(ora)) return null;
+  const sub = testo(exif[0x9291]).replace(/\D/g, '');
+  return ora.slice(0, 19) + '.' + (sub || '0').padEnd(3, '0').slice(0, 3);
+}
+// Le foto in ordine di scatto, se TUTTE dicono l'ora; se no come sono (mezze in ordine sarebbe peggio di niente).
+// A parità di ora, l'ordine dei nomi. `ora` = l'ordine viene dall'ora di scatto.
+async function _faInOrdineDiScatto(files) {
+  const ore = await Promise.all(files.map(_faOraScatto));
+  if (!files.length || ore.some(o => !o)) return { files, ora: false };
+  const k = files.map((f, i) => ({ f, o: ore[i], i }));
+  k.sort((a, b) => a.o < b.o ? -1 : a.o > b.o ? 1 : (String(a.f.name).localeCompare(String(b.f.name), undefined, { numeric: true }) || a.i - b.i));
+  return { files: k.map(x => x.f), ora: true };
+}
+
 // ---- caricare ----
 async function _faCaricaFile(lista) {
   if (!_fa.album) { _faStato('Scegli prima l’album.'); return; }
   _faSvuota();
-  const files = [...lista];
+  // 🆕 v7.313 - in ordine di scatto (`_faInOrdineDiScatto`), e `_fa.scatto` dice al riconoscimento che è una fila (`_faInFila`)
+  _faStato('Leggo l’ora di scatto…');
+  const scatto = await _faInOrdineDiScatto([...lista]);
+  const files = scatto.files;
+  _fa.scatto = scatto.ora;
   // v7.288 - senza pagine sul sito non c'è niente con cui riconoscerle: vale l'ordine dei nomi dei file
-  if (_fa.album.senzaFoto) files.sort((x, y) => x.name.localeCompare(y.name, undefined, { numeric: true }));
+  // (v7.313: se le foto non dicono l'ora di scatto)
+  if (_fa.album.senzaFoto && !scatto.ora) files.sort((x, y) => x.name.localeCompare(y.name, undefined, { numeric: true }));
   for (let i = 0; i < files.length; i++) {
     _faStato('Preparo le foto: ' + (i + 1) + ' di ' + files.length + '…');
     try {
@@ -46147,7 +46381,29 @@ function _faApriEditor(f) {
     _faInOrdine(); _faMiniature(); _faApriEditor(dopo);
   };
   _fa$('editor').classList.add('aperto');
+  _faEdPulisciTasto();
   _faDisegnaEditor();
+}
+// 🆕 v7.313 (Franco: «il tasto pulisci sfondo lo vorrei anche nella finestra della pagina a tutto schermo») - lo stesso 🧽
+//    delle miniature (`_faPulisciTutte` su questa foto sola), col ritaglio che si sta correggendo: prima di pulire lo si
+//    tiene, come con «Fatto», perché la foto pulita vale per quel ritaglio (`_faPulitaValida`). Mentre lavora, il tasto
+//    dice «⏳ Pulisco…» (la riga di stato sta sotto la finestra e non si vede).
+function _faEdPulisciTasto() {
+  const b = _fa$('ed-pulisci');
+  if (!b || !_fa.ed) return;
+  const lavora = _fa.edPulisce === _fa.ed.f;
+  const pulita = _faPulitaValida({ ..._fa.ed.f, rett: _fa.ed.r });
+  b.textContent = lavora ? '⏳ Pulisco…' : pulita ? '🧽✓ Sfondo pulito' : '🧽 Pulisci sfondo';
+  b.title = pulita ? 'Sfondo già pulito' : 'Pulisci lo sfondo di questa foto';
+  b.disabled = !!lavora || pulita || !!_fa.inCorso;
+}
+async function _faEdPulisci() {
+  const f = _fa.ed && _fa.ed.f;
+  if (!f) return;
+  f.rett = _fa.ed.r;
+  _fa.edPulisce = f;
+  _faEdPulisciTasto();
+  try { await _faPulisciTutte([f]); } finally { _fa.edPulisce = null; _faEdPulisciTasto(); if (_fa.ed && _fa.ed.f === f) _faDisegnaEditor(); }
 }
 // 🆕 v7.182 (Franco: «metti dei pulsantini per passare da una pagina all'altra dopo che ne ho aperta una, senza dover
 //    chiudere la finestra») - ◀ ▶ e le frecce della tastiera: il ritaglio della pagina lasciata si tiene, come con «Fatto»
@@ -46182,6 +46438,13 @@ function _faEditorPassa(passo) {
 function _faDisegnaEditor() {
   const t = _fa$('ed-tela'), x = t.getContext('2d'), { f, k, r } = _fa.ed;
   x.drawImage(f.tela, 0, 0, t.width, t.height);
+  // 🐛 v7.313 (Franco: «quando pulisco lo sfondo di una foto dalla sua miniatura, quando poi zoomo la foto cliccandoci sopra,
+  //    la finestra grande mostra la foto pre pulizia») - dentro il ritaglio, la foto pulita se vale per QUESTO ritaglio
+  //    (spostato il bordo, torna la foto vera: la pulita non vale più); lo sfondo tolto si vede bianco
+  if (_faPulitaValida({ ...f, rett: r })) {
+    x.fillStyle = '#fff'; x.fillRect(r.x * k, r.y * k, r.w * k, r.h * k);
+    x.drawImage(f.pulita.tela, r.x * k, r.y * k, r.w * k, r.h * k);
+  }
   x.fillStyle = 'rgba(0,0,0,.55)';
   x.fillRect(0, 0, t.width, r.y * k);
   x.fillRect(0, (r.y + r.h) * k, t.width, t.height - (r.y + r.h) * k);
@@ -46220,15 +46483,16 @@ function _faEditorEventi() {
     ed.r = { x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0) };
     _faDisegnaEditor();
   });
-  t.addEventListener('pointerup', () => { if (_fa.ed) _fa.ed.presa = null; });
-  _fa$('ed-auto').onclick = () => { _fa.ed.r = _faAutoTaglio(_fa.ed.f.tela); _faDisegnaEditor(); };
+  t.addEventListener('pointerup', () => { if (_fa.ed) { _fa.ed.presa = null; _faEdPulisciTasto(); } });
+  _fa$('ed-auto').onclick = () => { _fa.ed.r = _faAutoTaglio(_fa.ed.f.tela); _faDisegnaEditor(); _faEdPulisciTasto(); };
   // v7.188 (Franco: «nella finestra di visualizzazione della pagina, i due tastini per ruotare di 90 gradi la foto, come ci
   //    sono nella vista delle foto tutte assieme») - la stessa `_faGiraFoto` delle miniature. Il ritaglio che si stava
   //    correggendo si tiene (gira con la foto), e la pagina si ridisegna per la forma nuova.
   [['ed-sx', 3], ['ed-dx', 1]].forEach(([id, volte]) => {
     _fa$(id).onclick = () => { const f = _fa.ed.f; f.rett = _fa.ed.r; _faGiraFoto(f, volte); _faMiniature(); _faApriEditor(f); };
   });
-  _fa$('ed-tutta').onclick = () => { _fa.ed.r = { x: 0, y: 0, w: _fa.ed.f.tela.width, h: _fa.ed.f.tela.height }; _faDisegnaEditor(); };
+  _fa$('ed-tutta').onclick = () => { _fa.ed.r = { x: 0, y: 0, w: _fa.ed.f.tela.width, h: _fa.ed.f.tela.height }; _faDisegnaEditor(); _faEdPulisciTasto(); };
+  _fa$('ed-pulisci').onclick = () => _faEdPulisci();   // v7.313
   _fa$('ed-ok').onclick = () => { _fa.ed.f.rett = _fa.ed.r; _fa$('editor').classList.remove('aperto'); _faMiniature(); };
   _fa$('ed-prec').onclick = () => _faEditorPassa(-1);
   _fa$('ed-succ').onclick = () => _faEditorPassa(1);
@@ -53558,6 +53822,9 @@ const _CAMPI_POSIZIONE_CAROSELLO = [
   { k: 'sottoserie',     it: 'Sottoserie / famiglia / tipologia', en: 'Subseries / family / type' },
   { k: 'numero',         it: 'Numero',         en: 'Number' },
   { k: 'nome',           it: 'Nome',           en: 'Name' },
+  // 🆕 v7.313 (Franco: «nella tabella "Posizione dei campi" della cfg dei caroselli, non vedo la modifica circa l'aver
+  //    aggiunto la versione») - la riga della v7.312 (`_conVersione`, `k:'versione'`); vuota = sotto il nome
+  { k: 'versione',       it: 'Versione',       en: 'Version' },
   { k: 'categoria',      it: 'Categoria',      en: 'Category' },
   { k: 'sottocategoria', it: 'Sottocategoria', en: 'Subcategory' }
 ];
@@ -73370,9 +73637,12 @@ async function _cpFotoRiduci(blob) {
 // 🔄 v7.310 - `campo`: la linguetta in cui si carica (`_CP_FOTO_CANALI`)
 async function _cpFotoScelte(input, campo) {
   campo = campo || 'foto';
-  const it = currentLang === 'it', file = [...input.files];
+  const it = currentLang === 'it', scelti = [...input.files];
   input.value = '';
-  if (!file.length) return;
+  if (!scelti.length) return;
+  // 🆕 v7.313 - in ordine di scatto, quando tutte lo dicono: la riduzione qui sotto toglie l'EXIF, quindi l'ordine si fissa
+  //    adesso, e «Crea annuncio album» lo trova già nell'elenco della copia (Franco: «io fotografo sempre in ordine»)
+  const file = (await _faInOrdineDiScatto(scelti)).files;
   const modal = document.getElementById('copia-modal'), st = document.getElementById('cp-stato'), tasto = document.getElementById('cp-foto-carica-' + campo);
   const pulisci = !!document.getElementById('cp-foto-pulisci-' + campo)?.checked;
   const di = (t, col) => { if (st) { st.style.color = col || 'var(--info)'; st.textContent = t; } };
@@ -77571,14 +77841,18 @@ function _spegniBottoniSfondo() {
 function _riaccendiBottoniSfondo() {
   _bottoniSfondo().forEach(b => { if (b.dataset.spentoSfondo) { b.disabled = false; delete b.dataset.spentoSfondo; b.style.opacity = ''; } });
 }
-async function _togliSfondoDaBlob(blob, onPct) {
+// 🆕 v7.313 - `intera`: la foto pulita alla sua misura, senza il ritaglio della trasparenza qui sotto. Per le pagine di
+//    «Crea annuncio album» (Franco: «rimuovendo lo sfondo ad alcune foto, questo ne ha cambiato l'aspect ratio … la
+//    pagina album cambiata di dimensione (meno larga e più alta)»): se il modello si mangiava un bordo della pagina, il
+//    ritaglio della trasparenza la restringeva.
+async function _togliSfondoDaBlob(blob, onPct, intera) {
   if (_sfondoInCorso) throw new Error('_SFONDO_OCCUPATO_');
   _sfondoInCorso = true;
   _spegniBottoniSfondo();
-  try { return await _sfondoDalModello(blob, onPct); }
+  try { return await _sfondoDalModello(blob, onPct, intera); }
   finally { _sfondoInCorso = false; if (!_sfondoFila) _riaccendiBottoniSfondo(); }
 }
-async function _sfondoDalModello(blob, onPct) {
+async function _sfondoDalModello(blob, onPct, intera) {
   let removeBackground = window._removeBackground;
   if (!removeBackground) {
     if (onPct) onPct(null, 'libreria');
@@ -77594,6 +77868,7 @@ async function _sfondoDalModello(blob, onPct) {
     model: 'isnet', // v5.793 - modello PIENO (meglio sui soggetti chiari a basso contrasto, es. retro bianchi)
     progress: (key, current, total) => { if (onPct && total) onPct(Math.round((current / total) * 100)); }
   });
+  if (intera) return resultBlob;   // v7.313
   // Ritaglio della trasparenza residua: si cercano i pixel con alpha > 10 e si taglia li' intorno,
   // con 4px di margine.
   const cropCanvas = document.createElement('canvas');
