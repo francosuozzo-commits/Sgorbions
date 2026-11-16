@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.311';
+const JS_VERSION = 'v7.312';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35324,6 +35324,20 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     r.splice(iC, 0, n);
     return r;
   };
+  // 🆕 v7.312 (Franco: «nel carosello degli album vorrei che sia indicata la tipologia di versione, sotto al nome»; «il
+  //    carosello degli album sta mostrando le versioni») - UNA VERSIONE NEL CAROSELLO DICE QUALE È. Ci entra quando la
+  //    console la accende per la sua tipologia (`_inCaroselloPerVersione`), e senza questa riga si leggeva come la base.
+  //    La riga sta subito sotto al nome (anche dopo `_nomePrima`), nel colore della versione; la base non ce l'ha. Vale
+  //    in tutti i caroselli e per ogni tipologia: la regola che fa entrare le versioni è una sola.
+  const _conVersione = (r, dim, alt) => {
+    const ch = _rtVersione(f);
+    if (ch === 'base') return r;
+    const v = _versioneDiChiave(ch);
+    const riga = { t: esc(_nomeVersione(ch, currentLang === 'it' ? 'it' : 'en')), col: (v && v.colore) || 'var(--text)', dim, alt, k: 'versione' };
+    const iN = r.findIndex(x => x.k === 'nome');
+    if (iN < 0) return r.concat(riga);
+    return r.slice(0, iN + 1).concat(riga, r.slice(iN + 1));
+  };
   if (_isMobileViewport()) {
     const isRetro = (f.section || '') === 'retros';
     // v6.080 (Franco) - I RETRO SU TELEFONO HANNO LE LORO RIGHE: serie, categoria, sottocategoria,
@@ -35354,7 +35368,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
       // 🔄 v7.145 (Franco: «lascia perdere il sottonome») - il nome: il testo corto si scrive nel Nome mobile, che
       //    qui sotto vince comunque. `_sottoR` resta letto per la storia di questa regola, non si usa più.
       const _etichettaR = _nomeR || _sottoR;
-      return _nomePrima([
+      return _conVersione(_nomePrima([
         ...rigaSerie('0.62rem'),
         // v6.080 (Franco) - la CATEGORIA va a capo se non ci sta, invece di essere troncata coi
         // puntini: su una card da un centinaio di pixel "SGORBIONS HORRIBLE HOROSCOPES" su una
@@ -35372,7 +35386,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
         // 🆕 v6.991 - e anche qui il «Nome carosello mobile», se c'e', vince sull'etichetta
         { t: (_nomeRidotto('caroTel', f) ? _nomeCaroselloHTML(_nomeRidotto('caroTel', f)) : esc(_etichettaR)), col: COL_IDENTITA,   /* v7.150: la console */ dim: '0.7rem', alt: 'auto', k: 'nome',
           coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.66rem' }
-      ]);
+      ]), '0.64rem', 'auto');   // v7.312
     }
     // Le figurine restano come deciso prima: serie, numero, e il nome parola per parola - li' sono
     // due parole e la spezzatura le rende leggibili invece che troncate.
@@ -35390,7 +35404,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     //    (`conNumero`, come sul desktop); prima mancava sulla sola card senza numero e il nome saliva.
     if (_haNumero(f) && ((f.number || f.lettera) || conNumero)) righe.push({ t: (f.number || f.lettera) ? esc(String(_numeroAschermo(f))) : '', col: COL_IDENTITA, dim: '0.66rem', alt: '1.2em', k: 'numero' });
     righe.push({ t: parole, col: COL_IDENTITA, dim: '0.72rem', alt: 'auto', k: 'nome' });
-    return righe;
+    return _conVersione(righe, '0.64rem', 'auto');   // v7.312
   }
   // 🆕 v7.149 (Franco: «il nome mobile lo userei anche nel carosello; quindi il campo chiamalo "Nome mobile e Carosello"»)
   //    - ANCHE SUL DESKTOP IL CAROSELLO USA IL NOME MOBILE, se scritto (coi suoi «|»: `_nomeCaroselloHTML`), retro e
@@ -35415,7 +35429,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     // v7.149: la categoria del carosello è la Categoria mobile e Carosello, se scritta (`_caroselloOppure`)
     const _catC = _caroselloOppure(f, 'categoriaMobile', f.category);
     if (_catInRiga && _catC) _rs[0].t += ' - ' + _catC;
-    return _nomePrima([
+    return _conVersione(_nomePrima([
       ...rigaSerie('0.66rem'),
       ..._rs,   // v6.722
       // v6.279 (Franco) - come sopra, e per la stessa ragione.
@@ -35427,12 +35441,12 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
       ...(_senzaSottocat ? [] : [{ t: _caroselloOppure(f, 'sottocategoriaMobile', f.subcategory), col: COL_SOTTOCAT, dim: '0.68rem', alt: '1.2em', k: 'sottocategoria' }]),   // v7.149
       { t: _nomeD, col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em', k: 'nome',   // v7.149: _nomeD
         coda: _monetaPunti(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }   // v6.722
-    ]);
+    ]), '0.68rem', '1.2em');   // v7.312
   }
   // 🔄 v6.722 - QUATTRO RIGHE, come le ha elencate Franco: serie, sottoserie, numero, nome. E la
   //    stella non e' la quinta: *«la stella mettila in fondo a dx della quarta riga; niente
   //    quinta riga»*. Viaggia come CODA della riga del nome, in basso a destra.
-  return [
+  return _conVersione([   // v7.312
     ...rigaSerie('0.66rem'),
     ...rigaSottoserie('0.66rem'),
     // v6.277 (Franco) - numero e nome in azzurro, come sulle card. v6.080 - senza cancelletto.
@@ -35440,7 +35454,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie, conSottoserie, conNumero, re
     ...(conNumero === false ? [] : [{ t: (f.number || f.lettera) ? esc(String(_numeroAschermo(f))) : '', col: COL_IDENTITA, dim: '0.7rem', alt: '1.2em', k: 'numero' }]),
     { t: _nomeD, col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em', k: 'nome',   // v7.149: _nomeD
       coda: _monetaPunti(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }
-  ];
+  ], '0.68rem', '1.2em');
 }
 
 // La card: foto, poi le righe di cui sopra. Il titolo del passaggio del mouse usa il NOME COMPLETO
@@ -37654,7 +37668,7 @@ function updateNavUser() {
   // 📌 Ognuno di questi viene riacceso piu' sotto da chi ne ha il diritto - `nav-reply-btn` per
   //    l'utente NON admin, gli altri per l'admin - e `nav-quota-warning-btn` da
   //    `_checkReadQuotaWarning()`, che gira dopo.
-  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-cerca-var' /* v7.304 */, 'nav-quota-warning-btn',
+  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-copie' /* v7.312 */, 'nav-cerca-var' /* v7.304 */, 'nav-quota-warning-btn',
    'admin-add-series-btn', 'nav-wantlist', 'nav-js-version-wrap'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
@@ -37712,6 +37726,9 @@ function updateNavUser() {
     // 🆕 v7.304 - «Cerca variazioni» nel panino del telefono, solo all'admin (sul desktop la spegne la regola dell'index)
     const cvBtn = document.getElementById('nav-cerca-var');
     if (cvBtn) cvBtn.style.display = currentUser.isAdmin ? '' : 'none';
+    // 🆕 v7.312 - «Copie doppie» nel panino del telefono, solo all'admin (sul desktop la spegne la regola dell'index)
+    const cpBtn = document.getElementById('nav-copie');
+    if (cpBtn) cpBtn.style.display = currentUser.isAdmin ? '' : 'none';
     const homeContent = document.getElementById('home-logged-in-content');
     if (homeContent) homeContent.style.display = '';
     // 🗄️ v6.913 — qui c'era `mostraNumeroniHero(true)` (v5.935): è salita fuori dall'`if`, perché
@@ -41947,7 +41964,8 @@ function _puoAnnunci() { return !!(currentUser && (currentUser.isAdmin || curren
 // la voce «📢 Annunci» della barra: all'admin la scheda della console, al venditore una finestrella coi due tasti
 function apriAnnunciNav() {
   // 🔄 v7.276 - Annunci è il tab ANNUNCI di «🧾 Copie doppie» (Franco: «fai un tab unico chiamato "Copie doppie"»)
-  if (currentUser?.isAdmin) { _cdVistaEntrando = 'ann'; showAdminTab('doppioni'); return; }
+  // 🔄 v7.312 - `tel-solo-ann`: dal telefono, entrando da qui, di «Copie doppie» si vede solo Annunci (regola in style.css)
+  if (currentUser?.isAdmin) { document.getElementById('admin-panel')?.classList.add('tel-solo-ann'); _cdVistaEntrando = 'ann'; showAdminTab('doppioni'); return; }
   if (!_puoAnnunci()) return;
   const it = currentLang === 'it';
   document.getElementById('annunci-venditore-modal')?.remove();
@@ -41964,6 +41982,14 @@ function apriAnnunciNav() {
       '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();apriCollage()">' + (it ? '🖼️ Crea annuncio da collage' : '🖼️ Create listing from collage') + '</button>' +
     '</div></div></div>';
   document.body.appendChild(ov);
+}
+// 🆕 v7.312 (Franco: «da mobile vorrei l'accesso alle copie; aggiungi una voce di menu sotto annunci, che riprende la
+//    linguetta admin») - la voce «🧾 Copie doppie» del panino fa quello che fa la linguetta `#ml-linguetta`: la sezione
+//    sul primo tab. Toglie `tel-solo-ann`, così dal telefono si vedono anche il titolo e i tre tab della sezione.
+function apriCopieNav() {
+  if (!currentUser?.isAdmin) return;
+  document.getElementById('admin-panel')?.classList.remove('tel-solo-ann');
+  showAdminTab('doppioni');
 }
 function apriCollage() {
   if (!_puoAnnunci()) return;   // v7.247 - anche il venditore
@@ -69350,7 +69376,7 @@ function updateBellBadge() {
 // si dimenticherebbe. E' il difetto che questo file ha registrato piu' volte di ogni altro.
 // 📌 L'elenco e' SEPARATO da `_FE_TAB`: sono due schede diverse e possono avere tab diversi -
 // in lettura non c'e' niente da modificare, in modifica non c'e' niente da sfogliare.
-const _FD_TAB = ['generale', 'pagine', 'ebay', 'doppi'];   // v7.258: + Doppi (solo admin)
+const _FD_TAB = ['generale', 'pagine', 'ebay'];   // v7.258: + Doppi (solo admin); 🔄 v7.312: le Copie hanno una sezione loro (`_copieInRiga`)
 
 // 🆕 v6.888 - LA BARRA DEI TAB DELLA VISTA IN LETTURA SI COSTRUISCE DA UN ELENCO.
 // 🔴 Era scritta a mano con due bottoni, e i tab adesso possono essere due o tre secondo il
@@ -69380,6 +69406,34 @@ function _collegatiInRiga(html) {
   if (!el) return;
   el.innerHTML = html || '';
   el.style.display = '';
+}
+// 🆕 v7.312 (Franco: «il tab copie lo metterei sotto all'altezza di terminazione delle foto; in questo modo, quando lo si
+//    seleziona, il suo contenuto può andare anche sotto alla foto, in modo da svilupparsi con righe meno alte»; «anche da
+//    mobile»; scelta B: «il tab Copie esce dalla barra in alto e diventa una sezione sua sotto le foto, a tutta larghezza»)
+//    - LE COPIE IN `#fig-detail-copie`, la riga sotto le due colonne (prima dei collegati), in lettura e in modifica. Il
+//    tab «🧾 Copie» apre e chiude il contenuto, che nasce chiuso; non dipende dai tab in alto. Il contenitore tiene il suo
+//    id di prima (`figdetail-tab-doppi` in lettura, `fe-tab-doppi` in modifica), e in modifica le caselle restano nel DOM
+//    anche chiuse: il «Salva» della scheda le legge come prima. Senza contenuto la sezione non c'è.
+function _copieInRiga(dentro, idDiv) {
+  const el = document.getElementById('fig-detail-copie');
+  if (!el) return;
+  if (!dentro) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin:1rem 0;">'
+    + '<button type="button" id="fig-detail-copie-btn" onclick="_copieApriChiudi()" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🧾 ' + (currentLang === 'it' ? 'Copie' : 'Copies') + '</button></div>'
+    + '<div id="' + idDiv + '" style="display:none;">' + dentro + '</div>';
+}
+function _copieApriChiudi() {
+  const el = document.getElementById('fig-detail-copie');
+  const div = el && el.querySelector('#figdetail-tab-doppi, #fe-tab-doppi');
+  const btn = document.getElementById('fig-detail-copie-btn');
+  if (!div) return;
+  const apri = div.style.display === 'none';
+  div.style.display = apri ? '' : 'none';
+  if (btn) {
+    btn.style.borderBottomColor = apri ? 'var(--accent)' : 'transparent';
+    btn.style.color = apri ? 'var(--accent)' : 'var(--text)';
+    btn.style.fontWeight = apri ? '600' : '400';
+  }
 }
 function _collegatiSoloNelGenerale(tab) {
   const el = document.getElementById('fig-detail-collegati');
@@ -70165,6 +70219,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   document.getElementById('fig-detail-content').innerHTML = '';
   document.getElementById('fig-detail-photo').innerHTML = '';
   _collegatiInRiga('');   // v7.306
+  _copieInRiga('');   // v7.312
 
   // Build content
   const rows = [];
@@ -70860,15 +70915,15 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     if (_pagLett) _voci.push({ k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') });
     _voci.push({ k: 'ebay', et: '🏷️ Ebay' });
     const _doppi1 = _doppiTabC(f);   // v7.262 - con tutti e due i campi spenti (Doppioni) il tab non c'è
-    if (_doppi1) _voci.push({ k: 'doppi', et: '🧾 ' + (currentLang === 'it' ? 'Copie' : 'Copies') });   // 🆕 v7.258; v7.263: «Copie» (Franco)
+    // 🗑️ v7.312 - qui il tab «🧾 Copie» entrava nella barra (v7.258): adesso ha la sua sezione sotto le foto (`_copieInRiga`)
     const tabNav = _tabNavLettura(_voci);
     // v6.529 - lo scambio si lancia dopo, quando questo markup e' nel DOM (in fondo alla funzione).
   document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + tabNav +
       '<div id="figdetail-tab-generale">' + rows.join('') + '</div>' +
       (_pagLett ? '<div id="figdetail-tab-pagine" style="display:none;">' + _pagLett + '</div>' : '') +
       '<div id="figdetail-tab-ebay" style="display:none;">' + ebayRows.join('') + '</div>' +
-      (_doppi1 ? '<div id="figdetail-tab-doppi" style="display:none;">' + _bloccoDoppiLettura(f) + '</div>' : '') +
       _sfogliaCodaDetail() + _codaAzioniDetail(bottomButtons);
+    _copieInRiga(_doppi1 ? _bloccoDoppiLettura(f) : '', 'figdetail-tab-doppi');   // v7.312
     // v6.103 - dopo l'innerHTML, altrimenti i due contenitori non esistono ancora.
     if (f.forSale) riempiEbayVistaLettura(f);
   } else {
@@ -70884,13 +70939,13 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     const _doppi2 = !!currentUser?.isAdmin && _doppiTabC(f);   // v7.262 - e se la matrice dei Doppioni accende un campo
     const _voci2 = [{ k: 'generale', et: '📋 ' + (currentLang === 'it' ? 'Generale' : 'General') }];
     if (_pagLett2) _voci2.push({ k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') });
-    if (_doppi2) _voci2.push({ k: 'doppi', et: '🧾 ' + (currentLang === 'it' ? 'Copie' : 'Copies') });   // v7.263: «Copie»
+    // 🗑️ v7.312 - qui il tab «🧾 Copie» entrava nella barra: adesso ha la sua sezione sotto le foto (`_copieInRiga`)
     const _tabLett2 = _tabNavLettura(_voci2);
     document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + _tabLett2
       + '<div id="figdetail-tab-generale">' + rows.join('') + '</div>'
       + (_pagLett2 ? '<div id="figdetail-tab-pagine" style="display:none;">' + _pagLett2 + '</div>' : '')
-      + (_doppi2 ? '<div id="figdetail-tab-doppi" style="display:none;">' + _bloccoDoppiLettura(f) + '</div>' : '')
       + _sfogliaCodaDetail() + _codaAzioniDetail(bottomButtons);
+    _copieInRiga(_doppi2 ? _bloccoDoppiLettura(f) : '', 'figdetail-tab-doppi');   // v7.312
   }
   _collegatiInRiga(_collegatiLettura);   // v7.306 - per tutti e due i rami
   // 🆕 v6.966 - il markup c'e' (in tutti e due i rami): si riempie il campo Personaggio.
@@ -72638,7 +72693,7 @@ let editingFeEbayImgFileSave = null;
 // mano; al terzo sarebbero diventate tre, e il giorno del quarto una si dimenticherebbe - e' il
 // difetto che questo file ha registrato piu' volte di ogni altro: due elenchi che devono dire per
 // forza la stessa cosa. Qui si cicla, e un tab nuovo si aggiunge a questa riga.
-const _FE_TAB = ['generale', 'pagine', 'ebay', 'doppi'];   // v7.258: + Doppi
+const _FE_TAB = ['generale', 'pagine', 'ebay'];   // v7.258: + Doppi; 🔄 v7.312: le Copie hanno una sezione loro (`_copieInRiga`)
 
 // 🆕 v7.258 (Franco) - IL TAB «DOPPI» DELLA SCHEDA IN MODIFICA: la Disponibilità (un numero, `disponibili`, su ogni
 //    articolo; il clone non la copia) e, solo sulle fcr base, la Disponibilità totale in sola lettura (`_dispTotaleFcr`),
@@ -73804,9 +73859,19 @@ function _copieAnnunciDopo() { setTimeout(() => { _copieAnnunciRiempi(); }, 0); 
 //    ordina (`_copieOrdinaTab`); i titoli stanno in un `<thead>`. Le colonne della tabella sono 7 in modifica, 6 in lettura.
 const _copieCellaSu = 'padding:4px 6px;vertical-align:top;';
 // v7.278 - `coda`: una cella vuota con la linea in fondo (la colonna dei tasti, in modifica)
-const _copieCondizioniRiga = (dentro, colonne, coda) => '<tr><td colspan="' + colonne + '" style="' + _copieCella + 'padding-top:0;">'
-  + '<span style="font-size:0.76rem;color:var(--info);font-weight:600;">' + (currentLang === 'it' ? 'Condizioni' : 'Condition') + '</span><br>' + dentro + '</td>'
-  + (coda ? '<td style="' + _copieCella + '"></td>' : '') + '</tr>';
+// 🔄 v7.312 (Franco: «il campo condizioni, mettilo collassabile, con la tendina per collassare, di default chiusa, da
+//    mobile»; «Tab Copie dell'articolo») - dal telefono le Condizioni di ogni copia stanno in un `<details>` chiuso: il
+//    titolo è la tendina, il testo (o la casella, in modifica) si apre col tocco. La casella resta nel DOM anche chiusa,
+//    quindi il «Salva» della scheda la legge come prima. Sul computer come prima.
+const _copieCondizioniRiga = (dentro, colonne, coda) => {
+  const tit = '<span style="font-size:0.76rem;color:var(--info);font-weight:600;">' + (currentLang === 'it' ? 'Condizioni' : 'Condition') + '</span>';
+  return '<tr><td colspan="' + colonne + '" style="' + _copieCella + 'padding-top:0;">'
+    + (_isMobileViewport()
+      ? '<details class="copie-cond-tel"><summary style="cursor:pointer;">' + tit + '</summary>' + dentro + '</details>'
+      : tit + '<br>' + dentro)
+    + '</td>'
+    + (coda ? '<td style="' + _copieCella + '"></td>' : '') + '</tr>';
+};
 function _copiaRigaHTML(c, artId, chiave) {
   c = c || {};
   const inp = 'class="form-input" style="padding:0.25rem 0.4rem;font-size:0.85rem;';
@@ -74546,6 +74611,7 @@ function _apriSchedaSuBozza(bozza) {
   const cont = document.getElementById('fig-detail-content'); if (cont) cont.innerHTML = '';
   const ph = document.getElementById('fig-detail-photo'); if (ph) ph.innerHTML = '';
   _collegatiInRiga('');   // v7.306
+  _copieInRiga('');   // v7.312
   modal.classList.remove('hidden');
   switchToEditMode('');
   return true;
@@ -74724,7 +74790,7 @@ function switchToEditMode(figId) {
     _tabPagineBtn(f) +
     '<button type="button" id="fe-tab-btn-ebay" onclick="switchFeTab(\'ebay\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>' +
     // 🆕 v7.258 - il tab «Doppi», su ogni tipologia; v7.262: se la matrice dei Doppioni accende almeno un campo
-    (_doppiTabC(f) ? '<button type="button" id="fe-tab-btn-doppi" onclick="switchFeTab(\'doppi\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🧾 ' + (currentLang === 'it' ? 'Copie' : 'Copies') + '</button>' : '') +   // v7.263: era «Doppi» (Franco: «rinominalo in "Copie"»)
+    // 🗑️ v7.312 - qui c'era il tab «🧾 Copie» (v7.258, v7.263): adesso ha la sua sezione sotto le foto (`_copieInRiga`)
     '</div>';
   // 🔄 v7.082 (Franco: «da quando le due foto dell'album, nella sua form, sono andate in basso a
   //    tutto? mettile in alto a dx, come per le altre tda») - con le foto dentro il tab, il tab si
@@ -75422,7 +75488,7 @@ function switchToEditMode(figId) {
   html += '</div>'; // chiude fe-tab-ebay
   // 🆕 v7.258 (Franco: «crea un tab nella form di dettaglio di ogni tipologia di articolo, chiamato "Doppi", e metti il
   //    campo Disponibilità qui») - dopo Ebay
-  html += '<div id="fe-tab-doppi" style="display:none;">' + _bloccoDoppiEdit(f) + '</div>';
+  // 🔄 v7.312 - le Copie non stanno più qui: la loro sezione sotto le foto la riempie `_copieInRiga`, dopo il disegno
 
   // v6.052 (Franco) - I PULSANTI SALGONO IN CIMA E CI RESTANO.
   // Stavano in fondo al form, dopo il tab Ebay: per salvare bisognava scorrere tutto ogni volta.
@@ -75509,6 +75575,7 @@ function switchToEditMode(figId) {
   content.innerHTML = barra + html;
   try { _aggiornaNumeroEreditato(); } catch (e) {}   // 🆕 v6.965 - il N. ereditato, già all'apertura
   _collegatiInRiga(f.id ? buildLinkedFiguresTabsHTML(f.id) : '');   // v7.306 - una bozza non ha ancora collegati
+  _copieInRiga(_doppiTabC(f) ? _bloccoDoppiEdit(f) : '', 'fe-tab-doppi');   // v7.312
   // 🆕 v7.091 - il personaggio riparte dai dati a ogni apertura in modifica: una scelta non salvata non sopravvive
   try { _iniziaPersMod(f); } catch (e) { console.error('_iniziaPersMod', e); }
   // 🔄 v7.103 (Franco: «nella maschera della card, il campo Numero deve essere sopra al campo Nome») - nelle Carte
