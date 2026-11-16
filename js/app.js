@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.310';
+const JS_VERSION = 'v7.311';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -73171,12 +73171,20 @@ function _cpFotoHTML(c, sola, artId, chiave, album) {
     + '</div>';
   const pannello = (d, n) => '<div id="cp-foto-tab-' + d.k + '"' + (n === 0 ? '' : ' style="display:none;"') + '>'
     // v7.310 - «Scarica tutte» sopra le foto delle linguette dei siti, anche in sola lettura (`_cpFotoScaricaTutte`)
-    + (d.sito ? '<div style="margin-bottom:0.5rem;"><button type="button" class="btn-secondary" id="cp-foto-scarica-' + d.k + '" onclick="_cpFotoScaricaTutte(\'' + d.k + '\')" style="font-size:0.8rem;padding:0.25rem 0.8rem;">⬇️ ' + (it ? 'Scarica tutte' : 'Download all') + '</button></div>' : '')
+    // 🆕 v7.311 (Franco: «mi serve anche un tasto (in tutti e 4 i tab) per eliminare tutte le foto in un colpo solo») -
+    //    «🗑️ Elimina tutte» accanto, in tutte e quattro, solo in modifica (`_cpFotoTogliTutte`)
+    + ((d.sito || !sola) ? '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">'
+      + (d.sito ? '<button type="button" class="btn-secondary" id="cp-foto-scarica-' + d.k + '" onclick="_cpFotoScaricaTutte(\'' + d.k + '\')" style="font-size:0.8rem;padding:0.25rem 0.8rem;">⬇️ ' + (it ? 'Scarica tutte' : 'Download all') + '</button>' : '')
+      + (sola ? '' : '<button type="button" class="btn-danger" id="cp-foto-togli-tutte-' + d.k + '" onclick="_cpFotoTogliTutte(\'' + d.k + '\')" style="font-size:0.8rem;padding:0.25rem 0.8rem;">🗑️ ' + (it ? 'Elimina tutte' : 'Delete all') + '</button>')
+      + '</div>' : '')
     + '<div id="cp-foto-lista-' + d.k + '" style="display:flex;flex-wrap:wrap;gap:0.5rem;">' + _cpFotoMiniature(sola, d.k) + '</div>'
-    + (sola ? '' : '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:0.8rem;margin-top:0.5rem;">'
-      + '<input type="file" id="cp-foto-input-' + d.k + '" accept="image/*" multiple style="display:none;" onchange="_cpFotoScelte(this,\'' + d.k + '\')">'
-      + '<button type="button" class="btn-barra-admin pieno" id="cp-foto-carica-' + d.k + '" onclick="document.getElementById(\'cp-foto-input-' + d.k + '\').click()">📷 ' + (it ? 'Carica foto' : 'Upload photos') + '</button>'
-      + '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" id="cp-foto-pulisci-' + d.k + '">' + (it ? 'Pulisci sfondo' : 'Clean background') + '</label>'
+    // 🔄 v7.311 (Franco: «i tasti per caricare le foto, nei tab ebay, vinted e subito, ci ho ripensato. toglili. lì non
+    //    servono») - «Carica foto» e «Pulisci sfondo» solo nelle Originali; nelle linguette dei siti le foto arrivano da
+    //    «Crea annuncio album». Si possono sempre togliere (✕) e scaricare (⬇).
+    + (sola || (d.sito && !album) ? '' : '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:0.8rem;margin-top:0.5rem;">'
+      + (d.sito ? '' : '<input type="file" id="cp-foto-input-' + d.k + '" accept="image/*" multiple style="display:none;" onchange="_cpFotoScelte(this,\'' + d.k + '\')">'
+        + '<button type="button" class="btn-barra-admin pieno" id="cp-foto-carica-' + d.k + '" onclick="document.getElementById(\'cp-foto-input-' + d.k + '\').click()">📷 ' + (it ? 'Carica foto' : 'Upload photos') + '</button>'
+        + '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" id="cp-foto-pulisci-' + d.k + '">' + (it ? 'Pulisci sfondo' : 'Clean background') + '</label>')
       // 🆕 v7.310 (Franco: «nei 3 tab Ebay, Vinted, Subito, deve essere presente un tasto che avvia la procedura "Crea annuncio
       //    album"»; album dall'articolo, sito dalla linguetta; «completata la trasformazione, le foto generate devono essere
       //    direttamente allegate alla copia») - `_cpCreaAnnuncioAlbum`
@@ -73244,6 +73252,43 @@ async function _cpFotoTogli(i, campo) {
   if (dove >= 0) elenco.splice(dove, 1);
   if (via.anteprima) URL.revokeObjectURL(via.anteprima);
   _cpFotoDisegna(campo);
+}
+// 🆕 v7.311 (Franco: «un tasto (in tutti e 4 i tab) per eliminare tutte le foto in un colpo solo») - come la ✕ di ogni foto
+//    (v7.294): le foto già sul sito escono SUBITO dalla copia, senza Salva (una scrittura sola), quelle non ancora salvate si
+//    buttano; i file su Cloudinary li toglie il lavoro serale. Prima una conferma: sono tante foto in un clic. Gli altri campi
+//    della finestra, anche se cambiati e non salvati, non si toccano.
+async function _cpFotoTogliTutte(campo) {
+  const it = currentLang === 'it', elenco = _cpFotoElenco(campo), st = document.getElementById('cp-stato');
+  const nome = (d => it ? d.it : d.en)(_cpFotoDelCanale(campo));
+  if (!elenco.length) { if (st) { st.style.color = 'var(--info)'; st.textContent = it ? 'Nessuna foto da eliminare.' : 'No photos to delete.'; } return; }
+  const ok = await _finestraConferma({
+    titolo: '🗑️ ' + (it ? 'Elimina tutte le foto (' + nome + ')' : 'Delete all photos (' + nome + ')'),
+    testo: it ? 'Elimino tutte le ' + elenco.length + ' foto della linguetta ' + nome + ' di questa copia? Escono subito dalla copia, senza Salva.'
+      : 'Delete all ' + elenco.length + ' photos of the ' + nome + ' tab of this copy? They leave the copy right away, without Save.',
+    ok: it ? 'Elimina' : 'Delete', annulla: it ? 'Annulla' : 'Cancel'
+  });
+  if (!ok) return;
+  if (elenco.some(f => f.url) && _cpFotoDi) {
+    const art = _articoloVivo(_cpFotoDi.artId);
+    const copie = art && Array.isArray(art.copie) ? art.copie.slice() : [];
+    const j = copie.findIndex((c, k) => _annChiaveCopia(c, k) === _cpFotoDi.chiave);
+    if (j >= 0 && campo in copie[j]) {
+      const nuova = Object.assign({}, copie[j]);
+      delete nuova[campo];
+      copie[j] = nuova;
+      try {
+        await _saveFigurineItem(Object.assign({}, art, { copie }));
+      } catch (e) {
+        console.error('_cpFotoTogliTutte', e);
+        if (st) { st.style.color = 'var(--danger)'; st.textContent = (it ? '⚠️ Foto NON eliminate: ' : '⚠️ Photos NOT deleted: ') + (e?.message || e); }
+        return;
+      }
+    }
+  }
+  elenco.forEach(f => { if (f.anteprima) URL.revokeObjectURL(f.anteprima); });
+  _cpFoto[campo] = [];
+  _cpFotoDisegna(campo);
+  if (st) { st.style.color = 'var(--success)'; st.textContent = it ? '✅ Foto eliminate.' : '✅ Photos deleted.'; }
 }
 // un clone è un altro pezzo: le foto non vengono dietro, di nessuna linguetta
 function _cpFotoSvuota() {
