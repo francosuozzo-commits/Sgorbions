@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.308';
+const JS_VERSION = 'v7.309';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34910,6 +34910,8 @@ function _aggiornaLogoNavbar() {
     && (!dettaglioSerie || dettaglioSerie.style.display === 'none');
   logo.style.display = inHome ? 'none' : '';
   _logoAlCentroSeCiSta(logo);
+  // 🆕 v7.309 - prima le voci, poi il nome: il nome misura anche loro
+  _vociAlCentroSeCiStanno();
   // 🔄 v6.947 — IL NOME SI SPEGNE DA LOGGATI, NON IN HOME. Per un'ora la regola era
   //    l'opposta, perché il nome stava anche nell'hero e in home si sarebbe letto due volte.
   //    Adesso vive solo qui, quindi in home ci deve stare — è l'unico posto che lo dice.
@@ -34946,6 +34948,33 @@ function _logoAlCentroSeCiSta(logo) {
     return r.width && r.left < l.right + 6 && r.right > l.left - 6; });
   if (tocca) nav.classList.remove('nav-logo-centro');
 }
+// 🐛 v7.309 (Franco: «c'è un pb con la navbar: alcune voci sono finite sopra alla casella di ricerca») - LE VOCI AL
+//    CENTRO DELLA BARRA SE CI STANNO. Dalla v7.306 il gruppo `.nav-voci` è centrato sulla barra fuori dal flusso, e
+//    fuori dal flusso non cede il posto a nessuno: dove la finestra non è abbastanza larga finiva sopra la casella
+//    (il rischio era scritto nel foglio: «il gruppo può arrivare al logo o alla casella»). Ora si fa come per il
+//    logo del telefono e per il nome del sito: si posa al centro, si misura, e se tocca il logo, la casella, il 🔍
+//    o i comandi di destra si cede spazio in due passi (style.css):
+//      1. `nav-ricerca-mini`: la casella lascia il posto al 🔍, come sotto i 1500px, e si riprova al centro;
+//      2. `nav-voci-in-fila`: il gruppo torna nel flusso, al centro dello spazio fra il logo e il 🔍. In fila non si
+//         sovrappone a niente per costruzione.
+//    📏 Misurato sul sito vero da utente a 1536px (lo schermo di Franco), iniettando: le voci al centro andavano da 266
+//    a 1265 e la casella cominciava a 997. Solo in fila la casella si schiacciava a 49px (illeggibile): per questo
+//    prima il 🔍. Con 🔍 e in fila: voci 175→1174, 🔍 a 1183, comandi di destra a 1237.
+function _vociAlCentroSeCiStanno() {
+  const nav = document.getElementById('navbar'), voci = nav && nav.querySelector('.nav-voci');
+  if (!voci) return;
+  nav.classList.remove('nav-voci-in-fila', 'nav-ricerca-mini');
+  if (_isMobileViewport() || !voci.offsetParent) return;
+  const tocca = () => {
+    const v = voci.getBoundingClientRect();
+    return [...nav.querySelectorAll('.nav-brand, #nav-search-input, #nav-search-link, #nav-search-mini, .nav-right')]
+      .filter(e => e.offsetParent)
+      .some(e => { const r = e.getBoundingClientRect(); return r.width && r.left < v.right + 12 && r.right > v.left - 12; });
+  };
+  if (!tocca()) return;
+  nav.classList.add('nav-ricerca-mini');
+  if (tocca()) nav.classList.add('nav-voci-in-fila');
+}
 function _nomeSitoSeCiSta(nome) {
   if (!nome.offsetParent) return;
   const n = nome.getBoundingClientRect();
@@ -34956,6 +34985,8 @@ function _nomeSitoSeCiSta(nome) {
   if (tocca) nome.style.display = 'none';
 }
 window.addEventListener('resize', () => { try { _aggiornaLogoNavbar(); } catch (e) {} });
+// 🆕 v7.309 - le voci si misurano col carattere vero: prima che arrivi, le scritte sono più strette
+try { document.fonts && document.fonts.ready.then(() => { try { _aggiornaLogoNavbar(); } catch (e) {} }); } catch (e) {}
 
 // ============================================================
 //  CAROSELLO DELLA HOME (v6.051, Franco)
@@ -36267,11 +36298,12 @@ function renderRicercaTipologia() {
   // 🔄 v6.996 (Franco: «lascia che sia "Cerca in tutte le serie"; non serve ripetere il nome della
   //    tda; questo da mobile. Nella desktop mettilo prima; esempio: "Cerca le figurine con retro in
   //    tutte le serie"») - sul computer articolo e nome in minuscolo, con `_articoloPlurale`.
+  // 🔄 v7.309 (Franco: «la frase "Imposta i criteri per la tua ricerca di figurine per album" che usiamo nelle sezioni
+  //    serie, nelle sezioni tda falla diventare così: "Imposta i criteri per la tua ricerca (in tutte le serie) di figurine
+  //    per album"») - la frase della sezione di una serie (`aggiornaTestiRicercaSezione`) con «(in tutte le serie)», sul
+  //    computer e sul telefono: via «Cerca … in tutte le serie» della v6.996.
   const _nomeTda = String((ARTICOLI[sec] && (it ? ARTICOLI[sec].it : ARTICOLI[sec].en)) || getSectionLabel(sec));
-  const titolo = _isMobileViewport()
-    ? (it ? 'Cerca in tutte le serie' : 'Search all series')
-    : (it ? 'Cerca ' + _articoloPlurale(_nomeTda, ARTICOLI[sec] && ARTICOLI[sec].genere).toLowerCase() + ' ' + esc(_nomeTda.toLowerCase()) + ' in tutte le serie'
-          : 'Search ' + esc(_nomeTda.toLowerCase()) + ' in all series');
+  const titolo = (it ? 'Imposta i criteri per la tua ricerca (in tutte le serie) di ' : 'Set your search criteria (in all series) for ') + esc(_nomeTda.toLowerCase());
   box.innerHTML = '<div id="rt-search-box" style="background:var(--card);border:1px solid var(--action);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-bottom:1.2rem;">'
     + '<div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.9rem;">'
     + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + titolo + '</div>'
@@ -50869,7 +50901,9 @@ function renderCatalogPersonaggi(grid) {
     + '<div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.75rem;">'
     // 🔄 v7.191 (Franco: «da mobile, "Imposta i criteri per la tua ricerca" diventa "Imposta dei criteri di ricerca"»;
     //    «da mobile, il bottone "Azzera filtri" prova a scriverlo su due righe») - le due frasi del telefono
-    + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? (_isMobileViewport() ? 'Imposta dei criteri di ricerca' : 'Imposta i criteri per la tua ricerca') : 'Set your search criteria') + '</div>'
+    // 🔄 v7.309 (Franco: «nella ricerca personaggi, usa questa frase "Imposta i criteri per la tua ricerca personaggi (in
+    //    tutte le serie)"») - sul computer; il telefono tiene la sua della v7.191
+    + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? (_isMobileViewport() ? 'Imposta dei criteri di ricerca' : 'Imposta i criteri per la tua ricerca personaggi (in tutte le serie)') : 'Set your character search criteria (in all series)') + '</div>'
     + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiSenzaFoto=false;_personaggiConFoto=false;_personaggiSerie=new Set();_personaggiTipi=new Set();_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;line-height:1.15;">' + t('items.resetFiltersHtml') + '</button>'
     + '</div>'
     + '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;">'
@@ -50927,6 +50961,8 @@ function renderCatalogPersonaggi(grid) {
       + '<div style="font-size:0.75rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Catalogo' : 'Catalogue') + '</div>'
       + '<div id="admin-add-personaggio-btn" style="display:inline-flex;gap:0.75rem;flex-wrap:wrap;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">'
       + '<button class="btn-primary btn-admin" onclick="openAddPersonaggioModal()">+ ' + (it ? 'Aggiungi personaggio' : 'Add character') + '</button>'
+      // 🆕 v7.309 - accanto, «Ripara i collegamenti» (`ricollegaPersonaggi`): anteprima, poi una scrittura sola
+      + '<button class="btn-secondary btn-admin" onclick="ricollegaPersonaggi()">🔗 ' + (it ? 'Ripara i collegamenti' : 'Repair links') + '</button>'
       + '</div></div>' : '')
     + '</div>';
   if (!_personaggiDati.elenco.length) {
@@ -51532,6 +51568,83 @@ async function allineaPersonaggiGemella() {
     }));
   } catch (e) { toast((it ? '⚠️ NON allineato: ' : '⚠️ NOT aligned: ') + (e?.message || e), 'error'); return; }
   toast(it ? '✅ Allineati ' + scritture.length + ' articoli fra ' + s.name + ' e ' + g.name : '✅ Aligned ' + scritture.length + ' items', 'success');
+}
+// 🆕 v7.309 (Franco: «nei personaggi ce ne sono molti senza articoli associati ma sono secondo me quasi tutti della
+//    serie 4; secondo me va rifatto il ricalcolo dei personaggi»; «ok» alla proposta) - RIPARA I COLLEGAMENTI.
+//    📏 Misurato il 15/11 sul sito vero: 306 personaggi senza articoli, 259 collegamenti del pacchetto che puntano ad
+//    articoli che non esistono più (la serie 4 è stata rifatta, gli id sono cambiati), 258 personaggi con una fcr/fpa
+//    BASE dello stesso nome esatto.
+//    Due passi, una sola scrittura del pacchetto:
+//    (1) via i collegamenti a un articolo che non c'è più. Si guarda `_cache.figurines` intera, non `getData`, che
+//        filtra: un articolo nascosto c'è, e il suo collegamento è buono.
+//    (2) ogni personaggio rimasto senza articoli si collega alla fcr/fpa base con lo stesso nome esatto, sulla riga
+//        giusta (`_rigaDelPersonaggio`), solo se la riga è UNA e non ha già un personaggio. Due righe possibili, o una
+//        riga già presa, o una riga voluta da due personaggi: non si indovina, si elenca nella conferma.
+//    Anteprima nella finestra del sito; niente scritto finché non si preme «Ripara».
+function _nomePerConfronto(s) { return String(s || '').trim().replace(/\s+/g, ' ').toUpperCase(); }
+function _pianoRicollegaPersonaggi() {
+  const D = _personaggiDati, ix = _indiciPersonaggi();
+  const esistono = new Set((_cache.figurines || []).map(f => f.id));
+  const rotti = D.grezzi.associazioni.filter(a => a && a.articoloId && !esistono.has(a.articoloId));
+  const buone = D.grezzi.associazioni.filter(a => a && a.articoloId && esistono.has(a.articoloId) && D.perId.has(a.personaggioId));
+  const conArticoli = new Set(buone.map(a => a.personaggioId)), righePrese = new Set(buone.map(a => a.articoloId));
+  // le fcr/fpa base per nome: nome → righe giuste (senza doppioni: la fcr e la sua fpa danno la stessa riga)
+  const perNome = new Map();
+  (_cache.figurines || []).forEach(f => {
+    const sez = f.section || 'figurines';
+    if ((sez !== 'figurines' && sez !== 'attaccare') || !_eBase(f)) return;
+    const k = _nomePerConfronto(f.name); if (!k) return;
+    const riga = _rigaDelPersonaggio(f, ix);
+    if (!perNome.has(k)) perNome.set(k, new Map());
+    perNome.get(k).set(riga.id, riga);
+  });
+  const proposte = [], dubbi = [], senza = [];
+  D.elenco.filter(p => !conArticoli.has(p.id)).forEach(p => {
+    const righe = [...((perNome.get(_nomePerConfronto(p.nome)) || new Map()).values())];
+    if (!righe.length) { senza.push(p); return; }
+    if (righe.length > 1) { dubbi.push({ p, motivo: righe.length + ' articoli con questo nome' }); return; }
+    if (righePrese.has(righe[0].id)) { dubbi.push({ p, motivo: 'l\'articolo ha già un personaggio' }); return; }
+    proposte.push({ p, riga: righe[0] });
+  });
+  // una riga voluta da due personaggi (nomi uguali scritti in due personaggi): nessuno dei due
+  const quanti = new Map(); proposte.forEach(x => quanti.set(x.riga.id, (quanti.get(x.riga.id) || 0) + 1));
+  const doppie = proposte.filter(x => quanti.get(x.riga.id) > 1);
+  doppie.forEach(x => dubbi.push({ p: x.p, motivo: 'stesso articolo di un altro personaggio' }));
+  return { rotti, proposte: proposte.filter(x => quanti.get(x.riga.id) === 1), dubbi, senza };
+}
+async function ricollegaPersonaggi() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  await caricaPersonaggi();
+  if (!(_cache.figurines || []).length) { toast(it ? 'Gli articoli non sono ancora caricati: riprova fra poco' : 'Items not loaded yet: try again shortly', 'error'); return; }
+  const P = _pianoRicollegaPersonaggi();
+  if (!P.rotti.length && !P.proposte.length) { toast(it ? 'Niente da riparare' : 'Nothing to repair', 'success'); return; }
+  const serie = new Map(getData('series', []).map(s => [s.id, s.name]));
+  const riga = x => x.p.nome + '  →  ' + (serie.get(x.riga.seriesId) || '—') + (x.riga.subseries ? ' · ' + x.riga.subseries : '') + ' · n.' + (x.riga.number ?? '—') + (x.riga.section === 'attaccare' ? ' (fpa)' : '');
+  const testo = it
+    ? '· ' + P.rotti.length + ' collegamenti puntano ad articoli che non esistono più: li tolgo.\n'
+      + '· ' + P.proposte.length + ' personaggi senza articoli si collegano all\'articolo base con lo stesso nome.\n'
+      + '· ' + P.dubbi.length + ' restano da vedere a mano.\n'
+      + '· ' + P.senza.length + ' non hanno nessuna figurina con lo stesso nome.'
+      + (P.proposte.length ? '\n\nI collegamenti nuovi:\n' + P.proposte.map(riga).join('\n') : '')
+      + (P.dubbi.length ? '\n\nDa vedere a mano:\n' + P.dubbi.map(x => x.p.nome + ' — ' + x.motivo).join('\n') : '')
+      + (P.senza.length ? '\n\nSenza figurina con lo stesso nome:\n' + P.senza.map(p => p.nome).join(', ') : '')
+    : '· ' + P.rotti.length + ' links to items that no longer exist: removed.\n'
+      + '· ' + P.proposte.length + ' characters linked to the base item with the same name.\n'
+      + '· ' + P.dubbi.length + ' to check by hand.\n'
+      + '· ' + P.senza.length + ' without a sticker of the same name.'
+      + (P.proposte.length ? '\n\n' + P.proposte.map(riga).join('\n') : '');
+  if (!await _finestraConferma({ titolo: '🔗 ' + (it ? 'Ripara i collegamenti dei personaggi' : 'Repair the character links'), larghezza: '1100px', aCapo: true, ok: it ? 'Ripara' : 'Repair', testo })) return;
+  const viaArt = new Set(P.rotti.map(a => a.articoloId));
+  try {
+    await _scriviPacchetto(d => {
+      // si rifà il conto sul documento appena riletto: tolti solo gli articoli che non ci sono
+      d.associazioni = d.associazioni.filter(x => !viaArt.has(x.a));
+      P.proposte.forEach(x => { if (!d.associazioni.some(y => y.a === x.riga.id)) d.associazioni.push({ a: x.riga.id, p: x.p.id }); });
+    });
+  } catch (e) { toast((it ? '⚠️ NON riparato: ' : '⚠️ NOT repaired: ') + (e?.message || e), 'error'); return; }
+  toast(it ? '✅ Tolti ' + P.rotti.length + ' collegamenti rotti, collegati ' + P.proposte.length + ' personaggi' : '✅ Removed ' + P.rotti.length + ' broken links, linked ' + P.proposte.length + ' characters', 'success');
+  renderCatalog();
 }
 // 🆕 v7.123 (Franco: «Mega 1 e Mega 2 non sono gemelle: condividono solo lo stesso set di 37 retro»; «evitare di censire
 //    37 foto di retro due volte») - I RETRO IN COMUNE. Campo `retroCondivisiId`, scritto su tutte e due le serie e letto
