@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.313';
+const JS_VERSION = 'v7.314';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -51167,11 +51167,17 @@ function articoliDelPersonaggio(pid, ix, soloLui) {   // v6.972: `soloLui` = sen
 // 🆕 v7.192 (Franco: «se cerco "ciccioso" o "trippone" nella RG non esce il personaggio collegato al retro "CICCIOSO AL
 //    TRIPPONE"»; «sì, procedi») - I NOMI DEI SUOI ARTICOLI, per la ricerca: Nome e Sottonome di quelli di cui lui (o un suo
 //    alter ego) è il personaggio. Fuori le figurine che sono sue solo per il retro: hanno il nome di un altro personaggio.
+// 🔄 v7.314 (Franco: «perché mostriamo il personaggio MARIAROSA RUGOSA a fronte della ricerca della parola SPAZZALATRINO? …
+//    la ricerca non deve restituire tutti i personaggi che hanno in uno degli articoli quella parola, ma solo i personaggi che
+//    contengono quella parola nel loro nome»; poi, alla proposta, «la tua proposta mi piace») - SOLO GLI ARTICOLI IN CUI LUI
+//    È L'UNICO PERSONAGGIO. 📏 Misurato sul sito: «spazzalatrino» dava anche MARIAROSA RUGOSA, dal retro «MARIAROSA RUGOSA E
+//    GINO SPAZZALATRINO» (due personaggi): ora no. «ciccioso» dà ancora SIMONE TESTIMONE, dal retro «CICCIOSO AL TRIPPONE»
+//    che è solo suo (il caso della v7.192). Chi ha un retro in comune si vede nella pagina, in «Personaggi collegati».
 function _nomiArticoliDelPersonaggio(pid, ix) {
   ix = ix || _indiciPersonaggi();
   const suoi = _conAlterEgo(pid);
   return articoliDelPersonaggio(pid, ix)
-    .filter(a => personaggiDiArticolo(a, ix).some(x => suoi.includes(x)))
+    .filter(a => { const chi = personaggiDiArticolo(a, ix); return chi.length > 0 && chi.every(x => suoi.includes(x)); })
     .flatMap(a => [a.name, a.subname]).filter(Boolean);
 }
 // 🔄 v7.192 - LA DOMANDA È «HA UNA FIGURINA SUA?» (con retro o per album), e non più `_haFigurineSue`: da oggi quella
@@ -51422,7 +51428,20 @@ function renderCatalogPersonaggi(grid) {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🧑‍🎤</div><p class="empty-title">' + (it ? 'I personaggi non sono ancora stati caricati.' : 'Characters have not been loaded yet.') + '</p></div>';
     return;
   }
-  const card = p => {
+  // 🔄 v7.314 - la card è anche dei «Personaggi collegati» della pagina del personaggio: `_cardPersonaggioHTML`
+  const card = p => _cardPersonaggioHTML(p, ix);
+  grid.innerHTML = _rigaTitoloHub(it ? 'I PERSONAGGI SGORBIONS' : 'THE SGORBIONS CHARACTERS') + cerca + _paginazionePersonaggi(pagine) + (pagina.length ? pagina.map(card).join('')
+      : '<div class="empty-state" style="grid-column:1/-1;"><p class="empty-title">' + (it ? 'Nessun personaggio con questo nome.' : 'No character with this name.') + '</p></div>')
+    + _paginazionePersonaggi(pagine);
+  // 🆕 v7.000 - «Filtra per serie» e «Filtri aggiuntivi» diventano barre
+  _bmApplica(document.getElementById('personaggi-filtro-serie'), 'pers-serie');
+  _bmApplica(document.getElementById('personaggi-filtro-tipi'), 'pers-tipi');   // v7.189
+  _bmApplica(document.getElementById('personaggi-filtri-agg'), 'pers-agg');
+}
+// LA CARD DI UN PERSONAGGIO (hub; v7.314: anche «Personaggi collegati»)
+function _cardPersonaggioHTML(p, ix) {
+  const it = currentLang === 'it';
+  const { principaleDi, perId } = _personaggiDati;
     const arts = articoliDelPersonaggio(p.id, ix);
     const foto = _fotoPersonaggio(arts, p.id, ix);
     // 🔄 v6.971 (Franco: «sì, togli le fpa anche dalla card») - il conto non conta le figurine per
@@ -51450,17 +51469,6 @@ function renderCatalogPersonaggi(grid) {
       + (principaleDi.has(p.id) ? '<div style="font-size:0.7rem;color:var(--text);">' + (it ? 'alter ego di ' : 'alter ego of ') + esc(perId.get(principaleDi.get(p.id)).nome) + '</div>' : '')
       + '<div class="card-desc" style="margin-top:0.3rem;padding-top:0.3rem;font-size:0.72rem;line-height:1.3;border-top:1px solid rgba(255,255,255,0.06);color:var(--accent);">' + conto + ' ' + _paroleArticoli(conto).trim() + '</div>'
       + '</div></div>';
-  };
-  // 🆕 v7.010 (Franco: «analogamente, quando il selettore è su "Personaggi", scrivi "I PERSONAGGI SGORBIONS"»)
-  // 🔄 v7.013 (Franco: «nella griglia dei personaggi le frecce di cambio pagina sono solo in basso; nelle
-  //    altre griglie sono sopra e sotto») - anche sopra, fra la ricerca e le card
-  grid.innerHTML = _rigaTitoloHub(it ? 'I PERSONAGGI SGORBIONS' : 'THE SGORBIONS CHARACTERS') + cerca + _paginazionePersonaggi(pagine) + (pagina.length ? pagina.map(card).join('')
-      : '<div class="empty-state" style="grid-column:1/-1;"><p class="empty-title">' + (it ? 'Nessun personaggio con questo nome.' : 'No character with this name.') + '</p></div>')
-    + _paginazionePersonaggi(pagine);
-  // 🆕 v7.000 - «Filtra per serie» e «Filtri aggiuntivi» diventano barre
-  _bmApplica(document.getElementById('personaggi-filtro-serie'), 'pers-serie');
-  _bmApplica(document.getElementById('personaggi-filtro-tipi'), 'pers-tipi');   // v7.189
-  _bmApplica(document.getElementById('personaggi-filtri-agg'), 'pers-agg');
 }
 
 // 🆕 v7.192 (Franco: «nella versione desktop, nella griglia dei personaggi, quelli con una foto orizzontale si vedono troppo
@@ -51518,16 +51526,11 @@ function chiudiPersonaggio() { _personaggioAperto = null; renderCatalog(); }
 //    poi altro; tra le fcr l'ordine lo detta il solito ordine serie») - NON PIU' BLOCCHI PER SERIE
 //    CON LE RIGHE DEI NOMI: una griglia di card, una per articolo, tutte con lo stesso riquadro
 //    quadrato (la foto ci sta dentro intera, come nelle card delle griglie).
-// 📌 L'ORDINE: tre gruppi (`_gruppoPersonaggio`), dentro ognuno l'ordine delle serie, poi - negli
-//    «altri» - l'ordine delle tipologie dell'inventario, e infine il comparatore della griglia, cosi'
-//    due articoli della stessa serie e tipologia stanno come nella loro griglia.
+// 📌 L'ORDINE: 🔄 v7.314 serie, tipologia, numero/nome, versione (vedi `ord` qui sotto). 🗑️ Via `_gruppoPersonaggio`, i
+//    tre gruppi fcr/retro/altri della v6.969 che venivano prima della serie.
 // 📌 SOTTO LA FOTO (poi, sempre Franco): serie, tipologia, «numero - nome», versione, nome completo
 //    - tutto dell'ARTICOLO. Vedi la card qui sotto.
 // ⚠️ Via la foto grande in testa: era la prima di queste stesse card, ripetuta.
-function _gruppoPersonaggio(f) {
-  const sec = f.section || 'figurines';
-  return sec === 'figurines' ? 0 : sec === 'retros' ? 1 : 2;
-}
 // 🆕 v7.304 - le tipologie che nella pagina del personaggio mostrano anche il retro preso dal record (vedi `_ff` sotto)
 const _PERS_RETRO_SUL_RECORD = ['carte', 'olografiche'];
 function renderPaginaPersonaggio(grid, pid) {
@@ -51551,11 +51554,6 @@ function renderPaginaPersonaggio(grid, pid) {
     if (!comp.has(k)) comp.set(k, _comparatoreGriglia(sec, figs.filter(x => x.seriesId === f.seriesId && (x.section || 'figurines') === sec), ix.perId, figs));
     return comp.get(k);
   };
-  // 🆕 v6.972 (Franco: «prima il personaggio principale e poi l'alter ego»; esempio: fcr di Livio
-  //    Bivio, fcr dell'alter ego, retro di Livio Bivio, retro dell'alter ego) - dentro il gruppo
-  //    fcr/retro/altri, e prima della serie. Del principale è quello che lui ha anche SENZA alter ego.
-  const _suoi = new Set(articoliDelPersonaggio(pid, ix, true).map(f => f.id));
-  const _dellAlterEgo = f => _suoi.has(f.id) ? 0 : 1;
   // 🐛 v6.980 (Franco: «non stai rispettando l'ordine delle sottoserie all'interno di una serie; se
   //    mostri una spilla 4.1 senza nome e una 3.7 cm con nome, dovresti mostrare prima la 4.1») - dopo
   //    serie e tipologia comanda la SOTTOSERIE, nell'ordine in cui la serie le dichiara, come nella
@@ -51567,11 +51565,6 @@ function renderPaginaPersonaggio(grid, pid) {
     const i = l.indexOf(String(f.subseries || '').trim());
     return i < 0 ? l.length : i;
   };
-  // 🆕 v7.192 (Franco: «mi aspetto di vedere prima una figurina che è direttamente collegata a quel personaggio rispetto ad
-  //    una figurina avente il retro collegato a quel personaggio») - dentro il gruppo, prima gli articoli di cui lui (o un
-  //    suo alter ego) è il personaggio, poi quelli che ci sono per il retro. Viene prima dell'alter ego.
-  const _tuttiSuoi = _conAlterEgo(pid);
-  const _perIlRetro = f => personaggiDiArticolo(f, ix).some(x => _tuttiSuoi.includes(x)) ? 0 : 1;
   // 🔄 v7.306 (Franco: «nella scheda del personaggio, non separare mai le versioni di un articolo; vanno sulla stessa
   //    riga; vedo, per esempio, che le slim le mandi a capo anche da sole») - LE CHIAVI SONO QUELLE DEL CAPOGRUPPO
   //    (`_familyKey`, il gruppo dell'Inventario). Prima ogni articolo si ordinava per sé: una slim senza il personaggio
@@ -51580,15 +51573,29 @@ function renderPaginaPersonaggio(grid, pid) {
   const _famDi = f => _familyKey(f, ix.perId);
   const _capoMemo = new Map();
   const _capo = f => { const k = _famDi(f); if (!_capoMemo.has(k)) _capoMemo.set(k, ix.perId.get(k) || f); return _capoMemo.get(k); };
+  // 🔄 v7.314 (Franco: «vorrei che gli articoli seguano un ordine espositivo ben preciso: serie, tda, nome/numero, tdv») -
+  //    L'ORDINE È QUELLO: la serie (ordine delle serie), la tipologia (ordine dell'Inventario), poi il comparatore della
+  //    griglia, che mette in fila numeri e nomi e tiene ogni versione dietro la sua base nell'ordine delle versioni. In
+  //    mezzo la sottoserie, che nella griglia viene prima del numero (v6.980). 🗑️ Via le chiavi che venivano prima della
+  //    serie: i tre gruppi fcr/retro/altri (v6.969), «prima i suoi, poi quelli per il retro» (v7.192), «prima il
+  //    principale, poi l'alter ego» (v6.972).
   const ord = arts.slice().sort((a, b) => { const ca = _capo(a), cb = _capo(b);
-    return (_gruppoPersonaggio(ca) - _gruppoPersonaggio(cb))
-    || (_perIlRetro(ca) - _perIlRetro(cb))
-    || (_dellAlterEgo(ca) - _dellAlterEgo(cb))
-    || (ordSerie(ca.seriesId) - ordSerie(cb.seriesId))
+    return (ordSerie(ca.seriesId) - ordSerie(cb.seriesId))
     || (ordSez(ca.section || 'figurines') - ordSez(cb.section || 'figurines'))
     || (ordSs(ca) - ordSs(cb))
     || compDi(a)(a, b); });
-  _elencoPersonaggio = ord.map(f => f.id);
+  // 🆕 v7.314 (Franco: «nella scheda di un personaggio vorrei una barra con dei filtri che permettano di rimuovere alcuni
+  //    articoli, in funzione di serie, tda, tipologia di versione (tdv); un meccanismo semplice (non è una ricerca) ma
+  //    efficace; lo scopo è ridurre il numero degli articoli della schermata») - I FILTRI: tre file di pillole (serie,
+  //    tipologie, versioni), tutte accese; un clic spegne una pillola e i suoi articoli escono (`_persFiltro`). Ogni pillola
+  //    conta i suoi articoli fra quelli che passano le altre due file. Una fila con un valore solo non si mostra: non
+  //    toglierebbe niente che non tolga già la pagina vuota. Valgono per il personaggio aperto (`_persFiltriDi`).
+  if (_persFiltriDi !== pid) { _persFiltriDi = pid; _persFiltriVia = { serie: new Set(), tipi: new Set(), tdv: new Set() }; _persTab = 'articoli'; }
+  const _chiaviPers = { serie: f => f.seriesId || '', tipi: f => f.section || 'figurines', tdv: f => _chiaveTipo(f) || 'base' };
+  const _passaPers = (f, salta) => Object.keys(_chiaviPers).every(g => g === salta || !_persFiltriVia[g].has(_chiaviPers[g](f)));
+  const vis = ord.filter(f => _passaPers(f));
+  _elencoPersonaggio = vis.map(f => f.id);
+  const collegati = _personaggiCollegati(pid, ix);   // v7.314, il secondo tab
   // 🔄 v6.969 (Franco: «le card della pagina del personaggio devono essere grandi il doppio; tanto ce
   //    ne saranno poche») - le colonne della griglia così come sono (l'hub ne usa il doppio), cioè
   //    card larghe il doppio di quelle dell'hub. 📱 Sul telefono due invece di tre: la metà
@@ -51613,12 +51620,13 @@ function renderPaginaPersonaggio(grid, pid) {
   // 🆕 v7.306 - UN GRUPPO NON SI SPEZZA FRA DUE RIGHE: se nella riga non ci sta tutto, comincia dalla riga dopo (la sua
   //    prima card prende `grid-column-start: 1`). Un gruppo più lungo di una riga va a capo per forza, ma parte da capo.
   const _aCapo = new Set();
-  for (let i = 0, pos = 0; i < ord.length;) {
-    const k = _famDi(ord[i]);
+  // v7.314: sugli articoli che passano i filtri (`vis`)
+  for (let i = 0, pos = 0; i < vis.length;) {
+    const k = _famDi(vis[i]);
     let j = i + 1;
-    while (j < ord.length && _famDi(ord[j]) === k) j++;
+    while (j < vis.length && _famDi(vis[j]) === k) j++;
     const quanti = j - i;
-    if (pos > 0 && pos + quanti > _colonne) { _aCapo.add(ord[i].id); pos = 0; }
+    if (pos > 0 && pos + quanti > _colonne) { _aCapo.add(vis[i].id); pos = 0; }
     pos = (pos + quanti) % _colonne;
     i = j;
   }
@@ -51723,9 +51731,81 @@ function renderPaginaPersonaggio(grid, pid) {
         + (currentUser?.isAdmin ? ' <button type="button" class="btn-secondary btn-admin-ghost" style="padding:0 0.4rem;font-size:0.75rem;" title="Non è più un suo alter ego" onclick="_togliAlterEgo(\'' + a + '\')">✕</button>' : '')).join(', ') + '</div>' : '')
     + (currentUser?.isAdmin ? _rigaAlterEgoAdmin(pid) + _rigaGestionePersonaggio(pid) : '')
     + '<div style="color:var(--accent);margin-top:0.3rem;">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div></div>'
-    + ord.map(card).join('')
-    + _posterDelPersonaggioHTML(pid, arts, ix, ordSerie, serieDi);
+    + _persTabBarra(arts.length, collegati.length, it)
+    + (_persTab === 'collegati'
+      ? (collegati.length ? collegati.map(c => _cardPersonaggioHTML(c, ix)).join('')
+        : '<div style="grid-column:1/-1;color:var(--text);padding:1rem 0;">' + (it ? 'Nessun personaggio ha un retro in comune con lui.' : 'No character shares a back with this one.') + '</div>')
+      : _persFiltriHTML(ord, vis, _chiaviPers, _passaPers, serieDi, ordSerie, ordSez, it)
+        + (vis.length ? vis.map(card).join('') : '<div style="grid-column:1/-1;color:var(--text);padding:1rem 0;">' + (it ? 'Nessun articolo con questi filtri.' : 'No item with these filters.') + '</div>')
+        + _posterDelPersonaggioHTML(pid, arts, ix, ordSerie, serieDi));
 }
+// 🆕 v7.314 (Franco: «aperto un personaggio, oltre che vederne gli articoli ad esso collegati, ho un'altra sezione che mostra
+//    i personaggi collegati; e qui ne mostro quelli che hanno almeno un retro in comune con lui; questa sezione la chiamerei
+//    PERSONAGGI COLLEGATI; la prima sezione la chiamerei ARTICOLI DEL PERSONAGGIO; le due sezioni le farei a tab con la
+//    sezione ARTICOLI aperta») - I DUE TAB della pagina del personaggio, col numero accanto. `_persTab` torna ad
+//    «articoli» quando si apre un altro personaggio (`_persFiltriDi`).
+let _persTab = 'articoli', _persFiltriDi = null, _persFiltriVia = { serie: new Set(), tipi: new Set(), tdv: new Set() };
+function _persTabBarra(nArt, nColl, it) {
+  const b = (k, testo) => '<button type="button" id="pers-tab-' + k + '" onclick="_persApriTab(\'' + k + '\')" style="padding:0.45rem 1rem;border:none;border-bottom:2px solid '
+    + (_persTab === k ? 'var(--accent)' : 'transparent') + ';background:transparent;color:' + (_persTab === k ? 'var(--accent)' : 'var(--text)')
+    + ';font-weight:' + (_persTab === k ? '600' : '400') + ';font-size:0.9rem;cursor:pointer;font-family:var(--font-ui);">' + testo + '</button>';
+  return '<div style="grid-column:1/-1;display:flex;gap:0.5rem;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-top:0.4rem;">'
+    + b('articoli', (it ? 'ARTICOLI DEL PERSONAGGIO' : 'CHARACTER ITEMS') + ' (' + nArt + ')')
+    + b('collegati', (it ? 'PERSONAGGI COLLEGATI' : 'RELATED CHARACTERS') + ' (' + nColl + ')')
+    + '</div>';
+}
+function _persApriTab(k) { _persTab = k; renderCatalog(); }
+// I personaggi che hanno almeno un retro in comune con lui (lui e i suoi alter ego esclusi; un alter ego conta come il
+// suo principale), in ordine di nome.
+function _personaggiCollegati(pid, ix) {
+  ix = ix || _indiciPersonaggi();
+  const suoi = new Set(_conAlterEgo(pid)), trovati = new Set();
+  articoliDelPersonaggio(pid, ix).filter(a => a.section === 'retros').forEach(r => {
+    const chi = personaggiDiArticolo(r, ix);
+    if (!chi.some(x => suoi.has(x))) return;
+    chi.forEach(x => { const pr = _principale(x); if (!suoi.has(x) && !suoi.has(pr)) trovati.add(pr); });
+  });
+  return [...trovati].map(id => _personaggiDati.perId.get(id)).filter(Boolean)
+    .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'it'));
+}
+// LA BARRA DEI FILTRI (vedi `_persFiltriVia` in `renderPaginaPersonaggio`): una fila per serie, tipologie e versioni, solo
+// se ha almeno due valori; pillola spenta = barrata e sbiadita. «Mostra tutti» riaccende tutto.
+function _persFiltriHTML(ord, vis, chiavi, passa, serieDi, ordSerie, ordSez, it) {
+  const etichette = {
+    serie: v => serieDi.get(v) ? _nomeSerieCard(serieDi.get(v)) : '—',
+    tipi: v => getSectionLabel(v) || v,
+    tdv: v => v === 'base' ? (it ? 'Versione base' : 'Base version') : _nomeVersione(v, it ? 'it' : 'en')
+  };
+  const ordina = {
+    serie: (a, b) => ordSerie(a) - ordSerie(b),
+    tipi: (a, b) => ordSez(a) - ordSez(b),
+    tdv: (a, b) => (a !== 'base') - (b !== 'base')
+  };
+  const titoli = { serie: it ? 'Serie' : 'Series', tipi: it ? 'Tipologie' : 'Item types', tdv: it ? 'Versioni' : 'Versions' };
+  const file = Object.keys(chiavi).map(g => {
+    const valori = [...new Set(ord.map(chiavi[g]))].sort(ordina[g]);
+    if (valori.length < 2) return '';
+    return '<div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">'
+      + '<span style="font-size:0.8rem;color:var(--text);min-width:5.5rem;">' + titoli[g] + '</span>'
+      + valori.map(v => {
+        const via = _persFiltriVia[g].has(v), n = ord.filter(f => chiavi[g](f) === v && passa(f, g)).length;
+        return '<button type="button" class="pers-filtro" data-gruppo="' + g + '" data-valore="' + esc(v) + '" onclick="_persFiltro(this.dataset.gruppo, this.dataset.valore)"'
+          + ' title="' + (via ? (it ? 'Rimetti questi articoli' : 'Show these items again') : (it ? 'Togli questi articoli' : 'Hide these items')) + '"'
+          + ' style="padding:0.2rem 0.65rem;border-radius:999px;border:1px solid var(--border2);background:var(--card2);color:var(--text);font-size:0.78rem;cursor:pointer;'
+          + (via ? 'opacity:0.45;text-decoration:line-through;' : '') + '">' + esc(etichette[g](v)) + ' <span style="color:var(--accent);">' + n + '</span></button>';
+      }).join('') + '</div>';
+  }).filter(Boolean);
+  if (!file.length) return '';
+  const spenti = Object.values(_persFiltriVia).some(s => s.size);
+  return '<div id="pers-filtri" style="grid-column:1/-1;display:flex;flex-direction:column;gap:0.45rem;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.7rem 0.85rem;">'
+    + file.join('')
+    + '<div style="display:flex;align-items:center;gap:0.8rem;font-size:0.8rem;color:var(--text);">'
+    + (it ? 'Mostrati ' : 'Showing ') + '<b style="color:var(--accent);">' + vis.length + '</b>' + (it ? ' di ' : ' of ') + ord.length
+    + (spenti ? ' <button type="button" class="btn-secondary" onclick="_persFiltriAzzera()" style="font-size:0.75rem;padding:0.15rem 0.7rem;">' + (it ? 'Mostra tutti' : 'Show all') + '</button>' : '')
+    + '</div></div>';
+}
+function _persFiltro(g, v) { const s = _persFiltriVia[g]; if (!s) return; if (s.has(v)) s.delete(v); else s.add(v); renderCatalog(); }
+function _persFiltriAzzera() { Object.values(_persFiltriVia).forEach(s => s.clear()); renderCatalog(); }
 // 🆕 v6.980 (Franco: «mostri direttamente il poster; magari lo fai in fondo, dopo aver mostrato tutti
 //    gli articoli; prima ci scrivi Poster, nello stesso font di "ARTICOLI"») - un poster per serie
 //    (uno per personaggio per serie), in ordine di serie; il nome della serie sopra solo se sono più
