@@ -1874,9 +1874,10 @@ footer {
   .nav-links #nav-classifica     { order: 8; }
   .nav-links #nav-newsletter-btn { order: 9; }
   .nav-links #nav-annunci        { order: 10; }
-  .nav-links #nav-cerca-var      { order: 11; }   /* v7.304 - «Cerca variazioni», solo admin */
-  .nav-links a[data-page="contact"] { order: 12; }
-  .nav-links #nav-logout-link    { order: 13; }
+  .nav-links #nav-copie          { order: 11; }   /* v7.312 - «Copie doppie», solo admin, sotto Annunci */
+  .nav-links #nav-cerca-var      { order: 12; }   /* v7.304 - «Cerca variazioni», solo admin */
+  .nav-links a[data-page="contact"] { order: 13; }
+  .nav-links #nav-logout-link    { order: 14; }
 
   #navbar .nav-logo img { height: 30px; }
 }
@@ -2200,11 +2201,15 @@ footer {
      spegneva tutto il pannello, Annunci compreso. */
   /* 🔄 v7.276 - Annunci è il tab ANNUNCI dentro «Copie doppie» (`#admin-doppioni`): conta solo se è aperta lei, e del
      contenitore si spengono anche il titolo e i tre tab (dal telefono si vede solo Annunci, come prima) */
-  #admin-panel:has(#admin-doppioni.active #admin-fotoannuncio.active) { display: block !important; }
-  #admin-panel:has(#admin-doppioni.active #admin-fotoannuncio.active) > h2,
-  #admin-panel:has(#admin-doppioni.active #admin-fotoannuncio.active) > .admin-tabs,
-  #admin-panel:has(#admin-doppioni.active #admin-fotoannuncio.active) #admin-doppioni > h3,
-  #admin-panel:has(#admin-doppioni.active #admin-fotoannuncio.active) #admin-doppioni > .cd-schede { display: none !important; }
+  /* 🔄 v7.312 (Franco: «da mobile vorrei l'accesso alle copie») - con la voce «🧾 Copie doppie» del panino
+     (`apriCopieNav`) la console si vede quando è aperta «Copie doppie», con il suo titolo e i suoi tre tab; titolo e tab
+     della console restano spenti. Entrando da «📢 Annunci» (`apriAnnunciNav` mette `tel-solo-ann`) si vede solo
+     Annunci, come prima. La classe e non il tab acceso: se no, passando al tab ANNUNCI dalle copie, i tab sparirebbero. */
+  #admin-panel:has(#admin-doppioni.active) { display: block !important; }
+  #admin-panel:has(#admin-doppioni.active) > h2,
+  #admin-panel:has(#admin-doppioni.active) > .admin-tabs,
+  #admin-panel.tel-solo-ann:has(#admin-doppioni.active #admin-fotoannuncio.active) #admin-doppioni > h3,
+  #admin-panel.tel-solo-ann:has(#admin-doppioni.active #admin-fotoannuncio.active) #admin-doppioni > .cd-schede { display: none !important; }
 
   /* strumenti admin sparsi nelle pagine */
   /* 🔄 v7.091 (Franco: «nella maschera di ricerca delle carte, da applicazione mobile, non c'è il filtro admin ma
@@ -2237,9 +2242,10 @@ footer {
      scheda di un articolo porta .admin-anche-telefono. SOLO quello: matita e clona sulle card, e
      Clona/Elimina della scheda, restano spenti (scelta di Franco, «tasto A»). I Salva della
      modalità modifica sono .btn-barra-admin, che questa lista non ha mai nascosto. */
-  .btn-admin:not(.admin-anche-telefono):not(#bulk-edit-view *):not(#page-newsletter *),
-  .tbl-btn-edit:not(.admin-anche-telefono):not(#bulk-edit-view *):not(#page-newsletter *),
-  .tbl-btn-del:not(#bulk-edit-view *):not(#page-newsletter *) { display: none !important; }
+  /* 🔄 v7.312 - e dentro «Copie doppie» (`#admin-doppioni`): dal telefono la apre solo l'admin, dalla voce del panino */
+  .btn-admin:not(.admin-anche-telefono):not(#bulk-edit-view *):not(#page-newsletter *):not(#admin-doppioni *),
+  .tbl-btn-edit:not(.admin-anche-telefono):not(#bulk-edit-view *):not(#page-newsletter *):not(#admin-doppioni *),
+  .tbl-btn-del:not(#bulk-edit-view *):not(#page-newsletter *):not(#admin-doppioni *) { display: none !important; }
 
   /* vista tabellare disattivata su telefono: il selettore sparisce
      (la guardia JS in index.html riporta alla griglia chi ci arriva restringendo la finestra) */
@@ -2738,6 +2744,7 @@ footer {
    verticale … ogni articolo può usare tutta la larghezza della riga, ora maggiore»): una prima stesura li
    metteva in colonne affiancate, ed era sbagliata. */
 #fig-detail-collegati:empty { display: none; }
+#fig-detail-copie:empty { display: none; }   /* v7.312 - la sezione delle Copie, quando l'articolo non le ha */
 @media (min-width: 861px) {
   #fig-detail-collegati .linked-fig-barra {
     grid-template-columns: none !important;
