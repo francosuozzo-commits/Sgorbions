@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.311">
+<link rel="stylesheet" href="css/style.css?v=7.312">
 
 
 <style>
@@ -438,6 +438,8 @@
   .nav-links #nav-annunci { display:none !important; }}
 /* 🆕 v7.304 - «Cerca variazioni» solo nel panino (il suo posto, dopo Annunci, lo dà `order` in style.css) */
 @media (min-width:861px) { .nav-links #nav-cerca-var { display:none !important; } }
+/* 🆕 v7.312 - «Copie doppie» solo nel panino: sul desktop c'è la linguetta `#ml-linguetta` */
+@media (min-width:861px) { .nav-links #nav-copie { display:none !important; } }
 /* ⬜ E SOTTO I 1500px LA CASELLA SPARISCE, AL SUO POSTO UN TASTO 🔍 che apre la finestrella del
    telefono. 📏 Misurato: da admin, a 1440px le voci da sole arrivano già dove comincia la bandiera,
    quindi una casella lì non ci sta comunque - stringerla a 26px non è «più stretta», è illeggibile.
@@ -1632,6 +1634,11 @@ button.back-btn { color:#ffffff; }
   /* 🔄 v7.242 (Franco, dal telefono: «stringi la colonna Sito») - la seconda colonna della tabella degli annunci (Sito,
      dopo la spunta), titolo e celle, col margine stretto; il selettore lo stringe app.js (`_annSitoTel`) */
   #annunci-tabella th:nth-child(2), #annunci-tabella td:nth-child(2) { padding-left: 0.2rem; padding-right: 0.2rem; }
+  /* 🔄 v7.312 (Franco: «da mobile, nella finestra di ricerca degli annunci, usa appieno la larghezza dello schermo; se serve
+     usa una colonna in più; questo per tutti i box di ricerca di quella pagina») - dal telefono i riquadri dei filtri a tutta
+     larghezza (sul PC restano al 70%, v7.270), e le pillole vanno a capo in più colonne da sole.
+     `!important` perché la larghezza è uno stile in linea */
+  #annunci-filtri { width: 100% !important; }
 }
 /* 🔄 v7.285 (Franco: «la colonna Iniziale falla della stessa larghezza della colonna Finale») - i titoli di Iniziale (10ª colonna)
    e Finale (11ª) col margine stretto delle loro celle: così la larghezza la danno le due caselle uguali, non il titolo */
@@ -2650,6 +2657,10 @@ button.back-btn { color:#ffffff; }
          la console lì non si vede. Sul desktop no (regola in testa): c'è il tab della console. Nel markup sta PRIMA di
          Annunci, che deve restare attaccato alla casella di ricerca (v7.187); nel panino va dopo (`order` 11). -->
     <a onclick="apriCercaVariazioni()" id="nav-cerca-var" style="display:none;">🔍 Cerca variazioni</a>
+    <!-- 🆕 v7.312 (Franco: «da mobile vorrei l'accesso alle copie; aggiungi una voce di menu sotto annunci, che riprende la
+         linguetta admin») - la linguetta `#ml-linguetta` nel panino del telefono, solo all'admin (`apriCopieNav`). Nel
+         markup sta prima di Annunci, che deve restare attaccato alla casella di ricerca: sotto Annunci la mette `order` -->
+    <a onclick="apriCopieNav()" id="nav-copie" style="display:none;">🧾 Copie doppie</a>
     <a onclick="apriAnnunciNav()" id="nav-annunci" style="display:none;">📢 Annunci</a>
     <div id="nav-search" style="display:none;">
       <!-- 🆕 v6.852 (Franco: «il messaggio da mostrare non deve starci tutto dentro; deve apparire
@@ -6789,6 +6800,11 @@ di tutte le serie</button>
       <!-- 🆕 v7.306 (Franco: «i 3 tab siano tutti affiancati, andando ad usare tutta la larghezza della pagina …
            la parte sottostante (quella coi 3 tab) inizia sotto all'ultimo campo») - i tab collegati escono dalla
            colonna dei campi: una riga sotto le due colonne, larga quanto la scheda. Lo riempie `_collegatiInRiga`. -->
+      <!-- 🆕 v7.312 (Franco: «il tab copie lo metterei sotto all'altezza di terminazione delle foto; in questo modo, quando lo
+           si seleziona, il suo contenuto può andare anche sotto alla foto, in modo da svilupparsi con righe meno alte»;
+           «anche da mobile»; scelta B) - le Copie escono dalla barra dei tab: una sezione sua sotto le due colonne, larga
+           quanto la scheda, col suo tab che apre e chiude. La riempie `_copieInRiga`, in lettura e in modifica. -->
+      <div id="fig-detail-copie" style="grid-column:1 / -1;min-width:0;"></div>
       <div id="fig-detail-collegati" style="grid-column:1 / -1;min-width:0;"></div>
     </div>
   </div>
@@ -7104,7 +7120,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.311"></script>
+<script src="js/app.js?v=7.312"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7128,7 +7144,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.311'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.312'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
