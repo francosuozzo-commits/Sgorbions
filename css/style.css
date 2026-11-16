@@ -233,6 +233,13 @@ body {
     z-index: 2;
   }
   .nav-links #nav-search { flex: 0 1 auto; }
+  /* 🐛 v7.309 (Franco: «alcune voci sono finite sopra alla casella di ricerca») - dove al centro della barra il
+     gruppo tocca il logo, la casella, il 🔍 o i comandi di destra, `_vociAlCentroSeCiStanno` cede spazio: prima la
+     casella diventa 🔍 (`nav-ricerca-mini`, come sotto i 1500px; da non loggato il 🔍 resta spento dal suo stile in
+     linea), poi, se non basta, il gruppo torna nel flusso al centro dello spazio fra il logo e il 🔍. */
+  #navbar.nav-ricerca-mini #nav-search { display: none !important; }
+  #navbar.nav-ricerca-mini #nav-search-mini { display: block; }
+  #navbar.nav-voci-in-fila .nav-voci { position: static; transform: none; margin: 0 auto; }
 }
 /* 🔄 v6.704 (Franco: «usiamo la b)», dopo tre prove iniettate nel sito vero) — LE VOCI
    DELLA NAVBAR SONO BIANCHE A RIPOSO. Erano `--muted`, che non e' un grigio: e' #8b7aaa, un
@@ -915,6 +922,13 @@ body {
 /* ===== SECTION STYLES ===== */
 .section { padding: 2.5rem 2rem; }
 .section-inner { max-width: 1100px; margin: 0 auto; }
+/* 🆕 v7.309 (Franco: «il riquadro contenitore dei filtri di ricerca non è identico in tutte le pagine di ricerca; mi
+   piace più di tutti quello delle sezioni delle serie: più centrato e non troppo largo; adattiamo quelli delle pagine
+   per tipo di articolo e personaggio») - LA MISURA DELLA SEZIONE DI UNA SERIE. 📏 Misurato sul sito vero a 1536px: là
+   `#items-search-box` sta in `#items-section` (1100px, imbottitura 2rem) coi margini a -1rem, cioè 1068px al centro
+   (231→1299); la pagina di una tipologia (`#rt-search-box`) era 1325px (103→1428), l'hub dei personaggi
+   (`#personaggi-search-box`) 1312px (109→1421). Iniettato: tutte e due a 231→1299. Sotto i 1068px non cambia niente. */
+#rt-search-box, #personaggi-search-box { max-width: 1068px; margin-left: auto; margin-right: auto; }
 .section-header { text-align: center; margin-bottom: 3rem; }
 .section-eyebrow {
   font-family: var(--font-ui); font-size: 0.9rem; color: var(--accent2);
