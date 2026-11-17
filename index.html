@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.323">
+<link rel="stylesheet" href="css/style.css?v=7.324">
 
 
 <style>
@@ -3222,6 +3222,9 @@ button.back-btn { color:#ffffff; }
                Personaggi») — il terzo taglio. Stessa forma dei due di prima: lo stato acceso lo
                mette `_aggiornaBivioInventario`, che adesso conosce tre valori. -->
           <button type="button" id="taglio-personaggi" onclick="impostaTaglioInventario('personaggi')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;">Personaggi</button>
+          <!-- 🆕 v7.324 (Franco: «aggiungi un nuovo tab, nell'hub principale, dopo Serie, Tipologie di articoli, Personaggi;
+               chiamato "Novità"») — gli articoli degli ultimi N giorni (`renderCatalogNovita`) -->
+          <button type="button" id="taglio-novita" onclick="impostaTaglioInventario('novita')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;">Novità</button>
         </div>
         <!-- v6.174 (Franco) - IL RIEPILOGO DELLE SERIE, per tutti e non solo per l'admin.
              `margin-left:auto` lo spinge in fondo a destra della riga senza aggiungere contenitori.
@@ -4818,6 +4821,13 @@ di tutte le serie</button>
                   <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveImpostazioniGenerali()" data-i18n="admin.save">Salva</button>
                 </div>
                 <div class="form-hint" data-i18n="admin.generali.timeoutHint">Oltre questo tempo il sito smette di aspettare i dati e mostra il pannello di guasto. Da 3 a 120 secondi. Con una connessione lenta un valore basso fa comparire «SITO MOMENTANEAMENTE NON DISPONIBILE» anche quando i dati stavano arrivando.</div>
+                <!-- 🆕 v7.324 (Franco: «n diventa un parametro da admin console, nel pannello "Impostazioni"») -->
+                <label class="form-label" style="margin-top:1rem;">Novità: articoli creati negli ultimi … giorni (vale anche per la stellina «New»)</label>
+                <div style="display:flex;gap:0.5rem;align-items:flex-start;">
+                  <input class="form-input" type="number" id="impostazioni-novita-input" min="1" max="365" step="1" placeholder="90" style="width:110px;">
+                  <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveGiorniNovita()">Salva</button>
+                </div>
+                <div class="form-hint">Da 1 a 365. La linguetta «Novità» dell'Inventario mostra gli articoli creati in questi ultimi giorni (solo quelli con la foto), e le loro card hanno la stellina «New». Senza un valore salvato: 90.</div>
                 <div id="impostazioni-generali-feedback" style="display:none;margin-top:0.6rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;"></div>
               </div>
             </div>
@@ -7121,7 +7131,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.323"></script>
+<script src="js/app.js?v=7.324"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7145,7 +7155,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.323'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.324'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
