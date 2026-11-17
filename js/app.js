@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.315';
+const JS_VERSION = 'v7.316';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -46617,7 +46617,9 @@ async function _faComponi() {
 //    aperta su quella copia, la sua linguetta si aggiorna (se no il suo Salva le butterebbe).
 async function _faAllegaAllaCopia() {
   const { artId, chiave, campo } = _fa.copia, it = currentLang === 'it';
-  const scrivi = (t, rosso) => _fa$('piano2').insertAdjacentHTML('beforeend', '<br><span style="color:' + (rosso ? '#c0392b' : '#2e7d32') + '">' + esc(t) + '</span>');
+  // 🔄 v7.316 (Franco: «invece che essere informato di questo attraverso quella frase in verde, preferisco un pop-up a
+  //    schermo che devo cliccare») - l'esito, riuscito o no, in una finestra nella pagina della procedura, chiusa solo da «OK»
+  const scrivi = (t, rosso) => _faAvviso(t, rosso);
   if (!_fa.uscite.length) return;
   try {
     const nuove = [];
@@ -46647,6 +46649,32 @@ async function _faAllegaAllaCopia() {
     _faStato('');
     scrivi('⚠️ Foto NON allegate alla copia: ' + (e && e.message || e), true);
   }
+}
+// 🆕 v7.316 - una finestra sopra la pagina della procedura (che è un'altra scheda: `_finestraConferma` non ci arriva); si
+//    chiude solo col suo «OK», né Esc né il clic sullo sfondo
+function _faAvviso(testo, rosso) {
+  const d = _fa && _fa.w && _fa.w.document;
+  if (!d || !d.body) return;
+  const vecchio = d.getElementById('fa-avviso');
+  if (vecchio) vecchio.remove();
+  const ov = d.createElement('div');
+  ov.id = 'fa-avviso';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;';
+  const box = d.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:10px;padding:20px 22px;max-width:420px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,0.35);text-align:center;border-top:6px solid ' + (rosso ? '#c0392b' : '#2e7d32') + ';';
+  const p = d.createElement('p');
+  p.style.cssText = 'margin:0 0 16px;font-size:16px;color:' + (rosso ? '#c0392b' : '#222') + ';';
+  p.textContent = testo;
+  const ok = d.createElement('button');
+  ok.className = 'btn primario';
+  ok.id = 'fa-avviso-ok';
+  ok.textContent = 'OK';
+  ok.style.minWidth = '110px';
+  ok.onclick = () => ov.remove();
+  box.append(p, ok);
+  ov.appendChild(box);
+  d.body.appendChild(ov);
+  ok.focus();
 }
 // 🔄 v7.243 - le foto pronte, ridisegnate anche dopo «Togli» (prima stavano in fondo a `_faComponi`)
 function _faRisultati() {
@@ -73247,6 +73275,9 @@ function _cdDisegna() {
 // v7.269 (Franco: «aggiungi il filtro "Con annuncio" e "Senza annuncio"; come titolo, usa "Filtra per annunci"») - + `annunci`
 //    ('si' / 'no'; '' finché gli annunci non sono letti, e allora la pillola non c'è)
 const _CD_FILTRI = ['serie', 'tipo', 'versione', 'articolo', 'annunci'];
+// v7.316 - dal telefono, i filtri aperti (nascono tutti chiusi)
+const _cdFiltriAperti = new Set();
+function _cdFiltroApri(k, aperto) { if (aperto) _cdFiltriAperti.add(k); else _cdFiltriAperti.delete(k); }
 function _cdPassa(x, salta) {
   return _CD_FILTRI.every(k => k === salta || !_cdFiltro[k].size || _cdFiltro[k].has(x[k]));
 }
@@ -73371,11 +73402,26 @@ function _cdInterno() {
   if (!_annLetti) setTimeout(() => { _cdAnnunciPoi(); }, 0);   // v7.269: gli annunci per il loro filtro
   // v7.266 (Franco: «i box contenitore sopra la tabella sono esageratamente lunghi; direi di stare al 70% di quella
   //    lunghezza») - i riquadri dei filtri al 70% della larghezza della pagina
-  const filtri = '<div style="display:flex;flex-direction:column;gap:0.9rem;margin-bottom:1rem;width:70%;">'
+  // 🔄 v7.316 (Franco: «nella versione mobile … le due colonne si sovrappongono un pochino; rimettiamo tutto su una sola
+  //    colonna ma mettimi dei collassatori che stanno di default chiusi») - dal telefono: tutta la larghezza, un filtro sotto
+  //    l'altro, ognuno un <details> chiuso; quelli aperti li ricorda `_cdFiltriAperti` (ogni clic ridisegna tutto)
+  const tel = _isMobileViewport();
+  const filtri = '<div style="display:flex;flex-direction:column;gap:0.9rem;margin-bottom:1rem;width:' + (tel ? '100%' : '70%') + ';">'
     + '<div><button type="button" class="btn-primary" onclick="_cdAzzera()" style="font-size:0.82rem;padding:0.3rem 1rem;">' + (it ? 'Azzera filtri' : 'Reset filters') + '</button></div>'
     + (() => {
       const box = k => {
         const voci = _cdVoci(tutte, k);
+        if (tel) {
+          const accesi = _cdFiltro[k].size;
+          return '<details class="cd-filtro-tel"' + (_cdFiltriAperti.has(k) ? ' open' : '') + ' ontoggle="_cdFiltroApri(\'' + k + '\', this.open)"'
+            + ' style="background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.6rem 0.9rem;">'
+            + '<summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--info);">' + titolo[k]
+            + (accesi ? ' <span style="color:var(--text);">(' + accesi + ')</span>' : '') + '</summary>'
+            + '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.6rem;">'
+            + voci.map((v, j) => _chipTipoHTML({ etichetta: etichetta[k](v), n: tutte.filter(x => _cdPassa(x, k) && x[k] === v).length, attiva: _cdFiltro[k].has(v), it,
+                onSet: "_cdFiltra('" + k + "'," + j + ",false)", onAdd: "_cdFiltra('" + k + "'," + j + ",true)", titolo: it ? 'Solo questo' : 'Only this' })).join('')
+            + '</div></details>';
+        }
         return '<div style="position:relative;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:1.05rem 0.9rem 0.7rem;flex:1;min-width:0;">'
           + '<div style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;white-space:nowrap;">'
           + '<span style="font-size:0.78rem;font-weight:600;color:var(--info);">' + titolo[k] + '</span></div>'
@@ -73387,6 +73433,7 @@ function _cdInterno() {
       // v7.268 (Franco: «i filtri "Filtra per tipologia di articolo" e "Filtra per versione" mettili sulla stessa riga») -
       //    serie; tipologia e versione affiancate; nome / numero
       // v7.269 (Franco: «mettilo sulla stessa riga di "Filtra per nome / numero"») - nome / numero e annunci affiancati
+      if (tel) return _CD_FILTRI.map(box).join('');   // v7.316: dal telefono una colonna sola
       return box('serie') + '<div style="display:flex;gap:0.9rem;flex-wrap:wrap;">' + box('tipo') + box('versione') + '</div>'
         + '<div style="display:flex;gap:0.9rem;flex-wrap:wrap;">' + box('articolo') + box('annunci') + '</div>';
     })() + '</div>';
@@ -73427,7 +73474,13 @@ function _cdInterno() {
       + '<td data-cd="finale" style="' + td + 'text-align:center;white-space:nowrap;' + (x.finali.length > 1 ? 'color:var(--warn);font-weight:600;' : '') + '"'
         + (x.finali.length > 1 ? ' title="' + (it ? 'Gli annunci di questa copia hanno Finali diversi' : 'This copy’s listings have different finals') + '"' : '') + '>'
         + esc(x.finali.map(p => it ? String(p).replace('.', ',') : String(p)).join(' / ')) + '</td>'
-      + '<td style="' + td + 'white-space:pre-wrap;min-width:12rem;width:100%;">' + _condColorato(x.c.condizioni) + '</td>'
+      // 🔄 v7.316 (Franco: «il campo condizioni della tabellina sottostante, lo possiamo anche lui tenere chiuso con un
+      //    collassatore?») - dal telefono le Condizioni stanno in un <details> chiuso, come nel tab Copie (v7.312)
+      + '<td style="' + td + 'white-space:pre-wrap;min-width:12rem;width:100%;">'
+        + (tel && String(x.c.condizioni || '').trim()
+          ? '<details class="cd-cond-tel"><summary style="cursor:pointer;font-size:0.76rem;color:var(--info);font-weight:600;">' + (it ? 'Condizioni' : 'Condition') + '</summary>'
+            + '<div style="margin-top:0.3rem;">' + _condColorato(x.c.condizioni) + '</div></details>'
+          : _condColorato(x.c.condizioni)) + '</td>'
       // 🆕 v7.268 (Franco: «anche nella tabella ELENCO COPIE metti il campo Annunci; se riesci metti gli N link (saranno sempre
       //    al massimo 3) sulla stessa riga») - la stessa cella del tab «Copie» (`_copieAnnunciRiempi`), coi link in riga
       + '<td data-ann-art="' + esc(x.f.id) + '" data-ann-chiave="' + esc(x.chiave) + '" style="' + td + 'white-space:nowrap;font-size:0.8rem;"></td>'
@@ -73838,14 +73891,14 @@ async function _cpFotoCarica(nuova) {
   }
 }
 // 🆕 v7.310 - LE LINGUETTE DELLA COPIA (Generale, Foto, Annunci), vestite come quelle della scheda dell'articolo
-const _CP_TAB = ['generale', 'foto', 'annunci'];
+const _CP_TAB = ['generale', 'condizioni', 'foto', 'annunci'];   // v7.316: + condizioni, seconda
 // 🆕 v7.310 (Franco: «metti anche un marker al tab "Foto" atto a indicare che in uno dei suoi 4 tab ci sono delle foto») -
 //    📷 accanto a «Foto» (`cp-tab-segno-foto`), come accanto agli annunci; `c` = la copia; lo tiene giusto `_cpFotoDisegna`
 const _cpSegnoFoto = n => n ? ' 📷' : '';
 function _cpTabBarra(c) {
   const it = currentLang === 'it';
   const nFoto = _CP_FOTO_CANALI.reduce((t, d) => t + (c && Array.isArray(c[d.k]) ? c[d.k].length : 0), 0);
-  const et = { generale: it ? 'Generale' : 'General', foto: (it ? 'Foto' : 'Photos') + '<span id="cp-tab-segno-foto" title="' + (it ? 'Ci sono foto' : 'There are photos') + '">' + _cpSegnoFoto(nFoto) + '</span>', annunci: it ? 'Annunci' : 'Listings' };
+  const et = { generale: it ? 'Generale' : 'General', condizioni: it ? 'Condizioni' : 'Condition', foto: (it ? 'Foto' : 'Photos') + '<span id="cp-tab-segno-foto" title="' + (it ? 'Ci sono foto' : 'There are photos') + '">' + _cpSegnoFoto(nFoto) + '</span>', annunci: it ? 'Annunci' : 'Listings' };
   return '<div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">'
     + _CP_TAB.map((k, n) => '<button type="button" id="cp-tab-btn-' + k + '" onclick="_cpTab(\'' + k + '\')" '
       + 'style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid ' + (n === 0 ? 'var(--accent)' : 'transparent')
@@ -73915,6 +73968,11 @@ function _copiaApri(artId, chiave, sola) {
     + '<div style="flex:1;min-width:5.5rem;">' + lab(it ? 'Mancanti' : 'Missing')
     + '<input id="cp-mancanti" class="form-input" type="number" min="0" step="1" value="' + (c.mancanti ?? '') + '" style="color:var(--danger);font-weight:600;"' + dis + '></div>'
     + '</div>'
+    + '</div>'
+    // 🆕 v7.316 (Franco: «nella maschera della copia aggiungiamo un tab chiamato "condizioni" messo in posizione numero 2,
+    //    all'interno del quale mettiamo tutti i campi a partire dal campo "il nome in copertina" fino all'ultimo che dovrebbe
+    //    essere il campo "condizioni"») - i campi album e le Condizioni escono dal Generale
+    + '<div id="cp-tab-condizioni" style="display:none;">'
     // v7.279 - righe 4, 5 e 6: i campi delle copie di album (Franco); li accende e spegne anche il cambio di tipologia nelle tendine
     + _copiaAlbumHTML(c, dis, _aggTipoDi(art) === 'albums')
     // 🔄 v7.279 - riga 7: le Condizioni
