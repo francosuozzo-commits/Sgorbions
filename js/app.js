@@ -32132,7 +32132,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.326';
+const JS_VERSION = 'v7.327';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -44539,7 +44539,11 @@ function _annDisegna() {
           // v7.187 (Franco: «riduci larghezza colonne Prezzo e Costo; allarga colonna Titolo; riduci larghezza colonna N»)
           // 🔄 v7.285 (Franco: «anche la colonna N non mi sembra centrata») - cella e numero al centro
           // 🔄 v7.320 - la colonna «N» diventa «Copia»: il numero della copia collegata, scritto e non più una casella
-          + '<td style="text-align:center;' + rosso + '">' + esc(_annVisto(r, 'n', figs) ?? '') + '</td>'
+          // 🔄 v7.327 (Franco: «la copia di un articolo deve essere cliccabile anche dalla tabella annunci») - il numero, se la
+          //    copia collegata c'è, apre la sua finestra in sola lettura (come il 👁 del tab Copie)
+          + '<td style="text-align:center;' + rosso + '">' + (_annCopiaDi(r, figs)
+            ? '<a href="#" style="color:var(--info);font-weight:600;" title="' + (it ? 'Apri la copia' : 'Open the copy') + '" onclick="_copiaApri(\'' + esc(r.articoloId) + '\',\'' + esc(r.copiaId) + '\',true);return false;">' + esc(_annVisto(r, 'n', figs) ?? '') + '</a>'
+            : esc(_annVisto(r, 'n', figs) ?? '')) + '</td>'
           // v7.200 (Franco: «accorcia il campo "Titolo" di un 20%»; «riduci la larghezza della colonna Costo e Prezzo»)
           + '<td>' + inp('titolo', 'text', r.titolo, 'min-width:272px;width:100%;') + '</td>'
           // 🔄 v7.202 (Franco: «le colonne Costo e Prezzo sono ancora troppo larghe; avvicina il simbolo dell'Euro al
@@ -67794,6 +67798,12 @@ async function inviaMancolistaUtente() {
   try {
     await fsSave('attivita', { tipo: 'mancolista', date: new Date().toISOString(), userId: currentUser.id,
       authUid: currentUser.authUid || null, username: currentUser.username || currentUser.email || '', testo });
+    // 🆕 v7.327 (Franco: «ho inviato una mancolista ma non è arrivato alcun messaggio all'admin») - il registro «Attività
+    //    utenti» non suona: una mancolista è da leggere, quindi arriva anche nel registro eventi, con la campanella.
+    //    Lì l'inizio del testo; intera resta in «Attività utenti → MANCOLISTE INVIATE».
+    const corto = testo.length > 200 ? testo.slice(0, 200) + '…' : testo;
+    await logEvent('mancolista', 'Mancolista inviata da ' + bold(currentUser.username || currentUser.email || '?') + ': ' + esc(corto)
+      + ' <span style="color:var(--info);">(intera in Attività utenti → Mancoliste inviate)</span>');
     v('mancolista-modal')?.remove();
     // il «!» con lo spazio prima, come in tutto il sito (prova-v6390)
     toast(it ? 'La tua mancolista è stata inviata ! Torna a trovarci tra qualche giorno e saprai che ti abbiamo trovato le figurine !'
@@ -69739,7 +69749,7 @@ function renderAdminEventi() {
     el.innerHTML = '<p style="color:var(--text);">' + (currentLang === 'it' ? 'Nessun evento ancora.' : 'No events yet.') + '</p>';
     return;
   }
-  const typeIcon = { 'new_user': '👤', 'new_post': '📝', 'reset_pwd': '🔑', 'login': '🔓', 'newsletter_off': '📭', 'account_deleted': '🗑️' };
+  const typeIcon = { 'new_user': '👤', 'new_post': '📝', 'reset_pwd': '🔑', 'login': '🔓', 'newsletter_off': '📭', 'account_deleted': '🗑️', 'mancolista': '📮' };   // v7.327: + mancolista
   const noBellEvTypes = ['login'];
   el.innerHTML = `<table class="data-table compact"><thead><tr>
     <th>${(currentLang === 'it') ? 'Data' : 'Date'}</th><th>${(currentLang === 'it') ? 'Tipo' : 'Type'}</th><th>${(currentLang === 'it') ? 'Descrizione' : 'Description'}</th><th></th>
@@ -74330,7 +74340,9 @@ function _copiaApri(artId, chiave, sola) {
   ov.id = 'copia-modal';
   const lab = t => '<label class="detail-label" style="display:block;margin:0.7rem 0 0.25rem;">' + t + '</label>';
   const dis = sola ? ' disabled' : '';
-  ov.innerHTML = '<div class="modal" style="max-width:620px;width:94vw;">'
+  // 🔄 v7.327 (Franco: «la form di una copia … è molto piccola; farla grande quanto la form di dettaglio di un articolo») -
+  //    era 620px; ora la misura della scheda dell'articolo dal PC (`#fig-detail-modal .modal`, style.css)
+  ov.innerHTML = '<div class="modal" style="max-width:min(1320px, 97vw);width:97vw;">'
     + '<div class="modal-header"><h2 class="modal-title">' + (sola ? (it ? 'Copia' : 'Copy') : (it ? 'Modifica copia' : 'Edit copy')) + '</h2>'
     // 🔄 v7.279 (Franco: «il campo N.copia mettilo in alto sulla riga della x, accanto alla x»)
     + '<div style="display:flex;align-items:center;gap:0.5rem;">'
@@ -74779,7 +74791,15 @@ function _bloccoDoppiEdit(f) {
 //    lo abbiamo creato sulla entità copia, eliminiamolo») - VIA LA COLONNA «VERSIONE» e `_copieBasi` / `_copiaNomeBase`,
 //    che la riempivano: la copia è dell'articolo, e la versione è la sua. Il valore già salvato su qualche copia esce dal
 //    dato al primo «Salva» della scheda (`_copieLeggi` non lo scrive più).
-const _copieCella = 'padding:4px 6px;border-bottom:1px solid var(--border);vertical-align:top;';
+// 🔄 v7.327 (Franco: «nel tab Copie dell'articolo, separare ogni copia dalla successiva da una riga bianca sottile») - la linea
+//    sotto ogni copia (riga delle Condizioni e cella degli Annunci, v7.277) da `--border` a bianco, 1px
+// 🔄 poi (Franco: «è quasi invisibile; aumentane lo spessore») - 2px, bianco pieno
+const _copieCella = 'padding:4px 6px;border-bottom:2px solid #ffffff;vertical-align:top;';
+// 🆕 v7.327 - il 👁 che apre la copia in sola lettura (`_copiaApri`), sulla riga del tab Copie; quello dell'ELENCO COPIE
+function _tastoApriCopia(artId, chiave) {
+  return '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:0.95rem;font-weight:bold;line-height:1;padding:2px 6px;margin-right:0.35rem;" title="'
+    + (currentLang === 'it' ? 'Apri la copia in sola lettura' : 'Open the copy read-only') + '" onclick="event.stopPropagation();_copiaApri(\'' + esc(artId) + '\',\'' + esc(chiave) + '\',true)">&#128065;</button>';
+}
 // 🆕 v7.263 (Franco: «nella struttura Copie mi serve un campo: Qualità; tendina da 3 a 10 con passo 0,5») - campo `qualita`
 //    della copia, un numero (7.5); a schermo con la virgola in italiano
 const _COPIA_QUALITA = Array.from({ length: 15 }, (_, i) => 3 + i * 0.5);
@@ -74883,7 +74903,8 @@ function _copiaRigaHTML(c, artId, chiave) {
   //    per sapere quali copie sono state tolte (`_copieTolte`). Le righe nuove e i cloni non ce l'hanno.
   return '<tbody data-copia data-copia-id="' + esc(c.id || ('cp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6))) + '"'
     + (chiave ? ' data-copia-chiave="' + esc(chiave) + '"' : '') + altriAttr + '><tr>'
-    + '<td style="' + _copieCella + '"><input type="number" min="0" step="1" data-copia-n value="' + (c.n ?? '') + '" ' + inp + 'width:4.2rem;"></td>'
+    // 🆕 v7.327 - 👁 accanto al numero anche in modifica (lettura e modifica uguali), solo sulle copie già salvate (`chiave`)
+    + '<td style="' + _copieCella + 'white-space:nowrap;">' + (artId && chiave ? _tastoApriCopia(artId, chiave) : '') + '<input type="number" min="0" step="1" data-copia-n value="' + (c.n ?? '') + '" ' + inp + 'width:4.2rem;"></td>'
     // 🆕 v7.274 (Franco) - le Figurine mancanti, intere, in rosso
     + '<td style="' + _copieCella + '"><input type="number" min="0" step="1" data-copia-mancanti value="' + (c.mancanti ?? '') + '" ' + inp + 'width:5rem;color:var(--danger);font-weight:600;"></td>'
     // v7.263 - `step="any"`: l'Iniziale portata da un annuncio può avere i decimali, e non si deve perdere
@@ -75106,7 +75127,9 @@ function _copieLetturaHTML(f) {
     + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' + _copieIntestazione() + '</tr></thead>'
     + _copiePerNumero(f).map(([c, i]) => {   // v7.266: per n.
       const td = _copieCellaSu + 'font-size:0.85rem;color:var(--text);';   // v7.277: la riga dei campi senza linea
-      return '<tbody><tr><td style="' + td + '">' + esc(String(c.n ?? '')) + '</td>'
+      // 🆕 v7.327 (Franco: «le copie non sono cliccabili; devo poter aprire una copia cliccando qualcosa sulla sua riga; metti
+      //    magari il tastino per aprire in lettura») - 👁 accanto al numero, apre la finestra della copia in sola lettura
+      return '<tbody><tr><td style="' + td + 'white-space:nowrap;">' + _tastoApriCopia(f.id, _annChiaveCopia(c, i)) + esc(String(c.n ?? '')) + '</td>'
         // v7.274: le Figurine mancanti
         + '<td style="' + td + 'color:var(--danger);font-weight:600;">' + esc(String(c.mancanti ?? '')) + '</td>'
         + '<td style="' + td + '">' + esc(String(c.iniziale ?? '')) + '</td>'
