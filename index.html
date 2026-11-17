@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.321">
+<link rel="stylesheet" href="css/style.css?v=7.322">
 
 
 <style>
@@ -1798,6 +1798,7 @@ button.back-btn { color:#ffffff; }
    della pagina utente; gli `!important` battono i colori scritti nella riga. Gli account da spuntare no: sono le
    risposte, non le etichette */
 #fe-tab-ebay label:not(#fe-ebay-account-lista label), #fam-tab-ebay label { color: var(--info) !important; }   /* v7.238: + il tab Ebay della famiglia */
+#fe-tab-vendita label:not(#fe-ebay-account-lista label) { color: var(--info) !important; }   /* v7.322: il riquadro della vendita è passato nel tab «🛒 Ebay» */
 /* 🆕 v7.238 (Franco: «i due tasti per passare alla famiglia successiva e precedente mettiamoli piu esterni»; «le foto
    dell'album abbiano, come spazio, tutta la larghezza del box di ricerca sottostante»; «aumenta la dimensione di quelle
    2 miniature famiglia; direi del 100%») - dal PC le due frecce escono dalla riga, una per lato: la striscia delle foto
@@ -7120,7 +7121,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.321"></script>
+<script src="js/app.js?v=7.322"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7144,7 +7145,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.321'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.322'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
