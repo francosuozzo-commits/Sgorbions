@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.318';
+const JS_VERSION = 'v7.319';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -73373,11 +73373,13 @@ const _CD_COLONNE = [
   // v7.265 (Franco: «Tipologia di articolo, mettilo su due righe») - il titolo della colonna
   // 🔄 v7.279 (Franco: «la colonna Tipologia di articolo, doveva chiamarsi TDA»)
   { k: 'tipo', it: 'TDA', en: 'Type', val: x => x.nomeTipo },
-  { k: 'versione', it: 'Versione', en: 'Version', val: x => x.nomeVer },
+  // 🔄 v7.319 (Franco: «da mobile, la colonna "Versione" … troncala a "vers"; la etichetta colonna "n. Copia" etichettala
+  //    come "Copia"») - `itTel`/`enTel`: il titolo della colonna dal telefono
+  { k: 'versione', it: 'Versione', en: 'Version', itTel: 'Vers', enTel: 'Ver', val: x => x.nomeVer },
   // 🔄 v7.279 (Franco: «ti avevo chiesto di spezzare su 2 righe il nome della colonna "Nome/Numero"»)
   { k: 'nome', it: 'Nome<br>Numero', en: 'Name<br>Number', val: x => x.numOrd < 1e9 && _haNumero(x.f) ? x.numOrd : _annNomeArticolo(x.f) },
   // 🔄 v7.279 (Franco: «stessa cosa per "N.copia": "N." e "copia"») - il titolo su due righe, come «Tipologia di articolo»
-  { k: 'ncopia', it: 'N.<br>copia', en: 'Copy<br>no.', val: x => x.c.n == null ? '' : x.c.n, centro: true },
+  { k: 'ncopia', it: 'N.<br>copia', en: 'Copy<br>no.', itTel: 'Copia', enTel: 'Copy', val: x => x.c.n == null ? '' : x.c.n, centro: true },
   // v7.274 (Franco: «"Figurine mancanti"; Numerico; esponilo anche nelle due viste tabellari delle copie; scrivilo in rosso»)
   // 🔄 v7.278 (Franco: «la colonna "Figurine mancanti" chiamala "Mancanti" e mettila dopo "Voto"»)
   // 🔄 v7.279 (Franco: «nella tabella delle copie, "Mancanti" diventa "No", scritto in rosso») - `rosso`: il titolo della colonna
@@ -73463,18 +73465,20 @@ function _cdInterno() {
   return testa + filtri + '<div id="copie-doppie-lista" style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'
     // 🔄 v7.317 (Franco: «il trittico di bottoni visualizza modifica clona mettilo a inizio riga invece che a fine riga»)
     + '<tr><th style="' + th + '"></th>' + _CD_COLONNE.map(c => '<th style="' + th + al(c) + (c.rosso ? 'color:var(--danger);' : '') + 'cursor:pointer;user-select:none;" onclick="_cdOrdina(\'' + c.k + '\')" title="' + (it ? 'Ordina' : 'Sort') + '">'
-      + (it ? c.it : c.en) + (_cdOrdine.col === c.k ? (_cdOrdine.su ? ' ▲' : ' ▼') : '') + '</th>').join('')
+      + (it ? (tel && c.itTel) || c.it : (tel && c.enTel) || c.en) + (_cdOrdine.col === c.k ? (_cdOrdine.su ? ' ▲' : ' ▼') : '') + '</th>').join('')
       + '<th style="' + th + '">' + (it ? 'Annunci' : 'Listings') + '</th></tr>'   // v7.268 (non ordinabile: si riempie dopo)
     + (righe.length ? righe.map(x => '<tr>'
       // 🆕 v7.266 (Franco: «dalla tabella delle copie deve essere possibile aprire in visualizzazione o modifica il record
       //    di copia») - l'occhio e la matita della tabella degli annunci, che aprono la finestra della copia (`_copiaApri`)
       // 🔄 v7.317 - in testa alla riga (era in fondo)
+      // 🔄 v7.319 (Franco: «da mobile, i tasti che servono per clonare, modificare e visualizzare, li fare un pochino più
+      //    piccoli») - dal telefono carattere e margini più stretti, anche la matita
       + '<td style="' + td + 'white-space:nowrap;">'
-        + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Apri in sola lettura' : 'Open read-only') + '"'
+        + '<button type="button" class="tbl-btn tbl-btn-edit" style="' + (tel ? 'font-size:0.85rem;font-weight:bold;line-height:1;padding:2px 5px;' : 'font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;') + '" title="' + (it ? 'Apri in sola lettura' : 'Open read-only') + '"'
         + ' onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\',true)">&#128065;</button> '
-        + '<button type="button" class="tbl-btn tbl-btn-edit" title="' + (it ? 'Modifica' : 'Edit') + '" onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">✏️</button> '
+        + '<button type="button" class="tbl-btn tbl-btn-edit"' + (tel ? ' style="font-size:0.75rem;line-height:1;padding:2px 5px;"' : '') + ' title="' + (it ? 'Modifica' : 'Edit') + '" onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">✏️</button> '
         // v7.267 (Franco: «nelle copie mettimi un tasto di clone; sia in tabella che nella form di dettaglio») - ⧉ come negli annunci
-        + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Clona' : 'Clone') + '"'
+        + '<button type="button" class="tbl-btn tbl-btn-edit" style="' + (tel ? 'font-size:0.85rem;font-weight:bold;line-height:1;padding:2px 5px;' : 'font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;') + '" title="' + (it ? 'Clona' : 'Clone') + '"'
         + ' onclick="_copiaClona(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">&#10697;</button>'
       + '</td>'
       + '<td style="' + td + 'white-space:nowrap;">' + esc(x.nomeSerie) + '</td>'
