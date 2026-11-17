@@ -2062,7 +2062,7 @@ footer {
 .fig-act-label { font-size: 0.78rem; color: var(--text); }
 /* v5.873 — il toggle "Mia lista" nella card era piu' massiccio del cuore e della bandierina:
    ridotto a dimensioni allineate agli altri due controlli del trittico. */
-#items-grid .fig-act-mylist .owned-btn { width: 30px; height: 20px; font-size: 0.72rem; }
+:is(#items-grid, .griglia-novita) .fig-act-mylist .owned-btn { width: 30px; height: 20px; font-size: 0.72rem; }
 .fig-act-report { margin-left: 0; }
 /* v5.871 — su DESKTOP le tre azioni (Mia lista / Ciò che cerco / Errore) giustificate a destra,
    tutte insieme, così i controlli sono allineati fra card vicine (prima "Errore" era spinto da
@@ -2627,7 +2627,7 @@ footer {
   #items-search-box { padding: 0.7rem 0.8rem !important; }
 
   /* v5.848 — via la descrizione dalla card: in 85px di larghezza erano briciole di testo */
-  #items-grid .fig-desc { display: none; }
+  :is(#items-grid, .griglia-novita) .fig-desc { display: none; }
 
   /* v5.848 — i due pulsanti blu "Aggiungi / Rimuovi i risultati della ricerca" stavano su due
      righe e occupavano mezzo schermo: ora dividono in due una riga sola, con testo compatto.
@@ -2660,23 +2660,23 @@ footer {
 
   /* v5.827 — etichetta della card: numero e nome più piccoli e allineati a sinistra.
      Il numero ha un font-size INLINE di 1.05rem messo da renderItems(), quindi !important. */
-  #items-grid .fig-body { padding: 0.35rem 0.4rem 0.45rem; text-align: left; }
-  #items-grid .fig-name { font-size: 0.72rem; line-height: 1.2; }
-  #items-grid .fig-number { font-size: 0.72rem !important; }
-  #items-grid .toggle-label { font-size: 0.6rem; }
-  #items-grid .fig-toggle { margin-top: 0.3rem; }
+  :is(#items-grid, .griglia-novita) .fig-body { padding: 0.35rem 0.4rem 0.45rem; text-align: left; }
+  :is(#items-grid, .griglia-novita) .fig-name { font-size: 0.72rem; line-height: 1.2; }
+  :is(#items-grid, .griglia-novita) .fig-number { font-size: 0.72rem !important; }
+  :is(#items-grid, .griglia-novita) .toggle-label { font-size: 0.6rem; }
+  :is(#items-grid, .griglia-novita) .fig-toggle { margin-top: 0.3rem; }
 
   /* v5.853 — il badge del tipo ("Variazione ufficiale", "Change", …) esce dal riquadro della
      foto, dove copriva l'immagine, e va in una FASCIA SOPRA. La fascia c'è SEMPRE, anche sulle
      figurine base che il badge non ce l'hanno: altrimenti le loro card sarebbero più corte e
      la griglia si disallineerebbe. L'altezza è fissa e calcolata su due righe di badge, che è
      il caso peggiore ("Variazione / non ufficiale"). */
-  #items-grid .fig-badge-row {
+  :is(#items-grid, .griglia-novita) .fig-badge-row {
     height: calc(0.62rem * 1.15 * 2 + 6px);
     display: flex; align-items: flex-start; justify-content: flex-end;
     padding: 2px 3px 0 3px;
   }
-  #items-grid .fig-badge-row .fig-owned-badge {
+  :is(#items-grid, .griglia-novita) .fig-badge-row .fig-owned-badge {
     position: static !important;
     font-size: 0.62rem; padding: 1px 5px; line-height: 1.15;
   }
@@ -2689,14 +2689,14 @@ footer {
 
   /* v5.867 — le tre azioni (Mia lista / Ciò che cerco / Errore?) IMPILATE su telefono, una per
      riga: la card è stretta e in fila non ci stavano. "Errore?" torna in colonna (no margin auto). */
-  #items-grid .fig-actions { flex-direction: column; align-items: stretch; gap: 0.25rem; }
-  #items-grid .fig-act { justify-content: space-between; gap: 0.4rem; }
-  #items-grid .fig-act-label { font-size: 0.6rem; }
-  #items-grid .fig-act-report { margin-left: 0; }
+  :is(#items-grid, .griglia-novita) .fig-actions { flex-direction: column; align-items: stretch; gap: 0.25rem; }
+  :is(#items-grid, .griglia-novita) .fig-act { justify-content: space-between; gap: 0.4rem; }
+  :is(#items-grid, .griglia-novita) .fig-act-label { font-size: 0.6rem; }
+  :is(#items-grid, .griglia-novita) .fig-act-report { margin-left: 0; }
 
   /* v5.829 — punteggio accanto al numero, stesso corpo del numero; il nome va sotto */
-  #items-grid .fig-score-inline { font-size: 0.72rem; color: var(--accent); margin-left: 0.3rem; white-space: nowrap; }
-  #items-grid .fig-name-line { font-size: 0.72rem; line-height: 1.2; margin-top: 1px; }
+  :is(#items-grid, .griglia-novita) .fig-score-inline { font-size: 0.72rem; color: var(--accent); margin-left: 0.3rem; white-space: nowrap; }
+  :is(#items-grid, .griglia-novita) .fig-name-line { font-size: 0.72rem; line-height: 1.2; margin-top: 1px; }
 }
 
 /* ---- v5.832 — DETTAGLIO FIGURINA: prima le foto, poi le informazioni ----
@@ -3064,7 +3064,7 @@ body:not(.wz-visibile) .solo-wz { display: none !important; }
    basso a destra. Su una card stretta il badge da 0,7rem con l'imbottitura di 8px era largo quasi quanto la foto, e
    in alto a destra sembrava in mezzo. */
 @media (max-width: 860px) {
-  #items-grid .fig-img-placeholder > .fig-owned-badge {
+  :is(#items-grid, .griglia-novita) .fig-img-placeholder > .fig-owned-badge {
     top: auto; bottom: 3px; right: 3px;
     font-size: 0.55rem; padding: 1px 4px; line-height: 1.1; border-radius: 6px;
   }
@@ -3106,3 +3106,6 @@ body:not(.wz-visibile) .solo-wz { display: none !important; }
   .ann-colonna-desc textarea { min-height: 14rem; }
   .ann-colonna-desc textarea.ann-condizioni { min-height: 7rem; }
 }
+/* 🆕 v7.324 - linguetta «Novità»: ogni card sta in una cella larga quanto una colonna della sua sezione (`_novitaHTML`) e
+   la riempie; nel modo «Fronte e retro sempre grandi» comanda la larghezza scritta sulla card, come nella griglia. */
+.nov-cella > .fig-card { flex: 1 1 auto; min-width: 0; }
