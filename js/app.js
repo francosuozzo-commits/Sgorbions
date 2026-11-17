@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.321';
+const JS_VERSION = 'v7.322';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -58782,12 +58782,24 @@ function _bloccoEbayAlbumLettura(f) {
   if (!f || f.section !== 'albums') return '';
   const it = currentLang === 'it', p = f.fotoAnnuncio || {};
   const foto = !_albumConCaselleFotoAnnuncio(f) ? '' : '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin:0 0 0.8rem;">'
-    + '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">📸 ' + (it ? 'Foto annuncio' : 'Listing photos') + '</div>'
+    + '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">📸 ' + (it ? 'Foto annunci' : 'Listing photos') + '</div>'
     + _FA_SITI.map(s => { const v = String(p[s.chiave] || '').trim();
         return '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;">' + s.nome + ' (' + (it ? 'massimo ' : 'max ') + s.limite + ' foto)</div>'
           + '<div style="font-size:0.85rem;color:var(--text);">' + (v ? esc(v) : '—') + '</div></div>'; }).join('')
     + '</div>';
-  return _famEbayLettura({ testiAccount: f.testiAccount }, it, 'fd-ebay-testi') + foto;
+  // 🔄 v7.322 (Franco: «quando la form dell'articolo è in sola lettura, i sottotab "Descrizioni" e "Foto annunci" sono
+  //    disposti in verticale … li voglio sempre affiancati») - le stesse due linguette della modifica (`_sottoTabEbay`)
+  const desc = _famEbayLettura({ testiAccount: f.testiAccount }, it, 'fd-ebay-testi');
+  if (!foto) return desc;
+  const parti = [['desc', it ? 'Descrizioni' : 'Descriptions', desc], ['foto', it ? 'Foto annunci' : 'Listing photos', foto]];
+  return '<div id="fd-ebay-sottotab" style="margin-top:0.25rem;">'
+    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem;">'
+    + parti.map((p, i) => '<button type="button" class="fe-eb-tab" data-parte="' + p[0] + '" onclick="_feEbTab(\'' + p[0] + '\',\'fd-ebay-sottotab\')"'
+      + ' style="padding:0.4rem 0.9rem;border:none;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;font-family:var(--font-ui);'
+      + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + p[1] + '</button>').join('')
+    + '</div>'
+    + parti.map((p, i) => '<div class="fe-eb-pannello" data-parte="' + p[0] + '"' + (i === 0 ? '' : ' style="display:none;"') + '>' + p[2] + '</div>').join('')
+    + '</div>';
 }
 // 🆕 v7.235 (Franco: «da mobile potrebbero servire anche i bottoni per passare alla pagina successiva e alla pagina
 //    precedente»; «la seconda fila … per passare alla coppia di pagine precedente e successiva») - la striscia scorre fino
@@ -69822,7 +69834,7 @@ function updateBellBadge() {
 // si dimenticherebbe. E' il difetto che questo file ha registrato piu' volte di ogni altro.
 // 📌 L'elenco e' SEPARATO da `_FE_TAB`: sono due schede diverse e possono avere tab diversi -
 // in lettura non c'e' niente da modificare, in modifica non c'e' niente da sfogliare.
-const _FD_TAB = ['generale', 'pagine', 'ebay'];   // v7.258: + Doppi (solo admin); 🔄 v7.312: le Copie hanno una sezione loro (`_copieInRiga`)
+const _FD_TAB = ['generale', 'pagine', 'ebay', 'vendita'];   // v7.322: + «Ebay» (chiave `vendita`: `ebay` è già il tab Annunci)   // v7.258: + Doppi (solo admin); 🔄 v7.312: le Copie hanno una sezione loro (`_copieInRiga`)
 
 // 🆕 v6.888 - LA BARRA DEI TAB DELLA VISTA IN LETTURA SI COSTRUISCE DA UN ELENCO.
 // 🔴 Era scritta a mano con due bottoni, e i tab adesso possono essere due o tre secondo il
@@ -71327,8 +71339,12 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   if (isAdmin) {
     const conditionLabel = f.condition === 'used' ? (currentLang === 'it' ? 'Usato' : 'Used') : (currentLang === 'it' ? 'Nuovo' : 'New');
     const ebayRows = [];
+    // 🆕 v7.322 (Franco: «i campi "Prezzo ($)", "In coda" e "Ebay" (quello popolato, per esempio con ✓ €0.00 · Q.tà 1 ·
+    //    Nuovo), mettili in un nuovo tab chiamato "Ebay", da mettere dopo "Annunci"») - le righe della vendita su eBay (con
+    //    account e stato, che vengono con loro) vanno in `venditaRows`; in «Annunci» restano testi e foto degli annunci
+    const venditaRows = [];
     // 🗑️ v7.258 - via la disponibilità a testo libero (v7.039): il numero nuovo sta nel Generale
-    ebayRows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Ebay' : 'For sale'}</span><span class="detail-value">${f.forSale ? `<span style="color:var(--success);">✓ €${(f.price||0).toFixed(2)} · ${currentLang === 'it' ? 'Q.tà' : 'Qty'} ${f.quantity||1} · ${conditionLabel}</span>` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'no' : 'no') + '</span>'}</span></div>`);
+    venditaRows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Ebay' : 'For sale'}</span><span class="detail-value">${f.forSale ? `<span style="color:var(--success);">✓ €${(f.price||0).toFixed(2)} · ${currentLang === 'it' ? 'Q.tà' : 'Qty'} ${f.quantity||1} · ${conditionLabel}</span>` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'no' : 'no') + '</span>'}</span></div>`);
     // v6.103 (§12.1, segnalato da Franco) - QUESTA VISTA ERA IL TERZO ELENCO DEGLI STESSI CAMPI, e
     // nessuno lo contava: il §12.1 parla di DUE form, ma i campi eBay si scrivono in tre posti - la
     // finestra, la scheda in modifica e QUI. Ed era rimasto indietro da parecchio, in silenzio:
@@ -71337,7 +71353,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     // l'unico modo per accorgersene era premere Modifica - che e' esattamente quello che ha fatto
     // Franco. Il tab e' admin-only e solo desktop, quindi qui si puo' mostrare tutto.
     if (f.forSale) {
-      const _v = (etichetta, valore) => ebayRows.push('<div class="detail-row"><span class="detail-label">' + etichetta + '</span><span class="detail-value">' + valore + '</span></div>');
+      const _v = (etichetta, valore) => venditaRows.push('<div class="detail-row"><span class="detail-label">' + etichetta + '</span><span class="detail-value">' + valore + '</span></div>');
       const _muto = t => '<span style="color:var(--muted);font-style:italic;">' + t + '</span>';
       // Il prezzo in dollari vuoto NON e' zero: e' "non deciso", e finche' resta cosi' il programma
       // non pubblica su eBay.com. Dirlo a parole invece di mostrare un trattino: un campo vuoto non
@@ -71358,8 +71374,8 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       // 🗑️ v7.237 - via Titolo e Descrizione 🇮🇹/🇬🇧: i campi non ci sono più
       // Account e stato hanno bisogno delle impostazioni, che si leggono in modo asincrono: si
       // lasciano due contenitori vuoti e li riempie `riempiEbayVistaLettura()` appena arrivano.
-      ebayRows.push('<div id="figdetail-ebay-account"></div>');
-      ebayRows.push('<div id="figdetail-ebay-stato" style="margin-top:0.5rem;"></div>');
+      venditaRows.push('<div id="figdetail-ebay-account"></div>');
+      venditaRows.push('<div id="figdetail-ebay-stato" style="margin-top:0.5rem;"></div>');
     }
     ebayRows.push(_bloccoEbayAlbumLettura(f));   // v7.288 (Franco) - anche senza il flag Ebay: in modifica si vedono comunque
     if (f.section === 'figurines' || f.section === 'retros') {
@@ -71371,6 +71387,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     if (_pagLett) _voci.push({ k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') });
     // 🔄 v7.318 (Franco: «rinomina il tab "eBay" in "Annunci"») - solo il nome: la chiave resta `ebay`
     _voci.push({ k: 'ebay', et: '🏷️ ' + (currentLang === 'it' ? 'Annunci' : 'Listings') });
+    _voci.push({ k: 'vendita', et: '🛒 Ebay' });   // v7.322
     const _doppi1 = _doppiTabC(f);   // v7.262 - con tutti e due i campi spenti (Doppioni) il tab non c'è
     // 🗑️ v7.312 - qui il tab «🧾 Copie» entrava nella barra (v7.258): adesso ha la sua sezione sotto le foto (`_copieInRiga`)
     const tabNav = _tabNavLettura(_voci);
@@ -71379,6 +71396,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       '<div id="figdetail-tab-generale">' + rows.join('') + '</div>' +
       (_pagLett ? '<div id="figdetail-tab-pagine" style="display:none;">' + _pagLett + '</div>' : '') +
       '<div id="figdetail-tab-ebay" style="display:none;">' + ebayRows.join('') + '</div>' +
+      '<div id="figdetail-tab-vendita" style="display:none;">' + venditaRows.join('') + '</div>' +   // v7.322
       _sfogliaCodaDetail() + _codaAzioniDetail(bottomButtons);
     _copieInRiga(_doppi1 ? _bloccoDoppiLettura(f) : '', 'figdetail-tab-doppi');   // v7.312
     // v6.103 - dopo l'innerHTML, altrimenti i due contenitori non esistono ancora.
@@ -73150,7 +73168,7 @@ let editingFeEbayImgFileSave = null;
 // mano; al terzo sarebbero diventate tre, e il giorno del quarto una si dimenticherebbe - e' il
 // difetto che questo file ha registrato piu' volte di ogni altro: due elenchi che devono dire per
 // forza la stessa cosa. Qui si cicla, e un tab nuovo si aggiunge a questa riga.
-const _FE_TAB = ['generale', 'pagine', 'ebay'];   // v7.258: + Doppi; 🔄 v7.312: le Copie hanno una sezione loro (`_copieInRiga`)
+const _FE_TAB = ['generale', 'pagine', 'ebay', 'vendita'];   // v7.322: + «Ebay», come in lettura (`_FD_TAB`)   // v7.258: + Doppi; 🔄 v7.312: le Copie hanno una sezione loro (`_copieInRiga`)
 
 // 🆕 v7.258 (Franco) - IL TAB «DOPPI» DELLA SCHEDA IN MODIFICA: la Disponibilità (un numero, `disponibili`, su ogni
 //    articolo; il clone non la copia) e, solo sulle fcr base, la Disponibilità totale in sola lettura (`_dispTotaleFcr`),
@@ -74496,10 +74514,10 @@ const _copieCellaSu = 'padding:4px 6px;vertical-align:top;';
 //    quindi il «Salva» della scheda la legge come prima. Sul computer come prima.
 const _copieCondizioniRiga = (dentro, colonne, coda) => {
   const tit = '<span style="font-size:0.76rem;color:var(--info);font-weight:600;">' + (currentLang === 'it' ? 'Condizioni' : 'Condition') + '</span>';
+  // 🔄 v7.322 (Franco: «il campo "Condizioni" collassalo (default chiuso) anche nel tab "Copie" della form dell'articolo») -
+  //    la tendina chiusa anche dal computer
   return '<tr><td colspan="' + colonne + '" style="' + _copieCella + 'padding-top:0;">'
-    + (_isMobileViewport()
-      ? '<details class="copie-cond-tel"><summary style="cursor:pointer;">' + tit + '</summary>' + dentro + '</details>'
-      : tit + '<br>' + dentro)
+    + '<details class="copie-cond-tel"><summary style="cursor:pointer;">' + tit + '</summary>' + dentro + '</details>'
     + '</td>'
     + (coda ? '<td style="' + _copieCella + '"></td>' : '') + '</tr>';
 };
@@ -75421,6 +75439,8 @@ function switchToEditMode(figId) {
     _tabPagineBtn(f) +
     // 🔄 v7.318 (Franco: «rinomina il tab "eBay" in "Annunci"») - solo il nome: la chiave resta `ebay`
     '<button type="button" id="fe-tab-btn-ebay" onclick="switchFeTab(\'ebay\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🏷️ ' + (currentLang === 'it' ? 'Annunci' : 'Listings') + '</button>' +
+    // 🆕 v7.322 - il tab «Ebay» dopo «Annunci», come in lettura (Franco: «per me non ci sono mai differenze tra un form in lettura ed in modifica»)
+    '<button type="button" id="fe-tab-btn-vendita" onclick="switchFeTab(\'vendita\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🛒 Ebay</button>' +
     // 🆕 v7.258 - il tab «Doppi», su ogni tipologia; v7.262: se la matrice dei Doppioni accende almeno un campo
     // 🗑️ v7.312 - qui c'era il tab «🧾 Copie» (v7.258, v7.263): adesso ha la sua sezione sotto le foto (`_copieInRiga`)
     '</div>';
@@ -76051,7 +76071,9 @@ function switchToEditMode(figId) {
   html += '<div id="fe-tab-pagine" style="display:none;">' + _bloccoPagineEdit(f) + '</div>';
 
   // Tab Ebay: Vendita (Da vendere / Prezzo / Quantità / Condizione) + foto dedicata
-  html += '<div id="fe-tab-ebay" style="display:none;">';
+  // 🔄 v7.322 - il riquadro della vendita (spunta Ebay, prezzi, quantità, condizione, account, coda, stato) sta nel tab
+  //    nuovo «🛒 Ebay» (`fe-tab-vendita`); in «Annunci» (`fe-tab-ebay`) restano testi, foto annuncio e foto per Ebay
+  html += '<div id="fe-tab-vendita" style="display:none;">';
   // 🗑️ v7.258 (Franco: «quello del tab ebay, cancellalo») - via la «Disponibilità» a testo libero della v7.039
   //    (`disponibilita`): al suo posto il numero `disponibili` nel tab Generale. Il Salva svuota il campo vecchio.
   // 🆕 v7.184 - le pagine per le foto annuncio, solo sull'album base con le pagine sue (vedi `_FA_SITI`)
@@ -76101,6 +76123,7 @@ function switchToEditMode(figId) {
     // 🗑️ v7.237 (Franco: «puoi cancellare quei 4 campi vecchi per tutte le tda»; «la vista ebay andrà rifatta») - via
     //    Titolo e Descrizione ITA/ENG (`ebayTitleIt` … `ebayDescEn`): gli album hanno i testi per account (v7.199)
     '</div>';
+  html += '</div><div id="fe-tab-ebay" style="display:none;">';   // v7.322: chiuso «Ebay», si apre «Annunci»
   html += _prelevaTestiTastoHTML(f);   // v7.288
   html += _sottoTabEbay(f);   // v7.200
   html += '<div style="margin-bottom:0.75rem;' + ((f.section === 'figurines' || f.section === 'retros') ? '' : 'display:none;') + '">' +
@@ -77390,7 +77413,8 @@ function _prelevaTesti() {
 function _sottoTabEbay(f) {
   const it = currentLang === 'it';
   // 🔄 v7.238 (Franco: «invertiamo i due sottotab "Foto annuncio" e "Descrizione"») - prima Descrizione, che si apre
-  const parti = [['desc', it ? 'Descrizione' : 'Description', _bloccoTestiAccountEdit(f)], ['foto', it ? 'Foto annuncio' : 'Listing photos', _bloccoFotoAnnuncioEdit(f)]]
+  // 🔄 v7.322 (Franco: «il tab "Foto annuncio" rinominalo "Foto annunci"»; «il tab "Descrizione" nel tab "Annunci" chiamalo "Descrizioni"»)
+  const parti = [['desc', it ? 'Descrizioni' : 'Descriptions', _bloccoTestiAccountEdit(f)], ['foto', it ? 'Foto annunci' : 'Listing photos', _bloccoFotoAnnuncioEdit(f)]]
     .filter(p => p[2]);
   if (parti.length < 2) return parti.map(p => p[2]).join('');
   return '<div id="fe-ebay-sottotab" style="margin-top:0.25rem;">'
@@ -77402,13 +77426,15 @@ function _sottoTabEbay(f) {
     + parti.map((p, i) => '<div class="fe-eb-pannello" data-parte="' + p[0] + '"' + (i === 0 ? '' : ' style="display:none;"') + '>' + p[2] + '</div>').join('')
     + '</div>';
 }
-function _feEbTab(k) {
-  document.querySelectorAll('#fe-ebay-sottotab .fe-eb-tab').forEach(b => {
+// 🔄 v7.322 - `box`: i sotto-tab della scheda in lettura (`fd-ebay-sottotab`, `_bloccoEbayAlbumLettura`) usano lo stesso scambio
+function _feEbTab(k, box) {
+  const id = box || 'fe-ebay-sottotab';
+  document.querySelectorAll('#' + id + ' .fe-eb-tab').forEach(b => {
     const su = b.dataset.parte === k;
     b.style.borderBottomColor = su ? 'var(--accent)' : 'transparent';
     b.style.fontWeight = su ? '700' : '400';
   });
-  document.querySelectorAll('#fe-ebay-sottotab .fe-eb-pannello').forEach(p => { p.style.display = p.dataset.parte === k ? '' : 'none'; });
+  document.querySelectorAll('#' + id + ' .fe-eb-pannello').forEach(p => { p.style.display = p.dataset.parte === k ? '' : 'none'; });
 }
 // v7.200 - la linguetta scelta si accende, il suo pannello si vede, gli altri due si nascondono
 function _feTaTab(a) {
