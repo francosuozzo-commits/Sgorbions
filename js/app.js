@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.319';
+const JS_VERSION = 'v7.320';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41886,7 +41886,7 @@ function renderAdminFotoAnnuncio() {
     // 🔄 v7.294 (Franco: «"Crea foto per annunci" diventa "Crea annuncio album"»; «"Crea collage foto" diventa "Crea
     //    annuncio da collage"») - i due tasti, qui e nella finestrella del venditore
     '<div class="fa-tasti">' +
-    '<button class="btn-primary btn-admin admin-anche-telefono" onclick="_faApri()">' + (it ? '📸 Crea annuncio album' : '📸 Create album listing') + '</button>' +
+    '<button class="btn-primary btn-admin admin-anche-telefono" onclick="_faApri()">' + (it ? '📸 Crea foto per annuncio album' : '📸 Create album listing photos') + '</button>' +
     // 🆕 v7.219 (Franco: «sposta la funzione Collage foto nella sezione "Annunci"; lì dentro ci metti un tasto, dello stesso
     //    stile del tasto "Crea annuncio", fa iniziare la procedura di creazione collage in una finestra») - `apriCollage`
     '<button class="btn-primary btn-admin admin-anche-telefono" onclick="apriCollage()">' + (it ? '🖼️ Crea annuncio da collage' : '🖼️ Create listing from collage') + '</button>' +
@@ -41978,7 +41978,7 @@ function apriAnnunciNav() {
     '<div style="padding:0 1.2rem 1.4rem;"><p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it ? 'Le foto si scaricano e basta: sul sito non si salva niente.' : 'Photos are only downloaded: nothing is saved on the site.') + '</p>' +
     '<div class="fa-tasti">' +
-      '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();_faApri()">' + (it ? '📸 Crea annuncio album' : '📸 Create album listing') + '</button>' +
+      '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();_faApri()">' + (it ? '📸 Crea foto per annuncio album' : '📸 Create album listing photos') + '</button>' +
       '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();apriCollage()">' + (it ? '🖼️ Crea annuncio da collage' : '🖼️ Create listing from collage') + '</button>' +
     '</div></div></div>';
   document.body.appendChild(ov);
@@ -44434,7 +44434,7 @@ function _annDisegna() {
     //    della colonna, solo dal telefono (`tel`), come «TDA»
     // 🔄 v7.266 (Franco: «nella tabella degli annunci la colonna "Tipologia di articolo" rinominala in "TDA"») - «TDA»
     //    sempre, non più solo dal telefono
-    + th(it ? 'Sito' : 'Site') + th(it ? (tel ? 'Account' : 'Venditore') : (tel ? 'Account' : 'Seller')) + th(it ? 'Serie' : 'Series') + th(it ? 'TDA' : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th('N') + th(it ? 'Titolo' : 'Title')
+    + th(it ? 'Sito' : 'Site') + th(it ? (tel ? 'Account' : 'Venditore') : (tel ? 'Account' : 'Seller')) + th(it ? 'Serie' : 'Series') + th(it ? 'TDA' : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th(it ? 'Copia' : 'Copy') + th(it ? 'Titolo' : 'Title')
     // v7.187 (Franco: «il campo descrizione non mostrarlo nella tabella degli annunci; mostra invece la url») - la
     //    descrizione resta nella finestra; in tabella al suo posto il link, scritto per intero
     // v7.187 (Franco: «per ora togli il campo Foto dalla tabellina») - lo zip resta nella finestra
@@ -44496,7 +44496,8 @@ function _annDisegna() {
             + '</td>'
           // v7.187 (Franco: «riduci larghezza colonne Prezzo e Costo; allarga colonna Titolo; riduci larghezza colonna N»)
           // 🔄 v7.285 (Franco: «anche la colonna N non mi sembra centrata») - cella e numero al centro
-          + '<td style="text-align:center;">' + inp('n', 'text', r.n, 'width:2.6rem;text-align:center;') + '</td>'
+          // 🔄 v7.320 - la colonna «N» diventa «Copia»: il numero della copia collegata, scritto e non più una casella
+          + '<td style="text-align:center;' + rosso + '">' + esc(_annVisto(r, 'n', figs) ?? '') + '</td>'
           // v7.200 (Franco: «accorcia il campo "Titolo" di un 20%»; «riduci la larghezza della colonna Costo e Prezzo»)
           + '<td>' + inp('titolo', 'text', r.titolo, 'min-width:272px;width:100%;') + '</td>'
           // 🔄 v7.202 (Franco: «le colonne Costo e Prezzo sono ancora troppo larghe; avvicina il simbolo dell'Euro al
@@ -44651,6 +44652,9 @@ function _annCopiaDi(r, idx) {
 // quello che si legge a schermo (scelta A): dalla copia se è collegata e ce l'ha scritto, se no dall'annuncio
 function _annVisto(r, campo, idx) {
   const k = (_ANN_DA_COPIA.find(x => x[0] === campo) || [])[1], c = k ? _annCopiaDi(r, idx) : null;
+  // 🔄 v7.320 (Franco: «è una informazione inutile … proviamo a togliere questo campo») - N è SOLO il numero della copia
+  //    collegata: senza copia non c'è, e il numero scritto a mano negli annunci vecchi resta nel dato ma non si legge
+  if (campo === 'n') return c && !_annVuoto(c[k]) ? _annValCopia(campo, c[k]) : null;
   return c && !_annVuoto(c[k]) ? _annValCopia(campo, c[k]) : r[campo];
 }
 // nella finestra: scelta una copia, i suoi valori entrano nelle caselle e quelle caselle si bloccano (si cambiano dalla
@@ -44888,9 +44892,7 @@ function _annApriFinestra(i, sola) {
     // 🆕 v7.263 (Franco: «prima chiede l'articolo, come oggi, poi la sua copia») - le copie del tab «Doppi» dell'articolo
     + lab(it ? 'Copia' : 'Copy')
     + '<select id="ann-copia" class="form-select" onchange="_annBloccaDaCopia()">' + _annOpzioniCopia(r.articoloId || '', r.copiaId || null) + '</select>'
-    // v7.187 (Franco: «aggiungere un campo all'annuncio, da esporre in tabella, chiamato N, da mettere dopo Articolo»)
-    + lab('N')
-    + '<input id="ann-n" class="form-input" type="text" value="' + esc(r.n ?? '') + '" style="max-width:8rem;">'
+    // 🗑️ v7.320 (Franco: «proviamo a togliere questo campo») - via la casella «N» (v7.187): il numero è quello della copia
     // v7.199 (Franco: «vorrei un campo Titolo - ENG, da mettere dopo al campo Titolo, che vorrei rinominare in Titolo - ITA»)
     + labP(it ? 'Titolo - ITA' : 'Title - ITA', 'titoloIt', 'ann-titolo')
     + '<input id="ann-titolo" class="form-input" type="text" value="' + esc(r.titolo || '') + '">'
@@ -45021,7 +45023,8 @@ async function _annSalva(i, da, dopo) {
     costo: Number.isFinite(costo) ? costo : null,   // v7.187
     prezzo: Number.isFinite(prezzo) ? prezzo : null,
     link: v('ann-link').value.trim() || null,   // v7.187
-    n: v('ann-n').value.trim() || null,   // v7.187
+    // 🔄 v7.320 - niente più casella: resta quello che l'annuncio aveva (la copia, se collegata, lo riscrive sotto)
+    n: (i !== null && _annRighe[i] && _annRighe[i].n) || null,
     condizioni: v('ann-condizioni').value.trim(),   // v7.187
     ...(v('ann-da-eliminare')?.checked ? { daEliminare: true } : {}),   // v7.274
     // 🗑️ v7.201 (Franco: «il campo foto zip ti dico di cancellarlo … le foto degli annunci sono molto grosse e … stiamo
@@ -45266,7 +45269,7 @@ function _faDescriviPiano(g, N) {
 
 // 🔄 v7.294 (Franco: i titoli delle finestre come i tasti) - «Crea annuncio album», nel <title> e nell'<h1>
 const _FA_HTML = `<!doctype html><html lang="it"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>Crea annuncio album</title><style>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Crea foto per annuncio album</title><style>
 * { box-sizing:border-box; }
 body { margin:0; background:#f4f1ea; color:#222; font:15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
 main { max-width:1100px; margin:0 auto; padding:16px; }
@@ -45317,7 +45320,7 @@ h1 { font-size:22px; margin:6px 0 4px; }
 .testa { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .esci { flex:none; width:40px; height:40px; border:1px solid #ddd; background:#fff; border-radius:8px; font-size:20px; line-height:1; cursor:pointer; color:#222; }
 </style></head><body><main>
-<div class="testa"><h1>📸 Crea annuncio album</h1><button type="button" class="esci" id="esci" title="Chiudi">✕</button></div>
+<div class="testa"><h1>📸 Crea foto per annuncio album</h1><button type="button" class="esci" id="esci" title="Chiudi">✕</button></div>
 <div class="nota">Le foto restano in questa finestra: sul sito non si salva niente.</div>
 <section class="passo"><h2>1. Quale album?</h2><div class="scelte" id="scelta-album"></div></section>
 <section class="passo"><h2>2. Le foto delle pagine</h2>
@@ -46263,7 +46266,7 @@ async function _faFotoDellaCopia() {
   const { artId, chiave } = _fa.copia;
   const copia = _annTrovaCopia(_articoloVivo(artId), chiave);
   const urls = copia && Array.isArray(copia.foto) ? copia.foto : [];
-  if (!urls.length) { _faStato('⚠️ La copia non ha foto nella linguetta Originali: caricale lì, poi riapri «Crea annuncio album».'); return; }
+  if (!urls.length) { _faStato('⚠️ La copia non ha foto nella linguetta Originali: caricale lì, poi riapri «Crea foto per annuncio album».'); return; }
   const file = [];
   for (let i = 0; i < urls.length; i++) {
     _faStato('Scarico le foto della copia: ' + (i + 1) + ' di ' + urls.length + '…');
@@ -73501,7 +73504,8 @@ function _cdInterno() {
       // 🔄 v7.316 (Franco: «il campo condizioni della tabellina sottostante, lo possiamo anche lui tenere chiuso con un
       //    collassatore?») - dal telefono le Condizioni stanno in un <details> chiuso, come nel tab Copie (v7.312)
       + '<td style="' + td + 'white-space:pre-wrap;min-width:12rem;width:100%;">'
-        + (tel && String(x.c.condizioni || '').trim()
+        // 🔄 v7.320 (Franco: «il collassatore per il campo "Condizioni" mettiamolo anche da desktop: default chiuso»)
+        + (String(x.c.condizioni || '').trim()
           ? '<details class="cd-cond-tel"><summary style="cursor:pointer;font-size:0.76rem;color:var(--info);font-weight:600;">' + (it ? 'Condizioni' : 'Condition') + '</summary>'
             + '<div style="margin-top:0.3rem;">' + _condColorato(x.c.condizioni) + '</div></details>'
           : _condColorato(x.c.condizioni)) + '</td>'
@@ -73720,7 +73724,7 @@ function _cpFotoHTML(c, sola, artId, chiave, album) {
       // 🆕 v7.310 (Franco: «nei 3 tab Ebay, Vinted, Subito, deve essere presente un tasto che avvia la procedura "Crea annuncio
       //    album"»; album dall'articolo, sito dalla linguetta; «completata la trasformazione, le foto generate devono essere
       //    direttamente allegate alla copia») - `_cpCreaAnnuncioAlbum`
-      + (album && d.sito ? '<button type="button" class="btn-barra-admin pieno" id="cp-crea-annuncio-' + d.k + '" onclick="_cpCreaAnnuncioAlbum(\'' + d.k + '\')">📸 ' + (it ? 'Crea annuncio album' : 'Create album listing') + '</button>' : '')
+      + (album && d.sito ? '<button type="button" class="btn-barra-admin pieno" id="cp-crea-annuncio-' + d.k + '" onclick="_cpCreaAnnuncioAlbum(\'' + d.k + '\')">📸 ' + (it ? 'Crea foto per annuncio album' : 'Create album listing photos') + '</button>' : '')
       + '</div>')
     + '</div>';
   return '<div id="cp-foto-box">' + barra + _CP_FOTO_CANALI.map(pannello).join('') + '</div>';
@@ -74008,6 +74012,9 @@ function _copiaApri(artId, chiave, sola) {
     + '<div id="cp-stato" style="font-size:0.8rem;min-height:1.2em;margin-top:0.6rem;"></div>'
     // v7.278 (Franco: «nella pagina della copia, tutti i tasti facciamoli meno alti») - `.cp-comandi` (regola nell'index)
     + '<div class="cp-comandi" style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.8rem;">'
+      // 🆕 v7.320 (Franco: «mi serve un nuovo bottone, sul form di una copia, chiamato "Crea annuncio"») - anche in sola
+      //    lettura: non cambia la copia, aggiunge un annuncio (`_cpCreaAnnuncio`)
+      + '<button type="button" class="btn-barra-admin pieno" id="cp-crea-annuncio" onclick="_cpCreaAnnuncio(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">🏷️ ' + (it ? 'Crea annuncio' : 'Create listing') + '</button>'
       // 🆕 v7.267 (Franco: «nelle copie mettimi un tasto di clone; sia in tabella che nella form di dettaglio») - «Clona»
       //    come nella finestra dell'annuncio: arancione, a sinistra, lontano da Salva; solo in modifica
       + (sola ? '' : '<button type="button" class="btn-barra-admin pieno" id="cp-clona" onclick="_copiaClonaQui(\'' + esc(artId) + '\')">&#10697; ' + (it ? 'Clona' : 'Clone') + '</button>')
@@ -74030,6 +74037,91 @@ function _copiaApri(artId, chiave, sola) {
     + '</div></div>';
   document.body.appendChild(ov);
   _cpTestiAggiorna();   // v7.318: il riquadro dei testi c'è solo per gli album
+}
+// 🆕 v7.320 (Franco: «"Crea annuncio" fa apparire una finestrella che chiede 1) Sito; 2) Venditore 3) Finale; in automatico
+//    si crea un annuncio che prende questi 3 valori … serie e tipologia di articolo sono presi direttamente dalla copia; così
+//    come "Articolo" e "Copia"; così come "Voto", "Iniziale" … Titolo Ita e Titolo Eng sono presi dal tab "Annunci"
+//    dell'articolo collegato alla copia, dal tab relativo al venditore selezionato») - la copia come è SALVATA. Il Titolo -
+//    ITA serve (un annuncio senza titolo non si salva, come nella finestra dell'annuncio); il Finale passa dallo stesso
+//    controllo del Salva (`_annFinaleDiverso`: lo stesso pezzo ha un solo Finale).
+function _cpCreaAnnuncio(artId, chiave) {
+  const it = currentLang === 'it';
+  document.getElementById('cp-crea-ann-modal')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'cp-crea-ann-modal';
+  ov.style.zIndex = '10001';
+  const lab = (id, t) => '<label for="' + id + '" class="detail-label" style="display:block;margin:0.7rem 0 0.25rem;">' + t + '</label>';
+  ov.innerHTML = '<div class="modal" style="max-width:360px;width:92vw;">'
+    + '<div class="modal-header"><h2 class="modal-title">' + (it ? 'Crea annuncio' : 'Create listing') + '</h2>'
+    + '<button type="button" class="modal-close" onclick="document.getElementById(\'cp-crea-ann-modal\').remove()">✕</button></div>'
+    + lab('cpa-sito', it ? 'Sito' : 'Site')
+    + '<select id="cpa-sito" class="form-select"><option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+    + _FA_SITI.map(s => '<option value="' + esc(s.nome) + '">' + esc(s.nome) + '</option>').join('') + '</select>'
+    + lab('cpa-venditore', it ? 'Venditore' : 'Seller')
+    + '<select id="cpa-venditore" class="form-select"><option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+    + _ANN_ACCOUNT.map(a => '<option value="' + esc(a) + '">' + esc(a) + '</option>').join('') + '</select>'
+    + lab('cpa-finale', it ? 'Finale' : 'Final')
+    + '<input id="cpa-finale" class="form-input" type="number" min="0" step="any" style="max-width:8rem;">'
+    + '<div id="cpa-stato" style="font-size:0.8rem;min-height:1.2em;margin-top:0.6rem;"></div>'
+    + '<div style="display:flex;justify-content:flex-end;margin-top:0.6rem;">'
+    + '<button type="button" class="btn-barra-admin pieno" id="cpa-crea" onclick="_cpCreaAnnuncioSalva(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">' + (it ? 'Crea' : 'Create') + '</button></div>'
+    + '</div>';
+  document.body.appendChild(ov);
+}
+// l'annuncio nuovo, dai tre valori della finestrella e dalla copia; null (e il motivo in `stato`) se manca qualcosa
+function _cpAnnuncioNuovo(art, c, chiave, sito, account, finale, idx, stato) {
+  const it = currentLang === 'it';
+  if (!sito || !account) { stato.push(it ? 'Scegli il sito e il venditore.' : 'Choose site and seller.'); return null; }
+  const titolo = String(_annValoreDaAlbum(art, account, 'titoloIt', idx) || '').trim();
+  const titoloEn = String(_annValoreDaAlbum(art, account, 'titoloEn', idx) || '').trim();
+  if (!titolo) { stato.push(it ? 'L’articolo non ha il Titolo - ITA nel tab Annunci, linguetta ' + account + ': scrivilo lì, poi riprova.' : 'The item has no Italian title for ' + account + '.'); return null; }
+  const riga = {
+    id: 'ann' + Date.now().toString(36),
+    sito, account,
+    seriesId: art.seriesId || null,
+    tipologia: _aggTipoDi(art) || null,
+    articoloId: art.id,
+    copiaId: chiave,
+    titolo: _annTitoloPerSito(sito, titolo),
+    titoloEn: _annTitoloPerSito(sito, titoloEn),
+    descrizione: '', descrizioneEn: '',
+    voto: null, costo: null,
+    prezzo: Number.isFinite(finale) ? finale : null,
+    link: null, n: null, condizioni: ''
+  };
+  // Voto, Iniziale (e N, Condizioni) dalla copia, come il Salva della finestra dell'annuncio
+  Object.assign(riga, _annDaCopia(riga, c));
+  return riga;
+}
+async function _cpCreaAnnuncioSalva(artId, chiave) {
+  const it = currentLang === 'it', v = id => document.getElementById(id);
+  const stato = v('cpa-stato'), bottone = v('cpa-crea');
+  const dire = t => { stato.style.color = 'var(--danger)'; stato.textContent = t; };
+  const art = _articoloVivo(artId), c = _annTrovaCopia(art, chiave);
+  if (!art || !c) return dire(it ? 'Copia non trovata: chiudi e riapri la copia.' : 'Copy not found.');
+  const f = parseFloat(String(v('cpa-finale').value).replace(',', '.'));
+  const motivi = [];
+  const riga = _cpAnnuncioNuovo(art, c, chiave, v('cpa-sito').value, v('cpa-venditore').value, f, _indiceArticoli(), motivi);
+  if (!riga) return dire(motivi[0]);
+  bottone.disabled = true;
+  try {
+    if (!_annLetti) {
+      const d = (await fsGetAll('settings')).find(x => x.id === 'annunci');
+      _annRighe = (d && Array.isArray(d.righe)) ? d.righe : [];
+      _annRighe.forEach(r => { if (r.sito === 'Subito') r.sito = 'Subito.it'; });
+      _annLetti = true;
+    }
+    const diversi = _annFinaleDiverso(riga, _annRighe);
+    if (diversi) { bottone.disabled = false; return dire(_annFinaleDiversoTesto(diversi)); }
+    await _annScrivi(_annRighe.concat([riga]));
+    v('cp-crea-ann-modal')?.remove();
+    toast(it ? '✅ Annuncio creato.' : '✅ Listing created.', 'success');
+  } catch (e) {
+    console.error('_cpCreaAnnuncioSalva', e);
+    bottone.disabled = false;
+    dire((it ? '⚠️ NON creato: ' : '⚠️ NOT created: ') + (e?.message || e));
+  }
 }
 // 🆕 v7.277 (Franco: «nella copia, sia in clonazione che in fase di modifica, deve essere possibile cambiare l'articolo
 //    associato; in questo momento è possibile impostare l'articolo solo in fase di creazione partendo dall'articolo») -
