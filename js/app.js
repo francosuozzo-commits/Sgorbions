@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.316';
+const JS_VERSION = 'v7.317';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -73452,11 +73452,22 @@ function _cdInterno() {
   const verCella = t => { const p = String(t).trim().split(/\s+/); return p.length === 2 ? esc(p[0]) + '<br>' + esc(p[1]) : esc(t); };
   // v7.264 (Franco: «il campo "Condizioni" fallo più lungo») - la tabella fino a fine pagina, lo spazio in più a Condizioni
   return testa + filtri + '<div id="copie-doppie-lista" style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'
-    + '<tr>' + _CD_COLONNE.map(c => '<th style="' + th + al(c) + (c.rosso ? 'color:var(--danger);' : '') + 'cursor:pointer;user-select:none;" onclick="_cdOrdina(\'' + c.k + '\')" title="' + (it ? 'Ordina' : 'Sort') + '">'
+    // 🔄 v7.317 (Franco: «il trittico di bottoni visualizza modifica clona mettilo a inizio riga invece che a fine riga»)
+    + '<tr><th style="' + th + '"></th>' + _CD_COLONNE.map(c => '<th style="' + th + al(c) + (c.rosso ? 'color:var(--danger);' : '') + 'cursor:pointer;user-select:none;" onclick="_cdOrdina(\'' + c.k + '\')" title="' + (it ? 'Ordina' : 'Sort') + '">'
       + (it ? c.it : c.en) + (_cdOrdine.col === c.k ? (_cdOrdine.su ? ' ▲' : ' ▼') : '') + '</th>').join('')
-      + '<th style="' + th + '">' + (it ? 'Annunci' : 'Listings') + '</th>'   // v7.268 (non ordinabile: si riempie dopo)
-      + '<th style="' + th + '"></th></tr>'
+      + '<th style="' + th + '">' + (it ? 'Annunci' : 'Listings') + '</th></tr>'   // v7.268 (non ordinabile: si riempie dopo)
     + (righe.length ? righe.map(x => '<tr>'
+      // 🆕 v7.266 (Franco: «dalla tabella delle copie deve essere possibile aprire in visualizzazione o modifica il record
+      //    di copia») - l'occhio e la matita della tabella degli annunci, che aprono la finestra della copia (`_copiaApri`)
+      // 🔄 v7.317 - in testa alla riga (era in fondo)
+      + '<td style="' + td + 'white-space:nowrap;">'
+        + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Apri in sola lettura' : 'Open read-only') + '"'
+        + ' onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\',true)">&#128065;</button> '
+        + '<button type="button" class="tbl-btn tbl-btn-edit" title="' + (it ? 'Modifica' : 'Edit') + '" onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">✏️</button> '
+        // v7.267 (Franco: «nelle copie mettimi un tasto di clone; sia in tabella che nella form di dettaglio») - ⧉ come negli annunci
+        + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Clona' : 'Clone') + '"'
+        + ' onclick="_copiaClona(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">&#10697;</button>'
+      + '</td>'
       + '<td style="' + td + 'white-space:nowrap;">' + esc(x.nomeSerie) + '</td>'
       + '<td style="' + td + 'white-space:nowrap;">' + esc(x.nomeTipo) + '</td>'
       + '<td style="' + td + 'white-space:nowrap;">' + verCella(x.nomeVer) + '</td>'
@@ -73484,16 +73495,7 @@ function _cdInterno() {
       // 🆕 v7.268 (Franco: «anche nella tabella ELENCO COPIE metti il campo Annunci; se riesci metti gli N link (saranno sempre
       //    al massimo 3) sulla stessa riga») - la stessa cella del tab «Copie» (`_copieAnnunciRiempi`), coi link in riga
       + '<td data-ann-art="' + esc(x.f.id) + '" data-ann-chiave="' + esc(x.chiave) + '" style="' + td + 'white-space:nowrap;font-size:0.8rem;"></td>'
-      // 🆕 v7.266 (Franco: «dalla tabella delle copie deve essere possibile aprire in visualizzazione o modifica il record
-      //    di copia») - l'occhio e la matita della tabella degli annunci, che aprono la finestra della copia (`_copiaApri`)
-      + '<td style="' + td + 'white-space:nowrap;">'
-        + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Apri in sola lettura' : 'Open read-only') + '"'
-        + ' onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\',true)">&#128065;</button> '
-        + '<button type="button" class="tbl-btn tbl-btn-edit" title="' + (it ? 'Modifica' : 'Edit') + '" onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">✏️</button> '
-        // v7.267 (Franco: «nelle copie mettimi un tasto di clone; sia in tabella che nella form di dettaglio») - ⧉ come negli annunci
-        + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Clona' : 'Clone') + '"'
-        + ' onclick="_copiaClona(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">&#10697;</button>'
-      + '</td></tr>').join('')
+      + '</tr>').join('')
       : '<tr><td colspan="12" style="' + td + 'font-style:italic;color:var(--muted);">' + (it ? 'Nessuna copia con questi filtri.' : 'No copies match these filters.') + '</td></tr>')
     + '</table></div>' + _copieAnnunciDopo();   // v7.268: le celle Annunci si riempiono al giro dopo
 }
@@ -74049,7 +74051,8 @@ function _cpSceltaArticoloHTML(art, sola, nomeVer) {
   return '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">'
     + sel('cp-serie', it ? 'Serie' : 'Series', '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
       + _annSerie().map(s => '<option value="' + esc(s.id) + '"' + (s.id === sid ? ' selected' : '') + '>' + esc(_nomeSerie(s)) + '</option>').join(''), '_cpCambiaSerie(this.value)')
-    + sel('cp-tipo', it ? 'Tipologia di articolo' : 'Item type', _cpOpzioniTipologia(sid, tipo), '_cpCambiaTipo(this.value)')
+    // 🔄 v7.317 (Franco: «il campo "tipologia di articolo" rinominalo come "tipologia articolo"»)
+    + sel('cp-tipo', it ? 'Tipologia articolo' : 'Item type', _cpOpzioniTipologia(sid, tipo), '_cpCambiaTipo(this.value)')
     // v7.279 - la Versione è quella dell'articolo (v7.263, Franco): si legge e non si sceglie
     + '<div style="flex:1;min-width:8rem;">' + etich(it ? 'Versione' : 'Version') + '<input id="cp-versione" class="form-input" type="text" disabled value="' + esc(nomeVer || '') + '"></div>'
     + '</div>'
