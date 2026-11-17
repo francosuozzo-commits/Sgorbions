@@ -32132,7 +32132,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.325';
+const JS_VERSION = 'v7.326';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -50515,7 +50515,9 @@ function _aggiornaBivioInventario() {
     if (_taglioInventario === 'novita') {
       // 🆕 v7.324 - nelle Novità la frase sta sopra le card (`_novitaHTML`): qui sotto il titolo niente
       sub.removeAttribute('data-i18n');
-      sub.textContent = '';
+      // 🐛 v7.326 (Franco: «quando si seleziona NOVITA' la schermata sale un pochino») - la riga vuota si chiudeva e tutto
+      //    sotto saliva di un'altezza di riga: resta, con uno spazio, alta come negli altri tagli
+      sub.innerHTML = '&nbsp;';
     } else if (_taglioInventario === 'personaggi') {
       // 🆕 v6.966 - la riga sotto il titolo per il taglio Personaggi. Senza `data-i18n`: la frase è
       //    scritta qui nelle due lingue, e l'attributo la farebbe tornare quella delle serie.
@@ -51414,7 +51416,9 @@ function _novitaHTML(larghezza) {
   // 🔄 v7.324 (Franco: «anche sotto NOVITA' voglio una barra gialla con la scritta sopra; prediligo sempre la simmetria»;
   //    «come titolo metti la frase "gli articoli Sgorbions aggiunti al sito negli ultimi N giorni.", tutto maiuscolo») - la
   //    barra degli altri tagli (`_rigaTitoloHub`), al posto della frase
-  const frase = '<div class="novita-frase" style="margin-bottom:1rem;">'
+  // 🐛 v7.326 - `display:flow-root`: senza, il margine alto della barra usciva dal contenitore e la barra stava 16px più su
+  //    che negli altri tagli (misurato: 296 contro 312)
+  const frase = '<div class="novita-frase" style="display:flow-root;margin-bottom:1rem;">'
     + _rigaTitoloHub(it ? 'GLI ARTICOLI SGORBIONS AGGIUNTI AL SITO NEGLI ULTIMI ' + n + ' GIORNI.' : 'THE SGORBIONS ITEMS ADDED TO THE SITE IN THE LAST ' + n + ' DAYS.') + '</div>';
   if (!gruppi.length) return frase + '<div class="empty-state"><p class="empty-title">' + (it ? 'Nessun articolo nuovo in questi giorni.' : 'No new items in these days.') + '</p></div>';
   const allFigs = getData('figurines', []), _idx = _figIndex(allFigs);
@@ -51423,7 +51427,8 @@ function _novitaHTML(larghezza) {
     owned: getOwned(), _allFigs: allFigs, _idx,
     _commentoAlbumCard: f => ((f.section === 'attaccare' && _COMMENTO_CARD_CFG.fpa) || ((f.section || 'figurines') === 'figurines' && _COMMENTO_CARD_CFG.fcr)) ? lettore(f) : '',
     _retriFam: _retriDelleFamiglie(allFigs, _idx),
-    _serieById: new Map(getData('series', []).map(x => [x.id, x]))
+    _serieById: new Map(getData('series', []).map(x => [x.id, x])),
+    senzaNuovo: true   // v7.326 - qui sono tutte nuove: la stellina non dice niente (Franco)
   };
   // la griglia degli articoli: 1800px al massimo (96% dello schermo) dal PC, la pagina dal telefono; gli spazi dell'index
   const W = tel ? larghezza : Math.min(1800, Math.round(window.innerWidth * 0.96));
@@ -55049,7 +55054,10 @@ function renderCatalogSearch(q) {
                   //    stesso aspetto nei due posti in cui si vede.
                   + ((sec !== 'retros' && _haSottonome(sec) && (f.subname || '').trim())
                       ? ' <span style="color:var(--info);">(' + esc((f.subname || '').trim()) + ')</span>'
-                      : '');
+                      : '')
+                  // 🆕 v7.326 (Franco: «metti NEW anche nei risultati della RG») - la stellina della card, dopo il nome. Il
+                  //    `typeof`: i banchi di prova eseguono questa funzione da sola
+                  + ((typeof _articoloNuovo === 'function' && _articoloNuovo(f)) ? '<span class="rg-nuovo" style="display:inline-flex;vertical-align:middle;margin-left:6px;">' + _badgeNuovo(f) + '</span>' : '');
                 const _pezzi = [];
                 if (sec === 'retros' && f.changeType) _pezzi.push('<span style="font-size:0.85rem;'
                   + 'text-transform:uppercase;color:' + _COLORE_TIPO.change + ';">Change</span>');
@@ -66474,7 +66482,8 @@ function _cardArticoloHTML(f, C) {
              Sul telefono no: la card è stretta e la frase la allungherebbe di molto. */''}
         ${(f.section || 'figurines') === 'figurines' && !_isMobileViewport() ? _rigaCard(esc(_commentoAlbumCard(f)), 'font-size:0.8rem;color:#ffd84d;line-height:1.3;margin-bottom:0.35rem;', 'commento') : ''}
         ${/* 🔄 v7.323 (Franco: «mettilo affianco al nome») - con il badge «New» il nome e la stella stanno in fila */''}
-        ${_articoloNuovo(f) ? `<div class="fig-name-con-nuovo" style="display:flex;align-items:center;justify-content:center;gap:4px;"><div class="fig-name" style="min-width:0;">${figNameInner}</div>${_badgeNuovo(f)}</div>` : `<div class="fig-name">${figNameInner}</div>`}
+        ${/* 🔄 v7.326 (Franco: «nella sezione NOVITA', il bollino NEW non ha senso; qui non va; ovunque ma non qui») - `C.senzaNuovo` */''}
+        ${!C.senzaNuovo && _articoloNuovo(f) ? `<div class="fig-name-con-nuovo" style="display:flex;align-items:center;justify-content:center;gap:4px;"><div class="fig-name" style="min-width:0;">${figNameInner}</div>${_badgeNuovo(f)}</div>` : `<div class="fig-name">${figNameInner}</div>`}
         ${_sottonomeRigaHTML}${_personaggioRigaHTML}${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : famigliaHTML + _catTDARigheHTML)}
         ${retroNameHTML}${cartoncinoHTML}
         ${typeIndicatorHTML}
@@ -67750,16 +67759,24 @@ function apriMancolistaUtente() {
   ov.className = 'modal-overlay';
   ov.id = 'mancolista-modal';
   ov.style.alignItems = 'center';
-  ov.innerHTML = '<div class="modal" style="max-width:560px;width:94vw;">'
+  // 🔄 v7.326 (Franco: «allarga la finestra in modo che il titolo stia tutto su una riga (non da mobile)») - più larga, e il
+  //    titolo su una riga dal PC (regola nell'index, `#mancolista-modal .modal-title`)
+  ov.innerHTML = '<div class="modal" style="max-width:760px;width:94vw;">'
     + '<div class="modal-header"><h2 class="modal-title">' + (it ? 'Vuoi inviarci una tua mancolista Sgorbions ?' : 'Would you like to send us your Sgorbions want list?') + '</h2>'
     + '<button type="button" class="modal-close" onclick="document.getElementById(\'mancolista-modal\').remove()">✕</button></div>'
     + '<p style="color:var(--text);margin:0 0 0.8rem;line-height:1.5;">' + (it
-      ? 'Scrivi nel box qui sotto quali sono le figurine che cerchi e inviaci la lista.<br>Ti aiuteremo a trovarle, grazie agli altri utenti del sito !'
-      : 'Write in the box below the stickers you are looking for and send us the list.<br>We will help you find them, thanks to the other users of the site !') + '</p>'
+      // 🔄 v7.326 (Franco: «metti una riga vuota prima della frase "Ti aiuteremo a trovarle…"»)
+      ? 'Scrivi nel box qui sotto quali sono le figurine che cerchi e inviaci la lista.<br><br>Ti aiuteremo a trovarle, grazie agli altri utenti del sito !'
+      : 'Write in the box below the stickers you are looking for and send us the list.<br><br>We will help you find them, thanks to the other users of the site !') + '</p>'
     + '<textarea id="mancolista-testo" class="form-input" rows="10" maxlength="' + MANCOLISTA_MAX + '" style="width:100%;resize:vertical;font-size:0.95rem;line-height:1.45;"></textarea>'
+    // 🆕 v7.326 (Franco: «aggiungi sotto al box "Se vuoi mandare la tua mancolista in modo più strutturato, usa la funzione
+    //    "Ciò che cerco"", con un link che porta alla pagina "Ciò che cerco"»)
+    + '<p style="color:var(--text);font-size:0.9rem;margin:0.6rem 0 0;">' + (it
+      ? 'Se vuoi mandare la tua mancolista in modo più strutturato, usa la funzione <a href="#" style="color:var(--info);" onclick="document.getElementById(\'mancolista-modal\').remove();showPage(\'wishlist\');return false;">«Ciò che cerco»</a>.'
+      : 'If you want to send your want list in a more structured way, use the <a href="#" style="color:var(--info);" onclick="document.getElementById(\'mancolista-modal\').remove();showPage(\'wishlist\');return false;">«What I\'m looking for»</a> feature.') + '</p>'
     + '<div id="mancolista-stato" style="font-size:0.85rem;min-height:1.2em;margin-top:0.5rem;"></div>'
     + '<div style="display:flex;justify-content:flex-end;margin-top:0.6rem;">'
-    + '<button type="button" class="btn-primary" id="mancolista-invia" onclick="inviaMancolistaUtente()">' + (it ? 'Invia mancolista' : 'Send want list') + '</button></div>'
+    + '<button type="button" class="btn-primary" id="mancolista-invia" onclick="inviaMancolistaUtente()">' + (it ? 'Invia la tua mancolista' : 'Send your want list') + '</button></div>'   // v7.326 (Franco)
     + '</div>';
   document.body.appendChild(ov);
   setTimeout(() => document.getElementById('mancolista-testo')?.focus(), 50);
