@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.322';
+const JS_VERSION = 'v7.323';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -55367,6 +55367,23 @@ function _albumHaTestiAnnuncio(f) {
   return Object.values(f.testiAccount || {}).some(t => Object.values(t || {}).some(pieno))
     || Object.values(f.fotoAnnuncio || {}).some(pieno);
 }
+// 🆕 v7.323 (Franco: «quando un articolo è stato creato meno di 30 giorni, metti sopra di esso un piccolo badge a forma di
+//    stella a più punte, con scritto "New"; colore giallo; che lo vedono tutti; al trentesimo giorno sparisce») - la data è
+//    quella ricavata dall'id (`_dataCreazione`); chi non ce l'ha (id vecchi di Firestore) non è nuovo. Accanto al nome
+//    della card (Franco: «mettilo affianco al nome»). La stella è un poligono a 12 punte (`clip-path`).
+const _NUOVO_GIORNI = 30;
+const _STELLA_12 = 'polygon(' + Array.from({ length: 24 }, (_, i) => { const r = i % 2 ? 36 : 50, a = Math.PI * i / 12 - Math.PI / 2;
+  return (50 + r * Math.cos(a)).toFixed(1) + '% ' + (50 + r * Math.sin(a)).toFixed(1) + '%'; }).join(',') + ')';
+function _articoloNuovo(f, ora) {
+  const d = _dataCreazione(f);
+  return !!d && ((ora ?? Date.now()) - d.getTime()) < _NUOVO_GIORNI * 86400000;
+}
+function _badgeNuovo(f) {
+  if (!_articoloNuovo(f)) return '';
+  return '<div class="fig-badge-nuovo" title="' + (currentLang === 'it' ? 'Nuovo' : 'New') + '" style="flex:0 0 auto;'
+    + 'width:34px;height:34px;background:#ffd400;clip-path:' + _STELLA_12 + ';color:#0e0a1a;display:flex;align-items:center;justify-content:center;'
+    + 'font-family:var(--font-ui);font-size:0.56rem;font-weight:800;line-height:1;pointer-events:none;">New</div>';
+}
 function _segnoAnnuncio(f) {
   if (!currentUser?.isAdmin || !_albumHaTestiAnnuncio(f)) return '';
   const tit = currentLang === 'it' ? 'Ha testi per gli annunci (tab Ebay)' : 'Has listing texts (Ebay tab)';
@@ -58751,7 +58768,9 @@ function _famEbayLettura(d, it, idBox) {
     // v7.252 - le linguette nello stesso ordine della finestra: prima chi ha testi (`_testiAccountInOrdine`)
     + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + _testiAccountInOrdine(t).map(lin).join('') + '</div>'
     + _testiAccountInOrdine(t).map((a, i) => '<div class="fam-el-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
-      + _TESTI_CAMPI.map(([k, nIt, nEn]) => ['It', 'En'].map(l => {
+      // 🔄 v7.323 (Franco: «cambia l'ordine dei campi: titolo ita, descrizione ita, titolo eng, descrizione eng») - prima la
+      //    lingua, poi il campo (era il contrario: i due titoli, poi le due descrizioni); lo stesso in modifica
+      + ['It', 'En'].map(l => _TESTI_CAMPI.map(([k, nIt, nEn]) => {
         const v = String((t[a] || {})[k + l] || '').trim();
         // 🆕 v7.318 (Franco: «accanto a tutti i campi di questo tab annunci, metti un tastino per copiarne in memoria il
         //    contenuto; mi riferisco ai campi titolo e descrizione, sia ita che eng, di ogni venditore») - 📋 accanto
@@ -58759,7 +58778,9 @@ function _famEbayLettura(d, it, idBox) {
         return '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;display:flex;align-items:center;gap:0.4rem;">' + (it ? nIt : nEn) + ' - ' + (l === 'It' ? 'ITA' : 'ENG')
           + (v ? '<button type="button" class="tbl-btn" title="' + (it ? 'Copia negli appunti' : 'Copy to clipboard') + '" data-testo="' + esc(v) + '" onclick="_collageCopia(this.dataset.testo)"'
             + ' style="font-size:0.8rem;line-height:1;padding:2px 6px;cursor:pointer;">📋</button>' : '') + '</div>'
-          + '<div style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;">' + (v ? esc(v) : '—') + '</div></div>';
+          // 🆕 v7.323 (Franco: «metti una cornicetta attorno ai campi descrizione») - in lettura il testo della descrizione
+          //    in un riquadro col bordo, come la casella della modifica
+          + '<div style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;' + (k === 'desc' ? 'border:1px solid var(--border2);border-radius:8px;padding:0.4rem 0.55rem;' : '') + '">' + (v ? esc(v) : '—') + '</div></div>';
       }).join('')).join('')
       // v7.252 - e il messaggio finale dell'annuncio, come nella finestra
       + (idBox ? '' : (v => '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;">' + (it ? 'Messaggio di testo finale annuncio' : 'Closing message of the listing') + '</div>'
@@ -66543,7 +66564,8 @@ function renderItems() {
              `_allineaRigheRetro` la tiene alla stessa altezza nella riga di griglia e la toglie dove nessuna card l'ha.
              Sul telefono no: la card è stretta e la frase la allungherebbe di molto. */''}
         ${(f.section || 'figurines') === 'figurines' && !_isMobileViewport() ? _rigaCard(esc(_commentoAlbumCard(f)), 'font-size:0.8rem;color:#ffd84d;line-height:1.3;margin-bottom:0.35rem;', 'commento') : ''}
-        <div class="fig-name">${figNameInner}</div>
+        ${/* 🔄 v7.323 (Franco: «mettilo affianco al nome») - con il badge «New» il nome e la stella stanno in fila */''}
+        ${_articoloNuovo(f) ? `<div class="fig-name-con-nuovo" style="display:flex;align-items:center;justify-content:center;gap:4px;"><div class="fig-name" style="min-width:0;">${figNameInner}</div>${_badgeNuovo(f)}</div>` : `<div class="fig-name">${figNameInner}</div>`}
         ${_sottonomeRigaHTML}${_personaggioRigaHTML}${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : famigliaHTML + _catTDARigheHTML)}
         ${retroNameHTML}${cartoncinoHTML}
         ${typeIndicatorHTML}
@@ -67507,7 +67529,7 @@ function _cliccaLinguettaMacchie() {
   toast(_adminSenzaMacchie ? '💧 Macchie tolte, solo per te' : '💧 Macchie visibili', 'success');
 }
 function _cliccaLinguettaImpersona() {
-  if (typeof isImpersonating === 'function' && isImpersonating()) { stopImpersonation(); return; }
+  if (typeof isImpersonating === 'function' && isImpersonating()) { stopImpersonation(true); return; }   // v7.323: si resta qui
   if (!currentUser || !currentUser.isAdmin) return;
   const pan = document.getElementById('imp-pannello'), sel = document.getElementById('imp-pannello-select');
   if (!pan || !sel) return;
@@ -67526,7 +67548,7 @@ function _impersonaDalPannello() {
   const id = document.getElementById('imp-pannello-select')?.value;
   if (!id) return;
   document.getElementById('imp-pannello').style.display = 'none';
-  impersonateUser(id);
+  impersonateUser(id, true);   // v7.323: si resta nella pagina (e nella scheda) dove si è
 }
 function renderProfile() {
   if (!currentUser) { showPage('home'); return; }
@@ -69632,7 +69654,26 @@ function isImpersonating() {
   return !!(_realAdmin);
 }
 
-function impersonateUser(userId) {
+// 🆕 v7.323 (Franco: «si riesce a fare in modo che quando impersonifico rimango nella scheda dove sono?») - dalla linguetta
+//    (`resta`) non si va più in Home né, tornando admin, nel profilo: si ridisegna la pagina dov'è, allo stesso punto, e
+//    una scheda d'articolo aperta si riapre sullo stesso articolo (con la *Mia lista* della persona di adesso). Dalla
+//    tendina del profilo resta il giro di prima: lì si è in una pagina che cambia di senso con l'utente.
+function _impersonaRestaQui() {
+  const x = window.scrollX, y = window.scrollY;
+  const mod = document.getElementById('fig-detail-modal');
+  const scheda = mod && !mod.classList.contains('hidden') && _currentDetailFigId ? _currentDetailFigId : null;
+  const attiva = id => !!document.getElementById(id)?.classList.contains('active');
+  // la pagina della newsletter è solo admin: chi non lo è torna in Home
+  if (attiva('page-newsletter') && !currentUser?.isAdmin) showPage('home');
+  renderAll();
+  updateNavUser();
+  // il profilo non lo ridisegna `renderAll`: si rifà qui, ed è il profilo della persona di adesso
+  if (attiva('page-profile')) { try { renderProfile(); } catch (e) { console.error('renderProfile', e); } }
+  if (scheda) { try { openFigDetail(scheda, undefined, true); } catch (e) { console.error('_impersonaRestaQui', e); } }
+  const tieni = () => { if (Math.abs(window.scrollY - y) > 1) window.scrollTo(x, y); };
+  tieni(); requestAnimationFrame(tieni); setTimeout(tieni, 250);
+}
+function impersonateUser(userId, resta) {
   // 🔴 v6.920 — CHIEDE CHI SEI, e fin qui non lo chiedeva a nessuno.
   // 📏 Trovata dalla mappa delle scritture (`prova-sicurezza-scritture`, 19 settembre): un
   //    comando che cambia l'identita' con cui il sito lavora, e che non guardava `currentUser`.
@@ -69652,22 +69693,24 @@ function impersonateUser(userId) {
   currentUser = { ...user };
   _wzLeggiSegno();   // v7.303: «Inizia» / «Riprendi» e il livello dell'utente impersonato
   _showImpersonateBanner();
-  showPage('home');
-  renderAll();
-  updateNavUser();
+  if (resta) _impersonaRestaQui();   // v7.323
+  else { showPage('home'); renderAll(); updateNavUser(); }
   toast('🎭 ' + (currentLang === 'it' ? 'Impersonando: ' : 'Impersonating: ') + user.username, 'success');
 }
 
-function stopImpersonation() {
+function stopImpersonation(resta) {
   if (!_realAdmin) return;
   currentUser = { ..._realAdmin };
   _realAdmin = null;
   _wzLeggiSegno();   // v7.303: torna il segno dell'admin
   _hideImpersonateBanner();
-  showPage('profile');
-  setTimeout(() => adminTab('users'), 200);
-  renderAll();
-  updateNavUser();
+  if (resta) _impersonaRestaQui();   // v7.323
+  else {
+    showPage('profile');
+    setTimeout(() => adminTab('users'), 200);
+    renderAll();
+    updateNavUser();
+  }
   toast(currentLang === 'it' ? '✅ Tornato admin' : '✅ Back to admin', 'success');
 }
 
@@ -77337,7 +77380,8 @@ function _bloccoTestiAccountEdit(f) {
     + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;">✍️ ' + (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account') + '</div>'
     + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + ordine.map(linguetta).join('') + '</div>'
     + ordine.map((a, i) => '<div class="fe-ta-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
-      + _TESTI_CAMPI.map(([k, nIt, nEn]) => ['It', 'En'].map(l => {
+      // 🔄 v7.323 - titolo ITA, descrizione ITA, titolo ENG, descrizione ENG (come in lettura, `_famEbayLettura`)
+      + ['It', 'En'].map(l => _TESTI_CAMPI.map(([k, nIt, nEn]) => {
         const id = 'fe-ta-' + a + '-' + k + l, v = (t[a] || {})[k + l] || '';
         const etichetta = (it ? nIt : nEn) + ' - ' + (l === 'It' ? 'ITA' : 'ENG');
         // 🆕 v7.318 (Franco: «accanto a tutti i campi di questo tab annunci, metti un tastino per copiarne in memoria il
@@ -77348,7 +77392,8 @@ function _bloccoTestiAccountEdit(f) {
           + (k === 'titolo'
             ? '<input class="form-input" type="text" id="' + id + '" value="' + esc(v) + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;">'
             // v7.200 (Franco: «i campi Descrizione ITA e Descrizione ENG … devono essere più lunghi») - 3 → 12 righe
-            : '<textarea class="form-input" id="' + id + '" rows="12" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc(v) + '</textarea>')
+            // 🔄 v7.323 (Franco: «una cornicetta attorno ai campi descrizione») - il bordo ben visibile, come in lettura
+            : '<textarea class="form-input" id="' + id + '" rows="12" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;border:1px solid var(--border2);border-radius:8px;">' + esc(v) + '</textarea>')
           + '</div>';
       }).join('')).join('')
       // 🆕 v7.252 (Franco: «nella form della famiglia, aggiungi un campo che si chiama "Messaggio di testo finale
