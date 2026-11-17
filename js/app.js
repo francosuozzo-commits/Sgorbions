@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.320';
+const JS_VERSION = 'v7.321';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -71157,7 +71157,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
              foto uscivano alte uguali e larghe a caso: misurate 62k px2 contro 117k.
              Col quadrato il vincolo e' il LATO, come nella card, e le aree si pareggiano. -->
         <div class="fig-facce" style="display:grid;grid-template-columns:${_haFotoRuotata(f) ? '1fr 1fr 1fr' : '1fr 1fr'};gap:0.5rem;">
-          <div>
+          <div id="fig-detail-fronte">
             <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:14px;">${currentLang === 'it' ? 'Fronte' : 'Front'}</div>
             ${_latoErr === 'fronte' ? _corniceErroreStampaHTML(baseHTML, _tipoErr)
               /* v6.979 - il doppio incornicia anche il fronte, col tipo del fronte */
@@ -71212,6 +71212,13 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   // Nota: in css/style.css restano le regole mobile per .detail-row-mylist/.detail-row-wishlist
   // dentro #fig-detail-content (li affiancavano al 49%); ora non trovano piu' nulla. Non le tolgo
   // qui perche' vivono nel file grande, che si tocca a parte.
+  // 🔄 v7.321 (Franco: «nella pagina dell'album, il tasto per sfogliare l'album mettilo sotto alla foto del fronte») - era
+  //    in fondo alla scheda, a sinistra (`_sfogliaCodaDetail`, v6.906): adesso sotto il Fronte (o sotto la foto, se una sola)
+  const _sfogliaSottoFoto = _bottoneSfogliaSuArticolo(f);
+  if (_sfogliaSottoFoto && photoEl) {
+    (photoEl.querySelector('#fig-detail-fronte') || photoEl).insertAdjacentHTML('beforeend',
+      '<div id="fig-detail-sfoglia" style="display:flex;justify-content:center;margin-top:0.6rem;">' + _sfogliaSottoFoto + '</div>');
+  }
   if (currentUser && photoEl) {
     const _azioni = [];
     _azioni.push(`<span style="display:inline-flex;align-items:center;gap:0.45rem;">
@@ -71269,7 +71276,8 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   // 🆕 v6.980 (Franco: «nella form della figurina o di una sua versione, metti un bottone "Vedi
   //    poster" che apre una finestra… che mostra il poster») - nello stesso angolo, accanto.
   const _sfogliaCodaDetail = () => {
-    const b = _bottoneSfogliaSuArticolo(f) + _bottonePosterSuArticolo(f);
+    // 🔄 v7.321 - «Sfoglia» è salito sotto la foto del fronte: qui resta il poster
+    const b = _bottonePosterSuArticolo(f);
     return b ? '<div style="display:flex;justify-content:flex-start;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;">' + b + '</div>' : '';
   };
 
@@ -77243,7 +77251,9 @@ function _bloccoFotoAnnuncioEdit(f) {
   if (!_albumConCaselleFotoAnnuncio(f)) return '';
   const it = currentLang === 'it', N = _pagineDi(f).length, p = f.fotoAnnuncio || {};
   return '<div id="fe-foto-annuncio" data-n="' + N + '" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
-    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.3rem;">📸 ' + (it ? 'Foto annuncio: come unire le foto delle pagine' : 'Listing photos: how to join the page photos') + '</div>'
+    // 🔄 v7.321 (Franco: «la etichetta "Foto annuncio: come unire le foto delle pagine" cambiala in "Come unire le foto delle
+    //    pagine per crere le foto di un annuncio"») - «creare»
+    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.3rem;">📸 ' + (it ? 'Come unire le foto delle pagine per creare le foto di un annuncio' : 'How to join the page photos to create the photos of a listing') + '</div>'
     + '<div style="font-size:0.72rem;color:var(--text);margin-bottom:0.6rem;line-height:1.45;">' + (it
         ? 'I numeri del tab Pagine (1 = copertina, ' + N + ' = retro). La virgola separa una foto dall’altra; le pagine della stessa foto (2 o 4) vanno fra quadre, unite dal +; le pagine non scritte si saltano. Esempio: 1, 2, [3+4], [5+6+7+8], ' + N + '.<br>'
           + 'Vuota: eBay e Vinted dividono le foto delle pagine da soli, Subito per questo album resta spento.'
