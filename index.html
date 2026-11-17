@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.325">
+<link rel="stylesheet" href="css/style.css?v=7.326">
 
 
 <style>
@@ -793,6 +793,8 @@ body:not(.wz-ripresa) #inv-linguetta { top: 80px; }
   white-space: nowrap; box-shadow: 3px 3px 12px rgba(0,0,0,0.45); }
 #mcl-linguetta:hover { filter: brightness(1.12); }
 @media (max-width: 860px) { #mcl-linguetta { display: none !important; } }
+/* 🆕 v7.326 (Franco: «allarga la finestra in modo che il titolo stia tutto su una riga (non da mobile)») */
+@media (min-width: 861px) { #mancolista-modal .modal-title { white-space: nowrap; } }
 /* 🔄 v7.120 (Franco: «a volte le linguette blu vanno sopra ai tasti per tornare indietro durante la navigazione;
    proviamo a metterle sulla dx») - LA COLONNA BLU PASSA AL BORDO DESTRO, speculare: angoli tondi a sinistra, ombra
    verso sinistra, si allungano verso sinistra. Dove c'è quella arancio dell'admin (stesso bordo, stessa altezza), la
@@ -7146,7 +7148,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.325"></script>
+<script src="js/app.js?v=7.326"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7170,7 +7172,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.325'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.326'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
