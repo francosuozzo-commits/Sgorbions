@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.324">
+<link rel="stylesheet" href="css/style.css?v=7.325">
 
 
 <style>
@@ -785,6 +785,14 @@ body:not(.wz-ripresa) #inv-linguetta { top: 80px; }
   display: flex; flex-direction: column; gap: 0.5rem; min-width: 240px; }
 #imp-pannello select { min-width: 0; }
 @media (max-width: 860px) { #imp-linguetta, #imp-pannello { display: none !important; } }
+/* 🆕 v7.325 - «📮 Inviaci la tua mancolista»: speculare a «Impersona» (stessa altezza, stessa forma), sul bordo SINISTRO
+   e blu dei comandi dell'utente; solo sul desktop, come le altre linguette. */
+#mcl-linguetta { display: none; position: fixed; left: 0; top: 80px; z-index: 900; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 0.8rem 0.6rem 0.9rem; border: none; cursor: pointer; border-radius: 0 12px 12px 0;
+  background: var(--action); color: #fff; font-family: var(--font-ui); font-weight: 700; font-size: 0.9rem;
+  white-space: nowrap; box-shadow: 3px 3px 12px rgba(0,0,0,0.45); }
+#mcl-linguetta:hover { filter: brightness(1.12); }
+@media (max-width: 860px) { #mcl-linguetta { display: none !important; } }
 /* 🔄 v7.120 (Franco: «a volte le linguette blu vanno sopra ai tasti per tornare indietro durante la navigazione;
    proviamo a metterle sulla dx») - LA COLONNA BLU PASSA AL BORDO DESTRO, speculare: angoli tondi a sinistra, ombra
    verso sinistra, si allungano verso sinistra. Dove c'è quella arancio dell'admin (stesso bordo, stessa altezza), la
@@ -2558,6 +2566,9 @@ button.back-btn { color:#ffffff; }
   <span class="wz-ling-lunga" data-i18n="cc.linguetta">Le figurine che stai cercando</span>
 </button>
 </div>
+<!-- 🆕 v7.325 (Franco: «una linguetta, da mostrare sulla sinistra dello schermo, come quelle admin arancio che abbiamo sulla
+     destra, chiamata "Inviaci la tua mancolista"») - blu perché è dell'utente; la accende `_aggiornaLinguettaImpersona` -->
+<button type="button" id="mcl-linguetta" onclick="apriMancolistaUtente()" aria-label="Inviaci la tua mancolista" style="display:none;">📮 Inviaci la tua mancolista</button>
 <!-- 🆕 v7.118 - la linguetta arancio a destra per impersonare un utente (solo admin, solo desktop). -->
 <button type="button" id="imp-linguetta" onclick="_cliccaLinguettaImpersona()">🎭 Impersona</button>
 <div id="imp-pannello" style="display:none;">
@@ -4822,12 +4833,16 @@ di tutte le serie</button>
                 </div>
                 <div class="form-hint" data-i18n="admin.generali.timeoutHint">Oltre questo tempo il sito smette di aspettare i dati e mostra il pannello di guasto. Da 3 a 120 secondi. Con una connessione lenta un valore basso fa comparire «SITO MOMENTANEAMENTE NON DISPONIBILE» anche quando i dati stavano arrivando.</div>
                 <!-- 🆕 v7.324 (Franco: «n diventa un parametro da admin console, nel pannello "Impostazioni"») -->
-                <label class="form-label" style="margin-top:1rem;">Novità: articoli creati negli ultimi … giorni (vale anche per la stellina «New»)</label>
-                <div style="display:flex;gap:0.5rem;align-items:flex-start;">
-                  <input class="form-input" type="number" id="impostazioni-novita-input" min="1" max="365" step="1" placeholder="90" style="width:110px;">
+                <!-- 🔄 v7.325 (Franco: «massimo 50 card per serie … un altro parametro da mettere affianco al 30»; «non usiamo la
+                     data di creazione ma la data nella quale le sue condizioni diventano tali da mostrarlo») -->
+                <label class="form-label" style="margin-top:1rem;">Novità: giorni (vale anche per la stellina «New») e card al massimo per serie</label>
+                <div style="display:flex;gap:0.5rem;align-items:flex-start;flex-wrap:wrap;">
+                  <input class="form-input" type="number" id="impostazioni-novita-input" min="1" max="365" step="1" placeholder="30" style="width:110px;" title="Giorni">
+                  <input class="form-input" type="number" id="impostazioni-novita-max-input" min="1" max="500" step="1" placeholder="50" style="width:110px;" title="Card al massimo per serie">
                   <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveGiorniNovita()">Salva</button>
+                  <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="_novitaPreparaDate()">Prepara le date delle Novità</button>
                 </div>
-                <div class="form-hint">Da 1 a 365. La linguetta «Novità» dell'Inventario mostra gli articoli creati in questi ultimi giorni (solo quelli con la foto), e le loro card hanno la stellina «New». Senza un valore salvato: 90.</div>
+                <div class="form-hint">Giorni da 1 a 365 (senza un valore salvato: 30); card per serie da 1 a 500 (senza: 50). Un articolo è nuovo dal momento in cui si può mostrare (visibile e con la foto), non da quando è stato creato. «Prepara le date delle Novità» scrive quel momento su tutti gli articoli che non l'hanno ancora: va premuto una volta.</div>
                 <div id="impostazioni-generali-feedback" style="display:none;margin-top:0.6rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;"></div>
               </div>
             </div>
@@ -7131,7 +7146,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.324"></script>
+<script src="js/app.js?v=7.325"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7155,7 +7170,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.324'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.325'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
