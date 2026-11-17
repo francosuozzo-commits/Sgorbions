@@ -30107,6 +30107,10 @@ async function _aggiornaTimeoutDaConfigurazione() {
     const g = docs.find(d => d.id === 'generali');
     const v = parseInt(g?.timeoutCaricamentoMs);
     if (v >= TIMEOUT_CARICAMENTO_MIN_MS && v <= TIMEOUT_CARICAMENTO_MAX_MS) LOCAL.set('timeoutCaricamentoMs', v);
+    // 🆕 v7.324 - i giorni delle «Novità» (e del badge «New»): valgono subito, e si ridisegna se la linguetta è aperta
+    const gn = _giorniNovitaValido(g?.giorniNovita) || NOVITA_GIORNI_DEFAULT;
+    LOCAL.set('giorniNovita', gn);
+    if (gn !== _giorniNovita) { _giorniNovita = gn; _novitaSeAperta(); }
   } catch(e) { /* silenzio voluto: e' una rifinitura per il giro dopo, non un'operazione dell'utente */ }
 }
 
@@ -30588,6 +30592,25 @@ async function loadImpostazioniGeneraliFields() {
     if (n >= TIMEOUT_CARICAMENTO_MIN_MS && n <= TIMEOUT_CARICAMENTO_MAX_MS) v = n;
   } catch(e) {}
   input.value = Math.round(v / 1000);   // all'admin si mostrano SECONDI: i millisecondi qui non servono a nessuno
+  const gn = document.getElementById('impostazioni-novita-input');   // v7.324
+  if (gn) gn.value = _giorniNovita;
+}
+// 🆕 v7.324 (Franco: «n diventa un parametro da admin console, nel pannello "Impostazioni"») - i giorni delle «Novità»,
+//    che valgono anche per il badge «New». `fsSave` unisce (`merge`): il tetto del caricamento resta.
+async function saveGiorniNovita() {
+  const it = currentLang === 'it';
+  const n = _giorniNovitaValido(document.getElementById('impostazioni-novita-input')?.value);
+  if (!n) { toast(it ? 'Valore ammesso: da ' + NOVITA_GIORNI_MIN + ' a ' + NOVITA_GIORNI_MAX + ' giorni' : 'Allowed: ' + NOVITA_GIORNI_MIN + ' to ' + NOVITA_GIORNI_MAX + ' days', 'error'); return; }
+  try {
+    await fsSave('settings', { id: 'generali', giorniNovita: n });
+    _giorniNovita = n;
+    LOCAL.set('giorniNovita', n);
+    toast(it ? '✅ Salvato: le Novità sono gli articoli degli ultimi ' + n + ' giorni.' : '✅ Saved: ' + n + ' days.', 'success');
+    renderAll();
+  } catch (e) {
+    console.error('saveGiorniNovita', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
 }
 
 async function saveImpostazioniGenerali() {
@@ -32101,7 +32124,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.323';
+const JS_VERSION = 'v7.324';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -50061,7 +50084,7 @@ async function _seminaVersioniArticolo() {
 // casello: alla terza volta uno sa gia' dove vuole andare, e la domanda e' solo un clic in piu'.
 let _taglioInventario = 'serie';
 // 🔄 v6.966 - tre tagli: serie, prodotti (tipologie) e personaggi.
-const _TAGLI_INVENTARIO = ['serie', 'prodotti', 'personaggi'];
+const _TAGLI_INVENTARIO = ['serie', 'prodotti', 'personaggi', 'novita'];   // v7.324: + «Novità»
 try { const _t = localStorage.getItem('sgb_taglio'); if (_TAGLI_INVENTARIO.includes(_t)) _taglioInventario = _t; } catch (e) {}
 
 function impostaTaglioInventario(taglio) {
@@ -50470,7 +50493,11 @@ function _aggiornaBivioInventario() {
   });
   const sub = document.getElementById('catalog-sub');
   if (sub) {
-    if (_taglioInventario === 'personaggi') {
+    if (_taglioInventario === 'novita') {
+      // 🆕 v7.324 - nelle Novità la frase sta sopra le card (`_novitaHTML`): qui sotto il titolo niente
+      sub.removeAttribute('data-i18n');
+      sub.textContent = '';
+    } else if (_taglioInventario === 'personaggi') {
       // 🆕 v6.966 - la riga sotto il titolo per il taglio Personaggi. Senza `data-i18n`: la frase è
       //    scritta qui nelle due lingue, e l'attributo la farebbe tornare quella delle serie.
       sub.removeAttribute('data-i18n');
@@ -51316,6 +51343,109 @@ function _haFigurineSue(pid, arts, ix) {
   return arts.some(a => ['figurines', 'attaccare', 'carte', 'olografiche'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).some(x => suoi.includes(x)));
 }
 
+// ============================================================
+//  🆕 v7.324 — LE NOVITÀ: IL QUARTO TAGLIO DELL'INVENTARIO
+// ------------------------------------------------------------
+// Franco: «aggiungi un nuovo tab, nell'hub principale, dopo Serie, Tipologie di articoli, Personaggi; chiamato "Novità"; al
+// suo interno metti gli articoli creati negli ultimi N giorni … li organizzi per serie, mostrando gli articoli ordinati con
+// la stessa regola della griglia di visualizzazione; solo ordinati per serie; ad ogni fine serie si va a capo; la card è
+// proprio identica; prima di queste card metti una frase che dice "Ecco gli articoli Sgorbions aggiunti al sito negli
+// ultimi [N] giorni."».
+// 📌 Gli articoli sono quelli che si contano sul sito (`_articoliDaContareSito`: niente invisibili né serie nascoste o in
+//    arrivo), nuovi secondo `_articoloNuovo` (gli stessi N giorni del badge). Le serie nell'ordine dell'Inventario; dentro
+//    la serie le sezioni nell'ordine di `ARTICOLI` e, nella sezione, il comparatore della griglia (`_comparatoreGriglia`).
+// 📌 LA CARD È QUELLA DELLA GRIGLIA (`_cardArticoloHTML`), disegnata con la serie e la sezione dell'articolo impostate
+//    come se la griglia fosse aperta lì (le rimette com'erano subito dopo). Ogni card è larga quanto una colonna della
+//    sua sezione: la larghezza della griglia meno gli spazi, divisa per le colonne (`_colonneGriglia`).
+// ============================================================
+function _novitaSeAperta() {
+  try {
+    if (_taglioInventario === 'novita' && document.getElementById('page-catalog')?.classList.contains('active')) renderCatalog();
+  } catch (e) { console.error('_novitaSeAperta', e); }
+}
+// gli articoli nuovi, a gruppi per serie: [{ serie, pezzi: [{ f, sez }] }]
+function _novitaGruppi(ora) {
+  // 🔄 v7.324 (Franco: «gli articoli senza foto non vanno mostrati») - la foto è quella che mostra la card (`_fotoFigurina`)
+  const allFigs = getData('figurines', []), idx = _figIndex(allFigs);
+  const nuovi = _articoliDaContareSito().filter(f => _articoloNuovo(f, ora) && !!_fotoFigurina(f, allFigs));
+  if (!nuovi.length) return [];
+  const ordSez = Object.keys(ARTICOLI), posSez = s => { const i = ordSez.indexOf(s); return i < 0 ? ordSez.length : i; };
+  const serie = getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  return serie.map(s => {
+    const suoi = nuovi.filter(f => f.seriesId === s.id);
+    if (!suoi.length) return null;
+    const sezSerie = [...new Set(suoi.map(f => f.section || 'figurines'))].sort((a, b) => posSez(a) - posSez(b));
+    const pezzi = [];
+    sezSerie.forEach(sez => {
+      const qui = suoi.filter(f => (f.section || 'figurines') === sez);
+      const prima = currentSeriesId, primaSez = currentSection;
+      currentSeriesId = s.id; currentSection = sez;
+      try { qui.sort(_comparatoreGriglia(sez, qui, idx, allFigs)); } catch (e) { console.error('_novitaGruppi', e); }
+      finally { currentSeriesId = prima; currentSection = primaSez; }
+      qui.forEach(f => pezzi.push({ f, sez }));
+    });
+    return { serie: s, pezzi };
+  }).filter(Boolean);
+}
+function _novitaHTML(larghezza) {
+  const it = currentLang === 'it', n = _giorniNovita;
+  const tel = _isMobileViewport();
+  const gruppi = _novitaGruppi();
+  // 🔄 v7.324 (Franco: «anche sotto NOVITA' voglio una barra gialla con la scritta sopra; prediligo sempre la simmetria»;
+  //    «come titolo metti la frase "gli articoli Sgorbions aggiunti al sito negli ultimi N giorni.", tutto maiuscolo») - la
+  //    barra degli altri tagli (`_rigaTitoloHub`), al posto della frase
+  const frase = '<div class="novita-frase" style="margin-bottom:1rem;">'
+    + _rigaTitoloHub(it ? 'GLI ARTICOLI SGORBIONS AGGIUNTI AL SITO NEGLI ULTIMI ' + n + ' GIORNI.' : 'THE SGORBIONS ITEMS ADDED TO THE SITE IN THE LAST ' + n + ' DAYS.') + '</div>';
+  if (!gruppi.length) return frase + '<div class="empty-state"><p class="empty-title">' + (it ? 'Nessun articolo nuovo in questi giorni.' : 'No new items in these days.') + '</p></div>';
+  const allFigs = getData('figurines', []), _idx = _figIndex(allFigs);
+  const lettore = _lettoreCommentoAlbum(allFigs);
+  const C = {
+    owned: getOwned(), _allFigs: allFigs, _idx,
+    _commentoAlbumCard: f => ((f.section === 'attaccare' && _COMMENTO_CARD_CFG.fpa) || ((f.section || 'figurines') === 'figurines' && _COMMENTO_CARD_CFG.fcr)) ? lettore(f) : '',
+    _retriFam: _retriDelleFamiglie(allFigs, _idx),
+    _serieById: new Map(getData('series', []).map(x => [x.id, x]))
+  };
+  // la griglia degli articoli: 1800px al massimo (96% dello schermo) dal PC, la pagina dal telefono; gli spazi dell'index
+  const W = tel ? larghezza : Math.min(1800, Math.round(window.innerWidth * 0.96));
+  const gap = tel ? 6.4 : 12;
+  const prima = { s: currentSeriesId, sez: currentSection, tipo: _tipoProdottoCorrente };
+  const righe = [];
+  try {
+    _tipoProdottoCorrente = null;
+    gruppi.forEach(g => {
+      currentSeriesId = g.serie.id;
+      const celle = g.pezzi.map(({ f, sez }) => {
+        currentSection = sez;
+        const cols = Math.max(1, _colonneGriglia(sez));
+        const w = Math.floor((W - (cols - 1) * gap) / cols);
+        const flessibile = sez === 'figurines' && _retroViewMode === 'destra-piena' && !_soloFronteMobile();
+        return '<div class="nov-cella" style="display:flex;' + (flessibile ? 'flex:0 0 auto;' : 'flex:0 0 ' + w + 'px;width:' + w + 'px;') + '">'
+          + _cardArticoloHTML(f, C) + '</div>';
+      });
+      righe.push('<div class="novita-serie" data-serie="' + esc(g.serie.id) + '">'
+        + '<div class="novita-serie-nome" style="font-family:var(--font-ui);font-weight:700;color:var(--nome-entita, var(--accent));margin:1rem 0 0.5rem;">' + esc(_nomeSerie(g.serie)) + '</div>'
+        + '<div class="griglia-novita" style="display:flex;flex-wrap:wrap;align-items:stretch;gap:' + gap + 'px;">' + celle.join('') + '</div></div>');
+    });
+  } finally {
+    currentSeriesId = prima.s; currentSection = prima.sez; _tipoProdottoCorrente = prima.tipo;
+  }
+  const larga = tel ? '' : 'width:min(1800px, 96vw);max-width:1800px;margin-left:50%;transform:translateX(-50%);';
+  return frase + '<div id="novita-elenco" style="' + larga + '">' + righe.join('') + '</div>';
+}
+function renderCatalogNovita(grid) {
+  grid.style.display = 'block';
+  grid.innerHTML = _novitaHTML(grid.clientWidth || Math.round(window.innerWidth * 0.92));
+  const el = document.getElementById('novita-elenco');
+  if (el) {
+    try { _ordinaRigheCard(el); } catch (e) { console.error('_ordinaRigheCard (novità)', e); }
+    try { _adattaCorniciErrore(el); } catch (e) { console.error('_adattaCorniciErrore (novità)', e); }
+    // il cuore di «Ciò che cerco» non ha un onclick: lo ascolta il contenitore, come in `renderItems`
+    el.addEventListener('click', e => {
+      const btn = e.target.closest('.wishlist-heart-btn');
+      if (btn) { e.stopPropagation(); toggleWishlist(btn.dataset.wishlistId); _novitaSeAperta(); }
+    });
+  }
+}
 function renderCatalogPersonaggi(grid) {
   const it = currentLang === 'it';
   // 📌 Sul telefono due colonne, come l'hub delle tipologie (v6.080): a tre la card si stringe e la
@@ -53674,6 +53804,7 @@ function renderCatalog() {
   // 🆕 v7.014 - il pulsante del percorso guidato, solo per chi ha fatto l'accesso
   { const _wzp = document.getElementById('wz-pulsante-inv'); if (_wzp) _wzp.style.display = currentUser ? '' : 'none'; }
   if (_taglioInventario === 'personaggi') { if (grid) renderCatalogPersonaggi(grid); return; }   // 🆕 v6.966
+  if (_taglioInventario === 'novita') { if (grid) renderCatalogNovita(grid); return; }   // 🆕 v7.324
   // v6.080 - tornando al taglio per SERIE la griglia riprende le sue colonne: e' lo stesso
   // elemento, e lo stile inline messo dal taglio Prodotti gli resterebbe addosso.
   if (grid) grid.style.gridTemplateColumns = '';
@@ -55371,12 +55502,18 @@ function _albumHaTestiAnnuncio(f) {
 //    stella a più punte, con scritto "New"; colore giallo; che lo vedono tutti; al trentesimo giorno sparisce») - la data è
 //    quella ricavata dall'id (`_dataCreazione`); chi non ce l'ha (id vecchi di Firestore) non è nuovo. Accanto al nome
 //    della card (Franco: «mettilo affianco al nome»). La stella è un poligono a 12 punte (`clip-path`).
-const _NUOVO_GIORNI = 30;
+// 🔄 v7.324 (Franco: «n diventa un parametro da admin console, nel pannello "Impostazioni"»; risposta 2: vale anche per il
+//    badge) - i giorni stanno in `settings/generali.giorniNovita`; si leggono all'avvio (`_aggiornaTimeoutDaConfigurazione`)
+//    e si tengono nel browser (`LOCAL`) per il giro dopo, come il tetto del caricamento. Senza valore: 30.
+// 🔄 v7.324 (Franco: «30 deve diventare 90») - il valore di partenza
+const NOVITA_GIORNI_DEFAULT = 90, NOVITA_GIORNI_MIN = 1, NOVITA_GIORNI_MAX = 365;
+const _giorniNovitaValido = v => { const n = parseInt(v, 10); return n >= NOVITA_GIORNI_MIN && n <= NOVITA_GIORNI_MAX ? n : null; };
+let _giorniNovita = (() => { try { return _giorniNovitaValido(LOCAL.get('giorniNovita')) || NOVITA_GIORNI_DEFAULT; } catch (e) { return NOVITA_GIORNI_DEFAULT; } })();
 const _STELLA_12 = 'polygon(' + Array.from({ length: 24 }, (_, i) => { const r = i % 2 ? 36 : 50, a = Math.PI * i / 12 - Math.PI / 2;
   return (50 + r * Math.cos(a)).toFixed(1) + '% ' + (50 + r * Math.sin(a)).toFixed(1) + '%'; }).join(',') + ')';
-function _articoloNuovo(f, ora) {
+function _articoloNuovo(f, ora, giorni) {
   const d = _dataCreazione(f);
-  return !!d && ((ora ?? Date.now()) - d.getTime()) < _NUOVO_GIORNI * 86400000;
+  return !!d && ((ora ?? Date.now()) - d.getTime()) < (giorni ?? _giorniNovita) * 86400000;
 }
 function _badgeNuovo(f) {
   if (!_articoloNuovo(f)) return '';
@@ -61941,6 +62078,7 @@ async function toggleOwned(figId) {
   if (await saveOwnedToFirebase(currentUser.id, owned)) _registraSpunta('lista', figId, owned.includes(figId));
   renderItems(); renderProfile();
   refreshSeriesMeta();   // i contatori in alto seguono la lista (v5.709)
+  _novitaSeAperta();   // v7.324 - la spunta presa nella linguetta «Novità» si vede lì
 }
 
 async function saveOwnedToFirebase(userId, owned) {
@@ -65518,321 +65656,12 @@ function _comparatoreGriglia(sez, elenco, _idx, _allFigs) {
   };
 }
 
-function renderItems() {
-  const grid = document.getElementById('items-grid');
-  if (!currentSeriesId || !grid || !currentSection) return;
-  // 🔄 v6.718 - prima di tutto il resto si controlla che la sottoserie in cui siamo esista
-  //    ancora: decide quali articoli sono in gioco. Fino a ieri lo faceva la barra dei tab
-  //    mentre si disegnava, ed era l'unico pezzo di quel blocco che non era disegno.
-  try { _verificaSottoserieAttiva(); } catch (e) { console.error('_verificaSottoserieAttiva', e); }
-  const searchQ = _perRicerca((document.getElementById('items-search')?.value || '').trim()); // v6.093 — senza accenti
-  // 🔴 v6.355 - QUI C'ERA `if (searchQ) currentItemPage = 1;`, E BLOCCAVA LA PAGINAZIONE.
-  // `changeItemPage(2)` scrive `currentItemPage = 2` e poi chiama QUESTA funzione, che con la
-  // casella di ricerca piena rimetteva 1 due righe dopo. La pagina 2 era irraggiungibile ogni volta
-  // che c'era del testo nella ricerca — in tutte le sezioni, non solo nei Retro.
-  // 📌 L'intenzione era giusta e il posto no: «quando l'utente CAMBIA la ricerca, torna a pagina 1»
-  // e' una cosa che deve succedere UNA VOLTA, quando la ricerca cambia, e stava in una funzione che
-  // gira a ogni ridisegno. Adesso la decide `ricercaItemsCambiata()`, che e' l'unico punto da cui
-  // la ricerca cambia. Stessa forma degli altri filtri, che il loro `currentItemPage = 1` ce
-  // l'hanno nel proprio gestore da sempre — e infatti la paginazione con quelli funzionava.
-
-  // Render filtri tipo (sezione Figurine o Retro)
-  renderItemTypeFilters();
-
-  // v6.329 - il riquadro delle categorie non ha piu' una chiamata sua: lo disegna
-  // `renderRaggrSummaries` insieme agli altri quattro, al posto che gli assegna `_ORDINE_RIQUADRI`.
-
-  // Specchietti della TESTATA (Change e Errori di stampa, affiancati in un nodo solo) — v6.079
-  try { renderSpecchiettiTop(); } catch(e) { console.error('renderSpecchiettiTop', e); }
-
-  // I raggruppamenti per tipo sotto i risultati — v5.809 (Change), v6.079 (Errori di stampa),
-  // v6.266 (Omaggio, e da qui in poi chiunque abbia un `campoTipo`)
-  try { renderRaggrSummaries(); } catch(e) { console.error('renderRaggrSummaries', e); }
-
-  // v6.315 - il bottone "Azzera filtri" si accende solo se c'e' qualcosa da azzerare. Sta QUI
-  // perche' ogni comando che tocca un filtro finisce per chiamare `renderItems()`: agganciarlo al
-  // ridisegno e' l'unico modo di non dover ricordare il bottone in venti punti diversi.
-  try { _aggiornaBottoneAzzera(); } catch(e) { console.error('_aggiornaBottoneAzzera', e); }
-
-  // Selettore "Vista retro" — visibile solo nella sezione Figurine, per tutti.
-  // v6.020 (Franco) — e SOLO se i retro si vedono davvero. Quando su telefono "Figurine set base"
-  // li nasconde, le cinque voci non producono nessuna immagine diversa: il selettore c'era, si
-  // muoveva e non faceva niente. Peggio, "Fronte e retro sempre grandi" era letto anche fuori dal
-  // ramo delle immagini e cambiava comunque la disposizione della griglia (vedi useFlexForWideMode
-  // e isWideFlexMode, corretti anch'essi). Un comando inerte e uno con un effetto che non c'entra.
-  const retroViewSelector = document.getElementById('retro-view-selector');
-  if (retroViewSelector) {
-    retroViewSelector.style.display = (currentSection === 'figurines' && !_soloFronteMobile()) ? 'flex' : 'none';
-    const sel = document.getElementById('retro-view-mode-select');
-    if (sel && sel.value !== _retroViewMode) sel.value = _retroViewMode;
-  }
-
-  // v5.828 — Toggle "Mostra nomi" / "Nascondi nomi", nello stile dei filtri (.toggle-btn-blue).
-  // Compare SOLO sotto la soglia mobile, SOLO nella sezione Figurine e SOLO se la serie ha i
-  // numeri: in una serie marcata "Non ha numeri" nascondere il nome lascerebbe la card muta.
-  // Sul desktop resta display:none, quindi la barra dei controlli e' identica a prima.
-  // v6.020 — nello stesso contenitore vivono ora DUE interruttori, e ognuno ha la sua condizione:
-  // "Mostra nomi" dipende dal flag "Non ha numeri" della serie, "Mostra retro" dal filtro tipo.
-  // Il contenitore si accende se ne serve almeno uno: legarlo alla condizione del primo avrebbe
-  // fatto sparire il secondo nelle serie senza numeri, dove invece serve esattamente come altrove.
-  const figLabelSelector = document.getElementById('fig-label-selector');
-  if (figLabelSelector) {
-    const inFigurineMobile = (currentSection === 'figurines') && _isMobileViewport();
-    const showNomi  = inFigurineMobile && _serieHaNumeri();
-    const showRetro = _mostraRetroToggleVisibile();
-    figLabelSelector.style.display = (showNomi || showRetro) ? 'flex' : 'none';
-    const gruppo = (html, staccato) =>
-      `<span style="display:inline-flex;align-items:center;gap:0.4rem;${staccato ? 'margin-left:0.7rem;' : ''}">${html}</span>`;
-    let html = '';
-    if (showNomi) {
-      const on = (_figLabelMode === 'full');
-      const lab = on
-        ? (currentLang === 'it' ? 'Nascondi nomi' : 'Hide names')
-        : (currentLang === 'it' ? 'Mostra nomi' : 'Show names');
-      html += gruppo(
-        `<button class="toggle-btn-blue ${on ? 'on' : ''}" onclick="toggleFigLabelMode()" title="${lab}"></button>` +
-        `<span style="font-size:0.82rem;color:var(--text);">${lab}</span>`, false);
-    }
-    if (showRetro) {
-      // L'etichetta segue lo stato, come quella accanto: spento "Mostra retro", acceso
-      // "Nascondi retro". Due comandi vicini che si comportano allo stesso modo.
-      const onR = _mostraRetroSoloBase;
-      const labR = onR
-        ? (currentLang === 'it' ? 'Nascondi retro' : 'Hide backs')
-        : (currentLang === 'it' ? 'Mostra retro' : 'Show backs');
-      html += gruppo(
-        `<button class="toggle-btn-blue ${onR ? 'on' : ''}" onclick="toggleMostraRetroSoloBase()" title="${labR}"></button>` +
-        `<span style="font-size:0.82rem;color:var(--text);">${labR}</span>`, showNomi);
-    }
-    figLabelSelector.innerHTML = html;
-  }
-
-  // v5.978 — indice id -> oggetto costruito UNA VOLTA, fuori dal comparatore. Dentro, ogni
-  // confronto faceva allFigsForSort.find(...) su ~3300 oggetti fino a tre volte: 163 ms per
-  // ordinare le 800 figurine della Serie 3, ad ogni cambio pagina. Ora 1,4 ms, ordine identico.
-  const _allFigs = getData('figurines', []);
-  const _idx = _figIndex(_allFigs);
-  const _daOrdinare = getCurrentlyFilteredItems();
-  // v6.088 - le chiavi si calcolano UNA VOLTA, non ad ogni confronto. Il comparatore viene
-  // chiamato n·log n volte: cercare li' dentro il capogruppo di un figlio avrebbe voluto dire una
-  // scansione dell'elenco per confronto, cioe' il difetto che la v6.072 aveva appena tolto da
-  // questo stesso sort ("ora 1,4 ms, ordine identico", due righe piu' su).
-  // 🔄 v6.965 - le chiavi le calcola adesso `_comparatoreGriglia`, una volta per chiamata.
-  // v6.155 - dentro il box di un tipo comanda l'ordinamento scritto sul tipo, se c'e'. Sta in cima
-  // perche' e' una scelta esplicita di chi ha creato il box: le regole per sezione sono il
-  // comportamento predefinito, questa e' una decisione presa.
-  const _cmpTipo = _tipoProdottoCorrente ? _comparatoreTipo(_tipoProdottoCorrente) : null;
-  // 🆕 v6.964 - dove le sottoserie stanno nella griglia, prima comanda la SOTTOSERIE (nell'ordine
-  //    in cui la serie le dichiara), poi tutto il resto come sempre. Senza, i titoli di
-  //    `_incollaGruppi` comparirebbero ogni volta che la sottoserie cambia, cioè a caso.
-  const _ssOrd = _gruppiSottoserieInGriglia();
-  const _ssPos = f => { const p = _ssOrd.indexOf(String(f.subseries || '').trim()); return p < 0 ? _ssOrd.length : p; };
-  // 🔄 v6.965 - il comparatore sta in `_comparatoreGriglia`, e lo usa anche la ricerca globale.
-  const _cmpG = _comparatoreGriglia(currentSection, _daOrdinare, _idx, _allFigs);
-  const allItems = _daOrdinare.sort((a,b) => {
-    if (_ssOrd.length && _ssPos(a) !== _ssPos(b)) return _ssPos(a) - _ssPos(b);
-    if (_cmpTipo) return _cmpTipo(a, b);
-    return _cmpG(a, b);
-  });
-  updateItemsCountDisplay(allItems);
-  const owned = getOwned();
-  // Barra di avanzamento RIMOSSA (v5.689, richiesta di Franco: "non mi e' mai
-  // piaciuta"). Con lei sono spariti il titolo "La mia lista", il contenitore
-  // detail-progress-toprow e l'etichetta: la riga di colonne in alto dice la stessa
-  // cosa meglio, ripartita per categoria.
-  // ATTENZIONE — due delle scritture che stavano qui NON avevano guardia:
-  //     pw.style.display = ''
-  //     document.getElementById('detail-progress-fill').style.width = ...
-  // Tolti gli elementi, avrebbero fatto ESPLODERE l'apertura di OGNI serie. Non e'
-  // un dettaglio: e' il motivo per cui questo blocco andava riscritto e non
-  // ritagliato via a pezzi.
-  const bulkBtns = document.getElementById('bulk-owned-btns');
-  if (bulkBtns) bulkBtns.style.display = (currentUser && (currentSection === 'figurines' || currentSection === 'retros') && allItems.length) ? 'flex' : 'none';
-
-  // Il messaggio di completamento resta, e continua a NON seguire i filtri:
-  // si e' completi rispetto a tutta la SEZIONE, non a cio' che si e' appena
-  // ritagliato con un filtro. Bastava altrimenti filtrare per variazioni,
-  // possedere quelle tre, e vedersi annunciare "Hai tutte le figurine!" — un
-  // complimento falso, corretto in v5.671.
-  const itemsSerie = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
-  const completeMsg = document.getElementById('items-complete-msg');
-  if (completeMsg) {
-    const ownedCount = itemsSerie.filter(f => owned.includes(f.id)).length;
-    const isComplete = currentUser && currentSection === 'figurines' && itemsSerie.length > 0 && ownedCount === itemsSerie.length;
-    completeMsg.style.display = isComplete ? '' : 'none';
-    if (isComplete) completeMsg.textContent = currentLang === 'it'
-      ? '\u{1F389} Hai tutte le figurine in lista, per questa serie !'
-      : '\u{1F389} You have all the stickers in your list, for this series !';
-  }
-
-  if (!allItems.length) {
-    grid.innerHTML = `<div class="empty-state"><p class="empty-title" style="white-space:nowrap;">${currentLang === 'it' ? 'Nessun articolo ancora !' : 'Nothing here yet !'}</p></div>`;
-    document.getElementById('items-pagination').innerHTML = '';
-    return;
-  }
-  // v5.978 — La geometria della griglia si imposta QUI, PRIMA di calcolare le pagine: e' da
-  // questi stili che _gridGeometry() legge quante colonne ci sono e quanto e' larga la griglia.
-  // Se il blocco restasse dopo (com'era fino alla v5.977, quando le colonne erano un numero
-  // assunto e nessuno le leggeva), al primo render e ad ogni cambio di modalita' la misura
-  // descriverebbe il render PRECEDENTE.
-
-  // v6.162 - si toglie sempre PRIMA: il numero configurato si scrive con `!important` (per battere
-  // la regola del CSS che sotto gli 860px scrive le colonne con `!important`), e un `!important`
-  // lasciato acceso da un giro precedente vincerebbe anche dove non deve piu'.
-  // 🔄 v6.452 — DICEVA «forza quattro colonne»: falso dalla v5.854, che l'ha cambiata in
-  // `repeat(auto-fill, minmax(100px,1fr))`. Il numero quattro qui non c'entra piu' niente; quello
-  // che conta, e che resta vero, e' che quella regola porta un `!important`.
-  grid.style.removeProperty('grid-template-columns');
-  if (currentSection === 'retros' || currentSection === 'figurines') {
-    // v6.020 — !_soloFronteMobile(): senza retro in griglia nessuna card e' larga, quindi il
-    // passaggio a flex non serviva a niente e cambiava comunque la disposizione delle card.
-    const useFlexForWideMode = currentSection === 'figurines' && _retroViewMode === 'destra-piena' && !_soloFronteMobile();
-    // 🔴 v6.418 - QUI LA v6.416 ACCENDEVA `griglia-allineata`, la classe che serviva al `subgrid`.
-    // Il subgrid non ha funzionato (Franco l'ha visto nell'anteprima) ed e' stato tolto dall'index:
-    // la classe se ne va con lui. Una classe che nessun foglio di stile guarda e' un appiglio che
-    // sembra fare qualcosa, e il giorno che qualcuno ci scrive una regola sopra non sa piu' se
-    // arrivava accesa per caso o per decisione.
-    if (useFlexForWideMode) {
-      grid.style.display = 'flex';
-      grid.style.flexWrap = 'wrap';
-      grid.style.gridTemplateColumns = '';
-    } else {
-      grid.style.display = '';
-      grid.style.flexWrap = '';
-      // v6.163 - qui c'era `currentSection === 'retros' ? 'repeat(5, 1fr)' : ''`. Quel 5 ora e' il
-      // valore di partenza del campo dei Retro, quindi non serve piu' cablato: lo scrive
-      // `_colonneGriglia` insieme a tutti gli altri, poche righe piu' sotto.
-      grid.style.gridTemplateColumns = '';
-    }
-  } else {
-    grid.style.display = '';
-    grid.style.flexWrap = '';
-    grid.style.gridTemplateColumns = '';
-  }
-  // 🆕 v6.445 (Franco: *"come mai per le figurine con velina la dimensione del contenitore della
-  // griglia e' piu' largo che per le figurine da attaccare? non e' identico per tutte le tipologie
-  // di articolo?"* → *"puoi farli tutti larghi come quello di figurine con velina?"*)
-  // 🔴 LA LARGHEZZA E' UNA SOLA, E VALE PER TUTTE E SETTE LE SEZIONI.
-  // Fino a qui queste cinque righe stavano DENTRO il ramo `retros || figurines`, e l'altro ramo le
-  // azzerava. Cioe' due sezioni su sette uscivano dalla larghezza della pagina e cinque no.
-  // 📌 IL NUMERO CHE LO RENDE UN DIFETTO E NON UNA SCELTA: «Figurine da attaccare» e «Carte»
-  // dichiarano `{d:7, m:4}` in `ARTICOLI`, IDENTICO a «Figurine con velina». Stesso numero di
-  // colonne impostato, ma in 1036px invece che in 1800 — cioe' card da ~138px invece di ~247px.
-  // Un'impostazione che dice 7 e a schermo vale la meta' e' un'impostazione che mente.
-  // 📌 E i 247px non sono un caso: sono esattamente 7 colonne in 1800px col gap da 12px, ed e' da
-  // li' che viene la larghezza fissa `flex:0 0 247px` del modo «Fronte e retro sempre grandi».
-  // ⚠️ NON e' che le altre cinque «avessero deciso» di stare strette: la centratura a 1800px c'e'
-  // dalla v5.667, quando le sezioni erano queste due. «Figurine da attaccare» e' nata nella v6.195
-  // e in quell'`if` non e' mai entrata. Nel CHANGELOG non c'e' una riga che dica di averlo deciso.
-  // 📌 SOTTO GLI 860px NON CAMBIA NIENTE: `style.css` neutralizza `width`, `margin-left` e
-  // `transform` di `#items-grid` con `!important`. Questa release si vede solo sul computer.
-  // ⚠️ Album, Bustine e Altri oggetti dichiarano 4 colonne: in 1800px diventano card da ~441px
-  // invece di ~250. Franco ha scelto la larghezza unica sapendolo; le loro colonne vanno riviste
-  // guardando, non calcolando.
-  grid.style.width = 'min(1800px, 96vw)';
-  grid.style.maxWidth = '1800px';
-  grid.style.marginLeft = '50%';
-  grid.style.marginRight = '0';
-  grid.style.transform = 'translateX(-50%)';
-  // v6.162 - e alla fine, se c'e' un numero configurato, comanda lui. Non in modalita' FLEX
-  // ('destra-piena'): li' le colonne non esistono, le card si dispongono da se' secondo la
-  // larghezza, e scrivere `grid-template-columns` non farebbe niente — meglio non scriverlo che
-  // lasciare uno stile che non ha effetto e fa credere il contrario a chi legge il DOM.
-  // v6.163 - il numero c'e' sempre (default o configurato), tranne in modalita' FLEX dove le
-  // colonne non esistono.
-  if (grid.style.display !== 'flex') {
-    grid.style.setProperty('grid-template-columns', 'repeat(' + _colonneGriglia(currentSection) + ', 1fr)', 'important');
-  }
-
-  // Pagination — i confini NON sono piu' multipli del tetto: li decide buildItemPages(), che non
-  // spezza mai una famiglia fra due pagine (v5.977). Da qui in giu' si legge SEMPRE da _itemPages,
-  // mai piu' da moltiplicazioni per getItemsPerPage(): erano quelle a dare per scontato che tutte
-  // le pagine fossero lunghe uguale.
-  // 🆕 v6.767 - la geometria si legge QUI, una volta per render, e la usano tutti e due:
-  //    chi decide i confini delle pagine e chi scrive i riempimenti in fondo alle righe.
-  //    ⚠️ Dopo il blocco degli stili qui sopra, mai prima: e' da quegli stili che si leggono le
-  //    colonne e la larghezza, e letta prima descriverebbe il render PRECEDENTE (v5.978).
-  const _geoRender = _gridGeometry();
-  _itemPages = buildItemPages(allItems, _geoRender);
-  const totalPages = _itemPages.length;
-  if (currentItemPage > totalPages) currentItemPage = totalPages;
-  if (currentItemPage < 1) currentItemPage = 1;
-  const { start, end } = _itemPages[currentItemPage - 1];
-  const items = allItems.slice(start, end);
-  // Elenco completo ordinato (tutte le pagine), usato per navigare avanti/indietro nel dettaglio
-  _gridOrderedIds = allItems.map(f => f.id);
-  // Pagination controls (top)
-  const paginationTop = document.getElementById('items-pagination-top');
-  const totalPagesTop = totalPages;
-  function paginationHTML(cur, tot, total) {
-    if (tot <= 1) return '';
-    const _ser = getData('series', []).find(s => s.id === currentSeriesId);
-    // 🔄 v6.818 - calcolato. ⚠️ E' l'unico dei tre punti dove il numero non finisce in una cella:
-  //    da qui parte il conteggio della coda («figurine 161..200 di 256»), e se manca il ramo
-  //    `else` qui sotto scrive «256 figurine» senza intervallo. Un dato assente qui non lascia un
-  //    buco: accorcia una frase.
-  const firstNum = currentSection === 'retros' ? 1 : (_intervalloNumeriSerie(_ser)?.first ?? null);
-    const sectionLabelLower = (getSectionLabel(currentSection) || (currentLang === 'it' ? 'articoli' : 'items')).toLowerCase();
-    // v5.893 — la coda dei risultati passa da "${label} ${from}..${to} | ${total} ${label}"
-    // a "${label} ${from}..${to} di ${total}": via la pipe e la ripetizione della parola.
-    // Senza range (sezioni senza numeri) resta "${total} ${label}".
-    // 🔄 v6.965 (Franco: «Pagina 1 di 3 | figurine con retro 417..451 di 82» diventa «Pagina 1 di 3
-    //    | N figurine con retro di 82 (da 417 a 451)», dove N è il numero di card della pagina; «in
-    //    tutte le griglie») — PRIMA QUANTE SONO, POI DA DOVE A DOVE. Il numero di card viene dai
-    //    confini VERI della pagina (v5.977), che sono di lunghezza variabile: non è il tetto.
-    // 📌 Dove i numeri non ci sono (sezioni senza numeri) resta la prima metà, senza parentesi.
-    // 📌 Il singolare a una card sola: «1 figurina con retro», non «1 figurine con retro».
-    const b = _itemPages[cur - 1] || { start: 0, end: total };
-    const nPagina = Math.max(0, Math.min(b.end, total) - b.start);
-    const _etiN = (nPagina === 1 ? (getSectionLabelSingular(currentSection) || sectionLabelLower) : sectionLabelLower).toLowerCase();
-    let tailStr = currentLang === 'it'
-      ? ` &nbsp;|&nbsp; ${nPagina} ${_etiN} di ${total}`
-      : ` &nbsp;|&nbsp; ${nPagina} ${_etiN} of ${total}`;
-    if (firstNum != null) {
-      // v5.977 — l'intervallo si legge dai confini VERI della pagina. Con le pagine di lunghezza
-      // variabile, "firstNum + (cur-1) * tetto" annuncerebbe numeri che nella pagina non ci sono.
-      const from = firstNum + b.start;
-      const to = Math.min(firstNum + b.end - 1, firstNum + total - 1);
-      tailStr += currentLang === 'it' ? ` (da ${from} a ${to})` : ` (from ${from} to ${to})`;
-    }
-    const label = currentLang === 'it'
-      ? `Pagina ${cur} di ${tot}${tailStr}`
-      : `Page ${cur} of ${tot}${tailStr}`;
-    return `<div class="pag-row" style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
-      ${cur > 1 ? `<button onclick="changeItemPage(1)" class="btn-secondary" style="padding:0.4rem 1rem;">⏮ ${currentLang === 'it' ? 'Prima' : 'First'}</button>` : ''}
-      <button onclick="changeItemPage(${cur - 1})" ${cur === 1 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">◀ ${currentLang === 'it' ? 'Precedente' : 'Previous'}</button>
-      <span class="pag-label" style="font-family:var(--font-ui);color:var(--text);font-size:0.9rem;">${label}</span>
-      <button onclick="changeItemPage(${cur + 1})" ${cur === tot ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Successiva' : 'Next'} ▶</button>
-      ${cur < tot ? `<button onclick="changeItemPage(${tot})" class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Ultima' : 'Last'} ⏭</button>` : ''}
-    </div>`;
-  }
-  if (paginationTop) paginationTop.innerHTML = paginationHTML(currentItemPage, totalPagesTop, allItems.length);
-
-
-  // v5.758 — Retro nella card: la prima riga antepone "Categoria - " al nome, TRANNE quando il
-  // nome comincia già con la categoria (decisione per singolo retro; ex flag di serie
-  // retroNameHasCategory, rimosso). Stessa regola del Nome completo (_retroNameStartsWithCategory).
-
-  // 🆕 v6.362 - le serie in una MAPPA, non una lookup per card. `_mostraTaglia` vuole la serie
-  // dell'oggetto, e in griglia gli oggetti possono venire da serie diverse (la vista per PRODOTTO,
-  // v6.073): prendere `currentSeriesId` avrebbe dato la risposta giusta per caso nella vista per
-  // serie e sbagliata nell'altra. Una mappa costruita una volta costa quanto una lookup sola.
-  const _serieById = new Map(getData('series', []).map(x => [x.id, x]));
-  // 🗑️ v6.837 (Franco: «quel campo preesistente togliamolo pure») - qui c'era `_famigliaPerBase`: la
-  //    famiglia della v6.366 viveva sulla figurina per album e la card della con retro la prendeva
-  //    in prestito. Adesso ognuna delle due ha la sua, scelta fra le Famiglie della serie.
-  // 🆕 v7.178 (Franco: «mostrare il campo "Commento album" quando si fa mouse over sulle card di una fpa / fcr») - il
-  //    commento sta sulla fpa; la fcr lo prende dalla fpa collegata (`baseFigurineId`). Mappa fatta una volta.
-  // v7.178 - acceso o spento per tipologia dalla console (Griglie → Commento album sulle card)
-  const _lettoreCommento = _lettoreCommentoAlbum(_allFigs);
-  // v7.214 - i retro di ogni famiglia, una volta per griglia, solo dove ci sono le figurine con retro
-  const _retriFam = items.some(f => (f.section || 'figurines') === 'figurines') ? _retriDelleFamiglie(_allFigs, _idx) : null;
-  const _commentoAlbumCard = f => ((f.section === 'attaccare' && _COMMENTO_CARD_CFG.fpa)
-    || ((f.section || 'figurines') === 'figurines' && _COMMENTO_CARD_CFG.fcr)) ? _lettoreCommento(f) : '';
-  // 🔄 v6.767 - QUI C'ERA `grid.innerHTML = items.map(...).join('')`. Adesso l'HTML delle card
-  //    si costruisce in un elenco e lo incolla `_incollaGruppi`, che ci infila le celle vuote dove
-  //    un gruppo non entrerebbe nella riga. Il disegno della singola card non cambia di una riga.
-  const _cardsHTML = items.map(f => {
+// 🆕 v7.324 (Franco: «la card è proprio identica» - la linguetta «Novità» dell'Inventario) - LA CARD DI UN ARTICOLO, staccata
+//    da `renderItems` senza cambiarne una riga: era il corpo di `items.map(f => { … })`. Quello che prendeva dalla griglia
+//    sta in `C` (la *Mia lista*, l'archivio e il suo indice, il commento album, i retro delle famiglie, le serie). La
+//    sezione resta `currentSection`: chi disegna card di un'altra sezione la imposta prima (vedi `_novitaHTML`).
+function _cardArticoloHTML(f, C) {
+  const { owned, _allFigs, _idx, _commentoAlbumCard, _retriFam, _serieById } = C;
     // 🔴 v6.503 - QUESTE DUE STANNO IN CIMA, E NON E' UNA QUESTIONE DI ORDINE ESTETICO.
     // Sono `const`, quindi vivono in una zona morta finche' la loro riga non viene
     // eseguita: chiamarle prima non da' `undefined`, da' ReferenceError e ferma tutto.
@@ -66588,7 +66417,325 @@ function renderItems() {
         </div>
       </div>
     </div>`;
+}
+
+function renderItems() {
+  const grid = document.getElementById('items-grid');
+  if (!currentSeriesId || !grid || !currentSection) return;
+  // 🔄 v6.718 - prima di tutto il resto si controlla che la sottoserie in cui siamo esista
+  //    ancora: decide quali articoli sono in gioco. Fino a ieri lo faceva la barra dei tab
+  //    mentre si disegnava, ed era l'unico pezzo di quel blocco che non era disegno.
+  try { _verificaSottoserieAttiva(); } catch (e) { console.error('_verificaSottoserieAttiva', e); }
+  const searchQ = _perRicerca((document.getElementById('items-search')?.value || '').trim()); // v6.093 — senza accenti
+  // 🔴 v6.355 - QUI C'ERA `if (searchQ) currentItemPage = 1;`, E BLOCCAVA LA PAGINAZIONE.
+  // `changeItemPage(2)` scrive `currentItemPage = 2` e poi chiama QUESTA funzione, che con la
+  // casella di ricerca piena rimetteva 1 due righe dopo. La pagina 2 era irraggiungibile ogni volta
+  // che c'era del testo nella ricerca — in tutte le sezioni, non solo nei Retro.
+  // 📌 L'intenzione era giusta e il posto no: «quando l'utente CAMBIA la ricerca, torna a pagina 1»
+  // e' una cosa che deve succedere UNA VOLTA, quando la ricerca cambia, e stava in una funzione che
+  // gira a ogni ridisegno. Adesso la decide `ricercaItemsCambiata()`, che e' l'unico punto da cui
+  // la ricerca cambia. Stessa forma degli altri filtri, che il loro `currentItemPage = 1` ce
+  // l'hanno nel proprio gestore da sempre — e infatti la paginazione con quelli funzionava.
+
+  // Render filtri tipo (sezione Figurine o Retro)
+  renderItemTypeFilters();
+
+  // v6.329 - il riquadro delle categorie non ha piu' una chiamata sua: lo disegna
+  // `renderRaggrSummaries` insieme agli altri quattro, al posto che gli assegna `_ORDINE_RIQUADRI`.
+
+  // Specchietti della TESTATA (Change e Errori di stampa, affiancati in un nodo solo) — v6.079
+  try { renderSpecchiettiTop(); } catch(e) { console.error('renderSpecchiettiTop', e); }
+
+  // I raggruppamenti per tipo sotto i risultati — v5.809 (Change), v6.079 (Errori di stampa),
+  // v6.266 (Omaggio, e da qui in poi chiunque abbia un `campoTipo`)
+  try { renderRaggrSummaries(); } catch(e) { console.error('renderRaggrSummaries', e); }
+
+  // v6.315 - il bottone "Azzera filtri" si accende solo se c'e' qualcosa da azzerare. Sta QUI
+  // perche' ogni comando che tocca un filtro finisce per chiamare `renderItems()`: agganciarlo al
+  // ridisegno e' l'unico modo di non dover ricordare il bottone in venti punti diversi.
+  try { _aggiornaBottoneAzzera(); } catch(e) { console.error('_aggiornaBottoneAzzera', e); }
+
+  // Selettore "Vista retro" — visibile solo nella sezione Figurine, per tutti.
+  // v6.020 (Franco) — e SOLO se i retro si vedono davvero. Quando su telefono "Figurine set base"
+  // li nasconde, le cinque voci non producono nessuna immagine diversa: il selettore c'era, si
+  // muoveva e non faceva niente. Peggio, "Fronte e retro sempre grandi" era letto anche fuori dal
+  // ramo delle immagini e cambiava comunque la disposizione della griglia (vedi useFlexForWideMode
+  // e isWideFlexMode, corretti anch'essi). Un comando inerte e uno con un effetto che non c'entra.
+  const retroViewSelector = document.getElementById('retro-view-selector');
+  if (retroViewSelector) {
+    retroViewSelector.style.display = (currentSection === 'figurines' && !_soloFronteMobile()) ? 'flex' : 'none';
+    const sel = document.getElementById('retro-view-mode-select');
+    if (sel && sel.value !== _retroViewMode) sel.value = _retroViewMode;
+  }
+
+  // v5.828 — Toggle "Mostra nomi" / "Nascondi nomi", nello stile dei filtri (.toggle-btn-blue).
+  // Compare SOLO sotto la soglia mobile, SOLO nella sezione Figurine e SOLO se la serie ha i
+  // numeri: in una serie marcata "Non ha numeri" nascondere il nome lascerebbe la card muta.
+  // Sul desktop resta display:none, quindi la barra dei controlli e' identica a prima.
+  // v6.020 — nello stesso contenitore vivono ora DUE interruttori, e ognuno ha la sua condizione:
+  // "Mostra nomi" dipende dal flag "Non ha numeri" della serie, "Mostra retro" dal filtro tipo.
+  // Il contenitore si accende se ne serve almeno uno: legarlo alla condizione del primo avrebbe
+  // fatto sparire il secondo nelle serie senza numeri, dove invece serve esattamente come altrove.
+  const figLabelSelector = document.getElementById('fig-label-selector');
+  if (figLabelSelector) {
+    const inFigurineMobile = (currentSection === 'figurines') && _isMobileViewport();
+    const showNomi  = inFigurineMobile && _serieHaNumeri();
+    const showRetro = _mostraRetroToggleVisibile();
+    figLabelSelector.style.display = (showNomi || showRetro) ? 'flex' : 'none';
+    const gruppo = (html, staccato) =>
+      `<span style="display:inline-flex;align-items:center;gap:0.4rem;${staccato ? 'margin-left:0.7rem;' : ''}">${html}</span>`;
+    let html = '';
+    if (showNomi) {
+      const on = (_figLabelMode === 'full');
+      const lab = on
+        ? (currentLang === 'it' ? 'Nascondi nomi' : 'Hide names')
+        : (currentLang === 'it' ? 'Mostra nomi' : 'Show names');
+      html += gruppo(
+        `<button class="toggle-btn-blue ${on ? 'on' : ''}" onclick="toggleFigLabelMode()" title="${lab}"></button>` +
+        `<span style="font-size:0.82rem;color:var(--text);">${lab}</span>`, false);
+    }
+    if (showRetro) {
+      // L'etichetta segue lo stato, come quella accanto: spento "Mostra retro", acceso
+      // "Nascondi retro". Due comandi vicini che si comportano allo stesso modo.
+      const onR = _mostraRetroSoloBase;
+      const labR = onR
+        ? (currentLang === 'it' ? 'Nascondi retro' : 'Hide backs')
+        : (currentLang === 'it' ? 'Mostra retro' : 'Show backs');
+      html += gruppo(
+        `<button class="toggle-btn-blue ${onR ? 'on' : ''}" onclick="toggleMostraRetroSoloBase()" title="${labR}"></button>` +
+        `<span style="font-size:0.82rem;color:var(--text);">${labR}</span>`, showNomi);
+    }
+    figLabelSelector.innerHTML = html;
+  }
+
+  // v5.978 — indice id -> oggetto costruito UNA VOLTA, fuori dal comparatore. Dentro, ogni
+  // confronto faceva allFigsForSort.find(...) su ~3300 oggetti fino a tre volte: 163 ms per
+  // ordinare le 800 figurine della Serie 3, ad ogni cambio pagina. Ora 1,4 ms, ordine identico.
+  const _allFigs = getData('figurines', []);
+  const _idx = _figIndex(_allFigs);
+  const _daOrdinare = getCurrentlyFilteredItems();
+  // v6.088 - le chiavi si calcolano UNA VOLTA, non ad ogni confronto. Il comparatore viene
+  // chiamato n·log n volte: cercare li' dentro il capogruppo di un figlio avrebbe voluto dire una
+  // scansione dell'elenco per confronto, cioe' il difetto che la v6.072 aveva appena tolto da
+  // questo stesso sort ("ora 1,4 ms, ordine identico", due righe piu' su).
+  // 🔄 v6.965 - le chiavi le calcola adesso `_comparatoreGriglia`, una volta per chiamata.
+  // v6.155 - dentro il box di un tipo comanda l'ordinamento scritto sul tipo, se c'e'. Sta in cima
+  // perche' e' una scelta esplicita di chi ha creato il box: le regole per sezione sono il
+  // comportamento predefinito, questa e' una decisione presa.
+  const _cmpTipo = _tipoProdottoCorrente ? _comparatoreTipo(_tipoProdottoCorrente) : null;
+  // 🆕 v6.964 - dove le sottoserie stanno nella griglia, prima comanda la SOTTOSERIE (nell'ordine
+  //    in cui la serie le dichiara), poi tutto il resto come sempre. Senza, i titoli di
+  //    `_incollaGruppi` comparirebbero ogni volta che la sottoserie cambia, cioè a caso.
+  const _ssOrd = _gruppiSottoserieInGriglia();
+  const _ssPos = f => { const p = _ssOrd.indexOf(String(f.subseries || '').trim()); return p < 0 ? _ssOrd.length : p; };
+  // 🔄 v6.965 - il comparatore sta in `_comparatoreGriglia`, e lo usa anche la ricerca globale.
+  const _cmpG = _comparatoreGriglia(currentSection, _daOrdinare, _idx, _allFigs);
+  const allItems = _daOrdinare.sort((a,b) => {
+    if (_ssOrd.length && _ssPos(a) !== _ssPos(b)) return _ssPos(a) - _ssPos(b);
+    if (_cmpTipo) return _cmpTipo(a, b);
+    return _cmpG(a, b);
   });
+  updateItemsCountDisplay(allItems);
+  const owned = getOwned();
+  // Barra di avanzamento RIMOSSA (v5.689, richiesta di Franco: "non mi e' mai
+  // piaciuta"). Con lei sono spariti il titolo "La mia lista", il contenitore
+  // detail-progress-toprow e l'etichetta: la riga di colonne in alto dice la stessa
+  // cosa meglio, ripartita per categoria.
+  // ATTENZIONE — due delle scritture che stavano qui NON avevano guardia:
+  //     pw.style.display = ''
+  //     document.getElementById('detail-progress-fill').style.width = ...
+  // Tolti gli elementi, avrebbero fatto ESPLODERE l'apertura di OGNI serie. Non e'
+  // un dettaglio: e' il motivo per cui questo blocco andava riscritto e non
+  // ritagliato via a pezzi.
+  const bulkBtns = document.getElementById('bulk-owned-btns');
+  if (bulkBtns) bulkBtns.style.display = (currentUser && (currentSection === 'figurines' || currentSection === 'retros') && allItems.length) ? 'flex' : 'none';
+
+  // Il messaggio di completamento resta, e continua a NON seguire i filtri:
+  // si e' completi rispetto a tutta la SEZIONE, non a cio' che si e' appena
+  // ritagliato con un filtro. Bastava altrimenti filtrare per variazioni,
+  // possedere quelle tre, e vedersi annunciare "Hai tutte le figurine!" — un
+  // complimento falso, corretto in v5.671.
+  const itemsSerie = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
+  const completeMsg = document.getElementById('items-complete-msg');
+  if (completeMsg) {
+    const ownedCount = itemsSerie.filter(f => owned.includes(f.id)).length;
+    const isComplete = currentUser && currentSection === 'figurines' && itemsSerie.length > 0 && ownedCount === itemsSerie.length;
+    completeMsg.style.display = isComplete ? '' : 'none';
+    if (isComplete) completeMsg.textContent = currentLang === 'it'
+      ? '\u{1F389} Hai tutte le figurine in lista, per questa serie !'
+      : '\u{1F389} You have all the stickers in your list, for this series !';
+  }
+
+  if (!allItems.length) {
+    grid.innerHTML = `<div class="empty-state"><p class="empty-title" style="white-space:nowrap;">${currentLang === 'it' ? 'Nessun articolo ancora !' : 'Nothing here yet !'}</p></div>`;
+    document.getElementById('items-pagination').innerHTML = '';
+    return;
+  }
+  // v5.978 — La geometria della griglia si imposta QUI, PRIMA di calcolare le pagine: e' da
+  // questi stili che _gridGeometry() legge quante colonne ci sono e quanto e' larga la griglia.
+  // Se il blocco restasse dopo (com'era fino alla v5.977, quando le colonne erano un numero
+  // assunto e nessuno le leggeva), al primo render e ad ogni cambio di modalita' la misura
+  // descriverebbe il render PRECEDENTE.
+
+  // v6.162 - si toglie sempre PRIMA: il numero configurato si scrive con `!important` (per battere
+  // la regola del CSS che sotto gli 860px scrive le colonne con `!important`), e un `!important`
+  // lasciato acceso da un giro precedente vincerebbe anche dove non deve piu'.
+  // 🔄 v6.452 — DICEVA «forza quattro colonne»: falso dalla v5.854, che l'ha cambiata in
+  // `repeat(auto-fill, minmax(100px,1fr))`. Il numero quattro qui non c'entra piu' niente; quello
+  // che conta, e che resta vero, e' che quella regola porta un `!important`.
+  grid.style.removeProperty('grid-template-columns');
+  if (currentSection === 'retros' || currentSection === 'figurines') {
+    // v6.020 — !_soloFronteMobile(): senza retro in griglia nessuna card e' larga, quindi il
+    // passaggio a flex non serviva a niente e cambiava comunque la disposizione delle card.
+    const useFlexForWideMode = currentSection === 'figurines' && _retroViewMode === 'destra-piena' && !_soloFronteMobile();
+    // 🔴 v6.418 - QUI LA v6.416 ACCENDEVA `griglia-allineata`, la classe che serviva al `subgrid`.
+    // Il subgrid non ha funzionato (Franco l'ha visto nell'anteprima) ed e' stato tolto dall'index:
+    // la classe se ne va con lui. Una classe che nessun foglio di stile guarda e' un appiglio che
+    // sembra fare qualcosa, e il giorno che qualcuno ci scrive una regola sopra non sa piu' se
+    // arrivava accesa per caso o per decisione.
+    if (useFlexForWideMode) {
+      grid.style.display = 'flex';
+      grid.style.flexWrap = 'wrap';
+      grid.style.gridTemplateColumns = '';
+    } else {
+      grid.style.display = '';
+      grid.style.flexWrap = '';
+      // v6.163 - qui c'era `currentSection === 'retros' ? 'repeat(5, 1fr)' : ''`. Quel 5 ora e' il
+      // valore di partenza del campo dei Retro, quindi non serve piu' cablato: lo scrive
+      // `_colonneGriglia` insieme a tutti gli altri, poche righe piu' sotto.
+      grid.style.gridTemplateColumns = '';
+    }
+  } else {
+    grid.style.display = '';
+    grid.style.flexWrap = '';
+    grid.style.gridTemplateColumns = '';
+  }
+  // 🆕 v6.445 (Franco: *"come mai per le figurine con velina la dimensione del contenitore della
+  // griglia e' piu' largo che per le figurine da attaccare? non e' identico per tutte le tipologie
+  // di articolo?"* → *"puoi farli tutti larghi come quello di figurine con velina?"*)
+  // 🔴 LA LARGHEZZA E' UNA SOLA, E VALE PER TUTTE E SETTE LE SEZIONI.
+  // Fino a qui queste cinque righe stavano DENTRO il ramo `retros || figurines`, e l'altro ramo le
+  // azzerava. Cioe' due sezioni su sette uscivano dalla larghezza della pagina e cinque no.
+  // 📌 IL NUMERO CHE LO RENDE UN DIFETTO E NON UNA SCELTA: «Figurine da attaccare» e «Carte»
+  // dichiarano `{d:7, m:4}` in `ARTICOLI`, IDENTICO a «Figurine con velina». Stesso numero di
+  // colonne impostato, ma in 1036px invece che in 1800 — cioe' card da ~138px invece di ~247px.
+  // Un'impostazione che dice 7 e a schermo vale la meta' e' un'impostazione che mente.
+  // 📌 E i 247px non sono un caso: sono esattamente 7 colonne in 1800px col gap da 12px, ed e' da
+  // li' che viene la larghezza fissa `flex:0 0 247px` del modo «Fronte e retro sempre grandi».
+  // ⚠️ NON e' che le altre cinque «avessero deciso» di stare strette: la centratura a 1800px c'e'
+  // dalla v5.667, quando le sezioni erano queste due. «Figurine da attaccare» e' nata nella v6.195
+  // e in quell'`if` non e' mai entrata. Nel CHANGELOG non c'e' una riga che dica di averlo deciso.
+  // 📌 SOTTO GLI 860px NON CAMBIA NIENTE: `style.css` neutralizza `width`, `margin-left` e
+  // `transform` di `#items-grid` con `!important`. Questa release si vede solo sul computer.
+  // ⚠️ Album, Bustine e Altri oggetti dichiarano 4 colonne: in 1800px diventano card da ~441px
+  // invece di ~250. Franco ha scelto la larghezza unica sapendolo; le loro colonne vanno riviste
+  // guardando, non calcolando.
+  grid.style.width = 'min(1800px, 96vw)';
+  grid.style.maxWidth = '1800px';
+  grid.style.marginLeft = '50%';
+  grid.style.marginRight = '0';
+  grid.style.transform = 'translateX(-50%)';
+  // v6.162 - e alla fine, se c'e' un numero configurato, comanda lui. Non in modalita' FLEX
+  // ('destra-piena'): li' le colonne non esistono, le card si dispongono da se' secondo la
+  // larghezza, e scrivere `grid-template-columns` non farebbe niente — meglio non scriverlo che
+  // lasciare uno stile che non ha effetto e fa credere il contrario a chi legge il DOM.
+  // v6.163 - il numero c'e' sempre (default o configurato), tranne in modalita' FLEX dove le
+  // colonne non esistono.
+  if (grid.style.display !== 'flex') {
+    grid.style.setProperty('grid-template-columns', 'repeat(' + _colonneGriglia(currentSection) + ', 1fr)', 'important');
+  }
+
+  // Pagination — i confini NON sono piu' multipli del tetto: li decide buildItemPages(), che non
+  // spezza mai una famiglia fra due pagine (v5.977). Da qui in giu' si legge SEMPRE da _itemPages,
+  // mai piu' da moltiplicazioni per getItemsPerPage(): erano quelle a dare per scontato che tutte
+  // le pagine fossero lunghe uguale.
+  // 🆕 v6.767 - la geometria si legge QUI, una volta per render, e la usano tutti e due:
+  //    chi decide i confini delle pagine e chi scrive i riempimenti in fondo alle righe.
+  //    ⚠️ Dopo il blocco degli stili qui sopra, mai prima: e' da quegli stili che si leggono le
+  //    colonne e la larghezza, e letta prima descriverebbe il render PRECEDENTE (v5.978).
+  const _geoRender = _gridGeometry();
+  _itemPages = buildItemPages(allItems, _geoRender);
+  const totalPages = _itemPages.length;
+  if (currentItemPage > totalPages) currentItemPage = totalPages;
+  if (currentItemPage < 1) currentItemPage = 1;
+  const { start, end } = _itemPages[currentItemPage - 1];
+  const items = allItems.slice(start, end);
+  // Elenco completo ordinato (tutte le pagine), usato per navigare avanti/indietro nel dettaglio
+  _gridOrderedIds = allItems.map(f => f.id);
+  // Pagination controls (top)
+  const paginationTop = document.getElementById('items-pagination-top');
+  const totalPagesTop = totalPages;
+  function paginationHTML(cur, tot, total) {
+    if (tot <= 1) return '';
+    const _ser = getData('series', []).find(s => s.id === currentSeriesId);
+    // 🔄 v6.818 - calcolato. ⚠️ E' l'unico dei tre punti dove il numero non finisce in una cella:
+  //    da qui parte il conteggio della coda («figurine 161..200 di 256»), e se manca il ramo
+  //    `else` qui sotto scrive «256 figurine» senza intervallo. Un dato assente qui non lascia un
+  //    buco: accorcia una frase.
+  const firstNum = currentSection === 'retros' ? 1 : (_intervalloNumeriSerie(_ser)?.first ?? null);
+    const sectionLabelLower = (getSectionLabel(currentSection) || (currentLang === 'it' ? 'articoli' : 'items')).toLowerCase();
+    // v5.893 — la coda dei risultati passa da "${label} ${from}..${to} | ${total} ${label}"
+    // a "${label} ${from}..${to} di ${total}": via la pipe e la ripetizione della parola.
+    // Senza range (sezioni senza numeri) resta "${total} ${label}".
+    // 🔄 v6.965 (Franco: «Pagina 1 di 3 | figurine con retro 417..451 di 82» diventa «Pagina 1 di 3
+    //    | N figurine con retro di 82 (da 417 a 451)», dove N è il numero di card della pagina; «in
+    //    tutte le griglie») — PRIMA QUANTE SONO, POI DA DOVE A DOVE. Il numero di card viene dai
+    //    confini VERI della pagina (v5.977), che sono di lunghezza variabile: non è il tetto.
+    // 📌 Dove i numeri non ci sono (sezioni senza numeri) resta la prima metà, senza parentesi.
+    // 📌 Il singolare a una card sola: «1 figurina con retro», non «1 figurine con retro».
+    const b = _itemPages[cur - 1] || { start: 0, end: total };
+    const nPagina = Math.max(0, Math.min(b.end, total) - b.start);
+    const _etiN = (nPagina === 1 ? (getSectionLabelSingular(currentSection) || sectionLabelLower) : sectionLabelLower).toLowerCase();
+    let tailStr = currentLang === 'it'
+      ? ` &nbsp;|&nbsp; ${nPagina} ${_etiN} di ${total}`
+      : ` &nbsp;|&nbsp; ${nPagina} ${_etiN} of ${total}`;
+    if (firstNum != null) {
+      // v5.977 — l'intervallo si legge dai confini VERI della pagina. Con le pagine di lunghezza
+      // variabile, "firstNum + (cur-1) * tetto" annuncerebbe numeri che nella pagina non ci sono.
+      const from = firstNum + b.start;
+      const to = Math.min(firstNum + b.end - 1, firstNum + total - 1);
+      tailStr += currentLang === 'it' ? ` (da ${from} a ${to})` : ` (from ${from} to ${to})`;
+    }
+    const label = currentLang === 'it'
+      ? `Pagina ${cur} di ${tot}${tailStr}`
+      : `Page ${cur} of ${tot}${tailStr}`;
+    return `<div class="pag-row" style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+      ${cur > 1 ? `<button onclick="changeItemPage(1)" class="btn-secondary" style="padding:0.4rem 1rem;">⏮ ${currentLang === 'it' ? 'Prima' : 'First'}</button>` : ''}
+      <button onclick="changeItemPage(${cur - 1})" ${cur === 1 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">◀ ${currentLang === 'it' ? 'Precedente' : 'Previous'}</button>
+      <span class="pag-label" style="font-family:var(--font-ui);color:var(--text);font-size:0.9rem;">${label}</span>
+      <button onclick="changeItemPage(${cur + 1})" ${cur === tot ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Successiva' : 'Next'} ▶</button>
+      ${cur < tot ? `<button onclick="changeItemPage(${tot})" class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Ultima' : 'Last'} ⏭</button>` : ''}
+    </div>`;
+  }
+  if (paginationTop) paginationTop.innerHTML = paginationHTML(currentItemPage, totalPagesTop, allItems.length);
+
+
+  // v5.758 — Retro nella card: la prima riga antepone "Categoria - " al nome, TRANNE quando il
+  // nome comincia già con la categoria (decisione per singolo retro; ex flag di serie
+  // retroNameHasCategory, rimosso). Stessa regola del Nome completo (_retroNameStartsWithCategory).
+
+  // 🆕 v6.362 - le serie in una MAPPA, non una lookup per card. `_mostraTaglia` vuole la serie
+  // dell'oggetto, e in griglia gli oggetti possono venire da serie diverse (la vista per PRODOTTO,
+  // v6.073): prendere `currentSeriesId` avrebbe dato la risposta giusta per caso nella vista per
+  // serie e sbagliata nell'altra. Una mappa costruita una volta costa quanto una lookup sola.
+  const _serieById = new Map(getData('series', []).map(x => [x.id, x]));
+  // 🗑️ v6.837 (Franco: «quel campo preesistente togliamolo pure») - qui c'era `_famigliaPerBase`: la
+  //    famiglia della v6.366 viveva sulla figurina per album e la card della con retro la prendeva
+  //    in prestito. Adesso ognuna delle due ha la sua, scelta fra le Famiglie della serie.
+  // 🆕 v7.178 (Franco: «mostrare il campo "Commento album" quando si fa mouse over sulle card di una fpa / fcr») - il
+  //    commento sta sulla fpa; la fcr lo prende dalla fpa collegata (`baseFigurineId`). Mappa fatta una volta.
+  // v7.178 - acceso o spento per tipologia dalla console (Griglie → Commento album sulle card)
+  const _lettoreCommento = _lettoreCommentoAlbum(_allFigs);
+  // v7.214 - i retro di ogni famiglia, una volta per griglia, solo dove ci sono le figurine con retro
+  const _retriFam = items.some(f => (f.section || 'figurines') === 'figurines') ? _retriDelleFamiglie(_allFigs, _idx) : null;
+  const _commentoAlbumCard = f => ((f.section === 'attaccare' && _COMMENTO_CARD_CFG.fpa)
+    || ((f.section || 'figurines') === 'figurines' && _COMMENTO_CARD_CFG.fcr)) ? _lettoreCommento(f) : '';
+  // 🔄 v6.767 - QUI C'ERA `grid.innerHTML = items.map(...).join('')`. Adesso l'HTML delle card
+  //    si costruisce in un elenco e lo incolla `_incollaGruppi`, che ci infila le celle vuote dove
+  //    un gruppo non entrerebbe nella riga. Il disegno della singola card non cambia di una riga.
+  // 🔄 v7.324 - la card la disegna `_cardArticoloHTML`, la stessa che usa la linguetta «Novità»
+  const _ctxCard = { owned, _allFigs, _idx, _commentoAlbumCard, _retriFam, _serieById };
+  const _cardsHTML = items.map(f => _cardArticoloHTML(f, _ctxCard));
   grid.innerHTML = _incollaGruppi(items, _cardsHTML, _geoRender, _allFigs, _idx);
   _ordinaRigheCard(grid);   // v7.151: sul telefono, l'ordine delle righe dalla console
 
