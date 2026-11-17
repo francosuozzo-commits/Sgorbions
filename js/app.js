@@ -32101,7 +32101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.317';
+const JS_VERSION = 'v7.318';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -58750,7 +58750,12 @@ function _famEbayLettura(d, it, idBox) {
     + _testiAccountInOrdine(t).map((a, i) => '<div class="fam-el-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
       + _TESTI_CAMPI.map(([k, nIt, nEn]) => ['It', 'En'].map(l => {
         const v = String((t[a] || {})[k + l] || '').trim();
-        return '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;">' + (it ? nIt : nEn) + ' - ' + (l === 'It' ? 'ITA' : 'ENG') + '</div>'
+        // 🆕 v7.318 (Franco: «accanto a tutti i campi di questo tab annunci, metti un tastino per copiarne in memoria il
+        //    contenuto; mi riferisco ai campi titolo e descrizione, sia ita che eng, di ogni venditore») - 📋 accanto
+        //    all'etichetta, solo se il campo è scritto; il testo viaggia nel tasto (`data-testo`)
+        return '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;display:flex;align-items:center;gap:0.4rem;">' + (it ? nIt : nEn) + ' - ' + (l === 'It' ? 'ITA' : 'ENG')
+          + (v ? '<button type="button" class="tbl-btn" title="' + (it ? 'Copia negli appunti' : 'Copy to clipboard') + '" data-testo="' + esc(v) + '" onclick="_collageCopia(this.dataset.testo)"'
+            + ' style="font-size:0.8rem;line-height:1;padding:2px 6px;cursor:pointer;">📋</button>' : '') + '</div>'
           + '<div style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;">' + (v ? esc(v) : '—') + '</div></div>';
       }).join('')).join('')
       // v7.252 - e il messaggio finale dell'annuncio, come nella finestra
@@ -58854,7 +58859,8 @@ function apriFinestraFamiglia(el) {
     + '<div class="modal-header"><h2 class="modal-title">' + (it ? 'Famiglia «' : 'Family «') + esc(nome) + '»</h2>'
     + '<button type="button" class="modal-close" onclick="document.getElementById(\'famiglia-modal\').remove()">✕</button></div>'
     + '<div style="padding:0 1.2rem 1.2rem;">'
-    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.3rem;">' + tabFam('generale', it ? 'Generale' : 'General', true) + tabFam('ebay', 'Ebay', false) + '</div>'
+    // 🔄 v7.318 (Franco: «rinomina il tab "eBay" in "Annunci"») - solo il nome: la chiave resta `ebay`
+    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.3rem;">' + tabFam('generale', it ? 'Generale' : 'General', true) + tabFam('ebay', it ? 'Annunci' : 'Listings', false) + '</div>'
     + '<div id="fam-tab-ebay" class="fam-pannello" data-tab="ebay" style="display:none;padding-top:0.6rem;">'
     + '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
     + '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;font-weight:600;">'
@@ -71305,7 +71311,9 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   const topEl = document.getElementById('fig-detail-top');
   if (topEl) topEl.innerHTML = _mobileDetail ? rowsTop.join('') : '';
 
-  if (isAdmin && !_isMobileViewport()) {
+  // 🔄 v7.318 (Franco: «questo tab, infine, deve essere sempre visibile; non solo in modifica») - il tab «Annunci» c'è
+  //    anche dal telefono: l'admin passa da questo ramo anche lì (dalla v5.832 lì prendeva quello del visitatore)
+  if (isAdmin) {
     const conditionLabel = f.condition === 'used' ? (currentLang === 'it' ? 'Usato' : 'Used') : (currentLang === 'it' ? 'Nuovo' : 'New');
     const ebayRows = [];
     // 🗑️ v7.258 - via la disponibilità a testo libero (v7.039): il numero nuovo sta nel Generale
@@ -71350,7 +71358,8 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     const _pagLett = _bloccoPagineLettura(f);
     const _voci = [{ k: 'generale', et: '📋 ' + (currentLang === 'it' ? 'Generale' : 'General') }];
     if (_pagLett) _voci.push({ k: 'pagine', et: '📖 ' + (currentLang === 'it' ? 'Pagine' : 'Pages') });
-    _voci.push({ k: 'ebay', et: '🏷️ Ebay' });
+    // 🔄 v7.318 (Franco: «rinomina il tab "eBay" in "Annunci"») - solo il nome: la chiave resta `ebay`
+    _voci.push({ k: 'ebay', et: '🏷️ ' + (currentLang === 'it' ? 'Annunci' : 'Listings') });
     const _doppi1 = _doppiTabC(f);   // v7.262 - con tutti e due i campi spenti (Doppioni) il tab non c'è
     // 🗑️ v7.312 - qui il tab «🧾 Copie» entrava nella barra (v7.258): adesso ha la sua sezione sotto le foto (`_copieInRiga`)
     const tabNav = _tabNavLettura(_voci);
@@ -73970,6 +73979,7 @@ function _copiaApri(artId, chiave, sola) {
     + '<div style="flex:1;min-width:5.5rem;">' + lab(it ? 'Mancanti' : 'Missing')
     + '<input id="cp-mancanti" class="form-input" type="number" min="0" step="1" value="' + (c.mancanti ?? '') + '" style="color:var(--danger);font-weight:600;"' + dis + '></div>'
     + '</div>'
+    + _cpTestiHTML()   // v7.318: venditore e tasti dei testi dell'annuncio
     + '</div>'
     // 🆕 v7.316 (Franco: «nella maschera della copia aggiungiamo un tab chiamato "condizioni" messo in posizione numero 2,
     //    all'interno del quale mettiamo tutti i campi a partire dal campo "il nome in copertina" fino all'ultimo che dovrebbe
@@ -74015,6 +74025,7 @@ function _copiaApri(artId, chiave, sola) {
         + '<button type="button" class="btn-barra-admin pieno" id="cp-salva" onclick="_copiaSalva(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">' + (it ? 'Salva' : 'Save') + '</button>')
     + '</div></div>';
   document.body.appendChild(ov);
+  _cpTestiAggiorna();   // v7.318: il riquadro dei testi c'è solo per gli album
 }
 // 🆕 v7.277 (Franco: «nella copia, sia in clonazione che in fase di modifica, deve essere possibile cambiare l'articolo
 //    associato; in questo momento è possibile impostare l'articolo solo in fase di creazione partendo dall'articolo») -
@@ -74064,6 +74075,49 @@ function _cpCambiaArticolo(id) {
   if (!box) return;
   const a = id ? _articoloVivo(id) : null, ch = a ? _chiaveTipo(a) : null;
   box.value = !a ? '' : ch === 'base' ? 'Base' : _nomeVersione(ch, currentLang);
+  _cpTestiAggiorna();   // v7.318: i tasti dei testi seguono l'articolo scelto
+}
+// 🆕 v7.318 (Franco: «aggiungiamo i tasti "copia titolo" e "copia descrizione" anche sul form della copia; mostrali quando i
+//    campi usati dai bottoni stessi sono popolati»; «in questo caso chiedimi il venditore») - come in «Crea annuncio album»
+//    (`_faTestoAlbum`): Titolo - ITA e Descrizione - ITA del tab Ebay dell'album, per il venditore scelto nella tendina
+//    (`_annValoreDaAlbum`: su una versione senza testi, quelli della sua partenza). Il riquadro c'è solo per gli album; ogni
+//    tasto solo se il suo testo è scritto. Copiare non scrive niente: vale anche in sola lettura.
+function _cpTestiHTML() {
+  const it = currentLang === 'it';
+  const tasto = (id, k, t) => '<button type="button" class="btn-barra-admin pieno" id="' + id + '" style="display:none;white-space:nowrap;" onclick="_cpCopiaTesto(\'' + k + '\')">📋 ' + t + '</button>';
+  return '<div id="cp-testi" style="display:none;margin-top:0.7rem;">'
+    + '<label for="cp-venditore" class="detail-label" style="display:block;margin:0 0 0.25rem;">' + (it ? 'Venditore (per i testi dell\'annuncio)' : 'Seller (for listing texts)') + '</label>'
+    + '<div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">'
+    + '<select id="cp-venditore" class="form-select" style="width:auto;min-width:9rem;" onchange="_cpTestiAggiorna()"><option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+    + _ANN_ACCOUNT.map(a => '<option value="' + esc(a) + '">' + esc(a) + '</option>').join('') + '</select>'
+    + tasto('cp-copia-titolo', 'titoloIt', it ? 'Copia titolo' : 'Copy title')
+    + tasto('cp-copia-desc', 'descIt', it ? 'Copia descrizione' : 'Copy description')
+    + '<span id="cp-testi-nota" style="font-size:0.8rem;color:var(--text);"></span>'
+    + '</div></div>';
+}
+// il testo di un tasto per l'articolo e il venditore scelti, o ''
+function _cpTesto(k) {
+  const sel = document.getElementById('cp-articolo'), ven = (document.getElementById('cp-venditore') || {}).value || '';
+  const a = sel && sel.value ? _articoloVivo(sel.value) : null;
+  if (!a || !ven) return '';
+  return String(_annValoreDaAlbum(a, ven, k, _indiceArticoli()) || '').trim();
+}
+function _cpTestiAggiorna() {
+  const box = document.getElementById('cp-testi');
+  if (!box) return;
+  const it = currentLang === 'it', sel = document.getElementById('cp-articolo');
+  const a = sel && sel.value ? _articoloVivo(sel.value) : null;
+  box.style.display = a && _aggTipoDi(a) === 'albums' ? '' : 'none';
+  const ven = (document.getElementById('cp-venditore') || {}).value || '';
+  const tit = _cpTesto('titoloIt'), desc = _cpTesto('descIt');
+  document.getElementById('cp-copia-titolo').style.display = tit ? '' : 'none';
+  document.getElementById('cp-copia-desc').style.display = desc ? '' : 'none';
+  document.getElementById('cp-testi-nota').textContent = ven && !tit && !desc
+    ? (it ? 'L’album non ha Titolo né Descrizione scritti nel tab ' + ven + ' della sezione Ebay.' : 'No texts for ' + ven + '.') : '';
+}
+function _cpCopiaTesto(k) {
+  const t = _cpTesto(k);
+  if (t) _collageCopia(t);
 }
 function _cpCambiaSerie(sid) {
   document.getElementById('cp-tipo').innerHTML = _cpOpzioniTipologia(sid, null);
@@ -75261,7 +75315,8 @@ function switchToEditMode(figId) {
   html += '<div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin:0.75rem 0 1rem;">' +
     '<button type="button" id="fe-tab-btn-generale" onclick="switchFeTab(\'generale\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Generale</button>' +
     _tabPagineBtn(f) +
-    '<button type="button" id="fe-tab-btn-ebay" onclick="switchFeTab(\'ebay\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>' +
+    // 🔄 v7.318 (Franco: «rinomina il tab "eBay" in "Annunci"») - solo il nome: la chiave resta `ebay`
+    '<button type="button" id="fe-tab-btn-ebay" onclick="switchFeTab(\'ebay\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🏷️ ' + (currentLang === 'it' ? 'Annunci' : 'Listings') + '</button>' +
     // 🆕 v7.258 - il tab «Doppi», su ogni tipologia; v7.262: se la matrice dei Doppioni accende almeno un campo
     // 🗑️ v7.312 - qui c'era il tab «🧾 Copie» (v7.258, v7.263): adesso ha la sua sezione sotto le foto (`_copieInRiga`)
     '</div>';
@@ -77125,6 +77180,12 @@ function _testiAccountInOrdine(t) {
   const pieno = a => Object.values((t || {})[a] || {}).some(v => String(v || '').trim());
   return _TESTI_ACCOUNT.slice().sort((x, y) => (pieno(y) - pieno(x)) || x.localeCompare(y, 'it'));
 }
+// 🆕 v7.318 - copia il contenuto di una casella; vuota lo dice e non copia (il 📋 dei testi per account, in modifica)
+function _copiaCampoTesto(id) {
+  const el = document.getElementById(id), t = String(el && el.value || '').trim();
+  if (!t) { toast(currentLang === 'it' ? 'Il campo è vuoto: niente da copiare.' : 'The field is empty.', 'info'); return; }
+  _collageCopia(t);
+}
 function _bloccoTestiAccountEdit(f) {
   if (!f || f.section !== 'albums') return '';
   const it = currentLang === 'it', t = f.testiAccount || {};
@@ -77150,7 +77211,11 @@ function _bloccoTestiAccountEdit(f) {
       + _TESTI_CAMPI.map(([k, nIt, nEn]) => ['It', 'En'].map(l => {
         const id = 'fe-ta-' + a + '-' + k + l, v = (t[a] || {})[k + l] || '';
         const etichetta = (it ? nIt : nEn) + ' - ' + (l === 'It' ? 'ITA' : 'ENG');
-        return '<div style="margin-bottom:0.5rem;"><label for="' + id + '" style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' + etichetta + '</label>'
+        // 🆕 v7.318 (Franco: «accanto a tutti i campi di questo tab annunci, metti un tastino per copiarne in memoria il
+        //    contenuto») - 📋 accanto all'etichetta: copia quello che c'è scritto adesso nella casella (`_copiaCampoTesto`)
+        return '<div style="margin-bottom:0.5rem;"><div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:2px;"><label for="' + id + '" style="font-size:0.72rem;color:var(--text);">' + etichetta + '</label>'
+          + '<button type="button" class="tbl-btn" title="' + (it ? 'Copia negli appunti' : 'Copy to clipboard') + '" onclick="_copiaCampoTesto(\'' + id + '\')"'
+          + ' style="font-size:0.8rem;line-height:1;padding:2px 6px;cursor:pointer;">📋</button></div>'
           + (k === 'titolo'
             ? '<input class="form-input" type="text" id="' + id + '" value="' + esc(v) + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;">'
             // v7.200 (Franco: «i campi Descrizione ITA e Descrizione ENG … devono essere più lunghi») - 3 → 12 righe
