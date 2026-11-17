@@ -30109,8 +30109,10 @@ async function _aggiornaTimeoutDaConfigurazione() {
     if (v >= TIMEOUT_CARICAMENTO_MIN_MS && v <= TIMEOUT_CARICAMENTO_MAX_MS) LOCAL.set('timeoutCaricamentoMs', v);
     // 🆕 v7.324 - i giorni delle «Novità» (e del badge «New»): valgono subito, e si ridisegna se la linguetta è aperta
     const gn = _giorniNovitaValido(g?.giorniNovita) || NOVITA_GIORNI_DEFAULT;
+    const mn = _maxNovitaValido(g?.maxNovita) || NOVITA_MAX_DEFAULT;   // v7.325 - le card per serie
     LOCAL.set('giorniNovita', gn);
-    if (gn !== _giorniNovita) { _giorniNovita = gn; _novitaSeAperta(); }
+    LOCAL.set('maxNovita', mn);
+    if (gn !== _giorniNovita || mn !== _maxNovita) { _giorniNovita = gn; _maxNovita = mn; _novitaSeAperta(); }
   } catch(e) { /* silenzio voluto: e' una rifinitura per il giro dopo, non un'operazione dell'utente */ }
 }
 
@@ -30594,6 +30596,8 @@ async function loadImpostazioniGeneraliFields() {
   input.value = Math.round(v / 1000);   // all'admin si mostrano SECONDI: i millisecondi qui non servono a nessuno
   const gn = document.getElementById('impostazioni-novita-input');   // v7.324
   if (gn) gn.value = _giorniNovita;
+  const mn = document.getElementById('impostazioni-novita-max-input');   // v7.325
+  if (mn) mn.value = _maxNovita;
 }
 // 🆕 v7.324 (Franco: «n diventa un parametro da admin console, nel pannello "Impostazioni"») - i giorni delle «Novità»,
 //    che valgono anche per il badge «New». `fsSave` unisce (`merge`): il tetto del caricamento resta.
@@ -30601,11 +30605,15 @@ async function saveGiorniNovita() {
   const it = currentLang === 'it';
   const n = _giorniNovitaValido(document.getElementById('impostazioni-novita-input')?.value);
   if (!n) { toast(it ? 'Valore ammesso: da ' + NOVITA_GIORNI_MIN + ' a ' + NOVITA_GIORNI_MAX + ' giorni' : 'Allowed: ' + NOVITA_GIORNI_MIN + ' to ' + NOVITA_GIORNI_MAX + ' days', 'error'); return; }
+  // v7.325 - e il numero massimo di card per serie, accanto
+  const m = _maxNovitaValido(document.getElementById('impostazioni-novita-max-input')?.value);
+  if (!m) { toast(it ? 'Card per serie: da ' + NOVITA_MAX_MIN + ' a ' + NOVITA_MAX_MAX : 'Cards per series: ' + NOVITA_MAX_MIN + ' to ' + NOVITA_MAX_MAX, 'error'); return; }
   try {
-    await fsSave('settings', { id: 'generali', giorniNovita: n });
-    _giorniNovita = n;
+    await fsSave('settings', { id: 'generali', giorniNovita: n, maxNovita: m });
+    _giorniNovita = n; _maxNovita = m;
     LOCAL.set('giorniNovita', n);
-    toast(it ? '✅ Salvato: le Novità sono gli articoli degli ultimi ' + n + ' giorni.' : '✅ Saved: ' + n + ' days.', 'success');
+    LOCAL.set('maxNovita', m);
+    toast(it ? '✅ Salvato: le Novità sono gli articoli degli ultimi ' + n + ' giorni, al massimo ' + m + ' per serie.' : '✅ Saved: ' + n + ' days, ' + m + ' per series.', 'success');
     renderAll();
   } catch (e) {
     console.error('saveGiorniNovita', e);
@@ -32124,7 +32132,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.324';
+const JS_VERSION = 'v7.325';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32595,7 +32603,7 @@ function _serieVisibili(tutte) {
 //    Le slim già nel database non hanno questi campi: risultano non in vendita finché non si spunta Ebay sulla loro scheda.
 const SLIM_CAMPI_EBAY = ['forSale', 'price', 'priceUsd', 'quantity', 'condition', 'ebayAccounts', 'daPubblicare', 'ebay', 'ebayImg'];
 const SLIM_CAMPI_PROPRI = ['id', 'seriesId', 'section', 'isSlim', 'baseFigurineId',
-                           'disponibili', 'quante', 'copie', 'peso', 'invisibile'].concat(SLIM_CAMPI_EBAY);
+                           'disponibili', 'quante', 'copie', 'peso', 'invisibile', 'mostratoDal'].concat(SLIM_CAMPI_EBAY);   // v7.325: + `mostratoDal` (le Novità)
 // ⚠️ UN CAMPO PROPRIO ASSENTE SI LEGGEREBBE DALLA PARENT: la Disponibilità della slim sarebbe quella della fcr, e il totale
 //    la conterebbe due volte. Per questo in memoria i campi propri ci sono sempre, `undefined` se vuoti (`_collegaSlim`);
 //    alla scrittura gli `undefined` si saltano, e nel database restano solo quelli scritti.
@@ -33123,6 +33131,15 @@ async function fsSave(collName, item) {
     _segnalaSerieCambiata(_salvato && _salvato.seriesId);
     return _salvato;
   }
+  // 🆕 v7.325 - le Novità: a ogni scrittura della serie INTERA (con `items`) si aggiornano `mostratoDal` degli articoli e
+  //    `mostrataDal` della serie (vedi `_segnaMostratoDal`). Le scritture parziali (senza `items`) non si toccano.
+  if (collName === 'series' && item && Array.isArray(item.items) && typeof _segnaMostratoDal === 'function') {
+    try {
+      const _tutte = getData('figurines', []);
+      item.items.forEach(f => _segnaMostratoDal(f, _tutte));
+      _segnaMostrataDalSerie(item);
+    } catch (e) { console.error('Novità: date non aggiornate', e); }
+  }
   const { collection, doc, setDoc, addDoc } = window._fb;
   if (item.id) {
     const ref = doc(db, collName, item.id);
@@ -33352,6 +33369,8 @@ async function _saveFigurineItem(item) {
       catch (e) { console.error('computeFullName dopo la regola del "!"', e); }
     }
   }
+  // 🆕 v7.325 - da quando l'articolo si può mostrare (le Novità): vedi `_segnaMostratoDal`
+  if (typeof _segnaMostratoDal === 'function') { try { _segnaMostratoDal(item, getData('figurines', [])); } catch (e) { console.error('_segnaMostratoDal', e); } }
   // 🆕 v7.263 - una slim si scrive coi soli campi propri: tutto il resto è della parent (`_collegaSlim`). Prima del
   //    controllo degli undefined, che altrimenti avviserebbe dei campi propri vuoti.
   _soloCampiSlim(item);
@@ -51384,7 +51403,8 @@ function _novitaGruppi(ora) {
       finally { currentSeriesId = prima; currentSection = primaSez; }
       qui.forEach(f => pezzi.push({ f, sez }));
     });
-    return { serie: s, pezzi };
+    // 🔄 v7.325 (Franco: «massimo 50 card per serie; alla 50esima fermati») - nell'ordine della griglia, le prime N
+    return { serie: s, pezzi: pezzi.slice(0, _maxNovita) };
   }).filter(Boolean);
 }
 function _novitaHTML(larghezza) {
@@ -55506,13 +55526,73 @@ function _albumHaTestiAnnuncio(f) {
 //    badge) - i giorni stanno in `settings/generali.giorniNovita`; si leggono all'avvio (`_aggiornaTimeoutDaConfigurazione`)
 //    e si tengono nel browser (`LOCAL`) per il giro dopo, come il tetto del caricamento. Senza valore: 30.
 // 🔄 v7.324 (Franco: «30 deve diventare 90») - il valore di partenza
-const NOVITA_GIORNI_DEFAULT = 90, NOVITA_GIORNI_MIN = 1, NOVITA_GIORNI_MAX = 365;
+// 🔄 v7.325 (Franco, viste le misure - 90 giorni = 1747 articoli, 30 = 199: «ok fai 30») - di nuovo 30
+const NOVITA_GIORNI_DEFAULT = 30, NOVITA_GIORNI_MIN = 1, NOVITA_GIORNI_MAX = 365;
 const _giorniNovitaValido = v => { const n = parseInt(v, 10); return n >= NOVITA_GIORNI_MIN && n <= NOVITA_GIORNI_MAX ? n : null; };
 let _giorniNovita = (() => { try { return _giorniNovitaValido(LOCAL.get('giorniNovita')) || NOVITA_GIORNI_DEFAULT; } catch (e) { return NOVITA_GIORNI_DEFAULT; } })();
+// 🆕 v7.325 (Franco: «massimo 50 card per serie; alla 50esima fermati; 50 è un altro parametro da mettere affianco al 30 di
+//    prima») - `settings/generali.maxNovita`, come i giorni
+const NOVITA_MAX_DEFAULT = 50, NOVITA_MAX_MIN = 1, NOVITA_MAX_MAX = 500;
+const _maxNovitaValido = v => { const n = parseInt(v, 10); return n >= NOVITA_MAX_MIN && n <= NOVITA_MAX_MAX ? n : null; };
+let _maxNovita = (() => { try { return _maxNovitaValido(LOCAL.get('maxNovita')) || NOVITA_MAX_DEFAULT; } catch (e) { return NOVITA_MAX_DEFAULT; } })();
+// 🆕 v7.325 (Franco: «non usiamo la data di creazione dell'articolo ma la data nella quale le sue condizioni diventano tali da
+//    mostrarlo; crea un campo, per questi, che aggiorni in base agli eventi; per esempio … quelli senza foto … quando la
+//    avranno dovranno essere mostrati, indipendentemente dalla data di creazione») - IL CAMPO `mostratoDal` DELL'ARTICOLO:
+//    · un articolo si mostra se è visibile e ha la foto che la card mostra (`_articoloMostrabile`);
+//    · a ogni scrittura (`_saveFigurineItem` e `fsSave('series')`, da dove passano tutte) `_segnaMostratoDal` lo aggiorna:
+//      non mostrabile → '' ; mostrabile e prima '' → adesso (il momento in cui le condizioni si sono avverate);
+//      mostrabile e campo mai scritto (gli articoli di prima) → la data di creazione, se c'è, se no una data antica;
+//    · lo stesso per la SERIE (`mostrataDal`): una serie nascosta o in arrivo che si apre rende nuovi i suoi articoli.
+//    La data delle Novità è la più recente fra le due (`_dataNovita`). Chi non ha il campo usa la creazione, come prima.
+//    ⚠️ Un articolo mai scritto da questa versione e SENZA foto non ha ancora '': se la foto gli arriva nella stessa
+//    scrittura che lo vede per la prima volta, prenderebbe la data di creazione. Il tasto «Prepara le date delle Novità»
+//    (Impostazioni, `_novitaPreparaDate`) scrive il campo su tutti una volta sola.
+const _DATA_ANTICA = '1970-01-01T00:00:00.000Z';
+function _articoloMostrabile(f, tutte) {
+  return !!f && !f.invisibile && !!_fotoFigurina(f, tutte || getData('figurines', []));
+}
+function _segnaMostratoDal(f, tutte, ora) {
+  if (!f) return;
+  if (!_articoloMostrabile(f, tutte)) { if (f.mostratoDal !== '') f.mostratoDal = ''; return; }
+  if (f.mostratoDal) return;
+  if (f.mostratoDal === '') { f.mostratoDal = new Date(ora ?? Date.now()).toISOString(); return; }
+  const d = _dataCreazione(f);
+  f.mostratoDal = d ? d.toISOString() : _DATA_ANTICA;
+}
+function _segnaMostrataDalSerie(s, ora) {
+  if (!s) return;
+  if (!_serieStatoContabile(s)) { if (s.mostrataDal !== '') s.mostrataDal = ''; return; }
+  if (s.mostrataDal === '') s.mostrataDal = new Date(ora ?? Date.now()).toISOString();
+  else if (s.mostrataDal === undefined) s.mostrataDal = _DATA_ANTICA;   // già aperta prima di questa versione: non è nuova
+}
+function _dataNovita(f) {
+  if (!f || f.mostratoDal === '') return null;
+  let d = f.mostratoDal ? new Date(f.mostratoDal) : _dataCreazione(f);
+  if (!d || isNaN(d)) return null;
+  const s = (typeof _cache !== 'undefined' && _cache && Array.isArray(_cache.series)) ? _cache.series.find(x => x.id === f.seriesId) : null;
+  if (s && s.mostrataDal) { const ds = new Date(s.mostrataDal); if (!isNaN(ds) && ds > d) d = ds; }
+  return d;
+}
+// Il tasto delle Impostazioni: scrive `mostratoDal` / `mostrataDal` dove mancano, serie per serie (solo quelle da toccare)
+async function _novitaPreparaDate() {
+  const it = currentLang === 'it';
+  if (!currentUser?.isAdmin) return;
+  const serie = (Array.isArray(_cache.series) ? _cache.series : []).filter(s => Array.isArray(s.items)
+    && (s.mostrataDal === undefined || s.items.some(f => f && f.mostratoDal === undefined)));
+  if (!serie.length) { toast(it ? 'Le date delle Novità sono già tutte pronte.' : 'Already done.', 'info'); return; }
+  let fatte = 0;
+  for (const s of serie) {
+    try { await fsSave('series', s); fatte++; }
+    catch (e) { console.error('_novitaPreparaDate', s.id, e); toast((it ? '⚠️ Serie non preparata: ' : '⚠️ Series not done: ') + (s.name || s.id) + ' — ' + (e?.message || e), 'error'); }
+  }
+  toast(it ? '✅ Date delle Novità pronte su ' + fatte + ' serie.' : '✅ Done on ' + fatte + ' series.', 'success');
+  _novitaSeAperta();
+}
 const _STELLA_12 = 'polygon(' + Array.from({ length: 24 }, (_, i) => { const r = i % 2 ? 36 : 50, a = Math.PI * i / 12 - Math.PI / 2;
   return (50 + r * Math.cos(a)).toFixed(1) + '% ' + (50 + r * Math.sin(a)).toFixed(1) + '%'; }).join(',') + ')';
 function _articoloNuovo(f, ora, giorni) {
-  const d = _dataCreazione(f);
+  // 🔄 v7.325 - la data è quella in cui l'articolo si è potuto mostrare (`_dataNovita`), non più solo la creazione
+  const d = _dataNovita(f);
   return !!d && ((ora ?? Date.now()) - d.getTime()) < (giorni ?? _giorniNovita) * 86400000;
 }
 function _badgeNuovo(f) {
@@ -67651,6 +67731,61 @@ function _aggiornaLinguettaImpersona() {
   if (ml) ml.style.display = admin ? 'flex' : 'none';
   const ann = document.getElementById('ann-linguetta');
   if (ann) ann.style.display = _puoAnnunci() ? 'flex' : 'none';
+  // v7.325 - «Inviaci la tua mancolista», a sinistra: a chi ha fatto l'accesso e non è admin (anche a chi impersona, per provarla)
+  const mcl = document.getElementById('mcl-linguetta');
+  if (mcl) mcl.style.display = (currentUser && !admin) ? 'flex' : 'none';
+}
+// 🆕 v7.325 (Franco: «una linguetta, da mostrare sulla sinistra dello schermo, come quelle admin arancio che abbiamo sulla
+//    destra, chiamata "Inviaci la tua mancolista"; se premuto appare una finestra in centro allo schermo …; un bel box
+//    multiline dove lo user può scrivere; un bel bottone "Invia mancolista", blu; quando premuto un messaggio di conferma …;
+//    la form si chiude e all'admin arriva un evento come quello di Ciò che cerco») - LA MANCOLISTA SCRITTA DALL'UTENTE.
+//    Diventa una riga del registro «👣 Attività utenti» (tipo `mancolista`, col testo), come le spunte di «Ciò che cerco»;
+//    qui però si aspetta la scrittura: la conferma si dà solo se la riga è salvata davvero.
+const MANCOLISTA_MAX = 5000;
+function apriMancolistaUtente() {
+  const it = currentLang === 'it';
+  if (!currentUser) { openAuth('login'); return; }
+  document.getElementById('mancolista-modal')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'mancolista-modal';
+  ov.style.alignItems = 'center';
+  ov.innerHTML = '<div class="modal" style="max-width:560px;width:94vw;">'
+    + '<div class="modal-header"><h2 class="modal-title">' + (it ? 'Vuoi inviarci una tua mancolista Sgorbions ?' : 'Would you like to send us your Sgorbions want list?') + '</h2>'
+    + '<button type="button" class="modal-close" onclick="document.getElementById(\'mancolista-modal\').remove()">✕</button></div>'
+    + '<p style="color:var(--text);margin:0 0 0.8rem;line-height:1.5;">' + (it
+      ? 'Scrivi nel box qui sotto quali sono le figurine che cerchi e inviaci la lista.<br>Ti aiuteremo a trovarle, grazie agli altri utenti del sito !'
+      : 'Write in the box below the stickers you are looking for and send us the list.<br>We will help you find them, thanks to the other users of the site !') + '</p>'
+    + '<textarea id="mancolista-testo" class="form-input" rows="10" maxlength="' + MANCOLISTA_MAX + '" style="width:100%;resize:vertical;font-size:0.95rem;line-height:1.45;"></textarea>'
+    + '<div id="mancolista-stato" style="font-size:0.85rem;min-height:1.2em;margin-top:0.5rem;"></div>'
+    + '<div style="display:flex;justify-content:flex-end;margin-top:0.6rem;">'
+    + '<button type="button" class="btn-primary" id="mancolista-invia" onclick="inviaMancolistaUtente()">' + (it ? 'Invia mancolista' : 'Send want list') + '</button></div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  setTimeout(() => document.getElementById('mancolista-testo')?.focus(), 50);
+}
+async function inviaMancolistaUtente() {
+  const it = currentLang === 'it', v = id => document.getElementById(id);
+  const testo = String(v('mancolista-testo')?.value || '').trim().slice(0, MANCOLISTA_MAX);
+  const dire = t => { const s = v('mancolista-stato'); if (s) { s.style.color = 'var(--danger)'; s.textContent = t; } };
+  if (!testo) return dire(it ? 'Scrivi prima le figurine che cerchi.' : 'Write the stickers you are looking for first.');
+  if (!currentUser || currentUser.isAdmin) return dire(it ? 'Serve l’accesso di un utente.' : 'A user account is needed.');
+  // chi impersona non scrive nel registro (come per le spunte, `_registraAttivita`): lo si dice invece di fingere l'invio
+  if (isImpersonating()) return dire(it ? 'Stai impersonando un utente: la mancolista non si invia.' : 'You are impersonating a user: the list is not sent.');
+  const b = v('mancolista-invia');
+  if (b) b.disabled = true;
+  try {
+    await fsSave('attivita', { tipo: 'mancolista', date: new Date().toISOString(), userId: currentUser.id,
+      authUid: currentUser.authUid || null, username: currentUser.username || currentUser.email || '', testo });
+    v('mancolista-modal')?.remove();
+    // il «!» con lo spazio prima, come in tutto il sito (prova-v6390)
+    toast(it ? 'La tua mancolista è stata inviata ! Torna a trovarci tra qualche giorno e saprai che ti abbiamo trovato le figurine !'
+             : 'Your want list has been sent ! Come back in a few days to find out about the stickers we found for you !', 'success', null, 9000);
+  } catch (e) {
+    console.error('inviaMancolistaUtente', e);
+    if (b) b.disabled = false;
+    dire((it ? '⚠️ Non inviata: ' : '⚠️ Not sent: ') + (e?.message || e));
+  }
 }
 // 🆕 v7.120 - accende e spegne le macchie per l'admin, e ridisegna quello che è a schermo (stesso giro di
 //    `_impostaProtezione`). Una scheda già aperta si aggiorna alla prossima apertura.
@@ -69654,6 +69789,7 @@ const _ATTIVITA_TIPI = [
   { k: 'lista',    it: '<em>MIA LISTA</em>',     en: '<em>MY LIST</em>' },
   { k: 'q_inizio', it: 'QUESTIONARI INIZIATI',   en: 'QUESTIONNAIRES STARTED' },
   { k: 'q_fine',   it: 'QUESTIONARI COMPLETATI', en: 'QUESTIONNAIRES COMPLETED' },
+  { k: 'mancolista', it: 'MANCOLISTE INVIATE',   en: 'WANT LISTS SENT' },   // v7.325 - «Inviaci la tua mancolista»
 ];
 let _attivitaVista = 'cerco';
 let _attivitaCaricate = false;
@@ -69733,6 +69869,12 @@ function _attivitaDisegna() {
     tab = '<table class="data-table compact"><thead><tr><th style="' + th + '">' + (it ? 'Data' : 'Date') + '</th><th style="' + th + '">' + (it ? 'Utente' : 'User') + '</th>'
       + '<th style="' + th + '">' + (it ? 'Volta' : 'Time') + '</th></tr></thead><tbody>'
       + righe.map(r => '<tr>' + td1 + quando(r) + '</td><td>' + _attivitaUtente(r) + '</td><td>' + (r.ripresa ? (it ? 'ripreso' : 'resumed') : (it ? 'prima volta' : 'first time')) + '</td></tr>').join('')
+      + '</tbody></table>';
+  } else if (_attivitaVista === 'mancolista') {
+    // v7.325 - la mancolista scritta dall'utente, intera e a capo come l'ha scritta
+    tab = '<table class="data-table compact"><thead><tr><th style="' + th + '">' + (it ? 'Data' : 'Date') + '</th><th style="' + th + '">' + (it ? 'Utente' : 'User') + '</th>'
+      + '<th style="' + th + '">' + (it ? 'Mancolista' : 'Want list') + '</th></tr></thead><tbody>'
+      + righe.map(r => '<tr>' + td1 + quando(r) + '</td><td style="vertical-align:top;">' + _attivitaUtente(r) + '</td><td style="white-space:pre-wrap;color:var(--text);">' + esc(r.testo || '') + '</td></tr>').join('')
       + '</tbody></table>';
   } else {
     tab = '<table class="data-table compact"><thead><tr><th style="' + th + '">' + (it ? 'Data' : 'Date') + '</th><th style="' + th + '">' + (it ? 'Utente' : 'User') + '</th>'
