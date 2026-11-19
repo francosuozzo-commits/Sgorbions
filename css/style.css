@@ -3109,3 +3109,6 @@ body:not(.wz-visibile) .solo-wz { display: none !important; }
 /* 🆕 v7.324 - linguetta «Novità»: ogni card sta in una cella larga quanto una colonna della sua sezione (`_novitaHTML`) e
    la riempie; nel modo «Fronte e retro sempre grandi» comanda la larghezza scritta sulla card, come nella griglia. */
 .nov-cella > .fig-card { flex: 1 1 auto; min-width: 0; }
+/* 🆕 v7.329 - dal telefono comanda la cella (le foto per riga dell'Impostazione): la larghezza fissa che la card con fronte e
+   retro si scrive addosso (`flex:0 0 350px`) qui non vale, come in `#items-grid` sotto gli 860px. */
+.nov-cella-tel > .fig-card { flex: 1 1 auto !important; width: auto !important; min-width: 0 !important; }
