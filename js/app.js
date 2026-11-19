@@ -1,6 +1,33 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.331 - Modificati index.html (versione) e js/app.js. Il personaggio passa a un erede (Franco: «un personaggio non
+//          venga mai cancellato se può essere relazionato ad un articolo. quando l'articolo ad esso relazionato muore, il
+//          personaggio passa ad un altro articolo … fpa, fcr, carta, olo, carta di identità, trasferello, tatuaggio»):
+//          cancellando l'articolo che porta il collegamento, chi lo mostrava e resta senza lo riceve sulla sua riga, in
+//          quell'ordine (`_erediDelPersonaggio`). La stessa scala ordina, dentro la serie, la foto della card PERS
+//          (`_fotoPersonaggio`; prima: fpa, fcr e «il resto» alla pari), e si cambia dal nuovo tab della console «🎭
+//          Personaggi» (`settings/scalaPersonaggi`, Franco: «rendila configurabile»).
+//          LE PUBBLICITÀ (PUB), il quinto taglio dell'Inventario fra Personaggi e Novità (Franco: «una nuova entità,
+//          Pubblicità … le PUB si legano solo ai retro … un retro o ha un PERS o ha una PUB»): documento
+//          `personaggi/_pubblicita`, hub con ricerca e card, pagina della PUB, «Pubblicità» nella scheda del retro e «del
+//          retro» in quella della figurina, collegamento da admin nella modifica del retro (PERS e PUB si escludono), eredità
+//          alla cancellazione, e il tasto della prima lista (retro base senza personaggio delle serie 3 e 4, il nome è
+//          quello del retro). L'anteprima della prima lista è una tabella con la vignetta del retro, in ordine di serie e
+//          categoria (la finestra di conferma accetta una cella `{img}`).
+//          CERCA VARIAZIONI SI CONFIGURA (Franco: «per la serie 3 … non variazioni non ufficiali, ma … non presenti nel sito
+//          oppure presenti che admin ha marcato come "da trovare"»): in console, sotto il tasto, righe = serie, colonne = le
+//          versioni delle fcr + «Da trovare» (`settings/cercaVariazioni`); il primo elenco del risultato («1. Figurine da
+//          segnalare») mostra quello che è spuntato. Nuovo campo `daTrovare` delle fcr (spunta admin in modifica, riga in
+//          lettura). La famiglia del verdetto sono tutte le versioni della base. Colonne: senza omaggio, errore di stampa e
+//          change; in più «Variazione non censita» (il secondo elenco). Le caselle da guardare si tagliano dalla foto
+//          ORIGINALE (Franco: «le foto non vanno rimpicciolite»): foto grande intera, miniatura da 240 px (`_cvMiniatura`);
+//          griglia e firma restano sulla copia da 1600. I RETRO SI GIRANO (Franco: «possono essere ruotati di 90 gradi …
+//          devi prima capirne il senso di rotazione»): dritto, 90 a destra, 90 a sinistra, vince il più somigliante, e il
+//          risultato dice come era girato. L'IMPRONTA SEGUE LA FORMA (Franco: «verticale od orizzontale»): 45×60 in piedi,
+//          60×45 sdraiata, e si confrontano solo impronte dello stesso verso. 🐛 LA TINTA NON CONTAVA nell'impronta (la
+//          deviazione con un minimo di 1 schiacciava i rapporti di colore): ora conta, a peso 1,2. Misurato sulle foto di
+//          Franco (serie 3, 3×7): fronti da 14/21 a 21/21, retro 21/21 senza dubbi. Prova: prova-v7331.js.
 // v7.330 - Modificati css/style.css, index.html (versione) e js/app.js. Scheda dell'articolo (Franco: «i tag slim, ma
 //          anche gli altri, si vedono sulla card, ma … nella scheda di dettagli non c'è. Stessa cosa per il bollino
 //          new»): sopra le foto una riga con il badge della versione e la stella «New», come sulla card. Il badge
@@ -30320,6 +30347,15 @@ function _finestraConferma(opz) {
               else if (p.spento) sp.style.cssText = 'color:var(--muted);';
               td.appendChild(sp);
             });
+          } else if (cella && typeof cella === 'object' && 'img' in cella) {
+            // 🆕 v7.331 (Franco: «nella anteprima mettimi una vignetta affianco») - UNA CELLA PUO' ESSERE UNA FOTO,
+            //    `{img: url}`. Un elemento `<img>` col suo `src`, mai `innerHTML`: la regola delle celle resta.
+            if (cella.img) {
+              const im = document.createElement('img');
+              im.src = cella.img; im.loading = 'lazy'; im.alt = '';
+              im.style.cssText = 'width:64px;height:64px;object-fit:contain;display:block;border-radius:4px;background:var(--card2);';
+              td.appendChild(im);
+            }
           } else {
             td.textContent = cella;
           }
@@ -32168,7 +32204,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.330';
+const JS_VERSION = 'v7.331';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33535,6 +33571,7 @@ async function _deleteFigurineItem(id) {
       // 🆕 v7.330 - e via il suo collegamento al personaggio, se ne aveva uno: era così che nascevano i collegamenti
       //    morti (259 dopo il rifacimento della serie 4). Un errore qui non fa credere fallita la cancellazione, riuscita.
       try { await _togliCollegamentoPersonaggio(id); } catch (e) { console.error('_togliCollegamentoPersonaggio', e); }
+      try { await _togliCollegamentoPubblicita(id); } catch (e) { console.error('_togliCollegamentoPubblicita', e); }   // 🆕 v7.331
       break;
     }
   }
@@ -33546,7 +33583,74 @@ async function _togliCollegamentoPersonaggio(id) {
   if (!currentUser?.isAdmin) return;
   const D = await caricaPersonaggi();
   if (!D || !D.grezzi.associazioni.some(a => a && a.articoloId === id)) return;
-  await _scriviPacchetto(d => { d.associazioni = d.associazioni.filter(x => x.a !== id); });
+  // 🆕 v7.331 - ⚠️ qui l'articolo è ancora in `_cache.figurines` (lo si toglie dopo): serve, per sapere chi lo ereditava
+  const eredi = _erediDelPersonaggio(id, getData('figurines', []) || [], D.grezzi.associazioni);
+  await _scriviPacchetto(d => {
+    d.associazioni = d.associazioni.filter(x => x.a !== id);
+    eredi.forEach(e => { if (!d.associazioni.some(x => x.a === e.a && x.p === e.p)) d.associazioni.push(e); });
+  });
+}
+// 🆕 v7.331 (Franco: «l'importante è che un personaggio non venga mai cancellato se può essere relazionato ad un articolo.
+//    quando l'articolo ad esso relazionato muore, il personaggio passa ad un altro articolo … la scala di priorità: fpa,
+//    fcr, carta, olo, carta di identità, trasferello, tatuaggio») - GLI EREDI DEL COLLEGAMENTO. Chi mostrava il personaggio
+//    PRIMA (come suo, non come quello del retro) e DOPO la cancellazione non lo mostra più è orfano: il collegamento va
+//    sulla riga giusta (`_rigaDelPersonaggio`) dell'orfano più in alto nella scala, e si ripete finché non ne restano.
+//    Esempio: muore la fpa → la sua fcr base, e con lei tutte le versioni. Se non c'è nessun orfano, il personaggio resta
+//    com'è: senza articoli, ma mai cancellato (si cancella solo a mano).
+// 📌 Una figurina ha UN personaggio: una riga di figurina che ne ha già uno suo non riceve il secondo.
+const _PRIORITA_EREDE = ['attaccare', 'figurines', 'carte', 'olografiche', 'cartoncini', 'trasferelli', 'tatuaggi'];
+// 🆕 v7.331 (Franco: «usiamo la stessa scala … rendila configurabile. vedi se in admin console c'è una sezione "personaggi"
+//    sennò creala») - LA SCALA DEI PERSONAGGI. Quella sopra è la scala di partenza; la console la cambia dal tab «🎭
+//    Personaggi» (`settings/scalaPersonaggi`, campo `ordine`). Vale per due cose: l'erede del collegamento (qui sotto) e
+//    la foto della card PERS (`_fotoPersonaggio`). Le tipologie fuori dalla scala vengono dopo, alla pari.
+let _SCALA_PERS = null;
+function _impostaScalaPersonaggi(d) {
+  const o = d && Array.isArray(d.ordine) ? d.ordine.filter((s, i, a) => !!ARTICOLI[s] && a.indexOf(s) === i) : [];
+  _SCALA_PERS = o.length ? o : null;
+}
+function _scalaPersonaggi() { return _SCALA_PERS || _PRIORITA_EREDE; }
+function _rangoScala(f) { const s = _scalaPersonaggi(), i = s.indexOf(f.section || 'figurines'); return i < 0 ? s.length : i; }
+function _indiciPersonaggiDa(figs) {
+  const figliDi = new Map(), perRetro = new Map();
+  figs.forEach(f => {
+    if (f.baseFigurineId) { if (!figliDi.has(f.baseFigurineId)) figliDi.set(f.baseFigurineId, []); figliDi.get(f.baseFigurineId).push(f); }
+    if (f.retroId) { if (!perRetro.has(f.retroId)) perRetro.set(f.retroId, []); perRetro.get(f.retroId).push(f); }
+  });
+  return { figs, perId: new Map(figs.map(f => [f.id, f])), figliDi, perRetro };
+}
+function _erediDelPersonaggio(id, figs, assoc) {
+  const dirDa = lista => { const m = new Map(); lista.forEach(a => { if (!a || !a.articoloId) return; if (!m.has(a.articoloId)) m.set(a.articoloId, []); m.get(a.articoloId).push(a.personaggioId); }); return m; };
+  // la stessa regola di `personaggiDiArticolo`, su un indice e una tabella dati qui (quelli di prima e quelli di dopo)
+  const suoi = (f, ix, dir) => {
+    const d = k => (k && dir.get(k)) || [];
+    const sez = f.section || 'figurines';
+    let out = d(f.id);
+    if (sez === 'figurines') {
+      const baseId = _eBase(f) ? f.id : (f.baseFigurineId || '');
+      if (!out.length) { const fpa = (ix.figliDi.get(baseId) || []).find(x => x.section === 'attaccare'); if (fpa) out = d(fpa.id); }
+      if (!out.length) out = d(baseId);
+      return out.slice(0, 1);
+    }
+    if (!out.length && f.baseFigurineId) out = d(f.baseFigurineId);
+    return out;
+  };
+  const rango = _rangoScala;
+  const dir0 = dirDa(assoc), prima = _indiciPersonaggiDa(figs);
+  const restano = figs.filter(f => f.id !== id), dopo = _indiciPersonaggiDa(restano);
+  const lista = assoc.filter(a => a && a.articoloId !== id), eredi = [];
+  (dir0.get(id) || []).forEach(p => {
+    const loAvevano = restano.filter(f => suoi(f, prima, dir0).includes(p));
+    for (let giro = 0; giro < 100; giro++) {
+      const dir = dirDa(lista);
+      const orfani = loAvevano.filter(f => !suoi(f, dopo, dir).includes(p)).sort((a, b) => rango(a) - rango(b));
+      const riga = orfani.map(f => _rigaDelPersonaggio(f, dopo)).find(r => !(['figurines', 'attaccare'].includes(r.section || 'figurines') && (dir.get(r.id) || []).length)
+        && !lista.some(a => a.articoloId === r.id && a.personaggioId === p));
+      if (!riga) break;
+      lista.push({ articoloId: riga.id, personaggioId: p });
+      eredi.push({ a: riga.id, p });
+    }
+  });
+  return eredi;
 }
 
 // ============================================================
@@ -41466,6 +41570,8 @@ async function _caricaLegendeDefinizioni() {
     _impostaEreditaBase(docs.find(x => x.id === 'ereditaBase'));   // v7.205 - idem
     _impostaColonneVT(docs.find(x => x.id === 'colonneVT'));   // v7.207 - idem
     _impostaDoppioni(docs.find(x => x.id === 'doppioni'));   // v7.262 - idem
+    _impostaScalaPersonaggi(docs.find(x => x.id === 'scalaPersonaggi'));   // v7.331 - idem
+    _impostaCercaVariazioni(docs.find(x => x.id === 'cercaVariazioni'));   // v7.331 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -47742,6 +47848,58 @@ function renderAdminDettagliSet() {
     box.innerHTML = testa + '<p style="color:var(--text);">❌ ' + (it ? 'Lettura non riuscita: ' : 'Read failed: ') + esc(e?.code || e?.message || '') + '</p>';
   });
 }
+// 🆕 v7.331 (Franco: «rendila configurabile. vedi se in admin console c'è una sezione "personaggi" sennò creala») - IL TAB
+//    «🎭 PERSONAGGI»: la scala dei personaggi (`_scalaPersonaggi`), un numero per tipologia. Vuota = fuori dalla scala.
+function renderAdminPersonaggi() {
+  const box = document.getElementById('admin-personaggi-box');
+  if (!box) return;
+  const it = currentLang === 'it', scala = _scalaPersonaggi();
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
+  const righe = PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez] && sez !== 'extras')
+    .sort((a, b) => ((scala.indexOf(a) + 1) || 999) - ((scala.indexOf(b) + 1) || 999));
+  box.innerHTML =
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">🎭 ' + (it ? 'Scala dei personaggi' : 'Character ranking') + '</h4>' +
+    // v7.331 (Franco: «questo testo fallo bianco»)
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it ? 'L\'ordine delle tipologie, dalla 1 in giù. Vale per due cose:<br>' +
+            '· la foto sulla card del personaggio: nella serie più vecchia, la tipologia più in alto;<br>' +
+            '· quando si cancella l\'articolo collegato al personaggio, il collegamento passa all\'articolo della tipologia più in alto.<br>' +
+            'Casella vuota: la tipologia viene dopo tutte le altre.'
+          : 'The order of item types, from 1 down. It decides the character card photo and who inherits the link when the linked item is deleted. Empty: after all the others.') +
+    '</p>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
+      '<th style="' + th + 'text-align:center;">' + (it ? 'Posizione' : 'Position') + '</th></tr>' +
+    righe.map(sez => '<tr><td style="' + td + '">' + esc(getSectionLabel(sez)) + '</td>' +
+      '<td style="' + td + 'text-align:center;"><input type="number" min="1" max="20" step="1" data-scala-pers="' + esc(sez) + '"' +
+      ' value="' + ((scala.indexOf(sez) + 1) || '') + '" style="width:3.4em;padding:2px 4px;text-align:center;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;"></td></tr>').join('') +
+    '</table></div>' +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
+      '<button class="btn-primary btn-admin" onclick="salvaScalaPersonaggi()">' + (it ? 'Salva la scala' : 'Save ranking') + '</button>' +
+    '</div>';
+}
+async function salvaScalaPersonaggi() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it', voci = [];
+  document.querySelectorAll('#admin-personaggi-box input[data-scala-pers]').forEach(el => {
+    const n = parseInt(String(el.value || '').trim(), 10);
+    if (n > 0) voci.push([n, el.dataset.scalaPers]);
+  });
+  const numeri = voci.map(v => v[0]);
+  if (!voci.length) { toast(it ? '❌ Serve almeno una tipologia nella scala' : '❌ At least one item type is needed', 'error'); return; }
+  if (numeri.some((n, i) => numeri.indexOf(n) !== i)) { toast(it ? '❌ Due tipologie con la stessa posizione' : '❌ Two item types with the same position', 'error'); return; }
+  const ordine = voci.sort((a, b) => a[0] - b[0]).map(v => v[1]);
+  try {
+    await fsSave('settings', { id: 'scalaPersonaggi', ordine });
+    _impostaScalaPersonaggi({ ordine });
+    toast(it ? '✅ Scala salvata. Vale da subito.' : '✅ Ranking saved.', 'success');
+    renderAdminPersonaggi();
+  } catch (e) {
+    console.error('salvaScalaPersonaggi', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
+}
 // si salvano solo le spunte diverse dal descrittore: le altre seguono lui, anche se un giorno cambia
 async function salvaQuestionario() {
   if (!currentUser?.isAdmin) return;
@@ -48815,6 +48973,8 @@ i18n.it['catalog.bycharacters'] = 'Personaggi';
 i18n.en['catalog.bycharacters'] = 'Characters';
 i18n.it['catalog.bynew'] = 'Novità';
 i18n.en['catalog.bynew'] = 'New';
+i18n.it['catalog.byads'] = 'Pubblicità';   // 🆕 v7.331 - il quinto taglio, fra Personaggi e Novità
+i18n.en['catalog.byads'] = 'Advertising';
 // 🆕 v7.191 (Franco: «da mobile, il bottone "Azzera filtri" prova a scriverlo su due righe ("Azzera" e sotto "filtri")»)
 //    - un a capo che c'è solo sul telefono (`.wz-solo-tel`); sul desktop lo spazio prima tiene le parole staccate
 i18n.it['items.resetFiltersHtml'] = 'Azzera <br class="wz-solo-tel">filtri';
@@ -50161,12 +50321,13 @@ async function _seminaVersioniArticolo() {
 // casello: alla terza volta uno sa gia' dove vuole andare, e la domanda e' solo un clic in piu'.
 let _taglioInventario = 'serie';
 // 🔄 v6.966 - tre tagli: serie, prodotti (tipologie) e personaggi.
-const _TAGLI_INVENTARIO = ['serie', 'prodotti', 'personaggi', 'novita'];   // v7.324: + «Novità»
+const _TAGLI_INVENTARIO = ['serie', 'prodotti', 'personaggi', 'pubblicita', 'novita'];   // v7.324: + «Novità»; v7.331: + «Pubblicità»
 try { const _t = localStorage.getItem('sgb_taglio'); if (_TAGLI_INVENTARIO.includes(_t)) _taglioInventario = _t; } catch (e) {}
 
 function impostaTaglioInventario(taglio) {
   _taglioInventario = _TAGLI_INVENTARIO.includes(taglio) ? taglio : 'serie';
   if (taglio === 'personaggi') _personaggioAperto = null;   // v6.966 - dal selettore si torna all'hub
+  if (taglio === 'pubblicita') _pubAperta = null;   // v7.331 - idem
   try { localStorage.setItem('sgb_taglio', _taglioInventario); } catch (e) {}
   _aggiornaBivioInventario();
   renderCatalog();
@@ -50581,6 +50742,10 @@ function _aggiornaBivioInventario() {
       //    scritta qui nelle due lingue, e l'attributo la farebbe tornare quella delle serie.
       sub.removeAttribute('data-i18n');
       sub.textContent = currentLang === 'it' ? 'Tutti i personaggi Sgorbions, con i loro articoli' : 'All Sgorbions characters, with their items';
+    } else if (_taglioInventario === 'pubblicita') {
+      // 🆕 v7.331 - come i Personaggi
+      sub.removeAttribute('data-i18n');
+      sub.textContent = currentLang === 'it' ? 'Tutte le pubblicità Sgorbions, con i loro articoli' : 'All Sgorbions advertisements, with their items';
     } else {
       const chiave = (_taglioInventario === 'prodotti') ? 'catalog.subProducts' : 'catalog.sub';
       sub.setAttribute('data-i18n', chiave);
@@ -51340,7 +51505,9 @@ function _fotoPersonaggio(arts, pid, ix) {
     }
   }
   const ordine = new Map((getData('series', []) || []).map(s => [s.id, s.order ?? 9999]));
-  const pesoSez = f => ({ attaccare: 0, figurines: 1 }[f.section || 'figurines'] ?? 2);
+  // 🔄 v7.331 (Franco: «quando dici "poi il resto", cosa intendi di preciso? usiamo la stessa scala») - dentro la serie
+  //    l'ordine delle tipologie è la scala dei personaggi (`_rangoScala`); prima era fpa, fcr e tutto il resto alla pari
+  const pesoSez = _rangoScala;
   const figs = getData('figurines', []);
   const cand = arts.slice().sort((a, b) => (ordine.get(a.seriesId) ?? 9999) - (ordine.get(b.seriesId) ?? 9999)
     || pesoSez(a) - pesoSez(b) || (_eBase(b) - _eBase(a)) || ((+a.number || 9999) - (+b.number || 9999)));
@@ -52349,6 +52516,7 @@ function _persAggiungi() {
   else if (!m.pids.includes(pid)) m.pids.push(pid);
   m.toccato = true;
   _disegnaPersMod();
+  try { _pubEsclusaDalPers(); } catch (e) {}   // 🆕 v7.331 - o personaggio o pubblicità (Franco)
 }
 function _persTogli(pid) {
   const m = _persMod; if (!m) return;
@@ -52636,6 +52804,459 @@ async function _eliminaPersonaggio(pid) {
   catch (e) { toast((it ? '⚠️ NON eliminato: ' : '⚠️ NOT deleted: ') + (e?.message || e), 'error'); return; }
   toast((it ? 'Eliminato: ' : 'Deleted: ') + p.nome, 'success');
   chiudiPersonaggio();
+}
+
+// ============================================================
+//  🆕 v7.331 — LE PUBBLICITÀ (PUB): IL QUINTO TAGLIO DELL'INVENTARIO
+// ============================================================
+// Franco, 19 novembre: «vorrei creare un'altra sezione, tra Personaggi e Novità, chiamata Pubblicità, dove andiamo a
+// censire una nuova entità, Pubblicità; come il PERS, la PUB si collega agli articoli»; «le PUB si legano solo ai retro»;
+// «un retro o ha un PERS o ha una PUB». Alla proposta: «a: no» (mai PERS e PUB sullo stesso retro), «b: sì» (la vedono
+// tutti), «c: solo retro» (la prima lista), «d: sì» (il nome è quello del retro; lo corregge lui dove serve).
+// 📌 I DATI COME I PERSONAGGI: un documento solo, `personaggi/_pubblicita` (la regola Firebase della raccolta c'è già:
+//    lettura libera, scrittura admin), con `pubblicita: [{i, n}]` e `associazioni: [{a, p}]`. Il collegamento sta sul retro
+//    base (`_rigaDelPersonaggio`): le versioni lo ricavano dalla base, le figurine lo vedono come «Pubblicità del retro».
+// 📌 UNA PUB, UN RETRO (Franco: «credo sempre e solo uno»): collegarne una già usata chiede conferma, e dice dove sta.
+const PUBBLICITA_PACCHETTO = { coll: 'personaggi', id: '_pubblicita' };
+// la prima lista (Franco: «per ora usa solo le serie 3 e 4») - gli id di `_DS_SERIE`
+const PUBBLICITA_SERIE_PRIMA_LISTA = ['s3', 's4'];
+let _pubDati = null, _pubCaricamento = null, _pubAperta = null, _pubPagina = 1, _pubFiltro = '', _elencoPubblicita = [];
+function _impostaPubblicita(d) {
+  const elenco = ((d && d.pubblicita) || []).filter(x => x && x.i).map(x => ({ id: x.i, nome: x.n || x.i }));
+  const perId = new Map(elenco.map(p => [p.id, p]));
+  const associazioni = ((d && d.associazioni) || []).filter(x => x && x.a && perId.has(x.p)).map(x => ({ articoloId: x.a, personaggioId: x.p }));
+  const dirPerArt = new Map(), artPerPub = new Map();
+  associazioni.forEach(a => {
+    dirPerArt.set(a.articoloId, a.personaggioId);
+    if (!artPerPub.has(a.personaggioId)) artPerPub.set(a.personaggioId, []);
+    artPerPub.get(a.personaggioId).push(a.articoloId);
+  });
+  elenco.sort((x, y) => x.nome.localeCompare(y.nome, 'it', { sensitivity: 'base' }));
+  _pubDati = { elenco, perId, dirPerArt, artPerPub, grezzi: { associazioni } };
+  return _pubDati;
+}
+async function caricaPubblicita() {
+  if (_pubDati) return _pubDati;
+  if (_pubCaricamento) return _pubCaricamento;
+  _pubCaricamento = fsGet(PUBBLICITA_PACCHETTO.coll, PUBBLICITA_PACCHETTO.id).then(_impostaPubblicita)
+    .catch(e => { _pubCaricamento = null; throw e; });
+  return _pubCaricamento;
+}
+// come `_scriviPacchetto`: si rilegge dal server, si cambia, si riscrive
+async function _scriviPacchettoPub(cambia) {
+  const { doc, getDoc, setDoc } = window._fb;
+  const rif = doc(db, PUBBLICITA_PACCHETTO.coll, PUBBLICITA_PACCHETTO.id);
+  const snap = await getDoc(rif);
+  const d = snap.exists() ? snap.data() : {};
+  d.pubblicita = d.pubblicita || []; d.associazioni = d.associazioni || [];
+  cambia(d);
+  d.aggiornato = new Date().toISOString();
+  await setDoc(rif, d);
+  _impostaPubblicita(d);
+}
+// la PUB di un retro (sua, o della sua base); null per tutto il resto
+function pubblicitaDiArticolo(f) {
+  if (!f || !_pubDati || (f.section || 'figurines') !== 'retros') return null;
+  return _pubDati.dirPerArt.get(f.id) || (f.baseFigurineId ? _pubDati.dirPerArt.get(f.baseFigurineId) : null) || null;
+}
+function pubblicitaDelRetroDi(f, ix) {
+  if (!f || !f.retroId) return null;
+  ix = ix || _indiciPersonaggi();
+  const r = ix.perId.get(f.retroId);
+  return r ? pubblicitaDiArticolo(r) : null;
+}
+// gli articoli di una PUB: i suoi retro con le loro versioni, e le figurine che li usano
+function articoliDellaPubblicita(id, ix) {
+  if (!_pubDati) return [];
+  ix = ix || _indiciPersonaggi();
+  const admin = !!currentUser?.isAdmin, out = new Map();
+  const add = f => { if (f && (admin || !f.invisibile)) out.set(f.id, f); };
+  (_pubDati.artPerPub.get(id) || []).forEach(aid => {
+    const a = ix.perId.get(aid);
+    if (!a) return;
+    [a].concat(ix.figliDi.get(a.id) || []).forEach(r => { add(r); (ix.perRetro.get(r.id) || []).forEach(add); });
+  });
+  return [...out.values()];
+}
+// l'ordine della pagina e della foto: serie, prima i retro, base prima delle versioni, numero, nome
+function _ordinaArticoliPub(arts) {
+  const ordSerie = new Map((getData('series', []) || []).map(s => [s.id, s.order ?? 9999]));
+  return arts.slice().sort((a, b) => ((ordSerie.get(a.seriesId) ?? 9999) - (ordSerie.get(b.seriesId) ?? 9999))
+    || ((a.section === 'retros' ? 0 : 1) - (b.section === 'retros' ? 0 : 1))
+    || (_eBase(b) - _eBase(a)) || ((+a.number || 9999) - (+b.number || 9999))
+    || String(a.name || '').localeCompare(String(b.name || ''), 'it'));
+}
+function _fotoPubblicita(arts) {
+  const figs = getData('figurines', []);
+  for (const f of _ordinaArticoliPub(arts)) { const u = _fotoFigurina(f, figs); if (u) return u; }
+  return '';
+}
+
+function renderCatalogPubblicita(grid) {
+  const it = currentLang === 'it';
+  if (!_pubDati) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">⏳</div><p class="empty-title">' + (it ? 'Caricamento delle pubblicità…' : 'Loading advertisements…') + '</p></div>';
+    caricaPubblicita().then(() => { if (_taglioInventario === 'pubblicita') renderCatalog(); })
+      .catch(e => { console.error('caricaPubblicita', e); grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><p class="empty-title">❌ ' + (it ? 'Lettura non riuscita' : 'Read failed') + '</p></div>'; });
+    return;
+  }
+  if (_pubAperta) { renderPaginaPubblicita(grid, _pubAperta); return; }
+  // le colonne dell'hub dei personaggi: il doppio di quelle della griglia, tre sul telefono
+  if (grid) {
+    const n = _isMobileViewport() ? 0 : getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
+    grid.style.gridTemplateColumns = 'repeat(' + (n ? n * 2 : 3) + ', minmax(0, 1fr))';
+    grid.style.gap = '0.75rem';
+  }
+  const ix = _indiciPersonaggi();
+  const q = _perRicerca(_pubFiltro.trim());
+  const tutti = _pubDati.elenco.filter(p => !q || _perRicerca(p.nome).includes(q));
+  _elencoPubblicita = tutti.map(p => p.id);
+  const pagine = Math.max(1, Math.ceil(tutti.length / PERSONAGGI_PER_PAGINA));
+  _pubPagina = Math.min(Math.max(1, _pubPagina), pagine);
+  const da = (_pubPagina - 1) * PERSONAGGI_PER_PAGINA, pagina = tutti.slice(da, da + PERSONAGGI_PER_PAGINA);
+  const _etichettaBordo = 'position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;pointer-events:none;';
+  // la forma della ricerca dei personaggi: il riquadro blu, la buca con l'etichetta a cavallo del bordo
+  const cerca = '<div style="grid-column:1/-1;">'
+    + '<div id="pubblicita-search-box" style="background:var(--card);border:1px solid var(--action);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-bottom:0.9rem;">'
+    + '<div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.75rem;">'
+    + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? 'Imposta i criteri per la tua ricerca pubblicità (in tutte le serie)' : 'Set your advertisement search criteria (in all series)') + '</div>'
+    + '<button type="button" class="btn-primary" onclick="_pubFiltro=\'\';_pubPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;line-height:1.15;">' + t('items.resetFiltersHtml') + '</button>'
+    + '</div>'
+    + '<div class="search-bar" style="position:relative;">'
+    + '<span style="' + _etichettaBordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + t('items.searchHint') + '</span>'
+    + '<div class="search-input-wrap"><span class="search-icon">🔍</span>'
+    + '<input class="search-input" type="text" id="pubblicita-cerca" value="' + esc(_pubFiltro) + '" placeholder="' + (it ? 'Cerca una pubblicità…' : 'Search an advertisement…') + '" oninput="_pubFiltro=this.value;_pubPagina=1;renderCatalog();const c=document.getElementById(\'pubblicita-cerca\');c.focus();c.setSelectionRange(c.value.length,c.value.length);">'
+    + (_pubFiltro ? '<span class="search-clear-btn" onclick="_pubFiltro=\'\';_pubPagina=1;renderCatalog();">✕</span>' : '')
+    + '</div></div></div>'
+    + '<div style="display:flex;flex-direction:column;gap:1px;margin-bottom:0.5rem;">'
+    + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:0.35rem;">' + (it ? 'I risultati della tua ricerca:' : 'Your search results:') + '</div>'
+    + '<div style="font-size:0.95rem;color:var(--text);"><span style="font-size:1.5rem;font-weight:700;color:var(--accent);">' + tutti.length.toLocaleString(it ? 'it-IT' : 'en-US') + '</span> '
+    + (it ? (tutti.length === 1 ? 'pubblicità trovata' : 'pubblicità trovate') : (tutti.length === 1 ? 'advertisement found' : 'advertisements found')) + '</div>'
+    + '</div>'
+    // il riquadro «Catalogo» degli admin, come «+ Aggiungi personaggio»
+    + (currentUser?.isAdmin ? '<div style="margin-bottom:1rem;">'
+      + '<div style="font-size:0.75rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Catalogo' : 'Catalogue') + '</div>'
+      + '<div id="admin-pubblicita-btn" style="display:inline-flex;gap:0.75rem;flex-wrap:wrap;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">'
+      + '<button class="btn-primary btn-admin" onclick="creaPubblicitaDaiRetro()">' + (it ? '+ Crea le pubblicità dai retro senza personaggio (serie 3 e 4)' : '+ Create advertisements from backs without a character (series 3 and 4)') + '</button>'
+      + '</div></div>' : '')
+    + '</div>';
+  const vuoto = !_pubDati.elenco.length
+    ? '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">📣</div><p class="empty-title">' + (it ? 'Nessuna pubblicità ancora censita.' : 'No advertisement yet.') + '</p></div>'
+    : '<div class="empty-state" style="grid-column:1/-1;"><p class="empty-title">' + (it ? 'Nessuna pubblicità con questo nome.' : 'No advertisement with this name.') + '</p></div>';
+  grid.innerHTML = _rigaTitoloHub(it ? 'LE PUBBLICITÀ SGORBIONS' : 'THE SGORBIONS ADVERTISEMENTS') + cerca + _paginazionePubblicita(pagine)
+    + (pagina.length ? pagina.map(p => _cardPubblicitaHTML(p, ix)).join('') : vuoto) + _paginazionePubblicita(pagine);
+}
+// la card della PUB: la forma della card del personaggio
+function _cardPubblicitaHTML(p, ix) {
+  const arts = articoliDellaPubblicita(p.id, ix), foto = _fotoPubblicita(arts);
+  return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="apriPubblicita(\'' + p.id + '\')">'
+    + '<div class="card-img-placeholder" style="margin-top:auto;">' + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="' + esc(p.nome) + '" style="width:100%;height:100%;object-fit:contain;" onload="_persSdraiata(this)">' : '') + '</div>'
+    + '<div class="card-body" style="display:flex;flex-direction:column;flex:0 0 auto;margin-top:auto;padding:0.55rem 0.65rem 0.6rem;">'
+    + '<div class="card-title" style="margin-bottom:0.2rem;font-size:0.85rem;line-height:1.2;color:var(--nome-entita);flex:1 1 auto;">' + esc(p.nome) + '</div>'
+    + '<div class="card-desc" style="margin-top:0.3rem;padding-top:0.3rem;font-size:0.72rem;line-height:1.3;border-top:1px solid rgba(255,255,255,0.06);color:var(--accent);">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div>'
+    + '</div></div>';
+}
+function _paginazionePubblicita(tot) {
+  if (tot <= 1) return '';
+  const it = currentLang === 'it', cur = _pubPagina;
+  const b = (p, testo, spento) => '<button class="btn-secondary" style="padding:0.4rem 1rem;' + (spento ? 'opacity:0.3;' : '') + '"' + (spento ? ' disabled' : ' onclick="_pubPagina=' + p + ';renderCatalog();"') + '>' + testo + '</button>';
+  return '<div class="pag-row" style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;margin-top:1rem;">'
+    + b(1, '⏮ ' + (it ? 'Prima' : 'First'), cur === 1) + b(cur - 1, '◀ ' + (it ? 'Precedente' : 'Previous'), cur === 1)
+    + '<span class="pag-label" style="font-family:var(--font-ui);color:var(--text);font-size:0.9rem;">' + (it ? 'Pagina ' + cur + ' di ' + tot : 'Page ' + cur + ' of ' + tot) + '</span>'
+    + b(cur + 1, (it ? 'Successiva' : 'Next') + ' ▶', cur === tot) + b(tot, (it ? 'Ultima' : 'Last') + ' ⏭', cur === tot)
+    + '</div>';
+}
+function apriPubblicita(id) {
+  try { closeModal('fig-detail-modal'); } catch (e) {}
+  _taglioInventario = 'pubblicita';
+  try { localStorage.setItem('sgb_taglio', 'pubblicita'); } catch (e) {}
+  _pubAperta = id;
+  const _casellaRG = document.getElementById('series-search'); if (_casellaRG) _casellaRG.value = '';
+  showPage('catalog');
+  renderCatalog();
+  window.scrollTo(0, 0);
+}
+function chiudiPubblicita() { _pubAperta = null; renderCatalog(); }
+function _vaiPubblicita(d) {
+  const i = _elencoPubblicita.indexOf(_pubAperta) + d;
+  if (i < 0 || i >= _elencoPubblicita.length) return;
+  _pubAperta = _elencoPubblicita[i];
+  _pubPagina = Math.floor(i / PERSONAGGI_PER_PAGINA) + 1;
+  renderCatalog();
+  window.scrollTo(0, 0);
+}
+// LA PAGINA DI UNA PUB: la testa della pagina del personaggio (indietro, frecce, nome, conto), poi una card per articolo
+function renderPaginaPubblicita(grid, id) {
+  const it = currentLang === 'it', p = _pubDati.perId.get(id);
+  if (!p) { _pubAperta = null; renderCatalogPubblicita(grid); return; }
+  const ix = _indiciPersonaggi(), figs = getData('figurines', []);
+  const serieDi = new Map((getData('series', []) || []).map(s => [s.id, s]));
+  const arts = _ordinaArticoliPub(articoliDellaPubblicita(id, ix));
+  _elencoPersonaggio = arts.map(f => f.id);   // le frecce della scheda dell'articolo, come nella pagina del personaggio
+  if (grid) {
+    const n = _isMobileViewport() ? 0 : getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
+    if (!_isMobileViewport()) { grid.style.width = 'min(1800px, 96vw)'; grid.style.maxWidth = '1800px'; }
+    grid.style.gridTemplateColumns = 'repeat(' + (n ? Math.round(n * 1.25) : 2) + ', minmax(0, 1fr))';
+    grid.style.gap = '0.75rem';
+  }
+  const iSeq = _elencoPubblicita.indexOf(id);
+  const freccia = (d, segno, spenta) => '<button class="btn-secondary btn-admin-ghost" style="padding:0.35rem 0.65rem;' + (spenta ? 'opacity:0.3;' : '') + '"' + (spenta ? ' disabled' : ' onclick="_vaiPubblicita(' + d + ')"') + '>' + segno + '</button>';
+  const frecce = iSeq < 0 || _elencoPubblicita.length < 2 ? '' : '<div style="display:flex;align-items:center;gap:0.5rem;">' + freccia(-1, '◀', iSeq === 0)
+    + '<span style="font-size:0.8rem;color:var(--muted);font-family:var(--font-ui);white-space:nowrap;min-width:4rem;text-align:center;">' + (iSeq + 1) + (it ? ' di ' : ' of ') + _elencoPubblicita.length + '</span>'
+    + freccia(1, '▶', iSeq === _elencoPubblicita.length - 1) + '</div>';
+  const riga = (testo, stile) => '<div style="font-size:0.8rem;line-height:1.3;' + stile + '">' + testo + '</div>';
+  const card = f => {
+    const u = _fotoFigurina(f, figs), s = serieDi.get(f.seriesId), sec = f.section || 'figurines', k = _chiaveTipo(f);
+    const versione = (sec === 'figurines' || k !== 'base') ? (_etichettaTipo(f, false) || (it ? 'Versione base' : 'Base version')) : '';
+    const numNome = esc((_haNumero(f) && (f.number || f.lettera)) ? _numeroAschermo(f) + ' - ' : '') + esc(f.name || '');
+    return '<div class="card personaggio-articolo" style="position:relative;display:flex;flex-direction:column;cursor:pointer;" onclick="openFigDetail(\'' + f.id + '\', _elencoPersonaggio)">'
+      + '<div style="aspect-ratio:1;background:var(--card2);display:flex;align-items:center;justify-content:center;">'
+      + (u ? '<img src="' + cloudinaryUrl(u, 'w_600,h_600,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;padding:4px;">'
+           : _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.7rem;padding:4px;'))
+      + '</div><div class="card-body" style="padding:0.45rem 0.55rem 0.5rem;">'
+      + riga(s ? esc(_nomeSerieCard(s)) : '', 'color:var(--text);')
+      + riga('<span style="color:var(--text);">' + (it ? 'Tipologia di articolo: ' : 'Item type: ') + '</span>' + esc(_maiuscola(String(getSectionLabelSingular(sec) || '').toLowerCase())), 'color:var(--accent);')
+      + riga(numNome, 'font-size:0.95rem;font-weight:600;color:var(--nome-entita);margin:0.1rem 0;')
+      + (versione ? riga(esc(_maiuscola(versione.toLowerCase())), 'color:' + (_COLORE_TIPO[k] || 'var(--text)') + ';') : '')
+      + '</div></div>';
+  };
+  // l'admin la rinomina o la elimina, come un personaggio
+  const gestione = currentUser?.isAdmin ? '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;font-size:0.85rem;color:var(--text);">'
+    + '<input class="form-input" id="pubblicita-rinomina" value="' + esc(p.nome) + '" style="max-width:320px;padding:0.3rem 0.6rem;font-size:0.85rem;">'
+    + '<button type="button" class="btn-primary btn-admin" style="padding:0.3rem 0.9rem;font-size:0.82rem;" onclick="_rinominaPubblicita(\'' + id + '\')">' + (it ? 'Rinomina' : 'Rename') + '</button>'
+    + '<button type="button" class="btn-secondary btn-admin" style="padding:0.3rem 0.9rem;font-size:0.82rem;" onclick="_eliminaPubblicita(\'' + id + '\')">' + (it ? 'Elimina' : 'Delete') + '</button>'
+    + '</div>' : '';
+  grid.innerHTML = '<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;"><button class="back-btn" onclick="chiudiPubblicita()">&#8592; ' + (it ? 'Pubblicità' : 'Advertisements') + '</button>' + frecce + '</div>'
+    + '<div style="grid-column:1/-1;"><div style="font-family:var(--font-display);font-size:1.8rem;color:var(--nome-entita);">' + esc(p.nome) + '</div>'
+    + gestione
+    + '<div style="color:var(--accent);margin-top:0.3rem;">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div></div>'
+    + (arts.length ? arts.map(card).join('') : '<div style="grid-column:1/-1;color:var(--text);padding:1rem 0;">' + (it ? 'Nessun articolo collegato.' : 'No linked item.') + '</div>');
+}
+async function _rinominaPubblicita(id) {
+  const it = currentLang === 'it';
+  const N = String(document.getElementById('pubblicita-rinomina')?.value || '').trim().replace(/\s+/g, ' ').toUpperCase();
+  if (!N) return;
+  try {
+    await _scriviPacchettoPub(d => {
+      if (d.pubblicita.some(p => p.i !== id && (p.n || '').toUpperCase() === N)) throw new Error(it ? 'c\'è già una pubblicità con questo nome' : 'another advertisement has this name');
+      const p = d.pubblicita.find(x => x.i === id);
+      if (!p) throw new Error(it ? 'pubblicità non trovata' : 'advertisement not found');
+      p.n = N;   // cambia il nome, non l'id: i collegamenti restano
+    });
+  } catch (e) { toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error'); return; }
+  toast((it ? 'Rinominata: ' : 'Renamed: ') + N, 'success');
+  renderCatalog();
+}
+async function _eliminaPubblicita(id) {
+  const it = currentLang === 'it', p = _pubDati.perId.get(id);
+  if (!p || !confirm(it ? 'Elimino la pubblicità «' + p.nome + '»? Il suo retro resta, senza pubblicità.' : 'Delete the advertisement «' + p.nome + '»?')) return;
+  try { await _scriviPacchettoPub(d => { d.pubblicita = d.pubblicita.filter(x => x.i !== id); d.associazioni = d.associazioni.filter(a => a.p !== id); }); }
+  catch (e) { toast((it ? '⚠️ NON eliminata: ' : '⚠️ NOT deleted: ') + (e?.message || e), 'error'); return; }
+  toast((it ? 'Eliminata: ' : 'Deleted: ') + p.nome, 'success');
+  chiudiPubblicita();
+}
+
+// 🆕 v7.331 - LA PRIMA LISTA (Franco: «per stilare la prima lista di PUB è facile: usa l'elenco degli articoli senza
+//    personaggio; per ora usa solo le serie 3 e 4»; «c: solo retro»; «d: sì») - i retro base delle due serie che non hanno
+//    né un personaggio né una pubblicità; il nome della PUB è il nome del retro. Due retro con lo stesso nome (lo stesso
+//    retro in due serie) vanno nella stessa PUB. Prima l'elenco nella finestra di conferma, poi una scrittura sola.
+function _candidatiPubblicita(figs, ix, serieIds, haPers, haPub) {
+  return figs.filter(f => f.section === 'retros' && _eBase(f) && serieIds.includes(f.seriesId) && !haPers(f) && !haPub(f) && String(f.name || '').trim());
+}
+// l'ordine dell'anteprima: serie, categoria del retro (come la griglia dei retro: `_catNome`, alfabetico), numero, nome
+function _ordinaCandidatiPub(cand, ordSerie) {
+  const txt = (a, b) => String(a || '').localeCompare(String(b || ''), 'it', { numeric: true, sensitivity: 'base' });
+  return cand.slice().sort((a, b) => ((ordSerie.get(a.seriesId) ?? 9999) - (ordSerie.get(b.seriesId) ?? 9999))
+    || txt(_catNome(a.category), _catNome(b.category))
+    || ((+a.number || 99999) - (+b.number || 99999)) || txt(a.name, b.name));
+}
+function _nuovePubblicita(cand, esistenti) {
+  const perNome = new Map(esistenti.map(p => [String(p.n || '').toUpperCase(), p.i])), usati = new Set(esistenti.map(p => p.i));
+  const pubblicita = [], associazioni = [];
+  cand.forEach(f => {
+    const N = String(f.name).trim().replace(/\s+/g, ' ').toUpperCase();
+    let id = perNome.get(N);
+    if (!id) {
+      const base = _slugPersonaggio(N) || 'pubblicita';
+      id = base;
+      for (let k = 2; usati.has(id); k++) id = base + '-' + k;
+      usati.add(id); perNome.set(N, id);
+      pubblicita.push({ i: id, n: N });
+    }
+    associazioni.push({ a: f.id, p: id });
+  });
+  return { pubblicita, associazioni };
+}
+async function creaPubblicitaDaiRetro() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  try { await Promise.all([caricaPersonaggi(), caricaPubblicita()]); }
+  catch (e) { toast((it ? '❌ Lettura non riuscita: ' : '❌ Read failed: ') + (e?.message || e), 'error'); return; }
+  const ix = _indiciPersonaggi();
+  const serieIds = _DS_SERIE.filter(x => PUBBLICITA_SERIE_PRIMA_LISTA.includes(x.k)).map(x => x.sid);
+  const cand = _candidatiPubblicita(ix.figs, ix, serieIds, f => personaggiDiArticolo(f, ix).length > 0, f => !!pubblicitaDiArticolo(f));
+  if (!cand.length) { toast(it ? 'Nessun retro senza personaggio e senza pubblicità nelle serie 3 e 4' : 'No back left without a character or advertisement', 'success'); return; }
+  const esistenti = _pubDati.elenco.map(p => ({ i: p.id, n: p.nome }));
+  const nuove = _nuovePubblicita(cand, esistenti);
+  // 🔄 v7.331 (Franco: «nella anteprima mettimi una vignetta affianco»; «ordinale per categoria retro, e serie (prima
+  //    serie, e poi categoria)») - una tabella: la vignetta del retro (la stessa misura della griglia, `cloudinaryUrl` senza
+  //    trasformazione sua: nessuna trasformazione nuova da pagare), il nome, la serie, la categoria, il numero. In ordine
+  //    di serie, poi di categoria come la griglia dei retro (`_catNome`, alfabetico), poi di numero e nome.
+  const figsTutte = getData('figurines', []);
+  const ordSerie = new Map((getData('series', []) || []).map(s => [s.id, s.order ?? 9999]));
+  const nomeSerie = new Map((getData('series', []) || []).map(s => [s.id, _nomeSerieCard(s)]));
+  const ordinati = _ordinaCandidatiPub(cand, ordSerie);
+  const righe = ordinati.map(f => { const u = _fotoFigurina(f, figsTutte); return [
+    String(f.name).trim().replace(/\s+/g, ' ').toUpperCase(), { img: u ? cloudinaryUrl(u) : '' }, nomeSerie.get(f.seriesId) || '',
+    _retroCatLabel(_catNome(f.category)), f.number != null && f.number !== '' ? String(f.number) : '']; });
+  if (!await _finestraConferma({ titolo: '📣 ' + (it ? 'Crea le pubblicità' : 'Create advertisements'), larghezza: '1100px', aCapo: true, ok: it ? 'Crea' : 'Create', testo: it
+    ? 'Creo ' + nuove.pubblicita.length + ' pubblicità da ' + cand.length + ' retro senza personaggio delle serie 3 e 4?'
+      + (cand.length > nuove.pubblicita.length ? '\n(i retro con lo stesso nome vanno nella stessa pubblicità)' : '')
+    : 'Create ' + nuove.pubblicita.length + ' advertisements from ' + cand.length + ' backs?',
+    colonne: it ? ['Pubblicità', 'Retro', 'Serie', 'Categoria', 'N.'] : ['Advertisement', 'Back', 'Series', 'Category', 'No.'], righe })) return;
+  try {
+    await _scriviPacchettoPub(d => {
+      nuove.pubblicita.forEach(p => { if (!d.pubblicita.some(x => x.i === p.i)) d.pubblicita.push(p); });
+      nuove.associazioni.forEach(a => { if (!d.associazioni.some(x => x.a === a.a)) d.associazioni.push(a); });
+    });
+  } catch (e) { toast((it ? '⚠️ NON create: ' : '⚠️ NOT created: ') + (e?.message || e), 'error'); return; }
+  toast(it ? '✅ Create ' + nuove.pubblicita.length + ' pubblicità' : '✅ Created ' + nuove.pubblicita.length + ' advertisements', 'success');
+  renderCatalog();
+}
+
+// LA SCHEDA DELL'ARTICOLO, IN LETTURA: «Pubblicità» sul retro, «Pubblicità del retro» sulla figurina
+function _rigaPubblicitaHTML(f) {
+  return '<div class="detail-row" id="fig-pubblicita-riga" data-fig-id="' + f.id + '" style="display:none;"></div>';
+}
+function _riempiRigaPubblicita(f) {
+  const r = document.getElementById('fig-pubblicita-riga');
+  if (!r || !f || r.dataset.figId !== f.id) return;
+  const sec = f.section || 'figurines';
+  if (sec !== 'retros' && sec !== 'figurines') return;
+  if (!_pubDati) { caricaPubblicita().then(() => _riempiRigaPubblicita(f)).catch(() => {}); return; }
+  const it = currentLang === 'it', ix = _indiciPersonaggi();
+  const id = sec === 'retros' ? pubblicitaDiArticolo(f) : pubblicitaDelRetroDi(f, ix), p = id && _pubDati.perId.get(id);
+  if (!p) return;
+  r.innerHTML = '<span class="detail-label">' + (sec === 'retros' ? (it ? 'Pubblicità' : 'Advertisement') : (it ? 'Pubblicità del retro' : 'Advertisement on the back')) + '</span>'
+    + '<span class="detail-value"><a href="javascript:void(0)" onclick="apriPubblicita(\'' + id + '\')" style="color:var(--nome-entita);">' + esc(p.nome) + '</a></span>';
+  r.style.display = '';
+}
+
+// LA SCHEDA IN MODIFICA (solo retro, solo admin): come il personaggio (`_persMod`), si sceglie e si salva con «Salva».
+// 🔴 PERS O PUB, MAI TUTTI E DUE (Franco: «un retro o ha un PERS o ha una PUB»): collegare una PUB toglie il personaggio
+//    scelto, e collegare un personaggio toglie la PUB. Si vede subito nella finestra, e si scrive al «Salva».
+let _pubMod = null;   // { f, orig: id|null diretto sulla riga, pub: id|null scelto, nuova: {i, n}|null, toccato }
+function _rigaPubblicitaEditHTML(f) {
+  if (!currentUser?.isAdmin || (f.section || 'figurines') !== 'retros') return '';
+  return '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">' + (currentLang === 'it' ? 'Pubblicità' : 'Advertisement') + '</span>'
+    + '<span class="detail-value" id="fe-pubblicita-valore">…</span></div>';
+}
+function _iniziaPubMod(f) {
+  _pubMod = null;
+  if (!f || (f.section || 'figurines') !== 'retros') return;
+  _pubMod = { f, orig: undefined, pub: undefined, nuova: null, toccato: false };
+  _disegnaPubMod();
+}
+function _disegnaPubMod() {
+  const el = document.getElementById('fe-pubblicita-valore');
+  if (!el || !_pubMod) return;
+  if (!_pubDati) { caricaPubblicita().then(_disegnaPubMod).catch(() => {}); return; }
+  const it = currentLang === 'it', m = _pubMod;
+  if (m.orig === undefined) {
+    const riga = m.f.id ? _rigaDelPersonaggio(m.f, _indiciPersonaggi()) : null;
+    m.orig = riga ? (_pubDati.dirPerArt.get(riga.id) || null) : null;
+    m.pub = m.orig;
+  }
+  const nome = id => (_pubDati.perId.get(id) || {}).nome || (m.nuova && m.nuova.i === id ? m.nuova.n : id);
+  el.innerHTML = (m.pub ? '<span style="display:inline-flex;align-items:center;gap:0.25rem;">' + esc(nome(m.pub))
+      + (m.nuova && m.nuova.i === m.pub ? ' <span style="font-size:0.72rem;color:var(--warn);">(' + (it ? 'nuova' : 'new') + ')</span>' : '')
+      + ' <button type="button" class="btn-secondary btn-admin-ghost" style="padding:0 0.4rem;font-size:0.75rem;" title="' + (it ? 'Scollega' : 'Unlink') + '" onclick="_pubTogli()">✕</button></span>' : '')
+    + '<span style="display:inline-flex;gap:0.4rem;align-items:center;flex-wrap:wrap;margin-left:' + (m.pub ? '0.8rem' : '0') + ';">'
+    + '<input class="form-input" id="fe-pubblicita-nuova" list="dl-pubblicita-modifica" placeholder="' + (it ? 'nome della pubblicità' : 'advertisement name') + '" style="max-width:240px;padding:0.2rem 0.5rem;font-size:0.82rem;" onkeydown="if(event.key===\'Enter\'){event.preventDefault();_pubAggiungi();}">'
+    + '<datalist id="dl-pubblicita-modifica">' + _pubDati.elenco.map(p => '<option value="' + esc(p.nome) + '"></option>').join('') + '</datalist>'
+    + '<button type="button" class="btn-primary btn-admin admin-anche-telefono" style="padding:0.2rem 0.8rem;font-size:0.8rem;" onclick="_pubAggiungi()">' + (it ? 'Collega' : 'Link') + '</button></span>'
+    + (m.toccato ? '<div style="font-size:0.72rem;color:var(--warn);margin-top:0.3rem;">' + (it ? 'Si salva con «Salva».' : 'Saved with «Save».') + '</div>' : '');
+}
+function _pubAggiungi() {
+  const m = _pubMod; if (!m || !_pubDati) return;
+  const it = currentLang === 'it';
+  const N = String(document.getElementById('fe-pubblicita-nuova')?.value || '').trim().replace(/\s+/g, ' ').toUpperCase();
+  if (!N) return;
+  let id = (_pubDati.elenco.find(p => (p.nome || '').toUpperCase() === N) || {}).id || (m.nuova && m.nuova.n === N ? m.nuova.i : null);
+  if (!id) {
+    const s = _slugPersonaggio(N);
+    if (!s) return;
+    if (_pubDati.perId.get(s)) { toast((it ? 'Esiste già una pubblicità scritta quasi uguale: ' : 'An advertisement spelled almost the same already exists: ') + _pubDati.perId.get(s).nome, 'error'); return; }
+    if (!confirm(it ? 'La pubblicità «' + N + '» non esiste.\n\nLa creo? (nasce quando salvi)' : 'The advertisement «' + N + '» does not exist.\n\nCreate it? (it is created when you save)')) return;
+    m.nuova = { i: s, n: N };
+    id = s;
+  } else {
+    // una PUB, un retro (Franco: «credo sempre e solo uno»): se ne ha già uno, si chiede
+    const riga = m.f.id ? _rigaDelPersonaggio(m.f, _indiciPersonaggi()).id : null;
+    const altri = (_pubDati.artPerPub.get(id) || []).filter(a => a !== riga);
+    if (altri.length) {
+      const a = _indiciPersonaggi().perId.get(altri[0]), sn = a ? ((getData('series', []).find(x => x.id === a.seriesId) || {}).name || '') : '';
+      if (!confirm(it ? '«' + N + '» è già collegata a un altro retro' + (a ? ' (' + sn + ', «' + a.name + '»)' : '') + '.\n\nLa collego anche a questo?'
+                      : '«' + N + '» is already linked to another back.\n\nLink it to this one too?')) return;
+    }
+  }
+  m.pub = id;
+  m.toccato = true;
+  // 🔴 o PERS o PUB: la PUB scelta toglie il personaggio scelto
+  if (_persMod && _persMod.pids && _persMod.pids.length) {
+    _persMod.pids = []; _persMod.nuovi = []; _persMod.toccato = true;
+    try { _disegnaPersMod(); } catch (e) {}
+    toast(it ? 'Un retro ha un personaggio o una pubblicità: il personaggio si scollega al «Salva»' : 'A back has a character or an advertisement: the character is unlinked on Save', 'success');
+  }
+  _disegnaPubMod();
+}
+function _pubTogli() {
+  const m = _pubMod; if (!m) return;
+  m.pub = null; m.nuova = null; m.toccato = true;
+  _disegnaPubMod();
+}
+// chiamata da `_persAggiungi`: il personaggio scelto toglie la PUB scelta (sullo stesso retro)
+function _pubEsclusaDalPers() {
+  const m = _pubMod;
+  if (!m || !m.pub || !_persMod || !_persMod.pids || !_persMod.pids.length) return;
+  m.pub = null; m.nuova = null; m.toccato = true;
+  _disegnaPubMod();
+  toast(currentLang === 'it' ? 'Un retro ha un personaggio o una pubblicità: la pubblicità si scollega al «Salva»' : 'A back has a character or an advertisement: the advertisement is unlinked on Save', 'success');
+}
+// dopo `_salvaPersMod`, ad articolo salvato (come lui)
+async function _salvaPubMod(f) {
+  const _casella = document.getElementById('fe-pubblicita-nuova');
+  if (_pubMod && _casella && _casella.value.trim()) _pubAggiungi();
+  const m = _pubMod;
+  if (!m || !m.toccato || !f || !f.id) return true;
+  const it = currentLang === 'it';
+  try {
+    const riga = _rigaDelPersonaggio(f, _indiciPersonaggi());
+    await _scriviPacchettoPub(d => {
+      if (m.nuova && m.pub === m.nuova.i && !d.pubblicita.some(p => p.i === m.nuova.i)) d.pubblicita.push({ i: m.nuova.i, n: m.nuova.n });
+      d.associazioni = d.associazioni.filter(a => a.a !== riga.id);
+      if (m.pub) d.associazioni.push({ a: riga.id, p: m.pub });
+    });
+  } catch (e) {
+    console.error('_salvaPubMod', e);
+    toast((it ? '⚠️ Pubblicità NON salvata: ' : '⚠️ Advertisement NOT saved: ') + (e?.message || e), 'error');
+    return false;
+  }
+  toast(m.pub ? (it ? 'Collegata la pubblicità: ' : 'Advertisement linked: ') + ((_pubDati.perId.get(m.pub) || {}).nome || m.pub) : (it ? 'Nessuna pubblicità collegata' : 'No advertisement linked'), 'success');
+  _pubMod = null;
+  return true;
+}
+// alla cancellazione di un retro, come per il personaggio (`_togliCollegamentoPersonaggio`): via il suo collegamento, e la
+// PUB passa a chi la mostrava e resta senza (`_erediDelPersonaggio`: per un retro, le sue versioni). La PUB non si cancella.
+async function _togliCollegamentoPubblicita(id) {
+  if (!currentUser?.isAdmin) return;
+  const D = await caricaPubblicita();
+  if (!D || !D.grezzi.associazioni.some(a => a.articoloId === id)) return;
+  const eredi = _erediDelPersonaggio(id, getData('figurines', []) || [], D.grezzi.associazioni);
+  await _scriviPacchettoPub(d => {
+    d.associazioni = d.associazioni.filter(x => x.a !== id);
+    eredi.forEach(e => { if (!d.associazioni.some(x => x.a === e.a)) d.associazioni.push(e); });
+  });
 }
 
 // 🆕 v7.212 (Franco: «A cosa serve il box "Altri articoli" della vista per TDA? … ora come ora non ci serve più»; «sì,
@@ -53846,6 +54467,7 @@ function renderCatalog() {
   // 🆕 v7.014 - il pulsante del percorso guidato, solo per chi ha fatto l'accesso
   { const _wzp = document.getElementById('wz-pulsante-inv'); if (_wzp) _wzp.style.display = currentUser ? '' : 'none'; }
   if (_taglioInventario === 'personaggi') { if (grid) renderCatalogPersonaggi(grid); return; }   // 🆕 v6.966
+  if (_taglioInventario === 'pubblicita') { if (grid) renderCatalogPubblicita(grid); return; }   // 🆕 v7.331
   if (_taglioInventario === 'novita') { if (grid) renderCatalogNovita(grid); return; }   // 🆕 v7.324
   // v6.080 - tornando al taglio per SERIE la griglia riprende le sue colonne: e' lo stesso
   // elemento, e lo stile inline messo dal taglio Prodotti gli resterebbe addosso.
@@ -68108,6 +68730,33 @@ function _cvRiduci(src, w, h, lato) {
   x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(src, 0, 0, c.width, c.height);
   return c;
 }
+// 🆕 v7.331 - la miniatura da guardare: si dimezza a passi con la riduzione «high» finché serve, poi l'ultimo passo. Una
+//    riduzione sola da migliaia di pixel a 240 sgrana. (La firma usa `_cvRiduci`, che non cambia: le firme restano quelle.)
+function _cvMiniatura(src, lato) {
+  let cur = src, w = src.width, h = src.height;
+  const fine = Math.min(1, lato / Math.max(w, h));
+  const tw = Math.max(1, Math.round(w * fine)), th = Math.max(1, Math.round(h * fine));
+  while (w / 2 > tw && h / 2 > th) {
+    w = Math.round(w / 2); h = Math.round(h / 2);
+    const c = _cvTela(w, h), x = c.getContext('2d');
+    x.imageSmoothingQuality = 'high'; x.drawImage(cur, 0, 0, w, h);
+    if (cur !== src) _cvLibera(cur);
+    cur = c;
+  }
+  const out = _cvTela(tw, th), x = out.getContext('2d');
+  x.imageSmoothingQuality = 'high'; x.drawImage(cur, 0, 0, tw, th);
+  if (cur !== src) _cvLibera(cur);
+  return out;
+}
+// 🆕 v7.331 - una tela girata di `d` gradi: 90 = a destra (orario), 270 = a sinistra
+function _cvRuota(src, d) {
+  const dritta = d === 90 || d === 270;
+  const c = _cvTela(dritta ? src.height : src.width, dritta ? src.width : src.height), x = c.getContext('2d');
+  x.translate(c.width / 2, c.height / 2);
+  x.rotate(d * Math.PI / 180);
+  x.drawImage(src, -src.width / 2, -src.height / 2);
+  return c;
+}
 function _cvRitaglio(tela, r) { const c = _cvTela(r.w, r.h); c.getContext('2d').drawImage(tela, r.x, r.y, r.w, r.h, 0, 0, c.width, c.height); return c; }
 // Il riquadro che si stacca dallo sfondo, dentro `r`: il colore dello sfondo si legge sul bordo (mediana), e si tengono
 // dalla prima all'ultima riga (colonna) che ne ha almeno il 15% diverso. Se resta meno di un quarto, `r` com'era.
@@ -68134,8 +68783,12 @@ function _cvRifila(tela, r) {
 }
 // la firma: la stessa ricetta di `_faFirma` (45×60, luce a mezzo peso, contorni pieni, tinta), sempre col colore:
 // i retro di una serie spesso si distinguono proprio per quello
+// 🔄 v7.331 (Franco: «l'impronta non può essere sempre un rettangolo verticale; a seconda della rotazione della foto (già
+//    tagliata) devi usare un'impronta verticale od orizzontale») - 45×60 per una foto in piedi, 60×45 per una sdraiata, e
+//    l'impronta si porta il suo verso (`oriz`): si confronta solo con impronte dello stesso verso (`_cvMigliore`). Prima
+//    ogni foto si stirava in 45×60, e un retro sdraiato diventava un'altra cosa. I pixel sono gli stessi 2.700.
 function _cvFirma(c) {
-  const W = 45, H = 60, n = W * H;
+  const oriz = c.width > c.height, W = oriz ? 60 : 45, H = oriz ? 45 : 60, n = W * H;
   const t = _cvTela(W * 2, H * 2); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
   const u = _cvTela(W, H), x = u.getContext('2d');
   x.imageSmoothingQuality = 'high'; x.drawImage(t, 0, 0, W, H);
@@ -68150,13 +68803,22 @@ function _cvFirma(c) {
   }
   const cr = new Float32Array(n), cg = new Float32Array(n);
   for (let k = 0; k < n; k++) { const s = d[k * 4] + d[k * 4 + 1] + d[k * 4 + 2] + 1; cr[k] = d[k * 4] / s; cg[k] = d[k * 4 + 1] / s; }
-  const strati = [[g, 0.5, 0], [e, 1, n], [cr, 0.8, 2 * n], [cg, 0.8, 3 * n]], v = new Float32Array(4 * n);
+  // 🐛 v7.331 (Franco: «come puoi confondere la figurina 644 con la 488? sono decisamente differenti») - LA TINTA NON CONTAVA.
+  //    Ogni strato si divide per la sua deviazione, ma con un minimo di 1 (`Math.max(1, …)`): luce e contorni vanno da 0 a
+  //    255 e lo superano, mentre le due tinte (rapporti fra 0 e 1) hanno deviazioni di centesimi, e divise per 1 restavano
+  //    quasi a zero. L'impronta guardava solo luce e contorni: la 644 rossa e la 488 si somigliavano. Ora ogni strato si
+  //    divide per la sua deviazione vera, e la tinta pesa 1,2.
+  //    📏 Misurato sulle foto di Franco (serie 3, fronti 631-651 e i loro retro, 3×7, `prove\foto-cv\`), da admin:
+  //    prima 14 fronti giusti su 21 (9 dubbi) e retro giusti con 2 dubbi; con la tinta che conta a peso 0,8 20/21; a 1,2
+  //    21/21 fronti (1 dubbio) e 21/21 retro (0 dubbi); a 1,5 21/21 ma 2 retro dubbi; a 2 sbaglia un fronte e due retro.
+  const strati = [[g, 0.5, 0], [e, 1, n], [cr, 1.2, 2 * n], [cg, 1.2, 3 * n]], v = new Float32Array(4 * n);
   strati.forEach(([a, peso, da]) => {
     let s = 0, s2 = 0;
     for (let k = 0; k < n; k++) { s += a[k]; s2 += a[k] * a[k]; }
-    const media = s / n, dev = Math.sqrt(Math.max(1, s2 / n - media * media));
+    const media = s / n, dev = Math.sqrt(Math.max(1e-9, s2 / n - media * media));   // v7.331: la deviazione vera (vedi sopra)
     for (let k = 0; k < n; k++) v[da + k] = peso * (a[k] - media) / dev;
   });
+  v.oriz = oriz;   // v7.331 - il verso dell'impronta
   return v;
 }
 function _cvSomiglia(a, b) { let s = 0; for (let k = 0; k < a.length; k++) s += a[k] * b[k]; return s / a.length; }
@@ -68245,6 +68907,14 @@ async function _cvCaselle(file, righe, colonne, opz) {
   opz = opz || {};
   const bm = await createImageBitmap(file, { imageOrientation: 'from-image' });
   const tela = _cvRiduci(bm, bm.width, bm.height, 1600);
+  // 🔄 v7.331 (Franco: «la miniatura offerta è in bassa risoluzione, a dispetto del fatto che la foto iniziale sia in grande
+  //    risoluzione»; «le foto non vanno rimpicciolite: piuttosto la computazione è più lunga») - DUE COPIE DELLA FOTO. Su
+  //    quella da 1600 si cercano griglia, caselle vuote e rifilatura e si fa la firma, come prima: il riconoscimento non
+  //    cambia. Le caselle da GUARDARE (miniatura e foto grande) si tagliano dall'ORIGINALE, alle stesse coordinate in scala.
+  // ⚠️ l'unico limite è quello del telefono: Safari non disegna tele oltre ~16,7 milioni di pixel (la tela resta bianca), quindi
+  //    solo una foto più grande di così si porta a 16 milioni. Le foto normali (12 Mpx) restano intere.
+  const _latoMax = Math.max(bm.width, bm.height) * Math.min(1, Math.sqrt(16e6 / (bm.width * bm.height)));
+  const piena = _cvRiduci(bm, bm.width, bm.height, _latoMax), ks = piena.width / tela.width;
   if (bm.close) bm.close();
   const tutta = { x: 0, y: 0, w: tela.width, h: tela.height };
   const sfondo = _cvSfondo(tela);
@@ -68263,14 +68933,33 @@ async function _cvCaselle(file, righe, colonne, opz) {
     const vuota = _cvPieno(tela, cella, sfondo) < _CV_VUOTA;
     // con la griglia trovata la casella è già stretta sulla figurina: rifilarla ancora mangerebbe i bordi chiari
     //    (v7.305: con le valli la casella ha ancora un po' di bordo, e si rifila)
-    const t = _cvRitaglio(tela, (vuota || (g && !g.valli)) ? cella : _cvRifila(tela, cella));
-    const mini = _cvRiduci(t, t.width, t.height, 90);
-    // 🆕 v7.305 - e una copia grande della casella, da aprire col clic sulla miniatura (`_cvMostraFoto`)
-    const grande = _cvRiduci(t, t.width, t.height, 600);
-    out.push({ r, c, vuota, firma: vuota ? null : _cvFirma(t), mini: mini.toDataURL('image/jpeg', 0.75), grande: grande.toDataURL('image/jpeg', 0.85) });
-    _cvLibera(t, mini, grande);
+    const rett = (vuota || (g && !g.valli)) ? cella : _cvRifila(tela, cella);
+    const t = _cvRitaglio(tela, rett);   // per la firma: la copia da 1600, come prima
+    // v7.331 - la stessa casella dall'originale: la foto grande del clic è lei, intera; la miniatura ne è una copia da
+    //    240 px fatta con la riduzione buona (64 punti in tabella sono fino a 192 pixel su uno schermo fitto)
+    const grandeO = _cvRitaglio(piena, { x: Math.round(rett.x * ks), y: Math.round(rett.y * ks), w: Math.max(1, Math.round(rett.w * ks)), h: Math.max(1, Math.round(rett.h * ks)) });
+    // 🆕 v7.331 (Franco: «nelle foto [i retro] possono essere ruotati di 90 gradi (a dx o sx) rispetto al sito, che usa sempre
+    //    l'orientamento corretto; quindi per i retro devi prima capirne il senso di rotazione») - IL VERSO, PRIMA DI TUTTO.
+    //    Con `opz.rotazioni` (i retro: 0, 90 a destra, 90 a sinistra) e `opz.confronta` (il confronto con le foto del sito)
+    //    si fa l'impronta della casella in ogni verso e si tiene quello che somiglia di più a una foto del sito. La firma
+    //    che resta è quella del verso scelto, e miniatura e foto grande si mostrano girate nel verso del sito.
+    let firma = vuota ? null : _cvFirma(t), rot = 0;
+    if (!vuota && opz.rotazioni && opz.confronta) {
+      let meglio = null;
+      for (const d of opz.rotazioni) {
+        const tr = d ? _cvRuota(t, d) : t, fd = d ? _cvFirma(tr) : firma, m = opz.confronta(fd);
+        if (d) _cvLibera(tr);
+        if (m && (!meglio || m.s > meglio.s)) meglio = { s: m.s, d, fd };
+      }
+      if (meglio) { firma = meglio.fd; rot = meglio.d; }
+    }
+    const grande = rot ? _cvRuota(grandeO, rot) : grandeO;
+    const mini = _cvMiniatura(grande, 240);
+    // 🆕 v7.305 - la copia grande si apre col clic sulla miniatura (`_cvMostraFoto`)
+    out.push({ r, c, vuota, rot, firma, mini: mini.toDataURL('image/jpeg', 0.85), grande: grande.toDataURL('image/jpeg', 0.85) });
+    _cvLibera(t, mini, grandeO, grande);
   }
-  _cvLibera(tela);
+  _cvLibera(tela, piena);
   out.griglia = !!g;
   out.bordo = (opz.nonRifilare || g) ? null : _cvBordoMancante(area, righe, colonne, opz.forma);
   return out;
@@ -68338,7 +69027,10 @@ function _cvValli(prof, n) {
 // il più somigliante, e se il secondo gli sta troppo vicino
 function _cvMigliore(firma, elenco) {
   let a = null, b = null;
-  for (const e of elenco) {
+  // v7.331 - solo le impronte dello stesso verso (orizzontale con orizzontale): un'impronta sdraiata e una in piedi hanno
+  //    i pixel in posti diversi, e confrontarle dà un numero senza senso. Se nessuna è dello stesso verso, tutte (come prima).
+  const pari = elenco.filter(e => !!e.firma.oriz === !!firma.oriz);
+  for (const e of (pari.length ? pari : elenco)) {
     const s = _cvSomiglia(firma, e.firma);
     if (!a || s > a.s) { b = a; a = { f: e.f, s }; } else if (!b || s > b.s) b = { f: e.f, s };
   }
@@ -68349,14 +69041,73 @@ function _cvColonnaRetro(c, C, modo) { return modo === 'libro' ? C - 1 - c : c; 
 // cos'è la coppia (fronte della base `B`, retro `R`) per l'Inventario
 function _cvVerdetto(B, R, tutte) {
   if (!B || !R) return { tipo: 'ignoto' };
-  const famiglia = tutte.filter(x => x && (x.id === B.id || (x.baseFigurineId === B.id && (x.isVariation || x.isUnofficialVariation))));
+  // 🔄 v7.331 (Franco: «per la serie 3 questa funzione non deve cercare variazioni non ufficiali, ma variazioni non presenti
+  //    nel sito oppure presenti che admin ha marcato come "da trovare"») - LA FAMIGLIA SONO TUTTE LE VERSIONI della base,
+  //    non più le sole variazioni: cosa segnalare lo decide la console (`_cvSegnala`). La base viene prima, così sul suo
+  //    retro vince lei e non una versione che lo eredita (change, errore di stampa).
+  const famiglia = [B].concat(tutte.filter(x => x && x.id !== B.id && x.baseFigurineId === B.id && (x.section || 'figurines') === (B.section || 'figurines')));
   // 🔄 v7.304 - i candidati sono solo i retro base: se un articolo della famiglia ha come retro una VERSIONE di retro,
   //    conta la sua base (`baseFigurineId` del retro). Prima si cerca l'uguaglianza esatta, poi quella per base.
   const eff = x => _retroEffettivo(x, tutte);
   const baseDelRetro = id => { const r = id && tutte.find(y => y && y.id === id); return (r && r.baseFigurineId) || id; };
   const art = famiglia.find(x => eff(x) === R.id) || famiglia.find(x => baseDelRetro(eff(x)) === R.id);
   if (!art) return { tipo: 'nuova' };
-  return { tipo: art.isUnofficialVariation ? 'nonUfficiale' : art.isVariation ? 'ufficiale' : 'base', art };
+  // v7.331 - `chiave`: la versione dell'articolo trovato, quella delle colonne della console
+  const chiave = typeof _chiaveTipo === 'function' ? (_chiaveTipo(art) || 'base') : 'base';
+  return { tipo: art.isUnofficialVariation ? 'nonUfficiale' : art.isVariation ? 'ufficiale' : art.id === B.id ? 'base' : 'versione', art, chiave };
+}
+// 🆕 v7.331 - COSA SEGNALA «CERCA VARIAZIONI», SERIE PER SERIE (console → 🔍 Cerca variazioni, la tabella sotto il tasto):
+//    una spunta per versione delle fcr, e una per gli articoli «da trovare» (il campo `daTrovare` delle fcr). Salvato in
+//    `settings/cercaVariazioni`, chiavi `<serie>|<versione>` e `<serie>|daTrovare`. Senza niente salvato vale la regola di
+//    prima: le variazioni non ufficiali sì, il resto no.
+let _CV_CFG = {};
+function _impostaCercaVariazioni(d) { _CV_CFG = (d && d.voci) || {}; }
+// 🔄 v7.331 (Franco: «manca una opzione, per tutte le serie: variazione non censita») - `nonCensita`: le coppie che nel sito
+//    non ci sono (il secondo elenco). Senza niente salvato è accesa, come prima.
+function _cvSegnala(sid, k) { const v = _CV_CFG[sid + '|' + k]; return typeof v === 'boolean' ? v : (k === 'unofficialVariation' || k === 'nonCensita'); }
+// le colonne della tabella: le versioni delle fcr meno omaggio, errore di stampa e change (Franco: «togli, infine, omaggio,
+// errore di stampa, e change»), poi «Variazione non censita» e «Da trovare»
+const _CV_VERSIONI_FUORI = ['free', 'printError', 'change'];
+function _cvColonne() { return _versioniDellaTDA('figurines').filter(k => !_CV_VERSIONI_FUORI.includes(k)).concat(['nonCensita', 'daTrovare']); }
+// la coppia va nel primo elenco del risultato? sì se la sua versione è spuntata, o se l'articolo è «da trovare» e la
+// colonna «Da trovare» è spuntata
+function _cvDaSegnalare(v, sid) {
+  return !!(v && v.art) && (_cvSegnala(sid, v.chiave || 'base') || (!!v.art.daTrovare && _cvSegnala(sid, 'daTrovare')));
+}
+function renderAdminCercaVariazioni() {
+  const box = document.getElementById('admin-variazioni-cfg');
+  if (!box) return;
+  const it = currentLang === 'it', tutte = getData('figurines', []);
+  const conRetri = new Set(tutte.filter(f => f && f.section === 'retros').map(f => f.seriesId));
+  const serie = getData('series', []).filter(s => conRetri.has(s.id)).sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  const colonne = _cvColonne();
+  const nomeCol = k => k === 'daTrovare' ? (it ? 'Da trovare' : 'To be found') : k === 'nonCensita' ? (it ? 'Variazione non censita' : 'Unlisted variation') : _nomeVersione(k, it ? 'it' : 'en');
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);text-align:center;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
+  box.innerHTML = '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">' + (it ? 'Cosa segnalare, serie per serie' : 'What to report, series by series') + '</h4>'
+    + '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;max-width:900px;">'
+    + (it ? 'Nel primo elenco del risultato vanno le coppie fronte-retro che nell\'Inventario sono una delle versioni spuntate, e gli articoli segnati «Da trovare» se quella colonna è spuntata. Con «Variazione non censita» spuntata, il secondo elenco mostra le coppie che nel sito non ci sono.'
+          : 'The first list of the result shows the pairs that are one of the ticked versions, and the items marked «To be found» if that column is ticked. With «Unlisted variation» ticked, the second list shows the pairs the site does not have.') + '</p>'
+    + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">'
+    + '<tr><th style="' + th + 'text-align:left;">' + (it ? 'Serie' : 'Series') + '</th>' + colonne.map(k => '<th style="' + th + '">' + esc(nomeCol(k)) + '</th>').join('') + '</tr>'
+    + serie.map(s => '<tr><td style="' + td + '">' + esc(s.name || s.id) + '</td>'
+      + colonne.map(k => '<td style="' + td + 'text-align:center;"><input type="checkbox" data-cv-cfg="' + esc(s.id + '|' + k) + '"' + (_cvSegnala(s.id, k) ? ' checked' : '') + '></td>').join('') + '</tr>').join('')
+    + '</table></div>'
+    + '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">'
+    + '<button class="btn-primary btn-admin" onclick="salvaCercaVariazioni()">' + (it ? 'Salva' : 'Save') + '</button></div>';
+}
+async function salvaCercaVariazioni() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it', voci = {};
+  document.querySelectorAll('#admin-variazioni-cfg input[data-cv-cfg]').forEach(el => { voci[el.dataset.cvCfg] = !!el.checked; });
+  try {
+    await fsSave('settings', { id: 'cercaVariazioni', voci });
+    _impostaCercaVariazioni({ voci });
+    toast(it ? '✅ Salvato. Vale dalla prossima verifica.' : '✅ Saved.', 'success');
+  } catch (e) {
+    console.error('salvaCercaVariazioni', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
 }
 // le coppie di una disposizione: fronti e retro già riconosciuti, casella per casella
 function _cvAccoppia(fronti, retri, C, modo, tutte) {
@@ -68513,13 +69264,14 @@ async function _cvFaiVerifica() {
     stato(it ? 'Taglio le tue foto…' : 'Cutting your photos…');
     const nonRifilare = !!$('cv-non-rifilare')?.checked;
     const fronti = await _cvCaselle(fF, R, C, { nonRifilare, forma: _cvMediana(firme.fronti.map(x => x.forma)) });
-    const retri = await _cvCaselle(fR, R, C, { nonRifilare, forma: _cvMediana(firme.retri.map(x => x.forma)) });
+    // v7.331 - i retro possono essere girati di 90° a destra o a sinistra: si prova ogni verso contro le foto del sito
+    const retri = await _cvCaselle(fR, R, C, { nonRifilare, forma: _cvMediana(firme.retri.map(x => x.forma)), rotazioni: [0, 90, 270], confronta: fd => _cvMigliore(fd, firme.retri) });
     stato(it ? 'Riconosco le figurine…' : 'Recognising the stickers…');
     fronti.forEach(x => { x.ric = x.vuota ? null : _cvMigliore(x.firma, firme.fronti); });
     retri.forEach(x => { x.ric = x.vuota ? null : _cvMigliore(x.firma, firme.retri); });
     const tutte = getData('figurines', []);
     const modo = modoChiesto === 'nonso' ? _cvScegliModo(fronti, retri, C, tutte) : modoChiesto;
-    _cvDisegna(_cvAccoppia(fronti, retri, C, modo, tutte), modo, modoChiesto === 'nonso', firme.saltate, { fronti: fronti.bordo, retri: retri.bordo, senzaGriglia: [fronti.griglia || nonRifilare ? '' : 'fronti', retri.griglia || nonRifilare ? '' : 'retri'].filter(Boolean) });
+    _cvDisegna(_cvAccoppia(fronti, retri, C, modo, tutte), modo, modoChiesto === 'nonso', firme.saltate, { fronti: fronti.bordo, retri: retri.bordo, senzaGriglia: [fronti.griglia || nonRifilare ? '' : 'fronti', retri.griglia || nonRifilare ? '' : 'retri'].filter(Boolean) }, sid);   // v7.331: la serie, per la console
     stato('');
   } catch (e) {
     console.error('_cvFaiVerifica', e);
@@ -68574,22 +69326,35 @@ function _cvDisegna(coppie, modo, sceltoDalSito, saltate, bordi) {
     + '<th style="' + th + '">' + (it ? 'Riconosciuto' : 'Recognised') + '</th>' + (conArt ? '<th style="' + th + '">' + (it ? 'Nell’Inventario' : 'In the catalogue') + '</th>' : '') + '</tr>'
     + righe.map(x => '<tr><td style="' + td + 'white-space:nowrap;">' + (it ? 'riga ' : 'row ') + (x.r + 1) + ', ' + (it ? 'col. ' : 'col. ') + (x.c + 1) + '</td>'
       + '<td style="' + td + '">' + mini(x.fr.mini, x.fr.grande) + '</td><td style="' + td + '">' + (x.re ? mini(x.re.mini, x.re.grande) : '—') + '</td>'
-      + '<td style="' + td + '">' + (it ? 'Fronte: ' : 'Front: ') + apri(x.fr.ric && x.fr.ric.f) + dubbio(x.fr.ric) + '<br>' + (it ? 'Retro: ' : 'Back: ') + apri(x.re && x.re.ric && x.re.ric.f) + dubbio(x.re && x.re.ric) + '</td>'
+      + '<td style="' + td + '">' + (it ? 'Fronte: ' : 'Front: ') + apri(x.fr.ric && x.fr.ric.f) + dubbio(x.fr.ric) + '<br>' + (it ? 'Retro: ' : 'Back: ') + apri(x.re && x.re.ric && x.re.ric.f) + dubbio(x.re && x.re.ric)
+        // v7.331 - il verso in cui era il retro nella foto, se non era dritto (la miniatura è già girata giusta)
+        + (x.re && x.re.rot ? ' <span style="color:var(--info);white-space:nowrap;">(' + (it ? 'nella foto girato ' : 'turned in the photo ') + (x.re.rot === 90 ? '↺ 90°' : '↻ 90°') + ')</span>' : '') + '</td>'
       + (conArt ? '<td style="' + td + '">' + (x.v.art ? apri(x.v.art) : nomeVerdetto(x.v)) + '</td>' : '') + '</tr>').join('')
     + '</table></div>';
   const tit = 'font-family:var(--font-ui);font-weight:700;font-size:1rem;margin:1rem 0 0.4rem;';
-  const nonUff = coppie.filter(x => x.v.tipo === 'nonUfficiale'), nuove = coppie.filter(x => x.v.tipo === 'nuova');
+  // 🔄 v7.331 - il primo elenco: quello che la console dice di segnalare per questa serie (`_cvDaSegnalare`; senza niente
+  //    salvato, le variazioni non ufficiali come prima). La serie arriva come sesto argomento.
+  const sid = arguments[5] || '';
+  const nonUff = coppie.filter(x => _cvDaSegnalare(x.v, sid)), nuove = _cvSegnala(sid, 'nonCensita') ? coppie.filter(x => x.v.tipo === 'nuova') : [];
+  const _cfgVoci = _cvColonne().filter(k => k !== 'nonCensita' && k !== 'daTrovare' && _cvSegnala(sid, k)).map(k => _nomeVersione(k, it ? 'it' : 'en'))
+    .concat(_cvSegnala(sid, 'daTrovare') ? [it ? 'gli articoli «Da trovare»' : 'items «To be found»'] : []);
   const nVuote = coppie.filter(x => x.v.tipo === 'vuota').length;
   box.innerHTML = _cvAvvisoBordo(bordi, it)
     + (nVuote ? '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Caselle vuote, saltate: ' : 'Empty cells, skipped: ') + nVuote + '</p>' : '')
     + '<p style="font-size:0.85rem;color:var(--text);">' + (it ? 'Disposizione dei retro: ' : 'Backs layout: ') + '<b>' + nomeModo + '</b>'
     + (sceltoDalSito ? (it ? ' (scelta dal sito: è quella con più coppie già note)' : ' (chosen by the site: the one with more known pairs)') : '') + '.'
     + (saltate ? ' ' + (it ? saltate + ' foto del sito non si sono caricate: quelle figurine non si possono riconoscere.' : saltate + ' site photos did not load.') : '') + '</p>'
-    + '<div style="' + tit + '">🎨 ' + (it ? '1. Figurine con retro non ufficiale' : '1. Stickers with unofficial back') + ' (' + nonUff.length + ')</div>'
-    + '<p style="font-size:0.8rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Coppie fronte-retro che nell’Inventario sono una variazione non ufficiale di quel fronte.' : 'Front-back pairs that are an unofficial variation of that front in the catalogue.') + '</p>'
+    // 🔄 v7.331 - il nome segue la console: non sono più solo le non ufficiali
+    + '<div style="' + tit + '">🎨 ' + (it ? '1. Figurine da segnalare' : '1. Stickers to report') + ' (' + nonUff.length + ')</div>'
+    // v7.331 - la frase dice cosa è spuntato in console per questa serie
+    + '<p style="font-size:0.8rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Coppie fronte-retro che nell’Inventario sono: ' : 'Front-back pairs that in the catalogue are: ')
+      + (_cfgVoci.length ? esc(_cfgVoci.join(', ')) : (it ? 'niente (nessuna spunta in console per questa serie)' : 'nothing (no tick in the console for this series)'))
+      + (it ? ' (console → Cerca variazioni).' : ' (console → Find variations).') + '</p>'
     + (nonUff.length ? tabella(nonUff, true) : '<p style="font-size:0.85rem;color:var(--text);">' + (it ? 'Nessuna.' : 'None.') + '</p>')
     + '<div style="' + tit + '">🆕 ' + (it ? '2. Figurine con retro non noto' : '2. Stickers with unknown back') + ' (' + nuove.length + ')</div>'
-    + (nuove.length ? '<p style="font-size:0.8rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Coppie fronte-retro che nel sito non ci sono. Il retro scritto è il retro base della serie più somigliante.' : 'Front-back pairs the site does not have. The back shown is the closest base back of the series.') + '</p>' + tabella(nuove, false)
+    // v7.331 - con «Variazione non censita» spenta in console per questa serie, il secondo elenco non si mostra
+    + (!_cvSegnala(sid, 'nonCensita') ? '<p style="font-size:0.85rem;color:var(--text);">' + (it ? 'Non cercate: «Variazione non censita» è spenta in console per questa serie.' : 'Not searched: «Unlisted variation» is off in the console for this series.') + '</p>'
+      : nuove.length ? '<p style="font-size:0.8rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Coppie fronte-retro che nel sito non ci sono. Il retro scritto è il retro base della serie più somigliante.' : 'Front-back pairs the site does not have. The back shown is the closest base back of the series.') + '</p>' + tabella(nuove, false)
       : '<p style="font-size:0.85rem;color:var(--text);">' + (it ? 'Nessuno.' : 'None.') + '</p>')
     + '<details style="margin-top:1rem;"><summary style="cursor:pointer;font-family:var(--font-ui);font-weight:700;font-size:0.9rem;">'
     + (it ? 'Tutte le caselle' : 'All cells') + ' (' + coppie.length + ')</summary>' + tabella(coppie, true) + '</details>';
@@ -68641,6 +69406,8 @@ function adminTab(tab) {
   if (tab === 'protezione') renderAdminProtezioneTDA();   // v7.104, tab suo dalla v7.121
   if (tab === 'caroselli') renderAdminCaroselliTDA();     // v6.982, tab suo dalla v7.151 (Franco)
   if (tab === 'questionario') renderAdminQuestionario();  // v7.156 (Franco)
+  if (tab === 'personaggi') renderAdminPersonaggi();   // v7.331 (Franco)
+  if (tab === 'variazioni') renderAdminCercaVariazioni();   // v7.331 - la tabella di cosa segnalare
   // v7.262 (Franco); 🔄 v7.267 - entrando, sempre il primo tab («la linguetta deve puntare a questa sezione, primo tab»)
   // 🔄 v7.276 - la linguetta 📢 Annunci entra sul tab ANNUNCI (`_cdVistaEntrando`), le altre strade sul primo di prima
   if (tab === 'doppioni') { const v = _cdVistaEntrando || 'el'; _cdVistaEntrando = null; _cdVista(v); }
@@ -71271,6 +72038,9 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   //    nome. Le righe nascono vuote e le riempie `_riempiRigaPersonaggi` quando la scheda è a
   //    schermo: i personaggi si leggono solo quando servono.
   (_mobileDetail ? rowsTop : rows).push(_rigaPersonaggiHTML(f));
+  (_mobileDetail ? rowsTop : rows).push(_rigaPubblicitaHTML(f));   // 🆕 v7.331 - e la pubblicità, sotto
+  // 🆕 v7.331 - «Da trovare» anche in lettura (la modifica lo scrive), solo admin e solo se acceso
+  if (currentUser?.isAdmin && f.daTrovare && (f.section || 'figurines') === 'figurines') rows.push('<div class="detail-row"><span class="detail-label">' + (currentLang === 'it' ? 'Da trovare' : 'To be found') + '</span><span class="detail-value" style="color:var(--warn);">' + (currentLang === 'it' ? 'Sì' : 'Yes') + '</span></div>');
 
 
   // Punteggio
@@ -71871,6 +72641,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   _collegatiInRiga(_collegatiLettura);   // v7.306 - per tutti e due i rami
   // 🆕 v6.966 - il markup c'e' (in tutti e due i rami): si riempie il campo Personaggio.
   try { _riempiRigaPersonaggi(f); } catch (e) { console.error('_riempiRigaPersonaggi', e); }
+  try { _riempiRigaPubblicita(f); } catch (e) { console.error('_riempiRigaPubblicita', e); }   // 🆕 v7.331
   // 🆕 v6.529 - il markup c'e': si caricano le foto grandi di lato e si scambiano quando
   // arrivano. Vale per TUTTE le `img[data-grande]` della scheda.
   // 🔄 v6.530 - la radice e' il MODALE: le foto grandi stanno nella colonna della foto,
@@ -76095,6 +76866,7 @@ function switchToEditMode(figId) {
   }
   html = html.replace('<!--fe-sottonome-retro-->', '').replace('<!--fe-nome-mobile-->', '');   // v7.148: chi non è admin
   html += _rigaPersDopoNomi;
+  html += _rigaPubblicitaEditHTML(f);   // 🆕 v7.331 - sui retro, sotto il personaggio
 
   // 🔄 v6.797 (Franco) - L'ORDINAMENTO SCENDE, E SI FERMA PRIMA DELLA RARITÀ. Parole sue:
   //    *«il campo Ordinamento, sulla form degli articoli (tutti) va + in basso; mettilo prima di
@@ -76489,6 +77261,15 @@ function switchToEditMode(figId) {
   // Il campo e' lo stesso `note` della finestra - una sola verita', due form. Scriverlo in una
   // sola era il difetto della v6.074 con `retroBianco`, esistito per una release solo nella
   // finestra: chi usava l'altra form non lo vedeva e, salvando, lo azzerava.
+  // 🆕 v7.331 (Franco: «il campo "da trovare" va creato, nelle fcr») - una spunta, solo admin e solo sulle fcr. La legge
+  //    «Cerca variazioni» (`_cvDaSegnalare`), dove la console spunta la colonna «Da trovare» per la serie.
+  if (currentUser?.isAdmin && (f.section || 'figurines') === 'figurines') {
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang === 'it' ? 'Da trovare' : 'To be found') + '</span><span class="detail-value">'
+      + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.88rem;">'
+      + '<input type="checkbox" id="fe-da-trovare"' + (f.daTrovare ? ' checked' : '') + ' style="width:16px;height:16px;cursor:pointer;">'
+      + (currentLang === 'it' ? '«Cerca variazioni» la segnala quando la riconosce nelle foto' : '«Find variations» reports it when it recognises it') + '</label>'
+      + '</span></div>';
+  }
   if (currentUser?.isAdmin) {
     // 🆕 v7.103 (Franco: «macchiare le immagini di certi articoli: creiamo un flag apposito») - la spunta della filigrana
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang === 'it' ? 'Foto protetta' : 'Protected photo') + '</span><span class="detail-value">'
@@ -76692,6 +77473,7 @@ function switchToEditMode(figId) {
   _copieInRiga(_doppiTabC(f) ? _bloccoDoppiEdit(f) : '', 'fe-tab-doppi');   // v7.312
   // 🆕 v7.091 - il personaggio riparte dai dati a ogni apertura in modifica: una scelta non salvata non sopravvive
   try { _iniziaPersMod(f); } catch (e) { console.error('_iniziaPersMod', e); }
+  try { _iniziaPubMod(f); } catch (e) { console.error('_iniziaPubMod', e); }   // 🆕 v7.331
   // 🔄 v7.103 (Franco: «nella maschera della card, il campo Numero deve essere sopra al campo Nome») - nelle Carte
   //    le due righe del numero (la sua e quella del numero ereditato) salgono prima del Nome. Si spostano i nodi
   //    già disegnati: il blocco del numero resta uno solo, scritto una volta (v6.797), per tutte le tipologie.
@@ -79942,6 +80724,8 @@ async function saveFigFromDetail(figId, opzioni) {
       ...(document.getElementById('fe-foto-annuncio') ? { fotoAnnuncio: _feFotoAnnuncio() } : {}),
       // 🗑️ v7.199 - gli sfondi delle foto (v7.185) non ci sono più: dove il campo è rimasto, il Salva lo svuota
       ...(_figSlotF && _figSlotF.sfondiFoto ? { sfondiFoto: null } : {}),
+      // 🆕 v7.331 - «Da trovare» delle fcr, solo se la spunta c'era (spenta = null: il campo non resta scritto a false)
+      ...(document.getElementById('fe-da-trovare') ? { daTrovare: document.getElementById('fe-da-trovare').checked || null } : {}),
       // 🆕 v7.103 - vedi `_fotoProtette`. 🔄 v7.104: si scrive solo l'ECCEZIONE alla tipologia; uguale = null
       fotoProtetta: (() => { const el = document.getElementById('fe-foto-protetta'); if (!el) return null;
         const rec = (typeof _recordInModifica === 'function' && _recordInModifica(figId)) || _bozzaCorrente || {};
@@ -80264,6 +81048,7 @@ async function saveFigFromDetail(figId, opzioni) {
     // 🆕 v7.091 - e il personaggio scelto nella finestra (`_persMod`), adesso che l'articolo è scritto. Se questa
     //    seconda scrittura non riesce lo dice il suo messaggio; l'articolo resta salvato.
     await _salvaPersMod(merged);
+    await _salvaPubMod(merged);   // 🆕 v7.331 - e la pubblicità (solo retro)
     _fotoProtetteRifai();   // 🆕 v7.103 - la spunta «Foto protetta» può essere cambiata: l'elenco delle foto si rifà
     const savedLabel = getSectionLabelSingular(merged.section || 'figurines');
     // v6.053 - se la modifica ha toccato dei collegati lo si DICE: un salvataggio che ne modifica
