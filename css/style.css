@@ -3112,3 +3112,16 @@ body:not(.wz-visibile) .solo-wz { display: none !important; }
 /* 🆕 v7.329 - dal telefono comanda la cella (le foto per riga dell'Impostazione): la larghezza fissa che la card con fronte e
    retro si scrive addosso (`flex:0 0 350px`) qui non vale, come in `#items-grid` sotto gli 860px. */
 .nov-cella-tel > .fig-card { flex: 1 1 auto !important; width: auto !important; min-width: 0 !important; }
+/* 🆕 v7.330 (Franco) - nella scheda dell'articolo, sopra le foto: badge della versione e stella «New», a destra come sulla
+   card. La riga ha un'altezza minima anche vuota, così scorrendo con le frecce le foto restano ferme. */
+#fig-detail-photo .fd-badge-row {
+  display: flex; align-items: center; justify-content: flex-end; gap: 6px;
+  min-height: 34px; margin-bottom: 6px;
+}
+#fig-detail-photo .fd-badge-row .fig-owned-badge { position: static; }
+/* 🆕 v7.330 (Franco: «nel mobile il bollino fallo un pochino più piccolo») - la stella «New» da 34 a 27px. Le misure sono
+   scritte sull'elemento (`_badgeNuovo`), quindi qui servono gli !important. */
+@media (max-width: 860px) {
+  .fig-badge-nuovo { width: 27px !important; height: 27px !important; font-size: 0.47rem !important; }
+  #fig-detail-photo .fd-badge-row { min-height: 27px; }
+}
