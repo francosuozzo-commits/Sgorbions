@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.330">
+<link rel="stylesheet" href="css/style.css?v=7.331">
 
 
 <style>
@@ -2225,7 +2225,7 @@ button.back-btn { color:#ffffff; }
    stesura lo portava a 0.85rem, ed è tornato quello di prima. `!important` perché lo stile dei
    pulsanti è in linea nell'index. */
 @media (max-width:860px){
-  #taglio-serie,#taglio-prodotti,#taglio-personaggi{padding:0.5rem 0.7rem !important;}
+  #taglio-serie,#taglio-prodotti,#taglio-personaggi,#taglio-pubblicita{padding:0.5rem 0.7rem !important;}   /* v7.331: + Pubblicità */
 }
 /* 🆕 v6.966 (Franco: «rimetti a sx l'inizio dei 3 selettori… lo ricordavo a sx, che inizia con
    l'inizio del contenitore dell'hub») — LA RIGA «SFOGLIA PER» PRENDE LA LARGHEZZA DELLA GRIGLIA.
@@ -3235,6 +3235,9 @@ button.back-btn { color:#ffffff; }
                Personaggi») — il terzo taglio. Stessa forma dei due di prima: lo stato acceso lo
                mette `_aggiornaBivioInventario`, che adesso conosce tre valori. -->
           <button type="button" id="taglio-personaggi" onclick="impostaTaglioInventario('personaggi')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.bycharacters">Personaggi</button>
+          <!-- 🆕 v7.331 (Franco: «vorrei creare un'altra sezione, tra Personaggi e Novità, chiamata Pubblicità») - le PUB
+               (`renderCatalogPubblicita`) -->
+          <button type="button" id="taglio-pubblicita" onclick="impostaTaglioInventario('pubblicita')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.byads">Pubblicità</button>
           <!-- 🆕 v7.324 (Franco: «aggiungi un nuovo tab, nell'hub principale, dopo Serie, Tipologie di articoli, Personaggi;
                chiamato "Novità"») — gli articoli degli ultimi N giorni (`renderCatalogNovita`) -->
           <button type="button" id="taglio-novita" onclick="impostaTaglioInventario('novita')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.bynew">Novità</button><!-- v7.329: tradotti (Franco) -->
@@ -4368,6 +4371,9 @@ di tutte le serie</button>
           <button class="admin-tab" onclick="adminTab('griglie')">&#128208; Griglie</button>
           <button class="admin-tab" onclick="adminTab('settings')" data-i18n="admin.settings.tab">⚙️ Impostazioni</button>
           <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
+          <!-- 🆕 v7.331 (Franco: «vedi se in admin console c'è una sezione "personaggi" sennò creala») - la scala dei
+               personaggi, la disegna `renderAdminPersonaggi`; in ordine alfabetico dopo Messaggi -->
+          <button class="admin-tab" onclick="adminTab('personaggi')">🎭 Personaggi</button>
           <button class="admin-tab" onclick="adminTab('protezione')">🔒 Protezione foto</button>
           <!-- 🆕 v7.156 (Franco: «se vuoi possiamo gestire anche questa cosa in configurazione») - quali tipologie hanno le
                quattro carte nel questionario; in ordine alfabetico, dopo Protezione foto -->
@@ -4766,6 +4772,10 @@ di tutte le serie</button>
         <div id="admin-questionario" class="admin-section">
           <div><div id="admin-questionario-tda"></div></div>
         </div>
+        <!-- 🆕 v7.331 - LA SEZIONE «PERSONAGGI»: la disegna `renderAdminPersonaggi` -->
+        <div id="admin-personaggi" class="admin-section">
+          <div><div id="admin-personaggi-box"></div></div>
+        </div>
         <div id="admin-attivita" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;color:var(--info);">👣 Attività utenti</h3>
           <div id="admin-attivita-box"></div>
@@ -4773,8 +4783,10 @@ di tutte le serie</button>
         <!-- 🆕 v7.304 - «Cerca variazioni»: un tasto che apre la finestra (`apriCercaVariazioni`) -->
         <div id="admin-variazioni" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🔍 Cerca variazioni</h3>
-          <p style="font-size:0.85rem;color:var(--text);margin-bottom:1rem;line-height:1.5;max-width:900px;">Due foto di un gruppo di figurine: i fronti e, nella stessa posizione, i loro retro. Il sito riconosce ogni coppia e dice quali sono variazioni non ufficiali già nell'Inventario e quali hanno un retro mai registrato per quel fronte.</p>
+          <p style="font-size:0.85rem;color:var(--text);margin-bottom:1rem;line-height:1.5;max-width:900px;">Due foto di un gruppo di figurine: i fronti e, nella stessa posizione, i loro retro. Il sito riconosce ogni coppia e dice quali sono, nell'Inventario, fra le versioni spuntate qui sotto (o «da trovare») e quali hanno un retro mai registrato per quel fronte.</p>
           <button type="button" class="btn-primary btn-admin" onclick="apriCercaVariazioni()">🔍 Cerca variazioni</button>
+          <!-- 🆕 v7.331 - cosa segnalare, serie per serie: la disegna `renderAdminCercaVariazioni` -->
+          <div id="admin-variazioni-cfg"></div>
         </div>
         <div id="admin-orfani" class="admin-section">
           <div><div id="admin-orfani-box"></div></div>
@@ -7153,7 +7165,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.330"></script>
+<script src="js/app.js?v=7.331"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7177,7 +7189,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.330'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.331'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
