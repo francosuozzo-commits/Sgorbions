@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.329 - Modificati index.html (tasto e versione) e js/app.js (versione). Profilo: «🗑️ Elimina il mio account» in basso a
+//          destra e più piccolo (Franco): `#profile-danger-zone` allineata a destra, tasto 0,72rem padding 3px 9px.
+//          Novità dal telefono (Franco): le foto per riga sono sempre le stesse, `settings/generali.fotoRigaNovitaTel`
+//          (default 2, 1–8, terza casella delle Impostazioni accanto a giorni e card per serie); una card con fronte e retro
+//          (`_coppiaFronteRetro`) vale due foto anche se il retro manca (`_novitaCardRigaTel`, celle `.nov-cella-tel`).
+//          Hub dell'Inventario: «Personaggi» e «Novità» tradotti («Characters», «New»; `catalog.bycharacters` / `bynew`).
+//          «Ripara i collegamenti dei personaggi»: le quattro righe della conferma riscritte (Franco non le capiva).
 // v7.328 - Modificati index.html (versione) e js/app.js. La linguetta «📮 Inviaci la tua mancolista» tradotta (Franco: «non è
 //          stato tradotto»): «Send us your want list», scritta da `_aggiornaLinguettaImpersona`, richiamata anche da `setLang`.
 //          Promemoria delle foto orfane all'ingresso (Franco): le foto già in attesa di cancellazione non contano più
@@ -30118,9 +30125,11 @@ async function _aggiornaTimeoutDaConfigurazione() {
     // 🆕 v7.324 - i giorni delle «Novità» (e del badge «New»): valgono subito, e si ridisegna se la linguetta è aperta
     const gn = _giorniNovitaValido(g?.giorniNovita) || NOVITA_GIORNI_DEFAULT;
     const mn = _maxNovitaValido(g?.maxNovita) || NOVITA_MAX_DEFAULT;   // v7.325 - le card per serie
+    const ft = _fotoRigaNovitaValido(g?.fotoRigaNovitaTel) || NOVITA_FOTO_TEL_DEFAULT;   // v7.329 - foto per riga dal telefono
     LOCAL.set('giorniNovita', gn);
     LOCAL.set('maxNovita', mn);
-    if (gn !== _giorniNovita || mn !== _maxNovita) { _giorniNovita = gn; _maxNovita = mn; _novitaSeAperta(); }
+    LOCAL.set('fotoRigaNovitaTel', ft);
+    if (gn !== _giorniNovita || mn !== _maxNovita || ft !== _fotoRigaNovitaTel) { _giorniNovita = gn; _maxNovita = mn; _fotoRigaNovitaTel = ft; _novitaSeAperta(); }
   } catch(e) { /* silenzio voluto: e' una rifinitura per il giro dopo, non un'operazione dell'utente */ }
 }
 
@@ -30606,6 +30615,8 @@ async function loadImpostazioniGeneraliFields() {
   if (gn) gn.value = _giorniNovita;
   const mn = document.getElementById('impostazioni-novita-max-input');   // v7.325
   if (mn) mn.value = _maxNovita;
+  const ft = document.getElementById('impostazioni-novita-foto-tel-input');   // v7.329
+  if (ft) ft.value = _fotoRigaNovitaTel;
 }
 // 🆕 v7.324 (Franco: «n diventa un parametro da admin console, nel pannello "Impostazioni"») - i giorni delle «Novità»,
 //    che valgono anche per il badge «New». `fsSave` unisce (`merge`): il tetto del caricamento resta.
@@ -30616,12 +30627,16 @@ async function saveGiorniNovita() {
   // v7.325 - e il numero massimo di card per serie, accanto
   const m = _maxNovitaValido(document.getElementById('impostazioni-novita-max-input')?.value);
   if (!m) { toast(it ? 'Card per serie: da ' + NOVITA_MAX_MIN + ' a ' + NOVITA_MAX_MAX : 'Cards per series: ' + NOVITA_MAX_MIN + ' to ' + NOVITA_MAX_MAX, 'error'); return; }
+  // v7.329 - e le foto per riga dal telefono, accanto
+  const ft = _fotoRigaNovitaValido(document.getElementById('impostazioni-novita-foto-tel-input')?.value);
+  if (!ft) { toast(it ? 'Foto per riga dal telefono: da ' + NOVITA_FOTO_TEL_MIN + ' a ' + NOVITA_FOTO_TEL_MAX : 'Photos per row on phones: ' + NOVITA_FOTO_TEL_MIN + ' to ' + NOVITA_FOTO_TEL_MAX, 'error'); return; }
   try {
-    await fsSave('settings', { id: 'generali', giorniNovita: n, maxNovita: m });
-    _giorniNovita = n; _maxNovita = m;
+    await fsSave('settings', { id: 'generali', giorniNovita: n, maxNovita: m, fotoRigaNovitaTel: ft });
+    _giorniNovita = n; _maxNovita = m; _fotoRigaNovitaTel = ft;
     LOCAL.set('giorniNovita', n);
     LOCAL.set('maxNovita', m);
-    toast(it ? '✅ Salvato: le Novità sono gli articoli degli ultimi ' + n + ' giorni, al massimo ' + m + ' per serie.' : '✅ Saved: ' + n + ' days, ' + m + ' per series.', 'success');
+    LOCAL.set('fotoRigaNovitaTel', ft);
+    toast(it ? '✅ Salvato: le Novità sono gli articoli degli ultimi ' + n + ' giorni, al massimo ' + m + ' per serie, ' + ft + ' foto per riga dal telefono.' : '✅ Saved: ' + n + ' days, ' + m + ' per series, ' + ft + ' photos per row on phones.', 'success');
     renderAll();
   } catch (e) {
     console.error('saveGiorniNovita', e);
@@ -32140,7 +32155,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.328';
+const JS_VERSION = 'v7.329';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -48771,6 +48786,11 @@ for (const _sez of Object.keys(HOME_ETICHETTE_MOBILE)) {
 //    taglio dell'Inventario ha due scritte, una per il telefono (`.wz-solo-tel`) e una per il desktop
 i18n.it['catalog.byproductsTel'] = 'Articoli';
 i18n.en['catalog.byproductsTel'] = 'Items';
+// 🐛 v7.329 (Franco: «"Personaggi" e "Novità" non sono stati tradotti in Inglese») - il terzo e il quarto taglio
+i18n.it['catalog.bycharacters'] = 'Personaggi';
+i18n.en['catalog.bycharacters'] = 'Characters';
+i18n.it['catalog.bynew'] = 'Novità';
+i18n.en['catalog.bynew'] = 'New';
 // 🆕 v7.191 (Franco: «da mobile, il bottone "Azzera filtri" prova a scriverlo su due righe ("Azzera" e sotto "filtri")»)
 //    - un a capo che c'è solo sul telefono (`.wz-solo-tel`); sul desktop lo spazio prima tiene le parole staccate
 i18n.it['items.resetFiltersHtml'] = 'Azzera <br class="wz-solo-tel">filtri';
@@ -51455,6 +51475,13 @@ function _novitaHTML(larghezza) {
       currentSeriesId = g.serie.id;
       const celle = g.pezzi.map(({ f, sez }) => {
         currentSection = sez;
+        // 🆕 v7.329 - dal telefono le foto per riga sono sempre le stesse (`_fotoRigaNovitaTel`): la card con fronte e
+        //    retro (`_coppiaFronteRetro(...).mostra`, la stessa domanda della card) ne vale due
+        if (tel) {
+          const perRiga = _novitaCardRigaTel(_fotoRigaNovitaTel, !!_coppiaFronteRetro(f, allFigs, _idx).mostra);
+          const wt = Math.floor((W - (perRiga - 1) * gap) / perRiga);
+          return '<div class="nov-cella nov-cella-tel" style="display:flex;flex:0 0 ' + wt + 'px;width:' + wt + 'px;">' + _cardArticoloHTML(f, C) + '</div>';
+        }
         const cols = Math.max(1, _colonneGriglia(sez));
         const w = Math.floor((W - (cols - 1) * gap) / cols);
         const flessibile = sez === 'figurines' && _retroViewMode === 'destra-piena' && !_soloFronteMobile();
@@ -52417,10 +52444,13 @@ async function ricollegaPersonaggi() {
   const serie = new Map(getData('series', []).map(s => [s.id, s.name]));
   const riga = x => x.p.nome + '  →  ' + (serie.get(x.riga.seriesId) || '—') + (x.riga.subseries ? ' · ' + x.riga.subseries : '') + ' · n.' + (x.riga.number ?? '—') + (x.riga.section === 'attaccare' ? ' (fpa)' : '');
   const testo = it
+    // 🔄 v7.329 (Franco: «non ho capito il seguente messaggio "257 personaggi senza articoli si collegano all'articolo base
+    //    con lo stesso nome."»; e «"49 non hanno nessuna figurina con lo stesso nome."») - le frasi dicono cosa si trova e
+    //    cosa succede premendo «Ripara»
     ? '· ' + P.rotti.length + ' collegamenti puntano ad articoli che non esistono più: li tolgo.\n'
-      + '· ' + P.proposte.length + ' personaggi senza articoli si collegano all\'articolo base con lo stesso nome.\n'
-      + '· ' + P.dubbi.length + ' restano da vedere a mano.\n'
-      + '· ' + P.senza.length + ' non hanno nessuna figurina con lo stesso nome.'
+      + '· ' + P.proposte.length + ' personaggi oggi non sono collegati a nessun articolo, ma esiste una sola figurina base (fcr o fpa) che si chiama esattamente come loro: li collego a quella.\n'
+      + '· ' + P.dubbi.length + ' personaggi non collegati hanno più figurine col loro nome, o la figurina è già di un altro personaggio: non li tocco, vanno collegati a mano.\n'
+      + '· ' + P.senza.length + ' personaggi non collegati non hanno nessuna figurina base che si chiami come loro: non li tocco, restano senza articoli.'
       + (P.proposte.length ? '\n\nI collegamenti nuovi:\n' + P.proposte.map(riga).join('\n') : '')
       + (P.dubbi.length ? '\n\nDa vedere a mano:\n' + P.dubbi.map(x => x.p.nome + ' — ' + x.motivo).join('\n') : '')
       + (P.senza.length ? '\n\nSenza figurina con lo stesso nome:\n' + P.senza.map(p => p.nome).join(', ') : '')
@@ -55557,6 +55587,17 @@ let _giorniNovita = (() => { try { return _giorniNovitaValido(LOCAL.get('giorniN
 const NOVITA_MAX_DEFAULT = 50, NOVITA_MAX_MIN = 1, NOVITA_MAX_MAX = 500;
 const _maxNovitaValido = v => { const n = parseInt(v, 10); return n >= NOVITA_MAX_MIN && n <= NOVITA_MAX_MAX ? n : null; };
 let _maxNovita = (() => { try { return _maxNovitaValido(LOCAL.get('maxNovita')) || NOVITA_MAX_DEFAULT; } catch (e) { return NOVITA_MAX_DEFAULT; } })();
+// 🆕 v7.329 (Franco: «nella nuova sezione novità, da mobile il numero di immagini per riga deve essere sempre uguale e io
+//    direi due; quando gli articoli hanno fronte retro ne mostri uno per riga, quando hanno solo una foto due per riga»;
+//    «cerchiamo di rendere questa cosa configurabile») - `settings/generali.fotoRigaNovitaTel`, come i giorni
+const NOVITA_FOTO_TEL_DEFAULT = 2, NOVITA_FOTO_TEL_MIN = 1, NOVITA_FOTO_TEL_MAX = 8;
+const _fotoRigaNovitaValido = v => { const n = parseInt(v, 10); return n >= NOVITA_FOTO_TEL_MIN && n <= NOVITA_FOTO_TEL_MAX ? n : null; };
+let _fotoRigaNovitaTel = (() => { try { return _fotoRigaNovitaValido(LOCAL.get('fotoRigaNovitaTel')) || NOVITA_FOTO_TEL_DEFAULT; } catch (e) { return NOVITA_FOTO_TEL_DEFAULT; } })();
+// Quante card per riga dal telefono: le foto per riga diviso le foto della card (fronte e retro = 2, almeno una card).
+//    La card con la coppia conta 2 anche se il retro manca: il suo posto resta (Franco: «consumiamo comunque lo spazio»).
+function _novitaCardRigaTel(fotoRiga, coppia) {
+  return Math.max(1, Math.floor(fotoRiga / (coppia ? 2 : 1)));
+}
 // 🆕 v7.325 (Franco: «non usiamo la data di creazione dell'articolo ma la data nella quale le sue condizioni diventano tali da
 //    mostrarlo; crea un campo, per questi, che aggiorni in base agli eventi; per esempio … quelli senza foto … quando la
 //    avranno dovranno essere mostrati, indipendentemente dalla data di creazione») - IL CAMPO `mostratoDal` DELL'ARTICOLO:
