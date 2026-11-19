@@ -1,6 +1,19 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.330 - Modificati css/style.css, index.html (versione) e js/app.js. Scheda dell'articolo (Franco: «i tag slim, ma
+//          anche gli altri, si vedono sulla card, ma … nella scheda di dettagli non c'è. Stessa cosa per il bollino
+//          new»): sopra le foto una riga con il badge della versione e la stella «New», come sulla card. Il badge
+//          ora lo disegna una funzione sola, `_badgeVersioneHTML(f, sez)`, per la card e per la scheda. Telefono
+//          (Franco: «il bollino fallo un pochino più piccolo»): la stella «New» 27px invece di 34.
+//          Personaggi (Franco: «valuta tu se mandare in pensione quella funzionalità»): via «🔗 Ripara i collegamenti»
+//          (v7.309); al suo posto la causa: cancellando un articolo si toglie anche il suo collegamento al personaggio
+//          (`_togliCollegamentoPersonaggio`, da `_deleteFigurineItem`).
+//          Novità (Franco): nomi allineati riga per riga (`_allineaRigheRetro` sul contenitore delle Novità); dopo il nome
+//          della serie «(N articoli nuovi)»; dentro, un titolo per tipologia «Retro: N articoli nuovi» (nella serie
+//          contenitore, gli articoli senza serie, la tipologia di prodotto); 2,5rem di spazio in più fra le serie. Il nome
+//          della tipologia giallo; sulla card, a sinistra nella riga di «Mia lista», «Articolo aggiunto il 01.01.2026»
+//          (`_dataAggiuntoHTML`, solo nelle Novità: `C.conData`).
 // v7.329 - Modificati index.html (tasto e versione) e js/app.js (versione). Profilo: «🗑️ Elimina il mio account» in basso a
 //          destra e più piccolo (Franco): `#profile-danger-zone` allineata a destra, tasto 0,72rem padding 3px 9px.
 //          Novità dal telefono (Franco): le foto per riga sono sempre le stesse, `settings/generali.fotoRigaNovitaTel`
@@ -32155,7 +32168,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.329';
+const JS_VERSION = 'v7.330';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33519,10 +33532,21 @@ async function _deleteFigurineItem(id) {
       // `fsSave` e senza questa riga la cancellazione sarebbe l'unico cambiamento che le altre
       // finestre non vedono. Sul ripiego il segnale parte due volte, ed e' innocuo (vedi fsSave).
       _segnalaSerieCambiata(series.id);
+      // 🆕 v7.330 - e via il suo collegamento al personaggio, se ne aveva uno: era così che nascevano i collegamenti
+      //    morti (259 dopo il rifacimento della serie 4). Un errore qui non fa credere fallita la cancellazione, riuscita.
+      try { await _togliCollegamentoPersonaggio(id); } catch (e) { console.error('_togliCollegamentoPersonaggio', e); }
       break;
     }
   }
   _cache.figurines = (_cache.figurines || []).filter(x => x.id !== id);
+}
+// 🆕 v7.330 - il pacchetto dei personaggi si riscrive solo se l'articolo cancellato vi compare. Le cancellazioni in blocco
+//    (`deleteBulkSelected`) vanno una alla volta, quindi le riscritture non si pestano.
+async function _togliCollegamentoPersonaggio(id) {
+  if (!currentUser?.isAdmin) return;
+  const D = await caricaPersonaggi();
+  if (!D || !D.grezzi.associazioni.some(a => a && a.articoloId === id)) return;
+  await _scriviPacchetto(d => { d.associazioni = d.associazioni.filter(x => x.a !== id); });
 }
 
 // ============================================================
@@ -51429,15 +51453,25 @@ function _novitaGruppi(ora) {
   return serie.map(s => {
     const suoi = nuovi.filter(f => f.seriesId === s.id);
     if (!suoi.length) return null;
-    const sezSerie = [...new Set(suoi.map(f => f.section || 'figurines'))].sort((a, b) => posSez(a) - posSez(b));
+    // 🔄 v7.330 (Franco: «ad ogni raggruppamento (serie, o tda essendo la serie) scrivi quanti articoli sono»; «anche per gli
+    //    articoli senza serie, prima che essi inizino, scrivi la tda») - il gruppo dentro la serie è la TIPOLOGIA: la sezione
+    //    in una serie vera, il tipo di prodotto nella serie contenitore (gli articoli senza serie). `gruppo` va nel pezzo.
+    const perTipo = !!s.serieContenitore;
+    const chiave = f => perTipo ? 'tipo:' + (f.tipoProdotto || '') : 'sez:' + (f.section || 'figurines');
+    const tipi = new Map((perTipo ? _tipiProdotto() : []).map(t => [t.id, t]));
+    const nomeGruppo = k => k.startsWith('tipo:') ? _nomeTipo(tipi.get(k.slice(5))) : getSectionLabel(k.slice(4));
+    const chiavi = [...new Set(suoi.map(chiave))].sort((a, b) => perTipo
+      ? nomeGruppo(a).localeCompare(nomeGruppo(b), 'it', { numeric: true })
+      : posSez(a.slice(4)) - posSez(b.slice(4)));
     const pezzi = [];
-    sezSerie.forEach(sez => {
-      const qui = suoi.filter(f => (f.section || 'figurines') === sez);
+    chiavi.forEach(k => {
+      const qui = suoi.filter(f => chiave(f) === k);
+      const sez = qui[0].section || 'figurines';
       const prima = currentSeriesId, primaSez = currentSection;
       currentSeriesId = s.id; currentSection = sez;
       try { qui.sort(_comparatoreGriglia(sez, qui, idx, allFigs)); } catch (e) { console.error('_novitaGruppi', e); }
       finally { currentSeriesId = prima; currentSection = primaSez; }
-      qui.forEach(f => pezzi.push({ f, sez }));
+      qui.forEach(f => pezzi.push({ f, sez: f.section || 'figurines', gruppo: k, nomeGruppo: nomeGruppo(k) }));
     });
     // 🔄 v7.325 (Franco: «massimo 50 card per serie; alla 50esima fermati») - nell'ordine della griglia, le prime N
     return { serie: s, pezzi: pezzi.slice(0, _maxNovita) };
@@ -51462,7 +51496,8 @@ function _novitaHTML(larghezza) {
     _commentoAlbumCard: f => ((f.section === 'attaccare' && _COMMENTO_CARD_CFG.fpa) || ((f.section || 'figurines') === 'figurines' && _COMMENTO_CARD_CFG.fcr)) ? lettore(f) : '',
     _retriFam: _retriDelleFamiglie(allFigs, _idx),
     _serieById: new Map(getData('series', []).map(x => [x.id, x])),
-    senzaNuovo: true   // v7.326 - qui sono tutte nuove: la stellina non dice niente (Franco)
+    senzaNuovo: true,   // v7.326 - qui sono tutte nuove: la stellina non dice niente (Franco)
+    conData: true       // v7.330 - «Articolo aggiunto il 01.01.2026» in fondo a sinistra (Franco)
   };
   // la griglia degli articoli: 1800px al massimo (96% dello schermo) dal PC, la pagina dal telefono; gli spazi dell'index
   const W = tel ? larghezza : Math.min(1800, Math.round(window.innerWidth * 0.96));
@@ -51471,9 +51506,14 @@ function _novitaHTML(larghezza) {
   const righe = [];
   try {
     _tipoProdottoCorrente = null;
-    gruppi.forEach(g => {
+    // 🆕 v7.330 (Franco: «serie 3 (100 articoli nuovi)», «retro: 50 articoli nuovi») - i conteggi sono delle card mostrate
+    const quanti = n => n + (it ? (n === 1 ? ' articolo nuovo' : ' articoli nuovi') : (n === 1 ? ' new item' : ' new items'));
+    gruppi.forEach((g, iSerie) => {
       currentSeriesId = g.serie.id;
-      const celle = g.pezzi.map(({ f, sez }) => {
+      const blocchi = [];
+      g.pezzi.forEach(x => { const u = blocchi[blocchi.length - 1]; if (u && u.k === x.gruppo) u.pezzi.push(x); else blocchi.push({ k: x.gruppo, nome: x.nomeGruppo, pezzi: [x] }); });
+      const griglie = blocchi.map(b => {
+      const celle = b.pezzi.map(({ f, sez }) => {
         currentSection = sez;
         // 🆕 v7.329 - dal telefono le foto per riga sono sempre le stesse (`_fotoRigaNovitaTel`): la card con fronte e
         //    retro (`_coppiaFronteRetro(...).mostra`, la stessa domanda della card) ne vale due
@@ -51488,9 +51528,16 @@ function _novitaHTML(larghezza) {
         return '<div class="nov-cella" style="display:flex;' + (flessibile ? 'flex:0 0 auto;' : 'flex:0 0 ' + w + 'px;width:' + w + 'px;') + '">'
           + _cardArticoloHTML(f, C) + '</div>';
       });
-      righe.push('<div class="novita-serie" data-serie="' + esc(g.serie.id) + '">'
-        + '<div class="novita-serie-nome" style="font-family:var(--font-ui);font-weight:700;color:var(--nome-entita, var(--accent));margin:1rem 0 0.5rem;">' + esc(_nomeSerie(g.serie)) + '</div>'
-        + '<div class="griglia-novita" style="display:flex;flex-wrap:wrap;align-items:stretch;gap:' + gap + 'px;">' + celle.join('') + '</div></div>');
+      return '<div class="novita-tda" style="font-family:var(--font-ui);font-size:0.92rem;font-weight:600;color:var(--text);margin:0.9rem 0 0.45rem;">'
+        // v7.330 (Franco: «il nome della tda non farlo bianco; giallo?») - il nome giallo, il conteggio resta bianco
+        + '<span style="color:' + COL_CATEGORIA + ';">' + esc(b.nome || '—') + '</span>: ' + quanti(b.pezzi.length) + '</div>'
+        + '<div class="griglia-novita" style="display:flex;flex-wrap:wrap;align-items:stretch;gap:' + gap + 'px;">' + celle.join('') + '</div>';
+      });
+      // 🔄 v7.330 (Franco: «tra una serie e l'altra lascia un poco di spazio in più») - 2,5rem sopra ogni serie dopo la prima
+      righe.push('<div class="novita-serie" data-serie="' + esc(g.serie.id) + '"' + (iSerie ? ' style="margin-top:2.5rem;"' : '') + '>'
+        + '<div class="novita-serie-nome" style="font-family:var(--font-ui);font-weight:700;color:var(--nome-entita, var(--accent));margin:1rem 0 0.5rem;">' + esc(_nomeSerie(g.serie))
+        + ' <span style="font-weight:600;color:var(--text);">(' + quanti(g.pezzi.length) + ')</span></div>'
+        + griglie.join('') + '</div>');
     });
   } finally {
     currentSeriesId = prima.s; currentSection = prima.sez; _tipoProdottoCorrente = prima.tipo;
@@ -51505,6 +51552,8 @@ function renderCatalogNovita(grid) {
   if (el) {
     try { _ordinaRigheCard(el); } catch (e) { console.error('_ordinaRigheCard (novità)', e); }
     try { _adattaCorniciErrore(el); } catch (e) { console.error('_adattaCorniciErrore (novità)', e); }
+    // 🆕 v7.330 (Franco: i nomi di due card vicine non allineati) - le righe e i nomi come nella griglia, riga per riga
+    try { _mobileSpazioEsclamativo(el); _allineaRigheRetro(el); } catch (e) { console.error('_allineaRigheRetro (novità)', e); }
     // il cuore di «Ciò che cerco» non ha un onclick: lo ascolta il contenitore, come in `renderItems`
     el.addEventListener('click', e => {
       const btn = e.target.closest('.wishlist-heart-btn');
@@ -51655,8 +51704,7 @@ function renderCatalogPersonaggi(grid) {
       + '<div style="font-size:0.75rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Catalogo' : 'Catalogue') + '</div>'
       + '<div id="admin-add-personaggio-btn" style="display:inline-flex;gap:0.75rem;flex-wrap:wrap;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">'
       + '<button class="btn-primary btn-admin" onclick="openAddPersonaggioModal()">+ ' + (it ? 'Aggiungi personaggio' : 'Add character') + '</button>'
-      // 🆕 v7.309 - accanto, «Ripara i collegamenti» (`ricollegaPersonaggi`): anteprima, poi una scrittura sola
-      + '<button class="btn-secondary btn-admin" onclick="ricollegaPersonaggi()">🔗 ' + (it ? 'Ripara i collegamenti' : 'Repair links') + '</button>'
+      // 🗑️ v7.330 - qui stava il pulsante «🔗 Ripara i collegamenti» (v7.309), in pensione
       + '</div></div>' : '')
     + '</div>';
   if (!_personaggiDati.elenco.length) {
@@ -52391,86 +52439,11 @@ async function allineaPersonaggiGemella() {
   } catch (e) { toast((it ? '⚠️ NON allineato: ' : '⚠️ NOT aligned: ') + (e?.message || e), 'error'); return; }
   toast(it ? '✅ Allineati ' + scritture.length + ' articoli fra ' + s.name + ' e ' + g.name : '✅ Aligned ' + scritture.length + ' items', 'success');
 }
-// 🆕 v7.309 (Franco: «nei personaggi ce ne sono molti senza articoli associati ma sono secondo me quasi tutti della
-//    serie 4; secondo me va rifatto il ricalcolo dei personaggi»; «ok» alla proposta) - RIPARA I COLLEGAMENTI.
-//    📏 Misurato il 15/11 sul sito vero: 306 personaggi senza articoli, 259 collegamenti del pacchetto che puntano ad
-//    articoli che non esistono più (la serie 4 è stata rifatta, gli id sono cambiati), 258 personaggi con una fcr/fpa
-//    BASE dello stesso nome esatto.
-//    Due passi, una sola scrittura del pacchetto:
-//    (1) via i collegamenti a un articolo che non c'è più. Si guarda `_cache.figurines` intera, non `getData`, che
-//        filtra: un articolo nascosto c'è, e il suo collegamento è buono.
-//    (2) ogni personaggio rimasto senza articoli si collega alla fcr/fpa base con lo stesso nome esatto, sulla riga
-//        giusta (`_rigaDelPersonaggio`), solo se la riga è UNA e non ha già un personaggio. Due righe possibili, o una
-//        riga già presa, o una riga voluta da due personaggi: non si indovina, si elenca nella conferma.
-//    Anteprima nella finestra del sito; niente scritto finché non si preme «Ripara».
-function _nomePerConfronto(s) { return String(s || '').trim().replace(/\s+/g, ' ').toUpperCase(); }
-function _pianoRicollegaPersonaggi() {
-  const D = _personaggiDati, ix = _indiciPersonaggi();
-  const esistono = new Set((_cache.figurines || []).map(f => f.id));
-  const rotti = D.grezzi.associazioni.filter(a => a && a.articoloId && !esistono.has(a.articoloId));
-  const buone = D.grezzi.associazioni.filter(a => a && a.articoloId && esistono.has(a.articoloId) && D.perId.has(a.personaggioId));
-  const conArticoli = new Set(buone.map(a => a.personaggioId)), righePrese = new Set(buone.map(a => a.articoloId));
-  // le fcr/fpa base per nome: nome → righe giuste (senza doppioni: la fcr e la sua fpa danno la stessa riga)
-  const perNome = new Map();
-  (_cache.figurines || []).forEach(f => {
-    const sez = f.section || 'figurines';
-    if ((sez !== 'figurines' && sez !== 'attaccare') || !_eBase(f)) return;
-    const k = _nomePerConfronto(f.name); if (!k) return;
-    const riga = _rigaDelPersonaggio(f, ix);
-    if (!perNome.has(k)) perNome.set(k, new Map());
-    perNome.get(k).set(riga.id, riga);
-  });
-  const proposte = [], dubbi = [], senza = [];
-  D.elenco.filter(p => !conArticoli.has(p.id)).forEach(p => {
-    const righe = [...((perNome.get(_nomePerConfronto(p.nome)) || new Map()).values())];
-    if (!righe.length) { senza.push(p); return; }
-    if (righe.length > 1) { dubbi.push({ p, motivo: righe.length + ' articoli con questo nome' }); return; }
-    if (righePrese.has(righe[0].id)) { dubbi.push({ p, motivo: 'l\'articolo ha già un personaggio' }); return; }
-    proposte.push({ p, riga: righe[0] });
-  });
-  // una riga voluta da due personaggi (nomi uguali scritti in due personaggi): nessuno dei due
-  const quanti = new Map(); proposte.forEach(x => quanti.set(x.riga.id, (quanti.get(x.riga.id) || 0) + 1));
-  const doppie = proposte.filter(x => quanti.get(x.riga.id) > 1);
-  doppie.forEach(x => dubbi.push({ p: x.p, motivo: 'stesso articolo di un altro personaggio' }));
-  return { rotti, proposte: proposte.filter(x => quanti.get(x.riga.id) === 1), dubbi, senza };
-}
-async function ricollegaPersonaggi() {
-  if (!currentUser?.isAdmin) return;
-  const it = currentLang === 'it';
-  await caricaPersonaggi();
-  if (!(_cache.figurines || []).length) { toast(it ? 'Gli articoli non sono ancora caricati: riprova fra poco' : 'Items not loaded yet: try again shortly', 'error'); return; }
-  const P = _pianoRicollegaPersonaggi();
-  if (!P.rotti.length && !P.proposte.length) { toast(it ? 'Niente da riparare' : 'Nothing to repair', 'success'); return; }
-  const serie = new Map(getData('series', []).map(s => [s.id, s.name]));
-  const riga = x => x.p.nome + '  →  ' + (serie.get(x.riga.seriesId) || '—') + (x.riga.subseries ? ' · ' + x.riga.subseries : '') + ' · n.' + (x.riga.number ?? '—') + (x.riga.section === 'attaccare' ? ' (fpa)' : '');
-  const testo = it
-    // 🔄 v7.329 (Franco: «non ho capito il seguente messaggio "257 personaggi senza articoli si collegano all'articolo base
-    //    con lo stesso nome."»; e «"49 non hanno nessuna figurina con lo stesso nome."») - le frasi dicono cosa si trova e
-    //    cosa succede premendo «Ripara»
-    ? '· ' + P.rotti.length + ' collegamenti puntano ad articoli che non esistono più: li tolgo.\n'
-      + '· ' + P.proposte.length + ' personaggi oggi non sono collegati a nessun articolo, ma esiste una sola figurina base (fcr o fpa) che si chiama esattamente come loro: li collego a quella.\n'
-      + '· ' + P.dubbi.length + ' personaggi non collegati hanno più figurine col loro nome, o la figurina è già di un altro personaggio: non li tocco, vanno collegati a mano.\n'
-      + '· ' + P.senza.length + ' personaggi non collegati non hanno nessuna figurina base che si chiami come loro: non li tocco, restano senza articoli.'
-      + (P.proposte.length ? '\n\nI collegamenti nuovi:\n' + P.proposte.map(riga).join('\n') : '')
-      + (P.dubbi.length ? '\n\nDa vedere a mano:\n' + P.dubbi.map(x => x.p.nome + ' — ' + x.motivo).join('\n') : '')
-      + (P.senza.length ? '\n\nSenza figurina con lo stesso nome:\n' + P.senza.map(p => p.nome).join(', ') : '')
-    : '· ' + P.rotti.length + ' links to items that no longer exist: removed.\n'
-      + '· ' + P.proposte.length + ' characters linked to the base item with the same name.\n'
-      + '· ' + P.dubbi.length + ' to check by hand.\n'
-      + '· ' + P.senza.length + ' without a sticker of the same name.'
-      + (P.proposte.length ? '\n\n' + P.proposte.map(riga).join('\n') : '');
-  if (!await _finestraConferma({ titolo: '🔗 ' + (it ? 'Ripara i collegamenti dei personaggi' : 'Repair the character links'), larghezza: '1100px', aCapo: true, ok: it ? 'Ripara' : 'Repair', testo })) return;
-  const viaArt = new Set(P.rotti.map(a => a.articoloId));
-  try {
-    await _scriviPacchetto(d => {
-      // si rifà il conto sul documento appena riletto: tolti solo gli articoli che non ci sono
-      d.associazioni = d.associazioni.filter(x => !viaArt.has(x.a));
-      P.proposte.forEach(x => { if (!d.associazioni.some(y => y.a === x.riga.id)) d.associazioni.push({ a: x.riga.id, p: x.p.id }); });
-    });
-  } catch (e) { toast((it ? '⚠️ NON riparato: ' : '⚠️ NOT repaired: ') + (e?.message || e), 'error'); return; }
-  toast(it ? '✅ Tolti ' + P.rotti.length + ' collegamenti rotti, collegati ' + P.proposte.length + ' personaggi' : '✅ Removed ' + P.rotti.length + ' broken links, linked ' + P.proposte.length + ' characters', 'success');
-  renderCatalog();
-}
+// 🗑️ v7.330 (Franco: «la riparazione dei collegamenti dei personaggi l'ho fatta … valuta tu se mandare in pensione quella
+//    funzionalità») - QUI STAVA «RIPARA I COLLEGAMENTI» (v7.309: `ricollegaPersonaggi`, `_pianoRicollegaPersonaggi`,
+//    `_nomePerConfronto`). È servita una volta, dopo il rifacimento della serie 4. I collegamenti morti nascevano
+//    perché cancellare un articolo non toglieva il suo collegamento al personaggio: ora lo toglie
+//    `_deleteFigurineItem` (`_togliCollegamentoPersonaggio`), quindi non se ne formano più.
 // 🆕 v7.123 (Franco: «Mega 1 e Mega 2 non sono gemelle: condividono solo lo stesso set di 37 retro»; «evitare di censire
 //    37 foto di retro due volte») - I RETRO IN COMUNE. Campo `retroCondivisiId`, scritto su tutte e due le serie e letto
 //    anche da un lato solo, come la gemella; ma vale SOLO per i retro, e solo per la foto. Il retro corrispondente è il
@@ -55658,11 +55631,36 @@ function _articoloNuovo(f, ora, giorni) {
   const d = _dataNovita(f);
   return !!d && ((ora ?? Date.now()) - d.getTime()) < (giorni ?? _giorniNovita) * 86400000;
 }
+// 🆕 v7.330 (Franco: «Articolo aggiunto il 01.01.2026») - la data in cui l'articolo è comparso sul sito (`_dataNovita`,
+//    la stessa che decide le Novità), giorno.mese.anno. Senza data, niente.
+function _dataAggiuntoHTML(f) {
+  const d = _dataNovita(f);
+  if (!d) return '';
+  const g = String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear();
+  return '<div class="fig-data-aggiunto" style="margin-right:auto;font-size:0.7rem;color:var(--text);white-space:nowrap;">'
+    + (currentLang === 'it' ? 'Articolo aggiunto il ' : 'Item added on ') + g + '</div>';
+}
 function _badgeNuovo(f) {
   if (!_articoloNuovo(f)) return '';
   return '<div class="fig-badge-nuovo" title="' + (currentLang === 'it' ? 'Nuovo' : 'New') + '" style="flex:0 0 auto;'
     + 'width:34px;height:34px;background:#ffd400;clip-path:' + _STELLA_12 + ';color:#0e0a1a;display:flex;align-items:center;justify-content:center;'
     + 'font-family:var(--font-ui);font-size:0.56rem;font-weight:800;line-height:1;pointer-events:none;">New</div>';
+}
+// 🆕 v7.330 (Franco: «i tag slim, ma anche gli altri, si vedono sulla card, ma poi cliccando sulla card, nella scheda di
+//    dettagli non c'è») - IL BADGE DELLA VERSIONE, staccato dalla card per darlo anche alla scheda (`openFigDetail`).
+// 🔴 v6.262 - Ogni versione porta il proprio testo (`badgeIt`/`badgeEn`) e la propria classe (`badge`), già nell'elenco.
+// ⚠️ RESTA UNA SOLA CONDIZIONE SCRITTA QUI: le due VARIAZIONI si mostrano solo fra le figurine, perché un retro non ha
+//    un dietro e lì quel badge non può esistere. È il rapporto fra versione e SEZIONE: la card passa `currentSection`,
+//    la scheda la sezione dell'articolo.
+// 🆕 v6.519 - IL LATO ENTRA NEL BADGE: «errore di stampa frontale» / «posteriore» (`_latoErroreStampaTesto`, vuota per
+//    le altre versioni).
+function _badgeVersioneHTML(f, sez) {
+  const _vBadge = _versioneDiChiave(_chiaveTipo(f));
+  if (!_vBadge) return '';
+  if ((_vBadge.chiave === 'variation' || _vBadge.chiave === 'unofficialVariation') && sez !== 'figurines') return '';
+  const _codaLatoBadge = _latoErroreStampaTesto(f);
+  const _testoBadge = (currentLang === 'it' ? _vBadge.badgeIt : _vBadge.badgeEn) + (_codaLatoBadge ? ' ' + _codaLatoBadge : '');
+  return _testoBadge ? `<div class="fig-owned-badge ${_vBadge.badge}">${_testoBadge}</div>` : '';
 }
 function _segnoAnnuncio(f) {
   if (!currentUser?.isAdmin || !_albumHaTestiAnnuncio(f)) return '';
@@ -65998,33 +65996,8 @@ function _cardArticoloHTML(f, C) {
       // che negli spazi stretti l'a capo si SCRIVE, perche' quello automatico spezza dove capita a
       // seconda della larghezza. "Variazione non ufficiale" senza `<br>` si romperebbe in un punto
       // su un telefono e in un altro su quello accanto.
-      const it = currentLang === 'it';
-      // 🔴 v6.262 - CINQUE RAMI SCRITTI A MANO DIVENTANO UNO. Ogni versione porta il proprio
-      // testo (`badgeIt`/`badgeEn`) e la propria classe (`badge`), gia' nell'elenco.
-      // ⚠️ RESTA UNA SOLA CONDIZIONE SCRITTA QUI, e non e' ridondante: le due VARIAZIONI si
-      // mostrano solo fra le figurine, perche' un retro non ha un dietro e li' quel badge non puo'
-      // esistere. Non e' una proprieta' della versione ma del rapporto fra versione e sezione,
-      // quindi non sta nell'elenco: ci finirebbe come `soloFigurine: true`, e sarebbe la stessa
-      // cosa scritta in un posto piu' lontano da chi la legge.
-      const _vBadge = _versioneDiChiave(_chiaveTipo(f));
-      const _badgeNascosto = _vBadge
-        && (_vBadge.chiave === 'variation' || _vBadge.chiave === 'unofficialVariation')
-        && currentSection !== 'figurines';
-      // 🆕 v6.519 (Franco: *"scrivilo come terza riga del badge: «errore di stampa frontale»
-      // o «errore di stampa posteriore»"*) — IL LATO ENTRA NEL BADGE.
-      // 📌 È il posto giusto perché il badge nomina la VERSIONE dell'articolo, e il lato dice
-      // che genere di errore di stampa è quello. Sulle altre versioni la coda è vuota e il
-      // badge resta identico: `_latoErroreStampaTesto` risponde solo agli errori di stampa.
-      // ⚠️ Il badge diventa più lungo e il suo riquadro è stretto: «Errore di stampa
-      // frontale» va su tre righe — che è quello che Franco chiede — e in inglese «Print
-      // error on the front» ne fa quattro. Da guardare a schermo, desktop e telefono.
-      const _codaLatoBadge = _latoErroreStampaTesto(f);
-      const _testoBadge = (_vBadge && !_badgeNascosto)
-        ? ((currentLang === 'it' ? _vBadge.badgeIt : _vBadge.badgeEn)
-           + (_codaLatoBadge ? ' ' + _codaLatoBadge : '')) : '';
-      if (_testoBadge) {
-        typeBadgeHTML = `<div class="fig-owned-badge ${_vBadge.badge}">${_testoBadge}</div>`;
-      }
+      // 🔄 v7.330 - il corpo è andato in `_badgeVersioneHTML`, che serve anche alla scheda (Franco)
+      typeBadgeHTML = _badgeVersioneHTML(f, currentSection);
     }
     // 🆕 v6.361 - i due tasti della card (Modifica e Clona) spariscono su una da-incollare che
     // non puo' essere diversa dalla sua figurina con velina: vedi `_daAttaccareCreazioneVietata`
@@ -66554,6 +66527,9 @@ function _cardArticoloHTML(f, C) {
         ${_bottoneSfogliaSuArticolo(f) ? `<div style="display:flex;justify-content:center;margin:0.35rem 0 0.15rem;">${_bottoneSfogliaSuArticolo(f)}</div>` : ''}
         ${/* 🔄 v7.304 - «Mostra varianti» (v7.214 «Mostra composizione varianti») è passato nella riga qui sotto, a sinistra: vedi `_tastoVar` */''}
         <div class="fig-actions">
+        ${/* 🆕 v7.330 (Franco: «in piccolo … tutto sulla sx … la data di pubblicazione dell'articolo nel sito: Articolo aggiunto
+             il 01.01.2026») - nella riga dei comandi in fondo, a sinistra; solo nelle Novità (`C.conData`); la data è quella delle Novità */''}
+        ${C.conData ? _dataAggiuntoHTML(f) : ''}
         ${slotSinistraHTML}
         <div class="fig-act fig-act-mylist"><span class="fig-act-label">${t('owned.toggle')}</span><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista \u2014 clicca per toglierla':'In your list \u2014 click to remove') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="event.stopPropagation();toggleOwned('${f.id}')">\u2713</button></div>
         ${(currentUser && !currentUser.isAdmin) ? `<div class="fig-act fig-act-wishlist"><span class="fig-act-label">${currentLang==='it'?'Ciò che cerco':'Looking for'}</span><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" title="${currentLang==='it'?(_wishlist.includes(f.id)?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(_wishlist.includes(f.id)?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${_wishlist.includes(f.id)?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'var(--danger)':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;position:relative;z-index:2;">${_wishlist.includes(f.id)?'❤️':'♡'}</button></div>` : ''}
@@ -66986,8 +66962,12 @@ function _applicaVistaCorrente() {
 //  - si legge tutto prima e si scrive tutto dopo: UN reflow, non trecento.
 // Il reset iniziale non e' pignoleria: senza, la seconda passata misurerebbe un layout gia' ridotto
 // dalla prima e le decisioni si impilerebbero invece di rifarsi da capo.
+// 🔄 v7.330 (Franco: «come mai GRANDE FESTA DI CAPONANNO e TOSTAPANE INTELLIGENTE non hanno il nome tra loro allineato
+//    verticalmente? … nella sezione Novità») - il contenitore si può passare: le Novità (`renderCatalogNovita`) non
+//    stanno in `#items-grid` e non si allineavano. Senza argomento, la griglia di sempre.
+// ⚠️ La firma resta quella di sempre (prova-v7082 e prova-v7133 la cercano così): il contenitore arriva da `arguments`.
 function _allineaRigheRetro() {
-  const grid = document.getElementById('items-grid');
+  const grid = arguments[0] || document.getElementById('items-grid');
   if (!grid) return;
   const righe = grid.querySelectorAll('.retro-riga');
   righe.forEach(r => { r.style.display = ''; r.style.minHeight = ''; });   // si riparte sempre da tutte riservate
@@ -71670,6 +71650,12 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
         // 🔄 v6.977 - il riquadro unico (`_senzaFotoHTML`): era un terzo testo, «Foto non ancora disponibile»
         : _senzaFotoHTML(!!f.fotoNonDisponibile, 'position:relative;width:100%;height:' + _altezzaFotoRetro + 'px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;');
     }
+    // 🆕 v7.330 (Franco: «i tag slim, ma anche gli altri, si vedono sulla card … nella scheda di dettagli non c'è. Stessa
+    //    cosa per il bollino new») - sopra le foto, a destra come sulla card: il badge della versione e la stella «New».
+    // 📌 La riga c'è SEMPRE, anche vuota (altezza minima): scorrendo con le frecce fra un articolo che li ha e uno che no
+    //    le foto non salgono e scendono - la regola anti-sfarfallio della v5.916.
+    photoEl.insertAdjacentHTML('afterbegin', '<div class="fd-badge-row">'
+      + _badgeVersioneHTML(f, f.section || 'figurines') + _badgeNuovo(f) + '</div>');
   }
 
   // v6.028 (Franco) - "Mia lista" e il cuore "Ciò che cerco" stanno SOTTO LA FOTO, centrati, in
