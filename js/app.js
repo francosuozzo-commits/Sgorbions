@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.328 - Modificati index.html (versione) e js/app.js. La linguetta «📮 Inviaci la tua mancolista» tradotta (Franco: «non è
+//          stato tradotto»): «Send us your want list», scritta da `_aggiornaLinguettaImpersona`, richiamata anche da `setLang`.
+//          Promemoria delle foto orfane all'ingresso (Franco): le foto già in attesa di cancellazione non contano più
+//          (`_orfaniInAttesa`, la stessa regola della sezione); tutte in coda = niente messaggio e niente pallino.
+//          La mancolista inviata arriva all'admin come un messaggio di «Contatti» (Franco): `contact_messages`, oggetto
+//          «📮 Mancolista», `type: 'mancolista'`; tolto l'evento della v7.327. Via la riga nel registro «Attività utenti»
+//          e la sua sotto-scheda «MANCOLISTE INVIATE» (Franco: «non doveva essere un registro attività; cancella pure»).
+//          Registro «Attività utenti»: 🗑️ in fondo a ogni riga per l'admin (`_attivitaTastoCancella`, `_attivitaCancella`).
 // v7.262 - Modificati index.html (regole e versione) e js/app.js. LE LINGUETTE ARANCIO DI NUOVO A SCOMPARSA (Franco: «le
 //          linguette admin non sono più a scomparsa»; scelta: «solo l'icona, uguali»): Impersona, Macchie, Set doppi e
 //          Annunci da chiuse solo l'icona, larghe uguali (`min-width: 3.4rem`, era 10.5rem dalla v7.260), al passaggio
@@ -32132,7 +32140,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.327';
+const JS_VERSION = 'v7.328';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34403,6 +34411,8 @@ function setLang(lang, byUser = false) {
   document.querySelectorAll('.lang-block-it').forEach(el => el.style.display = lang === 'it' ? '' : 'none');
   document.querySelectorAll('.lang-block-en').forEach(el => el.style.display = lang === 'en' ? '' : 'none');
   applyI18n();
+  // v7.328 - le linguette scritte dal codice (Impersona, Macchie, «Inviaci la tua mancolista») cambiano lingua anche loro
+  try { _aggiornaLinguettaImpersona(); } catch (e) {}
   renderAll();
 }
 
@@ -67747,13 +67757,20 @@ function _aggiornaLinguettaImpersona() {
   // v7.325 - «Inviaci la tua mancolista», a sinistra: a chi ha fatto l'accesso e non è admin (anche a chi impersona, per provarla)
   const mcl = document.getElementById('mcl-linguetta');
   if (mcl) mcl.style.display = (currentUser && !admin) ? 'flex' : 'none';
+  // 🐛 v7.328 (Franco: «"Inviaci la tua mancolista" non è stato tradotto») - la scritta stava fissa nell'index;
+  //    ora la scrive il codice nella lingua corrente, e `setLang` richiama questa funzione.
+  if (mcl) {
+    const scrittaMcl = currentLang === 'it' ? 'Inviaci la tua mancolista' : 'Send us your want list';
+    mcl.textContent = '📮 ' + scrittaMcl;
+    mcl.setAttribute('aria-label', scrittaMcl);
+  }
 }
 // 🆕 v7.325 (Franco: «una linguetta, da mostrare sulla sinistra dello schermo, come quelle admin arancio che abbiamo sulla
 //    destra, chiamata "Inviaci la tua mancolista"; se premuto appare una finestra in centro allo schermo …; un bel box
 //    multiline dove lo user può scrivere; un bel bottone "Invia mancolista", blu; quando premuto un messaggio di conferma …;
 //    la form si chiude e all'admin arriva un evento come quello di Ciò che cerco») - LA MANCOLISTA SCRITTA DALL'UTENTE.
-//    Diventa una riga del registro «👣 Attività utenti» (tipo `mancolista`, col testo), come le spunte di «Ciò che cerco»;
-//    qui però si aspetta la scrittura: la conferma si dà solo se la riga è salvata davvero.
+//    🔄 v7.328 - diventa un messaggio dei Contatti (`contact_messages`); si aspetta la scrittura: la conferma si dà solo
+//    se il messaggio è salvato davvero.
 const MANCOLISTA_MAX = 5000;
 function apriMancolistaUtente() {
   const it = currentLang === 'it';
@@ -67796,14 +67813,26 @@ async function inviaMancolistaUtente() {
   const b = v('mancolista-invia');
   if (b) b.disabled = true;
   try {
-    await fsSave('attivita', { tipo: 'mancolista', date: new Date().toISOString(), userId: currentUser.id,
-      authUid: currentUser.authUid || null, username: currentUser.username || currentUser.email || '', testo });
-    // 🆕 v7.327 (Franco: «ho inviato una mancolista ma non è arrivato alcun messaggio all'admin») - il registro «Attività
-    //    utenti» non suona: una mancolista è da leggere, quindi arriva anche nel registro eventi, con la campanella.
-    //    Lì l'inizio del testo; intera resta in «Attività utenti → MANCOLISTE INVIATE».
-    const corto = testo.length > 200 ? testo.slice(0, 200) + '…' : testo;
-    await logEvent('mancolista', 'Mancolista inviata da ' + bold(currentUser.username || currentUser.email || '?') + ': ' + esc(corto)
-      + ' <span style="color:var(--info);">(intera in Attività utenti → Mancoliste inviate)</span>');
+    // 🔄 v7.328 (Franco: «l'admin non riceve nulla … vorrei che riceva lo stesso tipo contatto che riceve con il tasto
+    //    "Contatti"») - la mancolista diventa un messaggio in `contact_messages`, come «Contatti» e «Ciò che cerco»
+    //    (`submitWishlist`): arriva nei messaggi dell'admin, col suo contatore. Al posto dell'evento della v7.327, per non
+    //    avvisare due volte. 🗑️ E niente più riga nel registro «Attività utenti» (Franco: «non doveva essere un registro
+    //    attività; cancella pure questa cosa»): via anche la sotto-scheda «MANCOLISTE INVIATE».
+    const saved = await fsSave('contact_messages', {
+      name: currentUser.username || '',
+      email: currentUser.email || '',
+      subject: '📮 Mancolista',
+      message: testo,
+      date: new Date().toISOString(),
+      read: false,
+      type: 'mancolista',
+      userId: currentUser.id
+    });
+    if (saved) {
+      _cache.contact_messages = _cache.contact_messages || [];
+      _cache.contact_messages.unshift(saved);
+      try { updateMsgBadge(); } catch (e) {}
+    }
     v('mancolista-modal')?.remove();
     // il «!» con lo spazio prima, come in tutto il sito (prova-v6390)
     toast(it ? 'La tua mancolista è stata inviata ! Torna a trovarci tra qualche giorno e saprai che ti abbiamo trovato le figurine !'
@@ -68620,6 +68649,10 @@ function _orfaniGiorni(iso, ora) {
 function _orfaniDaGuardare(rep, ora) {
   return !!rep && Array.isArray(rep.orfani) && rep.orfani.length > 0 && _orfaniGiorni(rep.ultimaPulizia, ora) >= _ORFANI_GIORNI;
 }
+// v7.328 - le foto già chieste e non ancora cancellate: la richiesta vale se è più nuova dell'elenco della sera
+function _orfaniInAttesa(rep, ric) {
+  return ric && Array.isArray(ric.ids) && String(ric.quando || '') > String((rep && rep.generato) || '') ? ric.ids : [];
+}
 function _orfaniSegnaTab(acceso) {
   const p = document.getElementById('orfani-punto');
   if (p) p.style.display = acceso ? 'inline-block' : 'none';
@@ -68629,11 +68662,19 @@ async function _orfaniAvviso() {
   _orfaniAvvisato = true;
   try {
     const rep = await _orfaniLeggi();
-    const acceso = _orfaniDaGuardare(rep, Date.now());
+    // 🐛 v7.328 (Franco: «il messaggio all'ingresso … continua ad apparire sebbene io abbia schedulato la pulizia … le foto
+    //    impattate da quella schedulazione non sono più selezionabili») - si contano solo le orfane NON già in attesa,
+    //    con la stessa regola della sezione (`_orfaniInAttesa`): tutte in coda = niente messaggio e niente pallino.
+    let ric = null;
+    try { ric = (await fsGetAllDalServer('settings')).find(x => x.id === 'orfaniRichiesta') || null; }
+    catch (e) { console.warn('_orfaniAvviso richiesta', e); }
+    const attesa = _orfaniInAttesa(rep, ric);
+    const libere = (rep && Array.isArray(rep.orfani) ? rep.orfani : []).filter(o => !attesa.includes(o.id));
+    const acceso = _orfaniDaGuardare({ ...rep, orfani: libere }, Date.now());
     _orfaniSegnaTab(acceso);
     if (acceso) toast(currentLang === 'it'
-      ? '🗑️ Sono passati ' + _orfaniGiorni(rep.ultimaPulizia, Date.now()) + ' giorni dall’ultima pulizia: ci sono ' + rep.orfani.length + ' foto orfane da guardare (console, «Foto orfane»).'
-      : '🗑️ ' + rep.orfani.length + ' orphan photos to review (console, «Orphan photos»).', 'warn');
+      ? '🗑️ Sono passati ' + _orfaniGiorni(rep.ultimaPulizia, Date.now()) + ' giorni dall’ultima pulizia: ci sono ' + libere.length + ' foto orfane da guardare (console, «Foto orfane»).'
+      : '🗑️ ' + libere.length + ' orphan photos to review (console, «Orphan photos»).', 'warn');
   } catch (e) { console.warn('_orfaniAvviso', e); }
 }
 async function renderAdminOrfani() {
@@ -68652,7 +68693,7 @@ async function renderAdminOrfani() {
   try { ric = (await fsGetAllDalServer('settings')).find(x => x.id === 'orfaniRichiesta') || null; }
   catch (e) { console.error('renderAdminOrfani', e); }
   _orfaniRep = rep;
-  _orfaniAttesa = ric && Array.isArray(ric.ids) && String(ric.quando || '') > String(rep.generato || '') ? ric.ids : [];
+  _orfaniAttesa = _orfaniInAttesa(rep, ric);
   _orfaniScelti = new Set();
   _orfaniDisegna();
 }
@@ -69816,8 +69857,8 @@ const _ATTIVITA_TIPI = [
   { k: 'lista',    it: '<em>MIA LISTA</em>',     en: '<em>MY LIST</em>' },
   { k: 'q_inizio', it: 'QUESTIONARI INIZIATI',   en: 'QUESTIONNAIRES STARTED' },
   { k: 'q_fine',   it: 'QUESTIONARI COMPLETATI', en: 'QUESTIONNAIRES COMPLETED' },
-  { k: 'mancolista', it: 'MANCOLISTE INVIATE',   en: 'WANT LISTS SENT' },   // v7.325 - «Inviaci la tua mancolista»
 ];
+// 🗑️ v7.328 - qui c'era la sotto-scheda «MANCOLISTE INVIATE» (v7.325): la mancolista ora è un messaggio dei Contatti
 let _attivitaVista = 'cerco';
 let _attivitaCaricate = false;
 
@@ -69847,6 +69888,31 @@ async function renderAdminAttivita(ricarica) {
   _attivitaDisegna();
 }
 function _attivitaScheda(k) { _attivitaVista = k; _attivitaDisegna(); }
+// 🆕 v7.328 (Franco: «dai all'admin la possibilità di cancellare le voci di quel registro attività») - un 🗑️ in fondo a ogni
+//    riga, come nel registro eventi (`deleteEvento`); le regole lo permettono già (attivita: delete se isAdmin)
+function _attivitaTastoCancella(r) {
+  return '<td style="white-space:nowrap;"><button type="button" class="tbl-btn tbl-btn-del" onclick="_attivitaCancella(\'' + esc(r.id) + '\')" title="'
+    + (currentLang === 'it' ? 'Elimina questa voce' : 'Delete this entry') + '">🗑️</button></td>';
+}
+async function _attivitaCancella(id) {
+  if (!currentUser || !currentUser.isAdmin || !id) return;
+  const it = currentLang === 'it';
+  const ok = await _finestraConferma({
+    titolo: '🗑️ ' + (it ? 'Eliminare questa voce dal registro?' : 'Delete this entry from the log?'),
+    testo: it ? 'La voce sparisce dal registro «Attività utenti». Non si può recuperare.' : 'The entry disappears from the «User activity» log. It cannot be recovered.',
+    ok: it ? 'Elimina' : 'Delete', annulla: it ? 'Annulla' : 'Cancel'
+  });
+  if (!ok) return;
+  try {
+    await fsDelete('attivita', id);
+    _cache.attivita = getData('attivita', []).filter(r => r.id !== id);
+    _attivitaDisegna();
+    toast(it ? 'Voce eliminata' : 'Entry deleted', 'success');
+  } catch (e) {
+    console.error('_attivitaCancella', e);
+    toast(it ? 'Eliminazione non riuscita' : 'Delete failed', 'error');
+  }
+}
 
 // Il nome dell'utente, col suo «Chi è?» fra parentesi come nel registro eventi (v7.252)
 function _attivitaUtente(r) {
@@ -69887,27 +69953,21 @@ function _attivitaDisegna() {
   else if (_attivitaVista === 'cerco' || _attivitaVista === 'lista') {
     tab = '<table class="data-table compact"><thead><tr><th style="' + th + '">' + (it ? 'Data' : 'Date') + '</th><th style="' + th + '">' + (it ? 'Utente' : 'User') + '</th>'
       + '<th style="' + th + '">' + (it ? 'Spunta' : 'Tick') + '</th><th style="' + th + '">' + (it ? 'Serie' : 'Series') + '</th>'
-      + '<th style="' + th + '">' + (it ? 'Tipologia' : 'Type') + '</th><th style="' + th + '">' + (it ? 'Articolo' : 'Item') + '</th></tr></thead><tbody>'
+      + '<th style="' + th + '">' + (it ? 'Tipologia' : 'Type') + '</th><th style="' + th + '">' + (it ? 'Articolo' : 'Item') + '</th><th></th></tr></thead><tbody>'
       + righe.map(r => { const a = _attivitaArticolo(r);
         const az = r.azione === 'tolta' ? '<span style="color:var(--danger);">➖ ' + (it ? 'tolta' : 'removed') + '</span>' : '<span style="color:var(--accent);">➕ ' + (it ? 'messa' : 'added') + '</span>';
-        return '<tr>' + td1 + quando(r) + '</td><td>' + _attivitaUtente(r) + '</td><td style="white-space:nowrap;">' + az + '</td><td>' + a.serie + '</td><td>' + a.tipo + '</td><td>' + a.nome + '</td></tr>'; }).join('')
+        return '<tr>' + td1 + quando(r) + '</td><td>' + _attivitaUtente(r) + '</td><td style="white-space:nowrap;">' + az + '</td><td>' + a.serie + '</td><td>' + a.tipo + '</td><td>' + a.nome + '</td>' + _attivitaTastoCancella(r) + '</tr>'; }).join('')
       + '</tbody></table>';
   } else if (_attivitaVista === 'q_inizio') {
     tab = '<table class="data-table compact"><thead><tr><th style="' + th + '">' + (it ? 'Data' : 'Date') + '</th><th style="' + th + '">' + (it ? 'Utente' : 'User') + '</th>'
-      + '<th style="' + th + '">' + (it ? 'Volta' : 'Time') + '</th></tr></thead><tbody>'
-      + righe.map(r => '<tr>' + td1 + quando(r) + '</td><td>' + _attivitaUtente(r) + '</td><td>' + (r.ripresa ? (it ? 'ripreso' : 'resumed') : (it ? 'prima volta' : 'first time')) + '</td></tr>').join('')
-      + '</tbody></table>';
-  } else if (_attivitaVista === 'mancolista') {
-    // v7.325 - la mancolista scritta dall'utente, intera e a capo come l'ha scritta
-    tab = '<table class="data-table compact"><thead><tr><th style="' + th + '">' + (it ? 'Data' : 'Date') + '</th><th style="' + th + '">' + (it ? 'Utente' : 'User') + '</th>'
-      + '<th style="' + th + '">' + (it ? 'Mancolista' : 'Want list') + '</th></tr></thead><tbody>'
-      + righe.map(r => '<tr>' + td1 + quando(r) + '</td><td style="vertical-align:top;">' + _attivitaUtente(r) + '</td><td style="white-space:pre-wrap;color:var(--text);">' + esc(r.testo || '') + '</td></tr>').join('')
+      + '<th style="' + th + '">' + (it ? 'Volta' : 'Time') + '</th><th></th></tr></thead><tbody>'
+      + righe.map(r => '<tr>' + td1 + quando(r) + '</td><td>' + _attivitaUtente(r) + '</td><td>' + (r.ripresa ? (it ? 'ripreso' : 'resumed') : (it ? 'prima volta' : 'first time')) + '</td>' + _attivitaTastoCancella(r) + '</tr>').join('')
       + '</tbody></table>';
   } else {
     tab = '<table class="data-table compact"><thead><tr><th style="' + th + '">' + (it ? 'Data' : 'Date') + '</th><th style="' + th + '">' + (it ? 'Utente' : 'User') + '</th>'
       + '<th style="' + th + '">' + (it ? 'Serie salvate' : 'Series saved') + '</th><th style="' + th + '">' + (it ? 'Articoli aggiunti' : 'Items added') + '</th>'
-      + '<th style="' + th + '">' + (it ? 'Articoli tolti' : 'Items removed') + '</th></tr></thead><tbody>'
-      + righe.map(r => '<tr>' + td1 + quando(r) + '</td><td>' + _attivitaUtente(r) + '</td><td>' + (r.serie || 0) + '</td><td>' + (r.aggiunti || 0) + '</td><td>' + (r.tolti || 0) + '</td></tr>').join('')
+      + '<th style="' + th + '">' + (it ? 'Articoli tolti' : 'Items removed') + '</th><th></th></tr></thead><tbody>'
+      + righe.map(r => '<tr>' + td1 + quando(r) + '</td><td>' + _attivitaUtente(r) + '</td><td>' + (r.serie || 0) + '</td><td>' + (r.aggiunti || 0) + '</td><td>' + (r.tolti || 0) + '</td>' + _attivitaTastoCancella(r) + '</tr>').join('')
       + '</tbody></table>';
   }
   box.innerHTML = schede + nota + tab;
