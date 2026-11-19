@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.328">
+<link rel="stylesheet" href="css/style.css?v=7.329">
 
 
 <style>
@@ -3234,10 +3234,10 @@ button.back-btn { color:#ffffff; }
           <!-- 🆕 v6.966 (Franco: «il selettore n. 3: dopo Serie e Tipologie di articoli, abbiamo
                Personaggi») — il terzo taglio. Stessa forma dei due di prima: lo stato acceso lo
                mette `_aggiornaBivioInventario`, che adesso conosce tre valori. -->
-          <button type="button" id="taglio-personaggi" onclick="impostaTaglioInventario('personaggi')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;">Personaggi</button>
+          <button type="button" id="taglio-personaggi" onclick="impostaTaglioInventario('personaggi')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.bycharacters">Personaggi</button>
           <!-- 🆕 v7.324 (Franco: «aggiungi un nuovo tab, nell'hub principale, dopo Serie, Tipologie di articoli, Personaggi;
                chiamato "Novità"») — gli articoli degli ultimi N giorni (`renderCatalogNovita`) -->
-          <button type="button" id="taglio-novita" onclick="impostaTaglioInventario('novita')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;">Novità</button>
+          <button type="button" id="taglio-novita" onclick="impostaTaglioInventario('novita')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.bynew">Novità</button><!-- v7.329: tradotti (Franco) -->
         </div>
         <!-- v6.174 (Franco) - IL RIEPILOGO DELLE SERIE, per tutti e non solo per l'admin.
              `margin-left:auto` lo spinge in fondo a destra della riga senza aggiungere contenitori.
@@ -4316,8 +4316,10 @@ di tutte le serie</button>
           <div id="profile-logout-wrap" style="margin-top:2rem;">
             <button class="btn-logout" onclick="logout()" style="font-size:0.85rem;padding:6px 14px;cursor:pointer;" data-i18n="nav.logout">Esci</button>
           </div>
-          <div id="profile-danger-zone" style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid rgba(var(--danger-rgb),0.25);">
-            <button class="btn-danger-ghost" onclick="openDeleteAccountModal()" style="font-size:0.85rem;padding:6px 14px;cursor:pointer;" data-i18n="profile.deleteAccount">🗑️ Elimina il mio account</button>
+          <!-- 🔄 v7.329 (Franco: «il tasto "delete my account" della scheda profilo mettiamolo in basso a destra e facciamolo
+               più piccolo») - allineato a destra, 0,72rem con padding 3px 9px (era 0,85rem 6px 14px, come «Esci») -->
+          <div id="profile-danger-zone" style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid rgba(var(--danger-rgb),0.25);text-align:right;">
+            <button class="btn-danger-ghost" onclick="openDeleteAccountModal()" style="font-size:0.72rem;padding:3px 9px;cursor:pointer;" data-i18n="profile.deleteAccount">🗑️ Elimina il mio account</button>
           </div>
         </div>
       </div>
@@ -4837,14 +4839,17 @@ di tutte le serie</button>
                 <!-- 🆕 v7.324 (Franco: «n diventa un parametro da admin console, nel pannello "Impostazioni"») -->
                 <!-- 🔄 v7.325 (Franco: «massimo 50 card per serie … un altro parametro da mettere affianco al 30»; «non usiamo la
                      data di creazione ma la data nella quale le sue condizioni diventano tali da mostrarlo») -->
-                <label class="form-label" style="margin-top:1rem;">Novità: giorni (vale anche per la stellina «New») e card al massimo per serie</label>
+                <!-- 🔄 v7.329 (Franco: «da mobile il numero di immagini per riga deve essere sempre uguale … rendere questa cosa
+                     configurabile») - la terza casella: le foto per riga dal telefono -->
+                <label class="form-label" style="margin-top:1rem;">Novità: giorni (vale anche per la stellina «New»), card al massimo per serie e foto per riga dal telefono</label>
                 <div style="display:flex;gap:0.5rem;align-items:flex-start;flex-wrap:wrap;">
                   <input class="form-input" type="number" id="impostazioni-novita-input" min="1" max="365" step="1" placeholder="30" style="width:110px;" title="Giorni">
                   <input class="form-input" type="number" id="impostazioni-novita-max-input" min="1" max="500" step="1" placeholder="50" style="width:110px;" title="Card al massimo per serie">
+                  <input class="form-input" type="number" id="impostazioni-novita-foto-tel-input" min="1" max="8" step="1" placeholder="2" style="width:110px;" title="Foto per riga dal telefono">
                   <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveGiorniNovita()">Salva</button>
                   <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="_novitaPreparaDate()">Prepara le date delle Novità</button>
                 </div>
-                <div class="form-hint">Giorni da 1 a 365 (senza un valore salvato: 30); card per serie da 1 a 500 (senza: 50). Un articolo è nuovo dal momento in cui si può mostrare (visibile e con la foto), non da quando è stato creato. «Prepara le date delle Novità» scrive quel momento su tutti gli articoli che non l'hanno ancora: va premuto una volta.</div>
+                <div class="form-hint">Giorni da 1 a 365 (senza un valore salvato: 30); card per serie da 1 a 500 (senza: 50); foto per riga dal telefono da 1 a 8 (senza: 2): una card con fronte e retro vale due foto, anche se il retro manca. Un articolo è nuovo dal momento in cui si può mostrare (visibile e con la foto), non da quando è stato creato. «Prepara le date delle Novità» scrive quel momento su tutti gli articoli che non l'hanno ancora: va premuto una volta.</div>
                 <div id="impostazioni-generali-feedback" style="display:none;margin-top:0.6rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;"></div>
               </div>
             </div>
@@ -7148,7 +7153,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.328"></script>
+<script src="js/app.js?v=7.329"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7172,7 +7177,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.328'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.329'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
