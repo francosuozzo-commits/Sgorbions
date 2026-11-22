@@ -1,6 +1,23 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.334 - Modificati index.html (versione) e js/app.js. Console → Tipologie di articoli → «Caratteristiche tipologie di
+//          articoli»: via le colonne «Fronte ruotato» e «Pagine» (`_COLONNE_ASSORBITE`), che ora dice «N. foto» (3 e 3+)
+//          (Franco: «come mai vedo ancora la colonna "Fronte ruotato"? non mi hai detto che avremmo fatto economia di
+//          colonne?»). Nel descrittore i due flag restano: sono il valore di partenza di «N. foto» (`_nFotoDiPartenza`).
+//          E i tipi senza serie hanno tutti e quattro i valori (Franco: «voglio piena libertà: dammi anche il 3 e il
+//          3+»): campo `nFoto` sul record del tipo (`_nFotoTipo`; senza, segue `haRetro`), «Ha il retro» allineato
+//          (spento = 1). `_nFotoArticolo(f)` risponde per l'articolo: lo leggono `_tipoHaRetro`, `_haFotoRuotata` e
+//          `_haPagine(sez, f)` (le sei chiamate ora passano l'articolo).
+//          Pagina di un personaggio: l'ordine delle card ha davanti tre gruppi (Franco: «prima le figurine direttamente
+//          collegate al personaggio, poi le figurine con retro il cui retro è collegato, infine i retro»; `_gruppoPers`, dal
+//          capogruppo), e i criteri si scelgono in console → 🎭 Personaggi → «Ordine degli articoli nella pagina del
+//          personaggio» (Franco: «portiamolo in configurazione»; `settings/ordinePersonaggio`, `_CRITERI_PERS`,
+//          `_ordinePersonaggio`, `salvaOrdinePersonaggio`): gruppo, serie, tipologia, sottoserie, con la posizione; dopo,
+//          sempre la griglia. E sulla card la riga «SERIE - SOTTOSERIE» (Franco), via la riga della sottoserie sotto.
+//          Pubblicità: «Filtra per serie» e «Filtra per categoria» (la categoria del retro, `_catNome`) nella ricerca,
+//          con le pillole della ricerca dei personaggi (`_pubSerie`, `_pubCategorie`, `_pubPillola`, `_pubAzzera`); nelle
+//          card la foto parte dall'alto (via `margin-top:auto`). Scheda in modifica: la fila dei tab va a capo (telefono).
 // v7.333 - Modificati index.html (selettore «Sfoglia per» e versione) e js/app.js (solo la versione). Dal telefono in
 //          verticale la pillola dei 5 tagli dell'Inventario non andava a capo e «Novità» usciva dallo schermo (Franco:
 //          «la sezione novità non si vede se non col telefono in orizzontale; direi di andare su due righe»). Sotto gli
@@ -32272,7 +32289,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.333';
+const JS_VERSION = 'v7.334';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41499,7 +41516,9 @@ function _haSottonome(sez) {
 // 🆕 v6.805 - «QUESTO ARTICOLO HA DELLE PAGINE?», gemella di `_haSottonome` e per la stessa
 //    ragione: la domanda vive nel descrittore, non in un elenco di sezioni scritto a mano. Oggi
 //    risponde «si» al solo Album.
-function _haPagine(sez) {
+function _haPagine(sez, f) {
+  // 🔄 v7.334 - con l'articolo (`f`), un tipo senza serie risponde col suo «N. foto» (`_nFotoArticolo`)
+  if (f && typeof _nFotoArticolo === 'function') return _nFotoArticolo(f) === '3+';
   // 🔄 v7.333 - «N. foto» 3+ nella tabella delle tipologie (`_nFotoTDA`); di partenza è il flag `pagine` del descrittore
   if (typeof _nFotoTDA === 'function' && ARTICOLI[sez || 'figurines']) return _nFotoTDA(sez) === '3+';
   return !!_art(sez).pagine;
@@ -41660,6 +41679,8 @@ const _TESTA_A_PAROLE = ['orientamentoFoto', 'questionarioQuattro', 'riquadro', 
   'colonne', 'nomeCompleto', 'nomeCompletoDove', 'fotoRuotata', 'lettera', 'sottoserieInTab'];
 // 🆕 v7.333 (Franco) - le colonne che stanno in fondo alla tabella, in quest'ordine
 const _COLONNE_IN_FONDO = ['orientamentoFoto', 'questionarioQuattro', 'riquadro', 'caroselloSenzaTipologia', 'sottoserieInGriglia'];
+// 🆕 v7.334 (Franco) - i campi del descrittore che non hanno più una colonna: li dice «N. foto»
+const _COLONNE_ASSORBITE = ['fotoRuotata', 'pagine'];
 // 🆕 v7.333 (Franco: «Trasferelli, Tatuaggi, Carte di identità … non hanno foto del retro»; «per il todo 3, farei una
 //    impostazione in cfg; aggiungi una colonna alla tabella») - QUALI TIPOLOGIE HANNO LA FOTO DEL RETRO, in
 //    `settings/fotoRetroTDA` { voci: { <tipologia>: false } }. Mai scritta = tutte sì (com'era). La legge `_schedaDueFoto`,
@@ -41701,8 +41722,9 @@ function _nFotoTDA(sez) {
 function _cellaNFoto(r) {
   const it = currentLang === 'it';
   if (!r.dato && r.chiave === 'extras') return '<span style="opacity:0.6;" title="' + (it ? 'Ogni tipo senza serie ha il suo valore (righe qui sotto)' : 'Each type has its own') + '">N/A</span>';
-  const val = r.dato ? (_tipoHaRetro(r.chiave) ? '2' : '1') : _nFotoTDA(r.chiave);
-  const valori = r.dato ? ['1', '2'] : _NFOTO_VALORI;
+  // 🔄 v7.334 (Franco: «voglio piena libertà: dammi anche il 3 e il 3+, per quelle tda») - tutti e quattro anche ai tipi
+  const val = r.dato ? _nFotoTipo(r.chiave) : _nFotoTDA(r.chiave);
+  const valori = _NFOTO_VALORI;
   return '<select class="form-input" style="padding:0.15rem 0.3rem;font-size:0.8rem;width:auto;" onchange="salvaNFotoTDA(\'' + esc(r.chiave) + '\', ' + (r.dato ? 'true' : 'false') + ', this.value)"'
     + ' title="' + (it ? '1 = solo il fronte · 2 = fronte e retro · 3 = fronte, retro e fronte ruotato · 3+ = fronte, retro e foto in più' : 'Number of photos') + '">'
     + valori.map(v => '<option value="' + v + '"' + (v === val ? ' selected' : '') + '>' + v + '</option>').join('') + '</select>';
@@ -41712,8 +41734,8 @@ async function salvaNFotoTDA(chiave, tipo, valore) {
   const it = currentLang === 'it';
   try {
     if (tipo) {
-      // il tipo senza serie: il suo «Ha il retro», nel suo record
-      const tipi = _tipiProdotto().map(t => t.id === chiave ? { ...t, haRetro: valore === '2' } : t);
+      // il tipo senza serie: il suo «N. foto» nel suo record, e il suo «Ha il retro» allineato (da 2 in su c'è)
+      const tipi = _tipiProdotto().map(t => t.id === chiave ? { ...t, nFoto: valore, haRetro: valore !== '1' } : t);
       await _salvaTipiProdotto(tipi);
     } else {
       const voci = Object.assign({}, _NFOTO_CFG || {});
@@ -41739,6 +41761,10 @@ function renderAdminTipoArticolo() {
   // 🔄 v7.333 (Franco: «le colonne Orientamento foto, Questionario…, Riquadro foto…, Carosello… e Sottoserie nella… vanno in
   //    fondo alla tabella (per ultime)») - in quest'ordine, dopo tutte le altre
   _COLONNE_IN_FONDO.forEach(k => { const i = chiavi.indexOf(k); if (i >= 0) { chiavi.splice(i, 1); chiavi.push(k); } });
+  // 🔄 v7.334 (Franco: «come mai vedo ancora la colonna "Fronte ruotato"? non mi hai detto che avremmo fatto economia di
+  //    colonne?») - «Fronte ruotato» e «Pagine» non hanno più una colonna: lo dice «N. foto» (3 e 3+). Nel descrittore
+  //    restano come valore di partenza (`_nFotoDiPartenza`).
+  _COLONNE_ASSORBITE.forEach(k => { const i = chiavi.indexOf(k); if (i >= 0) chiavi.splice(i, 1); });
   // v6.228 - l'elenco delle righe, ordinato se c'e' una colonna attiva. Senza nessuna colonna
   // attiva si vede l'ordine naturale, cioe' quello vero del sito (`PRODOTTI_INVENTARIO`), e ci
   // si torna col comando della colonna N. (v6.717).
@@ -41871,7 +41897,6 @@ function renderAdminTipoArticolo() {
       'Anche la colonna <em>N. foto</em> si modifica da qui, e si salva alla scelta: 1 = solo il fronte, 2 = fronte e retro, ' +
       '3 = fronte, retro e fronte ruotato, 3+ = fronte, retro e le foto in più (il tab «Pagine»). Sulla riga ' +
       '<em>Altri articoli</em> è N/A: ogni tipo senza serie ha il suo, ed è il suo «Ha il retro» (1 o 2). ' +
-      'Le colonne <em>Fronte ruotato</em> e <em>Pagine</em> dicono il valore di partenza scritto nel codice: comanda N. foto. ' +
       'La colonna <em>Ordina dove</em> ' +
       'porta il nome della funzione quando l\'ordinamento è di codice, e il campo del record quando è ' +
       'di campo.' +
@@ -41935,6 +41960,7 @@ async function _caricaLegendeDefinizioni() {
     _impostaScalaPersonaggi(docs.find(x => x.id === 'scalaPersonaggi'));   // v7.331 - idem
     _impostaCercaVariazioni(docs.find(x => x.id === 'cercaVariazioni'));   // v7.331 - idem
     _impostaNFoto(docs.find(x => x.id === 'nFotoTDA'), docs.find(x => x.id === 'fotoRetroTDA'));   // v7.333 - idem
+    _impostaOrdinePersonaggio(docs.find(x => x.id === 'ordinePersonaggio'));   // v7.334 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -48242,6 +48268,25 @@ function renderAdminPersonaggi() {
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin" onclick="salvaScalaPersonaggi()">' + (it ? 'Salva la scala' : 'Save ranking') + '</button>' +
     '</div>' +
+    // 🆕 v7.334 (Franco: «l'ordine con il quale vanno esposti gli articoli nella pagina di un personaggio, portiamolo in
+    //    configurazione, nella sezione Personaggi») - i criteri con la loro posizione, come la scala qui sopra
+    '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;color:var(--info);">↕️ ' + (it ? 'Ordine degli articoli nella pagina del personaggio' : 'Order of the items in the character page') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it ? 'I criteri, dal 1 in giù: si guarda il primo, a parità il secondo, e così via. Casella vuota: il criterio non si usa.<br>' +
+            'Dopo i criteri decide sempre l\'ordine della griglia: numero e nome, e le versioni dietro la loro base.'
+          : 'The criteria, from 1 down; empty = not used. After them, the grid order always decides.') +
+    '</p>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Criterio' : 'Criterion') + '</th>' +
+      '<th style="' + th + 'text-align:center;">' + (it ? 'Posizione' : 'Position') + '</th></tr>' +
+    (ord => _CRITERI_PERS.slice().sort((a, b) => ((ord.indexOf(a.k) + 1) || 99) - ((ord.indexOf(b.k) + 1) || 99))
+      .map(c => '<tr><td style="' + td + 'white-space:normal;max-width:40rem;">' + esc(it ? c.it : c.en) + '</td>' +
+        '<td style="' + td + 'text-align:center;"><input type="number" min="1" max="9" step="1" data-ordine-pers="' + c.k + '"' +
+        ' value="' + ((ord.indexOf(c.k) + 1) || '') + '" style="width:3.4em;padding:2px 4px;text-align:center;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;"></td></tr>').join(''))(_ordinePersonaggio()) +
+    '</table></div>' +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
+      '<button class="btn-primary btn-admin" onclick="salvaOrdinePersonaggio()">' + (it ? 'Salva l\'ordine' : 'Save order') + '</button>' +
+    '</div>' +
     // 🆕 v7.332 (Franco: «una funzione a mia disposizione che mi fa questo calcolo per tutti i personaggi lasciamela in console,
     //    nella sezione dei Personaggi») - LA SERIE IN CUI NASCE: «Calcola» mostra l'anteprima, «Scrivi» la salva nel pacchetto
     '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;color:var(--info);">🌱 ' + (it ? 'Serie in cui nasce' : 'Series of origin') + '</h4>' +
@@ -48350,6 +48395,43 @@ async function _scriviSerieNascita() {
   }
   toast(it ? '✅ Serie in cui nasce salvata per tutti i personaggi.' : '✅ Series of origin saved.', 'success');
   _anteprimaSerieNascita();
+}
+// 🆕 v7.334 (Franco: «l'ordine con il quale vanno esposti gli articoli nella pagina di un personaggio, portiamolo in
+//    configurazione, nella sezione Personaggi della admin console») - I CRITERI, in `settings/ordinePersonaggio`
+//    { criteri: ['gruppo', 'serie', …] }: nell'ordine scritto, chi manca non conta; dopo di loro decide sempre l'ordine della
+//    griglia (numero e nome, le versioni dietro la base). Mai salvato = quello della v7.334: gruppo, serie, tipologia,
+//    sottoserie. Le chiavi le usa `renderPaginaPersonaggio`; la forma è quella della «Scala dei personaggi» qui accanto.
+const _CRITERI_PERS = [
+  { k: 'gruppo',     it: 'Gruppo: prima gli articoli collegati direttamente, poi le figurine con retro presenti per il loro retro, poi i retro', en: 'Group: direct, then via the back, then backs' },
+  { k: 'serie',      it: 'Serie (nell\'ordine delle serie)', en: 'Series' },
+  { k: 'tipologia',  it: 'Tipologia di articolo (nell\'ordine dell\'Inventario)', en: 'Item type' },
+  { k: 'sottoserie', it: 'Sottoserie (nell\'ordine dichiarato dalla serie)', en: 'Subseries' },
+];
+let _ORDINE_PERS = null;
+function _impostaOrdinePersonaggio(d) {
+  const o = d && Array.isArray(d.criteri) ? d.criteri.filter((k, i, a) => _CRITERI_PERS.some(c => c.k === k) && a.indexOf(k) === i) : null;
+  _ORDINE_PERS = o;
+}
+function _ordinePersonaggio() { return _ORDINE_PERS || _CRITERI_PERS.map(c => c.k); }
+async function salvaOrdinePersonaggio() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it', voci = [];
+  document.querySelectorAll('#admin-personaggi-box input[data-ordine-pers]').forEach(el => {
+    const n = parseInt(String(el.value || '').trim(), 10);
+    if (n > 0) voci.push([n, el.dataset.ordinePers]);
+  });
+  const numeri = voci.map(v => v[0]);
+  if (numeri.some((n, i) => numeri.indexOf(n) !== i)) { toast(it ? '❌ Due criteri con la stessa posizione' : '❌ Two criteria with the same position', 'error'); return; }
+  const criteri = voci.sort((a, b) => a[0] - b[0]).map(v => v[1]);
+  try {
+    await fsSave('settings', { id: 'ordinePersonaggio', criteri });
+    _impostaOrdinePersonaggio({ criteri });
+    toast(it ? '✅ Ordine salvato. Vale da subito.' : '✅ Order saved.', 'success');
+    renderAdminPersonaggi();
+  } catch (e) {
+    console.error('salvaOrdinePersonaggio', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
 }
 async function salvaScalaPersonaggi() {
   if (!currentUser?.isAdmin) return;
@@ -52462,11 +52544,25 @@ function renderPaginaPersonaggio(grid, pid) {
   //    mezzo la sottoserie, che nella griglia viene prima del numero (v6.980). 🗑️ Via le chiavi che venivano prima della
   //    serie: i tre gruppi fcr/retro/altri (v6.969), «prima i suoi, poi quelli per il retro» (v7.192), «prima il
   //    principale, poi l'alter ego» (v6.972).
+  // 🔄 v7.334 (Franco: «l'ordine con cui esporre le card non è ancora perfetto: prima vanno le figurine che sono
+  //    direttamente collegate al personaggio, poi vanno le figurine con retro il cui retro è collegato al personaggio,
+  //    infine vanno i retro collegati al personaggio») - TRE GRUPPI, prima di tutto il resto: 0 = collegati direttamente
+  //    (`personaggiDiArticolo`, anche le altre tipologie), 1 = qui per il loro retro, 2 = i retro. Il gruppo è quello del
+  //    capogruppo, così le versioni restano dietro la loro base (v7.306).
+  const _grMemo = new Map();
+  const _gruppoPers = f => { const c = _capo(f);
+    if (!_grMemo.has(c.id)) _grMemo.set(c.id, (c.section || 'figurines') === 'retros' ? 2 : (personaggiDiArticolo(c, ix).includes(pid) ? 0 : 1));
+    return _grMemo.get(c.id); };
+  // 🔄 v7.334 (Franco: «portiamolo in configurazione, nella sezione Personaggi della admin console») - i criteri e il loro
+  //    ordine li dice la console (`_ordinePersonaggio`); dopo di loro sempre la griglia
+  const _criteri = { gruppo: (a, b) => _gruppoPers(a) - _gruppoPers(b),
+    serie: (a, b, ca, cb) => ordSerie(ca.seriesId) - ordSerie(cb.seriesId),
+    tipologia: (a, b, ca, cb) => ordSez(ca.section || 'figurines') - ordSez(cb.section || 'figurines'),
+    sottoserie: (a, b, ca, cb) => ordSs(ca) - ordSs(cb) };
+  const _usati = _ordinePersonaggio().map(k => _criteri[k]).filter(Boolean);
   const ord = arts.slice().sort((a, b) => { const ca = _capo(a), cb = _capo(b);
-    return (ordSerie(ca.seriesId) - ordSerie(cb.seriesId))
-    || (ordSez(ca.section || 'figurines') - ordSez(cb.section || 'figurines'))
-    || (ordSs(ca) - ordSs(cb))
-    || compDi(a)(a, b); });
+    for (const c of _usati) { const d = c(a, b, ca, cb); if (d) return d; }
+    return compDi(a)(a, b); });
   // 🆕 v7.314 (Franco: «nella scheda di un personaggio vorrei una barra con dei filtri che permettano di rimuovere alcuni
   //    articoli, in funzione di serie, tda, tipologia di versione (tdv); un meccanismo semplice (non è una ricerca) ma
   //    efficace; lo scopo è ridurre il numero degli articoli della schermata») - I FILTRI: tre file di pillole (serie,
@@ -52592,12 +52688,10 @@ function renderPaginaPersonaggio(grid, pid) {
       // 🔄 v6.980 (Franco: «il nome della serie, nelle card, da quando è in versione breve? ok per il
       //    mobile ma per il desktop vorrei fosse sempre usata la versione normale») - via `sempreCorto`:
       //    `_nomeSerieCard` dà il breve solo sul telefono, come sulle card delle serie.
-      + riga(s ? esc(_nomeSerieCard(s)) : '', 'color:var(--text);')
-      // 🆕 v6.980 (Franco: «se si tratta di un articolo con sottoserie, scrivere la sottoserie sotto
-      //    la serie; ma per garantire una lettura uniforme della pagina, lasciare una riga vuota quando
-      //    la sottoserie non è presente») - la riga c'è SEMPRE: vuota, tiene alla stessa altezza la
-      //    tipologia e le righe sotto in tutte le card. Il colore è quello della serie, di cui è parte.
-      + riga(esc(String(f.subseries || '').trim()) || '&nbsp;', 'color:var(--text);')
+      // 🔄 v7.334 (Franco: «nella card di un articolo nella pagina di un personaggio, quando c'è una sottoserie, scriverla
+      //    dopo la serie, in questo modo: SERIE - SOTTOSERIE») - una riga sola. 🗑️ Via la riga della sottoserie sotto la
+      //    serie (v6.980), che c'era sempre, vuota quando mancava: ora tutte le card hanno la stessa riga.
+      + riga((s ? esc(_nomeSerieCard(s)) : '') + ((ss => ss ? (s ? ' - ' : '') + esc(ss) : '')(String(f.subseries || '').trim())), 'color:var(--text);')
       // 🔄 v6.980 (Franco: «prima della tda, scrivere: "Tipologia di articolo: "») - la parola nel
       //    colore del testo, la tipologia resta lime
       + riga('<span style="color:var(--text);">' + (it ? 'Tipologia di articolo: ' : 'Item type: ') + '</span>' + esc(tipologia), 'color:var(--accent);')
@@ -53249,6 +53343,19 @@ const PUBBLICITA_PACCHETTO = { coll: 'personaggi', id: '_pubblicita' };
 // la prima lista (Franco: «per ora usa solo le serie 3 e 4») - gli id di `_DS_SERIE`
 const PUBBLICITA_SERIE_PRIMA_LISTA = ['s3', 's4'];
 let _pubDati = null, _pubCaricamento = null, _pubAperta = null, _pubPagina = 1, _pubFiltro = '', _elencoPubblicita = [];
+// 🆕 v7.334 (Franco: «nelle pubblicità, mettiamo i filtri ricerca: per nome, serie, categoria») - le pillole accese, come
+//    quelle della ricerca dei personaggi: il nome = solo questa, «+» = aggiungi o togli; in OR dentro la fila, in E fra le
+//    file. Le categorie si passano per posizione in `_pubCatElenco`: un nome con l'apostrofo romperebbe l'onclick.
+let _pubSerie = new Set(), _pubCategorie = new Set(), _pubCatElenco = [];
+function _pubPillola(gruppo, k, solo) {
+  const v = gruppo === 'cat' ? _pubCatElenco[k] : k;
+  if (v === undefined) return;
+  const s = gruppo === 'cat' ? _pubCategorie : _pubSerie;
+  const nuovo = solo ? ((s.size === 1 && s.has(v)) ? new Set() : new Set([v])) : new Set(s.has(v) ? [...s].filter(x => x !== v) : [...s, v]);
+  if (gruppo === 'cat') _pubCategorie = nuovo; else _pubSerie = nuovo;
+  _pubPagina = 1; renderCatalog();
+}
+function _pubAzzera() { _pubFiltro = ''; _pubSerie = new Set(); _pubCategorie = new Set(); _pubPagina = 1; renderCatalog(); }
 function _impostaPubblicita(d) {
   const elenco = ((d && d.pubblicita) || []).filter(x => x && x.i).map(x => ({ id: x.i, nome: x.n || x.i }));
   const perId = new Map(elenco.map(p => [p.id, p]));
@@ -53337,7 +53444,29 @@ function renderCatalogPubblicita(grid) {
   }
   const ix = _indiciPersonaggi();
   const q = _perRicerca(_pubFiltro.trim());
-  const tutti = _pubDati.elenco.filter(p => !q || _perRicerca(p.nome).includes(q));
+  // 🆕 v7.334 (Franco: «per nome, serie, categoria») - serie e categorie di ogni PUB, dai suoi articoli (la categoria è
+  //    quella del retro, `_catNome`); ogni fila di pillole conta sulle PUB che passano il nome e l'altra fila
+  const _dati = new Map(_pubDati.elenco.map(p => { const a = articoliDellaPubblicita(p.id, ix);
+    return [p.id, { serie: new Set(a.map(f => f.seriesId).filter(Boolean)), cat: new Set(a.map(f => _catNome(f.category)).filter(Boolean)) }]; }));
+  const _passaS = p => !_pubSerie.size || [..._dati.get(p.id).serie].some(s => _pubSerie.has(s));
+  const _passaC = p => !_pubCategorie.size || [..._dati.get(p.id).cat].some(c => _pubCategorie.has(c));
+  const perNome = _pubDati.elenco.filter(p => !q || _perRicerca(p.nome).includes(q));
+  const tutti = perNome.filter(p => _passaS(p) && _passaC(p));
+  const _contoS = new Map(), _contoC = new Map();
+  perNome.filter(_passaC).forEach(p => _dati.get(p.id).serie.forEach(s => _contoS.set(s, (_contoS.get(s) || 0) + 1)));
+  perNome.filter(_passaS).forEach(p => _dati.get(p.id).cat.forEach(c => _contoC.set(c, (_contoC.get(c) || 0) + 1)));
+  const _tutteSerie = new Set([..._dati.values()].flatMap(d => [...d.serie]).concat([..._pubSerie]));
+  const _pillS = (getData('series', []) || []).filter(s => _tutteSerie.has(s.id)).sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+    .map(s => _chipTipoHTML({ etichetta: _nomeSerieCard(s, true), n: _contoS.get(s.id) || 0, attiva: _pubSerie.has(s.id), it,
+      onSet: '_pubPillola(\'serie\', \'' + esc(s.id) + '\', true)', onAdd: '_pubPillola(\'serie\', \'' + esc(s.id) + '\', false)',
+      titolo: it ? 'Solo questa serie' : 'This series only' })).join('');
+  _pubCatElenco = [...new Set([..._dati.values()].flatMap(d => [...d.cat]).concat([..._pubCategorie]))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
+  const _pillC = _pubCatElenco.map((c, i) => _chipTipoHTML({ etichetta: c, n: _contoC.get(c) || 0, attiva: _pubCategorie.has(c), it,
+      onSet: '_pubPillola(\'cat\', ' + i + ', true)', onAdd: '_pubPillola(\'cat\', ' + i + ', false)',
+      titolo: it ? 'Solo questa categoria' : 'This category only' })).join('');
+  const _riquadroPill = (id, titolo, pill) => !pill ? '' : '<div id="' + id + '" style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
+    + '<div style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;pointer-events:none;">' + titolo + '</div>'
+    + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + pill + '</div></div>';
   _elencoPubblicita = tutti.map(p => p.id);
   const pagine = Math.max(1, Math.ceil(tutti.length / PERSONAGGI_PER_PAGINA));
   _pubPagina = Math.min(Math.max(1, _pubPagina), pagine);
@@ -53348,14 +53477,18 @@ function renderCatalogPubblicita(grid) {
     + '<div id="pubblicita-search-box" style="background:var(--card);border:1px solid var(--action);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-bottom:0.9rem;">'
     + '<div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.75rem;">'
     + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? 'Imposta i criteri per la tua ricerca pubblicità (in tutte le serie)' : 'Set your advertisement search criteria (in all series)') + '</div>'
-    + '<button type="button" class="btn-primary" onclick="_pubFiltro=\'\';_pubPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;line-height:1.15;">' + t('items.resetFiltersHtml') + '</button>'
+    + '<button type="button" class="btn-primary" onclick="_pubAzzera()" style="font-size:0.82rem;padding:0.3rem 1rem;line-height:1.15;">' + t('items.resetFiltersHtml') + '</button>'
     + '</div>'
     + '<div class="search-bar" style="position:relative;">'
     + '<span style="' + _etichettaBordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + t('items.searchHint') + '</span>'
     + '<div class="search-input-wrap"><span class="search-icon">🔍</span>'
     + '<input class="search-input" type="text" id="pubblicita-cerca" value="' + esc(_pubFiltro) + '" placeholder="' + (it ? 'Cerca una pubblicità…' : 'Search an advertisement…') + '" oninput="_pubFiltro=this.value;_pubPagina=1;renderCatalog();const c=document.getElementById(\'pubblicita-cerca\');c.focus();c.setSelectionRange(c.value.length,c.value.length);">'
     + (_pubFiltro ? '<span class="search-clear-btn" onclick="_pubFiltro=\'\';_pubPagina=1;renderCatalog();">✕</span>' : '')
-    + '</div></div></div>'
+    + '</div></div>'
+    // 🆕 v7.334 - «Filtra per serie» e «Filtra per categoria», i riquadri della ricerca dei personaggi
+    + _riquadroPill('pubblicita-filtro-serie', it ? 'Filtra per serie' : 'Filter by series', _pillS)
+    + _riquadroPill('pubblicita-filtro-cat', it ? 'Filtra per categoria' : 'Filter by category', _pillC)
+    + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:1px;margin-bottom:0.5rem;">'
     + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:0.35rem;">' + (it ? 'I risultati della tua ricerca:' : 'Your search results:') + '</div>'
     + '<div style="font-size:0.95rem;color:var(--text);"><span style="font-size:1.5rem;font-weight:700;color:var(--accent);">' + tutti.length.toLocaleString(it ? 'it-IT' : 'en-US') + '</span> '
@@ -53370,7 +53503,7 @@ function renderCatalogPubblicita(grid) {
     + '</div>';
   const vuoto = !_pubDati.elenco.length
     ? '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">📣</div><p class="empty-title">' + (it ? 'Nessuna pubblicità ancora censita.' : 'No advertisement yet.') + '</p></div>'
-    : '<div class="empty-state" style="grid-column:1/-1;"><p class="empty-title">' + (it ? 'Nessuna pubblicità con questo nome.' : 'No advertisement with this name.') + '</p></div>';
+    : '<div class="empty-state" style="grid-column:1/-1;"><p class="empty-title">' + (it ? 'Nessuna pubblicità con questi criteri.' : 'No advertisement matches these criteria.')   /* v7.334: ci sono anche serie e categoria */ + '</p></div>';
   // 🆕 v7.332 - il carosello delle PUB sotto la barra gialla, come quello dei personaggi
   const _carPrima = document.getElementById('pub-carosello'), _carScorri = _carPrima ? _carPrima.scrollLeft : null;
   grid.innerHTML = _rigaTitoloHub(it ? 'LE PUBBLICITÀ SGORBIONS' : 'THE SGORBIONS ADVERTISEMENTS') + _caroselloEntitaHTML('pubblicita') + cerca + _paginazionePubblicita(pagine)
@@ -53380,8 +53513,11 @@ function renderCatalogPubblicita(grid) {
 // la card della PUB: la forma della card del personaggio
 function _cardPubblicitaHTML(p, ix) {
   const arts = articoliDellaPubblicita(p.id, ix), foto = _fotoPubblicita(arts);
+  // 🔄 v7.334 (Franco: «nella sezione pubblicità, nelle card, la foto non inizia sempre allo stesso livello per tutte le
+  //    card») - la foto parte dall'alto: via il `margin-top:auto` preso dalla card del personaggio (v6.940, dove centra le
+  //    foto sdraiate). Il testo resta in fondo col suo `margin-top:auto`.
   return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="apriPubblicita(\'' + p.id + '\')">'
-    + '<div class="card-img-placeholder" style="margin-top:auto;">' + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="' + esc(p.nome) + '" style="width:100%;height:100%;object-fit:contain;" onload="_persSdraiata(this)">' : '') + '</div>'
+    + '<div class="card-img-placeholder">' + (foto ? '<img src="' + cloudinaryUrl(foto, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="' + esc(p.nome) + '" style="width:100%;height:100%;object-fit:contain;" onload="_persSdraiata(this)">' : '') + '</div>'
     + '<div class="card-body" style="display:flex;flex-direction:column;flex:0 0 auto;margin-top:auto;padding:0.55rem 0.65rem 0.6rem;">'
     + '<div class="card-title" style="margin-bottom:0.2rem;font-size:0.85rem;line-height:1.2;color:var(--nome-entita);flex:1 1 auto;">' + esc(p.nome) + '</div>'
     + '<div class="card-desc" style="margin-top:0.3rem;padding-top:0.3rem;font-size:0.72rem;line-height:1.3;border-top:1px solid rgba(255,255,255,0.06);color:var(--accent);">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div>'
@@ -54672,12 +54808,14 @@ async function salvaTipoProdotto() {
     if (k < 0) { toast(it ? 'Quel tipo di articolo non esiste più.' : 'That item type no longer exists.', 'error'); return; }
     // Si riscrive il record intero a partire da quello che c'e': cosi' un campo aggiunto in futuro
     // non viene perso da un salvataggio scritto oggi.
-    tipi[k] = { ...tipi[k], nome, singolare, nomeEn, singolareEn, genere, haRetro, haTaglia, taglie /* v6.758 */, ordina, colonneDesktop, colonneMobile };
+    // 🔄 v7.334 - «N. foto» segue la spunta «Ha il retro»: spenta = 1; accesa tiene il valore di prima se era già da 2 in su
+    const _nf = haRetro ? (['2', '3', '3+'].includes(_nFotoTipo(idEsistente)) ? _nFotoTipo(idEsistente) : '2') : '1';
+    tipi[k] = { ...tipi[k], nome, singolare, nomeEn, singolareEn, genere, haRetro, nFoto: _nf, haTaglia, taglie /* v6.758 */, ordina, colonneDesktop, colonneMobile };
   } else {
     // L'id si genera e non si scrive: e' un riferimento, e un riferimento battuto a mano e' un id
     // storto che non si vede (la lezione della v6.119 sul `baseFigurineId`).
     const id = 'tp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    tipi.push({ id, nome, singolare, nomeEn, singolareEn, genere, haRetro, haTaglia, taglie /* v6.758 */, ordina, colonneDesktop, colonneMobile });
+    tipi.push({ id, nome, singolare, nomeEn, singolareEn, genere, haRetro, nFoto: haRetro ? '2' : '1' /* v7.334 */, haTaglia, taglie /* v6.758 */, ordina, colonneDesktop, colonneMobile });
   }
   try {
     await _salvaTipiProdotto(tipi);
@@ -73682,9 +73820,23 @@ function _mostraTaglia(f, figSeries) {
 }
 
 function _tipoHaRetro(idTipo) {
-  if (!idTipo) return false;
-  const t = _tipiProdotto().find(x => x.id === idTipo);
-  return !!(t && t.haRetro);
+  // 🔄 v7.334 - lo dice «N. foto» del tipo (`_nFotoTipo`): da 2 in su il retro c'è
+  return !!idTipo && _nFotoTipo(idTipo) !== '1';
+}
+// 🆕 v7.334 (Franco: «perché hai deciso di offrire solo 1 e 2 per le tda senza serie? voglio piena libertà: dammi anche il
+//    3 e il 3+») - «N. foto» di un tipo senza serie: il campo `nFoto` del suo record; un tipo che non l'ha ancora segue il
+//    suo «Ha il retro» (2 o 1), com'era.
+function _nFotoTipo(idTipo) {
+  const t = idTipo ? _tipiProdotto().find(x => x.id === idTipo) : null;
+  if (!t) return '1';
+  if (['1', '2', '3', '3+'].includes(t.nFoto)) return t.nFoto;
+  return t.haRetro ? '2' : '1';
+}
+// «N. foto» di un articolo: quello del suo tipo se è senza serie, se no quello della sua tipologia
+function _nFotoArticolo(f) {
+  if (!f) return '1';
+  if (_eProdottoExtraSerie(f)) return _nFotoTipo(f.tipoProdotto);
+  return _nFotoTDA(f.section);
 }
 
 function _titoloTipoScheda(f) {
@@ -77198,7 +77350,10 @@ function switchToEditMode(figId) {
 
   // v5.784 — i tab PRIMA, poi (dentro il tab Generale) il campo Serie: così la posizione coincide
   // con la vista di visualizzazione, dove Serie sta SOTTO i tab. Prima qui stava sopra i tab.
-  html += '<div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin:0.75rem 0 1rem;">' +
+  // 🔄 v7.334 (Franco: «nella versione mobile durante la modifica di un articolo, la form non sta tutta nello schermo ma
+  //    fuoriesce un pochino a destra») - la fila dei tab va a capo invece di allargare la finestra: con Pagine, Annunci e
+  //    Ebay (v7.322) sul telefono stretto i quattro tab non ci stanno. Prima ipotesi, non misurata: da verificare a schermo.
+  html += '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;border-bottom:1px solid var(--border);margin:0.75rem 0 1rem;">' +
     '<button type="button" id="fe-tab-btn-generale" onclick="switchFeTab(\'generale\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Generale</button>' +
     _tabPagineBtn(f) +
     // 🔄 v7.318 (Franco: «rinomina il tab "eBay" in "Annunci"») - solo il nome: la chiave resta `ebay`
@@ -77741,7 +77896,7 @@ function switchToEditMode(figId) {
   //    `_haPagine`, dal descrittore - e non su una sezione nominata a mano.
   // 📌 Sta accanto alle altre dichiarazioni della scheda («Foto non disponibile», «Invisibile»):
   //    anche questa non descrive l'oggetto, dice che ruolo ha nel sito.
-  if (_haPagine(f.section)) {
+  if (_haPagine(f.section, f)) {
     html += '<div class="detail-row"><span class="detail-label">'
       + (currentLang === 'it' ? '\uD83D\uDCD6 Album da sfogliare' : '\uD83D\uDCD6 Album to browse') + '</span>'
       + '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">'
@@ -78103,6 +78258,8 @@ const _scriviSlot = (s, v) => { if (s === 'retro') _figEditImgRetroData = v; els
 // 🔄 v7.333 - «N. foto» 3 nella tabella delle tipologie (`_nFotoTDA`); di partenza è il flag `fotoRuotata` del descrittore
 function _haFotoRuotata(f) {
   if (!f || !ARTICOLI[f.section || 'figurines']) return false;
+  // 🔄 v7.334 - anche i tipi senza serie, col loro «N. foto» (`_nFotoArticolo`)
+  if (typeof _nFotoArticolo === 'function') return _nFotoArticolo(f) === '3';
   if (typeof _nFotoTDA === 'function') return _nFotoTDA(f.section) === '3';
   return !!ARTICOLI[f.section || 'figurines'].fotoRuotata;
 }
@@ -78526,7 +78683,7 @@ function _rigaFotoDaAlbumHTML(f) {
 function _albumSfogliabileDi(seriesId, escludiId) {
   if (!seriesId) return null;
   return getData('figurines', []).find(x =>
-    x.seriesId === seriesId && _haPagine(x.section) && x.sfogliabile && x.id !== escludiId) || null;
+    x.seriesId === seriesId && _haPagine(x.section, x) && x.sfogliabile && x.id !== escludiId) || null;
 }
 
 // 📖 L'album che si puo' sfogliare DAVVERO: dichiarato E con delle pagine dentro. Le due
@@ -78741,7 +78898,7 @@ function apriComposizioneVarianti(radice) {
 }
 
 function _bottoneSfogliaSuArticolo(f) {
-  if (!f || !_haPagine(f.section)) return '';
+  if (!f || !_haPagine(f.section, f)) return '';
   const alb = _albumDaSfogliare(f.seriesId);
   return (alb && alb.id === f.id) ? _bottoneSfogliaHTML('piccola', f.id) : '';
 }
@@ -79299,7 +79456,7 @@ function _feFotoAnnuncio() {
 }
 
 function _tabPagineBtn(f) {
-  if (!f || !_haPagine(f.section) || !currentUser || !currentUser.isAdmin) return '';
+  if (!f || !_haPagine(f.section, f) || !currentUser || !currentUser.isAdmin) return '';
   const n = _pagineDi(f).length;
   return '<button type="button" id="fe-tab-btn-pagine" onclick="switchFeTab(\'pagine\')"'
     + ' style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;'
@@ -79377,7 +79534,7 @@ function _miniaturaPaginaHTML(p, i, it) {
 //    l'anteprima dell'ULTIMO album aperto in modifica - una finestra che mostra le pagine di un
 //    altro album, e nessun errore da nessuna parte.
 function _bloccoPagineLettura(f) {
-  if (!f || !_haPagine(f.section)) return '';
+  if (!f || !_haPagine(f.section, f)) return '';
   // 🔄 v6.969 - le pagine sono quelle dell'album che le porta: lui, o quello da cui prende le foto.
   //    E `_figSlotF` va su QUELL'album, perche' `apriPaginaGrande` legge le pagine da li'.
   const _conPagine = _albumConLePagine(f);
@@ -79406,7 +79563,7 @@ function _bloccoPagineLettura(f) {
 //    v7.185 stessa (misura la tinta da sé): erano scritte e mai usate. Il campo, dove c'è, si svuota al Salva.
 function _bloccoPagineEdit(f) {
   const it = currentLang === 'it';
-  if (!f || !_haPagine(f.section) || !currentUser || !currentUser.isAdmin || !_pagineVisibili(f)) {
+  if (!f || !_haPagine(f.section, f) || !currentUser || !currentUser.isAdmin || !_pagineVisibili(f)) {
     return '<div id="fe-pagine-box" style="display:none;"></div>';
   }
   const pag = _pagineDi(f);
