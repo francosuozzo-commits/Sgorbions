@@ -1,7 +1,36 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.331 - Modificati index.html (versione) e js/app.js. Il personaggio passa a un erede (Franco: «un personaggio non
+// v7.332 - Modificati index.html (versione) e js/app.js. Il carosello anche nei tagli Personaggi e Pubblicità (Franco:
+//          «anche le sezioni Personaggi e Pubblicità devono avere il loro carosello»; alle domande: girano i personaggi e le
+//          PUB stessi, sotto la barra gialla). Foto e nome, il clic apre la loro pagina; solo quelli con la foto, a caso; la fila si pesca una volta per ingresso nel taglio e tiene il suo punto mentre si cerca
+//          (`renderCaroselloEntita`, `_caroselloEntitaFila`). Due righe nuove in console → 🎠 Caroselli → «Come girano i
+//          caroselli» (acceso, quanti, secondi, ordine). Le «Righe del nome» sul computer sono quelle del carosello di una
+//          tipologia (`caroTda`), e in «Posizione dei campi» quella riga si chiama «Caroselli di una tipologia, dei
+//          personaggi e delle pubblicità (desktop)». La foto è la richiesta della card (w_400): niente trasformazioni
+//          nuove su Cloudinary.
+//          E in console → 🎠 Caroselli i sei titoli (Caroselli, Come girano i caroselli, Titolo del carosello della home,
+//          Serie nel carosello della home, Campi ridotti, Posizione dei campi) nell'azzurro dei titoletti (`--info`).
+//          🌱 LA SERIE IN CUI NASCE un personaggio (Franco: «la serie che lo menziona per primo, cioè la serie da cui
+//          nasce … seguendo l'ordine delle serie»): la prima serie, per `order`, fra quelle dei suoi articoli (senza le
+//          serie contenitore), `_serieDiNascitaCalcolata`. Si calcola dalla console → 🎭 Personaggi («Calcola la serie in
+//          cui nasce»: anteprima con i numeri per serie e una riga per personaggio; «Scrivi» la salva, campo `s` nel
+//          pacchetto). A schermo: «Serie: …» sotto il nome nella card del carosello dei personaggi, «Serie in cui nasce: …»
+//          nella pagina del personaggio; solo se scritta e se chi guarda vede quella serie (`_serieDiNascita`).
+//          📝 Scheda in modifica di una figurina con retro: sotto «Tipo di change» la nota «Qui ci sono solo i change
+//          frontali. Per un change di retro collega come «Retro» il retro change: il tipo lo prende da lui.» (Franco). E
+//          scelto un retro change o errore di stampa, la figurina prende la stessa versione da sola (`_feVersioneDalRetro`),
+//          con un messaggio sotto il retro; se ha già un'altra versione spuntata non tocca niente e avvisa.
+//          🔢 Campo nuovo «Disponibilità singole doppie copia» (`disponibiliCopia`, un numero; Franco): nel tab «Doppi»
+//          della scheda, in lettura e in modifica, sotto «Disponibilità singole doppie» (segue la sua spunta nella matrice
+//          dei Doppioni; non entra nel totale); sulla card, solo admin, il pallino grigio «DC» + numero accanto al «D»,
+//          sempre se il campo ha un numero (`_pallinoDisponibiliCopia`), col nome nel `title`. Il clone non lo copia; la
+//          slim lo tiene suo (`SLIM_CAMPI_PROPRI`).
+//          🗑️ VIA GLI ALTER EGO (v6.972; Franco: «gli alter ego sono chiusi, quindi puoi cancellare il campo ed ogni
+//          riferimento ad esso»). Il documento `personaggi/_alterego`, letto il 22/11, era vuoto: niente cambia a schermo.
+//          Via la riga admin «È alter ego di:» e la ✕, `_principale`, `_conAlterEgo`, `principaleDi`/`alterEgoDi`,
+//          `_personaggiAlterEgo`; il caricamento dei personaggi non legge più quel documento (una lettura in meno).
+// v7.331 -Modificati index.html (versione) e js/app.js. Il personaggio passa a un erede (Franco: «un personaggio non
 //          venga mai cancellato se può essere relazionato ad un articolo. quando l'articolo ad esso relazionato muore, il
 //          personaggio passa ad un altro articolo … fpa, fcr, carta, olo, carta di identità, trasferello, tatuaggio»):
 //          cancellando l'articolo che porta il collegamento, chi lo mostrava e resta senza lo riceve sulla sua riga, in
@@ -32204,7 +32233,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.331';
+const JS_VERSION = 'v7.332';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -32675,7 +32704,7 @@ function _serieVisibili(tutte) {
 //    Le slim già nel database non hanno questi campi: risultano non in vendita finché non si spunta Ebay sulla loro scheda.
 const SLIM_CAMPI_EBAY = ['forSale', 'price', 'priceUsd', 'quantity', 'condition', 'ebayAccounts', 'daPubblicare', 'ebay', 'ebayImg'];
 const SLIM_CAMPI_PROPRI = ['id', 'seriesId', 'section', 'isSlim', 'baseFigurineId',
-                           'disponibili', 'quante', 'copie', 'peso', 'invisibile', 'mostratoDal'].concat(SLIM_CAMPI_EBAY);   // v7.325: + `mostratoDal` (le Novità)
+                           'disponibili', 'quante', 'copie', 'peso', 'invisibile', 'mostratoDal', 'disponibiliCopia'].concat(SLIM_CAMPI_EBAY);   // v7.325: + `mostratoDal` (le Novità); v7.332: + `disponibiliCopia`
 // ⚠️ UN CAMPO PROPRIO ASSENTE SI LEGGEREBBE DALLA PARENT: la Disponibilità della slim sarebbe quella della fcr, e il totale
 //    la conterebbe due volte. Per questo in memoria i campi propri ci sono sempre, `undefined` se vuoti (`_collegaSlim`);
 //    alla scrittura gli `undefined` si saltano, e nel database restano solo quelli scritti.
@@ -35203,6 +35232,7 @@ try { document.fonts && document.fonts.ready.then(() => { try { _aggiornaLogoNav
 // sciolte e _caroselloSpegni() sceglieva quale fermare a colpi di "diverso da": con due caroselli
 // funzionava, col terzo no — "diverso da serie" avrebbe spento anche quello nuovo. Una mappa non
 // ha questo problema e non va ritoccata quando se ne aggiunge un quarto.
+// v7.332: anche `personaggi` e `pubblicita` (`renderCaroselloEntita`), che il posto se lo prendono da soli alla prima accensione
 const _caroselloTimers = { home: null, serie: null, prodotto: null, sezione: null };   // v6.984: + sezione
 const CAROSELLO_MAX = 20;                                 // v6.066 (Franco): da 15 a 20
 // v6.066: altro +15% sulla velocita'. I fattori restano scritti uno per uno invece del risultato:
@@ -35763,7 +35793,10 @@ const _CAROSELLI_QUATTRO = [
   { k: 'home',     it: 'Home',                    en: 'Home',            quanti: CAROSELLO_MAX, ordine: 'a caso' },
   { k: 'serie',    it: 'Pagina della serie',      en: 'Series page',     quanti: 0, ordine: 'per numero, una tipologia per volta' },
   { k: 'prodotto', it: 'Pagina della tipologia',  en: 'Item type page',  quanti: 0, ordine: 'a caso (le bustine per serie)' },
-  { k: 'sezione',  it: 'Sezione della serie',     en: 'Series section',  quanti: 0, ordine: 'per numero' }
+  { k: 'sezione',  it: 'Sezione della serie',     en: 'Series section',  quanti: 0, ordine: 'per numero' },
+  // 🆕 v7.332 - i caroselli dei tagli Personaggi e Pubblicità (`renderCaroselloEntita`): «per numero» là vale «per nome»
+  { k: 'personaggi', it: 'Personaggi',            en: 'Characters',      quanti: CAROSELLO_MAX, ordine: 'a caso' },
+  { k: 'pubblicita', it: 'Pubblicità',            en: 'Advertisements',  quanti: CAROSELLO_MAX, ordine: 'a caso' }
 ];
 const _caroselloAcceso = c => _CAR_MODO_CFG[c + ':acceso'] !== false;
 // quanti card al massimo; 0 vuol dire tutte
@@ -35814,6 +35847,9 @@ function _ridisegnaCaroselliInVista() {
   try { if (inVista('serie-carosello-sez')) renderCaroselloSerie(); } catch (e) { console.error('renderCaroselloSerie', e); }
   try { if (inVista('prodotto-carosello-sez')) renderCaroselloProdotto(); } catch (e) { console.error('renderCaroselloProdotto', e); }
   try { if (inVista('sezione-carosello-sez')) renderCaroselloSezione(); } catch (e) { console.error('renderCaroselloSezione', e); }   // v6.984
+  // v7.332 - Personaggi e Pubblicità: le regole della console sono cambiate, la fila si ripesca
+  try { if (inVista('pers-carosello-sez')) renderCaroselloEntita('personaggi', true); } catch (e) { console.error('renderCaroselloEntita', e); }
+  try { if (inVista('pub-carosello-sez')) renderCaroselloEntita('pubblicita', true); } catch (e) { console.error('renderCaroselloEntita', e); }
 }
 
 // 🆕 v7.082 (Franco: «dobbiamo rendere anche questo aspetto configurabile da me [...] in admin console
@@ -36627,6 +36663,103 @@ function renderCaroselloProdotto() {
   box.onmouseenter = () => _caroselloSpegni('prodotto');
   box.onmouseleave = () => _caroselloAvviaBox(box, 'prodotto', vivo);
   _caroselloAvviaBox(box, 'prodotto', vivo);
+}
+
+// ---- I CAROSELLI DI PERSONAGGI E PUBBLICITÀ (v7.332, Franco) ------------------------------------------------------------
+// Franco (19/11): «anche le sezioni Personaggi e Pubblicità devono avere il loro carosello». Alle due domande: girano i
+// personaggi e le PUB stessi (foto e nome; il clic apre la loro pagina), e la fila sta sotto la barra gialla, sopra la
+// ricerca. Si regolano dalla console (🎠 Caroselli → «Come girano i caroselli»), come gli altri quattro.
+// 📌 Solo quelli con la foto. I filtri della ricerca non li toccano: è una vetrina, non un risultato.
+// 📌 LA FILA SI PESCA UNA VOLTA PER INGRESSO NEL TAGLIO (`_caroselloEntitaFila`): la ricerca ridisegna la pagina a ogni
+//    tasto, e rimescolare a ogni lettera farebbe saltare la fila sotto gli occhi. Si ripesca rientrando nel taglio, quando
+//    cambiano i dati e quando la console cambia le regole.
+// 📌 La foto è la STESSA richiesta della card del personaggio (w_400,h_400,c_fit): a Cloudinary non si chiede nessuna
+//    trasformazione nuova.
+const _CAR_ENTITA_FOTO = 'w_400,h_400,c_fit,q_auto,f_auto';
+const _CAR_ENTITA_ID = { personaggi: 'pers', pubblicita: 'pub' };
+const _caroselloEntitaFile = {};
+function _caroselloEntitaElenco(quale) {
+  const ix = _indiciPersonaggi();
+  if (quale === 'personaggi') {
+    if (!_personaggiDati) return [];
+    return _personaggiDati.elenco
+      .map(p => ({ id: p.id, name: p.nome, foto: _fotoPersonaggio(articoliDelPersonaggio(p.id, ix), p.id, ix), serie: _serieDiNascita(p) }))
+      .filter(x => x.foto);
+  }
+  if (!_pubDati) return [];
+  return _pubDati.elenco.map(p => ({ id: p.id, name: p.nome, foto: _fotoPubblicita(articoliDellaPubblicita(p.id, ix)) }))
+    .filter(x => x.foto);
+}
+// la fila: a caso (di sempre), poi l'ordine e il numero della console. `nuova` = si ripesca comunque.
+function _caroselloEntitaFila(quale, nuova) {
+  const dati = quale === 'personaggi' ? _personaggiDati : _pubDati;
+  const figs = (_cache && _cache.figurines) || null, admin = !!currentUser?.isAdmin;
+  const c = _caroselloEntitaFile[quale];
+  if (!nuova && c && c.dati === dati && c.figs === figs && c.admin === admin) return c.fila;
+  const mazzo = _caroselloEntitaElenco(quale);
+  for (let i = mazzo.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [mazzo[i], mazzo[j]] = [mazzo[j], mazzo[i]]; }
+  const fila = _caroselloTaglia(quale, _caroselloOrdina(quale, mazzo));
+  _caroselloEntitaFile[quale] = { dati, figs, admin, fila };
+  return fila;
+}
+// il posto della fila, dentro la griglia del taglio (tutta la riga); lo riempie `renderCaroselloEntita`
+function _caroselloEntitaHTML(quale) {
+  const id = _CAR_ENTITA_ID[quale], it = currentLang === 'it';
+  const freccia = (dir, lato, segno, nome) => '<button type="button" id="' + id + '-carosello-' + dir + '" aria-label="' + nome + '" style="position:absolute;' + lato + ':-6px;top:42%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.3rem;line-height:1;padding:0.4rem 0.55rem;border-radius:999px;cursor:pointer;">' + segno + '</button>';
+  return '<div id="' + id + '-carosello-sez" style="grid-column:1 / -1;min-width:0;max-width:100%;display:none;position:relative;margin:1.1rem 0 0.9rem;">'
+    + freccia('prec', 'left', '&#8249;', it ? 'Precedente' : 'Previous')
+    + '<div id="' + id + '-carosello" style="display:flex;gap:0.9rem;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;padding:0.2rem 0.4rem 0.6rem;"></div>'
+    + freccia('succ', 'right', '&#8250;', it ? 'Successivo' : 'Next')
+    + '</div>';
+}
+// `scorri` = dove stava la fila prima del ridisegno (null = si ripesca e si riparte dall'inizio)
+function renderCaroselloEntita(quale, nuova, scorri) {
+  const id = _CAR_ENTITA_ID[quale];
+  const sez = document.getElementById(id + '-carosello-sez'), box = document.getElementById(id + '-carosello');
+  if (!sez || !box) return;
+  _caroselloSpegni(quale);
+  const spento = () => { sez.style.display = 'none'; box.innerHTML = ''; };
+  if (!_caroselloAcceso(quale)) { spento(); return; }
+  const fila = _caroselloEntitaFila(quale, nuova);
+  if (fila.length < 2) { spento(); return; }
+  const tel = _isMobileViewport();
+  const larghezza = tel ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA;
+  const apri = quale === 'personaggi' ? 'apriPersonaggio' : 'apriPubblicita';
+  // le righe del nome sul computer: quelle del carosello di una tipologia, che ha card della stessa misura (Franco: la riga
+  //    della console «comprende 3 caroselli»). Sul telefono il nome va a capo quanto serve, come negli altri caroselli.
+  const righeNome = _righeNome('caroTda');
+  const conSerie = quale === 'personaggi' && fila.some(x => x.serie);   // la riga della serie, se qualcuno nella fila ce l'ha
+  box.innerHTML =fila.map(x => '<div onclick="' + apri + '(\'' + esc(x.id) + '\')" title="' + esc(x.name) + '" '
+    + 'style="flex:0 0 auto;width:' + larghezza + ';scroll-snap-align:start;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">'
+    + '<img src="' + cloudinaryUrl(x.foto, _CAR_ENTITA_FOTO) + '" loading="lazy" alt="" style="width:100%;'
+    + (tel ? 'aspect-ratio:1;height:auto;' : 'height:' + CAROSELLO_ALTEZZA_RIDOTTA + 'px;') + 'object-fit:contain;border-radius:6px;background:var(--card);">'
+    // 🆕 v7.332 (Franco: «"Serie in cui nasce" … nella card del personaggio del carosello; lì lo chiamerei solo Serie»; poi «il
+    //    nome della serie lo vorrei sopra al nome del personaggio, come nel carosello della Home») - la prima riga sotto la foto,
+    //    bianca come la riga della serie della home; vuota (ma c'è) se non è scritta, così i nomi restano alla stessa altezza
+    + (conSerie ? '<div class="car-riga" data-campo="serie" style="margin-top:0.4rem;font-size:' + (tel ? '0.66rem' : '0.72rem') + ';line-height:1.25;color:var(--text);'
+      + (tel ? '' : 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') + '">'
+      + (x.serie ? (currentLang === 'it' ? 'Serie: ' : 'Series: ') + esc(_nomeSerieCard(x.serie, true)) : '&nbsp;') + '</div>' : '')
+    + '<div class="car-riga" data-campo="nome" style="margin-top:' + (conSerie ? '0.15rem' : '0.4rem') + ';font-size:' + (tel ? '0.7rem' : '0.78rem') + ';font-weight:600;line-height:1.25;color:var(--nome-entita);'
+    + (tel ? '' : 'height:' + (righeNome * 1.25) + 'em;overflow:hidden;') + '">' + esc(x.name) + '</div>'
+    + '</div>').join('');
+  sez.style.display = '';
+  if (scorri) { box.style.scrollBehavior = 'auto'; box.scrollLeft = scorri; box.style.scrollBehavior = ''; }
+  _allineaRigheCarosello(box);
+  const prec = document.getElementById(id + '-carosello-prec'), succ = document.getElementById(id + '-carosello-succ');
+  if (prec) prec.onclick = () => _caroselloScorriBox(box, -1);
+  if (succ) succ.onclick = () => _caroselloScorriBox(box, 1);
+  // vivo finché si resta sull'elenco di quel taglio: aprendo un personaggio, cercando nella RG o cambiando pagina si spegne
+  const vivo = () => box.isConnected && _taglioInventario === quale
+    && !(quale === 'personaggi' ? _personaggioAperto : _pubAperta)
+    && !!document.getElementById('page-catalog')?.classList.contains('active')
+    && !(document.getElementById('series-search')?.value || '').trim();
+  box.onmouseenter = () => _caroselloSpegni(quale);
+  box.onmouseleave = () => _caroselloAvviaBox(box, quale, vivo);
+  _caroselloAvviaBox(box, quale, vivo);
+}
+// ridisegna la fila di quel taglio tenendo il punto in cui stava (la chiamano i due tagli dopo ogni loro ridisegno)
+function _caroselloEntitaDopo(quale, scorriPrima) {
+  try { renderCaroselloEntita(quale, scorriPrima === null, scorriPrima); } catch (e) { console.error('renderCaroselloEntita', e); }
 }
 
 function showPage(page) {
@@ -41815,7 +41948,8 @@ function renderAdminCaroselliTDA() {
   const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
   box.innerHTML =
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">\uD83C\uDFA0 ' + (it ? 'Caroselli' : 'Carousels') + '</h4>' +
+    // \uD83D\uDD04 v7.332 (Franco: i titoli della sezione Caroselli \u00ABnel solito azzurro che usiamo nei titoletti delle sezioni\u00BB) - `--info`
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">\uD83C\uDFA0 ' + (it ? 'Caroselli' : 'Carousels') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         // 🔄 v7.152 (Franco: «correggiamo perché i caroselli sono 4») - c'è anche quello dentro la sezione di una serie
@@ -41894,7 +42028,7 @@ function _tabelleModoCaroselliHTML(th, td, it) {
     ' placeholder="' + esc(_TITOLI_CAROSELLO_DI_SEMPRE[l + chiave] ?? ((i18n[l] || {})[chiave] || '')) + '" style="width:100%;min-width:15rem;' + st + '"></td>';
   const serie = getData('series', []).filter(_serieInVetrina)
     .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999) || String(a.name || '').localeCompare(String(b.name || ''), 'it', { numeric: true }));
-  return '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;">🎛️ ' + (it ? 'Come girano i caroselli' : 'How the carousels run') + '</h4>' +
+  return '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;color:var(--info);">🎛️ ' + (it ? 'Come girano i caroselli' : 'How the carousels run') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? '<strong>Acceso</strong>: spento, quel carosello non c’è. <strong>Quanti</strong>: le card al massimo. ' +
@@ -41909,13 +42043,13 @@ function _tabelleModoCaroselliHTML(th, td, it) {
       '<th style="' + th + 'text-align:center;">' + (it ? 'Secondi' : 'Seconds') + '</th>' +
       '<th style="' + th + '">' + (it ? 'Ordine' : 'Order') + '</th></tr>' +
     righe + '</table></div>' +
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🏷️ ' + (it ? 'Titolo del carosello della home' : 'Home carousel title') + '</h4>' +
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">🏷️ ' + (it ? 'Titolo del carosello della home' : 'Home carousel title') + '</h4>' +
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
     '<tr><th style="' + th + '"></th><th style="' + th + '">' + (it ? 'Italiano' : 'Italian') + '</th><th style="' + th + '">' + (it ? 'Inglese' : 'English') + '</th></tr>' +
     '<tr><td style="' + td + '">' + (it ? 'Computer' : 'Desktop') + '</td>' + titolo('titolo', 'it', 'home.figurine') + titolo('titolo', 'en', 'home.figurine') + '</tr>' +
     '<tr><td style="' + td + '">' + (it ? 'Telefono' : 'Phone') + '</td>' + titolo('titoloTel', 'it', 'home.figurineShort') + titolo('titoloTel', 'en', 'home.figurineShort') + '</tr>' +
     '</table></div>' +
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">🏠 ' + (it ? 'Serie nel carosello della home' : 'Series in the home carousel') + '</h4>' +
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">🏠 ' + (it ? 'Serie nel carosello della home' : 'Series in the home carousel') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;line-height:1.5;">' +
       (it ? 'Ci sono le serie pubblicate e in completamento; le IN ARRIVO restano sempre fuori. Togli la spunta per lasciarne fuori una.'
           : 'Published and in-progress series; upcoming ones are always out. Uncheck to leave one out.') +
@@ -47877,7 +48011,115 @@ function renderAdminPersonaggi() {
     '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin" onclick="salvaScalaPersonaggi()">' + (it ? 'Salva la scala' : 'Save ranking') + '</button>' +
-    '</div>';
+    '</div>' +
+    // 🆕 v7.332 (Franco: «una funzione a mia disposizione che mi fa questo calcolo per tutti i personaggi lasciamela in console,
+    //    nella sezione dei Personaggi») - LA SERIE IN CUI NASCE: «Calcola» mostra l'anteprima, «Scrivi» la salva nel pacchetto
+    '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;color:var(--info);">🌱 ' + (it ? 'Serie in cui nasce' : 'Series of origin') + '</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it ? 'Per ogni personaggio, la prima serie (nell\'ordine delle serie) in cui compare un suo articolo: figurine, retro, carte e il resto, versioni comprese.<br>' +
+            'Gli articoli senza serie non contano. Si vede sulla card del carosello («Serie») e nella pagina del personaggio («Serie in cui nasce»).<br>' +
+            '«Calcola» mostra il risultato senza scrivere niente; «Scrivi» lo salva. Un personaggio nuovo non ce l\'ha finché non si rifà il calcolo.'
+          : 'For each character, the first series (in series order) where one of its items appears. «Calculate» only shows the result; «Write» saves it.') +
+    '</p>' +
+    '<div style="display:flex;align-items:center;gap:0.9rem;">' +
+      '<button class="btn-primary btn-admin" onclick="_anteprimaSerieNascita()">' + (it ? 'Calcola la serie in cui nasce' : 'Calculate the series of origin') + '</button>' +
+    '</div>' +
+    '<div id="pers-nascita-anteprima" style="margin-top:0.9rem;"></div>';
+}
+// L'anteprima del calcolo: i numeri per serie, poi una riga per personaggio (prima quelli che cambiano). Niente si scrive.
+let _serieNascitaCalcolo = null;   // Map id personaggio → id serie ('' = nessuna), dell'ultima anteprima
+async function _anteprimaSerieNascita() {
+  if (!currentUser?.isAdmin) return;
+  const box = document.getElementById('pers-nascita-anteprima');
+  if (!box) return;
+  const it = currentLang === 'it';
+  box.innerHTML = '<p style="color:var(--text);">' + (it ? 'Calcolo…' : 'Calculating…') + '</p>';
+  try { await caricaPersonaggi(); } catch (e) { box.innerHTML = '<p style="color:var(--text);">❌ ' + esc(e?.message || String(e)) + '</p>'; return; }
+  const ix = _indiciPersonaggi();
+  const tutte = (_cache && Array.isArray(_cache.series)) ? _cache.series : (getData('series', []) || []);
+  const serieDi = new Map(tutte.map(s => [s.id, s]));
+  const nome = sid => { const s = serieDi.get(sid); return s ? _nomeSerieCard(s) : '—'; };
+  const calcolo = new Map(), righe = [], perSerie = new Map();
+  _personaggiDati.elenco.forEach(p => {
+    const sid = _serieDiNascitaCalcolata(p.id, ix, serieDi);
+    calcolo.set(p.id, sid);
+    perSerie.set(sid, (perSerie.get(sid) || 0) + 1);
+    righe.push({ p, sid, ora: p.serieNascita || '', cambia: sid !== (p.serieNascita || ''), fonte: _fonteSerieNascita(p.id, ix, sid) });
+  });
+  _serieNascitaCalcolo = calcolo;
+  righe.sort((a, b) => (b.cambia - a.cambia) || a.p.nome.localeCompare(b.p.nome, 'it'));
+  const ordine = [...perSerie.keys()].sort((a, b) => ((serieDi.get(a)?.order ?? 9999) - (serieDi.get(b)?.order ?? 9999)));
+  _serieNascitaVista = { righe, ordine, perSerie, nome };
+  _serieNascitaFiltro = new Set();
+  _disegnaAnteprimaNascita();
+}
+// 🆕 v7.332 (Franco: «nell'anteprima mostrami in modo distinto i personaggi che nascono da ogni serie; oppure lascia la lista
+//    unica ma mettimi un filtro usabile per vederli serie per serie») - LA LISTA UNICA CON LE PILLOLE DELLE SERIE, quelle dei
+//    filtri del sito (`_chipTipoHTML`: il nome = solo questa, «+» = aggiungila; nessuna accesa = tutte). Il calcolo non si
+//    rifà: le pillole ridisegnano solo la tabella (`_serieNascitaVista`).
+let _serieNascitaVista = null, _serieNascitaFiltro = new Set();
+function _filtroNascitaSolo(sid) {
+  _serieNascitaFiltro = (_serieNascitaFiltro.size === 1 && _serieNascitaFiltro.has(sid)) ? new Set() : new Set([sid]);
+  _disegnaAnteprimaNascita();
+}
+function _filtroNascitaAggiungi(sid) {
+  if (_serieNascitaFiltro.has(sid)) _serieNascitaFiltro.delete(sid); else _serieNascitaFiltro.add(sid);
+  _disegnaAnteprimaNascita();
+}
+function _disegnaAnteprimaNascita() {
+  const box = document.getElementById('pers-nascita-anteprima');
+  if (!box || !_serieNascitaVista) return;
+  const it = currentLang === 'it', { righe, ordine, perSerie, nome } = _serieNascitaVista;
+  const cambiano = righe.filter(r => r.cambia).length;
+  const viste = _serieNascitaFiltro.size ? righe.filter(r => _serieNascitaFiltro.has(r.sid)) : righe;
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);';
+  const td = 'padding:4px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
+  const pillole = ordine.map(sid => _chipTipoHTML({
+    etichetta: sid ? nome(sid) : (it ? 'Senza serie' : 'No series'), n: perSerie.get(sid), attiva: _serieNascitaFiltro.has(sid), it,
+    onSet: '_filtroNascitaSolo(\'' + esc(sid) + '\')', onAdd: '_filtroNascitaAggiungi(\'' + esc(sid) + '\')',
+    titolo: it ? 'Solo questa serie' : 'This series only', stacco: '1.6rem', prima: '#'
+  })).join('');
+  box.innerHTML =
+    '<div style="font-size:0.85rem;color:var(--text);line-height:1.6;margin-bottom:0.6rem;">'
+    + '<b>' + righe.length + '</b> ' + (it ? 'personaggi' : 'characters') + ' · '
+    + (it ? 'cambiano rispetto a quello scritto: ' : 'different from what is saved: ') + '<b style="color:var(--accent);">' + cambiano + '</b></div>'
+    + '<div id="pers-nascita-filtro" style="position:relative;margin:1rem 0 0.8rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">'
+    + '<div style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;">' + (it ? 'Filtra per serie in cui nasce' : 'Filter by series of origin') + '</div>'
+    + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">' + pillole + '</div></div>'
+    + '<div style="font-size:0.85rem;color:var(--text);margin-bottom:0.4rem;">' + (it ? 'Mostrati ' : 'Showing ') + '<b style="color:var(--accent);">' + viste.length + '</b>' + (it ? ' di ' : ' of ') + righe.length + '</div>'
+    + '<div style="max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:8px;"><table style="border-collapse:collapse;width:100%;">'
+    + '<tr><th style="' + th + '">' + (it ? 'Personaggio' : 'Character') + '</th><th style="' + th + '">' + (it ? 'Serie in cui nasce' : 'Series of origin') + '</th>'
+    + '<th style="' + th + '">' + (it ? 'Fonte' : 'Source') + '</th><th style="' + th + '">' + (it ? 'Scritta adesso' : 'Saved now') + '</th></tr>'
+    + viste.map(r => '<tr><td style="' + td + '">' + esc(r.p.nome) + '</td>'
+      + '<td style="' + td + (r.cambia ? 'color:var(--accent);font-weight:600;' : '') + '">' + (r.sid ? esc(nome(r.sid)) : '—') + '</td>'
+      // v7.332 - la fonte (`_fonteSerieNascita`): fcr, retro, o «altro» con la sua tipologia
+      + '<td style="' + td + '">' + (r.fonte === 'fcr' ? 'fcr' : r.fonte === 'retro' ? (it ? 'retro' : 'back')
+        : r.fonte ? (it ? 'altro' : 'other') + ' (' + esc(getSectionLabel(r.fonte.slice(6))) + ')' : '—') + '</td>'
+      + '<td style="' + td + '">' + (r.ora ? esc(nome(r.ora)) : '—') + '</td></tr>').join('')
+    + '</table></div>'
+    + '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">'
+    // «Scrivi» salva sempre TUTTI i personaggi, qualunque filtro sia acceso: il filtro serve solo a guardare
+    + (cambiano ? '<button class="btn-primary btn-admin" onclick="_scriviSerieNascita()">' + (it ? 'Scrivi (' + cambiano + ' personaggi, tutte le serie)' : 'Write (' + cambiano + ' characters, all series)') + '</button>'
+      : '<span style="font-size:0.85rem;color:var(--text);">' + (it ? 'È già tutto scritto così: niente da salvare.' : 'Already saved like this: nothing to write.') + '</span>')
+    + '</div>';
+}
+// Scrive l'ultima anteprima nel pacchetto (rileggendolo dal server, come ogni scrittura dei personaggi)
+async function _scriviSerieNascita() {
+  if (!currentUser?.isAdmin || !_serieNascitaCalcolo) return;
+  const it = currentLang === 'it', calcolo = _serieNascitaCalcolo;
+  try {
+    await _scriviPacchetto(d => d.personaggi.forEach(x => {
+      if (!calcolo.has(x.i)) return;   // un personaggio nato dopo l'anteprima: resta com'è
+      const s = calcolo.get(x.i);
+      if (s) x.s = s; else delete x.s;
+    }));
+  } catch (e) {
+    console.error('_scriviSerieNascita', e);
+    toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error');
+    return;
+  }
+  toast(it ? '✅ Serie in cui nasce salvata per tutti i personaggi.' : '✅ Series of origin saved.', 'success');
+  _anteprimaSerieNascita();
 }
 async function salvaScalaPersonaggi() {
   if (!currentUser?.isAdmin) return;
@@ -47933,15 +48175,21 @@ function _tabellaPosizioniHTML(th, td, it) {
       (conRighe ? '<th style="' + th + 'text-align:center;white-space:normal;max-width:7rem;border-left:1px solid var(--border2);">' + (it ? 'Righe del nome' : 'Name lines') + '</th>' : '') + '</tr>' +
     posti.map(p => '<tr><td style="' + td + '">' + esc(it ? p.it : p.en) + '</td>' + campi.map(c => cella(p.k, c.k)).join('') + (conRighe ? cellaRighe(p.k) : '') + '</tr>').join('') +
     '</table></div>';
-  return '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;">🔢 ' + (it ? 'Posizione dei campi' : 'Field positions') + '</h4>' +
+  // 🆕 v7.332 (Franco: «cambia il nome della riga di quella tabella, in modo da indicare che comprende 3 caroselli») - le
+  //    «Righe del nome» di `caroTda` valgono anche per i caroselli di Personaggi e Pubblicità (`renderCaroselloEntita`).
+  //    Il nome cambia solo qui: nella tabella dei campi ridotti quella riga resta del solo carosello di una tipologia.
+  const _NOME_TRE = { it: 'Caroselli di una tipologia, dei personaggi e delle pubblicità (desktop)', en: 'Item type, characters and advertisements carousels (desktop)' };
+  const postiCar = _POSTI_POSIZIONI.filter(p => p.k !== 'cardTel').map(p => p.k === 'caroTda' ? Object.assign({}, p, _NOME_TRE) : p);
+  return '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;color:var(--info);">🔢 ' + (it ? 'Posizione dei campi' : 'Field positions') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Il numero dice in che posizione, dall’alto, sta la riga di quel campo: 1 è la prima.<br>' +
           'Una casella vuota vuol dire «dove sta oggi». Senza nessun numero in una riga, quel posto resta com’è.<br>' +
-          'La posizione non cambia come il campo è scritto (con o senza «FAMIGLIA:», «Retro - …»).'
+          'La posizione non cambia come il campo è scritto (con o senza «FAMIGLIA:», «Retro - …»).<br>' +
+          'Nei caroselli dei personaggi e delle pubblicità la card ha solo il nome: lì vale solo «Righe del nome».'
         : 'The number is the position, from the top, of that field’s line: 1 is the first. Empty = where it is today.') +
     '</p>' +
-    tabella(_POSTI_POSIZIONI.filter(p => p.k !== 'cardTel'), _CAMPI_POSIZIONE_CAROSELLO, true) +
+    tabella(postiCar, _CAMPI_POSIZIONE_CAROSELLO, true) +
     tabella(_POSTI_POSIZIONI.filter(p => p.k === 'cardTel'), _CAMPI_POSIZIONE_CARD, false) +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.3rem;">' +
       '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaPosizioniCampi()">' + (it ? 'Salva le posizioni' : 'Save positions') + '</button>' +
@@ -47975,7 +48223,7 @@ async function salvaPosizioniCampi() {
 //    TABELLA DEI CAMPI RIDOTTI, sotto quella dei caroselli: una riga per posto, una spunta per campo. Le spunte si
 //    disegnano da `_campoRidotto`, cioè da ciò che il sito fa ADESSO (mai salvato: quello della v7.149).
 function _tabellaCampiRidottiHTML(th, td, it) {
-  return '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;">✂️ ' + (it ? 'Campi ridotti' : 'Short fields') + '</h4>' +
+  return '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;color:var(--info);">✂️ ' + (it ? 'Campi ridotti' : 'Short fields') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Dove la spunta è accesa, se l’articolo ha scritto il campo «mobile e Carosello» si usa quello al posto del campo di sempre.<br>' +
@@ -51244,25 +51492,12 @@ const PERSONAGGI_PER_PAGINA = 48;   // Franco: «mostrane 40 alla volta, max 50�
 let _personaggiDati = null;
 let _personaggiCaricamento = null;
 
-function _impostaPersonaggi(personaggi, associazioni, alterEgo) {
+// 🗑️ v7.332 (Franco: «gli alter ego sono chiusi, quindi puoi cancellare il campo ed ogni riferimento ad esso») - qui
+//    nascevano `principaleDi` e `alterEgoDi` dal documento `personaggi/_alterego` (v6.972). Il documento, letto il 22/11,
+//    era vuoto: niente cambia a schermo. Il sito non lo legge e non lo scrive più (resta sul server, vuoto).
+function _impostaPersonaggi(personaggi, associazioni) {
   const perId = new Map();
-  (personaggi || []).forEach(p => { if (p && p.id) perId.set(p.id, { id: p.id, nome: p.nome || p.id }); });
-  // 🆕 v6.972 - gli ALTER EGO (vedi `PERSONAGGI_ALTER_EGO`): alter ego → principale, e al contrario.
-  //    Vale solo una coppia di personaggi che esistono tutti e due; se il principale è a sua volta
-  //    un alter ego si risale fino in cima (al massimo 5 passi, e un giro chiuso si scarta).
-  const principaleDi = new Map(), alterEgoDi = new Map();
-  Object.entries(alterEgo || {}).forEach(([a, p]) => {
-    if (a === 'id' || typeof p !== 'string' || !perId.has(a) || !perId.has(p) || a === p) return;
-    principaleDi.set(a, p);
-  });
-  // ⚠️ si risale sulla COPIA di partenza: togliendo durante il giro, di un giro chiuso resterebbe metà
-  const scritto = new Map(principaleDi);
-  scritto.forEach((p0, a) => {
-    let p = p0, n = 0;
-    while (scritto.has(p) && p !== a && n++ < 5) p = scritto.get(p);
-    if (scritto.has(p) || p === a) principaleDi.delete(a); else principaleDi.set(a, p);
-  });
-  principaleDi.forEach((p, a) => { if (!alterEgoDi.has(p)) alterEgoDi.set(p, []); alterEgoDi.get(p).push(a); });
+  (personaggi || []).forEach(p => { if (p && p.id) perId.set(p.id, { id: p.id, nome: p.nome || p.id, serieNascita: p.serieNascita || '' }); });
   const dirPerArt = new Map(), artPerPers = new Map();
   (associazioni || []).forEach(a => {
     if (!a || !a.articoloId || !perId.has(a.personaggioId)) return;
@@ -51272,9 +51507,8 @@ function _impostaPersonaggi(personaggi, associazioni, alterEgo) {
     artPerPers.get(a.personaggioId).push(a.articoloId);
   });
   const elenco = [...perId.values()].sort((x, y) => x.nome.localeCompare(y.nome, 'it', { sensitivity: 'base' }));
-  // `grezzi`: i tre ingressi così come sono arrivati, per rifare tutto dopo un salvataggio dal sito
-  _personaggiDati = { elenco, perId, dirPerArt, artPerPers, principaleDi, alterEgoDi,
-    grezzi: { personaggi, associazioni, alterEgo: Object.assign({}, alterEgo || {}) } };
+  // `grezzi`: i due ingressi così come sono arrivati, per rifare tutto dopo un salvataggio dal sito
+  _personaggiDati = { elenco, perId, dirPerArt, artPerPers, grezzi: { personaggi, associazioni } };
   return _personaggiDati;
 }
 
@@ -51295,52 +51529,31 @@ const PERSONAGGI_PACCHETTO = { coll: 'personaggi', id: '_pacchetto' };
 // dal documento ai due elenchi nella forma di sempre (`{id,nome}` e `{articoloId,personaggioId}`)
 function _elenchiDaPacchetto(d) {
   return {
-    personaggi: ((d && d.personaggi) || []).map(x => ({ id: x.i, nome: x.n })),
+    // v7.332: `s` = la serie in cui nasce (`_serieDiNascitaCalcolata`, la scrive la console → 🎭 Personaggi)
+    personaggi: ((d && d.personaggi) || []).map(x => ({ id: x.i, nome: x.n, serieNascita: x.s || '' })),
     associazioni: ((d && d.associazioni) || []).map(x => ({ id: _idAssociazione(x.a, x.p), articoloId: x.a, personaggioId: x.p }))
   };
 }
-// 🆕 v6.972 - GLI ALTER EGO. Franco: «a volte i personaggi hanno 2 nomi; ma non vorrei avere 2
-//    personaggi nel nostro inventario… parliamo di "Alter ego"… sarò io a settarli, direttamente a
-//    db». Esempio: LIVIO BIVIO principale, ALBERTO TROMBA suo alter ego.
-// 📌 UN DOCUMENTO A PARTE, `personaggi/_alterego`, un campo per alter ego: `alberto-tromba:
-//    "livio-bivio"` (id dell'alter ego → id del principale). Franco li scrive dalla console di
-//    Firebase (sono al massimo una decina). Sta in `personaggi` perché la regola c'è già (lettura
-//    libera, scrittura admin); costa UNA lettura in più, insieme al pacchetto.
-// 📌 COSA FANNO: nell'hub senza ricerca l'alter ego non ha card; cercandolo esce il principale;
-//    la pagina del principale ha anche i suoi articoli; nella scheda il campo resta col suo nome,
-//    ma il link porta al principale (`_principale`). L'admin li vede con l'interruttore «Alter ego».
 // ⚠️ Dal 26 settembre i personaggi si correggono SOLO a db: la funzione 6 non si rilancia più (Franco:
 //    «che senso ha lavorare ancora da funzione 6 + excel tuoi? ormai il grosso è stato fatto»).
-const PERSONAGGI_ALTER_EGO = { coll: 'personaggi', id: '_alterego' };
+// 🗑️ v7.332 - qui stavano gli ALTER EGO (v6.972: `PERSONAGGI_ALTER_EGO`, la riga admin «È alter ego di:», la ✕ per
+//    toglierli, `_principale`, `_conAlterEgo`). Franco: «gli alter ego sono chiusi». Il caricamento legge solo il pacchetto:
+//    una lettura in meno a ogni apertura dei personaggi.
 async function caricaPersonaggi() {
   if (_personaggiDati) return _personaggiDati;
   if (_personaggiCaricamento) return _personaggiCaricamento;
   _personaggiCaricamento = (async () => {
-    const [pk, ae] = await Promise.all([fsGet(PERSONAGGI_PACCHETTO.coll, PERSONAGGI_PACCHETTO.id), fsGet(PERSONAGGI_ALTER_EGO.coll, PERSONAGGI_ALTER_EGO.id)]);
+    const pk = await fsGet(PERSONAGGI_PACCHETTO.coll, PERSONAGGI_PACCHETTO.id);
     const e = _elenchiDaPacchetto(pk);
-    return _impostaPersonaggi(e.personaggi, e.associazioni, ae);
+    return _impostaPersonaggi(e.personaggi, e.associazioni);
   })();
   return _personaggiCaricamento;
 }
-// 🆕 v6.972 - GLI ALTER EGO SI SEGNANO DAL SITO (Franco: «perché devo andare a fare le modifiche da
-//    FB?», «da quando agiamo da dietro le quinte?»). Nella pagina di un personaggio, solo admin, la
-//    riga «È alter ego di:» col nome del principale (suggeriti mentre si scrive) e Salva; nella pagina
-//    del principale la ✕ accanto a ogni alter ego lo toglie. Si scrive solo `personaggi/_alterego`,
-//    un campo per volta; poi i dati in memoria si rifanno dagli ingressi (`grezzi`), senza rileggere.
-function _rigaAlterEgoAdmin(pid) {
-  const d = _personaggiDati, esclusi = new Set(_conAlterEgo(pid));
-  return '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;font-size:0.85rem;color:var(--text);">'
-    + '<label for="alterego-di">È alter ego di:</label>'
-    + '<input class="form-input" id="alterego-di" list="dl-personaggi-nomi" placeholder="nome del personaggio principale" style="max-width:320px;padding:0.3rem 0.6rem;font-size:0.85rem;">'
-    + '<datalist id="dl-personaggi-nomi">' + d.elenco.filter(p => !esclusi.has(p.id) && !d.principaleDi.has(p.id)).map(p => '<option value="' + esc(p.nome) + '"></option>').join('') + '</datalist>'
-    + '<button type="button" class="btn-primary btn-admin" style="padding:0.3rem 0.9rem;font-size:0.82rem;" onclick="_salvaAlterEgo(\'' + pid + '\')">Salva</button>'
-    + '</div>';
-}
-// 🆕 v6.972 - Rinomina, ed Elimina solo se non ha collegamenti propri né alter ego (se no i suoi
-//    articoli resterebbero senza personaggio senza che nessuno l'abbia deciso)
+// 🆕 v6.972 - Rinomina, ed Elimina solo se non ha collegamenti propri (se no i suoi articoli resterebbero senza
+//    personaggio senza che nessuno l'abbia deciso)
 function _rigaGestionePersonaggio(pid) {
   const d = _personaggiDati, it = currentLang === 'it', p = d.perId.get(pid);
-  const eliminabile = !(d.artPerPers.get(pid) || []).length && !(d.alterEgoDi.get(pid) || []).length;
+  const eliminabile = !(d.artPerPers.get(pid) || []).length;
   return '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;font-size:0.85rem;color:var(--text);">'
     + '<label for="personaggio-rinomina">' + (it ? 'Nome:' : 'Name:') + '</label>'
     + '<input class="form-input" id="personaggio-rinomina" value="' + esc(p.nome) + '" style="max-width:320px;padding:0.3rem 0.6rem;font-size:0.85rem;">'
@@ -51348,45 +51561,6 @@ function _rigaGestionePersonaggio(pid) {
     + (eliminabile ? '<button type="button" class="btn-danger" style="padding:0.3rem 0.9rem;font-size:0.82rem;" onclick="_eliminaPersonaggio(\'' + pid + '\')">' + (it ? 'Elimina' : 'Delete') + '</button>' : '')
     + '</div>';
 }
-async function _scriviAlterEgo(campi) {
-  const { doc, setDoc } = window._fb;
-  await setDoc(doc(db, PERSONAGGI_ALTER_EGO.coll, PERSONAGGI_ALTER_EGO.id), campi, { merge: true });
-}
-function _rifaiPersonaggi(alterEgo) {
-  const g = _personaggiDati.grezzi;
-  _impostaPersonaggi(g.personaggi, g.associazioni, alterEgo);
-}
-async function _salvaAlterEgo(pid) {
-  const d = _personaggiDati, nome = (document.getElementById('alterego-di')?.value || '').trim().toUpperCase();
-  const p = d.elenco.find(x => x.nome.toUpperCase() === nome);
-  const it = currentLang === 'it';
-  if (!p) { toast(it ? 'Non trovo un personaggio che si chiama così: sceglilo fra quelli suggeriti' : 'No character with this name: pick one of the suggestions', 'error'); return; }
-  const princ = _principale(p.id);
-  if (_conAlterEgo(pid).includes(princ)) { toast(it ? 'Non può essere alter ego di sé stesso, né di un suo alter ego' : 'It cannot be the alter ego of itself or of one of its alter egos', 'error'); return; }
-  const ae = Object.assign({}, d.grezzi.alterEgo, { [pid]: p.id });
-  try { await _scriviAlterEgo({ [pid]: p.id }); }
-  catch (e) { console.error('_salvaAlterEgo', e); toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error'); return; }
-  // i suoi alter ego passano al nuovo principale: la catena si risale da sola (`_impostaPersonaggi`)
-  _rifaiPersonaggi(ae);
-  toast(d.perId.get(pid).nome + (it ? ' è ora alter ego di ' : ' is now the alter ego of ') + _personaggiDati.perId.get(princ).nome, 'success');
-  _personaggioAperto = princ;
-  renderCatalog();
-}
-async function _togliAlterEgo(aid) {
-  const { deleteField } = window._fb;
-  const ae = Object.assign({}, _personaggiDati.grezzi.alterEgo); delete ae[aid];
-  const it = currentLang === 'it';
-  try { await _scriviAlterEgo({ [aid]: deleteField() }); }
-  catch (e) { console.error('_togliAlterEgo', e); toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error'); return; }
-  _rifaiPersonaggi(ae);
-  toast(_personaggiDati.perId.get(aid).nome + (it ? ' non è più un alter ego' : ' is no longer an alter ego'), 'success');
-  renderCatalog();
-}
-
-// il principale di un personaggio (lui stesso, se non è un alter ego), e lui con i suoi alter ego
-function _principale(pid) { return (_personaggiDati && _personaggiDati.principaleDi.get(pid)) || pid; }
-function _conAlterEgo(pid) { return [pid].concat((_personaggiDati && _personaggiDati.alterEgoDi.get(pid)) || []); }
-
 // Gli indici degli articoli che servono a ricavare: figli per base, figurine per retro.
 function _indiciPersonaggi() {
   const figs = getData('figurines', []) || [];
@@ -51439,7 +51613,7 @@ function personaggiDelRetroDi(f, ix) {
 }
 
 // Gli ARTICOLI DI UN PERSONAGGIO: le righe della tabella, più tutto ciò che si ricava da loro.
-function articoliDelPersonaggio(pid, ix, soloLui) {   // v6.972: `soloLui` = senza i suoi alter ego
+function articoliDelPersonaggio(pid, ix) {
   if (!_personaggiDati) return [];
   ix = ix || _indiciPersonaggi();
   const admin = !!currentUser?.isAdmin;
@@ -51447,9 +51621,7 @@ function articoliDelPersonaggio(pid, ix, soloLui) {   // v6.972: `soloLui` = sen
   const out = new Map();
   const add = f => { if (visibile(f)) out.set(f.id, f); };
   const conFigli = f => { add(f); (ix.figliDi.get(f.id) || []).forEach(add); };
-  // 🔄 v6.972 - un principale porta con sé gli articoli dei suoi alter ego (Franco: «quando lo clicco
-  //    devono mostrarsi anche gli articoli di Alberto Tromba»)
-  (soloLui ? [pid] : _conAlterEgo(pid)).flatMap(x => _personaggiDati.artPerPers.get(x) || []).forEach(id => {
+  (_personaggiDati.artPerPers.get(pid) || []).forEach(id => {   // v7.332: senza gli alter ego (v6.972)
     const a = ix.perId.get(id);
     if (!a) return;
     const sez = a.section || 'figurines';
@@ -51475,8 +51647,8 @@ function articoliDelPersonaggio(pid, ix, soloLui) {   // v6.972: `soloLui` = sen
 //    prima foto in ordine di serie sarebbe stata quella di qualcun altro. Se il retro non c'è (sta
 //    solo su spille o altri articoli) si torna a tutti i suoi articoli, che sono suoi.
 // 🆕 v7.192 (Franco: «se cerco "ciccioso" o "trippone" nella RG non esce il personaggio collegato al retro "CICCIOSO AL
-//    TRIPPONE"»; «sì, procedi») - I NOMI DEI SUOI ARTICOLI, per la ricerca: Nome e Sottonome di quelli di cui lui (o un suo
-//    alter ego) è il personaggio. Fuori le figurine che sono sue solo per il retro: hanno il nome di un altro personaggio.
+//    TRIPPONE"»; «sì, procedi») - I NOMI DEI SUOI ARTICOLI, per la ricerca: Nome e Sottonome di quelli di cui lui è il
+//    personaggio. Fuori le figurine che sono sue solo per il retro: hanno il nome di un altro personaggio.
 // 🔄 v7.314 (Franco: «perché mostriamo il personaggio MARIAROSA RUGOSA a fronte della ricerca della parola SPAZZALATRINO? …
 //    la ricerca non deve restituire tutti i personaggi che hanno in uno degli articoli quella parola, ma solo i personaggi che
 //    contengono quella parola nel loro nome»; poi, alla proposta, «la tua proposta mi piace») - SOLO GLI ARTICOLI IN CUI LUI
@@ -51485,9 +51657,8 @@ function articoliDelPersonaggio(pid, ix, soloLui) {   // v6.972: `soloLui` = sen
 //    che è solo suo (il caso della v7.192). Chi ha un retro in comune si vede nella pagina, in «Personaggi collegati».
 function _nomiArticoliDelPersonaggio(pid, ix) {
   ix = ix || _indiciPersonaggi();
-  const suoi = _conAlterEgo(pid);
   return articoliDelPersonaggio(pid, ix)
-    .filter(a => { const chi = personaggiDiArticolo(a, ix); return chi.length > 0 && chi.every(x => suoi.includes(x)); })
+    .filter(a => { const chi = personaggiDiArticolo(a, ix); return chi.length > 0 && chi.every(x => x === pid); })
     .flatMap(a => [a.name, a.subname]).filter(Boolean);
 }
 // 🔄 v7.192 - LA DOMANDA È «HA UNA FIGURINA SUA?» (con retro o per album), e non più `_haFigurineSue`: da oggi quella
@@ -51497,8 +51668,7 @@ function _nomiArticoliDelPersonaggio(pid, ix) {
 function _fotoPersonaggio(arts, pid, ix) {
   if (pid) {
     ix = ix || _indiciPersonaggi();
-    const suoi = _conAlterEgo(pid);
-    const haFigurina = arts.some(a => ['figurines', 'attaccare'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).some(x => suoi.includes(x)));
+    const haFigurina = arts.some(a => ['figurines', 'attaccare'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).includes(pid));
     if (!haFigurina) {
       const nonFigurine = arts.filter(a => !['figurines', 'attaccare'].includes(a.section || 'figurines'));
       if (nonFigurine.length) arts = nonFigurine;
@@ -51515,6 +51685,39 @@ function _fotoPersonaggio(arts, pid, ix) {
   return '';
 }
 
+// 🆕 v7.332 (Franco: «per ogni personaggio possiamo determinare la serie che lo menziona per primo, cioè la serie da cui
+//    nasce; se tu segui l'ordine delle serie che abbiamo usato ovunque, quello va bene») - LA SERIE IN CUI NASCE: fra le
+//    serie dei suoi articoli (quelli della sua pagina: i suoi, le loro versioni, le figurine che usano il suo retro), la
+//    prima nell'ordine delle serie (`order`). Le serie contenitore (gli articoli senza serie) non contano; '' se non ne ha.
+// 📌 Si calcola dalla console (🎭 Personaggi → «Calcola la serie in cui nasce», con l'anteprima prima di scrivere) e si
+//    scrive nel pacchetto (`s` di ogni personaggio): un personaggio nuovo non ce l'ha finché non si rifà il calcolo.
+function _serieDiNascitaCalcolata(pid, ix, serieDi) {
+  let prima = null;
+  articoliDelPersonaggio(pid, ix).forEach(a => {
+    const s = serieDi.get(a.seriesId);
+    if (!s || s.serieContenitore) return;
+    if (!prima || (s.order ?? 9999) < (prima.order ?? 9999)) prima = s;
+  });
+  return prima ? prima.id : '';
+}
+// 🆕 v7.332 (Franco: «nell'anteprima metti una colonna che dice se la fonte è una fcr, un retro o altro») - DA DOVE NASCE,
+//    nella sua serie: 'fcr' se c'è una figurina (con retro o per album) col personaggio sul FRONTE; se no 'retro' se c'è un
+//    suo retro; se no 'altro:<sezione>' (carta, spilla…). Le figurine che sono sue solo per il retro contano come il retro.
+function _fonteSerieNascita(pid, ix, sid) {
+  if (!sid) return '';
+  const arts = articoliDelPersonaggio(pid, ix).filter(a => a.seriesId === sid);
+  const sez = a => a.section || 'figurines', figurina = a => ['figurines', 'attaccare'].includes(sez(a));
+  if (arts.some(a => figurina(a) && personaggiDiArticolo(a, ix).includes(pid))) return 'fcr';
+  if (arts.some(a => sez(a) === 'retros')) return 'retro';
+  const altro = arts.find(a => !figurina(a) && sez(a) !== 'retros');
+  return altro ? 'altro:' + sez(altro) : '';
+}
+// la serie in cui nasce, da mostrare: solo se scritta e se chi guarda vede quella serie; null altrimenti
+function _serieDiNascita(p) {
+  const sid = p && p.serieNascita;
+  return sid ? ((getData('series', []) || []).find(s => s.id === sid) || null) : null;
+}
+
 let _personaggiPagina = 1;
 let _personaggiFiltro = '';
 let _personaggioAperto = null;
@@ -51523,7 +51726,6 @@ let _personaggioAperto = null;
 //    retro») — una figurina (con retro o per album) conta solo se il personaggio è quello del suo
 //    FRONTE: una figurina che c'è perché lui sta sul retro non è «una sua figurina».
 let _personaggiSenzaFigurine = false;
-let _personaggiAlterEgo = false;   // 🆕 v6.972 - l'interruttore admin «Alter ego» dell'hub
 // 🆕 v7.088 (Franco: «sulla form della ricerca personaggi metterei una sezione "Filtri admin" con una spunta
 //    "Senza foto" che mostra i personaggi che nella griglia non hanno una foto») - la foto è quella della card,
 //    cioè `_fotoPersonaggio`: «senza foto» vuol dire che la card mostra il segnaposto.
@@ -51534,7 +51736,7 @@ let _personaggiConFoto = false;   // 🆕 v7.308 (Franco) - il contrario di «Se
 //    coinvolti nella serie o nelle selezionate; il rettangolo ha il nome "Filtra per serie"») - LE
 //    SERIE ACCESE, in OR: passa il personaggio che ha almeno un articolo in una di loro. Vuoto = tutte.
 let _personaggiSerie = new Set();
-// Le serie di un personaggio, da tutti i suoi articoli (alter ego compresi, come la sua pagina).
+// Le serie di un personaggio, da tutti i suoi articoli (come la sua pagina).
 // 📌 Si calcolano una volta e si tengono finché non cambiano articoli, personaggi o chi guarda
 //    (l'admin vede anche gli invisibili): senza, ogni lettera scritta nella buca rifarebbe il giro
 //    degli articoli di tutti i personaggi.
@@ -51583,10 +51785,9 @@ function _personaggiTipoAggiungi(k) {
   _personaggiPagina = 1; renderCatalog();
 }
 function _haFigurineSue(pid, arts, ix) {
-  const suoi = _conAlterEgo(pid);   // v6.972 - anche la figurina di un suo alter ego è sua
   // 🔄 v7.192 (Franco: «e deve escludere i personaggi legati ad una card») - contano anche le Carte
   // 🔄 v7.308 - e le Olografiche (Franco: «Personaggi senza Figurine / Carte / Olografiche»)
-  return arts.some(a => ['figurines', 'attaccare', 'carte', 'olografiche'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).some(x => suoi.includes(x)));
+  return arts.some(a => ['figurines', 'attaccare', 'carte', 'olografiche'].includes(a.section || 'figurines') && personaggiDiArticolo(a, ix).includes(pid));
 }
 
 // ============================================================
@@ -51751,17 +51952,12 @@ function renderCatalogPersonaggi(grid) {
   }
   const ix = _indiciPersonaggi();
   const q = _perRicerca(_personaggiFiltro.trim());
-  // 🔄 v6.972 - GLI ALTER EGO (vedi `PERSONAGGI_ALTER_EGO`). Senza l'interruttore admin «Alter ego»
-  //    non hanno card, e il loro nome fa trovare il principale (Franco: «se cerco "alberto" o
-  //    "tromba" deve uscire Livio Bivio»). Con l'interruttore acceso si vedono SOLO loro.
-  const { principaleDi, alterEgoDi, perId } = _personaggiDati;
-  const soloAlterEgo = !!currentUser?.isAdmin && _personaggiAlterEgo;
+  // 🗑️ v7.332 - via gli alter ego (v6.972: senza card, e il loro nome trovava il principale)
   // 🔄 v7.192 - e i nomi dei suoi articoli (`_nomiArticoliDelPersonaggio`), solo quando si cerca qualcosa
-  const nomiDi = p => [p.nome].concat((alterEgoDi.get(p.id) || []).map(a => perId.get(a).nome), q ? _nomiArticoliDelPersonaggio(p.id, ix) : []);
+  const nomiDi = p => [p.nome].concat(q ? _nomiArticoliDelPersonaggio(p.id, ix) : []);
   // 🔄 v6.980 - prima tutti gli altri filtri, poi le serie: i numeri delle pillole si contano sul
   //    primo elenco, così ogni pillola dice quanti ne troveresti accendendo lei.
-  const senzaSerie = _personaggiDati.elenco.filter(p => (soloAlterEgo ? principaleDi.has(p.id) : !principaleDi.has(p.id))
-    && (!q || (soloAlterEgo ? [p.nome] : nomiDi(p)).some(n => _perRicerca(n).includes(q)))
+  const senzaSerie = _personaggiDati.elenco.filter(p => (!q || nomiDi(p).some(n => _perRicerca(n).includes(q)))
     && (!_personaggiSenzaFigurine || !_haFigurineSue(p.id, articoliDelPersonaggio(p.id, ix), ix))
     && (!(currentUser?.isAdmin && _personaggiSenzaFoto) || !_fotoPersonaggio(articoliDelPersonaggio(p.id, ix), p.id, ix))   // v7.088
     && (!(currentUser?.isAdmin && _personaggiConFoto) || !!_fotoPersonaggio(articoliDelPersonaggio(p.id, ix), p.id, ix)));   // v7.308
@@ -51814,7 +52010,7 @@ function renderCatalogPersonaggi(grid) {
     // 🔄 v7.309 (Franco: «nella ricerca personaggi, usa questa frase "Imposta i criteri per la tua ricerca personaggi (in
     //    tutte le serie)"») - sul computer; il telefono tiene la sua della v7.191
     + '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (it ? (_isMobileViewport() ? 'Imposta dei criteri di ricerca' : 'Imposta i criteri per la tua ricerca personaggi (in tutte le serie)') : 'Set your character search criteria (in all series)') + '</div>'
-    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiAlterEgo=false;_personaggiSenzaFoto=false;_personaggiConFoto=false;_personaggiSerie=new Set();_personaggiTipi=new Set();_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;line-height:1.15;">' + t('items.resetFiltersHtml') + '</button>'
+    + '<button type="button" class="btn-primary" onclick="_personaggiFiltro=\'\';_personaggiSenzaFigurine=false;_personaggiSenzaFoto=false;_personaggiConFoto=false;_personaggiSerie=new Set();_personaggiTipi=new Set();_personaggiPagina=1;renderCatalog();" style="font-size:0.82rem;padding:0.3rem 1rem;line-height:1.15;">' + t('items.resetFiltersHtml') + '</button>'
     + '</div>'
     + '<div class="search-bar" style="margin-bottom:0.75rem;position:relative;">'
     + '<span style="' + _etichettaBordo + 'max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;">' + t('items.searchHint')   /* v6.972 (Franco): la stessa etichetta delle form di serie e TDA */ + '</span>'
@@ -51850,7 +52046,7 @@ function renderCatalogPersonaggi(grid) {
       + '<button type="button" class="toggle-btn-blue ' + (_personaggiSenzaFoto ? 'on' : '') + '" onclick="_personaggiSenzaFoto=!_personaggiSenzaFoto;if(_personaggiSenzaFoto)_personaggiConFoto=false;_personaggiPagina=1;renderCatalog();"></button>'
       + (it ? 'Senza foto' : 'Without photo') + '</label>'
       // 🗑️ v7.308 (Franco: «nel filtro admin dei personaggi, cancelliamo "alter ego", che non serve più e aggiungiamo
-      //    "Con foto"») - qui stava l'interruttore «Alter ego» (v6.972). `_personaggiAlterEgo` resta, sempre spento.
+      //    "Con foto"») - qui stava l'interruttore «Alter ego» (v6.972). v7.332: via anche `_personaggiAlterEgo`.
       //    «Con foto» è il contrario di «Senza foto»: accendendone uno l'altro si spegne (insieme non troverebbero nessuno).
       + '<label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;font-size:0.9rem;color:var(--text);margin-left:1.4rem;">'
       + '<button type="button" class="toggle-btn-blue ' + (_personaggiConFoto ? 'on' : '') + '" onclick="_personaggiConFoto=!_personaggiConFoto;if(_personaggiConFoto)_personaggiSenzaFoto=false;_personaggiPagina=1;renderCatalog();"></button>'
@@ -51880,9 +52076,12 @@ function renderCatalogPersonaggi(grid) {
   }
   // 🔄 v7.314 - la card è anche dei «Personaggi collegati» della pagina del personaggio: `_cardPersonaggioHTML`
   const card = p => _cardPersonaggioHTML(p, ix);
-  grid.innerHTML = _rigaTitoloHub(it ? 'I PERSONAGGI SGORBIONS' : 'THE SGORBIONS CHARACTERS') + cerca + _paginazionePersonaggi(pagine) + (pagina.length ? pagina.map(card).join('')
+  // 🆕 v7.332 - il carosello dei personaggi sotto la barra gialla (`renderCaroselloEntita`); la fila tiene il suo punto
+  const _carPrima = document.getElementById('pers-carosello'), _carScorri = _carPrima ? _carPrima.scrollLeft : null;
+  grid.innerHTML = _rigaTitoloHub(it ? 'I PERSONAGGI SGORBIONS' : 'THE SGORBIONS CHARACTERS') + _caroselloEntitaHTML('personaggi') + cerca + _paginazionePersonaggi(pagine) + (pagina.length ? pagina.map(card).join('')
       : '<div class="empty-state" style="grid-column:1/-1;"><p class="empty-title">' + (it ? 'Nessun personaggio con questo nome.' : 'No character with this name.') + '</p></div>')
     + _paginazionePersonaggi(pagine);
+  _caroselloEntitaDopo('personaggi', _carScorri);
   // 🆕 v7.000 - «Filtra per serie» e «Filtri aggiuntivi» diventano barre
   _bmApplica(document.getElementById('personaggi-filtro-serie'), 'pers-serie');
   _bmApplica(document.getElementById('personaggi-filtro-tipi'), 'pers-tipi');   // v7.189
@@ -51891,8 +52090,6 @@ function renderCatalogPersonaggi(grid) {
 // LA CARD DI UN PERSONAGGIO (hub; v7.314: anche «Personaggi collegati»; v7.315: `da` = il personaggio di partenza, che la
 // pagina aperta dal clic ricorda per segnare i retro in comune)
 function _cardPersonaggioHTML(p, ix, da) {
-  const it = currentLang === 'it';
-  const { principaleDi, perId } = _personaggiDati;
     const arts = articoliDelPersonaggio(p.id, ix);
     const foto = _fotoPersonaggio(arts, p.id, ix);
     // 🔄 v6.971 (Franco: «sì, togli le fpa anche dalla card») - il conto non conta le figurine per
@@ -51916,8 +52113,6 @@ function _cardPersonaggioHTML(p, ix, da) {
       // 🔄 v6.968 — card a un quarto: testo e margini scalati con lei (titolo 1,35 → 0,85rem).
       + '<div class="card-body" style="display:flex;flex-direction:column;flex:0 0 auto;margin-top:auto;padding:0.55rem 0.65rem 0.6rem;">'
       + '<div class="card-title" style="margin-bottom:0.2rem;font-size:0.85rem;line-height:1.2;color:var(--nome-entita);flex:1 1 auto;">' + esc(p.nome) + '</div>'
-      // 🆕 v6.972 - con l'interruttore «Alter ego» (admin) la card dice di chi è l'alter ego
-      + (principaleDi.has(p.id) ? '<div style="font-size:0.7rem;color:var(--text);">' + (it ? 'alter ego di ' : 'alter ego of ') + esc(perId.get(principaleDi.get(p.id)).nome) + '</div>' : '')
       + '<div class="card-desc" style="margin-top:0.3rem;padding-top:0.3rem;font-size:0.72rem;line-height:1.3;border-top:1px solid rgba(255,255,255,0.06);color:var(--accent);">' + conto + ' ' + _paroleArticoli(conto).trim() + '</div>'
       + '</div></div>';
 }
@@ -51962,8 +52157,8 @@ function apriPersonaggio(pid, da) {
   try { closeModal('fig-detail-modal'); } catch (e) {}
   _taglioInventario = 'personaggi';
   try { localStorage.setItem('sgb_taglio', 'personaggi'); } catch (e) {}
-  _personaggioAperto = _principale(pid);   // v6.972 - un alter ego apre il suo principale (Franco: «1. ok»)
-  _persDa = da ? { pid: _personaggioAperto, da: _principale(da) } : null;
+  _personaggioAperto = pid;
+  _persDa = da ? { pid, da } : null;
   // la casella della ricerca globale si svuota: piena, `renderCatalog` mostrerebbe i risultati
   const _casellaRG = document.getElementById('series-search'); if (_casellaRG) _casellaRG.value = '';
   showPage('catalog');
@@ -51988,7 +52183,6 @@ function chiudiPersonaggio() { _personaggioAperto = null; _persDa = null; render
 const _PERS_RETRO_SUL_RECORD = ['carte', 'olografiche'];
 function renderPaginaPersonaggio(grid, pid) {
   const it = currentLang === 'it';
-  pid = _principale(pid);   // v6.972 - la pagina è sempre del principale
   const p = _personaggiDati.perId.get(pid);
   if (!p) { _personaggioAperto = null; renderCatalogPersonaggi(grid); return; }
   const ix = _indiciPersonaggi();
@@ -52191,10 +52385,11 @@ function renderPaginaPersonaggio(grid, pid) {
     + _freccia(1, '▶', _iSeq === _sequenzaPersonaggi.length - 1) + '</div>';
   grid.innerHTML = '<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;"><button class="back-btn" onclick="chiudiPersonaggio()">&#8592; ' + (it ? 'Personaggi' : 'Characters') + '</button>' + _frecce + '</div>'
     + '<div style="grid-column:1/-1;"><div style="font-family:var(--font-display);font-size:1.8rem;color:var(--nome-entita);">' + esc(p.nome) + '</div>'
-    // 🆕 v6.972 - i suoi alter ego, sotto il nome; all'admin con la ✕ per toglierli
-    + ((_personaggiDati.alterEgoDi.get(pid) || []).length ? '<div style="color:var(--text);margin-top:0.2rem;">Alter ego: ' + _personaggiDati.alterEgoDi.get(pid).map(a => esc(_personaggiDati.perId.get(a).nome)
-        + (currentUser?.isAdmin ? ' <button type="button" class="btn-secondary btn-admin-ghost" style="padding:0 0.4rem;font-size:0.75rem;" title="Non è più un suo alter ego" onclick="_togliAlterEgo(\'' + a + '\')">✕</button>' : '')).join(', ') + '</div>' : '')
-    + (currentUser?.isAdmin ? _rigaAlterEgoAdmin(pid) + _rigaGestionePersonaggio(pid) : '')
+    // 🗑️ v7.332 - qui c'erano gli alter ego sotto il nome e la riga admin «È alter ego di:» (v6.972)
+    // 🆕 v7.332 (Franco: «nella scheda del personaggio gli lasci il suo nome») - «Serie in cui nasce», se scritta
+    + ((sn => sn ? '<div id="pers-serie-nascita" style="color:var(--text);margin-top:0.2rem;font-size:0.9rem;">' + (it ? 'Serie in cui nasce: ' : 'Series of origin: ')
+      + '<span style="color:var(--nome-entita);">' + esc(_nomeSerieCard(sn)) + '</span></div>' : '')(_serieDiNascita(p)))
+    + (currentUser?.isAdmin ? _rigaGestionePersonaggio(pid) : '')
     + '<div style="color:var(--accent);margin-top:0.3rem;">' + arts.length + ' ' + _paroleArticoli(arts.length).trim() + '</div></div>'
     + _persTabBarra(arts.length, collegati.length, it)
     + (_persTab === 'collegati'
@@ -52231,12 +52426,11 @@ function _persTabBarra(nArt, nColl, it) {
 function _persApriTab(k) { _persTab = k; renderCatalog(); }
 // 🆕 v7.315 - da dove si arriva (`apriPersonaggio(pid, da)`): { pid aperto, da }, o null
 let _persDa = null;
-// I retro dove compaiono tutti e due i personaggi (ognuno coi suoi alter ego): sono loro che fanno il collegamento.
+// I retro dove compaiono tutti e due i personaggi: sono loro che fanno il collegamento.
 function _retriInComune(pid, altro, ix) {
   ix = ix || _indiciPersonaggi();
-  const a = _conAlterEgo(pid), b = _conAlterEgo(altro);
   return articoliDelPersonaggio(pid, ix).filter(r => r.section === 'retros')
-    .filter(r => { const chi = personaggiDiArticolo(r, ix); return chi.some(x => a.includes(x)) && chi.some(x => b.includes(x)); })
+    .filter(r => { const chi = personaggiDiArticolo(r, ix); return chi.includes(pid) && chi.includes(altro); })
     .map(r => r.id);
 }
 // La frase sopra gli articoli, arrivando da un collegato: da chi, e quanti articoli sono segnati.
@@ -52248,15 +52442,14 @@ function _persArrivoHTML(da, n, it) {
       : 'You came from ' + nome + ': ' + (n === 1 ? 'the back that links them is marked «🔗 Shared».' : 'the ' + n + ' backs that link them are marked «🔗 Shared».'))
     + '</div>';
 }
-// I personaggi che hanno almeno un retro in comune con lui (lui e i suoi alter ego esclusi; un alter ego conta come il
-// suo principale), in ordine di nome.
+// I personaggi che hanno almeno un retro in comune con lui (lui escluso), in ordine di nome.
 function _personaggiCollegati(pid, ix) {
   ix = ix || _indiciPersonaggi();
-  const suoi = new Set(_conAlterEgo(pid)), trovati = new Set();
+  const trovati = new Set();
   articoliDelPersonaggio(pid, ix).filter(a => a.section === 'retros').forEach(r => {
     const chi = personaggiDiArticolo(r, ix);
-    if (!chi.some(x => suoi.has(x))) return;
-    chi.forEach(x => { const pr = _principale(x); if (!suoi.has(x) && !suoi.has(pr)) trovati.add(pr); });
+    if (!chi.includes(pid)) return;
+    chi.forEach(x => { if (x !== pid) trovati.add(x); });
   });
   return [...trovati].map(id => _personaggiDati.perId.get(id)).filter(Boolean)
     .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'it'));
@@ -52315,7 +52508,7 @@ function _persFiltriAzzera() { Object.values(_persFiltriSi).forEach(s => s.clear
 //    (uno per personaggio per serie), in ordine di serie; il nome della serie sopra solo se sono più
 //    d'uno. La scritta ha lo stile di «N articoli» in testa alla pagina.
 function _posterDelPersonaggioHTML(pid, arts, ix, ordSerie, serieDi) {
-  const pids = new Set(_conAlterEgo(pid));
+  const pids = new Set([pid]);
   const serie = [...new Set(arts.map(a => a.seriesId).filter(Boolean))].sort((a, b) => ordSerie(a) - ordSerie(b));
   const poster = serie.map(sid => ({ sid, pezzi: _pezziPoster(sid, pids, ix) })).filter(p => p.pezzi.length);
   if (!poster.length) return '';
@@ -52403,7 +52596,7 @@ function _riempiRigaPersonaggi(f) {
 //     c'è si crea, dopo una conferma.
 //   · HUB: il pulsante «+ Aggiungi personaggio» in alto a destra, come serie e tipologie, con la sua
 //     finestra (un personaggio ancora senza articoli).
-//   · PAGINA DEL PERSONAGGIO: Rinomina; Elimina solo se non ha più articoli né alter ego.
+//   · PAGINA DEL PERSONAGGIO: Rinomina; Elimina solo se non ha più articoli.
 // 📌 OGNI SCRITTURA RILEGGE IL DOCUMENTO DAL SERVER, lo cambia e lo riscrive (`_scriviPacchetto`):
 //    così non si scrive sopra una modifica fatta da un'altra finestra con una copia vecchia.
 // 📌 LA RIGA GIUSTA (`_rigaDelPersonaggio`), la regola delle righe minime (v6.966): il fronte sta
@@ -52431,7 +52624,7 @@ async function _scriviPacchetto(cambia) {
   d.aggiornato = new Date().toISOString();
   await setDoc(rif, d);
   const e = _elenchiDaPacchetto(d);
-  _impostaPersonaggi(e.personaggi, e.associazioni, _personaggiDati ? _personaggiDati.grezzi.alterEgo : null);
+  _impostaPersonaggi(e.personaggi, e.associazioni);
 }
 // il personaggio con quel nome, o uno nuovo (dopo conferma); null se si rinuncia o il nome è vuoto
 function _personaggioDaNome(nome, d, senzaConferma) {
@@ -52738,14 +52931,13 @@ async function _salvaPersMod(f) {
   }
   // 🆕 v7.092 (Franco: «la tua proposta di chiedere conferma circa la cancellazione di un personaggio quando
   //    questo si trova a non avere più articoli perché sull'articolo si è cambiata la relazione, a me sta bene») -
-  //    chi è stato tolto da QUESTO salvataggio e adesso non ha più nessun articolo (suoi, senza contare gli alter
-  //    ego) né legami di alter ego, si propone di eliminarlo, uno per volta. «No» lo lascia com'è.
+  //    chi è stato tolto da QUESTO salvataggio e adesso non ha più nessun articolo, si propone di eliminarlo, uno per
+  //    volta. «No» lo lascia com'è. (v7.332: via il controllo sugli alter ego)
   const tolti = m.orig.filter(p => !m.pids.includes(p));
   for (const pid of tolti) {
     const D = _personaggiDati, p = D && D.perId.get(pid);
     if (!p) continue;
-    const legato = (D.alterEgoDi.get(pid) || []).length || D.principaleDi.has(pid);
-    if (legato || articoliDelPersonaggio(pid, _indiciPersonaggi(), true).length) continue;
+    if (articoliDelPersonaggio(pid, _indiciPersonaggi()).length) continue;
     if (!confirm(it ? '«' + p.nome + '» resta senza articoli.\n\nLo elimino?' : '«' + p.nome + '» has no items left.\n\nDelete it?')) continue;
     try {
       await _scriviPacchetto(d => { d.personaggi = d.personaggi.filter(x => x.i !== pid); d.associazioni = d.associazioni.filter(a => a.p !== pid); });
@@ -52943,8 +53135,11 @@ function renderCatalogPubblicita(grid) {
   const vuoto = !_pubDati.elenco.length
     ? '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">📣</div><p class="empty-title">' + (it ? 'Nessuna pubblicità ancora censita.' : 'No advertisement yet.') + '</p></div>'
     : '<div class="empty-state" style="grid-column:1/-1;"><p class="empty-title">' + (it ? 'Nessuna pubblicità con questo nome.' : 'No advertisement with this name.') + '</p></div>';
-  grid.innerHTML = _rigaTitoloHub(it ? 'LE PUBBLICITÀ SGORBIONS' : 'THE SGORBIONS ADVERTISEMENTS') + cerca + _paginazionePubblicita(pagine)
+  // 🆕 v7.332 - il carosello delle PUB sotto la barra gialla, come quello dei personaggi
+  const _carPrima = document.getElementById('pub-carosello'), _carScorri = _carPrima ? _carPrima.scrollLeft : null;
+  grid.innerHTML = _rigaTitoloHub(it ? 'LE PUBBLICITÀ SGORBIONS' : 'THE SGORBIONS ADVERTISEMENTS') + _caroselloEntitaHTML('pubblicita') + cerca + _paginazionePubblicita(pagine)
     + (pagina.length ? pagina.map(p => _cardPubblicitaHTML(p, ix)).join('') : vuoto) + _paginazionePubblicita(pagine);
+  _caroselloEntitaDopo('pubblicita', _carScorri);
 }
 // la card della PUB: la forma della card del personaggio
 function _cardPubblicitaHTML(p, ix) {
@@ -55749,8 +55944,7 @@ function renderCatalogSearch(q) {
 }
 // 🆕 v7.112 (Franco) - I PERSONAGGI NELLA RICERCA GLOBALE: quelli il cui nome corrisponde (la stessa
 //    `_matchRicerca` degli articoli), ognuno col numero dei suoi articoli come nella card dell'hub (senza le
-//    figurine per album) e cliccabile verso la sua pagina. Chi non è admin, cercando un alter ego, trova il
-//    principale (come nell'hub, v6.972). I personaggi arrivano dopo i dati: se non ci sono ancora, si caricano e la
+//    figurine per album) e cliccabile verso la sua pagina. I personaggi arrivano dopo i dati: se non ci sono ancora, si caricano e la
 //    ricerca si rifà, se la casella dice ancora la stessa cosa.
 function _rgPersonaggiHTML(q, qn) {
   if (!_personaggiDati) {
@@ -55765,7 +55959,7 @@ function _rgPersonaggiHTML(q, qn) {
   D.elenco.forEach(p => {
     // 🔄 v7.192 - anche dal nome di un suo articolo (`_nomiArticoliDelPersonaggio`), come nella pagina dei Personaggi
     if (!_matchRicerca(p.nome, qn) && !_nomiArticoliDelPersonaggio(p.id, ix).some(n => _matchRicerca(n, qn))) return;
-    const pid = (!admin && D.principaleDi.get(p.id)) || p.id;
+    const pid = p.id;   // v7.332: senza gli alter ego (v6.972) ogni personaggio è sé stesso
     if (visti.has(pid)) return;
     // 🔄 v7.115 - gli articoli stessi, non solo il loro numero: servono all'elenco sotto la miniatura
     const tutti = articoliDelPersonaggio(pid, ix);
@@ -56322,6 +56516,18 @@ function _pallinoDisponibili(f) {
   return '<span class="fig-disp-doppie" title="' + esc(_doppiEt('disp')) + ': ' + n + '" style="display:inline-flex;align-items:center;'
     + 'justify-content:center;min-width:1.6rem;height:1.25rem;padding:0 0.35rem;border-radius:999px;background:#6b6b78;color:#fff;'
     + 'font-family:var(--font-ui);font-size:0.72rem;font-weight:700;line-height:1;flex-shrink:0;">D' + n + '</span>';
+}
+
+// 🆕 v7.332 (Franco: «sulle card lo mostri sempre se popolato e sempre al solo admin, affianco al valore "Disponibilità singole
+//    doppie", con il prefisso DC; al mouse over metti fuori il nome, anche qui») - «DC2»: la «Disponibilità singole doppie
+//    copia» (`disponibiliCopia`). Come il «D», ma senza la matrice dei Doppioni: «sempre se popolato» (anche 0).
+function _pallinoDisponibiliCopia(f) {
+  if (!f || !currentUser?.isAdmin) return '';
+  const n = f.disponibiliCopia;
+  if (typeof n !== 'number' || !isFinite(n)) return '';
+  return '<span class="fig-disp-doppie-copia" title="' + esc(_doppiEt('dispCopia')) + ': ' + n + '" style="display:inline-flex;align-items:center;'
+    + 'justify-content:center;min-width:1.6rem;height:1.25rem;padding:0 0.35rem;border-radius:999px;background:#6b6b78;color:#fff;'
+    + 'font-family:var(--font-ui);font-size:0.72rem;font-weight:700;line-height:1;flex-shrink:0;">DC' + n + '</span>';
 }
 
 // 🆕 v7.304 (Franco: «sulle card degli articoli, metti un bottone "rendi visibile", admin visible, solo quando l'articolo
@@ -61259,6 +61465,7 @@ function cloneFigurine(itemId) {
   b.quante = null;
   // v7.258 - né la Disponibilità: è dell'articolo di partenza
   b.disponibili = null;
+  b.disponibiliCopia = null;   // v7.332 - né la sua gemella «copia»
   // v7.262 - né le Copie doppie strutturate: sono dell'articolo di partenza
   b.copie = [];
   // v6.105 - e non copia nemmeno l'ESITO della pubblicazione. Non era un caso da gestire prima,
@@ -66996,7 +67203,7 @@ function _cardArticoloHTML(f, C) {
       // 🆕 v7.304 (Franco: «il campo "Disponibilità singole doppie" mostralo anche sulle card, solo per admin, con un
       //    pallino grigio, anteceduto da una D (esempio "D1" significa che il campo vale 1); mettilo nella riga in basso
       //    a tutto (altezza rarità) sulla estrema sinistra») - vedi `_pallinoDisponibili`
-      const _dispCard = _pallinoDisponibili(f);
+      const _dispCard = _pallinoDisponibili(f) + _pallinoDisponibiliCopia(f);   // v7.332: e accanto il «DC»
       //    📌 Un elemento suo col `margin-right:auto`: sul desktop la riga è spinta a destra (`justify-content: flex-end`),
       //    e solo così il pallino va al bordo sinistro lasciando la rarità dov'era. Sul telefono la riga è in colonna:
       //    il pallino sta in cima, a sinistra.
@@ -74044,7 +74251,7 @@ function buildLinkedFiguresTabsHTML(baseId) {
   const _albumDelCartoncino = allFigs.filter(x => x.cartoncinoId === baseId);
   // 🆕 v7.090 (Franco: «vorrei un tab chiamato "Varianti dello stesso personaggio" che mostri tutti gli articoli
   //    collegati allo stesso personaggio a cui è collegato questo articolo») - gli stessi articoli della pagina del
-  //    personaggio (`articoliDelPersonaggio`: alter ego compresi, invisibili solo all'admin), di tutti i suoi
+  //    personaggio (`articoliDelPersonaggio`: invisibili solo all'admin), di tutti i suoi
   //    personaggi, meno questo. I personaggi arrivano dopo la scheda: se non ci sono ancora si caricano, e il
   //    blocco dei tab si ridisegna da solo (`#linked-fig-tabs`).
   let _stessoPers = [];
@@ -74071,9 +74278,9 @@ function buildLinkedFiguresTabsHTML(baseId) {
       // 🔄 v7.304 (Franco: «va rivisto l'ordine degli articoli mostrati: 1. figurine con retro aventi il personaggio nel
       //    fronte 2. retro 3. figurine con retro aventi il personaggio nel retro; all'interno dei 3 punti, si va per
       //    Serie-Sottoserie-Nome») - prima era serie, tipologia, numero. Gli altri articoli (fpa diverse, extra…) vengono
-      //    dopo i tre gruppi, con lo stesso ordine. Il personaggio «nel fronte» è uno dei suoi (alter ego compresi,
-      //    come `articoliDelPersonaggio`) fra quelli della figurina stessa (`personaggiDiArticolo`).
-      const _pidsSet = new Set(_pids.flatMap(p => _conAlterEgo(p))), _suoi = a => personaggiDiArticolo(a, ix);
+      //    dopo i tre gruppi, con lo stesso ordine. Il personaggio «nel fronte» è uno dei suoi fra quelli della figurina
+      //    stessa (`personaggiDiArticolo`).
+      const _pidsSet = new Set(_pids), _suoi = a => personaggiDiArticolo(a, ix);
       _stessoPers = _ordinaStessoPersonaggio([...visti.values()], _pidsSet, ordSerie, _suoi);
       // 🆕 v7.305 - chi è qui per il suo retro (gruppo 2): la riga mostra anche la miniatura del retro (vedi sotto)
       _stessoPers.forEach(a => { if (_gruppoStessoPersonaggio(a, _pidsSet, _suoi) === 2) _stessoPersPerRetro.add(a.id); });
@@ -74396,6 +74603,9 @@ const _FE_TAB = ['generale', 'pagine', 'ebay', 'vendita'];   // v7.322: + «Ebay
 const _DOPPI_ET = {
   quante: ['Disponibilità in set doppi', 'Available in duplicate sets'],
   disp: ['Disponibilità singole doppie', 'Single duplicates available'],
+  // 🆕 v7.332 (Franco: «crea un altro campo chiamato "Disponibilità singole doppie copia" e mettilo affianco (o sotto) al campo
+  //    "Disponibilità singole doppie"») - `disponibiliCopia`, un numero; segue la spunta di «disp» nella matrice dei Doppioni
+  dispCopia: ['Disponibilità singole doppie copia', 'Single duplicates available, copy'],
   tot: ['Disponibilità singole doppie totale', 'Single duplicates available, total'],
   // 🆕 v7.262 (Franco: «per non confonderlo con gli altri campi già presenti chiamalo "Copie doppie strutturate"»); nel
   //    tab della scheda la tabella si intitola «Copie»
@@ -75628,6 +75838,9 @@ function _bloccoDoppiEdit(f) {
   if (_doppiAccesoPer('disp', f)) {   // v7.262 - e con lei il totale
     h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('disp') + '</span>'
       + '<span class="detail-value"><input type="number" min="0" step="1" class="form-input" id="fe-disponibili" value="' + (f.disponibili ?? '') + '" data-fig-id="' + esc(f.id || '') + '" oninput="_feAggiornaDispTotale(this)" style="max-width:6rem;padding:0.3rem 0.5rem;font-size:0.9rem;"></span></div>';
+    // 🆕 v7.332 - «Disponibilità singole doppie copia», sotto la sua gemella (non entra nel totale)
+    h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('dispCopia') + '</span>'
+      + '<span class="detail-value"><input type="number" min="0" step="1" class="form-input" id="fe-disponibili-copia" value="' + (f.disponibiliCopia ?? '') + '" style="max-width:6rem;padding:0.3rem 0.5rem;font-size:0.9rem;"></span></div>';
     const tot = _dispTotaleFcr(f, getData('figurines', []));
     if (tot !== null) {
       h += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label" title="' + esc(_dispTotaleHint()) + '" style="cursor:help;">' + _doppiEt('tot') + ' ⓘ</span>'
@@ -76007,6 +76220,8 @@ function _bloccoDoppiLettura(f) {
   if (_doppiAccesoPer('quante', f)) h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('quante') + '</span><span class="detail-value">' + (f.quante == null ? vuoto : esc(String(f.quante))) + '</span></div>';   // v7.262
   if (_doppiAccesoPer('disp', f)) {   // v7.262
     h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('disp') + '</span><span class="detail-value">' + (f.disponibili == null ? vuoto : esc(String(f.disponibili))) + '</span></div>';
+    // 🆕 v7.332 - e la gemella «copia», come in modifica (Franco: lettura e modifica sono sempre uguali)
+    h += '<div class="detail-row"><span class="detail-label">' + _doppiEt('dispCopia') + '</span><span class="detail-value">' + (f.disponibiliCopia == null ? vuoto : esc(String(f.disponibiliCopia))) + '</span></div>';
     const tot = _dispTotaleFcr(f, getData('figurines', []));
     if (tot !== null) {
       h += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label" title="' + esc(_dispTotaleHint()) + '" style="cursor:help;">' + _doppiEt('tot') + ' ⓘ</span>'
@@ -76356,9 +76571,62 @@ function selectFeRetroLink(id) {
   _aggiornaVisibilitaRetroBianco('fe'); // v6.078  // 🆕 v6.792 - collegare un retro può far passare l'articolo da «scelgo il tipo» a «il tipo
   //    me lo dice il retro», e viceversa. Senza questa riga il cambio si vedrebbe solo riaprendo
   //    la scheda - e nel frattempo la form mostrerebbe il caso sbagliato dei due.
-  toggleFeBaseFigurineGroup();
+  // 🔄 v7.332 - e se il retro è un change o un errore di stampa, la versione della figurina si spunta da sola
+  toggleFeBaseFigurineGroup(_feVersioneDalRetro(r));
   // 🆕 v6.965 - scelto il retro, il riquadro delle foto lo mostra subito.
   try { _ridisegnaSlotFoto('fronte'); } catch (e) {}
+}
+
+// 🆕 v7.332 (Franco: «quando viene selezionato un retro di versione non base, dirlo con un messaggio, che in automatico si
+//    setta il campo "Change" o "errore di stampa" ed autopopolarsi in base al retro selezionato; così si evita di dimenticarsi
+//    di farlo e di lasciare una incongruenza») - SCELTO UN RETRO CHANGE O ERRORE DI STAMPA, LA FIGURINA CON RETRO PRENDE LA
+//    STESSA VERSIONE: la spunta si accende e il messaggio sotto il retro lo dice. Il tipo: un change lo eredita dal retro
+//    (v6.792); un errore di stampa no, il salvataggio lo chiede alla figurina (v5.771), e il messaggio lo ricorda.
+// 📌 Solo per le figurine con retro, e solo se la serie ha quella spunta nella scheda. Se è già spuntata un'ALTRA versione
+//    (variazione, omaggio, sigillata, slim) non si tocca niente: il messaggio avvisa, perché le versioni si escludono e la
+//    scelta è di chi compila. Un retro base, o togliere il retro, non spegne niente: un change può essere frontale.
+// Restituisce l'id della spunta accesa (per `toggleFeBaseFigurineGroup`, che spegne le altre), altrimenti undefined.
+function _feVersioneDalRetro(r) {
+  const msg = document.getElementById('fe-retro-versione-msg');
+  const mostra = (testo, avviso) => {
+    if (!msg) return;
+    msg.style.display = testo ? '' : 'none';
+    msg.textContent = testo || '';
+    msg.style.border = '1px solid ' + (avviso ? '#ff6b6b' : 'var(--accent)');
+    msg.style.color = avviso ? '#ff6b6b' : 'var(--text)';
+  };
+  mostra('');
+  if ((_feSezione || 'figurines') !== 'figurines' || !r) return undefined;
+  const it = currentLang === 'it';
+  const quale = r.isChange ? { id: 'fe-is-change', campo: 'isChange', it: 'Change', en: 'Change' }
+    : r.isPrintError ? { id: 'fe-is-printerror', campo: 'isPrintError', it: 'Errore di stampa', en: 'Print error' } : null;
+  if (!quale) return undefined;
+  const el = document.getElementById(quale.id);
+  const tipoRetro = it ? (r.isChange ? 'un change' : 'un errore di stampa') : (r.isChange ? 'a change' : 'a print error');
+  if (!el) {
+    mostra(it ? '⚠️ Il retro scelto è ' + tipoRetro + ', ma in questa serie la spunta «' + quale.it + '» delle figurine non c\'è: controlla la serie.'
+      : '⚠️ The chosen back is ' + tipoRetro + ', but this series has no «' + quale.en + '» for stickers.', true);
+    return undefined;
+  }
+  // il tipo: un change di retro lo eredita (v6.792); l'errore di stampa no, il salvataggio lo chiede alla figurina (v5.771)
+  const tipoIt = r.isChange ? 'il tipo lo prende dal retro' : 'scegli il «Tipo di errore di stampa»';
+  const tipoEn = r.isChange ? 'the type comes from the back' : 'pick the «Print error type»';
+  if (el.checked) {
+    mostra(it ? 'Il retro scelto è ' + tipoRetro + ': la figurina è già «' + quale.it + '»; ' + tipoIt + '.'
+      : 'The chosen back is ' + tipoRetro + ': the sticker is already «' + quale.en + '»; ' + tipoEn + '.');
+    return undefined;
+  }
+  const v = _versioniDallaScheda();
+  const altra = _VERSIONI_VIVE.find(x => x.idForm !== quale.id && v[x.campo]);
+  if (altra) {
+    mostra(it ? '⚠️ Il retro scelto è ' + tipoRetro + ', ma la figurina è già segnata con un\'altra versione: «' + quale.it + '» non l\'ho spuntata. Controlla quale delle due è giusta.'
+      : '⚠️ The chosen back is ' + tipoRetro + ', but the sticker already has another version: «' + quale.en + '» was not checked.', true);
+    return undefined;
+  }
+  el.checked = true;
+  mostra(it ? '✅ Il retro scelto è ' + tipoRetro + ': ho spuntato «' + quale.it + '» sulla figurina; ' + tipoIt + '. Se manca, scegli la figurina di partenza.'
+    : '✅ The chosen back is ' + tipoRetro + ': «' + quale.en + '» is now checked; ' + tipoEn + '. If missing, pick the starting sticker.');
+  return quale.id;
 }
 
 function clearFeRetroLinkIfEmpty() {
@@ -76432,7 +76700,7 @@ function _bozzaNuovoItem(sezione, seriesId) {
     baseFigurineId: null, retroId: null, retroBianco: false,
     changeType: '', printErrorType: null,
     img: null, imgRetro: null, ebayImg: null,
-    forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new', disponibili: null, fotoProtetta: null,   // v7.104: null = segue la tipologia
+    forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new', disponibili: null, disponibiliCopia: null, fotoProtetta: null,   // v7.104: null = segue la tipologia
     ebayAccounts: null, daPubblicare: false,
     // v6.144 - il box da cui si sta creando. Fuori da un box e' null, e resta null: cosi' un
     // oggetto creato dalla serie normale non finisce dentro un contenitore per sbaglio.
@@ -77017,11 +77285,20 @@ function switchToEditMode(figId) {
     //    poterlo rimettere senza ridisegnare tutto.
     const showChangeType = !!f.isChange;
     // v6.102 (§12.10) - stesse opzioni a due gruppi dell'altra form, dalla stessa funzione.
-    html += '<div class="detail-row" id="fe-retro-change-type-group" style="' + (showChangeType ? '' : 'display:none;') + '">' +
+    html += '<div class="detail-row" id="fe-retro-change-type-group" style="' + (showChangeType ? '' : 'display:none;') + 'flex-wrap:wrap;">' +
       '<span class="detail-label">' + (currentLang==='it'?'Tipo di change':'Change type') + '</span>' +
       '<select class="form-input" id="fe-retro-change-type" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
       _opzioniTipoChange(f.seriesId, f.changeType, f.section || 'figurines') +   // v6.784
-      '</select></div>';
+      '</select>' +
+      // 🆕 v7.332 (Franco: «metti un messaggino piccolo, sotto al campo "Tipologia di change", che dice come creare una nuova
+      //    fcr con una tipologia di change di retro») - qui ci sono solo i tipi frontali (v6.791): il change di retro si eredita
+      ((f.section || 'figurines') === 'figurines'
+        ? '<div id="fe-change-retro-nota" style="flex-basis:100%;font-size:0.75rem;color:var(--text);opacity:0.8;margin-top:0.3rem;line-height:1.4;">' +
+          (currentLang === 'it'
+            ? 'Qui ci sono solo i change frontali. Per un change di retro collega come «Retro» il retro change: il tipo lo prende da lui.'
+            : 'Front change types only. For a back change, link the change back as «Back»: the type comes from it.') + '</div>'
+        : '') +
+      '</div>';
     // 🆕 v6.792 - LA RIGA DEL TIPO EREDITATO. Stessa etichetta, valore in sola lettura.
     html += '<div class="detail-row" id="fe-change-type-ereditato-group" style="display:none;">' +
       '<span class="detail-label">' + (currentLang==='it'?'Tipo di change':'Change type') + '</span>' +
@@ -77158,6 +77435,8 @@ function switchToEditMode(figId) {
       '<input type="hidden" id="fe-retro" value="' + (f.retroId || '') + '">' +
     '<div id="fe-retro-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:220px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>' +
     '</div>';
+    // 🆕 v7.332 - il messaggio di `_feVersioneDalRetro`: fuori dal gruppo, perché la tendina dei retro sta appesa sotto il gruppo
+    html += '<div id="fe-retro-versione-msg" style="display:none;font-size:0.8rem;line-height:1.4;padding:0.45rem 0.7rem;margin:0.2rem 0 0.4rem;border-radius:8px;"></div>';
     // v6.007 - la spunta "Retro bianco" anche QUI. La v6.006 l'aveva messa solo nella
     // finestra Aggiungi/Modifica (campi fig-*), ma la scheda di dettaglio ha un editor
     // tutto suo (campi fe-*): due form per lo stesso oggetto, e un campo aggiunto a una
@@ -78287,7 +78566,7 @@ function vaiAgliAlbumDellaSerie() {
 //  figurine; per vedere il poster basta mettere affianco le figurine»)
 // ============================================================
 // 📌 I PEZZI: le figurine con retro BASE di una serie con la spunta «Poster», dello stesso personaggio
-//    (alter ego compresi). Franco: «nella stessa serie un personaggio ha un solo poster». Senza
+//    Franco: «nella stessa serie un personaggio ha un solo poster». Senza
 //    personaggio, i pezzi senza personaggio della serie.
 // 📌 LA FORMA: una griglia di `colonne` colonne uguali, ogni fronte nella sua casella (riga, colonna),
 //    senza spazi; una casella senza figurina resta vuota. Riga o colonna mancanti valgono 1.
@@ -78296,7 +78575,7 @@ function _posterAmmesso(f) {
 }
 function _pezziPoster(seriesId, pids, ix) {
   return getData('figurines', []).filter(x => x.seriesId === seriesId && x.poster && _posterAmmesso(x) && (() => {
-    const ps = personaggiDiArticolo(x, ix).map(_principale);
+    const ps = personaggiDiArticolo(x, ix);
     return pids ? ps.some(p => pids.has(p)) : !ps.length;
   })());
 }
@@ -78332,8 +78611,8 @@ async function apriPoster(figId) {
   if (!base) return;
   try { await caricaPersonaggi(); } catch (e) { console.error('apriPoster (personaggi)', e); }
   const ix = _indiciPersonaggi();
-  const pid = _personaggiDati ? (personaggiDiArticolo(base, ix).map(_principale)[0] || null) : null;
-  const pezzi = _pezziPoster(base.seriesId, pid ? new Set(_conAlterEgo(pid)) : null, ix);
+  const pid = _personaggiDati ? (personaggiDiArticolo(base, ix)[0] || null) : null;
+  const pezzi = _pezziPoster(base.seriesId, pid ? new Set([pid]) : null, ix);
   let m = document.getElementById('poster-modal');
   if (!m) {
     m = document.createElement('div');
@@ -80718,6 +80997,8 @@ async function saveFigFromDetail(figId, opzioni) {
       disponibilita: null,
       // 🆕 v7.258 - «Disponibilità», un numero (vuoto = null); solo se la casella c'era
       ...(document.getElementById('fe-disponibili') ? { disponibili: _mlNumero(document.getElementById('fe-disponibili').value) } : {}),
+      // 🆕 v7.332 - «Disponibilità singole doppie copia», allo stesso modo
+      ...(document.getElementById('fe-disponibili-copia') ? { disponibiliCopia: _mlNumero(document.getElementById('fe-disponibili-copia').value) } : {}),
       // 🆕 v7.262 - le Copie doppie strutturate, solo se la tabella era in pagina (`_copieLeggi`)
       ...(document.getElementById('fe-copie') ? { copie: _copieLeggi() } : {}),
       // 🆕 v7.184 - le caselle delle foto annuncio. Solo se c'erano: altrove la chiave non si scrive
