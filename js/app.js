@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.335 - Modificati index.html (versione) e js/app.js. «Nomi alternativi» (`nomeAlternativo`) è una riga di
+//          «Informazioni ereditate dalla base» (`CAMPI_EREDITABILI`, in ogni tipologia, non spuntata di partenza) (Franco:
+//          «aggiungi alla lista dei campi ereditati dalla base, il campo "Nomi alternativi"»). Spuntata: nella scheda della
+//          versione la casella è in sola lettura, al salvataggio prende quelli della base, e salvando la base si allinea
+//          (la propagazione di `_divergenzeDaBase`). E via la colonna «Carosello» dalla tabella delle tipologie
+//          (`_COLONNE_ASSORBITE`): la decide console → 🎠 Caroselli (Franco: «togli la colonna carosello»).
+//          Pagina del personaggio: tornano le fpa (via il filtro della v6.969; anche il conto della card le conta) e il
+//          criterio «Gruppo» diventa un ordine di pezzi, uno per tipologia e le fcr divise in dirette e per il retro
+//          (`_PEZZI_GRUPPO_PERS`, `_pezzoGruppoPers`, `_ordineGruppiPers`), di partenza quello di Franco: fpa, carte,
+//          olografiche, retro, carte d'identità, trasferelli, tatuaggi, (le altre), fcr in fondo; si cambia in console →
+//          🎭 Personaggi, tabella «Ordine dei gruppi» (`gruppi` in `settings/ordinePersonaggio`) (Franco: «rendimelo
+//          configurabile, così posso cambiare idea»).
 // v7.334 - Modificati index.html (versione) e js/app.js. Console → Tipologie di articoli → «Caratteristiche tipologie di
 //          articoli»: via le colonne «Fronte ruotato» e «Pagine» (`_COLONNE_ASSORBITE`), che ora dice «N. foto» (3 e 3+)
 //          (Franco: «come mai vedo ancora la colonna "Fronte ruotato"? non mi hai detto che avremmo fatto economia di
@@ -32289,7 +32301,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.334';
+const JS_VERSION = 'v7.335';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -41680,7 +41692,8 @@ const _TESTA_A_PAROLE = ['orientamentoFoto', 'questionarioQuattro', 'riquadro', 
 // 🆕 v7.333 (Franco) - le colonne che stanno in fondo alla tabella, in quest'ordine
 const _COLONNE_IN_FONDO = ['orientamentoFoto', 'questionarioQuattro', 'riquadro', 'caroselloSenzaTipologia', 'sottoserieInGriglia'];
 // 🆕 v7.334 (Franco) - i campi del descrittore che non hanno più una colonna: li dice «N. foto»
-const _COLONNE_ASSORBITE = ['fotoRuotata', 'pagine'];
+// 🔄 v7.335 (Franco: «togli la colonna Carosello») - la decide console → 🎠 Caroselli (`_vaInCarosello`, v6.982)
+const _COLONNE_ASSORBITE = ['fotoRuotata', 'pagine', 'carosello'];
 // 🆕 v7.333 (Franco: «Trasferelli, Tatuaggi, Carte di identità … non hanno foto del retro»; «per il todo 3, farei una
 //    impostazione in cfg; aggiungi una colonna alla tabella») - QUALI TIPOLOGIE HANNO LA FOTO DEL RETRO, in
 //    `settings/fotoRetroTDA` { voci: { <tipologia>: false } }. Mai scritta = tutte sì (com'era). La legge `_schedaDueFoto`,
@@ -48284,6 +48297,19 @@ function renderAdminPersonaggi() {
         '<td style="' + td + 'text-align:center;"><input type="number" min="1" max="9" step="1" data-ordine-pers="' + c.k + '"' +
         ' value="' + ((ord.indexOf(c.k) + 1) || '') + '" style="width:3.4em;padding:2px 4px;text-align:center;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;"></td></tr>').join(''))(_ordinePersonaggio()) +
     '</table></div>' +
+    // 🆕 v7.335 (Franco: «io vorrei questo ordine qui: fpa, carte, olo, retro diretti, …, fcr») - i pezzi del criterio «Gruppo»
+    '<p style="font-size:0.85rem;color:var(--text);margin:1.1rem 0 0.6rem;line-height:1.5;">' +
+      (it ? '<strong>Ordine dei gruppi</strong> (il criterio «Gruppo»): uno per tipologia, e le figurine con retro divise fra quelle collegate direttamente e quelle presenti per il loro retro. Casella vuota: dopo tutti gli altri.'
+          : '<strong>Group order</strong> (the «Group» criterion). Empty: after all the others.') +
+    '</p>' +
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
+    '<tr><th style="' + th + '">' + (it ? 'Gruppo' : 'Group') + '</th>' +
+      '<th style="' + th + 'text-align:center;">' + (it ? 'Posizione' : 'Position') + '</th></tr>' +
+    (ord => _PEZZI_GRUPPO_PERS.slice().sort((a, b) => ((ord.indexOf(a) + 1) || 99) - ((ord.indexOf(b) + 1) || 99))
+      .map(k => '<tr><td style="' + td + '">' + esc(_nomePezzoGruppoPers(k, it)) + '</td>' +
+        '<td style="' + td + 'text-align:center;"><input type="number" min="1" max="20" step="1" data-gruppo-pers="' + k + '"' +
+        ' value="' + ((ord.indexOf(k) + 1) || '') + '" style="width:3.4em;padding:2px 4px;text-align:center;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;"></td></tr>').join(''))(_ordineGruppiPers()) +
+    '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin" onclick="salvaOrdinePersonaggio()">' + (it ? 'Salva l\'ordine' : 'Save order') + '</button>' +
     '</div>' +
@@ -48402,7 +48428,8 @@ async function _scriviSerieNascita() {
 //    griglia (numero e nome, le versioni dietro la base). Mai salvato = quello della v7.334: gruppo, serie, tipologia,
 //    sottoserie. Le chiavi le usa `renderPaginaPersonaggio`; la forma è quella della «Scala dei personaggi» qui accanto.
 const _CRITERI_PERS = [
-  { k: 'gruppo',     it: 'Gruppo: prima gli articoli collegati direttamente, poi le figurine con retro presenti per il loro retro, poi i retro', en: 'Group: direct, then via the back, then backs' },
+  // v7.335: i pezzi del gruppo e il loro ordine sono nella tabella «Ordine dei gruppi», sotto
+  { k: 'gruppo',     it: 'Gruppo (nell\'ordine della tabella «Ordine dei gruppi», qui sotto)', en: 'Group (see «Group order» below)' },
   { k: 'serie',      it: 'Serie (nell\'ordine delle serie)', en: 'Series' },
   { k: 'tipologia',  it: 'Tipologia di articolo (nell\'ordine dell\'Inventario)', en: 'Item type' },
   { k: 'sottoserie', it: 'Sottoserie (nell\'ordine dichiarato dalla serie)', en: 'Subseries' },
@@ -48411,8 +48438,31 @@ let _ORDINE_PERS = null;
 function _impostaOrdinePersonaggio(d) {
   const o = d && Array.isArray(d.criteri) ? d.criteri.filter((k, i, a) => _CRITERI_PERS.some(c => c.k === k) && a.indexOf(k) === i) : null;
   _ORDINE_PERS = o;
+  // v7.335 - e l'ordine dei pezzi del criterio «Gruppo»
+  const g = d && Array.isArray(d.gruppi) ? d.gruppi.filter((k, i, a) => _PEZZI_GRUPPO_PERS.includes(k) && a.indexOf(k) === i) : null;
+  _GRUPPI_PERS = g && g.length ? g : null;
 }
 function _ordinePersonaggio() { return _ORDINE_PERS || _CRITERI_PERS.map(c => c.k); }
+// 🆕 v7.335 (Franco: «io vorrei questo ordine qui: fpa, carte, olo, retro diretti, carte identità, trasferelli, tatuaggi, fcr
+//    (saranno sempre per retro, dato che le fpa sono già state usate)»; «le fcr vanno in fondo») - I PEZZI DEL CRITERIO
+//    «GRUPPO»: uno per tipologia, e le figurine con retro in due (collegate direttamente / presenti per il loro retro).
+//    L'ordine si sceglie in console (`gruppi` in `settings/ordinePersonaggio`); quello di partenza è il suo, con le
+//    tipologie che non ha nominato dopo i Tatuaggi. Un pezzo senza posizione va dopo tutti gli altri.
+const _PEZZI_GRUPPO_PERS = ['attaccare', 'carte', 'olografiche', 'retros', 'cartoncini', 'trasferelli', 'tatuaggi',
+  'spille', 'albums', 'bustine', 'extras', 'fcrDiretti', 'fcrPerRetro'];
+let _GRUPPI_PERS = null;
+function _ordineGruppiPers() { return _GRUPPI_PERS || _PEZZI_GRUPPO_PERS; }
+// il pezzo di un articolo: la sua tipologia; per una figurina con retro, se è del personaggio o lì per il suo retro
+function _pezzoGruppoPers(f, diretto) {
+  const sez = f.section || 'figurines';
+  if (sez === 'figurines') return diretto ? 'fcrDiretti' : 'fcrPerRetro';
+  return sez;
+}
+function _nomePezzoGruppoPers(k, it) {
+  if (k === 'fcrDiretti') return it ? 'Figurine con retro collegate direttamente' : 'Stickers with backs, direct';
+  if (k === 'fcrPerRetro') return it ? 'Figurine con retro presenti per il loro retro' : 'Stickers with backs, via their back';
+  return getSectionLabel(k);
+}
 async function salvaOrdinePersonaggio() {
   if (!currentUser?.isAdmin) return;
   const it = currentLang === 'it', voci = [];
@@ -48423,9 +48473,18 @@ async function salvaOrdinePersonaggio() {
   const numeri = voci.map(v => v[0]);
   if (numeri.some((n, i) => numeri.indexOf(n) !== i)) { toast(it ? '❌ Due criteri con la stessa posizione' : '❌ Two criteria with the same position', 'error'); return; }
   const criteri = voci.sort((a, b) => a[0] - b[0]).map(v => v[1]);
+  // v7.335 - l'ordine dei gruppi, dalla seconda tabella
+  const vg = [];
+  document.querySelectorAll('#admin-personaggi-box input[data-gruppo-pers]').forEach(el => {
+    const n = parseInt(String(el.value || '').trim(), 10);
+    if (n > 0) vg.push([n, el.dataset.gruppoPers]);
+  });
+  const ng = vg.map(v => v[0]);
+  if (ng.some((n, i) => ng.indexOf(n) !== i)) { toast(it ? '❌ Due gruppi con la stessa posizione' : '❌ Two groups with the same position', 'error'); return; }
+  const gruppi = vg.sort((a, b) => a[0] - b[0]).map(v => v[1]);
   try {
-    await fsSave('settings', { id: 'ordinePersonaggio', criteri });
-    _impostaOrdinePersonaggio({ criteri });
+    await fsSave('settings', { id: 'ordinePersonaggio', criteri, gruppi });
+    _impostaOrdinePersonaggio({ criteri, gruppi });
     toast(it ? '✅ Ordine salvato. Vale da subito.' : '✅ Order saved.', 'success');
     renderAdminPersonaggi();
   } catch (e) {
@@ -48973,6 +49032,9 @@ const CAMPI_EREDITABILI = [
   // 🆕 v7.333 (Franco: «mi aspetto di trovare questo campo nella cfg dei campi ereditati dalla fpa (da fcr)») - il campo
   //    non ha una casella nella scheda: si scrive al salvataggio (`_segnaOrientamentoFoto`). Esiste per le fpa.
   { k: 'orientamentoFoto', it: 'Orientamento foto', en: 'Photo orientation', dove: sez => sez === 'attaccare' },
+  // 🆕 v7.335 (Franco: «aggiungi alla lista dei campi ereditati dalla base, il campo "Nomi alternativi"») - in ogni
+  //    tipologia; non spuntato di partenza: una versione senza i suoi continua a leggere quelli della base (`_nomiAlternativi`)
+  { k: 'nomeAlternativo', it: 'Nomi alternativi', en: 'Alternative names', dove: () => true },
 ];
 // Le colonne: le tipologie di serie (senza «Altri articoli») e poi le tipologie senza serie, come le altre tabelle
 function _colonneTDA() {
@@ -52413,7 +52475,8 @@ function _cardPersonaggioHTML(p, ix, da) {
     // 🔄 v6.971 (Franco: «sì, togli le fpa anche dalla card») - il conto non conta le figurine per
     //    album, come la pagina del personaggio (v6.969): hanno lo stesso fronte della loro fcr. La
     //    foto qui sopra si sceglie ancora su tutti gli articoli.
-    const conto = arts.filter(a => a.section !== 'attaccare').length;
+    // 🔄 v7.335 - la pagina del personaggio rimostra le fpa (Franco: «le fcr … le lasciamo ma in fondo»): il conto le conta
+    const conto = arts.length;
     // 🗑️ v6.969 (Franco: «il nome della serie, nella card del personaggio, va tolto; un personaggio
     //    può avere più serie; non è quello il posto in cui scriverla») - via la riga delle serie.
     //    Le serie si vedono nella pagina del personaggio, sotto ogni articolo. Il `flex` che la
@@ -52507,7 +52570,9 @@ function renderPaginaPersonaggio(grid, pid) {
   // 🐛 v6.969 (Franco: «nella pagina di un personaggio hai messo le figurine per album; no: mettiamo
   //    solo fcr e sue versioni») - fuori le figurine per album: hanno lo stesso fronte della loro
   //    fcr, e in pagina sembravano un doppione. Il conto in testa segue quello che si vede.
-  const arts = articoliDelPersonaggio(pid, ix).filter(a => a.section !== 'attaccare');
+  // 🔄 v7.335 (Franco: «ho cambiato idea perché le fcr avendo 2 foto vengono sempre mostrate piccole; le lasciamo ma in
+  //    fondo») - LE FPA TORNANO: tolto il filtro della v6.969. Le fcr restano, in fondo (l'ordine dei gruppi, sotto).
+  const arts = articoliDelPersonaggio(pid, ix);
   const figs = getData('figurines', []);
   const serieDi = new Map((getData('series', []) || []).map(s => [s.id, s]));
   const ordSerie = id => serieDi.get(id)?.order ?? 9999;
@@ -52550,8 +52615,12 @@ function renderPaginaPersonaggio(grid, pid) {
   //    (`personaggiDiArticolo`, anche le altre tipologie), 1 = qui per il loro retro, 2 = i retro. Il gruppo è quello del
   //    capogruppo, così le versioni restano dietro la loro base (v7.306).
   const _grMemo = new Map();
-  const _gruppoPers = f => { const c = _capo(f);
-    if (!_grMemo.has(c.id)) _grMemo.set(c.id, (c.section || 'figurines') === 'retros' ? 2 : (personaggiDiArticolo(c, ix).includes(pid) ? 0 : 1));
+  // 🔄 v7.335 (Franco: «vorrei questo ordine: fpa, carte, olo, retro diretti, carte identità, trasferelli, tatuaggi, fcr»;
+  //    «le fcr vanno in fondo») - il gruppo è un PEZZO per tipologia (`_pezzoGruppoPers`), nell'ordine della console
+  //    (`_ordineGruppiPers`). La fpa conta per sé: il suo capogruppo sarebbe la fcr.
+  const _ordGr = _ordineGruppiPers();
+  const _gruppoPers = f => { const c = (f.section === 'attaccare') ? f : _capo(f);
+    if (!_grMemo.has(c.id)) { const k = _pezzoGruppoPers(c, personaggiDiArticolo(c, ix).includes(pid)); const i = _ordGr.indexOf(k); _grMemo.set(c.id, i < 0 ? _ordGr.length : i); }
     return _grMemo.get(c.id); };
   // 🔄 v7.334 (Franco: «portiamolo in configurazione, nella sezione Personaggi della admin console») - i criteri e il loro
   //    ordine li dice la console (`_ordinePersonaggio`); dopo di loro sempre la griglia
@@ -77528,7 +77597,8 @@ function switchToEditMode(figId) {
     const _phAlt = _altBase.length
       ? (currentLang === 'it' ? 'dalla base: ' : 'from the base: ') + _altBase.join(', ')
       : '';   // 🔄 v6.994 (Franco: «toglimi il suggerimento») - niente esempio, solo il valore della base
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nomi alternativi':'Alternative names') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-alternativo" value="' + esc(f.nomeAlternativo || '') + '" placeholder="' + esc(_phAlt) + '" title="' + esc(currentLang==='it' ? 'Solo per la ricerca: gli utenti non lo vedono, ma cercandolo trovano questo articolo. Più nomi separati da virgola.' : 'Search only: users do not see it.') + '"></span></div>';
+    // 🔄 v7.335 - ereditabile dalla base (tabella «Informazioni ereditate dalla base»): in sola lettura come gli altri
+    html += '<div class="detail-row" style="' + _eredStile('nomeAlternativo') + '"' + _eredAttr('nomeAlternativo') + '><span class="detail-label">' + (currentLang==='it'?'Nomi alternativi':'Alternative names') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-nome-alternativo"' + _eredRO('nomeAlternativo') + ' value="' + esc(f.nomeAlternativo || '') + '" placeholder="' + esc(_phAlt) + '" title="' + esc(currentLang==='it' ? 'Solo per la ricerca: gli utenti non lo vedono, ma cercandolo trovano questo articolo. Più nomi separati da virgola.' : 'Search only: users do not see it.') + '"></span></div>';
   }
   // 🆕 v6.991 (Franco: «altro campo... sotto "Nomi alternativi", chiamato "Nome carosello mobile"»)
   //    - nasce vuoto e lo si compila quando serve; su una versione vuota il segnaposto mostra la base.
@@ -81414,7 +81484,11 @@ async function saveFigFromDetail(figId, opzioni) {
       subname: _subnameEff, // v6.038
       // 🆕 v6.986 - i nomi alternativi, ripuliti (spazi, virgole doppie). Solo se il campo era in
       //    pagina: senza, il salvataggio scriverebbe vuoto e cancellerebbe quello che c'e'.
-      ...(document.getElementById('fe-nome-alternativo')
+      // 🔄 v7.335 (Franco: «aggiungi alla lista dei campi ereditati dalla base il campo "Nomi alternativi"») - dove la
+      //    tabella lo spunta, la versione prende quelli della sua base, come il Nome
+      ...((_campiDallaBase.includes('nomeAlternativo') && _baseScheda)
+        ? { nomeAlternativo: String(_baseScheda.nomeAlternativo || '').trim() }
+        : document.getElementById('fe-nome-alternativo')
         ? { nomeAlternativo: document.getElementById('fe-nome-alternativo').value.split(',').map(s => s.trim()).filter(Boolean).join(', ') }
         : {}),
       // 🆕 v6.991 - il «Nome carosello mobile», spazi ripuliti; stessa cautela del campo sopra
