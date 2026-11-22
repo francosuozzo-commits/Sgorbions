@@ -1,6 +1,45 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.333 - Modificati index.html (selettore «Sfoglia per» e versione) e js/app.js (solo la versione). Dal telefono in
+//          verticale la pillola dei 5 tagli dell'Inventario non andava a capo e «Novità» usciva dallo schermo (Franco:
+//          «la sezione novità non si vede se non col telefono in orizzontale; direi di andare su due righe»). Sotto gli
+//          860px la pillola va a capo, centrata, con gli angoli meno tondi; anche «Novità» ha il padding stretto.
+//          L'a capo è fisso prima di «Pubblicità» («su due righe, ma già con pubblicità»): sopra Serie, Tipologie di
+//          articoli e Personaggi, sotto Pubblicità e Novità.
+//          Scheda di un articolo: il tab «Articoli dello stesso personaggio» si chiama «Altri articoli con lo stesso
+//          personaggio» (Franco).
+//          Ricerche di fcr e fpa, «Filtri aggiuntivi admin»: «Con foto orizzontale» e «Con foto verticale» (Franco), due
+//          stati in più di `_fotoFilter`. Campo nuovo `orientamentoFoto` sull'articolo che ha la foto sua: si scrive a ogni
+//          salvataggio (`_segnaOrientamentoFoto`, misure da Cloudinary al caricamento). Le foto di prima le ha misurate
+//          una volta il tasto «Calcola l'orientamento delle foto», premuto da Franco dalla preview e poi tolto. Chi mostra la foto di un
+//          altro (la fpa senza foto sua) ne eredita l'orientamento (`_orientamentoDellaFoto`). Quadrata = verticale.
+//          E il campo è una riga di «Informazioni ereditate dalla base» (`CAMPI_EREDITABILI`, solo fpa; spuntata di
+//          partenza in `_campiEreditatiDaBase`): la fpa collegata non si misura, lo copia dalla fcr, anche al salvataggio
+//          della fcr (prima dei collegati in `saveFigFromDetail`, e in `_salvaFigurineInBlocco`) e col tasto.
+//          Console → Tipologie di articoli: il titolo azzurro; il sotto-tab «Tipi senza serie» si chiama «Caratteristiche
+//          tipologie di articoli» (Franco: il nome era sbagliato, la tabella è di tutte); nella sua tabella undici intestazioni
+//          una parola per riga (`_TESTA_A_PAROLE`), per stringere la tabella (Franco); e l'orientamento si corregge a
+//          mano nella scheda (tendina `fe-orientamento-foto`; in lettura la riga, solo admin): il valore scelto vale come
+//          misura di quella foto, vuoto la fa rimisurare (`_orientamentoRimisura`). I due filtri anche nella ricerca
+//          per tipologia (fcr, fpa, retro), per tutti (`_rtOrient`, `_rtOrientamento`). Le tre caselle delle Novità
+//          escono da Impostazioni e vanno nella sezione nuova «🆕 Novità» della console (`admin-novita`); via il tasto
+//          «Prepara le date delle Novità» e `_novitaPreparaDate` (Franco: «premuto; fai sparire anche quel bottone»).
+//          Nella tabella delle tipologie la colonna «N. foto», ultima (Franco: «ogni nuova colonna … in fondo»), una
+//          tendina 1 / 2 / 3 / 3+ (N/A su «Altri articoli») che si salva alla scelta (`settings/nFotoTDA`, `_nFotoTDA`,
+//          `salvaNFotoTDA`; la prima stesura «Foto del retro» in `settings/fotoRetroTDA` vale come «1»). 1 = una foto
+//          (`_schedaDueFoto`), 3 = il fronte ruotato (`_haFotoRuotata`), 3+ = le pagine (`_haPagine`); i tipi senza serie
+//          1 o 2 = il loro «Ha il retro». Sbloccata per tutte, retro e fpa compresi (Franco: Tatuaggi, Trasferelli e
+//          Carte d'identità non hanno il retro; «lo chiamerei N. foto … sbloccalo per tutte le tda»).
+//          Cinque colonne in fondo
+//          (`_COLONNE_IN_FONDO`: Orientamento foto, Questionario, Riquadro foto, Carosello senza tipologia, Sottoserie
+//          nella griglia).
+//          Tutto vale anche per i RETRO (Franco: «mi serviva anche per i retro; campo, filtri e funzione di calcolo
+//          iniziale»): le tipologie col campo le dice il descrittore, `orientamentoFoto: true` (`_sezOrientFoto`).
+//          «Filtri aggiuntivi admin» diventa «Filtri aggiuntivi» (ricerca di sezione e ricerca di tipologia). Le voci di
+//          sempre restano del solo admin, con l'interruttore arancio (css/style.css, `.toggle-btn-admin`); le due
+//          dell'orientamento le vedono tutti, blu (Franco: «nessun filtro deve essere visibile allo user a parte Foto
+//          orizzontali / Verticali; e quelli non visibili devono esser color arancio admin»). Il riquadro c'è se ha voci.
 // v7.332 - Modificati index.html (versione) e js/app.js. Il carosello anche nei tagli Personaggi e Pubblicità (Franco:
 //          «anche le sezioni Personaggi e Pubblicità devono avere il loro carosello»; alle domande: girano i personaggi e le
 //          PUB stessi, sotto la barra gialla). Foto e nome, il clic apre la loro pagina; solo quelli con la foto, a caso; la fila si pesca una volta per ingresso nel taglio e tiene il suo punto mentre si cerca
@@ -32233,7 +32272,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.332';
+const JS_VERSION = 'v7.333';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -33454,6 +33493,77 @@ function _applicaEsclamativo(oggetto, campi, elenchi) {
   return cambiati;
 }
 
+// ============================================================
+//  🆕 v7.333 — L'ORIENTAMENTO DELLA FOTO (fcr e fpa)
+// ------------------------------------------------------------
+// Franco: «nelle pagine di ricerca di fcr ed fpa, nei filtri aggiuntivi admin aggiungi un filtro "Con foto orizzontale"
+// ed uno "Con foto verticale"»; «il campo puoi anche metterlo solo sulle fcr e le fpa lo ereditano».
+// 📌 Il campo `orientamentoFoto` ('orizzontale' | 'verticale') sta sull'articolo che la foto ce l'ha DAVVERO (`img`):
+//    il filtro guarda la foto che la card mostra (`_fotoFigurina`) e ne cerca l'orientamento per indirizzo, quindi chi
+//    mostra la foto di un altro (la fpa senza foto sua, una variazione) eredita quello del proprietario senza scriverlo.
+// 📌 Una foto quadrata conta come verticale. Le misure arrivano da Cloudinary al caricamento (gratis); per le foto di
+//    prima le misura il browser sulla foto delle card (`w_400,h_400,c_fit`, già fatta: nessuna trasformazione nuova).
+// ============================================================
+// 🔄 v7.333 (Franco: «mi serviva anche per i retro; campo, filtri e funzione di calcolo iniziale») - + i retro. Quali
+//    tipologie lo hanno lo dice il descrittore (`orientamentoFoto: true` in `ARTICOLI`), non un elenco scritto qui.
+function _sezOrientFoto(sez) { return !!(ARTICOLI[sez || 'figurines'] && ARTICOLI[sez || 'figurines'].orientamentoFoto); }
+const _orientamentoMisurato = new Map();   // indirizzo della foto → 'orizzontale' | 'verticale' (misurato, o scelto a mano)
+const _orientamentoRimisura = new Set();   // foto da rimisurare: nella scheda la tendina è stata svuotata a mano
+function _nomeOrientamento(o) {
+  const it = currentLang === 'it';
+  return o === 'orizzontale' ? (it ? 'Orizzontale' : 'Landscape') : o === 'verticale' ? (it ? 'Verticale' : 'Portrait') : '';
+}
+function _orientamentoDaMisure(w, h) { return (Number(w) > Number(h)) ? 'orizzontale' : 'verticale'; }
+function _misuraOrientamentoFoto(url) {
+  if (!url) return Promise.resolve(null);
+  if (_orientamentoMisurato.has(url)) return Promise.resolve(_orientamentoMisurato.get(url));
+  return new Promise(res => {
+    let fatto = false;
+    const im = new Image();
+    const fine = v => { if (fatto) return; fatto = true; clearTimeout(t); if (v) _orientamentoMisurato.set(url, v); res(v); };
+    const t = setTimeout(() => fine(null), 10000);
+    im.onload = () => fine(im.naturalWidth && im.naturalHeight ? _orientamentoDaMisure(im.naturalWidth, im.naturalHeight) : null);
+    im.onerror = () => fine(null);
+    im.src = cloudinaryUrl(url, 'w_400,h_400,c_fit,q_auto,f_auto');
+  });
+}
+// a ogni scrittura: foto uguale a prima → l'orientamento resta; foto nuova → si misura; niente foto → niente campo
+// 🔄 v7.333 (Franco: «mi aspetto di trovare questo campo nella cfg dei campi ereditati dalla fpa (da fcr)») - è una riga
+//    di «Informazioni ereditate dalla base» (`CAMPI_EREDITABILI`), che esiste per le fpa: dove è spuntato, la fpa
+//    collegata NON si misura, lo copia dalla sua fcr (come Nome e Numero). `compagni`: chi viene scritto insieme
+//    (il salvataggio in blocco), dove la fcr può essere già quella nuova.
+async function _segnaOrientamentoFoto(item, compagni) {
+  if (!item || item.isSlim || !_sezOrientFoto(item.section)) return;
+  if (item.baseFigurineId && _eFiglioCollegato(item) && _campiEreditatiDaBase(item.section, item.tipoProdotto).includes('orientamentoFoto')) {
+    const b = (compagni || []).find(x => x && x.id === item.baseFigurineId) || getData('figurines', []).find(x => x && x.id === item.baseFigurineId);
+    if (b && b.orientamentoFoto) item.orientamentoFoto = b.orientamentoFoto; else delete item.orientamentoFoto;
+    return;
+  }
+  if (!item.img) { delete item.orientamentoFoto; return; }
+  const prima = item.id ? getData('figurines', []).find(x => x && x.id === item.id) : null;
+  const _rimisura = _orientamentoRimisura.delete(item.img);
+  if (!_rimisura && !_orientamentoMisurato.has(item.img) && prima && prima.img === item.img && prima.orientamentoFoto) {
+    item.orientamentoFoto = prima.orientamentoFoto; return;
+  }
+  const o = await _misuraOrientamentoFoto(item.img);
+  if (o) item.orientamentoFoto = o; else delete item.orientamentoFoto;
+}
+// l'orientamento della foto che la card mostra; la mappa si rifà quando cambia l'elenco degli articoli
+let _orientPerFotoCache = null;
+function _orientamentoDellaFoto(f, allFigs) {
+  const url = _fotoFigurina(f, allFigs);
+  if (!url) return null;
+  // il campo scritto sull'articolo (suo, o ereditato dalla fcr); se manca, quello di chi possiede la foto mostrata
+  if (f.orientamentoFoto) return f.orientamentoFoto;
+  if (!_orientPerFotoCache || _orientPerFotoCache.figs !== allFigs) {
+    const m = new Map();
+    allFigs.forEach(x => { if (x && x.img && x.orientamentoFoto) m.set(x.img, x.orientamentoFoto); });
+    _orientPerFotoCache = { figs: allFigs, m };
+  }
+  return _orientPerFotoCache.m.get(url) || null;
+}
+// 🗑️ v7.333 - qui stava `_orientamentoFotoPrepara`, il calcolo iniziale (usa e getta) dell'orientamento: premuto da Franco
+//    il 22/11 (prima e dopo i retro), fatto il suo lavoro è stato tolto (Franco: «a cosa serve?»).
 async function _saveFigurineItem(item) {
   // 🆕 v6.318 - la regola del "!" sta QUI e non nelle form, perche' questo e' il punto da cui
   // passano TUTTE le scritture di un articolo: la scheda, le celle della vista tabellare, l'import
@@ -33470,6 +33580,8 @@ async function _saveFigurineItem(item) {
       catch (e) { console.error('computeFullName dopo la regola del "!"', e); }
     }
   }
+  // 🆕 v7.333 - com'è girata la foto (i filtri «Con foto orizzontale / verticale»): vedi `_segnaOrientamentoFoto`
+  try { await _segnaOrientamentoFoto(item); } catch (e) { console.error('_segnaOrientamentoFoto', e); }
   // 🆕 v7.325 - da quando l'articolo si può mostrare (le Novità): vedi `_segnaMostratoDal`
   if (typeof _segnaMostratoDal === 'function') { try { _segnaMostratoDal(item, getData('figurines', [])); } catch (e) { console.error('_segnaMostratoDal', e); } }
   // 🆕 v7.263 - una slim si scrive coi soli campi propri: tutto il resto è della parent (`_collegaSlim`). Prima del
@@ -34137,6 +34249,8 @@ async function uploadToCloudinary(file, etichetta) {
   const data = await res.json();
   if (data.secure_url) {
     _trackCloudinaryUpload();
+    // 🆕 v7.333 - Cloudinary dice già le misure della foto: l'orientamento si segna qui, gratis (`_segnaOrientamentoFoto`)
+    if (data.width && data.height) _orientamentoMisurato.set(data.secure_url, _orientamentoDaMisure(data.width, data.height));
     return data.secure_url;
   }
   throw new Error('Upload failed');
@@ -34245,7 +34359,7 @@ const i18n = {
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Rarity','form.fig.scoreHint':'How rare it is. It adds to the Rarity score of whoever has it in their list',
-'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Add preset search filters','items.resetFilters':'Clear all filters','items.searchHint':'Search by keyword','items.searchPlaceholder':'Search...','admin.classifica':'Ranking','admin.catalogo':'Catalog','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker versions glossary','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Every version has its own colour</strong>, and it is the same everywhere on the site: on the cards, in the search filters and in the titles of the search boxes.','items.filterLegend.base':'<strong>Base version</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer.<br>Two cases can be told apart:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) same front but with a different graphic element in the printing (the back is the same as the base sticker’s)</li><li>2) same front; it is the back that gives rise to the variant</li></ul>','items.filterLegend.free':'<strong>Free</strong>: sticker given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black) on the back','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','items.filterLegend.titleRetros':'📖 Retro versions glossary','items.filterLegend.retroBase':'<strong>Base version</strong>: retro belonging to the series’ base set','items.filterLegend.retroChange':'<strong>Change</strong>: variant intentionally made by the manufacturer; it differs from the base version by a different graphic element in the printing','items.filterLegend.retroFree':'<strong>Free</strong>: retro given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black)','items.filterLegend.retroPrintError':'<strong>Print error</strong>: variant purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'More filters','items.searchBox':'Your search','items.filterIntro':'Add preset search filters','items.resetFilters':'Clear all filters','items.searchHint':'Search by keyword','items.searchPlaceholder':'Search...','admin.classifica':'Ranking','admin.catalogo':'Catalog','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker versions glossary','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Every version has its own colour</strong>, and it is the same everywhere on the site: on the cards, in the search filters and in the titles of the search boxes.','items.filterLegend.base':'<strong>Base version</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer.<br>Two cases can be told apart:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) same front but with a different graphic element in the printing (the back is the same as the base sticker’s)</li><li>2) same front; it is the back that gives rise to the variant</li></ul>','items.filterLegend.free':'<strong>Free</strong>: sticker given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black) on the back','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','items.filterLegend.titleRetros':'📖 Retro versions glossary','items.filterLegend.retroBase':'<strong>Base version</strong>: retro belonging to the series’ base set','items.filterLegend.retroChange':'<strong>Change</strong>: variant intentionally made by the manufacturer; it differs from the base version by a different graphic element in the printing','items.filterLegend.retroFree':'<strong>Free</strong>: retro given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black)','items.filterLegend.retroPrintError':'<strong>Print error</strong>: variant purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
 'profile.title':'My Profile','profile.owned':'In My List','profile.total':'Total','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
@@ -34335,7 +34449,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità ai risultati','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Export liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli articoli non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista articoli non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista articoli non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine per album diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine per album','form.series.haRistampe':'Ha ristampe','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Variazioni ufficiali','form.series.hasUnofficialVariations':'Variazioni non ufficiali','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'Senza numeri/lettere','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change','form.series.countRetroChange':'N. change','form.series.descPlaceholder':'Descrivi questa serie...','form.series.sottoserie':'Sottoserie','form.series.sottoserieHint':'Una riga per sottoserie, con la sua foto. L\'ORDINE conta: è l\'ordine con cui le sottoserie si vedranno. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','admin.catalogo':'Catalogo','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine per album diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine per album','form.series.haRistampe':'Ha ristampe','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Variazioni ufficiali','form.series.hasUnofficialVariations':'Variazioni non ufficiali','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'Senza numeri/lettere','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change','form.series.countRetroChange':'N. change','form.series.descPlaceholder':'Descrivi questa serie...','form.series.sottoserie':'Sottoserie','form.series.sottoserieHint':'Una riga per sottoserie, con la sua foto. L\'ORDINE conta: è l\'ordine con cui le sottoserie si vedranno. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','admin.catalogo':'Catalogo','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -36376,10 +36490,13 @@ function _rtNuovo() {
            _conDoppieFilter: false,   // v7.304
            _ownedFilter: 'all', _wishlistFilter: false };   // 🆕 v7.009 - la tua lista
 }
+// 🆕 v7.333 - i due stati di `_fotoFilter` che vedono tutti (l'orientamento della foto)
+function _rtOrientamento(v) { return v === 'orizzontale' || v === 'verticale'; }
 function _rtAcceso() {
   const x = _rt;
+  // v7.333: chi admin non è, dei filtri della foto conta solo l'orientamento (gli altri non li vede e non filtrano)
   return !!(x && (x.testo.trim() || x.cat.trim() || x.sottocat.trim() || x.serie.size || x.versioni.size
-    || x._fotoFilter || x._noteFilter || x._senzaRaritaFilter || x._senzaPersonaggioFilter
+    || (currentUser?.isAdmin ? x._fotoFilter : _rtOrientamento(x._fotoFilter)) || x._noteFilter || x._senzaRaritaFilter || x._senzaPersonaggioFilter
     || x._conNomiAlternativiFilter || x._conNomeCaroselloFilter || x._visibilitaFilter !== 'all'
     || x._conDoppieFilter   // v7.304
     || x._ownedFilter !== 'all' || x._wishlistFilter));   // v7.009
@@ -36401,7 +36518,10 @@ function _rtFiltrati(esclusa) {
     _fotoFilter: x._fotoFilter, _noteFilter: x._noteFilter, _senzaRaritaFilter: x._senzaRaritaFilter,
     _ixPersFiltro: (x._senzaPersonaggioFilter && _personaggiDati) ? _indiciPersonaggi() : null,
     _conNomiAlternativiFilter: x._conNomiAlternativiFilter, _conNomeCaroselloFilter: x._conNomeCaroselloFilter,
-    _visibilitaFilter: x._visibilitaFilter, _conDoppieFilter: x._conDoppieFilter } : null;   // v7.304: + Con doppie
+    _visibilitaFilter: x._visibilitaFilter, _conDoppieFilter: x._conDoppieFilter }   // v7.304: + Con doppie
+    // 🆕 v7.333 (Franco: «i due filtri nuovi mancano nella pagina di ricerca per Retro, FPA e FCR se entro all'Inventario
+    //    per TDA») - chi admin non è ha i soli due dell'orientamento: lo stato porta solo quelli
+    : (_rtOrientamento(x._fotoFilter) ? { _fotoFilter: x._fotoFilter, _visibilitaFilter: 'all' } : null);
   // 🆕 v7.009 - la lista e ciò che cerchi si leggono una volta, e solo a filtro acceso
   const mia = (currentUser && x._ownedFilter !== 'all') ? getOwned() : null;
   const cerco = (currentUser && x._wishlistFilter) ? getWishlist() : null;
@@ -36524,13 +36644,23 @@ function renderRicercaTipologia() {
   const bott = (acceso, onclick, et) => '<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ' + (acceso ? 'on' : '') + '" onclick="' + onclick + '" title="' + et + '"></button><span style="font-size:0.82rem;color:var(--text);">' + et + '</span></div>';
   // 🔄 v6.999 (Franco: «volevo che nascessero tutti collassati») - chiudibile anche lui, e il conto
   //    da chiuso sono i filtri admin accesi
-  const _nAdmin = [x._fotoFilter, x._noteFilter, x._senzaRaritaFilter, x._senzaPersonaggioFilter,
-    x._conNomiAlternativiFilter, x._conNomeCaroselloFilter, x._visibilitaFilter !== 'all', x._conDoppieFilter].filter(Boolean).length;   // v7.304
-  const adminHTML = !adm ? '' : chiudibile('admin', it ? 'Filtri aggiuntivi admin' : 'Admin filters', _nAdmin,
-    '<div style="display:flex;flex-wrap:wrap;gap:0.6rem 1.2rem;">'
+  const _nAdmin = adm ? [x._fotoFilter, x._noteFilter, x._senzaRaritaFilter, x._senzaPersonaggioFilter,
+    x._conNomiAlternativiFilter, x._conNomeCaroselloFilter, x._visibilitaFilter !== 'all', x._conDoppieFilter].filter(Boolean).length   // v7.304
+    : (_rtOrientamento(x._fotoFilter) ? 1 : 0);   // v7.333: chi admin non è ha solo l'orientamento
+  // 🔄 v7.333 (Franco) - si chiama «Filtri aggiuntivi»; le voci di sempre sono del solo admin, con l'interruttore arancio.
+  // 🆕 v7.333 (Franco: «i due filtri nuovi mancano nella pagina di ricerca per Retro, FPA e FCR se entro all'Inventario per
+  //    TDA») - «Con foto orizzontale» e «Con foto verticale», blu e per tutti, dove la tipologia ha l'orientamento
+  //    (`_sezOrientFoto`); per l'admin stanno dopo le altre della foto (il segno `_RT_ORIENT`)
+  const _RT_ORIENT = '\u0000orient\u0000';
+  const _rtOrient = _sezOrientFoto(_rtSez)
+    ? bott(x._fotoFilter === 'orizzontale', "_rtFoto('orizzontale')", it ? 'Con foto orizzontale' : 'With landscape photo')
+      + bott(x._fotoFilter === 'verticale', "_rtFoto('verticale')", it ? 'Con foto verticale' : 'With portrait photo')
+    : '';
+  const _rtVoci = (!adm ? _RT_ORIENT : (''
     + bott(x._fotoFilter === 'senza', "_rtFoto('senza')", it ? 'Senza foto' : 'Without photo')
     + bott(x._fotoFilter === 'con', "_rtFoto('con')", it ? 'Con foto' : 'With photo')
     + bott(x._fotoFilter === 'nonDisp', "_rtFoto('nonDisp')", it ? 'Con foto non disponibile' : 'Marked photo unavailable')
+    + _RT_ORIENT
     + bott(x._noteFilter, "_rtToggle('_noteFilter')", it ? 'Con note' : 'With notes')
     + bott(x._conDoppieFilter, "_rtToggle('_conDoppieFilter')", it ? 'Con doppie' : 'With duplicates')   // v7.304
     + bott(x._senzaRaritaFilter, "_rtToggle('_senzaRaritaFilter')", it ? 'Senza rarità' : 'Without rarity')
@@ -36539,7 +36669,9 @@ function renderRicercaTipologia() {
     + bott(x._conNomeCaroselloFilter, "_rtToggle('_conNomeCaroselloFilter')", it ? 'Con Nome mobile e Carosello alterato' : 'With altered mobile and carousel name')   // v7.144
     + bott(x._visibilitaFilter === 'visibili', "_rtVisibilita('visibili')", it ? 'Visibili' : 'Visible')
     + bott(x._visibilitaFilter === 'invisibili', "_rtVisibilita('invisibili')", it ? 'Invisibili' : 'Invisible')
-    + '</div>');
+    ).split('class="toggle-btn-blue ').join('class="toggle-btn-blue toggle-btn-admin ')).replace(_RT_ORIENT, _rtOrient);
+  const adminHTML = !_rtVoci ? '' : chiudibile('admin', it ? 'Filtri aggiuntivi' : 'More filters', _nAdmin,
+    '<div style="display:flex;flex-wrap:wrap;gap:0.6rem 1.2rem;">' + _rtVoci + '</div>');
   // 🔄 v6.996 (Franco: «lascia che sia "Cerca in tutte le serie"; non serve ripetere il nome della
   //    tda; questo da mobile. Nella desktop mettilo prima; esempio: "Cerca le figurine con retro in
   //    tutte le serie"») - sul computer articolo e nome in minuscolo, con `_articoloPlurale`.
@@ -41031,6 +41163,7 @@ const ARTICOLI = {
   // 🗑️ v6.831 (Franco) - qui c'era `figurine`, «Figurine»: i suoi 61 articoli di Holidays sono
   //    diventati «Figurine con retro» (strumenti/migrazione-v6831.js), e la tipologia e' uscita.
   figurines: {
+    orientamentoFoto: true,   // v7.333 - il campo e i filtri «Con foto orizzontale / verticale» (`_sezOrientFoto`)
     questionarioQuattro: true,   // v7.156 (Franco): nel questionario le quattro carte; la console lo può cambiare
     riquadro: 1,   // v6.654
     // 🆕 v7.149 (Franco) - nel carosello del desktop, senza sottoserie, la riga resta vuota: non dice la tipologia
@@ -41072,6 +41205,7 @@ const ARTICOLI = {
     nomeCompletoDove: 'computeFullName'       // rami variazione/change/errore/base
   },
   attaccare: {
+    orientamentoFoto: true,   // v7.333 - il campo e i filtri «Con foto orizzontale / verticale» (`_sezOrientFoto`)
     questionarioQuattro: true,   // v7.156 (Franco): nel questionario le quattro carte; la console lo può cambiare
     riquadro: 1,   // v6.654
     caroselloSenzaTipologia: true,   // v7.149, come le figurine con retro
@@ -41277,6 +41411,7 @@ const ARTICOLI = {
     nomeCompletoDove: 'computeFullName'
   },
   retros: {
+    orientamentoFoto: true,   // v7.333 (Franco: «mi serviva anche per i retro») - vedi `_sezOrientFoto`
     questionarioQuattro: true,   // v7.156 (Franco): nel questionario le quattro carte; la console lo può cambiare
     // 📌 1.6 e' il valore che il codice applicava gia': era l'unico ramo
     //    dichiarato dell'`if` che questa release ha tolto.
@@ -41365,6 +41500,8 @@ function _haSottonome(sez) {
 //    ragione: la domanda vive nel descrittore, non in un elenco di sezioni scritto a mano. Oggi
 //    risponde «si» al solo Album.
 function _haPagine(sez) {
+  // 🔄 v7.333 - «N. foto» 3+ nella tabella delle tipologie (`_nFotoTDA`); di partenza è il flag `pagine` del descrittore
+  if (typeof _nFotoTDA === 'function' && ARTICOLI[sez || 'figurines']) return _nFotoTDA(sez) === '3+';
   return !!_art(sez).pagine;
 }
 
@@ -41432,6 +41569,7 @@ const _ETICHETTE_DESCRITTORE = {
   caroselloSenzaTipologia: 'Carosello senza tipologia',   // v7.149
   questionarioQuattro: 'Questionario a quattro carte',   // v7.156
   lettera: 'Lettera al posto del numero',                // v7.211
+  orientamentoFoto: 'Orientamento foto',                 // v7.333
   numero: 'Numero', ordina: 'Ordinamento',
   ordinaDove: 'Ordina dove', nomeCompleto: 'Nome completo', nomeCompletoDove: 'Nome completo dove'
 };
@@ -41517,12 +41655,90 @@ function _valoreOrdinamentoDescrittore(v) {
   return v;
 }
 
+// 🆕 v7.333 (Franco) - le colonne della tabella delle tipologie con l'intestazione una parola per riga
+const _TESTA_A_PAROLE = ['orientamentoFoto', 'questionarioQuattro', 'riquadro', 'caroselloSenzaTipologia', 'sottoserieInGriglia',
+  'colonne', 'nomeCompleto', 'nomeCompletoDove', 'fotoRuotata', 'lettera', 'sottoserieInTab'];
+// 🆕 v7.333 (Franco) - le colonne che stanno in fondo alla tabella, in quest'ordine
+const _COLONNE_IN_FONDO = ['orientamentoFoto', 'questionarioQuattro', 'riquadro', 'caroselloSenzaTipologia', 'sottoserieInGriglia'];
+// 🆕 v7.333 (Franco: «Trasferelli, Tatuaggi, Carte di identità … non hanno foto del retro»; «per il todo 3, farei una
+//    impostazione in cfg; aggiungi una colonna alla tabella») - QUALI TIPOLOGIE HANNO LA FOTO DEL RETRO, in
+//    `settings/fotoRetroTDA` { voci: { <tipologia>: false } }. Mai scritta = tutte sì (com'era). La legge `_schedaDueFoto`,
+//    l'unica fonte di «quante facce ha questo articolo?»: la card, la scheda, i riquadri della form e la pagina Errori.
+// 📌 Retro e fpa non hanno la spunta: una foto sola per definizione (`_schedaDueFoto` lo dice prima). I tipi senza serie
+//    hanno la loro, «Ha il retro», nella loro scheda: qui la colonna la mostra soltanto.
+// 🔄 v7.333 (Franco: «estenderei il campo Foto del retro; lo chiamerei N. foto … 2 significa Fronte e Retro e "3+" che
+//    possono essere più foto (numero indefinito); le olografiche hanno 3 foto; i valori: 1, 2, 3, 3+, N/A; sbloccalo per
+//    tutte le tda»; N/A: «ok» alla riga «Altri articoli») - QUANTE FOTO HA UN ARTICOLO, per tipologia:
+//      1  = solo il fronte · 2 = fronte e retro · 3 = fronte, retro e «Fronte ruotato» · 3+ = fronte, retro e le foto in più
+//      (il tab «📖 Pagine») · N/A = «Altri articoli», che contiene i tipi senza serie: ognuno ha il suo.
+//    Le tipologie di serie: `settings/nFotoTDA` { voci: { <tipologia>: '1'|'2'|'3'|'3+' } }; mai scritto = il valore di
+//    sempre (`_nFotoDiPartenza`: dal descrittore). La prima stesura (spunta «Foto del retro», `settings/fotoRetroTDA`,
+//    false = una foto) vale ancora dove `nFotoTDA` non dice niente: le tre spente da Franco diventano «1».
+//    I tipi senza serie: 1 o 2, ed è il loro «Ha il retro» (`haRetro`), lo stesso campo della loro scheda.
+// 📌 Lo leggono `_schedaDueFoto` (1 = una foto), `_haFotoRuotata` (3) e `_haPagine` (3+).
+let _NFOTO_CFG = null;
+function _impostaNFoto(d, vecchio) {
+  let voci = (d && d.voci && typeof d.voci === 'object') ? Object.assign({}, d.voci) : null;
+  if (vecchio && vecchio.voci && typeof vecchio.voci === 'object') {
+    voci = voci || {};
+    Object.keys(vecchio.voci).forEach(k => { if (vecchio.voci[k] === false && !(k in voci)) voci[k] = '1'; });
+  }
+  _NFOTO_CFG = voci;
+}
+const _NFOTO_VALORI = ['1', '2', '3', '3+'];
+function _nFotoDiPartenza(sez) {
+  const a = ARTICOLI[sez] || {};
+  if (sez === 'retros' || sez === 'attaccare') return '1';
+  if (a.fotoRuotata) return '3';
+  if (a.pagine) return '3+';
+  return '2';
+}
+function _nFotoTDA(sez) {
+  const s = sez || 'figurines';
+  const c = typeof _NFOTO_CFG !== 'undefined' ? _NFOTO_CFG : null;
+  return (c && _NFOTO_VALORI.includes(c[s])) ? c[s] : _nFotoDiPartenza(s);
+}
+function _cellaNFoto(r) {
+  const it = currentLang === 'it';
+  if (!r.dato && r.chiave === 'extras') return '<span style="opacity:0.6;" title="' + (it ? 'Ogni tipo senza serie ha il suo valore (righe qui sotto)' : 'Each type has its own') + '">N/A</span>';
+  const val = r.dato ? (_tipoHaRetro(r.chiave) ? '2' : '1') : _nFotoTDA(r.chiave);
+  const valori = r.dato ? ['1', '2'] : _NFOTO_VALORI;
+  return '<select class="form-input" style="padding:0.15rem 0.3rem;font-size:0.8rem;width:auto;" onchange="salvaNFotoTDA(\'' + esc(r.chiave) + '\', ' + (r.dato ? 'true' : 'false') + ', this.value)"'
+    + ' title="' + (it ? '1 = solo il fronte · 2 = fronte e retro · 3 = fronte, retro e fronte ruotato · 3+ = fronte, retro e foto in più' : 'Number of photos') + '">'
+    + valori.map(v => '<option value="' + v + '"' + (v === val ? ' selected' : '') + '>' + v + '</option>').join('') + '</select>';
+}
+async function salvaNFotoTDA(chiave, tipo, valore) {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  try {
+    if (tipo) {
+      // il tipo senza serie: il suo «Ha il retro», nel suo record
+      const tipi = _tipiProdotto().map(t => t.id === chiave ? { ...t, haRetro: valore === '2' } : t);
+      await _salvaTipiProdotto(tipi);
+    } else {
+      const voci = Object.assign({}, _NFOTO_CFG || {});
+      // scritto sempre, anche se è il valore di partenza: così la prima stesura (`fotoRetroTDA`) non dice più niente qui
+      voci[chiave] = valore;
+      await fsSave('settings', { id: 'nFotoTDA', voci });
+      _impostaNFoto({ voci });
+    }
+    toast(it ? '✅ N. foto: ' + valore + '. Vale da subito per tutti.' : '✅ Saved.', 'success');
+    renderAll();
+  } catch (e) {
+    console.error('salvaNFotoTDA', e);
+    toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error');
+  }
+  renderAdminTipoArticolo();
+}
 function renderAdminTipoArticolo() {
   const box = document.getElementById('admin-tipo-articolo-tabella');
   if (!box) return;
   const chiavi = [];
   PRODOTTI_INVENTARIO.forEach(sez =>
     Object.keys(ARTICOLI[sez]).forEach(k => { if (!chiavi.includes(k)) chiavi.push(k); }));
+  // 🔄 v7.333 (Franco: «le colonne Orientamento foto, Questionario…, Riquadro foto…, Carosello… e Sottoserie nella… vanno in
+  //    fondo alla tabella (per ultime)») - in quest'ordine, dopo tutte le altre
+  _COLONNE_IN_FONDO.forEach(k => { const i = chiavi.indexOf(k); if (i >= 0) { chiavi.splice(i, 1); chiavi.push(k); } });
   // v6.228 - l'elenco delle righe, ordinato se c'e' una colonna attiva. Senza nessuna colonna
   // attiva si vede l'ordine naturale, cioe' quello vero del sito (`PRODOTTI_INVENTARIO`), e ci
   // si torna col comando della colonna N. (v6.717).
@@ -41541,7 +41757,8 @@ function renderAdminTipoArticolo() {
     });
   }
   // 🔄 v7.208 (Franco) - le intestazioni azzurre, come in tutte le tabelle delle tipologie (la colonna ordinata resta `--accent`)
-  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  // v7.333: `vertical-align:bottom`, così le intestazioni su più righe (`_TESTA_A_PAROLE`) stanno in fila con le altre
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--info);text-align:left;white-space:nowrap;vertical-align:bottom;border-bottom:1px solid var(--border);';
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
   box.innerHTML =
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
@@ -41592,8 +41809,14 @@ function renderAdminTipoArticolo() {
         return '<th style="' + th + 'cursor:pointer;user-select:none;' + (attiva ? 'color:var(--accent);' : '') + '"' +
           ' onclick="sortAdminTipoArticolo(\'' + k + '\')"' +
           ' title="' + (currentLang === 'it' ? 'Ordina per questa colonna' : 'Sort by this column') + '">' +
-          esc(_ETICHETTE_DESCRITTORE[k] || k) + freccia + '</th>';
+          // 🔄 v7.333 (Franco: «i nomi colonna fai in modo che abbiano solo una parola per riga, così da diminuire la
+          //    larghezza della tabella; questo vale solo per queste colonne») - le colonne di `_TESTA_A_PAROLE`
+          (_TESTA_A_PAROLE.includes(k) ? esc(_ETICHETTE_DESCRITTORE[k] || k).split(' ').join('<br>') : esc(_ETICHETTE_DESCRITTORE[k] || k)) + freccia + '</th>';
       }).join('') +
+      // 🆕 v7.333 (Franco: «per il todo 3, farei una impostazione in cfg; aggiungi una colonna alla tabella»; «ogni nuova
+      //    colonna che aggiungiamo a questa tabella deve andare in fondo, non all'inizio»; «lo chiamerei N. foto») - la
+      //    tendina «N. foto» (`_nFotoTDA`), ultima: è l'unica colonna che si modifica da qui
+      '<th style="' + th + '">' + (currentLang === 'it' ? 'N.<br>foto' : 'No. of<br>photos') + '</th>' +
     '</tr>' +
     // 🆕 v6.283 - LE FRECCE, e compaiono SOLO nell'ordine naturale. Con una colonna di
     // ordinamento accesa quello che si vede non e' l'ordine del sito, e una freccia che dice "su"
@@ -41627,6 +41850,7 @@ function renderAdminTipoArticolo() {
         '<td style="' + td + 'text-align:right;">' + (n + 1) + '</td>' +
         '<td style="' + td + 'white-space:nowrap;">' + celle + '</td>' +
         chiavi.map(k => '<td style="' + td + '">' + _cellaDescrittore(k, r.voce, r.dato) + '</td>').join('') +
+        '<td style="' + td + 'text-align:center;">' + _cellaNFoto(r) + '</td>' +   // v7.333 - ultima colonna
         '</tr>';
     }).join('') +
     '</table></div>' +
@@ -41643,6 +41867,11 @@ function renderAdminTipoArticolo() {
       'modificando <code>ARTICOLI</code> in <code>app.js</code>. Quelli dei tipi creati da questa ' +
       'console si modificano con l\'ingranaggio sulla loro card, nell\'Inventario. ' +
       'Le <strong>Versioni</strong>, qui sotto, si modificano invece da questa pagina. ' +
+      // v7.333 - la colonna che si modifica da qui
+      'Anche la colonna <em>N. foto</em> si modifica da qui, e si salva alla scelta: 1 = solo il fronte, 2 = fronte e retro, ' +
+      '3 = fronte, retro e fronte ruotato, 3+ = fronte, retro e le foto in più (il tab «Pagine»). Sulla riga ' +
+      '<em>Altri articoli</em> è N/A: ogni tipo senza serie ha il suo, ed è il suo «Ha il retro» (1 o 2). ' +
+      'Le colonne <em>Fronte ruotato</em> e <em>Pagine</em> dicono il valore di partenza scritto nel codice: comanda N. foto. ' +
       'La colonna <em>Ordina dove</em> ' +
       'porta il nome della funzione quando l\'ordinamento è di codice, e il campo del record quando è ' +
       'di campo.' +
@@ -41705,6 +41934,7 @@ async function _caricaLegendeDefinizioni() {
     _impostaDoppioni(docs.find(x => x.id === 'doppioni'));   // v7.262 - idem
     _impostaScalaPersonaggi(docs.find(x => x.id === 'scalaPersonaggi'));   // v7.331 - idem
     _impostaCercaVariazioni(docs.find(x => x.id === 'cercaVariazioni'));   // v7.331 - idem
+    _impostaNFoto(docs.find(x => x.id === 'nFotoTDA'), docs.find(x => x.id === 'fotoRetroTDA'));   // v7.333 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -48658,6 +48888,9 @@ const CAMPI_EREDITABILI = [
   { k: 'subcategory', it: 'Sottocategoria', en: 'Subcategory', dove: sez => SEZIONI_CON_CATEGORIA.includes(sez) },
   { k: 'year',        it: 'Anno',           en: 'Year',        dove: sez => sez === 'extras' },
   { k: 'desc',        it: 'Descrizione',    en: 'Description', dove: () => true },
+  // 🆕 v7.333 (Franco: «mi aspetto di trovare questo campo nella cfg dei campi ereditati dalla fpa (da fcr)») - il campo
+  //    non ha una casella nella scheda: si scrive al salvataggio (`_segnaOrientamentoFoto`). Esiste per le fpa.
+  { k: 'orientamentoFoto', it: 'Orientamento foto', en: 'Photo orientation', dove: sez => sez === 'attaccare' },
 ];
 // Le colonne: le tipologie di serie (senza «Altri articoli») e poi le tipologie senza serie, come le altre tabelle
 function _colonneTDA() {
@@ -48698,6 +48931,9 @@ function renderAdminEreditaBase() {
       '</tr>').join('') +
     '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' + tasto + '</div>';
+  // 🗑️ v7.333 (Franco: «il pregresso lo abbiamo gestito; il nuovo si auto gestisce e sono io autonomo nelle piccole
+  //    correzioni. Quindi a cosa serve?») - qui, per poco, stava il tasto «Calcola l'orientamento delle foto»: premuto da
+  //    Franco dalla preview il 22/11 (misurato: tutte le fcr, fpa e retro con foto propria hanno il campo). Via.
 }
 // Il piano del riallineamento con le spunte `voci`, senza scrivere niente: per ogni capo d'albero, la sua discendenza
 // allineata (`_discendenzaDaAggiornare`, la stessa del salvataggio della base: nipoti compresi, Nome completo ricalcolato).
@@ -56425,21 +56661,9 @@ function _dataNovita(f) {
   if (s && s.mostrataDal) { const ds = new Date(s.mostrataDal); if (!isNaN(ds) && ds > d) d = ds; }
   return d;
 }
-// Il tasto delle Impostazioni: scrive `mostratoDal` / `mostrataDal` dove mancano, serie per serie (solo quelle da toccare)
-async function _novitaPreparaDate() {
-  const it = currentLang === 'it';
-  if (!currentUser?.isAdmin) return;
-  const serie = (Array.isArray(_cache.series) ? _cache.series : []).filter(s => Array.isArray(s.items)
-    && (s.mostrataDal === undefined || s.items.some(f => f && f.mostratoDal === undefined)));
-  if (!serie.length) { toast(it ? 'Le date delle Novità sono già tutte pronte.' : 'Already done.', 'info'); return; }
-  let fatte = 0;
-  for (const s of serie) {
-    try { await fsSave('series', s); fatte++; }
-    catch (e) { console.error('_novitaPreparaDate', s.id, e); toast((it ? '⚠️ Serie non preparata: ' : '⚠️ Series not done: ') + (s.name || s.id) + ' — ' + (e?.message || e), 'error'); }
-  }
-  toast(it ? '✅ Date delle Novità pronte su ' + fatte + ' serie.' : '✅ Done on ' + fatte + ' series.', 'success');
-  _novitaSeAperta();
-}
+// 🗑️ v7.333 (Franco: «premuto; fai sparire anche quel bottone») - qui stava `_novitaPreparaDate`, il tasto «Prepara le
+//    date delle Novità» (v7.325) che scriveva `mostratoDal` / `mostrataDal` dove mancavano. Premuto il 22/11: ogni
+//    scrittura di una serie li tiene aggiornati da sola (`fsSave`).
 const _STELLA_12 = 'polygon(' + Array.from({ length: 24 }, (_, i) => { const r = i % 2 ? 36 : 50, a = Math.PI * i / 12 - Math.PI / 2;
   return (50 + r * Math.cos(a)).toFixed(1) + '% ' + (50 + r * Math.sin(a)).toFixed(1) + '%'; }).join(',') + ')';
 function _articoloNuovo(f, ora, giorni) {
@@ -63410,15 +63634,20 @@ function renderItemTypeFilters() {
   const elAdm = document.getElementById('items-admin-filters');
   const elAdmT = document.getElementById('items-admin-filter-toggles');
   if (elAdm && elAdmT) {
-    if (!currentUser?.isAdmin) {
-      elAdm.style.display = 'none';
-      elAdmT.innerHTML = '';
+    // 🔄 v7.333 (Franco: «la sezione Filtri aggiuntivi admin, rinominala "Filtri aggiuntivi" … da ora in avanti saranno le
+    //    singole opzioni di ricerca ad essere admin visibile o meno»; poi, a chiarire: «nessun filtro deve essere visibile
+    //    allo user a parte Foto orizzontali / Verticali; e quelli non visibili devono essere color arancio admin») - le
+    //    voci di sempre restano del solo admin, con l'interruttore arancio (`.toggle-btn-admin`); «Con foto orizzontale» e
+    //    «Con foto verticale» (fcr e fpa) le vedono tutti, blu. Il riquadro si vede se ha almeno una voce.
+    const _admin = !!currentUser?.isAdmin;
+    if (!_admin) {
       // v6.095 - da quando i filtri foto sono solo-admin, un non-admin non ha piu' NESSUN
       // interruttore per spegnerli: se uno restasse acceso (l'admin che esce, la stessa scheda
       // riusata) sarebbe un filtro invisibile che nasconde meta' griglia senza dire perche'.
       // Si azzera qui, che e' lo stesso posto in cui _itemTypeFilter ripiega quando punta a un
       // tipo che nella sezione non esiste. Gira dentro renderItems, PRIMA del filtro: vale subito.
-      _fotoFilter = null;
+      // v7.333 - tranne l'orientamento, che è di tutti
+      if (_fotoFilter !== 'orizzontale' && _fotoFilter !== 'verticale') _fotoFilter = null;
       _noteFilter = false;   // v6.113 - stessa ragione: un non-admin non ha come spegnerlo
       _senzaRaritaFilter = false;   // v6.502 - idem, ed e' il punto che si dimentica
       _senzaPersonaggioFilter = false;   // v6.980 - e il suo gemello
@@ -63427,12 +63656,16 @@ function renderItemTypeFilters() {
       _conCommentoFilter = false;   // v7.179
       _conDoppieFilter = false;     // v7.304
       _visibilitaFilter = 'all';    // v6.545 - e questo e' quel punto
-    } else {
+    }
+    {
       const itl = (currentLang === 'it');
       // niente emoji, per la regola posta da Franco: le icone ci sono sempre o mai.
       // (v5.692 le tolse dai filtri di tipo; queste due erano rimaste indietro.)
       // v5.796 — "Senza foto" NON è più qui: spostato tra i filtri per tutti gli utenti (vedi sotto).
       let ha = '';
+      // v7.333 - le voci di tutti (l'orientamento) entrano al segno `_ORIENT_SEGNO`, dopo le altre della foto
+      const _ORIENT_SEGNO = '\u0000orient\u0000';
+      if (_admin) {
 
       // Solo nelle FIGURINE: il setaccio applica questo filtro unicamente li'
       // (currentSection === 'figurines'). Mostrarlo nei Retro sarebbe un interruttore
@@ -63471,6 +63704,9 @@ function renderItemTypeFilters() {
       ha += _fotoBtn('senza', itl ? 'Senza foto' : 'Without photo');
       ha += _fotoBtn('con', itl ? 'Con foto' : 'With photo');
       ha += _fotoBtn('nonDisp', itl ? 'Con foto non disponibile' : 'Marked photo unavailable');
+      // 🆕 v7.333 (Franco: «nella pagine di ricerca di fcr ed fpa, nei filtri aggiuntivi admin aggiungi un filtro "Con foto
+      //    orizzontale" ed uno "Con foto verticale"») - due stati in più di `_fotoFilter`: si escludono fra loro e con gli altri tre
+      ha += _ORIENT_SEGNO;
       // v6.113 (Franco) - "Con note", subito dopo i tre della foto.
       // Interruttore A SE' e non un quarto stato di `_fotoFilter`: quelli sono tre risposte alla
       // STESSA domanda ("che foto ha?") e per questo si escludono a vicenda; le note sono un'altra
@@ -63499,9 +63735,20 @@ function renderItemTypeFilters() {
       // spegne l'altra, e non c'e' modo di averle accese insieme.
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_visibilitaFilter === 'visibili' ? 'on' : ''}" onclick="toggleVisibilitaFilter('visibili')" title="${itl ? 'Solo gli articoli che gli utenti normali vedono' : 'Only items normal users can see'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Visibili' : 'Visible'}</span></div>`;
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_visibilitaFilter === 'invisibili' ? 'on' : ''}" onclick="toggleVisibilitaFilter('invisibili')" title="${itl ? 'Solo gli articoli nascosti agli utenti normali' : 'Only items hidden from normal users'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Invisibili' : 'Invisible'}</span></div>`;
+      // v7.333 - tutte queste sono del solo admin: interruttore arancio
+      ha = ha.split('class="toggle-btn-blue ').join('class="toggle-btn-blue toggle-btn-admin ');
+      } else ha = _ORIENT_SEGNO;
+      // 🆕 v7.333 - «Con foto orizzontale» / «Con foto verticale»: due stati in più di `_fotoFilter`, per tutti, in fcr e fpa
+      const _orientBtn = (quale, etichetta) =>
+        `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_fotoFilter === quale ? 'on' : ''}" onclick="setFotoFilter('${quale}')" title="${etichetta}"></button><span style="font-size:0.82rem;color:var(--text);">${etichetta}</span></div>`;
+      const _orient = _sezOrientFoto(currentSection)   // fcr, fpa e retro
+        ? _orientBtn('orizzontale', itl ? 'Con foto orizzontale' : 'With landscape photo') + _orientBtn('verticale', itl ? 'Con foto verticale' : 'With portrait photo')
+        : '';
+      ha = ha.replace(_ORIENT_SEGNO, _orient);
 
       elAdmT.innerHTML = ha;
-      elAdm.style.display = '';
+      // v7.333 - il riquadro c'è se ha almeno una voce (chi admin non è, fuori da fcr e fpa, non ne ha)
+      elAdm.style.display = ha ? '' : 'none';
       // 🆕 v6.730 - il collassatore: il triangolino segue lo stato, il contenuto si spegne.
       // 📌 Il box resta, con la sua etichetta sul bordo: e' il comando per riaprirlo.
       const _triAdm = document.getElementById('items-admin-filters-tri');
@@ -64161,6 +64408,10 @@ function _passaFiltriAdmin(f, allFigs, stato) {
     // per caso: sono due tagli diversi, uno piu' largo dell'altro.
     if (_fotoFilter === 'nonDisp') {
       if (!_mostraSegnapostoFoto(f, allFigs)) return false;
+    } else if (_fotoFilter === 'orizzontale' || _fotoFilter === 'verticale') {
+      // 🆕 v7.333 - «Con foto orizzontale» / «Con foto verticale» (fcr e fpa): l'orientamento della foto che la card
+      //    mostra (`_orientamentoDellaFoto`), quindi la fpa senza foto sua eredita quello della sua fcr. Altrove non filtra.
+      if (_sezOrientFoto(f.section) && _orientamentoDellaFoto(f, allFigs) !== _fotoFilter) return false;
     } else {
       const _haFronte = !!_fotoFigurina(f, allFigs);
       if (_fotoFilter === 'senza' && _haFronte) return false;
@@ -69606,6 +69857,7 @@ function adminTab(tab) {
   if (tab === 'figurine') renderAdminFigurineInvisibili(); // v6.080
   if (tab === 'email') { renderEmailLog(); refreshEmailCountWidgets(); }
   if (tab === 'settings') { loadImpostazioniGeneraliFields(); loadReplyToField(); }   // v6.173
+  if (tab === 'novita') loadImpostazioniGeneraliFields();   // v7.333 - le caselle delle Novità hanno una sezione loro
   // 🆕 v7.121 (Franco) - Ebay e Griglie escono da Impostazioni, con un tab ciascuno
   if (tab === 'ebay') loadEbaySettingsFields();
   if (tab === 'griglie') renderGriglieVisualizzazione();   // v6.197
@@ -71354,7 +71606,10 @@ function _schedaDueFoto(f) {
   // per volta: OGNI oggetto ha due facce, tranne i RETRO. Un retro non ha un dietro - lui E' il
   // dietro di qualcos'altro. Quindi non si elencano piu' le sezioni che ne hanno due (elenco che
   // e' gia' cresciuto due volte), si nomina l'unica che ne ha una.
-  if (!f || f.section === 'retros') return false;
+  // 🔄 v7.333 (Franco: «N. foto … sbloccalo per tutte le tda») - i retro (e qui sotto le fpa) non sono più a una foto per
+  //    forza: lo sono di partenza (`_nFotoDiPartenza`), e la tabella delle tipologie può dire altro
+  if (!f) return false;
+  if (typeof _nFotoTDA !== 'function' && f.section === 'retros') return false;
   // 🆕 v6.370 (Franco: *"hanno solo una foto"*) - E TRANNE LE FIGURINE DA ATTACCARE. Una
   // da-incollare sta nell'album col dorso incollato: un retro non ce l'ha, per definizione (v6.359).
   // 📌 LA RIGA STA QUI E NON NELLA TABELLA, ed e' il punto: questa funzione e' l'unica fonte di
@@ -71363,7 +71618,10 @@ function _schedaDueFoto(f) {
   // vista tabellare. Correggendo la sola tabella si sarebbe sistemato cio' che Franco stava
   // guardando e lasciato il riquadro vuoto negli altri quattro posti - che e' esattamente il modo
   // in cui in questo file nascono le divergenze.
-  if (f.section === 'attaccare') return false;
+  if (typeof _nFotoTDA !== 'function' && f.section === 'attaccare') return false;
+  // 🆕 v7.333 (Franco: «Trasferelli, Tatuaggi, Carte di identità … non hanno foto del retro»; «farei una impostazione in
+  //    cfg»; «N. foto») - la colonna «N. foto» della tabella delle tipologie (`_nFotoTDA`): 1 = una foto sola
+  if (!_eProdottoExtraSerie(f) && typeof _nFotoTDA === 'function' && _nFotoTDA(f.section) === '1') return false;
   // v6.148 (Franco: "i cartoncini hanno solo fronte") - e tranne i PRODOTTI EXTRA SERIE. Sta qui e
   // non in un controllo suo per la ragione scritta due righe piu' sotto: questa e' gia' l'unica
   // fonte di "questo oggetto ha due facce?", e la leggono la scheda, la classe `detail-solo-foto`,
@@ -72480,6 +72738,13 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   }
 
   // Descrizione
+  // 🆕 v7.333 (Franco: «il nuovo campo sull'orientamento della foto deve essere popolabile anche a mano; per correggere
+  //    eventuali errori») - in lettura come in modifica (dove sta prima della Descrizione), solo admin: il campo scritto,
+  //    o quello della foto mostrata (la fpa senza il campo prende quello della sua fcr)
+  if (currentUser?.isAdmin && _sezOrientFoto(f.section)) {
+    const _o = (() => { try { return _orientamentoDellaFoto(f, getData('figurines', [])); } catch (e) { return null; } })();
+    if (_o) rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Orientamento foto' : 'Photo orientation'}</span><span class="detail-value">${_nomeOrientamento(_o)}</span></div>`);
+  }
   if (f.desc) {
     rows.push(`<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">${currentLang === 'it' ? 'Descrizione' : 'Description'}</span><span class="detail-value" style="font-size:0.88rem;line-height:1.5;">${f.desc}</span></div>`);
   }
@@ -74365,7 +74630,8 @@ function buildLinkedFiguresTabsHTML(baseId) {
     })),
     // 🆕 v7.090 (Franco) - in fondo, dopo le versioni: è l'unico tab che guarda fuori dall'articolo
     // 🔄 v7.094 (Franco: «cambiamo il nome del tab: "articoli dello stesso personaggio"») - era «Varianti dello…»
-    { key: 'stessoPersonaggio', label: currentLang === 'it' ? 'Articoli dello stesso personaggio' : 'Items of the same character', icon: '🧑‍🎤', items: _stessoPers },
+    // 🔄 v7.333 (Franco: «rinominalo come "Altri articoli con lo stesso personaggio"») - era «Articoli dello stesso personaggio»
+    { key: 'stessoPersonaggio', label: currentLang === 'it' ? 'Altri articoli con lo stesso personaggio' : 'Other items with the same character', icon: '🧑‍🎤', items: _stessoPers },
     ].filter(g => g.items.length > 0);
 
   if (!groups.length) return _vuoto;
@@ -77517,6 +77783,22 @@ function switchToEditMode(figId) {
     '<input type="checkbox" id="fe-foto-non-disponibile" ' + (f.fotoNonDisponibile ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
     '</label></span></div>';
 
+  // 🆕 v7.333 (Franco: «il nuovo campo sull'orientamento della foto deve essere popolabile anche a mano; per correggere
+  //    eventuali errori») - la tendina: scelto a mano vince sulla misura (`_orientamentoMisurato`, al salvataggio); vuoto =
+  //    si rimisura. Sulla fpa che lo eredita dalla fcr è in sola lettura, come gli altri campi ereditati.
+  if (_sezOrientFoto(f.section)) {
+    const _it = currentLang === 'it', _oEred = _feEreditati.includes('orientamentoFoto');
+    const _oVal = f.orientamentoFoto || '';
+    const _opz = (v, t) => '<option value="' + v + '"' + (_oVal === v ? ' selected' : '') + '>' + t + '</option>';
+    html += '<div class="detail-row"' + _eredAttr('orientamentoFoto') + '><span class="detail-label">' + (_it ? 'Orientamento foto' : 'Photo orientation') + '</span>'
+      + '<span class="detail-value" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">'
+      + '<select id="fe-orientamento-foto" class="form-input"' + (_oEred ? ' disabled' : '') + ' onchange="this.dataset.toccato=\'1\'" style="max-width:12rem;padding:0.3rem 0.5rem;font-size:0.9rem;">'
+      + _opz('', _it ? '— (lo misura il sito)' : '— (measured by the site)') + _opz('orizzontale', _nomeOrientamento('orizzontale')) + _opz('verticale', _nomeOrientamento('verticale'))
+      + '</select>'
+      + (_oEred ? '<span style="font-size:0.78rem;color:var(--text);">' + (_it ? 'dalla figurina con retro' : 'from the sticker with back') + '</span>' : '')
+      + '</span></div>';
+  }
+
   // v6.080 (Franco) - INVISIBILE: l'oggetto esiste, ma per chi non e' admin non c'e'. Il filtro sta
   // in getData(), quindi sparisce da griglia, ricerca, caroselli, contatori ed export insieme.
   // In rosso e non in grigio: e' l'unico campo di questa form che toglie una cosa dal sito, e va
@@ -77818,7 +78100,12 @@ const _datiSlot   = s => (s === 'retro') ? _figEditImgRetroData : (s === 'ruotat
 const _scriviSlot = (s, v) => { if (s === 'retro') _figEditImgRetroData = v; else if (s === 'ruotato') _figEditImgRuotatoData = v; else _figEditImgData = v; };
 // 🆕 v7.132 - QUESTO ARTICOLO HA IL FRONTE RUOTATO? Lo dice il descrittore della sua tipologia, una domanda sola per
 //    la scheda (lettura e modifica), il salvataggio, la card e la protezione delle foto.
-function _haFotoRuotata(f) { return !!(f && ARTICOLI[f.section || 'figurines'] && ARTICOLI[f.section || 'figurines'].fotoRuotata); }
+// 🔄 v7.333 - «N. foto» 3 nella tabella delle tipologie (`_nFotoTDA`); di partenza è il flag `fotoRuotata` del descrittore
+function _haFotoRuotata(f) {
+  if (!f || !ARTICOLI[f.section || 'figurines']) return false;
+  if (typeof _nFotoTDA === 'function') return _nFotoTDA(f.section) === '3';
+  return !!ARTICOLI[f.section || 'figurines'].fotoRuotata;
+}
 // 🆕 v7.132 (Franco: sì al cambio di foto sulla card) - SUL DESKTOP, COL MOUSE SOPRA, IL FRONTE DIVENTA IL FRONTE RUOTATO.
 //    La card lo dichiara (`data-ruotato`, l'indirizzo già passato da `cloudinaryUrl`, macchia compresa), e qui due
 //    ascoltatori sul documento scambiano la prima foto del riquadro (il fronte, anche nella coppia affiancata) e la
@@ -80305,7 +80592,8 @@ function _campiEreditatiDaBase(section, tipo) {
   // 🔄 v6.840 (Franco) - e la FAMIGLIA: «mi aspetto sia non modificabile, sulle fpa».
   // 🔄 v6.964 (Franco: «teoricamente quello dovrebbe essere un campo ereditato dalla fcr
   //    associata») - e la SOTTOSERIE: nella scheda non si modifica, la comanda la figurina con retro.
-  if (section === 'attaccare') return ['name', 'number', 'famiglia', 'subseries'];
+  // 🔄 v7.333 (Franco) - e l'ORIENTAMENTO DELLA FOTO: la foto di una fpa collegata è quella della sua fcr
+  if (section === 'attaccare') return ['name', 'number', 'famiglia', 'subseries', 'orientamentoFoto'];
   // 🔄 v6.843 (Franco) - sulle figurine con retro anche la FAMIGLIA: «editabile solo nelle figurine base;
   //    le sue versioni la ereditano». Scritto per sezione e non con `TDA_CON_FAMIGLIA`: le prove estraggono
   //    questa funzione da sola.
@@ -80608,6 +80896,8 @@ async function _salvaFigurineInBlocco(items) {
   const lista = (items || []).filter(Boolean);
   if (!lista.length) return [];
   if (lista.length === 1) return [await _saveFigurineItem(lista[0])];
+  // 🆕 v7.333 - l'orientamento della foto, come in `_saveFigurineItem`: in ordine, così la fcr nuova lo passa alle sue fpa
+  for (const it of lista) { try { await _segnaOrientamentoFoto(it, lista); } catch (e) { console.error('_segnaOrientamentoFoto', e); } }
 
   // v6.043 - via gli undefined, ma detti ad alta voce. Stessa regola di _saveFigurineItem:
   // Firestore rifiuta l'INTERO documento per un solo campo undefined.
@@ -81306,6 +81596,17 @@ async function saveFigFromDetail(figId, opzioni) {
     // v6.116 - LA BASE E I SUOI COLLEGATI IN UNA SCRITTURA SOLA (vedi _salvaFigurineInBlocco).
     // I collegati si calcolano PRIMA di scrivere, sulla base nuova, e viaggiano con lei.
     // v6.386 - non piu' la sola discendenza: anche chi USA questo retro (vedi _daSalvareInsiemeA).
+    // 🆕 v7.333 - l'orientamento della foto PRIMA dei collegati: le fpa che lo ereditano lo prendono già giusto.
+    //    Scelto a mano nella tendina (Franco: «popolabile anche a mano; per correggere eventuali errori»): vale per QUELLA
+    //    foto, come se fosse la sua misura; vuoto = si rimisura.
+    try {
+      const _selO = document.getElementById('fe-orientamento-foto');
+      if (_selO && !_selO.disabled && _selO.dataset.toccato === '1') {
+        if (_selO.value) { merged.orientamentoFoto = _selO.value; if (merged.img) _orientamentoMisurato.set(merged.img, _selO.value); }
+        else { delete merged.orientamentoFoto; if (merged.img) _orientamentoMisurato.delete(merged.img); _orientamentoRimisura.add(merged.img); }
+      }
+      await _segnaOrientamentoFoto(merged);
+    } catch (e) { console.error('_segnaOrientamentoFoto', e); }
     const _collegati = _daSalvareInsiemeA(merged);
     try {
       await _salvaFigurineInBlocco([merged, ..._collegati]);
