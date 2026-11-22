@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.332">
+<link rel="stylesheet" href="css/style.css?v=7.333">
 
 
 <style>
@@ -2225,7 +2225,18 @@ button.back-btn { color:#ffffff; }
    stesura lo portava a 0.85rem, ed è tornato quello di prima. `!important` perché lo stile dei
    pulsanti è in linea nell'index. */
 @media (max-width:860px){
-  #taglio-serie,#taglio-prodotti,#taglio-personaggi,#taglio-pubblicita{padding:0.5rem 0.7rem !important;}   /* v7.331: + Pubblicità */
+  #taglio-serie,#taglio-prodotti,#taglio-personaggi,#taglio-pubblicita,#taglio-novita{padding:0.5rem 0.7rem !important;}   /* v7.331: + Pubblicità; v7.333: + Novità */
+}
+/* 🆕 v7.333 (Franco: «la sezione novità non si vede se non col telefono in orizzontale; direi di andare su due righe»)
+   - SUL TELEFONO LA PILLOLA DEI TAGLI VA A CAPO. Con cinque bottoni non ci stava in verticale e «Novità» usciva dallo
+   schermo: ora la pillola è larga quanto la riga, i bottoni vanno a capo e stanno al centro, gli angoli meno tondi
+   perché la pillola è alta due righe. L'a capo è fisso prima di «Pubblicità» (Franco: «su due righe, ma già con
+   pubblicità»): un elemento vuoto largo tutta la riga (`::before`, ordine 1) fra i primi tre (ordine 0) e gli ultimi
+   due (ordine 2), lo stesso trucco del bivio della v7.012. */
+@media (max-width:860px){
+  #bivio-inventario > div{display:flex !important;flex-wrap:wrap;justify-content:center;max-width:100%;box-sizing:border-box;border-radius:22px !important;}
+  #bivio-inventario > div::before{content:'';order:1;flex-basis:100%;height:0;}
+  #taglio-pubblicita,#taglio-novita{order:2;}
 }
 /* 🆕 v6.966 (Franco: «rimetti a sx l'inizio dei 3 selettori… lo ricordavo a sx, che inizia con
    l'inizio del contenitore dell'hub») — LA RIGA «SFOGLIA PER» PRENDE LA LARGHEZZA DELLA GRIGLIA.
@@ -3809,7 +3820,7 @@ di tutte le serie</button>
                ⚠️ Il triangolo sta nel div ESTERNO e il testo in uno span suo: applyI18n
                scrive textContent su chi porta data-i18n, e si mangerebbe tutto cio' che gli
                sta dentro. Stessa forma di items-filter-intro. -->
-          <div id="items-admin-filters-label" onclick="toggleAdminFiltri()" style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:0.5rem;white-space:nowrap;user-select:none;"><span id="items-admin-filters-tri" style="color:var(--accent);font-size:0.8rem;">▶</span><span data-i18n="items.adminFilters">Filtri aggiuntivi admin</span></div>
+          <div id="items-admin-filters-label" onclick="toggleAdminFiltri()" style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:0.5rem;white-space:nowrap;user-select:none;"><span id="items-admin-filters-tri" style="color:var(--accent);font-size:0.8rem;">▶</span><span data-i18n="items.adminFilters">Filtri aggiuntivi</span></div>
           <div id="items-admin-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:center;"></div>
         </div>
     </div>
@@ -4373,6 +4384,8 @@ di tutte le serie</button>
           <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
           <!-- 🆕 v7.331 (Franco: «vedi se in admin console c'è una sezione "personaggi" sennò creala») - la scala dei
                personaggi, la disegna `renderAdminPersonaggi`; in ordine alfabetico dopo Messaggi -->
+          <!-- 🆕 v7.333 (Franco) - «Novità», in ordine alfabetico fra Messaggi e Personaggi -->
+          <button class="admin-tab" onclick="adminTab('novita')">🆕 Novità</button>
           <button class="admin-tab" onclick="adminTab('personaggi')">🎭 Personaggi</button>
           <button class="admin-tab" onclick="adminTab('protezione')">🔒 Protezione foto</button>
           <!-- 🆕 v7.156 (Franco: «se vuoi possiamo gestire anche questa cosa in configurazione») - quali tipologie hanno le
@@ -4394,7 +4407,8 @@ di tutte le serie</button>
              da `ARTICOLI`: un articolo nuovo compare da sé, e un campo nuovo del descrittore si
              porta dietro la sua colonna senza che nessuno debba ricordarsene. -->
         <div id="admin-tipoarticolo" class="admin-section">
-          <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🧩 Tipologie di articoli</h3>
+          <!-- 🔄 v7.333 (Franco: «il titolo "Tipologie di articoli" fallo nel solito azzurro titoli») -->
+          <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;color:var(--info);">🧩 Tipologie di articoli</h3>
           <!-- 🆕 v6.921 (Franco: «non mi piace come e diventato il pannello TDA; c'e troppa roba.
                non possiamo organizzarlo a sotto tab? uno per TDA e, se serve, uno generale?
                oppure uno per argomento? cosi sembra un lenzuolo sempre piu lungo»).
@@ -4407,7 +4421,9 @@ di tutte le serie</button>
                che e il blocco che ha fatto traboccare il lenzuolo, si sceglie UNA tipologia da una
                tendina. Il resto sono tabelle compatte che stanno in una schermata. -->
           <div class="admin-subtabs" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin:0.8rem 0 1rem;">
-            <button class="admin-subtab active" onclick="tdaSubTab('tipi')">🧩 Tipi senza serie</button>
+            <!-- 🔄 v7.333 (Franco: «questa tabella si chiama "Tipi senza serie" … ora la stiamo usando per tutte, quindi questo
+                 titolo è sbagliato; cambia in "Caratteristiche tipologie di articoli"») - la chiave resta `tipi` -->
+            <button class="admin-subtab active" onclick="tdaSubTab('tipi')">🧩 Caratteristiche tipologie di articoli</button>
             <button class="admin-subtab" onclick="tdaSubTab('versioni')">🧬 Versioni</button>
             <!-- 🆕 v7.205 (Franco: «la chiamerei "Informazioni ereditate dalla base"») -->
             <button class="admin-subtab" onclick="tdaSubTab('eredita')">🧬 Informazioni ereditate dalla base</button>
@@ -4833,6 +4849,27 @@ di tutte le serie</button>
             </div>
           </div>
         </div>
+        <!-- 🆕 v7.333 (Franco: «sposta tutta la sezione che concerne le Novità in una nuova sezione della admin console, chiamata
+             Novità»; «fai sparire anche quel bottone») - le tre caselle che stavano in Impostazioni (v7.324, v7.325, v7.329),
+             lette da `loadImpostazioniGeneraliFields` e salvate da `saveGiorniNovita`. Via «Prepara le date delle Novità»:
+             premuto da Franco il 22/11, il suo lavoro è fatto. -->
+        <div id="admin-novita" class="admin-section">
+          <div style="max-width:950px;">
+            <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+              <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;color:var(--info);">🆕 Novità</h4>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Giorni (vale anche per la stellina «New»), card al massimo per serie e foto per riga dal telefono</label>
+                <div style="display:flex;gap:0.5rem;align-items:flex-start;flex-wrap:wrap;">
+                  <input class="form-input" type="number" id="impostazioni-novita-input" min="1" max="365" step="1" placeholder="30" style="width:110px;" title="Giorni">
+                  <input class="form-input" type="number" id="impostazioni-novita-max-input" min="1" max="500" step="1" placeholder="50" style="width:110px;" title="Card al massimo per serie">
+                  <input class="form-input" type="number" id="impostazioni-novita-foto-tel-input" min="1" max="8" step="1" placeholder="2" style="width:110px;" title="Foto per riga dal telefono">
+                  <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveGiorniNovita()">Salva</button>
+                </div>
+                <div class="form-hint">Giorni da 1 a 365 (senza un valore salvato: 30); card per serie da 1 a 500 (senza: 50); foto per riga dal telefono da 1 a 8 (senza: 2): una card con fronte e retro vale due foto, anche se il retro manca. Un articolo è nuovo dal momento in cui si può mostrare (visibile e con la foto), non da quando è stato creato.</div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div id="admin-settings" class="admin-section">
           <div style="max-width:950px;">
             <!-- v6.173 (Franco) - IMPOSTAZIONI GENERALI SITO, primo riquadro: il generale prima del
@@ -4848,20 +4885,10 @@ di tutte le serie</button>
                   <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveImpostazioniGenerali()" data-i18n="admin.save">Salva</button>
                 </div>
                 <div class="form-hint" data-i18n="admin.generali.timeoutHint">Oltre questo tempo il sito smette di aspettare i dati e mostra il pannello di guasto. Da 3 a 120 secondi. Con una connessione lenta un valore basso fa comparire «SITO MOMENTANEAMENTE NON DISPONIBILE» anche quando i dati stavano arrivando.</div>
-                <!-- 🆕 v7.324 (Franco: «n diventa un parametro da admin console, nel pannello "Impostazioni"») -->
-                <!-- 🔄 v7.325 (Franco: «massimo 50 card per serie … un altro parametro da mettere affianco al 30»; «non usiamo la
-                     data di creazione ma la data nella quale le sue condizioni diventano tali da mostrarlo») -->
-                <!-- 🔄 v7.329 (Franco: «da mobile il numero di immagini per riga deve essere sempre uguale … rendere questa cosa
-                     configurabile») - la terza casella: le foto per riga dal telefono -->
-                <label class="form-label" style="margin-top:1rem;">Novità: giorni (vale anche per la stellina «New»), card al massimo per serie e foto per riga dal telefono</label>
-                <div style="display:flex;gap:0.5rem;align-items:flex-start;flex-wrap:wrap;">
-                  <input class="form-input" type="number" id="impostazioni-novita-input" min="1" max="365" step="1" placeholder="30" style="width:110px;" title="Giorni">
-                  <input class="form-input" type="number" id="impostazioni-novita-max-input" min="1" max="500" step="1" placeholder="50" style="width:110px;" title="Card al massimo per serie">
-                  <input class="form-input" type="number" id="impostazioni-novita-foto-tel-input" min="1" max="8" step="1" placeholder="2" style="width:110px;" title="Foto per riga dal telefono">
-                  <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveGiorniNovita()">Salva</button>
-                  <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="_novitaPreparaDate()">Prepara le date delle Novità</button>
-                </div>
-                <div class="form-hint">Giorni da 1 a 365 (senza un valore salvato: 30); card per serie da 1 a 500 (senza: 50); foto per riga dal telefono da 1 a 8 (senza: 2): una card con fronte e retro vale due foto, anche se il retro manca. Un articolo è nuovo dal momento in cui si può mostrare (visibile e con la foto), non da quando è stato creato. «Prepara le date delle Novità» scrive quel momento su tutti gli articoli che non l'hanno ancora: va premuto una volta.</div>
+                <!-- 🔄 v7.333 (Franco: «sposta tutta la sezione che concerne le Novità in una nuova sezione della admin console,
+                     chiamata Novità») - qui stavano le tre caselle delle Novità: ora sono in `admin-novita` -->
+                <!-- 🔄 v7.333 (Franco: «togli pure la funzione, da Impostazioni») - qui stava il tasto «Calcola l'orientamento
+                     delle foto»: ora è sotto la tabella «Informazioni ereditate dalla base» (`renderAdminEreditaBase`) -->
                 <div id="impostazioni-generali-feedback" style="display:none;margin-top:0.6rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;"></div>
               </div>
             </div>
@@ -7165,7 +7192,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.332"></script>
+<script src="js/app.js?v=7.333"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7189,7 +7216,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.332'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.333'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
