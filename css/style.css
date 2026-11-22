@@ -1299,6 +1299,10 @@ body {
    pillola con manopola = filtra una vista; quadrato con spunta = SCRIVE SUL DATABASE. */
 .toggle-btn-blue.on { background: var(--action); }
 .toggle-btn-blue.on::after { left: 19px; }
+/* 🆕 v7.333 (Franco: «quelli non visibili [allo user] devono esser color arancio admin») - l'interruttore delle voci
+   solo admin: arancio tenue da spento, `--action-admin` pieno da acceso. */
+.toggle-btn-blue.toggle-btn-admin { background: rgba(var(--action-admin-rgb), 0.4); }
+.toggle-btn-blue.toggle-btn-admin.on { background: var(--action-admin); }
 
 /* IL BOTTONE "MIA LISTA" (v5.720). NON e' un interruttore: SCRIVE SU FIRESTORE.
    Franco: "sono bottoni (che modificano persino il db), non interruttori, quindi
