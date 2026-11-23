@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.338 - Modificati index.html (versione) e js/app.js. LE FOTO ANNUNCI PER ACCOUNT (Franco: «voglio che con ognuno dei 4
+//          account sia possibile avere uno split differente delle foto dell'album»). Scheda dell'album, tab Annunci: via i
+//          sotto-tab «Descrizioni» / «Foto annunci»; in ogni linguetta dell'account, sotto i testi, le sue tre caselle (eBay,
+//          Vinted, Subito.it) con la spiegazione sopra (`_bloccoFotoAnnuncioEdit(f, a)`, `fe-fa-<account>-<sito>`); lettura
+//          uguale. Dato nuovo `fotoAnnuncioAccount`; la vecchia `fotoAnnuncio` (comune) vale per tutti finché l'album non si
+//          risalva (`_fotoAnnuncioDi`), e al Salva si svuota. «Crea foto per annuncio album»: al passo 3 prima l'account,
+//          obbligatorio, poi il sito; il piano è quello dell'account (`_faPianiDi`, `_faPianoDi(a, s, acc)`).
 // v7.336 - Modificati index.html (versione) e js/app.js. Card delle sottoserie (pagina della serie): il «🖼️ Cambia foto»
 //          col collage, in alto a sinistra come sulle card delle tipologie e delle famiglie (Franco: «il tasto "cambia
 //          foto" non c'è sulle card delle sottoserie, come mai? mettilo»). `apriCollageSottoserie` apre la finestra già
@@ -32306,7 +32313,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.337';
+const JS_VERSION = 'v7.338';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42463,8 +42470,19 @@ function _faLeggiPiano(testo, N, limite) {
   return { gruppi };
 }
 // Il piano di un album per un sito: quello scritto, se c'è; se no quello automatico, o null dove serve scritto.
-function _faPianoDi(a, s) {
-  const scritto = _faLeggiPiano((a.piani || {})[s.chiave], a.pagine.length, s.limite);
+// 🆕 v7.338 (Franco: «con ognuno dei 4 account sia possibile avere uno split differente delle foto») - le caselle dell'album per
+//    l'account `acc` (`_fotoAnnuncioDi`; per le serie 1 e 2 quelle dell'album da cui prende le pagine, e le sue scritte vincono,
+//    come nella v7.315). Senza account, quella comune di prima.
+function _faPianiDi(a, acc) {
+  if (!acc || !a.daPiani) return a.piani || {};
+  const suoi = _fotoAnnuncioDi(a.daPiani, acc);
+  if (!a.altroPiani) return suoi;
+  return Object.assign({}, _fotoAnnuncioDi(a.altroPiani, acc), Object.fromEntries(Object.entries(suoi).filter(([, v]) => String(v || '').trim())));
+}
+// 🔄 v7.338 - `acc`: l'account scelto
+function _faPianoDi(a, s, acc) {
+  const piani = acc && a.daPiani ? _faPianiDi(a, acc) : (a.piani || {});
+  const scritto = _faLeggiPiano(piani[s.chiave], a.pagine.length, s.limite);
   if (scritto.gruppi) return scritto.gruppi;
   return s.soloScritto ? null : _faPiano(a.pagine.length, s.limite);
 }
@@ -45801,10 +45819,10 @@ function _faAlbum(tutti) {
       //    la serie 1 e 2 condividono la struttura dell'album») - insieme alle pagine si prendono anche le SCELTE DELLE PAGINE
       //    PER SITO (`fotoAnnuncio`, il tab Ebay di quell'album): le pagine sono le stesse, quindi anche i numeri. Un sito che
       //    l'album ha scritto per conto suo tiene la sua scelta.
-      let pianiPresi = null;
+      let pianiPresi = null, altroPiani = null;
       if (!pagine.length && _FA_PAGINE_DI_SERIE.includes(s.id)) {
         const altro = items.find(g => g.section === 'albums' && !g.baseFigurineId && _pagineDi(g).length >= 3);
-        if (altro) { pagine = _pagineDi(altro).map(p => p.url); pianiPresi = altro.fotoAnnuncio || {}; }
+        if (altro) { pagine = _pagineDi(altro).map(p => p.url); pianiPresi = altro.fotoAnnuncio || {}; altroPiani = altro; }
       }
       const pianiSuoi = (fonte || f).fotoAnnuncio || {};
       const piani = pianiPresi ? Object.assign({}, pianiPresi, Object.fromEntries(Object.entries(pianiSuoi).filter(([, v]) => String(v || '').trim()))) : pianiSuoi;
@@ -45816,7 +45834,9 @@ function _faAlbum(tutti) {
       // v7.184: `piani` = le caselle del tab Ebay dell'album (`fotoAnnuncio`)
       // 🗑️ v7.199 - qui c'era `sfondi` (le tendine del tab Pagine, v7.185): non lo leggeva nessuno
       // v7.272: `id` = l'album di cui si legge il tab Ebay per «Copia titolo/descrizione annuncio» (`_faTestoAlbum`)
-      out.push({ id: f.id, nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, senzaFoto: !pagine.length, piani });
+      // 🆕 v7.338 - `daPiani` / `altroPiani`: gli album da cui leggere le foto annunci PER ACCOUNT (`_faPianiDi`); `piani` resta
+      //    quella comune di prima, per gli album mai risalvati
+      out.push({ id: f.id, nome, file: nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), pagine, senzaFoto: !pagine.length, piani, daPiani: fonte || f, altroPiani });
     });
   });
   return out;
@@ -45988,10 +46008,10 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <div class="griglia" id="miniature"></div>
 </section>
 <!-- v7.185 (Franco: «dovremmo invertire gli step 2 e 3; prima si caricano le foto e dopo si sceglie il sito») -->
-<section class="passo"><h2>3. Per quale sito servono le foto?</h2><div class="scelte" id="scelta-sito"></div><div class="piano" id="piano"></div>
-  <!-- v7.243 - il venditore, dopo il sito: il suo tessuto sotto le pagine -->
-  <div id="venditore-box" style="display:none;"><h2 style="margin-top:14px;">Per quale account? <span class="nota">(facoltativo: mette già il suo tessuto)</span></h2><div class="scelte" id="scelta-venditore"></div>
-  <h2 style="margin-top:14px;">Quale texture di sfondo?</h2><div class="scelte" id="scelta-texture"></div></div></section>
+<!-- 🔄 v7.338 (Franco: l'account «obbligatorio, prima del sito») - ogni account ha le sue foto annunci: prima l'account, poi il sito -->
+<section class="passo"><h2>3. Per quale account?</h2><div class="nota">Ogni account ha il suo modo di unire le pagine (scheda dell’album, tab Annunci); mette già il suo tessuto.</div><div class="scelte" id="scelta-venditore"></div>
+  <h2 style="margin-top:14px;">Per quale sito servono le foto?</h2><div class="scelte" id="scelta-sito"></div><div class="piano" id="piano"></div>
+  <div id="venditore-box" style="display:none;"><h2 style="margin-top:14px;">Quale texture di sfondo?</h2><div class="scelte" id="scelta-texture"></div></div></section>
 <section class="passo"><h2>4. Le foto per l'annuncio</h2>
   <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte</button><span class="nota" id="componi-perche" style="align-self:center;"></span></div>
   <!-- v7.337 (Franco: «sarebbe possibile aggiungere una barra di avanzamento? ... potrebbe non risultare chiaro cosa stia accadendo») -->
@@ -46135,11 +46155,14 @@ function _faDisegnaScelte() {
   });
   const sitoBox = _fa$('scelta-sito'); sitoBox.innerHTML = '';
   // v7.184: un sito che vuole il piano scritto (Subito) si accende solo per l'album che ce l'ha
-  if (_fa.sito && _fa.album && !_faPianoDi(_fa.album, _fa.sito)) _fa.sito = null;
+  // 🔄 v7.338 - …per l'account scelto: il piano è dell'account (`_faPianoDi(…, _fa.venditore)`), e senza account i siti sono spenti.
+  //    Partendo dalla copia il sito è già dato: resta scelto finché manca l'account.
+  const acc = _fa.venditore;
+  if (_fa.sito && _fa.album && acc && !_faPianoDi(_fa.album, _fa.sito, acc) && !_fa.copia) _fa.sito = null;
   _FA_SITI.forEach(s => {
     const b = d.createElement('button');
-    const usabile = !s.soloScritto || (!!_fa.album && !!_faPianoDi(_fa.album, s));
-    b.textContent = s.nome + ' (' + s.limite + ' foto)' + (usabile ? '' : (_fa.album ? ' — pagine da scegliere nella scheda dell’album' : ' — scegli prima l’album'));
+    const usabile = !!acc && (!s.soloScritto || (!!_fa.album && !!_faPianoDi(_fa.album, s, acc)));
+    b.textContent = s.nome + ' (' + s.limite + ' foto)' + (usabile ? '' : !acc ? ' — scegli prima l’account' : (_fa.album ? ' — pagine da scegliere nella scheda dell’album (tab Annunci, ' + acc + ')' : ' — scegli prima l’album'));
     // 🔄 v7.310 (Franco: «se la procedura l'ho avviata dal tab ebay … deve essere spento Vinted, ed ebay selezionato ma
     //    grigiato») - partendo dalla copia il sito lo dà la linguetta: tutti spenti, quello scelto resta acceso ma grigio
     b.disabled = !usabile || !!_fa.copia;
@@ -46159,7 +46182,8 @@ function _faDisegnaScelte() {
     b.textContent = v;
     if (v === _fa.venditore) b.className = 'on';
     b.onclick = () => {
-      _fa.venditore = _fa.venditore === v ? null : v;
+      // 🔄 v7.338 - obbligatorio: si cambia, non si toglie (ritoccato resta scelto)
+      _fa.venditore = v;
       if (_fa.venditore && COLLAGE_TEXTURE_VENDITORE[v]) _fa.texture = COLLAGE_TEXTURE_VENDITORE[v];
       rifai();
     };
@@ -46184,16 +46208,20 @@ function _faDisegnaScelte() {
   const a = _fa.album, s = _fa.sito;
   _fa$('piano').innerHTML = a && !a.pagine.length
     ? 'Album scelto: <b>' + esc(a.nome) + '</b>. Non ha pagine sul sito: carica le foto delle pagine (passo 2), poi scegli il sito.'   // v7.288
+    : a && s && !_fa.venditore ? 'Sito scelto: <b>' + s.nome + '</b>. Ora scegli l’account (passo 3): ognuno ha il suo modo di unire le pagine.'   // v7.338
+    // v7.338 - dalla copia il sito è dato: se l'account scelto non ha le pagine per quel sito (Subito), lo si dice
+    : a && s && !_faPianoDi(a, s, _fa.venditore) ? '⚠️ Per ' + esc(_fa.venditore) + ' le pagine di ' + s.nome + ' non sono scelte: scrivile nella scheda dell’album (tab Annunci, linguetta ' + esc(_fa.venditore) + '), oppure scegli un altro account.'
     : a && s
-    ? esc(a.nome) + ', ' + a.pagine.length + ' pagine. Su ' + s.nome + ' (massimo ' + s.limite + ' foto) → ' + _faDescriviPiano(_faPianoDi(a, s), a.pagine.length)
-      + (_faLeggiPiano(a.piani[s.chiave], a.pagine.length, s.limite).gruppi ? ' Come scritto nella scheda dell’album.' : '')
+    ? esc(a.nome) + ', ' + a.pagine.length + ' pagine. Su ' + s.nome + ' (massimo ' + s.limite + ' foto), per ' + esc(_fa.venditore) + ' → ' + _faDescriviPiano(_faPianoDi(a, s, _fa.venditore), a.pagine.length)
+      + (_faLeggiPiano(_faPianiDi(a, _fa.venditore)[s.chiave], a.pagine.length, s.limite).gruppi ? ' Come scritto nella scheda dell’album.' : '')
       + (!_fa.texture ? '<br>Ora scegli la texture di sfondo, qui sotto.'
         : _fa.foto.length ? '<br>Ora prepara le foto (passo 4).' : '<br>Ora carica le foto delle pagine (passo 2).')
     // v7.185: il sito è diventato il passo 3, dopo le foto
     : a ? 'Album scelto: <b>' + esc(a.nome) + '</b>, ' + a.pagine.length + ' pagine. Carica le foto delle pagine (passo 2), poi scegli il sito.'
     : s ? 'Sito scelto: <b>' + s.nome + '</b>. Ora scegli l’album (passo 1).'
-    : 'Scegli l’album e il sito.';
-  _fa$('componi').disabled = !_fa.foto.length || !_fa.sito || !_fa.texture;
+    : 'Scegli l’album, l’account e il sito.';
+  _fa$('componi').disabled = !_fa.foto.length || !_fa.venditore || !_fa.sito || !_fa.texture
+    || !(_fa.album && _faPianoDi(_fa.album, _fa.sito, _fa.venditore));   // v7.338: + l'account, e il suo piano per il sito
   if (_fa.inCorso) _fa$('componi').disabled = true;   // v7.292
   _faControllaUscite();   // v7.292
   _faComponiPerche();
@@ -46238,6 +46266,7 @@ function _faComponiPerche() {
   const el = _fa$('componi-perche');
   if (!el) return;
   el.textContent = !_fa.foto.length ? 'Per preparare le foto: carica prima le foto (passo 2).'
+    : !_fa.venditore ? 'Per preparare le foto: scegli l’account (passo 3).'   // v7.338
     : !_fa.sito ? 'Per preparare le foto: scegli il sito (passo 3).'
     : !_fa.texture ? 'Per preparare le foto: scegli la texture di sfondo (passo 3).' : '';
 }
@@ -46918,7 +46947,7 @@ async function _faFotoDelSito() {
   _faMiniature();
   // v7.292 - con «Pulisci sfondo» ci vuole tempo: si parte solo premendo «Prepara le foto» (Franco)
   // 🔄 v7.310 - la pulizia ora si chiede a parte (passo 2), quindi qui si prepara sempre
-  if (_fa.sito && _fa.texture) await _faComponi();
+  if (_fa.venditore && _fa.sito && _fa.texture) await _faComponi();   // v7.338: + l'account
 }
 
 // 🆕 v7.310 - LE FOTO DELLA COPIA (linguetta Originali, campo `foto`): sono foto vere delle pagine, come quelle caricate dal
@@ -47008,7 +47037,7 @@ function _faMiniature() {
     card.append(c, sel, riga);
     box.appendChild(card);
   });
-  _fa$('componi').disabled = !_fa.foto.length || !_fa.sito || !_fa.texture;
+  _fa$('componi').disabled = !_fa.foto.length || !_fa.venditore || !_fa.sito || !_fa.texture;   // v7.338: + l'account
   if (_fa.inCorso) _fa$('componi').disabled = true;   // v7.292
   _faControllaUscite();   // v7.292
   _faComponiPerche();
@@ -47223,7 +47252,7 @@ function _faComponiGruppo(tele) {
 }
 async function _faComponi() {
   const a = _fa.album, sito = _fa.sito;
-  if (!a || !sito || !_fa.texture) return;
+  if (!a || !sito || !_fa.texture || !_fa.venditore) return;   // v7.338: senza account non c'è il piano
   if (_fa.inCorso) return;   // v7.292: con «Pulisci sfondo» dura, e un secondo clic non deve partire
   _fa.inCorso = true;
   _fa$('componi').disabled = true;
@@ -47247,9 +47276,9 @@ async function _faComponi() {
   }
   const saltate = [];
   // v7.337 - i passi della barra: le foto da preparare, e dalla copia le stesse da allegare più il salvataggio
-  const _daFare = (_faPianoDi(a, sito) || []).filter(g => g.some(p => perPagina.has(p))).length;
+  const _daFare = (_faPianoDi(a, sito, _fa.venditore) || []).filter(g => g.some(p => perPagina.has(p))).length;   // v7.338: il piano dell'account
   _fa.avTot = _fa.copia ? 2 * _daFare + 1 : _daFare;
-  for (const g of (_faPianoDi(a, sito) || [])) {
+  for (const g of (_faPianoDi(a, sito, _fa.venditore) || [])) {
     g.filter(p => !perPagina.has(p)).forEach(p => saltate.push(_faNomePagina(p, N)));
     const presenti = g.filter(p => perPagina.has(p));
     if (!presenti.length) continue;
@@ -56874,7 +56903,8 @@ function _albumHaTestiAnnuncio(f) {
   // 🔄 v7.237 - i quattro campi vecchi non contano più: al loro posto i testi per account
   // 🗑️ v7.258 - e nemmeno la Disponibilità a testo libero, cancellata (Franco)
   return Object.values(f.testiAccount || {}).some(t => Object.values(t || {}).some(pieno))
-    || Object.values(f.fotoAnnuncio || {}).some(pieno);
+    || Object.values(f.fotoAnnuncio || {}).some(pieno)
+    || Object.values(f.fotoAnnuncioAccount || {}).some(p => Object.values(p || {}).some(pieno));   // v7.338: le foto annunci per account
 }
 // 🆕 v7.323 (Franco: «quando un articolo è stato creato meno di 30 giorni, metti sopra di esso un piccolo badge a forma di
 //    stella a più punte, con scritto "New"; colore giallo; che lo vedono tutti; al trentesimo giorno sparisce») - la data è
@@ -60373,18 +60403,20 @@ function _rendiTestaFamiglia() {
 //    azzurre (`--info`), valori bianchi; si cambia con «✎ Modifica famiglia».
 // 🔄 v7.288 (Franco: «il tab ebay di un articolo mostra i valori solo in modifica; deve mostrarli anche in visualizzazione») - `idBox`:
 //    lo stesso blocco per la scheda dell'articolo (`_bloccoEbayAlbumLettura`), con un id suo e senza la riga «Ebay» e il messaggio finale
+// 🔄 v7.338 - `d.fotoDi` (facoltativo, la scheda dell'album): a => l'HTML delle sue foto annunci, sotto i testi di ogni account;
+//    `d.fotoScritte`: a => true se ne ha di scritte (pallino e ordine delle linguette)
 function _famEbayLettura(d, it, idBox) {
   const t = d.testiAccount || {};
-  const pieno = a => Object.values(t[a] || {}).some(v => String(v || '').trim());
+  const pieno = a => Object.values(t[a] || {}).some(v => String(v || '').trim()) || !!(d.fotoScritte && d.fotoScritte(a));
   const lin = (a, i) => '<button type="button" class="fam-el-tab" data-account="' + a + '" onclick="_famElTab(\'' + a + '\'' + (idBox ? ',\'' + idBox + '\'' : '') + ')" style="padding:0.35rem 0.9rem;border:none;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;font-family:var(--font-ui);'
     + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + a
     + (pieno(a) ? '<span style="margin-left:0.35rem;color:var(--accent);">●</span>' : '') + '</button>';
   return '<div id="' + (idBox || 'fam-ebay-lettura') + '" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin:0 0 0.8rem;">'
-    + (idBox ? '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">✍️ ' + (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account') + '</div>'
+    + (idBox ? '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">✍️ ' + (d.fotoDi ? (it ? 'Titoli, descrizioni e foto per account' : 'Titles, descriptions and photos per account') : (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account')) + '</div>'
       : '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">🏷️ Ebay: <span style="color:var(--text);">' + (d.forSale ? (it ? 'sì' : 'yes') : 'no') + '</span></div>')
     // v7.252 - le linguette nello stesso ordine della finestra: prima chi ha testi (`_testiAccountInOrdine`)
-    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + _testiAccountInOrdine(t).map(lin).join('') + '</div>'
-    + _testiAccountInOrdine(t).map((a, i) => '<div class="fam-el-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
+    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + _testiAccountInOrdine(t, d.fotoScritte).map(lin).join('') + '</div>'
+    + _testiAccountInOrdine(t, d.fotoScritte).map((a, i) => '<div class="fam-el-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
       // 🔄 v7.323 (Franco: «cambia l'ordine dei campi: titolo ita, descrizione ita, titolo eng, descrizione eng») - prima la
       //    lingua, poi il campo (era il contrario: i due titoli, poi le due descrizioni); lo stesso in modifica
       + ['It', 'En'].map(l => _TESTI_CAMPI.map(([k, nIt, nEn]) => {
@@ -60399,6 +60431,7 @@ function _famEbayLettura(d, it, idBox) {
           //    in un riquadro col bordo, come la casella della modifica
           + '<div style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;' + (k === 'desc' ? 'border:1px solid var(--border2);border-radius:8px;padding:0.4rem 0.55rem;' : '') + '">' + (v ? esc(v) : '—') + '</div></div>';
       }).join('')).join('')
+      + (d.fotoDi ? d.fotoDi(a) : '')   // v7.338: le foto annunci dell'account, sotto i testi (come in modifica)
       // v7.252 - e il messaggio finale dell'annuncio, come nella finestra
       + (idBox ? '' : (v => '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;">' + (it ? 'Messaggio di testo finale annuncio' : 'Closing message of the listing') + '</div>'
           + '<div style="font-size:0.85rem;color:var(--text);white-space:pre-wrap;">' + (v ? esc(v) : '—') + '</div></div>')(String((t[a] || {}).finale || '').trim()))
@@ -60418,26 +60451,20 @@ function _famElTab(a, idBox) {
 //    che il tab Ebay in modifica ha in più sugli album (`_sottoTabEbay`): i testi per account e le caselle di «Foto annuncio»
 function _bloccoEbayAlbumLettura(f) {
   if (!f || f.section !== 'albums') return '';
-  const it = currentLang === 'it', p = f.fotoAnnuncio || {};
-  const foto = !_albumConCaselleFotoAnnuncio(f) ? '' : '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin:0 0 0.8rem;">'
-    + '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">📸 ' + (it ? 'Foto annunci' : 'Listing photos') + '</div>'
-    + _FA_SITI.map(s => { const v = String(p[s.chiave] || '').trim();
-        return '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;">' + s.nome + ' (' + (it ? 'massimo ' : 'max ') + s.limite + ' foto)</div>'
-          + '<div style="font-size:0.85rem;color:var(--text);">' + (v ? esc(v) : '—') + '</div></div>'; }).join('')
-    + '</div>';
-  // 🔄 v7.322 (Franco: «quando la form dell'articolo è in sola lettura, i sottotab "Descrizioni" e "Foto annunci" sono
-  //    disposti in verticale … li voglio sempre affiancati») - le stesse due linguette della modifica (`_sottoTabEbay`)
-  const desc = _famEbayLettura({ testiAccount: f.testiAccount }, it, 'fd-ebay-testi');
-  if (!foto) return desc;
-  const parti = [['desc', it ? 'Descrizioni' : 'Descriptions', desc], ['foto', it ? 'Foto annunci' : 'Listing photos', foto]];
-  return '<div id="fd-ebay-sottotab" style="margin-top:0.25rem;">'
-    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem;">'
-    + parti.map((p, i) => '<button type="button" class="fe-eb-tab" data-parte="' + p[0] + '" onclick="_feEbTab(\'' + p[0] + '\',\'fd-ebay-sottotab\')"'
-      + ' style="padding:0.4rem 0.9rem;border:none;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;font-family:var(--font-ui);'
-      + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + p[1] + '</button>').join('')
-    + '</div>'
-    + parti.map((p, i) => '<div class="fe-eb-pannello" data-parte="' + p[0] + '"' + (i === 0 ? '' : ' style="display:none;"') + '>' + p[2] + '</div>').join('')
-    + '</div>';
+  const it = currentLang === 'it';
+  // 🔄 v7.338 (Franco: «i due sottotab "Descrizioni" ed "Annunci" diventano un solo tab») - come in modifica: in ogni linguetta
+  //    dell'account, sotto i testi, le sue foto annunci. 🗑️ Via i sotto-tab della v7.322 (`fd-ebay-sottotab`).
+  const foto = a => {
+    const p = _fotoAnnuncioDi(f, a);
+    return '<div style="border:1px solid var(--border);border-radius:10px;padding:0.6rem 0.8rem;margin:0.75rem 0 0.5rem;">'
+      + '<div style="font-size:0.8rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">📸 ' + (it ? 'Foto annunci di ' : 'Listing photos of ') + a + '</div>'
+      + _FA_SITI.map(s => { const v = String(p[s.chiave] || '').trim();
+          return '<div style="margin-bottom:0.5rem;"><div style="font-size:0.72rem;color:var(--info);margin-bottom:2px;">' + s.nome + ' (' + (it ? 'massimo ' : 'max ') + s.limite + ' foto)</div>'
+            + '<div style="font-size:0.85rem;color:var(--text);">' + (v ? esc(v) : '—') + '</div></div>'; }).join('')
+      + '</div>';
+  };
+  const conFoto = _albumConCaselleFotoAnnuncio(f);
+  return _famEbayLettura({ testiAccount: f.testiAccount, fotoDi: conFoto ? foto : null, fotoScritte: conFoto ? a => _faScritteDi(f, a) : null }, it, 'fd-ebay-testi');
 }
 // 🆕 v7.235 (Franco: «da mobile potrebbero servire anche i bottoni per passare alla pagina successiva e alla pagina
 //    precedente»; «la seconda fila … per passare alla coppia di pagine precedente e successiva») - la striscia scorre fino
@@ -79464,13 +79491,26 @@ function _pagineVisibili(f) {
 function _albumConCaselleFotoAnnuncio(f) {
   return !!f && f.section === 'albums' && !f.baseFigurineId && _pagineDi(f).length >= 3;
 }
-function _bloccoFotoAnnuncioEdit(f) {
+// 🆕 v7.338 (Franco: «voglio che con ognuno dei 4 account sia possibile avere uno split differente delle foto dell'album») -
+//    LE FOTO ANNUNCI PER ACCOUNT: `fotoAnnuncioAccount` = { Franco: { ebay, vinted, subito }, … }. Un album mai risalvato dalla
+//    v7.338 ha ancora la sola `fotoAnnuncio` di prima, comune: vale per tutti gli account (e la scheda la mostra scritta in
+//    ognuno, così al Salva diventa di ognuno). Salvando si scrive la nuova e la vecchia si svuota.
+function _fotoAnnuncioDi(f, a) {
+  if (!f) return {};
+  if (f.fotoAnnuncioAccount && typeof f.fotoAnnuncioAccount === 'object') return f.fotoAnnuncioAccount[a] || {};
+  return f.fotoAnnuncio || {};
+}
+// v7.338 - l'account ha almeno una casella delle foto scritta (per il pallino e l'ordine delle linguette)
+const _faScritteDi = (f, a) => Object.values(_fotoAnnuncioDi(f, a)).some(v => String(v || '').trim());
+// 🔄 v7.338 - `a`: l'account; le caselle sono `fe-fa-<account>-<sito>`, il riquadro ha la classe `fe-foto-annuncio`. Sta dentro
+//    la linguetta dell'account (`_bloccoTestiAccountEdit`), sotto i testi.
+function _bloccoFotoAnnuncioEdit(f, a) {
   if (!_albumConCaselleFotoAnnuncio(f)) return '';
-  const it = currentLang === 'it', N = _pagineDi(f).length, p = f.fotoAnnuncio || {};
-  return '<div id="fe-foto-annuncio" data-n="' + N + '" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
+  const it = currentLang === 'it', N = _pagineDi(f).length, p = _fotoAnnuncioDi(f, a);
+  return '<div class="fe-foto-annuncio" data-account="' + a + '" data-n="' + N + '" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.75rem 0.9rem;margin:0.75rem 0;">'
     // 🔄 v7.321 (Franco: «la etichetta "Foto annuncio: come unire le foto delle pagine" cambiala in "Come unire le foto delle
     //    pagine per crere le foto di un annuncio"») - «creare»
-    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.3rem;">📸 ' + (it ? 'Come unire le foto delle pagine per creare le foto di un annuncio' : 'How to join the page photos to create the photos of a listing') + '</div>'
+    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.3rem;">📸 ' + (it ? 'Come unire le foto delle pagine per creare le foto di un annuncio di ' : 'How to join the page photos to create the photos of a listing of ') + a + '</div>'
     + '<div style="font-size:0.72rem;color:var(--text);margin-bottom:0.6rem;line-height:1.45;">' + (it
         ? 'I numeri del tab Pagine (1 = copertina, ' + N + ' = retro). La virgola separa una foto dall’altra; le pagine della stessa foto (2 o 4) vanno fra quadre, unite dal +; le pagine non scritte si saltano. Esempio: 1, 2, [3+4], [5+6+7+8], ' + N + '.<br>'
           + 'Vuota: eBay e Vinted dividono le foto delle pagine da soli, Subito per questo album resta spento.'
@@ -79482,9 +79522,9 @@ function _bloccoFotoAnnuncioEdit(f) {
     + _FA_SITI.map(s => {
         const ciStanno = !s.soloScritto && N <= s.limite;
         return '<div style="margin-bottom:0.5rem;"><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">'
-        + s.nome + ' (' + (it ? 'massimo ' : 'max ') + s.limite + ' foto) <span id="fe-fa-esito-' + s.chiave + '" style="font-size:0.7rem;">'
+        + s.nome + ' (' + (it ? 'massimo ' : 'max ') + s.limite + ' foto) <span id="fe-fa-esito-' + a + '-' + s.chiave + '" style="font-size:0.7rem;">'
         + (ciStanno ? '— ' + (it ? 'le ' + N + ' pagine ci stanno tutte: niente da unire' : 'all ' + N + ' pages fit: nothing to join') : '') + '</span></label>'
-        + '<input class="form-input" type="text" id="fe-fa-' + s.chiave + '" value="' + esc(p[s.chiave] || '') + '" oninput="_feFaControlla(\'' + s.chiave + '\')"'
+        + '<input class="form-input" type="text" id="fe-fa-' + a + '-' + s.chiave + '" value="' + esc(p[s.chiave] || '') + '" oninput="_feFaControlla(\'' + a + '\',\'' + s.chiave + '\')"'
         + (ciStanno ? ' readonly' : '')
         + ' style="padding:0.3rem 0.5rem;font-size:0.85rem;' + (ciStanno ? 'opacity:0.5;cursor:not-allowed;' : '') + '"></div>';
       }).join('')
@@ -79499,8 +79539,9 @@ const _TESTI_ACCOUNT = ['Franco', 'Fabio', 'Lendys', 'Antonio'];   // v7.286: + 
 const _TESTI_CAMPI = [['titolo', 'Titolo', 'Title'], ['desc', 'Descrizione', 'Description']];
 // 🆕 v7.252 - l'ordine delle linguette degli account: prima quelli con almeno un testo scritto, poi gli altri; tutti e
 //    due i gruppi in ordine alfabetico. `t` = `testiAccount` dell'articolo o della famiglia.
-function _testiAccountInOrdine(t) {
-  const pieno = a => Object.values((t || {})[a] || {}).some(v => String(v || '').trim());
+// 🔄 v7.338 - `altro` (facoltativo): a => true se l'account ha altro di scritto (le foto annunci dell'album, `_faScritteDi`)
+function _testiAccountInOrdine(t, altro) {
+  const pieno = a => Object.values((t || {})[a] || {}).some(v => String(v || '').trim()) || !!(altro && altro(a));
   return _TESTI_ACCOUNT.slice().sort((x, y) => (pieno(y) - pieno(x)) || x.localeCompare(y, 'it'));
 }
 // 🆕 v7.318 - copia il contenuto di una casella; vuota lo dice e non copia (il 📋 dei testi per account, in modifica)
@@ -79519,16 +79560,19 @@ function _bloccoTestiAccountEdit(f) {
   //    un simbolo affianco del nome del tab con dati»; «anche sulla form dell'album») - un pallino accanto al nome
   //    (`fe-ta-segno`), acceso se l'account ha almeno un campo scritto; si rifà mentre si scrive (`_feTaSegna`). Vale
   //    per l'album e per la famiglia, che usano questo stesso blocco.
-  const pieno = a => Object.values(t[a] || {}).some(v => String(v || '').trim());
+  // 🔄 v7.338 - sull'album con le pagine, in ogni linguetta anche le foto annunci dell'account (`f.fotoDi`, `f.fotoScritte`: li
+  //    passa `_sottoTabEbay`, come `_bloccoEbayAlbumLettura` a `_famEbayLettura`); contano per il pallino e l'ordine
+  const conFoto = typeof f.fotoDi === 'function';
+  const pieno = a => Object.values(t[a] || {}).some(v => String(v || '').trim()) || (conFoto && !!f.fotoScritte(a));
   const linguetta = (a, i) => '<button type="button" class="fe-ta-tab" data-account="' + a + '" onclick="_feTaTab(\'' + a + '\')"'
     + ' style="padding:0.35rem 0.9rem;border:none;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;font-family:var(--font-ui);'
     + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + a
     + '<span class="fe-ta-segno" title="' + (it ? 'Ha testi scritti' : 'Has texts') + '" style="margin-left:0.35rem;color:var(--accent);' + (pieno(a) ? '' : 'display:none;') + '">●</span></button>';
   // 🔄 v7.252 (Franco: «metti per primo il tab per il quale ci sono dati, poi gli altri; prima quelli col segno, in
   //    ordine alfabetico, e poi i rimanenti, in ordine alfabetico») - `_testiAccountInOrdine`; si apre il primo
-  const ordine = _testiAccountInOrdine(t);
+  const ordine = _testiAccountInOrdine(t, conFoto ? f.fotoScritte : null);
   return '<div id="fe-testi-account" oninput="_feTaSegna()" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
-    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;">✍️ ' + (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account') + '</div>'
+    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;">✍️ ' + (conFoto ? (it ? 'Titoli, descrizioni e foto per account' : 'Titles, descriptions and photos per account') : (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account')) + '</div>'
     + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + ordine.map(linguetta).join('') + '</div>'
     + ordine.map((a, i) => '<div class="fe-ta-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
       // 🔄 v7.323 - titolo ITA, descrizione ITA, titolo ENG, descrizione ENG (come in lettura, `_famEbayLettura`)
@@ -79547,6 +79591,9 @@ function _bloccoTestiAccountEdit(f) {
             : '<textarea class="form-input" id="' + id + '" rows="12" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;border:1px solid var(--border2);border-radius:8px;">' + esc(v) + '</textarea>')
           + '</div>';
       }).join('')).join('')
+      // 🆕 v7.338 (Franco: «in ogni tab account … ci saranno questi 3 campi, con la descrizione di come si popolano sopra») - le
+      //    foto annunci dell'account, sotto i suoi testi (solo sull'album con le pagine sue)
+      + (conFoto ? f.fotoDi(a) : '')
       // 🆕 v7.252 (Franco: «nella form della famiglia, aggiungi un campo che si chiama "Messaggio di testo finale
       //    annuncio", nel tab Ebay; anche questo campo va 3 volte») - uno per account, sotto le descrizioni, solo
       //    dove chi chiama lo chiede (`conFinale`: la famiglia); si salva in `testiAccount[account].finale`
@@ -79607,31 +79654,13 @@ function _prelevaTesti() {
   toast(it ? 'Descrizioni prelevate: premi Salva per tenerle.' : 'Descriptions copied: press Save to keep them.', 'success');
 }
 function _sottoTabEbay(f) {
-  const it = currentLang === 'it';
-  // 🔄 v7.238 (Franco: «invertiamo i due sottotab "Foto annuncio" e "Descrizione"») - prima Descrizione, che si apre
-  // 🔄 v7.322 (Franco: «il tab "Foto annuncio" rinominalo "Foto annunci"»; «il tab "Descrizione" nel tab "Annunci" chiamalo "Descrizioni"»)
-  const parti = [['desc', it ? 'Descrizioni' : 'Descriptions', _bloccoTestiAccountEdit(f)], ['foto', it ? 'Foto annunci' : 'Listing photos', _bloccoFotoAnnuncioEdit(f)]]
-    .filter(p => p[2]);
-  if (parti.length < 2) return parti.map(p => p[2]).join('');
-  return '<div id="fe-ebay-sottotab" style="margin-top:0.25rem;">'
-    + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem;">'
-    + parti.map((p, i) => '<button type="button" class="fe-eb-tab" data-parte="' + p[0] + '" onclick="_feEbTab(\'' + p[0] + '\')"'
-      + ' style="padding:0.4rem 0.9rem;border:none;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;font-family:var(--font-ui);'
-      + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + p[1] + '</button>').join('')
-    + '</div>'
-    + parti.map((p, i) => '<div class="fe-eb-pannello" data-parte="' + p[0] + '"' + (i === 0 ? '' : ' style="display:none;"') + '>' + p[2] + '</div>').join('')
-    + '</div>';
+  // 🔄 v7.338 (Franco: «i due sottotab "Descrizioni" ed "Annunci" diventano un solo tab») - le foto annunci stanno ora dentro
+  //    le linguette degli account (`_bloccoTestiAccountEdit`): niente più sotto-tab.
+  //    🗑️ Via i due sotto-tab «Descrizioni» / «Foto annunci» (v7.200, v7.238, v7.322) e il loro `fe-ebay-sottotab`.
+  if (!_albumConCaselleFotoAnnuncio(f)) return _bloccoTestiAccountEdit(f);
+  return _bloccoTestiAccountEdit(Object.assign({}, f, { fotoDi: a => _bloccoFotoAnnuncioEdit(f, a), fotoScritte: a => _faScritteDi(f, a) }));
 }
-// 🔄 v7.322 - `box`: i sotto-tab della scheda in lettura (`fd-ebay-sottotab`, `_bloccoEbayAlbumLettura`) usano lo stesso scambio
-function _feEbTab(k, box) {
-  const id = box || 'fe-ebay-sottotab';
-  document.querySelectorAll('#' + id + ' .fe-eb-tab').forEach(b => {
-    const su = b.dataset.parte === k;
-    b.style.borderBottomColor = su ? 'var(--accent)' : 'transparent';
-    b.style.fontWeight = su ? '700' : '400';
-  });
-  document.querySelectorAll('#' + id + ' .fe-eb-pannello').forEach(p => { p.style.display = p.dataset.parte === k ? '' : 'none'; });
-}
+// 🗑️ v7.338 - qui stava `_feEbTab` (v7.200, v7.322): cambiava i sotto-tab «Descrizioni» / «Foto annunci», che non ci sono più
 // v7.200 - la linguetta scelta si accende, il suo pannello si vede, gli altri due si nascondono
 function _feTaTab(a) {
   document.querySelectorAll('#fe-testi-account .fe-ta-tab').forEach(b => {
@@ -79663,9 +79692,10 @@ function _feTestiAccount() {
   return Object.keys(out).length ? out : null;
 }
 // La riga accanto al nome del sito: quante foto escono, o cosa non va. Restituisce l'errore (o '').
-function _feFaControlla(chiave) {
-  const box = document.getElementById('fe-foto-annuncio'), el = document.getElementById('fe-fa-' + chiave);
-  const sp = document.getElementById('fe-fa-esito-' + chiave), s = _FA_SITI.find(x => x.chiave === chiave);
+// 🔄 v7.338 - `a`: l'account (le caselle sono una terna per account)
+function _feFaControlla(a, chiave) {
+  const box = document.querySelector('.fe-foto-annuncio[data-account="' + a + '"]'), el = document.getElementById('fe-fa-' + a + '-' + chiave);
+  const sp = document.getElementById('fe-fa-esito-' + a + '-' + chiave), s = _FA_SITI.find(x => x.chiave === chiave);
   if (!box || !el || !s) return '';
   const r = _faLeggiPiano(el.value, +box.dataset.n, s.limite);
   if (sp) {
@@ -79673,16 +79703,25 @@ function _feFaControlla(chiave) {
     sp.style.color = r.errore ? 'var(--danger, #e5484d)' : 'var(--muted)';
   }
   el.style.borderColor = r.errore ? 'var(--danger, #e5484d)' : '';
-  return r.errore ? s.nome + ': ' + r.errore : '';
+  return r.errore ? a + ' - ' + s.nome + ': ' + r.errore : '';
 }
 // Il valore da salvare: le caselle ripulite degli spazi; tutte vuote = null.
-function _feFotoAnnuncio() {
+// 🔄 v7.338 - per account: { Franco: { ebay, … }, … }; un account senza caselle scritte non c'è; nessuno = null
+function _feFotoAnnuncioAccount() {
   const out = {};
-  _FA_SITI.forEach(s => {
-    const v = (document.getElementById('fe-fa-' + s.chiave)?.value || '').split(',').map(x => x.trim().split('+').map(y => y.trim()).join('+')).filter(Boolean).join(', ');
-    if (v) out[s.chiave] = v;
-  });
+  _TESTI_ACCOUNT.forEach(a => _FA_SITI.forEach(s => {
+    const v = (document.getElementById('fe-fa-' + a + '-' + s.chiave)?.value || '').split(',').map(x => x.trim().split('+').map(y => y.trim()).join('+')).filter(Boolean).join(', ');
+    if (v) (out[a] = out[a] || {})[s.chiave] = v;
+  }));
   return Object.keys(out).length ? out : null;
+}
+// v7.338 - il primo errore delle caselle delle foto, account per account: { a, msg } o null
+function _feFaPrimoErrore() {
+  for (const a of _TESTI_ACCOUNT) {
+    const msg = _FA_SITI.map(s => _feFaControlla(a, s.chiave)).filter(Boolean)[0];
+    if (msg) return { a, msg };
+  }
+  return null;
 }
 
 function _tabPagineBtn(f) {
@@ -81494,9 +81533,10 @@ async function saveFigFromDetail(figId, opzioni) {
       if (_msgSfo) { toast(_msgSfo, 'error', null, 9000); return; }
     }
     // 🆕 v7.184 - un piano delle foto annuncio sbagliato ferma il salvataggio, e si dice quale casella e perché
-    if (document.getElementById('fe-foto-annuncio')) {
-      const _msgFa = _FA_SITI.map(s => _feFaControlla(s.chiave)).filter(Boolean)[0];
-      if (_msgFa) { switchFeTab('ebay'); toast('📸 ' + _msgFa, 'error', null, 9000); return; }
+    // 🔄 v7.338 - una terna per account: si apre la linguetta dell'account sbagliato
+    if (document.querySelector('.fe-foto-annuncio')) {
+      const _errFa = _feFaPrimoErrore();
+      if (_errFa) { switchFeTab('ebay'); _feTaTab(_errFa.a); toast('📸 ' + _errFa.msg, 'error', null, 9000); return; }
     }
     if (existingForCheck?.section === 'retros') {
       const category = _catEff; // v6.038
@@ -81684,7 +81724,8 @@ async function saveFigFromDetail(figId, opzioni) {
       // 🆕 v7.262 - le Copie doppie strutturate, solo se la tabella era in pagina (`_copieLeggi`)
       ...(document.getElementById('fe-copie') ? { copie: _copieLeggi() } : {}),
       // 🆕 v7.184 - le caselle delle foto annuncio. Solo se c'erano: altrove la chiave non si scrive
-      ...(document.getElementById('fe-foto-annuncio') ? { fotoAnnuncio: _feFotoAnnuncio() } : {}),
+      // 🔄 v7.338 - per account; la vecchia comune si svuota (la scheda l'aveva già messa in ogni account)
+      ...(document.querySelector('.fe-foto-annuncio') ? { fotoAnnuncioAccount: _feFotoAnnuncioAccount(), fotoAnnuncio: null } : {}),
       // 🗑️ v7.199 - gli sfondi delle foto (v7.185) non ci sono più: dove il campo è rimasto, il Salva lo svuota
       ...(_figSlotF && _figSlotF.sfondiFoto ? { sfondiFoto: null } : {}),
       // 🆕 v7.331 - «Da trovare» delle fcr, solo se la spunta c'era (spenta = null: il campo non resta scritto a false)
