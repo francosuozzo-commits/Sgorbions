@@ -383,6 +383,16 @@ body {
   #fig-detail-modal #fig-detail-griglia.scheda-una-colonna { grid-template-columns: 1fr !important; }
 }
 
+/* 🐞 v7.337 — LA SCHEDA IN MODIFICA DAL TELEFONO NON SBORDA PIÙ A DESTRA (Franco, v7.334: «la form non
+   sta tutta nello schermo ma fuoriesce un pochino a destra»).
+   📏 MISURATO a 390px sul sito vero: con tre foto (Fronte, Fronte ruotato, Retro) la riga delle foto
+   chiedeva 338px dove ce n'erano 314. Le tre caselle hanno `min-width:0`, ma una colonna `1fr` di una
+   griglia non scende sotto il contenuto minimo dei suoi figli: la colonna si allargava e la scheda con
+   lei. Con `min-width:0` sui figli della griglia la colonna resta larga quanto lo schermo e le caselle
+   delle foto si stringono (101px l'una, i tasti ci stanno). La v7.334 aveva mandato a capo i tab:
+   giusto, ma non era quella la causa. */
+#fig-detail-griglia > * { min-width: 0; }
+
 /* 🆕 v6.886 — LE DUE FACCE, PORTATE NEL TAB «GENERALE».
    🔴 I COMANDI TORNANO IN RIGA, e la ragione è che quella per cui si erano impilati è scaduta:
    la v6.866 li aveva messi in colonna perché in metà di una colonna da 320px non ci stavano
