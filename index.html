@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.336">
+<link rel="stylesheet" href="css/style.css?v=7.337">
 
 
 <style>
@@ -3862,9 +3862,12 @@ di tutte le serie</button>
            richiesta «fai lo stesso per tutti i tasti equipollenti» non ha aggiunto una riga.
            ⚠️ E IL SUO `display` LO DECIDE IL JS: il tasto sparisce quando la tipologia non e'
            ammessa in questa serie o quando la creazione e' vietata (v6.822), mentre gli altri due
-           riquadri si accendono per ogni admin. Tre condizioni diverse, tre righe diverse. -->
-      <div>
-        <div id="admin-add-item-title" data-i18n="admin.catalogo" style="display:none;font-size:0.75rem;color:var(--text);margin-bottom:0.3rem;">Catalogo</div>
+           riquadri si accendono per ogni admin. Tre condizioni diverse, tre righe diverse.
+           🗑️ v7.337 (Franco: «a cosa serve la etichetta "Catalogo"? Nel sito non c'e' nessun
+           Catalogo» ... «toglilo e basta») - via il titoletto «Catalogo». Senza titoletto il
+           riquadro starebbe piu' in alto dei vicini: `align-self:flex-end` lo allinea in basso,
+           dove i tre riquadri grigi (alti uguali) finiscono insieme. -->
+      <div style="align-self:flex-end;">
         <div id="admin-add-item-btn" style="display:none;gap:0.75rem;flex-wrap:wrap;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">
           <!-- v6.104/105 (§12.1, tappa 2) — "+ Aggiungi" apre LA SCHEDA vuota. E' l'unico dei sette
                punti che CREA; gli altri sei modificano e passano tutti da apriModificaItem().
@@ -4944,7 +4947,7 @@ di tutte le serie</button>
               <!-- v5.981 — Gli account venditore. Non sono uno: Franco vende sul proprio e su tre
                    account di amici a cui ha accesso. L'applicazione registrata su eBay resta UNA
                    (la sua), e ogni account le dà il permesso una volta per conto suo. -->
-              <label class="form-label" style="display:block;margin-bottom:0.4rem;">👥 Account venditore</label>
+              <label class="form-label" style="display:block;margin-bottom:0.4rem;">👥 Account</label>
               <p style="font-size:0.82rem;color:var(--text);margin-bottom:0.6rem;">Gli account eBay su cui si vende. Il <strong>predefinito</strong> è quello usato dagli oggetti che non ne indicano uno. Le regole di pagamento, spedizione e resi appartengono a ciascun account: le legge il programma da eBay, non si scrivono qui.</p>
               <div id="ebay-settings-accounts" style="margin-bottom:0.6rem;"></div>
               <button class="btn-secondary btn-admin-ghost" onclick="ebayAggiungiAccount()" style="font-size:0.82rem;padding:0.35rem 0.9rem;cursor:pointer;">➕ Aggiungi account</button>
@@ -7192,7 +7195,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.336"></script>
+<script src="js/app.js?v=7.337"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7216,7 +7219,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.336'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.337'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
