@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.336 - Modificati index.html (versione) e js/app.js. Card delle sottoserie (pagina della serie): il «🖼️ Cambia foto»
+//          col collage, in alto a sinistra come sulle card delle tipologie e delle famiglie (Franco: «il tasto "cambia
+//          foto" non c'è sulle card delle sottoserie, come mai? mettilo»). `apriCollageSottoserie` apre la finestra già
+//          puntata (dal sito, la serie, la tipologia, la sottoserie: la domanda della sottoserie ora c'è anche da questa
+//          card), «Usa come foto della card» la salva come foto della sottoserie (`_sottoserieScriviFoto`). La matita resta.
 // v7.335 - Modificati index.html (versione) e js/app.js. «Nomi alternativi» (`nomeAlternativo`) è una riga di
 //          «Informazioni ereditate dalla base» (`CAMPI_EREDITABILI`, in ogni tipologia, non spuntata di partenza) (Franco:
 //          «aggiungi alla lista dei campi ereditati dalla base, il campo "Nomi alternativi"»). Spuntata: nella scheda della
@@ -32301,7 +32306,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.335';
+const JS_VERSION = 'v7.336';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42858,6 +42863,39 @@ function apriCollageFamiglia(el, titolo) {
   _collageMostraScelte();
   _collageStato();
 }
+// 🆕 v7.336 (Franco: «il tasto "cambia foto" non c'è sulle card delle sottoserie, come mai? mettilo») - IL COLLAGE DALLA CARD
+//    DI UNA SOTTOSERIE, come dalla famiglia: «Dal sito» → la serie aperta → la tipologia della sottoserie → la sottoserie
+//    (la domanda che dalle altre card non c'è, `_collageSottoserieDellaSerie`). «Usa come foto della card» la salva come
+//    foto della sottoserie. Nome e tipologia stanno nei `data-` della card: l'apostrofo di «Carte d'identità» non tocca codice.
+function apriCollageSottoserie(card) {
+  if (!currentUser?.isAdmin || !card || !currentSeriesId) return;
+  const nome = card.getAttribute('data-sottoserie'), sez = card.getAttribute('data-sezione') || 'figurines';
+  if (!nome) return;
+  const it = currentLang === 'it';
+  const ov = _collageApriFinestra('🖼️ ' + (it ? 'Foto della sottoserie «' : 'Subseries photo «') + esc(nome) + '»', true);
+  _collageBoxDest = { sottoserie: nome, sezione: sez, seriesId: currentSeriesId };
+  const da = ov.querySelector('input[name="collage-da"][value="sito"]');
+  if (da) da.checked = true;
+  _collageDa();
+  const conM = ov.querySelector('input[name="collage-sito-macchie"][value="con"]');
+  if (conM) conM.checked = true;
+  const cas = ov.querySelector('input[name="collage-sito-ordine"][value="casuale"]');
+  if (cas) cas.checked = true;
+  const via = ov.querySelector('input[name="collage-sito-da"][value="serie"]');
+  if (via) via.checked = true;
+  const metti = (id, v) => { const x = document.getElementById(id); if (x && [...x.options].some(o => o.value === v)) { x.value = v; return true; } return false; };
+  let trovata = false;
+  if (metti('collage-sito-serie', String(currentSeriesId))) {
+    _collageSerieScelta();
+    if (metti('collage-sito-serie-tda', sez)) {
+      _collageTdaScelta();
+      if (metti('collage-sito-serie-ss', 'ss:' + nome)) { _collageSottoserieScelta(); trovata = true; }
+    }
+  }
+  if (!trovata) toast(it ? '⚠️ Nessun articolo con la foto in questa sottoserie: scegli tu da dove prenderle' : '⚠️ No photos in this subseries: choose the source', 'error');
+  _collageMostraScelte();
+  _collageStato();
+}
 function chiudiCollageBox() {
   document.getElementById('collage-box-modal')?.remove();
   _collageBoxDest = null; _collageFoto = []; _collageBlob = null;
@@ -42922,9 +42960,11 @@ async function _collageUsaPerBox() {
     if (b) b.disabled = false;
     return;
   }
-  const serie = (d.perSerie || d.famiglia) ? getData('series', []).find(x => x.id === d.seriesId) : null;
+  const serie = (d.perSerie || d.famiglia || d.sottoserie) ? getData('series', []).find(x => x.id === d.seriesId) : null;
   // v7.233 - la copertina di una famiglia va nella sua riga di `famiglieDati` (`_famigliaScriviFoto`)
-  const ok = d.famiglia ? (serie && await _famigliaScriviFoto(serie, d.famiglia, url))
+  // v7.336 - quella di una sottoserie nella sua voce di `sottoserie` (`_sottoserieScriviFoto`)
+  const ok = d.sottoserie ? (serie && await _sottoserieScriviFoto(serie, d.sottoserie, url))
+    : d.famiglia ? (serie && await _famigliaScriviFoto(serie, d.famiglia, url))
     : d.perSerie ? (serie && await _scriviFotoSezioneSerie(serie, d.chiave, url)) : await _scriviFotoBox(d.chiave, url);
   if (!ok) { if (b) b.disabled = false; return; }
   chiudiCollageBox();
@@ -43268,7 +43308,8 @@ function _collageSottoserieScelta() {
 //    Nessuna sottoserie con un nome = nessuna domanda. Solo da Annunci: dal «Cambia foto» di una card o di una famiglia
 //    la finestra resta com'era.
 function _collageSottoserieDellaSerie(sid, sez) {
-  if (!sid || !sez || _collageBoxDest) return '';
+  // v7.336: dalla card di una sottoserie la domanda c'è (è già puntata su di lei, `apriCollageSottoserie`)
+  if (!sid || !sez || (_collageBoxDest && !_collageBoxDest.sottoserie)) return '';
   const it = currentLang === 'it';
   const serie = (getData('series', []) || []).find(x => String(x.id) === String(sid));
   const art = _collageArticoliDellaSerie(sid).filter(f => (f.section || 'figurines') === sez);
@@ -60036,6 +60077,12 @@ function _rendiCardSottoserie() {
             + 'style="position:absolute;top:6px;right:6px;z-index:3;border:none;'
             + 'border-radius:999px;width:30px;height:30px;line-height:1;cursor:pointer;'
             + 'font-size:0.95rem;background:rgba(0,0,0,0.6);color:#fff;">&#9998;</button>'
+            // 🆕 v7.336 (Franco: «il tasto "cambia foto" non c'è sulle card delle sottoserie, mettilo») - il collage, in alto
+            //    a sinistra come sulle card delle tipologie e delle famiglie (`_tastoCollageBox`)
+            + '<button type="button" title="Un collage per la foto di questa sottoserie" '
+            + 'onclick="event.stopPropagation();apriCollageSottoserie(this.parentNode)" '
+            + 'style="position:absolute;top:6px;left:6px;z-index:3;border:none;border-radius:999px;padding:0.3rem 0.7rem;cursor:pointer;'
+            + 'font-size:0.75rem;font-weight:700;background:rgba(0,0,0,0.6);color:#fff;">🖼️ Cambia foto</button>'
           : '')
         + '<div class="riquadro-sottoserie" style="width:100%;aspect-ratio:var(--hub-box-ratio);'
         + 'background:var(--bg3);overflow:hidden;background-size:contain;'
@@ -60786,6 +60833,32 @@ async function _caricaFotoSottoserie(ev) {
   _ssFotoInCorso = null;
   _ridisegnaBox();
   toast(it ? '\u2705 Foto della sottoserie aggiornata' : '\u2705 Subseries photo updated', 'success');
+}
+
+// 🆕 v7.336 - la foto di una sottoserie dal collage (`apriCollageSottoserie` → `_collageUsaPerBox`): la stessa scrittura
+//    della matita (`_caricaFotoSottoserie`, qui sopra). Sta qui e non accanto al collage: quel tratto di codice non scrive
+//    sul sito (prova-v7182, 24), come per `_famigliaScriviFoto`.
+async function _sottoserieScriviFoto(serie, nome, url) {
+  const it = currentLang === 'it';
+  const prima = serie.sottoserie;
+  serie.sottoserie = _sottoserieDef(serie).map(v => {
+    const img = (v.nome === nome) ? url : v.img;
+    return img ? { nome: v.nome, img } : v.nome;
+  });
+  try { await fsSave('series', _serieSenzaItems(serie)); }
+  catch (e) {
+    console.error('_sottoserieScriviFoto', e);
+    serie.sottoserie = prima;
+    toast((it ? '⚠️ Foto NON salvata: ' : '⚠️ Photo NOT saved: ') + (e?.message || e), 'error');
+    return false;
+  }
+  // come la matita: se la scheda della serie è aperta, la sua riga prende la foto nuova (la trappola della v6.443)
+  const riga = (_ssRighe || []).find(r => r.nome === nome);
+  if (riga) riga.img = url;
+  try { _rendiSottoserieTabella(); } catch (e) {}
+  _ridisegnaBox();
+  toast(it ? '✅ Foto della sottoserie aggiornata' : '✅ Subseries photo updated', 'success');
+  return true;
 }
 
 // 🆕 v6.682 - LA FOTO DI UNA SOTTOSERIE, per nome. Torna null se non ce l'ha ancora.
