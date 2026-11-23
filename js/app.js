@@ -32306,7 +32306,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.336';
+const JS_VERSION = 'v7.337';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34393,7 +34393,7 @@ const i18n = {
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Rarity','form.fig.scoreHint':'How rare it is. It adds to the Rarity score of whoever has it in their list',
-'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'More filters','items.searchBox':'Your search','items.filterIntro':'Add preset search filters','items.resetFilters':'Clear all filters','items.searchHint':'Search by keyword','items.searchPlaceholder':'Search...','admin.classifica':'Ranking','admin.catalogo':'Catalog','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker versions glossary','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Every version has its own colour</strong>, and it is the same everywhere on the site: on the cards, in the search filters and in the titles of the search boxes.','items.filterLegend.base':'<strong>Base version</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer.<br>Two cases can be told apart:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) same front but with a different graphic element in the printing (the back is the same as the base sticker’s)</li><li>2) same front; it is the back that gives rise to the variant</li></ul>','items.filterLegend.free':'<strong>Free</strong>: sticker given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black) on the back','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','items.filterLegend.titleRetros':'📖 Retro versions glossary','items.filterLegend.retroBase':'<strong>Base version</strong>: retro belonging to the series’ base set','items.filterLegend.retroChange':'<strong>Change</strong>: variant intentionally made by the manufacturer; it differs from the base version by a different graphic element in the printing','items.filterLegend.retroFree':'<strong>Free</strong>: retro given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black)','items.filterLegend.retroPrintError':'<strong>Print error</strong>: variant purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'More filters','items.searchBox':'Your search','items.filterIntro':'Add preset search filters','items.resetFilters':'Clear all filters','items.searchHint':'Search by keyword','items.searchPlaceholder':'Search...','admin.classifica':'Ranking','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker versions glossary','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Every version has its own colour</strong>, and it is the same everywhere on the site: on the cards, in the search filters and in the titles of the search boxes.','items.filterLegend.base':'<strong>Base version</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer.<br>Two cases can be told apart:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) same front but with a different graphic element in the printing (the back is the same as the base sticker’s)</li><li>2) same front; it is the back that gives rise to the variant</li></ul>','items.filterLegend.free':'<strong>Free</strong>: sticker given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black) on the back','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','items.filterLegend.titleRetros':'📖 Retro versions glossary','items.filterLegend.retroBase':'<strong>Base version</strong>: retro belonging to the series’ base set','items.filterLegend.retroChange':'<strong>Change</strong>: variant intentionally made by the manufacturer; it differs from the base version by a different graphic element in the printing','items.filterLegend.retroFree':'<strong>Free</strong>: retro given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black)','items.filterLegend.retroPrintError':'<strong>Print error</strong>: variant purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
 'profile.title':'My Profile','profile.owned':'In My List','profile.total':'Total','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
@@ -34483,7 +34483,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità ai risultati','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Export liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli articoli non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista articoli non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista articoli non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine per album diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine per album','form.series.haRistampe':'Ha ristampe','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Variazioni ufficiali','form.series.hasUnofficialVariations':'Variazioni non ufficiali','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'Senza numeri/lettere','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change','form.series.countRetroChange':'N. change','form.series.descPlaceholder':'Descrivi questa serie...','form.series.sottoserie':'Sottoserie','form.series.sottoserieHint':'Una riga per sottoserie, con la sua foto. L\'ORDINE conta: è l\'ordine con cui le sottoserie si vedranno. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','admin.catalogo':'Catalogo','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine per album diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine per album','form.series.haRistampe':'Ha ristampe','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Variazioni ufficiali','form.series.hasUnofficialVariations':'Variazioni non ufficiali','form.series.hasChange':'Change','form.series.hasRetroChange':'Change','form.series.noNumbers':'Senza numeri/lettere','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change','form.series.countRetroChange':'N. change','form.series.descPlaceholder':'Descrivi questa serie...','form.series.sottoserie':'Sottoserie','form.series.sottoserieHint':'Una riga per sottoserie, con la sua foto. L\'ORDINE conta: è l\'ordine con cui le sottoserie si vedranno. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -42673,7 +42673,7 @@ function _collageHTML(perBox) {
     '</div>') +
     // 🆕 v7.220 - il venditore (facoltativo) mette la sua texture; la texture è obbligatoria: da Annunci non ce n'è una
     //    di serie, dal «Cambia foto» di una card «Nessuna», come prima
-    '<div style="' + dom + '">3. ' + (it ? 'Per quale venditore è ? (facoltativa)' : 'Which seller is it for? (optional)') + '</div>' +
+    '<div style="' + dom + '">3. ' + (it ? 'Per quale account è ? (facoltativa)' : 'Which account is it for? (optional)') + '</div>' +
     '<select id="collage-venditore" onchange="_collageVenditoreScelto()" style="background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:0.35rem 0.5rem;font-size:0.88rem;">' +
       '<option value="">—</option>' + _ANN_ACCOUNT.map(a => '<option value="' + esc(a) + '">' + esc(a) + '</option>').join('') + '</select>' +
     '<div style="' + dom + '">4. ' + (it ? 'Quale texture di sfondo ?' : 'Which background texture?') + '</div>' +
@@ -44486,7 +44486,7 @@ function _collageDescrizioneAnnuncio() {
   const titolo = _collageTestoAnnuncio();
   if (!titolo) return { errore: it ? 'Manca il titolo dell\'annuncio.' : 'No listing title.' };
   const ven = String((document.getElementById('collage-venditore') || {}).value || '').trim();
-  if (!ven) return { errore: it ? 'Scegli il venditore (domanda «Per quale venditore è ?»): il messaggio finale è diverso per ognuno.' : 'Choose the seller.' };
+  if (!ven) return { errore: it ? 'Scegli l’account (domanda «Per quale account è ?»): il messaggio finale è diverso per ognuno.' : 'Choose the account.' };
   const f = _collageFamigliaScelta();
   if (!f) return { errore: it ? 'Il messaggio finale sta nella famiglia: scegli una famiglia (dalla serie).' : 'Choose a family.' };
   const fin = String(((f.d.testiAccount || {})[ven] || {}).finale || '').trim();
@@ -44868,7 +44868,7 @@ const _ANN_RIQUADRI = [
     val: r => ['figurines', 'attaccare'].includes(_ANN_RIQUADRI.find(x => x.k === 'tipologia').val(r)) ? (r.articoloId ? 'si' : 'no') : '',
     voci: () => ['si', 'no'],
     etichetta: v => v === 'si' ? (currentLang === 'it' ? 'Sì' : 'Yes') : 'No' },
-  { k: 'account', it: 'Filtra per venditore', en: 'Filter by seller', voci: () => _ANN_ACCOUNT },
+  { k: 'account', it: 'Filtra per account', en: 'Filter by account', voci: () => _ANN_ACCOUNT },
   { k: 'sito', it: 'Filtra per sito', en: 'Filter by site', voci: () => _FA_SITI.map(s => s.nome) },
   // 🆕 v7.202 (Franco: «un filtro … chiamato numero, con una pillola per ogni numero esistente tra gli annunci in corso
   //    (indipendentemente da altri attributi degli annunci)») - le voci sono i valori del campo N di tutti gli annunci,
@@ -45075,7 +45075,7 @@ function _annDisegna() {
     //    della colonna, solo dal telefono (`tel`), come «TDA»
     // 🔄 v7.266 (Franco: «nella tabella degli annunci la colonna "Tipologia di articolo" rinominala in "TDA"») - «TDA»
     //    sempre, non più solo dal telefono
-    + th(it ? 'Sito' : 'Site') + th(it ? (tel ? 'Account' : 'Venditore') : (tel ? 'Account' : 'Seller')) + th(it ? 'Serie' : 'Series') + th(it ? 'TDA' : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th(it ? 'Copia' : 'Copy') + th(it ? 'Titolo' : 'Title')
+    + th(it ? 'Sito' : 'Site') + th('Account') + th(it ? 'Serie' : 'Series') + th(it ? 'TDA' : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th(it ? 'Copia' : 'Copy') + th(it ? 'Titolo' : 'Title')
     // v7.187 (Franco: «il campo descrizione non mostrarlo nella tabella degli annunci; mostra invece la url») - la
     //    descrizione resta nella finestra; in tabella al suo posto il link, scritto per intero
     // v7.187 (Franco: «per ora togli il campo Foto dalla tabellina») - lo zip resta nella finestra
@@ -45090,7 +45090,7 @@ function _annDisegna() {
     // v7.200 - sopra i quattro tasti della riga, «Applica valori da album» (agli annunci spuntati)
     // 🔄 v7.202 (Franco: «chiamalo "Applica valori da album e venditore" (vai pure su due righe)») - a capo dopo «album»
     + '<th style="text-align:center;text-transform:none;letter-spacing:0;"><button type="button" class="btn-barra-admin pieno" id="ann-applica-album" onclick="_annApplicaDaAlbum()"'
-      + ' style="font-size:0.75rem;padding:0.2rem 0.6rem;line-height:1.25;">📥 ' + (it ? 'Applica valori da album<br>e venditore' : 'Apply values from album<br>and seller') + '</button></th>'
+      + ' style="font-size:0.75rem;padding:0.2rem 0.6rem;line-height:1.25;">📥 ' + (it ? 'Applica valori da album<br>e account' : 'Apply values from album<br>and account') + '</button></th>'
     + '</tr></thead><tbody>'
     + righe.map(([r, i]) => {
         const s = serie.get(r.seriesId), f = figs.get(r.articoloId);
@@ -45169,7 +45169,9 @@ function _annDisegna() {
             // v7.187 (Franco: «il tasto clona deve essere arancione come modifica e il tasto elimina deve avere il rosa
             //    usato per le eliminazioni»)
             //    l'icona è quella di sempre (Franco: «la icona del tasto Clona mi sembra diversa da quella solita»): ⧉
-            + '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Clona' : 'Clone') + '" onclick="_annClona(' + i + ')">&#10697;</button> '
+            // 🔄 v7.337 (Franco: «da mobile ... il tasto clona, toglilo dalla lista; lasciamo in form di dettaglio»,
+            //    anche per gli annunci) - dal telefono niente ⧉ nella riga: si clona dalla finestra dell'annuncio
+            + (_isMobileViewport() ? '' : '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Clona' : 'Clone') + '" onclick="_annClona(' + i + ')">&#10697;</button> ')
             + '<button type="button" class="tbl-btn tbl-btn-del" title="' + (it ? 'Elimina' : 'Delete') + '" onclick="_annElimina(' + i + ')">🗑️</button>'
           + '</td></tr>';
       }).join('')
@@ -45417,9 +45419,9 @@ async function _annApplicaDaAlbum() {
   const scelti = _annRighe.filter(r => _annSpuntati.has(r.id));
   if (!scelti.length) { toast(it ? 'Spunta prima gli annunci da aggiornare.' : 'Tick the listings to update first.', 'error'); return; }
   const ok = await _finestraConferma({
-    titolo: '📥 ' + (it ? 'Applica valori da album e venditore' : 'Apply values from album and seller'),   // v7.202
+    titolo: '📥 ' + (it ? 'Applica valori da album e account' : 'Apply values from album and account'),   // v7.202
     testo: it ? 'Aggiornare ' + (scelti.length === 1 ? 'l’annuncio selezionato' : 'tutti i ' + scelti.length + ' annunci selezionati')
-        + ' con Titolo ITA, Titolo ENG, Descrizione ITA e Descrizione ENG del loro album, per il loro venditore? I campi che l’album non ha scritto restano come sono.'
+        + ' con Titolo ITA, Titolo ENG, Descrizione ITA e Descrizione ENG del loro album, per il loro account? I campi che l’album non ha scritto restano come sono.'
       : 'Update ' + scelti.length + ' selected listing(s) with the album’s Title ITA/ENG and Description ITA/ENG for their seller? Fields the album has not written stay as they are.',
     ok: it ? 'Aggiorna' : 'Update', annulla: it ? 'Annulla' : 'Cancel'
   });
@@ -45428,7 +45430,7 @@ async function _annApplicaDaAlbum() {
   try {
     if (esito.cambiati) await _annScrivi(esito.righe);
     toast((it ? '✅ Annunci aggiornati: ' : '✅ Listings updated: ') + esito.cambiati
-      + (esito.saltati.length ? (it ? ' · saltati (senza venditore o senza album): ' : ' · skipped (no seller or album): ') + esito.saltati.length : ''), 'success');
+      + (esito.saltati.length ? (it ? ' · saltati (senza account o senza album): ' : ' · skipped (no account or album): ') + esito.saltati.length : ''), 'success');
   } catch (e) {
     console.error('_annApplicaDaAlbum', e);
     toast((it ? '⚠️ NON aggiornati: ' : '⚠️ NOT updated: ') + (e?.message || e), 'error');
@@ -45438,7 +45440,7 @@ function _annPrendiValore(chiave, id) {
   const it = currentLang === 'it', v = x => document.getElementById(x);
   const stato = v('ann-stato'), dire = t => { if (stato) stato.textContent = t; };
   const account = v('ann-account')?.value, artId = v('ann-articolo')?.value;
-  if (!account) return dire(it ? '⚠️ Scegli prima il venditore.' : '⚠️ Choose the seller first.');
+  if (!account) return dire(it ? '⚠️ Scegli prima l’account.' : '⚠️ Choose the account first.');
   const idx = _indiceArticoli(), art = artId ? idx.get(artId) : null;
   if (!art || art.section !== 'albums') return dire(it ? '⚠️ Scegli prima l’album nel campo Articolo.' : '⚠️ Choose the album in the Item field first.');
   const val = _annValoreDaAlbum(art, account, chiave, idx);
@@ -45454,7 +45456,7 @@ function _annApplicaCoppia() {
   const it = currentLang === 'it', v = x => document.getElementById(x);
   const stato = v('ann-stato'), dire = t => { if (stato) { stato.style.color = 'var(--info)'; stato.textContent = t; } };
   const account = v('ann-account')?.value, artId = v('ann-articolo')?.value;
-  if (!account) return dire(it ? '⚠️ Scegli prima il venditore.' : '⚠️ Choose the seller first.');
+  if (!account) return dire(it ? '⚠️ Scegli prima l’account.' : '⚠️ Choose the account first.');
   const idx = _indiceArticoli(), art = artId ? idx.get(artId) : null;
   if (!art || art.section !== 'albums') return dire(it ? '⚠️ Scegli prima l’album nel campo Articolo.' : '⚠️ Choose the album in the Item field first.');
   let presi = 0;
@@ -45515,7 +45517,7 @@ function _annApriFinestra(i, sola) {
     + '<div class="ann-griglia"><div>'
     + lab(it ? 'Sito' : 'Site')
     + '<select id="ann-sito" class="form-select">' + _FA_SITI.map(s => '<option' + (s.nome === r.sito ? ' selected' : '') + '>' + s.nome + '</option>').join('') + '</select>'
-    + lab(it ? 'Venditore' : 'Seller')
+    + lab('Account')
     + '<select id="ann-account" class="form-select"><option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
       + _ANN_ACCOUNT.map(a => '<option' + (a === r.account ? ' selected' : '') + '>' + a + '</option>').join('') + '</select>'
     + lab(it ? 'Serie' : 'Series')
@@ -45533,7 +45535,7 @@ function _annApriFinestra(i, sola) {
       : '<div style="display:flex;align-items:center;gap:0.5rem;">'
         + '<select id="ann-articolo" class="form-select" style="flex:1;min-width:0;" onchange="_annCambiaArticolo(this.value)">' + _annOpzioniArticolo(r.seriesId || '', tipoR, r.articoloId) + '</select>'
         + '<button type="button" class="btn-secondary ann-prendi" id="ann-applica-coppia" onclick="_annApplicaCoppia()" style="font-size:0.72rem;padding:0.25rem 0.6rem;flex-shrink:0;">'
-        + (it ? 'Applica valori da coppia<br>Venditore - Articolo' : 'Apply values from<br>Seller - Item pair') + '</button></div>')
+        + (it ? 'Applica valori da coppia<br>Account - Articolo' : 'Apply values from<br>Account - Item pair') + '</button></div>')
     // 🆕 v7.263 (Franco: «prima chiede l'articolo, come oggi, poi la sua copia») - le copie del tab «Doppi» dell'articolo
     + lab(it ? 'Copia' : 'Copy')
     + '<select id="ann-copia" class="form-select" onchange="_annBloccaDaCopia()">' + _annOpzioniCopia(r.articoloId || '', r.copiaId || null) + '</select>'
@@ -45807,7 +45809,10 @@ function _faAlbum(tutti) {
       const pianiSuoi = (fonte || f).fotoAnnuncio || {};
       const piani = pianiPresi ? Object.assign({}, pianiPresi, Object.fromEntries(Object.entries(pianiSuoi).filter(([, v]) => String(v || '').trim()))) : pianiSuoi;
       // una versione col nome uguale alla sua partenza si distingue dal nome della versione
-      const nome = s.name + ' — ' + (f.name || '') + (base && f.name === base.name ? ' (' + _nomeVersione(_chiaveTipo(f), 'it') + ')' : '');
+      // 🔄 v7.337 (Franco: «quando viene usato il nome della serie per il nome dell'album, usare il nome breve della serie;
+      //    oggi viene usato il nome lungo») - `_nomeSerieCard(s, true)`: il nome breve, o il lungo se la serie non ne ha uno.
+      //    Segue anche il nome dei file scaricati, che nasce da qui.
+      const nome = _nomeSerieCard(s, true) + ' — ' + (f.name || '') + (base && f.name === base.name ? ' (' + _nomeVersione(_chiaveTipo(f), 'it') + ')' : '');
       // v7.184: `piani` = le caselle del tab Ebay dell'album (`fotoAnnuncio`)
       // 🗑️ v7.199 - qui c'era `sfondi` (le tendine del tab Pagine, v7.185): non lo leggeva nessuno
       // v7.272: `id` = l'album di cui si legge il tab Ebay per «Copia titolo/descrizione annuncio» (`_faTestoAlbum`)
@@ -45985,10 +45990,12 @@ h1 { font-size:22px; margin:6px 0 4px; }
 <!-- v7.185 (Franco: «dovremmo invertire gli step 2 e 3; prima si caricano le foto e dopo si sceglie il sito») -->
 <section class="passo"><h2>3. Per quale sito servono le foto?</h2><div class="scelte" id="scelta-sito"></div><div class="piano" id="piano"></div>
   <!-- v7.243 - il venditore, dopo il sito: il suo tessuto sotto le pagine -->
-  <div id="venditore-box" style="display:none;"><h2 style="margin-top:14px;">Per quale venditore? <span class="nota">(facoltativo: mette già il suo tessuto)</span></h2><div class="scelte" id="scelta-venditore"></div>
+  <div id="venditore-box" style="display:none;"><h2 style="margin-top:14px;">Per quale account? <span class="nota">(facoltativo: mette già il suo tessuto)</span></h2><div class="scelte" id="scelta-venditore"></div>
   <h2 style="margin-top:14px;">Quale texture di sfondo?</h2><div class="scelte" id="scelta-texture"></div></div></section>
 <section class="passo"><h2>4. Le foto per l'annuncio</h2>
   <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte</button><span class="nota" id="componi-perche" style="align-self:center;"></span></div>
+  <!-- v7.337 (Franco: «sarebbe possibile aggiungere una barra di avanzamento? ... potrebbe non risultare chiaro cosa stia accadendo») -->
+  <div id="avanza" style="display:none;margin:10px 0 4px;"><div id="avanza-testo" style="font-size:14px;margin-bottom:4px;"></div><div style="height:14px;background:#e6e6e6;border-radius:7px;overflow:hidden;"><div id="avanza-barra" style="height:100%;width:0;background:#2e7d32;transition:width .25s;"></div></div></div>
   <!-- v7.272 (Franco: «anche nella sezione crea foto per annuncio vorrei avere i due bottoni») - i testi del tab Ebay dell'album, per il venditore scelto -->
   <div class="scelte" style="margin-top:8px;"><button class="btn" id="copia-titolo">📋 Copia titolo annuncio</button><button class="btn" id="copia-desc">📋 Copia descrizione annuncio</button><span class="nota" id="copia-stato" style="align-self:center;"></span></div>
   <div class="piano" id="piano2"></div><div class="risultati" id="risultati"></div>
@@ -46057,6 +46064,17 @@ function _faEsci() {
 }
 const _fa$ = id => _fa.w.document.getElementById(id);
 const _faStato = t => { _fa$('stato').textContent = t || ''; };
+// 🆕 v7.337 (Franco: «sarebbe possibile aggiungere una barra di avanzamento?») - la barra del passo 4: cosa sta facendo e a
+//    che punto è. I passi sono le foto da preparare e, partendo dalla copia, le stesse foto da allegare più il salvataggio
+//    (`_fa.avTot`, contato da `_faComponi`). Senza testo la barra sparisce.
+function _faAvanza(testo, fatti, totale) {
+  const box = _fa$('avanza');
+  if (!box) return;
+  if (!testo) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  _fa$('avanza-testo').textContent = testo;
+  _fa$('avanza-barra').style.width = (totale ? Math.round(100 * Math.min(fatti, totale) / totale) : 0) + '%';
+}
 function _faSvuota() {
   // v7.273: le foto e le miniature di prima liberano subito la memoria (`_faLibera`)
   _faLibera(..._fa.foto.map(f => f.tela), ..._fa.foto.map(f => f.pulita && f.pulita.tela), ..._fa$('miniature').querySelectorAll('canvas'));
@@ -46073,7 +46091,7 @@ function _faSvuota() {
 function _faTestoAlbum(chiave) {
   const nomeCampo = chiave === 'titoloIt' ? 'Titolo - ITA' : 'Descrizione - ITA';
   if (!_fa.album) return { errore: 'Scegli prima l’album (passo 1).' };
-  if (!_fa.venditore) return { errore: 'Scegli prima il venditore (passo 3, «Per quale venditore?»).' };
+  if (!_fa.venditore) return { errore: 'Scegli prima l’account (passo 3, «Per quale account?»).' };
   const idx = _indiceArticoli(), art = idx.get(_fa.album.id);
   if (!art) return { errore: 'Non trovo l’album sul sito.' };
   const testo = String(_annValoreDaAlbum(art, _fa.venditore, chiave, idx) || '').trim();
@@ -47228,10 +47246,14 @@ async function _faComponi() {
     catch (e) { console.error('_faComponi/texture', e); _faStato('⚠️ Non riesco a leggere il tessuto «' + tx.it + '»: foto su sfondo bianco.'); }
   }
   const saltate = [];
+  // v7.337 - i passi della barra: le foto da preparare, e dalla copia le stesse da allegare più il salvataggio
+  const _daFare = (_faPianoDi(a, sito) || []).filter(g => g.some(p => perPagina.has(p))).length;
+  _fa.avTot = _fa.copia ? 2 * _daFare + 1 : _daFare;
   for (const g of (_faPianoDi(a, sito) || [])) {
     g.filter(p => !perPagina.has(p)).forEach(p => saltate.push(_faNomePagina(p, N)));
     const presenti = g.filter(p => perPagina.has(p));
     if (!presenti.length) continue;
+    _faAvanza('Preparo la foto ' + (_fa.uscite.length + 1) + ' di ' + _daFare + '…', _fa.uscite.length, _fa.avTot);
     _faStato('Preparo la foto ' + (_fa.uscite.length + 1) + '…');
     _fa$('piano2').textContent = '⏳ Preparo la foto ' + (_fa.uscite.length + 1) + '…';   // v7.273: anche qui, dove si guarda
     const ritagli = presenti.map(p => _faRitaglioPronto(perPagina.get(p)));
@@ -47256,7 +47278,14 @@ async function _faComponi() {
   _fa.saltate = saltate;
   _faRisultati();
   if (_fa.copia) await _faAllegaAllaCopia();   // v7.310
-  } finally { _fa.inCorso = false; _faDisegnaScelte(); }
+  } finally {
+    _fa.inCorso = false; _faDisegnaScelte();
+    // 🆕 v7.337 (Franco: «durante questo lasso di tempo, vedo che il tasto "scarica tutte" è premibile ma non deve esserlo») -
+    //    «Scarica tutte» e i «Togli» delle foto pronte restano spenti finché si lavora (`_faRisultati`): si riaccendono qui
+    _fa$('scarica').disabled = !_fa.uscite.length;
+    _fa$('risultati').querySelectorAll('button.togli').forEach(b => { b.disabled = false; });
+    _faAvanza('');
+  }
 }
 // 🆕 v7.310 (Franco: «completata la trasformazione, le foto generate devono essere direttamente allegate alla copia») - le foto
 //    pronte vanno su Cloudinary (etichetta «copia», come quelle caricate a mano) e si scrivono subito sulla copia, nel campo
@@ -47271,10 +47300,13 @@ async function _faAllegaAllaCopia() {
   if (!_fa.uscite.length) return;
   try {
     const nuove = [];
+    const _fatte = _fa.uscite.length;   // v7.337: la barra riparte da qui (le foto preparate sono già fatte)
     for (let i = 0; i < _fa.uscite.length; i++) {
+      _faAvanza('Allego alla copia la foto ' + (i + 1) + ' di ' + _fa.uscite.length + '…', _fatte + i, _fa.avTot);
       _faStato('Allego alla copia: foto ' + (i + 1) + ' di ' + _fa.uscite.length + '…');
       nuove.push(await uploadToCloudinary(_fa.uscite[i].blob, 'copia'));
     }
+    _faAvanza('Salvo la copia…', 2 * _fatte, _fa.avTot);
     const art = _articoloVivo(artId);
     const copie = art && Array.isArray(art.copie) ? art.copie.slice() : [];
     const j = copie.findIndex((c, k) => _annChiaveCopia(c, k) === chiave);
@@ -47339,11 +47371,13 @@ function _faRisultati() {
     const cap = d.createElement('figcaption'); cap.textContent = 'Foto ' + (i + 1) + ':\n' + u.dida;
     const link = d.createElement('a'); link.href = u.url; link.download = u.nome; link.textContent = 'Scarica';
     const togli = d.createElement('button'); togli.className = 'togli'; togli.textContent = '🗑️ Togli'; togli.title = 'Togli questa foto dall’annuncio';
+    togli.disabled = !!_fa.inCorso;   // v7.337: mentre si allega alla copia, togliere una foto sposterebbe le altre
     togli.onclick = () => _faTogli(i);
     fig.append(img, cap, link, togli);
     _fa$('risultati').appendChild(fig);
   });
-  _fa$('scarica').disabled = !_fa.uscite.length;
+  // 🔄 v7.337 (Franco) - spento anche mentre si lavora: le foto sono pronte ma si stanno ancora allegando alla copia
+  _fa$('scarica').disabled = !_fa.uscite.length || !!_fa.inCorso;
 }
 // 🆕 v7.243 (Franco: «nella anteprima delle foto elaborate, deve essere possibile cancellare le singole foto») - la foto
 //    esce dall'elenco (e da «Scarica tutte»); le altre si rinumerano, nel nome del file come nella didascalia.
@@ -52484,8 +52518,8 @@ function renderCatalogPersonaggi(grid) {
     // 🔄 v7.189 (Franco: «il tasto "Aggiungi personaggio" deve stare dove stanno gli omologhi tasti di aggiunta, ovvero
     //    alla numerica che espone il totale dei risultati») - sotto il conteggio, nel riquadro grigio «Catalogo» di
     //    «+ Aggiungi» delle tipologie (`#admin-add-item-btn`, v6.931). Era in alto a destra, con serie e tipologie.
+    // 🗑️ v7.337 - via il titoletto «Catalogo» sopra il riquadro (Franco: «toglilo e basta»)
     + (currentUser?.isAdmin ? '<div style="margin-bottom:1rem;">'
-      + '<div style="font-size:0.75rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Catalogo' : 'Catalogue') + '</div>'
       + '<div id="admin-add-personaggio-btn" style="display:inline-flex;gap:0.75rem;flex-wrap:wrap;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">'
       + '<button class="btn-primary btn-admin" onclick="openAddPersonaggioModal()">+ ' + (it ? 'Aggiungi personaggio' : 'Add character') + '</button>'
       // 🗑️ v7.330 - qui stava il pulsante «🔗 Ripara i collegamenti» (v7.309), in pensione
@@ -53604,9 +53638,8 @@ function renderCatalogPubblicita(grid) {
     + '<div style="font-size:0.95rem;color:var(--text);"><span style="font-size:1.5rem;font-weight:700;color:var(--accent);">' + tutti.length.toLocaleString(it ? 'it-IT' : 'en-US') + '</span> '
     + (it ? (tutti.length === 1 ? 'pubblicità trovata' : 'pubblicità trovate') : (tutti.length === 1 ? 'advertisement found' : 'advertisements found')) + '</div>'
     + '</div>'
-    // il riquadro «Catalogo» degli admin, come «+ Aggiungi personaggio»
+    // il riquadro grigio degli admin, come «+ Aggiungi personaggio» (v7.337: senza il titoletto «Catalogo»)
     + (currentUser?.isAdmin ? '<div style="margin-bottom:1rem;">'
-      + '<div style="font-size:0.75rem;color:var(--text);margin-bottom:0.3rem;">' + (it ? 'Catalogo' : 'Catalogue') + '</div>'
       + '<div id="admin-pubblicita-btn" style="display:inline-flex;gap:0.75rem;flex-wrap:wrap;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">'
       + '<button class="btn-primary btn-admin" onclick="creaPubblicitaDaiRetro()">' + (it ? '+ Crea le pubblicità dai retro senza personaggio (serie 3 e 4)' : '+ Create advertisements from backs without a character (series 3 and 4)') + '</button>'
       + '</div></div>' : '')
@@ -61214,8 +61247,8 @@ function openSeriesSection(section, sottoserie) {
   //    orfana della v6.672, e qui si eviterebbe solo per caso - le due condizioni si somigliano.
   const _addVisibile = !!currentUser?.isAdmin && !_addVietato;
   document.getElementById('admin-add-item-btn').style.display = _addVisibile ? 'flex' : 'none';
-  const addTitle = document.getElementById('admin-add-item-title');
-  if (addTitle) addTitle.style.display = _addVisibile ? '' : 'none';
+  // 🗑️ v7.337 (Franco: «nel sito non c'è nessun Catalogo ... toglilo e basta») - via il titoletto «Catalogo»
+  //    (`admin-add-item-title`) e la riga che lo accendeva insieme al tasto.
   const ebayBtnWrap = document.getElementById('admin-ebay-btn-wrap');
   if (ebayBtnWrap) ebayBtnWrap.style.display = currentUser?.isAdmin ? 'flex' : 'none';
   const ebayTitle = document.getElementById('admin-ebay-title');
@@ -75494,8 +75527,10 @@ function _cdInterno() {
         + ' onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\',true)">&#128065;</button> '
         + '<button type="button" class="tbl-btn tbl-btn-edit"' + (tel ? ' style="font-size:0.75rem;line-height:1;padding:2px 5px;"' : '') + ' title="' + (it ? 'Modifica' : 'Edit') + '" onclick="_copiaApri(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">✏️</button> '
         // v7.267 (Franco: «nelle copie mettimi un tasto di clone; sia in tabella che nella form di dettaglio») - ⧉ come negli annunci
-        + '<button type="button" class="tbl-btn tbl-btn-edit" style="' + (tel ? 'font-size:0.85rem;font-weight:bold;line-height:1;padding:2px 5px;' : 'font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;') + '" title="' + (it ? 'Clona' : 'Clone') + '"'
-        + ' onclick="_copiaClona(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">&#10697;</button>'
+        // 🔄 v7.337 (Franco: «da mobile, nella lista delle copie, il tasto clona, toglilo dalla lista; lasciamo in form di
+        //    dettaglio») - dal telefono niente ⧉ qui: si clona dalla finestra della copia
+        + (tel ? '' : '<button type="button" class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="' + (it ? 'Clona' : 'Clone') + '"'
+        + ' onclick="_copiaClona(\'' + esc(x.f.id) + '\',\'' + esc(x.chiave) + '\')">&#10697;</button>')
       + '</td>'
       + '<td style="' + td + 'white-space:nowrap;">' + esc(x.nomeSerie) + '</td>'
       + '<td style="' + td + 'white-space:nowrap;">' + esc(x.nomeTipo) + '</td>'
@@ -75725,6 +75760,9 @@ function _cpFotoHTML(c, sola, artId, chiave, album) {
     + ((d.sito || !sola) ? '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">'
       + (d.sito ? '<button type="button" class="btn-secondary" id="cp-foto-scarica-' + d.k + '" onclick="_cpFotoScaricaTutte(\'' + d.k + '\')" style="font-size:0.8rem;padding:0.25rem 0.8rem;">⬇️ ' + (it ? 'Scarica tutte' : 'Download all') + '</button>' : '')
       + (sola ? '' : '<button type="button" class="btn-danger" id="cp-foto-togli-tutte-' + d.k + '" onclick="_cpFotoTogliTutte(\'' + d.k + '\')" style="font-size:0.8rem;padding:0.25rem 0.8rem;">🗑️ ' + (it ? 'Elimina tutte' : 'Delete all') + '</button>')
+      // 🆕 v7.337 (Franco: «ne vorrei anche una copia in ogni sotto tab») - «Crea annuncio» col Sito della linguetta già
+      //    scelto; anche in sola lettura, come quello del tab Annunci; il clone li toglie (`cp-crea-ann-sito-`)
+      + (d.sito && artId ? '<button type="button" class="btn-barra-admin pieno" id="cp-crea-ann-sito-' + d.k + '" onclick="_cpCreaAnnuncio(\'' + esc(artId) + '\',\'' + esc(chiave) + '\',\'' + d.sito + '\')" style="font-size:0.8rem;padding:0.25rem 0.8rem;">🏷️ ' + (it ? 'Crea annuncio' : 'Create listing') + '</button>' : '')
       + '</div>' : '')
     + '<div id="cp-foto-lista-' + d.k + '" style="display:flex;flex-wrap:wrap;gap:0.5rem;">' + _cpFotoMiniature(sola, d.k) + '</div>'
     // 🔄 v7.311 (Franco: «i tasti per caricare le foto, nei tab ebay, vinted e subito, ci ho ripensato. toglili. lì non
@@ -76002,7 +76040,7 @@ function _copiaApri(artId, chiave, sola) {
     + '<div style="flex:1;min-width:5.5rem;">' + lab(it ? 'Mancanti' : 'Missing')
     + '<input id="cp-mancanti" class="form-input" type="number" min="0" step="1" value="' + (c.mancanti ?? '') + '" style="color:var(--danger);font-weight:600;"' + dis + '></div>'
     + '</div>'
-    + _cpTestiHTML()   // v7.318: venditore e tasti dei testi dell'annuncio
+    // 🗑️ v7.337 - qui stava `_cpTestiHTML()` (v7.318): ora è nel tab Annunci, sotto la lista degli annunci
     + '</div>'
     // 🆕 v7.316 (Franco: «nella maschera della copia aggiungiamo un tab chiamato "condizioni" messo in posizione numero 2,
     //    all'interno del quale mettiamo tutti i campi a partire dal campo "il nome in copertina" fino all'ultimo che dovrebbe
@@ -76021,15 +76059,23 @@ function _copiaApri(artId, chiave, sola) {
     // gli annunci della copia: la stessa cella della colonna «Annunci» del tab, riempita quando gli annunci sono letti
     // v7.310 - tab Annunci
     + '<div id="cp-tab-annunci" style="display:none;">'
+    // 🔄 v7.337 (Franco: «il tasto "Crea annuncio" mettilo dentro al tab, non sotto ai tab») - stava fra i tasti in fondo,
+    //    visibile da tutti i tab; ora in cima al tab Annunci (anche in sola lettura). Il clone toglie il tab, e il tasto con lui.
+    + '<div style="margin:0.3rem 0 0.4rem;"><button type="button" class="btn-barra-admin pieno" id="cp-crea-annuncio" onclick="_cpCreaAnnuncio(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">🏷️ ' + (it ? 'Crea annuncio' : 'Create listing') + '</button></div>'
     + '<div id="cp-annunci">' + lab(it ? 'Annunci' : 'Listings')
     + '<table style="border-collapse:collapse;"><tr>' + _copiaCellaAnnunci(artId, chiave, null, 'riga') + '</tr></table></div>' + _copieAnnunciDopo()
+    // 🔄 v7.337 (Franco: «il campo "Venditore (per i testi dell'annuncio)" mettilo nel tab "Annunci", sotto alla lista degli
+    //    annunci. E rinomina … "Seleziona account per generare i testi dell'annuncio."») - account e tasti dei testi (v7.318)
+    + _cpTestiHTML()
     + '</div>'
     + '<div id="cp-stato" style="font-size:0.8rem;min-height:1.2em;margin-top:0.6rem;"></div>'
     // v7.278 (Franco: «nella pagina della copia, tutti i tasti facciamoli meno alti») - `.cp-comandi` (regola nell'index)
     + '<div class="cp-comandi" style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.8rem;">'
-      // 🆕 v7.320 (Franco: «mi serve un nuovo bottone, sul form di una copia, chiamato "Crea annuncio"») - anche in sola
-      //    lettura: non cambia la copia, aggiunge un annuncio (`_cpCreaAnnuncio`)
-      + '<button type="button" class="btn-barra-admin pieno" id="cp-crea-annuncio" onclick="_cpCreaAnnuncio(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">🏷️ ' + (it ? 'Crea annuncio' : 'Create listing') + '</button>'
+      // 🗑️ v7.337 - qui stava «Crea annuncio» (v7.320): ora è dentro il tab Annunci e nelle linguette dei siti del tab Foto
+      // 🆕 v7.337 (Franco: «se dalla tabella degli annunci clicco sul link della copia, essa si apre; ma dalla form che si apre
+      //    non posso modificare. non c'è il tasto di Modifica. lo vorrei») - in sola lettura, all'admin: riapre la stessa
+      //    copia in modifica, sullo stesso tab (vale per ogni apertura in lettura: tabella annunci, 👁 dell'ELENCO e del tab Copie)
+      + (sola && currentUser?.isAdmin ? '<button type="button" class="btn-barra-admin pieno" id="cp-modifica" style="margin-left:auto;" onclick="_copiaInModifica(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">✏️ ' + (it ? 'Modifica' : 'Edit') + '</button>' : '')
       // 🆕 v7.267 (Franco: «nelle copie mettimi un tasto di clone; sia in tabella che nella form di dettaglio») - «Clona»
       //    come nella finestra dell'annuncio: arancione, a sinistra, lontano da Salva; solo in modifica
       + (sola ? '' : '<button type="button" class="btn-barra-admin pieno" id="cp-clona" onclick="_copiaClonaQui(\'' + esc(artId) + '\')">&#10697; ' + (it ? 'Clona' : 'Clone') + '</button>')
@@ -76047,6 +76093,9 @@ function _copiaApri(artId, chiave, sola) {
                 + ' onclick="_copiaSalva(\'' + esc(artId) + '\',\'' + esc(chiave) + '\',' + passo + ')">💾 ' + testo + '</button>'; };
             return b(-1, 'cp-salva-prev', 'Salva e previous') + b(1, 'cp-salva-next', 'Salva e next');
           })()
+        // 🆕 v7.337 (Franco: «nella pagina della copia, aggiungi il tasto "Salva e resta"») - come nella scheda
+        //    dell'articolo, fra «Salva e next» e «Salva»: salva e riapre la stessa copia, sullo stesso tab
+        + '<button type="button" class="btn-barra-admin pieno" id="cp-salva-resta" onclick="_copiaSalva(\'' + esc(artId) + '\',\'' + esc(chiave) + '\',\'resta\')">💾 ' + (it ? 'Salva e resta' : 'Save and stay') + '</button>'
         // v7.268 (Franco: «il pulsante "Salva" della copia deve essere arancio admin»)
         + '<button type="button" class="btn-barra-admin pieno" id="cp-salva" onclick="_copiaSalva(\'' + esc(artId) + '\',\'' + esc(chiave) + '\')">' + (it ? 'Salva' : 'Save') + '</button>')
     + '</div></div>';
@@ -76059,7 +76108,15 @@ function _copiaApri(artId, chiave, sola) {
 //    dell'articolo collegato alla copia, dal tab relativo al venditore selezionato») - la copia come è SALVATA. Il Titolo -
 //    ITA serve (un annuncio senza titolo non si salva, come nella finestra dell'annuncio); il Finale passa dallo stesso
 //    controllo del Salva (`_annFinaleDiverso`: lo stesso pezzo ha un solo Finale).
-function _cpCreaAnnuncio(artId, chiave) {
+// 🆕 v7.337 - dalla copia in sola lettura alla stessa in modifica, restando sul tab che si guardava
+function _copiaInModifica(artId, chiave) {
+  const tab = _CP_TAB.find(k => { const d = document.getElementById('cp-tab-' + k); return d && d.style.display !== 'none'; }) || 'generale';
+  _copiaApri(artId, chiave);
+  _cpTab(tab);
+}
+// 🆕 v7.337 (Franco: «ne vorrei anche una copia in ogni sotto tab … (Ebay, Vinted, Subito), con la differenza che questi,
+//    quando premuti, già rispondono alla domanda "Sito"») - `sito`: la chiave del sito (`_FA_SITI`), già scelto nella tendina
+function _cpCreaAnnuncio(artId, chiave, sito) {
   const it = currentLang === 'it';
   document.getElementById('cp-crea-ann-modal')?.remove();
   const ov = document.createElement('div');
@@ -76072,8 +76129,8 @@ function _cpCreaAnnuncio(artId, chiave) {
     + '<button type="button" class="modal-close" onclick="document.getElementById(\'cp-crea-ann-modal\').remove()">✕</button></div>'
     + lab('cpa-sito', it ? 'Sito' : 'Site')
     + '<select id="cpa-sito" class="form-select"><option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
-    + _FA_SITI.map(s => '<option value="' + esc(s.nome) + '">' + esc(s.nome) + '</option>').join('') + '</select>'
-    + lab('cpa-venditore', it ? 'Venditore' : 'Seller')
+    + _FA_SITI.map(s => '<option value="' + esc(s.nome) + '"' + (sito && s.chiave === sito ? ' selected' : '') + '>' + esc(s.nome) + '</option>').join('') + '</select>'
+    + lab('cpa-venditore', 'Account')
     + '<select id="cpa-venditore" class="form-select"><option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
     + _ANN_ACCOUNT.map(a => '<option value="' + esc(a) + '">' + esc(a) + '</option>').join('') + '</select>'
     + lab('cpa-finale', it ? 'Finale' : 'Final')
@@ -76087,7 +76144,7 @@ function _cpCreaAnnuncio(artId, chiave) {
 // l'annuncio nuovo, dai tre valori della finestrella e dalla copia; null (e il motivo in `stato`) se manca qualcosa
 function _cpAnnuncioNuovo(art, c, chiave, sito, account, finale, idx, stato) {
   const it = currentLang === 'it';
-  if (!sito || !account) { stato.push(it ? 'Scegli il sito e il venditore.' : 'Choose site and seller.'); return null; }
+  if (!sito || !account) { stato.push(it ? 'Scegli il sito e l’account.' : 'Choose site and account.'); return null; }
   const titolo = String(_annValoreDaAlbum(art, account, 'titoloIt', idx) || '').trim();
   const titoloEn = String(_annValoreDaAlbum(art, account, 'titoloEn', idx) || '').trim();
   if (!titolo) { stato.push(it ? 'L’articolo non ha il Titolo - ITA nel tab Annunci, linguetta ' + account + ': scrivilo lì, poi riprova.' : 'The item has no Italian title for ' + account + '.'); return null; }
@@ -76197,14 +76254,24 @@ function _cpTestiHTML() {
   const it = currentLang === 'it';
   const tasto = (id, k, t) => '<button type="button" class="btn-barra-admin pieno" id="' + id + '" style="display:none;white-space:nowrap;" onclick="_cpCopiaTesto(\'' + k + '\')">📋 ' + t + '</button>';
   return '<div id="cp-testi" style="display:none;margin-top:0.7rem;">'
-    + '<label for="cp-venditore" class="detail-label" style="display:block;margin:0 0 0.25rem;">' + (it ? 'Venditore (per i testi dell\'annuncio)' : 'Seller (for listing texts)') + '</label>'
+    + '<label for="cp-venditore" class="detail-label" style="display:block;margin:0 0 0.25rem;">' + (it ? 'Seleziona account per generare i testi dell\'annuncio.' : 'Select the account to generate the listing texts.')   /* v7.337 (Franco) */ + '</label>'
     + '<div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">'
     + '<select id="cp-venditore" class="form-select" style="width:auto;min-width:9rem;" onchange="_cpTestiAggiorna()"><option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
     + _ANN_ACCOUNT.map(a => '<option value="' + esc(a) + '">' + esc(a) + '</option>').join('') + '</select>'
     + tasto('cp-copia-titolo', 'titoloIt', it ? 'Copia titolo' : 'Copy title')
     + tasto('cp-copia-desc', 'descIt', it ? 'Copia descrizione' : 'Copy description')
     + '<span id="cp-testi-nota" style="font-size:0.8rem;color:var(--text);"></span>'
+    + '</div>'
+    // 🆕 v7.337 (Franco: «affiancane altri … da mettere sotto, chiamati "Copia titoli ITA-EN" e "Copia descrizioni ITA-EN"
+    //    … il contenuto dei due campi … separati da una riga vuota») - la seconda riga; ogni tasto se almeno uno dei due è scritto
+    + '<div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;margin-top:0.5rem;">'
+    + tasto('cp-copia-titoli-itaen', 'titolo', it ? 'Copia titoli ITA-EN' : 'Copy titles ITA-EN')
+    + tasto('cp-copia-desc-itaen', 'desc', it ? 'Copia descrizioni ITA-EN' : 'Copy descriptions ITA-EN')
     + '</div></div>';
+}
+// v7.337 - `k` senza lingua ('titolo', 'desc'): l'italiano e l'inglese, separati da una riga vuota (quelli scritti)
+function _cpTestoItaEn(k) {
+  return [_cpTesto(k + 'It'), _cpTesto(k + 'En')].filter(Boolean).join('\n\n');
 }
 // il testo di un tasto per l'articolo e il venditore scelti, o ''
 function _cpTesto(k) {
@@ -76223,11 +76290,15 @@ function _cpTestiAggiorna() {
   const tit = _cpTesto('titoloIt'), desc = _cpTesto('descIt');
   document.getElementById('cp-copia-titolo').style.display = tit ? '' : 'none';
   document.getElementById('cp-copia-desc').style.display = desc ? '' : 'none';
-  document.getElementById('cp-testi-nota').textContent = ven && !tit && !desc
+  const titIE = _cpTestoItaEn('titolo'), descIE = _cpTestoItaEn('desc');   // v7.337
+  const b1 = document.getElementById('cp-copia-titoli-itaen'), b2 = document.getElementById('cp-copia-desc-itaen');
+  if (b1) b1.style.display = titIE ? '' : 'none';
+  if (b2) b2.style.display = descIE ? '' : 'none';
+  document.getElementById('cp-testi-nota').textContent = ven && !tit && !desc && !titIE && !descIE
     ? (it ? 'L’album non ha Titolo né Descrizione scritti nel tab ' + ven + ' della sezione Ebay.' : 'No texts for ' + ven + '.') : '';
 }
 function _cpCopiaTesto(k) {
-  const t = _cpTesto(k);
+  const t = /It$|En$/.test(k) ? _cpTesto(k) : _cpTestoItaEn(k);   // v7.337: 'titolo' / 'desc' = le due lingue
   if (t) _collageCopia(t);
 }
 function _cpCambiaSerie(sid) {
@@ -76264,11 +76335,13 @@ function _copiaClonaQui(artId) {
   // v7.310 - un clone non ha annunci: via anche il loro tab, e si torna sul Generale
   v('cp-tab-annunci')?.remove();
   v('cp-tab-btn-annunci')?.remove();
+  ['fotoEbay', 'fotoVinted', 'fotoSubito'].forEach(k => v('cp-crea-ann-sito-' + k)?.remove());   // v7.337: un clone non salvato non crea annunci
   _cpTab('generale');
   v('cp-clona')?.remove();
   v('cp-cancella')?.remove();   // v7.277: un clone non salvato non c'è ancora da cancellare
   ['cp-salva-prev', 'cp-salva-next'].forEach(id => v(id)?.remove());   // v7.268: un clone non ha vicine
   v('cp-salva')?.setAttribute('onclick', '_copiaSalva(\'' + artId + '\',null)');
+  v('cp-salva-resta')?.setAttribute('onclick', '_copiaSalva(\'' + artId + '\',null,\'resta\')');   // v7.337: il clone salvato resta aperto, ora copia vera
   const st = v('cp-stato');
   if (st) { st.style.color = 'var(--info)'; st.textContent = it ? 'È un clone: con Salva diventa una copia in più dello stesso articolo.' : 'This is a clone: Save adds a new copy of the same item.'; }
 }
@@ -76324,7 +76397,7 @@ async function _copiaSalva(artId, chiave, passo) {
         titolo: '🔀 ' + (it ? 'Spostare la copia e i suoi annunci?' : 'Move the copy and its listings?'),
         testo: it ? 'La copia passa a «' + _annNomeArticolo(artDest) + '», e con lei ' + (via.length === 1 ? 'il suo annuncio' : 'i suoi ' + via.length + ' annunci') + ':'
           : 'The copy moves to «' + _annNomeArticolo(artDest) + '», with its ' + via.length + ' listing' + (via.length === 1 ? '' : 's') + ':',
-        colonne: it ? ['Sito', 'Venditore', 'Titolo', 'Finale'] : ['Site', 'Seller', 'Title', 'Final'],
+        colonne: it ? ['Sito', 'Account', 'Titolo', 'Finale'] : ['Site', 'Account', 'Title', 'Final'],
         righe: via.map(r => [r.sito || '', r.account || '', r.titolo || '', _annVuoto(r.prezzo) ? '' : String(r.prezzo).replace('.', it ? ',' : '.')]),
         ok: it ? 'Sposta' : 'Move', annulla: it ? 'Annulla' : 'Cancel', larghezza: '900px'
       })) return;
@@ -76333,10 +76406,14 @@ async function _copiaSalva(artId, chiave, passo) {
   if (artDest) { if (chiave === null) copie.pop(); else copie.splice(i, 1); }
   else copie[i] = nuova;
   // v7.268 - durante il salvataggio si spengono tutti i Salva, non solo quello premuto (come nell'annuncio)
-  const salvi = ['cp-salva', 'cp-salva-prev', 'cp-salva-next'].map(v).filter(Boolean);
+  const salvi = ['cp-salva', 'cp-salva-prev', 'cp-salva-next', 'cp-salva-resta'].map(v).filter(Boolean);
   const accesi = salvi.filter(b => !b.disabled);
   salvi.forEach(b => { b.disabled = true; });
-  const vicina = passo && chiave !== null ? _cdVicina(artId, chiave, passo) : null;
+  // 🆕 v7.337 - «Salva e resta» (`passo` = 'resta'): si riapre la stessa copia, dove sta adesso (l'articolo di
+  //    destinazione, se è stata spostata), con la sua chiave: l'id, o la posizione per una vecchia copia senza id
+  const resta = passo === 'resta';
+  const tabAperto = resta ? (_CP_TAB.find(k => { const d = v('cp-tab-' + k); return d && d.style.display !== 'none'; }) || 'generale') : null;
+  const vicina = !resta && passo && chiave !== null ? _cdVicina(artId, chiave, passo) : null;
   try {
     await _cpFotoCarica(nuova);
     if (artDest) {
@@ -76355,6 +76432,12 @@ async function _copiaSalva(artId, chiave, passo) {
       : (it ? '✅ Copia salvata.' : '✅ Copy saved.'), 'success');
     _cdDisegna();
     if (vicina) _copiaApri(vicina[0], vicina[1]);
+    if (resta) {
+      const dove = artDest ? artDest.id : artId;
+      const k = (_articoloVivo(dove)?.copie || []).findIndex(c => nuova.id ? c.id === nuova.id : c === nuova);
+      _copiaApri(dove, nuova.id || ('#' + (k >= 0 ? k : i)));
+      _cpTab(tabAperto);
+    }
   } catch (e) {
     console.error('_copiaSalva', e);
     accesi.forEach(b => { b.disabled = false; });
@@ -76550,7 +76633,8 @@ function _copiaRigaHTML(c, artId, chiave) {
     + _copiaCellaAnnunci(artId, chiave, _copieCellaSu, true)   // v7.263; v7.278: sulle due righe
     // v7.267 (Franco: «il tasto di clona copia, sia nella tabella delle copie della sezione della admin console, che nella
     //    tabella della form di dettaglio delle copie») - ⧉ prima della ✕: una riga nuova subito sotto (`_copiaClonaRiga`)
-    + '<td style="' + _copieCella + 'white-space:nowrap;"><button type="button" class="tbl-btn tbl-btn-edit" style="font-weight:bold;" title="' + (currentLang === 'it' ? 'Clona questa copia' : 'Clone this copy') + '" onclick="_copiaClonaRiga(this)">&#10697;</button> '
+    // 🔄 v7.337 (Franco: «da mobile ... il tasto clona, toglilo dalla lista»; «tutte e due») - dal telefono niente ⧉ qui
+    + '<td style="' + _copieCella + 'white-space:nowrap;">' + (_isMobileViewport() ? '' : '<button type="button" class="tbl-btn tbl-btn-edit" style="font-weight:bold;" title="' + (currentLang === 'it' ? 'Clona questa copia' : 'Clone this copy') + '" onclick="_copiaClonaRiga(this)">&#10697;</button> ')
     + '<button type="button" class="tbl-btn tbl-btn-delete" title="' + (currentLang === 'it' ? 'Togli questa copia' : 'Remove this copy') + '" onclick="this.closest(\'tbody\').remove()">✕</button></td></tr>'   // v7.277: via tutta la copia, due righe
     // v7.277 - le Condizioni sotto, a tutta larghezza
     // v7.278: 5 colonne (n., Mancanti, Iniziale, Add +, Voto): gli Annunci occupano già questa riga, e i tasti hanno la loro cella vuota
@@ -76703,7 +76787,7 @@ function _copieConAnnunciAvviso(via, nCopia) {
     titolo: '🚫 ' + (it ? 'Copia con annunci: non si cancella' : 'Copy with listings: not deleted'),
     testo: it ? 'Prima cancella ' + (via.length === 1 ? 'l’annuncio collegato' : 'i ' + via.length + ' annunci collegati') + ' (pagina Annunci), poi cancella la copia:'
       : 'First delete the ' + via.length + ' linked listing' + (via.length === 1 ? '' : 's') + ' (Listings page), then delete the copy:',
-    colonne: it ? ['N. copia', 'Sito', 'Venditore', 'Titolo', 'Finale'] : ['Copy no.', 'Site', 'Seller', 'Title', 'Final'],
+    colonne: it ? ['N. copia', 'Sito', 'Account', 'Titolo', 'Finale'] : ['Copy no.', 'Site', 'Account', 'Title', 'Final'],
     righe: via.map(r => [nCopia(r.copiaId) || '—', r.sito || '', r.account || '', r.titolo || '', _annVuoto(r.prezzo) ? '' : String(r.prezzo).replace('.', it ? ',' : '.')]),
     coda: it ? 'Non è stato cancellato né salvato niente.' : 'Nothing was deleted or saved.',
     ok: it ? 'Ho capito' : 'OK', soloOk: true, larghezza: '900px'
@@ -77495,6 +77579,7 @@ function switchToEditMode(figId) {
   // 🔄 v7.334 (Franco: «nella versione mobile durante la modifica di un articolo, la form non sta tutta nello schermo ma
   //    fuoriesce un pochino a destra») - la fila dei tab va a capo invece di allargare la finestra: con Pagine, Annunci e
   //    Ebay (v7.322) sul telefono stretto i quattro tab non ci stanno. Prima ipotesi, non misurata: da verificare a schermo.
+  // 📏 v7.337 - misurata: i tab ci stavano già; sbordavano la riga delle tre foto e i tasti del tab Pagine (style.css, `#fig-detail-griglia > *`)
   html += '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;border-bottom:1px solid var(--border);margin:0.75rem 0 1rem;">' +
     '<button type="button" id="fe-tab-btn-generale" onclick="switchFeTab(\'generale\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Generale</button>' +
     _tabPagineBtn(f) +
@@ -78930,7 +79015,9 @@ function _mostraSfogliaAlbum() {
   //    sfogliare?» (`alb`) e «sono in un posto dove offrirlo ha senso?». Sull'hub della serie
   //    ha senso - e' li' che uno arriva per sfogliare, ed e' la richiesta della v6.806 - dentro
   //    gli Album pure, perche' e' la casa di quell'album. In Bustine no.
-  const quiCiSta = !currentSection || currentSection === 'albums';
+  // 🆕 v7.337 (Franco: «sì» alla proposta del tasto anche nella sezione delle fpa) - TERZO POSTO:
+  //    le figurine da attaccare (`attaccare`), quelle che nell'album si attaccano. Le altre sezioni no.
+  const quiCiSta = !currentSection || currentSection === 'albums' || currentSection === 'attaccare';
   const serie = document.getElementById('sfoglia-album-serie');
   if (serie) {
     const mostra = alb && quiCiSta;
@@ -79782,7 +79869,8 @@ function _bloccoPagineEdit(f) {
                 : '⚠️ This album is not the one to browse: the pages stay saved, but nobody sees them.')
           + '</p>'
         : '')
-    + '<div style="display:flex;gap:0.6rem;margin-bottom:0.6rem;">'
+    // \uD83D\uDC1E v7.337 - `flex-wrap`: dal telefono i tre tasti in fila chiedevano 805px e allargavano la scheda (misurato a 390px)
+    + '<div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin-bottom:0.6rem;">'
     + '<label class="btn-foto" style="flex:1;text-align:center;cursor:pointer;">\uD83D\uDCF7 '
     + (it ? 'Aggiungi pagine' : 'Add pages')
     // ⚠️ `multiple` e' il punto di questa release: senza, sono N giri di finestra.
