@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.339 - Modificati index.html (versione) e js/app.js. Franco: «"Titoli, descrizioni e foto per account" diventa
+//          "Titoli, descrizioni e struttura foto per account"». Il titolo del blocco per account nel tab Annunci dell'album,
+//          in lettura e in modifica (EN: «Titles, descriptions and photo layout per account»).
 // v7.338 (bis, 24/11) - Solo questa riga: un push nuovo per far ripartire il deploy, fallito al run 1153 con «Multiple
 //          artifacts named "github-pages"» (3 pacchetti nello stesso run; il re-run non lo sblocca). Codice invariato.
 // v7.338 - Modificati index.html (versione) e js/app.js. LE FOTO ANNUNCI PER ACCOUNT (Franco: «voglio che con ognuno dei 4
@@ -32315,7 +32318,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.338';
+const JS_VERSION = 'v7.339';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -60414,7 +60417,7 @@ function _famEbayLettura(d, it, idBox) {
     + 'border-bottom:2px solid ' + (i === 0 ? 'var(--accent)' : 'transparent') + ';font-weight:' + (i === 0 ? '700' : '400') + ';">' + a
     + (pieno(a) ? '<span style="margin-left:0.35rem;color:var(--accent);">●</span>' : '') + '</button>';
   return '<div id="' + (idBox || 'fam-ebay-lettura') + '" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin:0 0 0.8rem;">'
-    + (idBox ? '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">✍️ ' + (d.fotoDi ? (it ? 'Titoli, descrizioni e foto per account' : 'Titles, descriptions and photos per account') : (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account')) + '</div>'
+    + (idBox ? '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">✍️ ' + (d.fotoDi ? (it ? 'Titoli, descrizioni e struttura foto per account' : 'Titles, descriptions and photo layout per account') : (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account')) + '</div>'
       : '<div style="font-size:0.88rem;font-weight:700;color:var(--info);margin-bottom:0.4rem;">🏷️ Ebay: <span style="color:var(--text);">' + (d.forSale ? (it ? 'sì' : 'yes') : 'no') + '</span></div>')
     // v7.252 - le linguette nello stesso ordine della finestra: prima chi ha testi (`_testiAccountInOrdine`)
     + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + _testiAccountInOrdine(t, d.fotoScritte).map(lin).join('') + '</div>'
@@ -79574,7 +79577,7 @@ function _bloccoTestiAccountEdit(f) {
   //    ordine alfabetico, e poi i rimanenti, in ordine alfabetico») - `_testiAccountInOrdine`; si apre il primo
   const ordine = _testiAccountInOrdine(t, conFoto ? f.fotoScritte : null);
   return '<div id="fe-testi-account" oninput="_feTaSegna()" style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">'
-    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;">✍️ ' + (conFoto ? (it ? 'Titoli, descrizioni e foto per account' : 'Titles, descriptions and photos per account') : (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account')) + '</div>'
+    + '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;">✍️ ' + (conFoto ? (it ? 'Titoli, descrizioni e struttura foto per account' : 'Titles, descriptions and photo layout per account') : (it ? 'Titoli e descrizioni per account' : 'Titles and descriptions per account')) + '</div>'
     + '<div style="display:flex;gap:0.2rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem;">' + ordine.map(linguetta).join('') + '</div>'
     + ordine.map((a, i) => '<div class="fe-ta-pannello" data-account="' + a + '"' + (i === 0 ? '' : ' style="display:none;"') + '>'
       // 🔄 v7.323 - titolo ITA, descrizione ITA, titolo ENG, descrizione ENG (come in lettura, `_famEbayLettura`)
