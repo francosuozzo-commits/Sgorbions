@@ -1,6 +1,24 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.340 (3) - Brochure, i ritocchi di Franco: fpa prima delle fcr (`PRODOTTI_INVENTARIO`); fcr con fronte e retro affiancati
+//          e il nome del retro sotto il retro; bustine, album e altri articoli proseguono il foglio precedente
+//          (`_BR_ACCODA`); il numero di articoli accanto al nome della tipologia; versioni a scelta; con / senza macchie;
+//          tipologie con più foto (2 sempre, «Tutte le foto» a scelta); fuori gli articoli senza foto (tranne «Foto non
+//          disponibile»); la foto della serie in cima al suo primo foglio. Personaggi: in console le tre scale con le
+//          frecce ▲▼ e la spunta (`_persFrecceCella`); nella pagina il Nome in sola lettura col tasto «Modifica»; nelle
+//          card con due foto il lato col personaggio prende il 62% (`_PC_QUOTE`).
+// v7.340 (2) - LA BROCHURE (Franco: «vorrei implementare una nuova funzionalità chiamata brochure»). Console → 📖 Brochure
+//          (index: la linguetta e `#admin-brochure`): albero serie → tipologie, A4/A5, italiano/inglese, sotto le foto «nome e
+//          numero» o «come la card della griglia», foto di copertina dal PC. «Crea brochure» apre l'anteprima impaginata
+//          (`_brApri`): copertina SGORBIONS, sommario coi numeri di pagina, per ogni serie le pagine di ogni tipologia, poi
+//          gli articoli senza serie; «Stampa / Salva PDF». Solo basi visibili; foto della griglia (300 px, nessuna
+//          trasformazione nuova).
+// v7.340 - Modificati index.html (versione) e js/app.js. IL TELEFONO CHE SI BLOCCA in «Crea foto per annuncio album»
+//          (Franco: «scelgo opzione A»). Dalla copia, ogni foto preparata si allega e si salva sulla copia SUBITO
+//          (`_faAllegaUna`, chiamata da `_faComponi`), con una pausa di 400 ms prima della successiva: se il
+//          telefono si ferma a metà, quelle già allegate restano. Via `_faAllegaAllaCopia` (tutte insieme alla fine) e il passo
+//          «Salvo la copia…» della barra. Un errore di invio ferma il giro con la finestra rossa, che dice quante sono già salvate.
 // v7.339 - Modificati index.html (versione) e js/app.js. Franco: «"Titoli, descrizioni e foto per account" diventa
 //          "Titoli, descrizioni e struttura foto per account"». Il titolo del blocco per account nel tab Annunci dell'album,
 //          in lettura e in modifica (EN: «Titles, descriptions and photo layout per account»).
@@ -32318,7 +32336,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.339';
+const JS_VERSION = 'v7.340';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -47282,12 +47300,16 @@ async function _faComponi() {
   const saltate = [];
   // v7.337 - i passi della barra: le foto da preparare, e dalla copia le stesse da allegare più il salvataggio
   const _daFare = (_faPianoDi(a, sito, _fa.venditore) || []).filter(g => g.some(p => perPagina.has(p))).length;   // v7.338: il piano dell'account
-  _fa.avTot = _fa.copia ? 2 * _daFare + 1 : _daFare;
+  // 🔄 v7.340 - dalla copia ogni foto ha due passi (preparata, allegata e salvata); niente più il «Salvo la copia» finale
+  _fa.avTot = _fa.copia ? 2 * _daFare : _daFare;
+  // 🆕 v7.340 (il telefono che si blocca, strada A) - dalla copia ogni foto si allega e si salva appena pronta (`_faAllegaUna`):
+  //    se il telefono si ferma a metà, quelle già allegate restano sulla copia. `vecchie`: le foto del giro prima, da sostituire
+  const giro = _fa.copia ? { vecchie: (_fa.allegate || []).slice(), nuove: [], fermo: false } : null;
   for (const g of (_faPianoDi(a, sito, _fa.venditore) || [])) {
     g.filter(p => !perPagina.has(p)).forEach(p => saltate.push(_faNomePagina(p, N)));
     const presenti = g.filter(p => perPagina.has(p));
     if (!presenti.length) continue;
-    _faAvanza('Preparo la foto ' + (_fa.uscite.length + 1) + ' di ' + _daFare + '…', _fa.uscite.length, _fa.avTot);
+    _faAvanza('Preparo la foto ' + (_fa.uscite.length + 1) + ' di ' + _daFare + '…', _fa.uscite.length * (giro ? 2 : 1), _fa.avTot);
     _faStato('Preparo la foto ' + (_fa.uscite.length + 1) + '…');
     _fa$('piano2').textContent = '⏳ Preparo la foto ' + (_fa.uscite.length + 1) + '…';   // v7.273: anche qui, dove si guarda
     const ritagli = presenti.map(p => _faRitaglioPronto(perPagina.get(p)));
@@ -47305,13 +47327,16 @@ async function _faComponi() {
     const n = String(_fa.uscite.length + 1).padStart(2, '0');
     // v7.188: nel nome del file la chiave del sito (`subito`), non il nome a schermo («Subito.it» darebbe «subito.it-1.jpg»)
     _fa.uscite.push({ nome: a.file + '-' + sito.chiave + '-' + n + '.jpg', blob, url: URL.createObjectURL(blob), dida: presenti.map(p => _faNomePagina(p, N)).join(' + '), didaLunga: presenti.map(p => _faNomePagina(p, N, null, true)).join(' + ') });
+    // v7.340 - allegata e salvata subito; se non riesce ci si ferma (la finestra rossa dice quante sono già sulla copia)
+    if (giro && !(await _faAllegaUna(giro, blob, _fa.uscite.length, _daFare))) { giro.fermo = true; break; }
   }
   if (!_fa$('stato').textContent.startsWith('⚠️')) _faStato('');
   // v7.292 - una scelta cambiata mentre si lavorava: queste foto non valgono
   if (_fa.statoUscite !== _faStatoScelte()) { _faInvalida(); return; }
   _fa.saltate = saltate;
   _faRisultati();
-  if (_fa.copia) await _faAllegaAllaCopia();   // v7.310
+  // v7.310 / v7.340 - le foto sono già sulla copia, una per una: qui solo l'esito, nella finestra da chiudere (v7.316)
+  if (giro && !giro.fermo && giro.nuove.length) { _faStato(''); _faAvviso('✅ ' + giro.nuove.length + ' foto allegate alla copia.'); }
   } finally {
     _fa.inCorso = false; _faDisegnaScelte();
     // 🆕 v7.337 (Franco: «durante questo lasso di tempo, vedo che il tasto "scarica tutte" è premibile ma non deve esserlo») -
@@ -47326,42 +47351,44 @@ async function _faComponi() {
 //    della linguetta da cui si è partiti. Un secondo «Prepara le foto» SOSTITUISCE quelle allegate dal giro prima (le altre
 //    foto della linguetta restano): le vecchie, non più nominate, le toglie la pulizia serale. Se la finestra della copia è
 //    aperta su quella copia, la sua linguetta si aggiorna (se no il suo Salva le butterebbe).
-async function _faAllegaAllaCopia() {
+//    🔄 v7.340 (il telefono che si blocca: Franco sceglie la strada A) - non più tutte insieme alla fine (`_faAllegaAllaCopia`), ma
+//    una alla volta appena pronta, chiamata da `_faComponi`: caricata, scritta sulla copia, poi una pausa breve prima della
+//    successiva. Se il telefono si ferma a metà, quelle già allegate restano salvate. `giro.vecchie` (le foto del giro prima)
+//    escono dalla linguetta alla prima scrittura; `giro.nuove` sono quelle di questo giro. Esito `true`/`false`: sul `false`
+//    la finestra rossa dice quante sono già sulla copia, e `_faComponi` si ferma.
+async function _faAllegaUna(giro, blob, k, tot) {
   const { artId, chiave, campo } = _fa.copia, it = currentLang === 'it';
-  // 🔄 v7.316 (Franco: «invece che essere informato di questo attraverso quella frase in verde, preferisco un pop-up a
-  //    schermo che devo cliccare») - l'esito, riuscito o no, in una finestra nella pagina della procedura, chiusa solo da «OK»
-  const scrivi = (t, rosso) => _faAvviso(t, rosso);
-  if (!_fa.uscite.length) return;
   try {
-    const nuove = [];
-    const _fatte = _fa.uscite.length;   // v7.337: la barra riparte da qui (le foto preparate sono già fatte)
-    for (let i = 0; i < _fa.uscite.length; i++) {
-      _faAvanza('Allego alla copia la foto ' + (i + 1) + ' di ' + _fa.uscite.length + '…', _fatte + i, _fa.avTot);
-      _faStato('Allego alla copia: foto ' + (i + 1) + ' di ' + _fa.uscite.length + '…');
-      nuove.push(await uploadToCloudinary(_fa.uscite[i].blob, 'copia'));
-    }
-    _faAvanza('Salvo la copia…', 2 * _fatte, _fa.avTot);
+    _faAvanza('Allego alla copia la foto ' + k + ' di ' + tot + '…', 2 * k - 1, _fa.avTot);
+    _faStato('Allego alla copia: foto ' + k + ' di ' + tot + '…');
+    const url = await uploadToCloudinary(blob, 'copia');
     const art = _articoloVivo(artId);
     const copie = art && Array.isArray(art.copie) ? art.copie.slice() : [];
-    const j = copie.findIndex((c, k) => _annChiaveCopia(c, k) === chiave);
+    const j = copie.findIndex((c, i) => _annChiaveCopia(c, i) === chiave);
     if (j < 0) throw new Error(it ? 'non trovo più la copia' : 'copy not found');
     const prima = Array.isArray(copie[j][campo]) ? copie[j][campo] : [];
-    const elenco = prima.filter(u => !_fa.allegate.includes(u)).concat(nuove);
+    const nuove = giro.nuove.concat(url);
+    const elenco = prima.filter(u => !giro.vecchie.includes(u) && !nuove.includes(u)).concat(nuove);
     copie[j] = Object.assign({}, copie[j], { [campo]: elenco });
     await _saveFigurineItem(Object.assign({}, art, { copie }));
-    _fa.allegate = nuove;
+    giro.nuove = nuove;
+    _fa.allegate = nuove;   // un «Prepara le foto» dopo un blocco sostituisce anche queste
     // la finestra della copia, se è aperta su questa copia: le foto già sul sito diventano quelle scritte, quelle ancora da salvare restano
     if (_cpFotoDi && _cpFotoDi.artId === artId && _cpFotoDi.chiave === chiave) {
       const daSalvare = _cpFotoElenco(campo).filter(f => !f.url);
-      _cpFoto[campo] = elenco.map(url => ({ url })).concat(daSalvare);
+      _cpFoto[campo] = elenco.map(u => ({ url: u })).concat(daSalvare);
       _cpFotoDisegna(campo);
     }
-    _faStato('');
-    scrivi('✅ ' + nuove.length + ' foto allegate alla copia.');
+    // il respiro fra una foto e l'altra (400 ms): il telefono libera la memoria prima di preparare la successiva
+    if (k < tot) await new Promise(ok => setTimeout(ok, 400));
+    return true;
   } catch (e) {
-    console.error('_faAllegaAllaCopia', e);
+    console.error('_faAllegaUna', e);
     _faStato('');
-    scrivi('⚠️ Foto NON allegate alla copia: ' + (e && e.message || e), true);
+    const gia = giro.nuove.length;
+    _faAvviso('⚠️ ' + (it ? 'Foto ' + k + ' NON allegata alla copia: ' : 'Photo ' + k + ' NOT attached to the copy: ') + (e && e.message || e)
+      + (gia ? (it ? '. Le prime ' + gia + ' sono già allegate e salvate.' : '. The first ' + gia + ' are already attached and saved.') : ''), true);
+    return false;
   }
 }
 // 🆕 v7.316 - una finestra sopra la pagina della procedura (che è un'altra scheda: `_finestraConferma` non ci arriva); si
@@ -48377,15 +48404,14 @@ function renderAdminPersonaggi() {
       (it ? 'L\'ordine delle tipologie, dalla 1 in giù. Vale per due cose:<br>' +
             '· la foto sulla card del personaggio: nella serie più vecchia, la tipologia più in alto;<br>' +
             '· quando si cancella l\'articolo collegato al personaggio, il collegamento passa all\'articolo della tipologia più in alto.<br>' +
-            'Casella vuota: la tipologia viene dopo tutte le altre.'
-          : 'The order of item types, from 1 down. It decides the character card photo and who inherits the link when the linked item is deleted. Empty: after all the others.') +
+            'Le frecce ▲▼ spostano la tipologia. Senza spunta: la tipologia viene dopo tutte le altre.'
+          : 'The order of item types, from 1 down (▲▼ to move). It decides the character card photo and who inherits the link when the linked item is deleted. Unticked: after all the others.') +
     '</p>' +
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
     '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>' +
       '<th style="' + th + 'text-align:center;">' + (it ? 'Posizione' : 'Position') + '</th></tr>' +
     righe.map(sez => '<tr><td style="' + td + '">' + esc(getSectionLabel(sez)) + '</td>' +
-      '<td style="' + td + 'text-align:center;"><input type="number" min="1" max="20" step="1" data-scala-pers="' + esc(sez) + '"' +
-      ' value="' + ((scala.indexOf(sez) + 1) || '') + '" style="width:3.4em;padding:2px 4px;text-align:center;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;"></td></tr>').join('') +
+      _persFrecceCella(td, 'data-scala-pers', sez, scala.indexOf(sez) + 1, it) + '</tr>').join('') +
     '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin" onclick="salvaScalaPersonaggi()">' + (it ? 'Salva la scala' : 'Save ranking') + '</button>' +
@@ -48394,30 +48420,28 @@ function renderAdminPersonaggi() {
     //    configurazione, nella sezione Personaggi») - i criteri con la loro posizione, come la scala qui sopra
     '<h4 style="font-family:var(--font-ui);margin:2rem 0 0.5rem;color:var(--info);">↕️ ' + (it ? 'Ordine degli articoli nella pagina del personaggio' : 'Order of the items in the character page') + '</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
-      (it ? 'I criteri, dal 1 in giù: si guarda il primo, a parità il secondo, e così via. Casella vuota: il criterio non si usa.<br>' +
+      (it ? 'I criteri, dal 1 in giù: si guarda il primo, a parità il secondo, e così via. Le frecce ▲▼ li spostano. Senza spunta: il criterio non si usa.<br>' +
             'Dopo i criteri decide sempre l\'ordine della griglia: numero e nome, e le versioni dietro la loro base.'
-          : 'The criteria, from 1 down; empty = not used. After them, the grid order always decides.') +
+          : 'The criteria, from 1 down (▲▼ to move); unticked = not used. After them, the grid order always decides.') +
     '</p>' +
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
     '<tr><th style="' + th + '">' + (it ? 'Criterio' : 'Criterion') + '</th>' +
       '<th style="' + th + 'text-align:center;">' + (it ? 'Posizione' : 'Position') + '</th></tr>' +
     (ord => _CRITERI_PERS.slice().sort((a, b) => ((ord.indexOf(a.k) + 1) || 99) - ((ord.indexOf(b.k) + 1) || 99))
       .map(c => '<tr><td style="' + td + 'white-space:normal;max-width:40rem;">' + esc(it ? c.it : c.en) + '</td>' +
-        '<td style="' + td + 'text-align:center;"><input type="number" min="1" max="9" step="1" data-ordine-pers="' + c.k + '"' +
-        ' value="' + ((ord.indexOf(c.k) + 1) || '') + '" style="width:3.4em;padding:2px 4px;text-align:center;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;"></td></tr>').join(''))(_ordinePersonaggio()) +
+        _persFrecceCella(td, 'data-ordine-pers', c.k, ord.indexOf(c.k) + 1, it) + '</tr>').join(''))(_ordinePersonaggio()) +
     '</table></div>' +
     // 🆕 v7.335 (Franco: «io vorrei questo ordine qui: fpa, carte, olo, retro diretti, …, fcr») - i pezzi del criterio «Gruppo»
     '<p style="font-size:0.85rem;color:var(--text);margin:1.1rem 0 0.6rem;line-height:1.5;">' +
-      (it ? '<strong>Ordine dei gruppi</strong> (il criterio «Gruppo»): uno per tipologia, e le figurine con retro divise fra quelle collegate direttamente e quelle presenti per il loro retro. Casella vuota: dopo tutti gli altri.'
-          : '<strong>Group order</strong> (the «Group» criterion). Empty: after all the others.') +
+      (it ? '<strong>Ordine dei gruppi</strong> (il criterio «Gruppo»): uno per tipologia, e le figurine con retro divise fra quelle collegate direttamente e quelle presenti per il loro retro. Le frecce ▲▼ li spostano. Senza spunta: dopo tutti gli altri.'
+          : '<strong>Group order</strong> (the «Group» criterion), ▲▼ to move. Unticked: after all the others.') +
     '</p>' +
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">' +
     '<tr><th style="' + th + '">' + (it ? 'Gruppo' : 'Group') + '</th>' +
       '<th style="' + th + 'text-align:center;">' + (it ? 'Posizione' : 'Position') + '</th></tr>' +
     (ord => _PEZZI_GRUPPO_PERS.slice().sort((a, b) => ((ord.indexOf(a) + 1) || 99) - ((ord.indexOf(b) + 1) || 99))
       .map(k => '<tr><td style="' + td + '">' + esc(_nomePezzoGruppoPers(k, it)) + '</td>' +
-        '<td style="' + td + 'text-align:center;"><input type="number" min="1" max="20" step="1" data-gruppo-pers="' + k + '"' +
-        ' value="' + ((ord.indexOf(k) + 1) || '') + '" style="width:3.4em;padding:2px 4px;text-align:center;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;"></td></tr>').join(''))(_ordineGruppiPers()) +
+        _persFrecceCella(td, 'data-gruppo-pers', k, ord.indexOf(k) + 1, it) + '</tr>').join(''))(_ordineGruppiPers()) +
     '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin" onclick="salvaOrdinePersonaggio()">' + (it ? 'Salva l\'ordine' : 'Save order') + '</button>' +
@@ -48600,6 +48624,37 @@ async function salvaOrdinePersonaggio() {
     console.error('salvaOrdinePersonaggio', e);
     toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
   }
+}
+// 🔄 v7.340 (Franco: «nelle 3 scale di priorità, le posizioni preferisco muoverle con le usuali freccettine su-giù, anziché coi
+//    numeri. I numeri sono più scomodi perché richiedono più clic, per la medesima modifica») - LA CELLA DELLA POSIZIONE: la
+//    spunta (dentro la scala o fuori: era la casella vuota), il numero e le frecce ▲▼ della tabella delle serie. Il numero
+//    sta in un `input` nascosto con lo stesso `data-…` di prima, così i due Salva leggono come sempre.
+function _persFrecceCella(td, attr, k, n, it) {
+  return '<td style="' + td + 'text-align:center;white-space:nowrap;">'
+    + '<input type="checkbox" class="pers-dentro" onchange="_persRinumera(this)"' + (n > 0 ? ' checked' : '') + ' title="' + (it ? 'Nella scala' : 'In the ranking') + '"> '
+    + '<span class="pers-num" style="display:inline-block;min-width:1.6em;color:var(--text);font-size:0.78rem;">' + (n > 0 ? n : '—') + '</span>'
+    + '<button type="button" class="tbl-btn tbl-btn-edit" onclick="_persSposta(this, -1)" title="' + (it ? 'Su' : 'Up') + '">▲</button>'
+    + '<button type="button" class="tbl-btn tbl-btn-edit" onclick="_persSposta(this, 1)" title="' + (it ? 'Giù' : 'Down') + '">▼</button>'
+    + '<input type="hidden" ' + attr + '="' + esc(k) + '" value="' + (n > 0 ? n : '') + '"></td>';
+}
+// la riga sale o scende di un posto (la riga dei titoli non si scavalca), poi si rinumera
+function _persSposta(btn, verso) {
+  const tr = btn.closest('tr');
+  const altra = verso < 0 ? tr.previousElementSibling : tr.nextElementSibling;
+  if (!altra || altra.querySelector('th')) return;
+  if (verso < 0) altra.before(tr); else altra.after(tr);
+  _persRinumera(tr);
+}
+// le righe spuntate prendono 1, 2, 3… nell'ordine in cui stanno; le altre restano fuori (—)
+function _persRinumera(el) {
+  let n = 0;
+  el.closest('table').querySelectorAll('tr').forEach(r => {
+    const h = r.querySelector('input[type="hidden"]'), c = r.querySelector('.pers-dentro'), s = r.querySelector('.pers-num');
+    if (!h || !c) return;
+    if (c.checked) n++;
+    h.value = c.checked ? n : '';
+    if (s) s.textContent = c.checked ? n : '—';
+  });
 }
 async function salvaScalaPersonaggi() {
   if (!currentUser?.isAdmin) return;
@@ -52045,8 +52100,10 @@ function _rigaGestionePersonaggio(pid) {
   const eliminabile = !(d.artPerPers.get(pid) || []).length;
   return '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;font-size:0.85rem;color:var(--text);">'
     + '<label for="personaggio-rinomina">' + (it ? 'Nome:' : 'Name:') + '</label>'
-    + '<input class="form-input" id="personaggio-rinomina" value="' + esc(p.nome) + '" style="max-width:320px;padding:0.3rem 0.6rem;font-size:0.85rem;">'
-    + '<button type="button" class="btn-primary btn-admin" style="padding:0.3rem 0.9rem;font-size:0.82rem;" onclick="_rinominaPersonaggio(\'' + pid + '\')">' + (it ? 'Rinomina' : 'Rename') + '</button>'
+    // 🔄 v7.340 (Franco: «il campo Nome rendilo read only; diventa editabile solo dopo che premo il tasto "Rinomina", che
+    //    comunque sia chiamerei "Modifica"») - sola lettura; «Modifica» lo apre e diventa «Salva» (`_persNomeModifica`)
+    + '<input class="form-input" id="personaggio-rinomina" value="' + esc(p.nome) + '" readonly style="max-width:320px;padding:0.3rem 0.6rem;font-size:0.85rem;">'
+    + '<button type="button" class="btn-primary btn-admin" style="padding:0.3rem 0.9rem;font-size:0.82rem;" onclick="_persNomeModifica(this, \'' + pid + '\')">' + (it ? 'Modifica' : 'Edit') + '</button>'
     + (eliminabile ? '<button type="button" class="btn-danger" style="padding:0.3rem 0.9rem;font-size:0.82rem;" onclick="_eliminaPersonaggio(\'' + pid + '\')">' + (it ? 'Elimina' : 'Delete') + '</button>' : '')
     + '</div>';
 }
@@ -52834,15 +52891,27 @@ function renderPaginaPersonaggio(grid, pid) {
     //    TUTTE E DUE si passa a una sopra l'altra (`_pcOrientamento`). Come nella griglia (v6.094),
     //    la faccia che manca conta come sdraiata: si registra subito, qui.
     const _pcId = 'pc-' + f.id;
+    // 🆕 v7.340 (Franco: «nella card di un articolo della scheda personaggio, quando l'articolo ha 2 foto, usare più spazio per
+    //    il lato dell'articolo che ha il personaggio, e meno per l'altro; che sia esso fronte o retro ad averlo») - IL LATO
+    //    GRANDE: il retro quando il personaggio sta sul retro e non sul fronte (la fcr che è qui per il suo retro), se no il
+    //    fronte. Le quote sono `_PC_QUOTE` (grande / piccolo), al posto di metà e metà; `_pcOrientamento` le rilegge da
+    //    `data-grande`.
+    const _grande = (() => {
+      if (sec !== 'figurines') return 'fronte';
+      const _sulFronte = personaggiDiArticolo(_capo(f), ix).includes(pid) || personaggiDiArticolo(f, ix).includes(pid);
+      const _rid = _retroEffettivo(f, figs), _rr = _rid ? ix.perId.get(_rid) : null;
+      return !_sulFronte && _rr && personaggiDiArticolo(_rr, ix).includes(pid) ? 'retro' : 'fronte';
+    })();
+    const _quota = lato => (lato === _grande ? _PC_QUOTE[0] : _PC_QUOTE[1]) + '%';
     const _mezza = (url, lato) => url
-      ? '<img src="' + cloudinaryUrl(url, 'w_400,h_600,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:50%;height:100%;object-fit:contain;padding:3px;" onload="_pcOrientamento(\'' + _pcId + '\',\'' + lato + '\',this.naturalHeight>this.naturalWidth)">'
+      ? '<img src="' + cloudinaryUrl(url, 'w_400,h_600,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:' + _quota(lato) + ';height:100%;object-fit:contain;padding:3px;" onload="_pcOrientamento(\'' + _pcId + '\',\'' + lato + '\',this.naturalHeight>this.naturalWidth)">'
       // 🔄 v6.972 (Franco: «se non è presente una delle 2 foto, il comportamento deve essere lo stesso
       //    della griglia delle fcr: un box nero che dice "foto non disponibile"; ora mostri una zona nera
       //    senza confine» - OMBRETTA CARRETTA 224, MARCELLO PORCELLO) - il riquadro `fig-noimg` della
       //    griglia (`_facciaRetroHTML`), con la forma di una foto sdraiata come lì (v6.094).
       // 🔄 v6.977 - dal riquadro unico (`_senzaFotoHTML`), col flag di chi possiede la faccia
       : _senzaFotoHTML(lato === 'retro' ? !!(_ff && _ff.retroRec && _ff.retroRec.fotoNonDisponibile) : !!f.fotoNonDisponibile,
-          'position:relative;width:50%;aspect-ratio:1.38;flex:0 0 auto;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.62rem;line-height:1.15;padding:4px;box-sizing:border-box;');
+          'position:relative;width:' + _quota(lato) + ';aspect-ratio:1.38;flex:0 0 auto;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.62rem;line-height:1.15;padding:4px;box-sizing:border-box;');
     // 🔄 v7.304 (Franco: «è voluto che nella scheda personaggio il retro viene mostrato solo per le fcr e non per le card?»;
     //    «sì, aggiungilo per queste tda: carte, olografiche») - lì il retro è la seconda foto del record (`imgRetro`): con
     //    quella, fronte e retro affiancati come le fcr; senza, la foto sola come prima
@@ -52853,7 +52922,7 @@ function renderPaginaPersonaggio(grid, pid) {
       if (!_ff.retro) _pcOrientamento(_pcId, 'retro', false);
     }
     const _foto = _ff
-      ? (_ff.fronte || _ff.retro ? '<div id="' + _pcId + '" style="display:flex;flex-direction:row;width:100%;height:100%;align-items:center;justify-content:center;">' + _mezza(_ff.fronte, 'fronte') + _mezza(_ff.retro, 'retro') + '</div>' : '')
+      ? (_ff.fronte || _ff.retro ? '<div id="' + _pcId + '" data-grande="' + _grande + '" style="display:flex;flex-direction:row;width:100%;height:100%;align-items:center;justify-content:center;">' + _mezza(_ff.fronte, 'fronte') + _mezza(_ff.retro, 'retro') + '</div>' : '')
       : (u ? '<img src="' + cloudinaryUrl(u, 'w_600,h_600,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;padding:4px;">' : '');
     const _comune = _inComune.has(f.id);   // v7.315
     return '<div class="card personaggio-articolo' + (_comune ? ' pers-in-comune' : '') + '" style="position:relative;display:flex;flex-direction:column;cursor:pointer;' + (_aCapo.has(f.id) ? 'grid-column-start:1;' : '')
@@ -53030,6 +53099,7 @@ let _elencoPersonaggio = [];
 //    personaggio: si decide quando si conoscono TUTTE E DUE le facce; due sdraiate = una sopra
 //    l'altra, ciascuna alta metà del riquadro. Altrimenti restano affiancate, come nascono.
 const _pcFacce = {};
+const _PC_QUOTE = [62, 38];   // v7.340: le quote del riquadro, lato col personaggio / l'altro (erano 50 e 50)
 function _pcOrientamento(id, lato, inPiedi) {
   const s = _pcFacce[id] || (_pcFacce[id] = {});
   s[lato] = inPiedi;
@@ -53043,11 +53113,14 @@ function _pcOrientamento(id, lato, inPiedi) {
   //    le superfici tornano uguali. Prima quella in piedi si prendeva tutta l'altezza del riquadro e
   //    veniva il doppio della sdraiata accanto.
   const dritte = [s.fronte, s.retro];
+  // 🔄 v7.340 - non più metà e metà: il lato col personaggio prende la quota grande (`data-grande`, `_PC_QUOTE`)
+  const grande = c.dataset.grande === 'retro' ? 1 : 0;
   [...c.children].forEach((el, i) => {
+    const q = (i === grande ? _PC_QUOTE[0] : _PC_QUOTE[1]) + '%';
     el.style.flex = '0 0 auto';
-    if (el.tagName !== 'IMG') { el.style.width = '50%'; el.style.height = ''; el.style.aspectRatio = '1.38'; return; }
-    if (dritte[i]) { el.style.height = '50%'; el.style.width = 'auto'; el.style.maxWidth = '50%'; }
-    else { el.style.width = '50%'; el.style.height = 'auto'; }
+    if (el.tagName !== 'IMG') { el.style.width = q; el.style.height = ''; el.style.aspectRatio = '1.38'; return; }
+    if (dritte[i]) { el.style.height = q; el.style.width = 'auto'; el.style.maxWidth = q; }
+    else { el.style.width = q; el.style.height = 'auto'; }
   });
   // due sdraiate: una sopra l'altra, ciascuna larga mezzo riquadro come sopra (la faccia che manca ha
   // la forma di un retro sdraiato, 1,38, misurata nella v6.044)
@@ -53481,6 +53554,18 @@ function openAddPersonaggioModal() {
   if (c) c.value = '';
   document.getElementById('add-personaggio-modal')?.classList.remove('hidden');
   setTimeout(() => c && c.focus(), 50);
+}
+// 🆕 v7.340 - il primo clic apre il Nome (e il tasto dice «Salva»), il secondo salva
+function _persNomeModifica(btn, pid) {
+  const inp = document.getElementById('personaggio-rinomina');
+  if (!inp) return;
+  if (inp.readOnly) {
+    inp.readOnly = false;
+    inp.focus(); inp.select();
+    btn.textContent = currentLang === 'it' ? 'Salva' : 'Save';
+    return;
+  }
+  _rinominaPersonaggio(pid);
 }
 async function _rinominaPersonaggio(pid) {
   const it = currentLang === 'it';
@@ -70166,6 +70251,480 @@ function _cvDisegna(coppie, modo, sceltoDalSito, saltate, bordi) {
 // ============================================================
 //  ADMIN
 // ============================================================
+// ============================================================
+// 🆕 v7.340 (Franco: «vorrei implementare una nuova funzionalità chiamata brochure … una brochure da stampare … che contiene
+//    una versione compatta dell'Inventario Sgorbions … articoli in versione base … Pagina 1 copertina, pagina 2 sommario con
+//    l'elenco delle serie e delle tipologie di articolo previste per ogni serie, e poi comincia la prima serie con una pagina
+//    per ogni tipologia di articolo»; «un pannello iniziale completamente parametrico che mi chieda con una struttura ad
+//    albero quali sono le serie coinvolte e per ogni serie quali sono le tipologie di articolo coinvolte») - LA BROCHURE.
+// 📌 Le risposte di Franco: formato A4 o A5 verticale a scelta; copertina = la scritta SGORBIONS in maiuscolo e sotto una
+//    foto; sotto ogni foto nome e numero, con l'opzione «come la card della griglia»; tutte le tipologie (fpa e fcr
+//    comprese, i retri con pagine loro); lingua italiano o inglese («both, parametrico»); solo versioni base; dopo le
+//    serie, gli articoli senza serie.
+// 📌 COME ESCE: un riquadro sopra il sito con le pagine già impaginate in millimetri; «Stampa» apre la stampa del browser,
+//    da cui si va alla stampante o a «Salva come PDF». In stampa si vede solo la brochure (`body.br-stampa`), e la misura
+//    del foglio la dà `@page`, scritta a ogni apertura e tolta alla chiusura.
+// 📌 LE FOTO SONO QUELLE DELLA GRIGLIA: `cloudinaryUrl(url)` con la sua misura di sempre (300 px), quindi Cloudinary non
+//    fa trasformazioni nuove per una foto già vista nel sito. La foto di copertina la sceglie Franco dal PC e resta sul PC:
+//    non si carica da nessuna parte.
+// 📌 Si contano gli articoli che il sito mostra: basi (`_eBase`), non invisibili. Le serie non pubblicate (in arrivo,
+//    nascoste) stanno nell'albero ma partono spente.
+// ============================================================
+let _br = null;   // { scelte: Map(chiave serie -> Set di tipologie), formato, lingua, schede, foto }
+const _BR_SENZA = '__senza__';
+// v7.340 (Franco) - le tipologie che non aprono un foglio nuovo: proseguono il precedente, se ci stanno
+const _BR_ACCODA = ['bustine', 'albums', 'extras'];
+const _BR_RIGHE_FOTO = 2;   // v7.340: le righe di caselle che prende la foto della serie in cima al suo primo foglio   // la chiave del gruppo «articoli senza serie»
+// per formato: millimetri del foglio, colonne e righe di una pagina (con nome e numero / con la card), righe del sommario,
+//    e `k`, il fattore delle scritte
+const _BR_FORMATI = {
+  A4: { w: 210, h: 297, nomi: [4, 5], coppie: [2, 5], card: [3, 3], righeSommario: 38, k: 1 },
+  A5: { w: 148, h: 210, nomi: [3, 4], coppie: [2, 4], card: [2, 2], righeSommario: 26, k: 0.75 }
+};
+// le basi visibili, per serie (o senza serie) e per tipologia
+function _brGruppi() {
+  const ids = new Set(getData('series', []).map(s => s.id));
+  const gruppi = new Map();
+  const tutti = getData('figurines', []);
+  for (const f of tutti) {
+    // 🆕 v7.340 (Franco: «non devono essere inclusi gli articoli senza foto, a meno di quelli con apposito flag») - senza
+    //    nessuna foto si entra solo con «Foto non disponibile» (e allora c'è il suo segnaposto)
+    if (!f.fotoNonDisponibile && !_brFotoDi(f, tutti).some(Boolean)) continue;
+    // 🔄 v7.340 (Franco: «aggiungi come opzione anche le altre tipologie di versione (tutte)») - oltre alle basi, le
+    //    versioni spuntate nel pannello (`_br.versioni`, di partenza nessuna)
+    if (f.invisibile) continue;
+    if (!_eBase(f) && !(_br && _br.versioni && _VERSIONI_VIVE.some(v => f[v.campo] && _br.versioni.has(v.chiave)))) continue;
+    const s = f.seriesId && ids.has(f.seriesId) ? f.seriesId : _BR_SENZA, k = f.section || 'figurines';
+    if (!gruppi.has(s)) gruppi.set(s, new Map());
+    const g = gruppi.get(s);
+    if (!g.has(k)) g.set(k, []);
+    g.get(k).push(f);
+  }
+  return gruppi;
+}
+// l'albero del pannello e della brochure: le serie nel loro ordine (`order`), poi gli articoli senza serie; dentro, le
+//    tipologie nell'ordine dichiarato (una tipologia che il descrittore non conosce va in fondo, non si perde)
+function _brAlbero(gruppi) {
+  gruppi = gruppi || _brGruppi();
+  const serie = getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  const voce = (chiave, s) => {
+    const g = gruppi.get(chiave);
+    if (!g) return null;
+    // 🔄 v7.340 (Franco: «prima ci sono le fpa, dopo le fcr, come nell'usuale ordine delle tda di una serie») - l'ordine dei
+    //    box nella pagina di una serie (`PRODOTTI_INVENTARIO`, quello scritto in console), non quello del descrittore
+    const chiavi = PRODOTTI_INVENTARIO.filter(k => g.has(k)).concat([...g.keys()].filter(k => !PRODOTTI_INVENTARIO.includes(k)));
+    return { chiave, serie: s, tda: chiavi.map(k => ({ k, pezzi: g.get(k) })) };
+  };
+  return serie.map(s => voce(s.id, s)).concat([voce(_BR_SENZA, null)]).filter(Boolean);
+}
+// 🆕 v7.340 (Franco: «per le tipologie di articoli con più foto, se le foto sono 2, includerle entrambe; se sono più di 2,
+//    mettere opzione apposita; chiamala "Tutte le foto"») - LE FOTO DI UN ARTICOLO, nell'ordine della scheda: il fronte, il
+//    retro sul record (se la tipologia ne ha: «N. foto» da 2 in su; può mancare, e allora `null`), il fronte ruotato, le
+//    pagine. Le figurine con retro hanno il retro in un altro record: la loro coppia la fa `_coppiaFronteRetro`.
+function _brFotoDi(f, tutti) {
+  const out = [_fotoFigurina(f, tutti) || null];
+  if ((f.section || 'figurines') === 'figurines') return out;
+  if (_nFotoArticolo(f) !== '1') out.push(f.imgRetro || null);
+  if (_haFotoRuotata(f) && f.imgRuotato) out.push(f.imgRuotato);
+  if (_haPagine(f.section, f)) _pagineDi(f).forEach(x => { if (x && x.url) out.push(x.url); });
+  return out;
+}
+// con «Tutte le foto», un articolo con più di 2 foto prende la riga intera: 3 foto per colonna, e le righe che servono
+//    (al più quelle di un foglio)
+const _brLargo = (f, tutti) => _br.tutte === 'tutte' && _brFotoDi(f, tutti).filter(Boolean).length > 2;
+const _brRigheLargo = (n, c, R) => Math.min(R, Math.ceil(n / (3 * c)));
+// I PEZZI DI UNA TIPOLOGIA A FOGLI, per righe: le caselle normali riempiono la riga (`c` per riga), una larga comincia
+//    una riga nuova e ne prende `k`. Torna i pezzi di ogni foglio e quante righe usa.
+// 🔄 v7.340 - `R0`: le righe del primo foglio (meno, se in cima c'è la foto della serie); `larghi`: no con le card
+function _brTagli(pezzi, c, R, tutti, R0, larghi) {
+  const out = [];
+  const cap = () => out.length ? R : (R0 ?? R);
+  let cur = { pezzi: [], righe: 0 }, inRiga = 0;
+  const chiudi = () => { if (cur.pezzi.length) out.push(cur); cur = { pezzi: [], righe: 0 }; };
+  for (const f of pezzi) {
+    if (larghi !== false && _brLargo(f, tutti)) {
+      if (inRiga) { cur.righe++; inRiga = 0; }
+      const k = _brRigheLargo(_brFotoDi(f, tutti).filter(Boolean).length, c, R);
+      if (cur.righe + k > cap()) chiudi();
+      cur.pezzi.push(f); cur.righe += k;
+      continue;
+    }
+    if (!inRiga && cur.righe + 1 > cap()) chiudi();
+    cur.pezzi.push(f);
+    if (++inRiga === c) { cur.righe++; inRiga = 0; }
+  }
+  if (inRiga) cur.righe++;
+  chiudi();
+  return out;
+}
+const _brNomeGruppo = (v, it) => v.serie ? _nomeSerie(v.serie) : (it ? 'Articoli senza serie' : 'Items without series');
+const _brPubblicata = v => !v.serie || !['in-arrivo', 'nascosta'].includes(_statoSerie(v.serie));   // in completamento: si vede già
+
+function renderAdminBrochure() {
+  const box = document.getElementById('admin-brochure-box');
+  if (!box) return;
+  const it = currentLang === 'it';
+  const albero = _brAlbero();
+  if (!_br) _br = { scelte: null, formato: 'A4', lingua: currentLang === 'en' ? 'en' : 'it', schede: 'nomi', foto: null, versioni: new Set(), macchie: 'con', tutte: 'due' };
+  if (!_br.scelte) _br.scelte = new Map(albero.map(v => [v.chiave, new Set(_brPubblicata(v) ? v.tda.map(t => t.k) : [])]));
+  const quanti = n => n + (it ? (n === 1 ? ' articolo' : ' articoli') : (n === 1 ? ' item' : ' items'));
+  const radio = (nome, val, testo) => '<label style="display:inline-flex;align-items:center;gap:0.3rem;margin-right:1.1rem;cursor:pointer;">'
+    + '<input type="radio" name="br-' + nome + '" value="' + val + '"' + (_br[nome] === val ? ' checked' : '') + ' onchange="_brOpzione(\'' + nome + '\', this.value)">' + testo + '</label>';
+  const rami = albero.map(v => {
+    const sc = _br.scelte.get(v.chiave) || new Set();
+    const tot = v.tda.reduce((a, t) => a + t.pezzi.length, 0);
+    const stato = v.serie && !_brPubblicata(v) ? ' <span style="color:var(--text-muted);font-weight:400;">(' + esc(_voceStatoSerie(v.serie)[it ? 'it' : 'en'] || _statoSerie(v.serie)) + ')</span>' : '';
+    return '<details class="br-ramo" style="margin:0.15rem 0;">'
+      + '<summary style="cursor:pointer;padding:0.2rem 0;">'
+      + '<label style="cursor:pointer;font-weight:700;" onclick="event.stopPropagation()"><input type="checkbox" data-br-serie="' + esc(v.chiave) + '" onchange="_brSpuntaSerie(this)"> '
+      + esc(_brNomeGruppo(v, it)) + '</label>' + stato + ' <span style="color:var(--text-muted);">· ' + quanti(tot) + '</span></summary>'
+      + '<div style="padding:0.15rem 0 0.4rem 1.8rem;display:flex;flex-direction:column;gap:0.15rem;">'
+      + v.tda.map(t => '<label style="cursor:pointer;"><input type="checkbox" data-br-s="' + esc(v.chiave) + '" data-br-k="' + esc(t.k) + '"' + (sc.has(t.k) ? ' checked' : '') + ' onchange="_brSpuntaTda(this)"> '
+        + esc(_nomeSezioneCard(t.k, 2)) + ' <span style="color:var(--text-muted);">· ' + quanti(t.pezzi.length) + '</span></label>').join('')
+      + '</div></details>';
+  }).join('');
+  box.innerHTML =
+    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">📖 Brochure</h4>' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
+      (it ? 'Una versione compatta dell\'Inventario da stampare: copertina, sommario, poi per ogni serie una o più pagine per ogni tipologia, con le foto degli articoli in versione base. '
+          + 'Dopo le serie, gli articoli senza serie. Dall\'anteprima, «Stampa» porta alla stampante o a «Salva come PDF».'
+          : 'A compact printable version of the Inventory: cover, contents, then for each series one or more pages per item type, with the photos of the base items. Items without a series come last. From the preview, «Print» goes to the printer or to «Save as PDF».') +
+    '</p>' +
+    '<div style="font-weight:700;margin:0.8rem 0 0.3rem;">1. ' + (it ? 'Serie e tipologie' : 'Series and item types') + '</div>' +
+    '<div style="margin-bottom:0.3rem;"><button type="button" class="btn-secondary" onclick="_brTutto(true)">' + (it ? 'Tutto' : 'All') + '</button> '
+      + '<button type="button" class="btn-secondary" onclick="_brTutto(false)">' + (it ? 'Niente' : 'None') + '</button></div>' +
+    '<div id="br-albero" style="font-size:0.88rem;">' + (rami || (it ? 'Nessun articolo.' : 'No items.')) + '</div>' +
+    '<div style="font-weight:700;margin:1rem 0 0.3rem;">2. ' + (it ? 'Formato' : 'Size') + '</div>' +
+    '<div>' + radio('formato', 'A4', 'A4') + radio('formato', 'A5', 'A5') + '<span style="color:var(--text-muted);font-size:0.82rem;">' + (it ? 'verticale' : 'portrait') + '</span></div>' +
+    '<div style="font-weight:700;margin:1rem 0 0.3rem;">3. ' + (it ? 'Lingua' : 'Language') + '</div>' +
+    '<div>' + radio('lingua', 'it', 'Italiano') + radio('lingua', 'en', 'English') + '</div>' +
+    '<div style="font-weight:700;margin:1rem 0 0.3rem;">4. ' + (it ? 'Sotto ogni foto' : 'Under each photo') + '</div>' +
+    '<div>' + radio('schede', 'nomi', it ? 'Nome e numero' : 'Name and number') + radio('schede', 'card', it ? 'Come la card della griglia' : 'Like the grid card') + '</div>' +
+    '<div style="font-weight:700;margin:1rem 0 0.3rem;">5. ' + (it ? 'Foto di copertina' : 'Cover photo') + '</div>' +
+    '<div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">'
+      + '<input type="file" id="br-foto-file" accept="image/*" onchange="_brFoto(this)">'
+      + '<img id="br-foto-mini" alt="" style="max-height:60px;' + (_br.foto ? '' : 'display:none;') + '"' + (_br.foto ? ' src="' + _br.foto + '"' : '') + '>'
+      + '<span style="color:var(--text-muted);font-size:0.82rem;">' + (it ? 'Resta sul tuo computer: non si carica sul sito.' : 'It stays on your computer: it is not uploaded.') + '</span></div>' +
+    // 🆕 v7.340 (Franco) - le versioni oltre alle basi, e le macchie sulle foto protette
+    '<div style="font-weight:700;margin:1rem 0 0.3rem;">6. ' + (it ? 'Versioni (oltre alla versione base)' : 'Versions (besides the base version)') + '</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:0.2rem 1.1rem;">' + _VERSIONI_VIVE.map(v => '<label style="cursor:pointer;"><input type="checkbox" data-br-versione="' + esc(v.chiave) + '"'
+      + (_br.versioni.has(v.chiave) ? ' checked' : '') + ' onchange="_brVersione(this)"> ' + esc(it ? v.it : v.en) + '</label>').join('') + '</div>' +
+    '<div style="font-weight:700;margin:1rem 0 0.3rem;">7. ' + (it ? 'Macchie sulle foto' : 'Watermark on the photos') + '</div>' +
+    '<div>' + radio('macchie', 'con', it ? 'Con le macchie' : 'With watermark') + radio('macchie', 'senza', it ? 'Senza macchie' : 'Without watermark') + '</div>' +
+    '<div style="font-weight:700;margin:1rem 0 0.3rem;">8. ' + (it ? 'Articoli con più di 2 foto' : 'Items with more than 2 photos') + '</div>' +
+    '<div>' + radio('tutte', 'due', it ? 'Fronte e retro' : 'Front and back') + radio('tutte', 'tutte', it ? 'Tutte le foto' : 'All the photos') + '</div>' +
+    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:1.2rem;flex-wrap:wrap;">'
+      + '<button class="btn-primary btn-admin" id="br-crea" onclick="_brApri()">📖 ' + (it ? 'Crea brochure' : 'Create brochure') + '</button>'
+      + '<span id="br-conto" style="font-size:0.85rem;color:var(--text);"></span></div>';
+  _brAggiornaSerie();
+}
+// la casella della serie dice lo stato delle sue tipologie: tutte, nessuna, alcune (il trattino)
+function _brAggiornaSerie() {
+  document.querySelectorAll('#br-albero input[data-br-serie]').forEach(c => {
+    const tutte = document.querySelectorAll('#br-albero input[data-br-s="' + CSS.escape(c.dataset.brSerie) + '"]');
+    const accese = [...tutte].filter(x => x.checked).length;
+    c.checked = accese > 0 && accese === tutte.length;
+    c.indeterminate = accese > 0 && accese < tutte.length;
+  });
+  const conto = document.getElementById('br-conto');
+  if (conto && _br) {
+    const it = currentLang === 'it', p = _brPiano();
+    conto.textContent = p.sezioni.length ? (it ? 'Pagine: ' : 'Pages: ') + p.totale : (it ? 'Scegli almeno una tipologia.' : 'Choose at least one item type.');
+    const b = document.getElementById('br-crea');
+    if (b) b.disabled = !p.sezioni.length;
+  }
+}
+function _brSpuntaTda(c) {
+  const sc = _br.scelte.get(c.dataset.brS) || new Set();
+  if (c.checked) sc.add(c.dataset.brK); else sc.delete(c.dataset.brK);
+  _br.scelte.set(c.dataset.brS, sc);
+  _brAggiornaSerie();
+}
+// ⚠️ il valore si legge PRIMA del giro: `_brAggiornaSerie` ridisegna la casella della serie a ogni tipologia, e dopo la
+//    prima la serie è «a metà» (spenta col trattino) - il giro si sarebbe fermato lì
+function _brSpuntaSerie(c) {
+  const si = c.checked;
+  document.querySelectorAll('#br-albero input[data-br-s="' + CSS.escape(c.dataset.brSerie) + '"]').forEach(x => _brMetti(x, si));
+  _brAggiornaSerie();
+}
+function _brTutto(si) {
+  document.querySelectorAll('#br-albero input[data-br-s]').forEach(x => _brMetti(x, si));
+  _brAggiornaSerie();
+}
+function _brMetti(x, si) {
+  x.checked = si;
+  const sc = _br.scelte.get(x.dataset.brS) || new Set();
+  if (si) sc.add(x.dataset.brK); else sc.delete(x.dataset.brK);
+  _br.scelte.set(x.dataset.brS, sc);
+}
+function _brOpzione(nome, val) { _br[nome] = val; _brAggiornaSerie(); }
+// una versione accesa o spenta cambia i conteggi dell'albero: si ridisegna il pannello (le spunte stanno in `_br`); una
+//    tipologia che compare solo adesso (fatta di sole versioni) entra spenta
+function _brVersione(c) {
+  if (c.checked) _br.versioni.add(c.dataset.brVersione); else _br.versioni.delete(c.dataset.brVersione);
+  renderAdminBrochure();
+}
+function _brFoto(inp) {
+  const file = inp.files && inp.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    _br.foto = r.result;
+    const m = document.getElementById('br-foto-mini');
+    if (m) { m.src = _br.foto; m.style.display = ''; }
+  };
+  r.readAsDataURL(file);
+}
+
+// IL PIANO DELLE PAGINE: per ogni tipologia scelta i suoi articoli nell'ordine della griglia, a pagine piene; poi il
+//    sommario (una riga per serie e una per tipologia) e i numeri di pagina. Copertina = 1, sommario = 2 (e seguenti).
+function _brPiano() {
+  const F = _BR_FORMATI[_br.formato] || _BR_FORMATI.A4;
+  // 🆕 v7.340 (Franco: «nelle figurine con retro, serve la foto del retro, affianco al fronte») - con nome e numero le fcr
+  //    hanno caselle doppie (fronte e retro), quindi meno per pagina (`coppie`)
+  // 🔄 v7.340 - e così le tipologie con più foto (`_brFotoDi`), che ne mostrano almeno due
+  const misura = (k, doppia) => _br.schede === 'card' ? F.card : (k === 'figurines' || doppia ? F.coppie : F.nomi);
+  const [col, righe] = misura('');
+  const allFigs = getData('figurines', []);
+  let _idx = null;
+  const tappe = [];   // ⚠️ non `sezioni`: prova-v6646 vieta quella scritta (una vecchia lista a mano)
+  for (const v of _brAlbero()) {
+    const sc = _br.scelte.get(v.chiave);
+    if (!sc || !sc.size) continue;
+    for (const t of v.tda) {
+      if (!sc.has(t.k)) continue;
+      const pezzi = t.pezzi.slice();
+      try { if (!_idx) _idx = _figIndex(allFigs); pezzi.sort(_comparatoreGriglia(t.k, pezzi, _idx, allFigs)); } catch (e) { console.error('_brPiano', e); }
+      const doppia = pezzi.some(f => _brFotoDi(f, allFigs).length > 1);
+      const [c, r] = misura(t.k, doppia);
+      tappe.push({ v, k: t.k, pezzi, col: c, righe: r });
+    }
+  }
+  const righeSommario = tappe.length + new Set(tappe.map(s => s.v.chiave)).size;
+  const pagSommario = Math.max(1, Math.ceil(righeSommario / F.righeSommario));
+  // 🔄 v7.340 (Franco: «per le tda bustine, album, e altri articoli, non iniziare da una pagina vuota; prosegui la
+  //    precedente») - I FOGLI. Un foglio ha `R` righe di caselle; una tipologia di `_BR_ACCODA` entra nelle righe libere del
+  //    foglio prima (stessa serie, stesse righe), col suo titolo che vale una riga, se ci sta tutta; se no apre un foglio suo.
+  const fogli = [];
+  for (const s of tappe) {
+    // 🆕 v7.340 (Franco: «prima di ogni serie, mettere la foto della serie, a inizio pagina») - il primo foglio di una serie
+    //    porta in cima la sua foto, che vale `_BR_RIGHE_FOTO` righe di caselle
+    const ultimo = fogli[fogli.length - 1];
+    const fotoSerie = (!ultimo || ultimo.serie !== s.v.chiave) && s.v.serie && s.v.serie.img ? s.v.serie : null;
+    // i fogli della tipologia, a righe (`_brTagli`)
+    const tagli = _brTagli(s.pezzi, s.col, s.righe, allFigs, fotoSerie ? s.righe - _BR_RIGHE_FOTO : s.righe, _br.schede !== 'card');
+    const servono = tagli.length === 1 ? tagli[0].righe : Infinity;
+    if (_BR_ACCODA.includes(s.k) && ultimo && ultimo.serie === s.v.chiave && ultimo.R === s.righe && ultimo.R - ultimo.usate >= 1 + servono) {
+      ultimo.blocchi.push({ s, pezzi: s.pezzi, righe: servono, titolo: true });
+      ultimo.usate += 1 + servono;
+      s.da = ultimo.n;
+      continue;
+    }
+    tagli.forEach((tg, i) => {
+      const n = 2 + pagSommario + fogli.length;
+      if (!i) s.da = n;
+      const foto = i ? null : fotoSerie;
+      fogli.push({ n, serie: s.v.chiave, R: s.righe, usate: tg.righe + (foto ? _BR_RIGHE_FOTO : 0), fotoSerie: foto, blocchi: [{ s, pezzi: tg.pezzi, righe: tg.righe, segue: i > 0 }] });
+    });
+  }
+  return { F, col, righe, sezioni: tappe, fogli, pagSommario, totale: 1 + pagSommario + fogli.length };
+}
+
+function _brApri() {
+  if (!currentUser || !currentUser.isAdmin || !_br) return;
+  const prima = { lang: currentLang, s: currentSeriesId, sez: currentSection, tipo: _tipoProdottoCorrente, macchie: _adminSenzaMacchie };
+  let html = '';
+  try {
+    currentLang = _br.lingua;   // la brochure nella sua lingua: i nomi del sito (serie, tipologie, articoli) la leggono da qui
+    // 🆕 v7.340 (Franco: «con macchie / senza macchie; default: con») - come nel collage (`_collageUrlFoto`): «con» le
+    //    chiede anche se l'admin le ha spente con «Togli macchie», «senza» le toglie dalle foto protette
+    _fpSenzaScritta = _br.macchie === 'senza';
+    if (_br.macchie !== 'senza') _adminSenzaMacchie = false;
+    html = _brHTML(_brPiano());
+  } finally {
+    currentLang = prima.lang; currentSeriesId = prima.s; currentSection = prima.sez; _tipoProdottoCorrente = prima.tipo;
+    _fpSenzaScritta = false; _adminSenzaMacchie = prima.macchie;
+  }
+  _brChiudi();
+  const it = currentLang === 'it';
+  const st = document.createElement('style');
+  st.id = 'br-stile';
+  st.textContent = _brCSS(_BR_FORMATI[_br.formato] || _BR_FORMATI.A4);
+  document.head.appendChild(st);
+  const ov = document.createElement('div');
+  ov.id = 'br-anteprima';
+  ov.innerHTML = '<div id="br-barra"><span id="br-carico"></span>'
+    + '<button type="button" class="btn-primary" id="br-stampa" onclick="window.print()">🖨️ ' + (it ? 'Stampa / Salva PDF' : 'Print / Save PDF') + '</button>'
+    + '<button type="button" class="btn-secondary" onclick="_brChiudi()">✕ ' + (it ? 'Chiudi' : 'Close') + '</button></div>' + html;
+  document.body.appendChild(ov);
+  document.body.classList.add('br-stampa');
+  // le foto si caricano tutte prima di stampare: la stampa non aspetta quelle in arrivo
+  const imgs = [...ov.querySelectorAll('img')], tot = imgs.length;
+  let fatte = 0;
+  const conta = () => {
+    const el = document.getElementById('br-carico');
+    if (el) el.textContent = fatte < tot ? (it ? 'Carico le foto: ' : 'Loading photos: ') + fatte + ' / ' + tot + '…' : (it ? 'Foto caricate: ' : 'Photos loaded: ') + tot;
+  };
+  // ⚠️ le card si adattano UNA volta, quando ci sono tutte le foto (che ne cambiano l'altezza): rifarlo a ogni foto
+  //    arrivata, con qualche centinaio di card, bloccava la scheda (misurato in preview)
+  const una = () => { fatte++; conta(); if (fatte === tot) _brAdatta(); };
+  imgs.forEach(im => { if (im.complete) fatte++; else { im.addEventListener('load', una, { once: true }); im.addEventListener('error', una, { once: true }); } });
+  conta();
+  if (fatte === tot) _brAdatta();
+}
+// LA CARD INTERA DENTRO LA SUA CASELLA: la card della griglia è alta quanto il suo contenuto (foto, commento, nome, numero),
+//    spesso il doppio della casella. Si rimpicciolisce quanto basta a farla stare tutta, invece di tagliarne il fondo.
+// 📌 `transform: scale`, non `zoom`: lo zoom cambia lo spazio occupato e fa ricalcolare la pagina intera a ogni card; la
+//    scala no (la casella ha già la sua misura e taglia il resto). Una sola lettura di tutte le altezze, poi le scritture.
+function _brAdatta() {
+  const celle = [...document.querySelectorAll('#br-anteprima .br-cella-card')].map(cella => ({ cella, c: cella.firstElementChild })).filter(x => x.c);
+  const misure = celle.map(x => Math.min(1, (x.cella.clientHeight - 2) / Math.max(1, x.c.scrollHeight)));
+  celle.forEach((x, i) => { x.c.style.transform = misure[i] < 1 ? 'scale(' + misure[i].toFixed(3) + ')' : ''; });
+}
+function _brChiudi() {
+  const ov = document.getElementById('br-anteprima'); if (ov) ov.remove();
+  const st = document.getElementById('br-stile'); if (st) st.remove();
+  document.body.classList.remove('br-stampa');
+}
+
+function _brHTML(P) {
+  const it = currentLang === 'it';
+  const pagine = [];
+  const piede = n => '<div class="br-piede">' + n + '</div>';
+  // 1 - la copertina
+  pagine.push('<section class="br-pag br-copertina"><div class="br-titolo">SGORBIONS</div>'
+    + (_br.foto ? '<div class="br-cop-foto"><img src="' + _br.foto + '" alt=""></div>' : '') + '</section>');
+  // 2 - il sommario: la serie col numero della sua prima pagina, sotto le sue tipologie
+  const righe = [];
+  let ultima = null;
+  P.sezioni.forEach(s => {
+    if (s.v.chiave !== ultima) { ultima = s.v.chiave; righe.push({ serie: true, nome: _brNomeGruppo(s.v, it), p: s.da }); }
+    righe.push({ serie: false, nome: _nomeSezioneCard(s.k, 2), p: s.da });
+  });
+  for (let i = 0; i < P.pagSommario; i++) {
+    const qui = righe.slice(i * P.F.righeSommario, (i + 1) * P.F.righeSommario);
+    pagine.push('<section class="br-pag">'
+      + (i ? '' : '<div class="br-som-titolo">' + (it ? 'Sommario' : 'Contents') + '</div>')
+      + qui.map(r => '<div class="br-som-riga' + (r.serie ? ' br-som-serie' : '') + '"><span>' + esc(r.nome) + '</span><span class="br-punti"></span><span>' + r.p + '</span></div>').join('')
+      + piede(2 + i) + '</section>');
+  }
+  // 3 - le pagine delle tipologie
+  const allFigs = getData('figurines', []);
+  const _idx = _figIndex(allFigs);
+  const lettore = _lettoreCommentoAlbum(allFigs);
+  const C = {
+    owned: getOwned(), _allFigs: allFigs, _idx,
+    _commentoAlbumCard: f => ((f.section === 'attaccare' && _COMMENTO_CARD_CFG.fpa) || ((f.section || 'figurines') === 'figurines' && _COMMENTO_CARD_CFG.fcr)) ? lettore(f) : '',
+    _retriFam: _retriDelleFamiglie(allFigs, _idx),
+    _serieById: new Map(getData('series', []).map(x => [x.id, x])),
+    senzaNuovo: true
+  };
+  const card = _br.schede === 'card';
+  let colOra = 1, righeOra = 1;   // le colonne e le righe del blocco che si sta scrivendo (per le caselle larghe)
+  _tipoProdottoCorrente = null;
+  const cella = f => {
+      // ⚠️ senza gli `onload` delle foto: nella griglia girano la coppia fronte-retro quando arrivano le misure
+      //    (`_checkBothOrientationForStack`), e ognuno rimisura la pagina; con centinaia di card la scheda si bloccava
+      //    (misurato in preview). E cercano la card per id, che nella brochure è lo stesso della griglia.
+      if (card) return '<div class="br-cella br-cella-card">' + _cardArticoloHTML(f, C).replace(/\sonload="[^"]*"/g, '') + '</div>';
+      // 🆕 v7.340 (Franco: «nelle figurine con retro, serve la foto del retro, affianco al fronte»; «il nome del retro va
+      //    sotto alla foto del retro») - la coppia della card (`_coppiaFronteRetro`): sotto il fronte il suo nome (senza
+      //    quello del retro, che il nome completo porta) e il numero, sotto il retro il nome del retro
+      const cp = (f.section || 'figurines') === 'figurines' ? _coppiaFronteRetro(f, allFigs, _idx) : null;
+      if (cp && cp.mostra) {
+        const rid = _retroEffettivo(f, allFigs, _idx), rr = rid ? _idx.get(rid) : null;
+        const faccia = (url, nome, num) => '<div class="br-faccia"><div class="br-foto">' + (url ? '<img src="' + cloudinaryUrl(url) + '" alt="">' : '') + '</div>'
+          + '<div class="br-nome">' + esc(nome || '') + '</div>' + (num ? '<div class="br-num">#' + esc(String(num)) + '</div>' : '') + '</div>';
+        return '<div class="br-cella br-coppia">' + faccia(cp.fronte, f.name, f.number) + faccia(cp.retroImg, rr && rr.name, null) + '</div>';
+      }
+      const nome = f.fullName || computeFullName(f, allFigs) || f.name || '';
+      // 🆕 v7.340 - più foto: le prime due affiancate (fronte e retro), o tutte con «Tutte le foto»; una casella larga prende
+      //    la riga intera (`_brLargo`), con le righe contate da `_brTagli`
+      const tutte = _brFotoDi(f, allFigs);
+      if (tutte.length > 1) {
+        const largo = _brLargo(f, allFigs), vere = tutte.filter(Boolean);
+        const mostra = _br.tutte === 'tutte' ? vere : tutte.slice(0, 2);
+        const m = largo ? Math.min(vere.length, 3 * colOra) : mostra.length;
+        const stile = largo ? ' style="grid-column:1/-1;grid-row:span ' + _brRigheLargo(vere.length, colOra, righeOra) + ';"' : '';
+        return '<div class="br-cella"' + stile + '><div class="br-fila" style="grid-template-columns:repeat(' + m + ',minmax(0,1fr));">'
+          + mostra.map(u => '<div class="br-foto">' + (u ? '<img src="' + cloudinaryUrl(u) + '" alt="">' : '') + '</div>').join('') + '</div>'
+          + '<div class="br-nome">' + esc(nome) + '</div>'
+          + (f.number ? '<div class="br-num">#' + esc(String(f.number)) + '</div>' : '') + '</div>';
+      }
+      const foto = _fotoFigurina(f, allFigs);
+      return '<div class="br-cella"><div class="br-foto">' + (foto ? '<img src="' + cloudinaryUrl(foto) + '" alt="">' : '') + '</div>'
+        + '<div class="br-nome">' + esc(nome) + '</div>'
+        + (f.number ? '<div class="br-num">#' + esc(String(f.number)) + '</div>' : '') + '</div>';
+  };
+  // 🆕 v7.340 (Franco: «quando inizia una sezione con una nuova TDA, affianco al nome della TDA, tra (), metti il numero di articoli»)
+  const titoloTda = (s, segue) => esc(_nomeSezioneCard(s.k, 2)) + (segue ? ' <span class="br-segue">(' + (it ? 'segue' : 'continued') + ')</span>' : ' (' + s.pezzi.length + ')');
+  P.fogli.forEach(fo => {
+    const primo = fo.blocchi[0];
+    const corpo = fo.blocchi.map(b => {
+      currentSeriesId = b.s.v.serie ? b.s.v.serie.id : null;
+      currentSection = b.s.k;
+      colOra = b.s.col; righeOra = b.s.righe;
+      return (b.titolo ? '<div class="br-sottotda">' + titoloTda(b.s, false) + '</div>' : '')
+        + '<div class="br-griglia" style="grid-row:span ' + b.righe + ';grid-template-columns:repeat(' + b.s.col + ',minmax(0,1fr));grid-template-rows:repeat(' + b.righe + ',minmax(0,1fr));">'
+        + b.pezzi.map(cella).join('') + '</div>';
+    }).join('');
+    pagine.push('<section class="br-pag"><div class="br-testa"><div class="br-serie">' + esc(_brNomeGruppo(primo.s.v, it)) + '</div>'
+      + '<div class="br-tda">' + titoloTda(primo.s, primo.segue) + '</div></div>'
+      + '<div class="br-corpo" style="grid-template-rows:repeat(' + fo.R + ',minmax(0,1fr));">'
+      + (fo.fotoSerie ? '<div class="br-foto-serie" style="grid-row:span ' + _BR_RIGHE_FOTO + ';"><img src="' + cloudinaryUrl(fo.fotoSerie.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" alt=""></div>' : '')
+      + corpo + '</div>' + piede(fo.n) + '</section>');
+  });
+  return '<div id="br-pagine">' + pagine.join('') + '</div>';
+}
+
+function _brCSS(F) {
+  const k = F.k, mm = v => (v * k).toFixed(2) + 'mm';
+  const [col, righe] = _br.schede === 'card' ? F.card : F.nomi;
+  return '@page{size:' + (F === _BR_FORMATI.A5 ? 'A5' : 'A4') + ' portrait;margin:0;}'
+    + '#br-anteprima{position:fixed;inset:0;z-index:100000;overflow:auto;background:#5a5a5a;}'
+    + '#br-barra{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:center;gap:0.8rem;flex-wrap:wrap;padding:0.6rem;background:#222;color:#eee;font-family:var(--font-ui);font-size:0.9rem;}'
+    + '.br-pag{width:' + F.w + 'mm;height:' + F.h + 'mm;margin:8mm auto;background:#fff;color:#111;box-sizing:border-box;padding:' + mm(12) + ' ' + mm(11) + ' ' + mm(14) + ';position:relative;overflow:hidden;display:flex;flex-direction:column;'
+      + 'font-family:var(--font-ui),sans-serif;box-shadow:0 2px 10px rgba(0,0,0,0.4);-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
+    + '.br-copertina{align-items:center;justify-content:center;gap:' + mm(12) + ';}'
+    + '.br-titolo{font-size:' + mm(26) + ';font-weight:900;letter-spacing:0.08em;line-height:1;}'
+    + '.br-cop-foto{flex:0 1 auto;max-height:70%;display:flex;justify-content:center;}'
+    + '.br-cop-foto img{max-width:100%;max-height:' + (F.h * 0.65).toFixed(0) + 'mm;object-fit:contain;}'
+    + '.br-som-titolo{font-size:' + mm(9) + ';font-weight:800;margin-bottom:' + mm(6) + ';}'
+    + '.br-som-riga{display:flex;align-items:baseline;gap:' + mm(2) + ';font-size:' + mm(3.8) + ';line-height:1.55;padding-left:' + mm(6) + ';}'
+    + '.br-som-serie{font-weight:800;padding-left:0;margin-top:' + mm(2) + ';}'
+    + '.br-punti{flex:1;border-bottom:0.3mm dotted #999;}'
+    + '.br-testa{border-bottom:0.5mm solid #111;margin-bottom:' + mm(4) + ';padding-bottom:' + mm(2) + ';}'
+    + '.br-serie{font-size:' + mm(3.4) + ';text-transform:uppercase;letter-spacing:0.05em;color:#666;}'
+    + '.br-tda{font-size:' + mm(6.5) + ';font-weight:800;line-height:1.15;}'
+    + '.br-segue{font-size:' + mm(3.6) + ';font-weight:400;color:#666;}'
+    + '.br-corpo{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);gap:' + mm(3) + ';}'
+    + '.br-griglia{min-height:0;display:grid;gap:' + mm(3) + ';}'
+    + '.br-sottotda{align-self:end;font-size:' + mm(6.5) + ';font-weight:800;line-height:1.15;border-bottom:0.5mm solid #111;padding-bottom:' + mm(2) + ';}'
+    + '.br-cella{display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden;border:0.2mm solid #ddd;border-radius:1.5mm;padding:' + mm(1.5) + ';}'
+    + '.br-foto{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;}'
+    + '.br-foto img{max-width:100%;max-height:100%;object-fit:contain;}'
+    + '.br-foto-serie{min-height:0;display:flex;align-items:center;justify-content:center;}'
+    + '.br-foto-serie img{max-width:100%;max-height:100%;object-fit:contain;}'
+    + '.br-fila{flex:1;min-height:0;display:grid;grid-auto-rows:minmax(0,1fr);gap:' + mm(1.5) + ';}'
+    + '.br-nome{font-size:' + mm(2.7) + ';font-weight:700;text-align:center;line-height:1.15;margin-top:' + mm(1) + ';overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}'
+    + '.br-num{font-size:' + mm(2.5) + ';text-align:center;color:#555;}'
+    + '.br-cella-card{border:none;padding:0;background:transparent;}'
+    + '.br-coppia{flex-direction:row;gap:' + mm(2) + ';}'
+    + '.br-faccia{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;}'
+    + '.br-cella-card{align-items:center;justify-content:flex-start;}'
+    + '.br-cella-card > *{width:100%;max-width:100%;margin:0;box-sizing:border-box;flex:0 0 auto;transform-origin:top center;}'
+    // i tasti della card (modifica, clona, *Mia lista*…) sulla carta non servono
+    + '.br-cella-card button{display:none !important;}'
+    + '.br-piede{position:absolute;bottom:' + mm(5) + ';left:0;right:0;text-align:center;font-size:' + mm(2.8) + ';color:#777;}'
+    + '@media print{'
+      + 'body.br-stampa > *:not(#br-anteprima){display:none !important;}'
+      + 'html,body.br-stampa{background:#fff !important;}'
+      + '#br-anteprima{position:static;overflow:visible;background:none;}'
+      + '#br-barra{display:none;}'
+      + '.br-pag{margin:0;box-shadow:none;break-after:page;page-break-after:always;}'
+    + '}';
+}
+
 function adminTab(tab) {
   // 🔴 v6.915 — LA SECONDA PORTA DELLA CONSOLE, trovata dal setaccio di `prova-sicurezza`.
   // 📌 La v6.914 aveva messo la guardia su `showAdminTab`, che e' la porta che i pulsanti usano.
@@ -70216,6 +70775,7 @@ function adminTab(tab) {
   // 🔄 v7.276 - la linguetta 📢 Annunci entra sul tab ANNUNCI (`_cdVistaEntrando`), le altre strade sul primo di prima
   if (tab === 'doppioni') { const v = _cdVistaEntrando || 'el'; _cdVistaEntrando = null; _cdVista(v); }
   if (tab === 'aggiornamenti') renderAdminAggiornamenti();   // v7.170 (Franco)
+  if (tab === 'brochure') renderAdminBrochure();   // v7.340 (Franco)
   // 🗑️ v7.276 - qui c'era il ramo `fotoannuncio`: «📢 Annunci» è diventato il tab ANNUNCI di «Copie doppie» (`_cdVista('ann')`)
   // 🗑️ v7.267 - qui c'era il ramo `mancoliste`: Set doppi è diventato il secondo tab di «Copie doppie», e quello che
   //    faceva entrando (ordine per Quantità, riapertura del suo tab) lo fa `_cdVista('set')`
