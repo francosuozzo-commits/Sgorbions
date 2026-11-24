@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.338 (bis, 24/11) - Solo questa riga: un push nuovo per far ripartire il deploy, fallito al run 1153 con «Multiple
+//          artifacts named "github-pages"» (3 pacchetti nello stesso run; il re-run non lo sblocca). Codice invariato.
 // v7.338 - Modificati index.html (versione) e js/app.js. LE FOTO ANNUNCI PER ACCOUNT (Franco: «voglio che con ognuno dei 4
 //          account sia possibile avere uno split differente delle foto dell'album»). Scheda dell'album, tab Annunci: via i
 //          sotto-tab «Descrizioni» / «Foto annunci»; in ogni linguetta dell'account, sotto i testi, le sue tre caselle (eBay,
