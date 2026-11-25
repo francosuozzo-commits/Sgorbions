@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.340">
+<link rel="stylesheet" href="css/style.css?v=7.341">
 
 
 <style>
@@ -438,6 +438,8 @@
   .nav-links #nav-annunci { display:none !important; }}
 /* 🆕 v7.304 - «Cerca variazioni» solo nel panino (il suo posto, dopo Annunci, lo dà `order` in style.css) */
 @media (min-width:861px) { .nav-links #nav-cerca-var { display:none !important; } }
+/* 🆕 v7.341 - «Brochure» solo nel panino: sul desktop c'è il tab della console */
+@media (min-width:861px) { .nav-links #nav-brochure { display:none !important; } }
 /* 🆕 v7.312 - «Copie doppie» solo nel panino: sul desktop c'è la linguetta `#ml-linguetta` */
 @media (min-width:861px) { .nav-links #nav-copie { display:none !important; } }
 /* ⬜ E SOTTO I 1500px LA CASELLA SPARISCE, AL SUO POSTO UN TASTO 🔍 che apre la finestrella del
@@ -2682,6 +2684,9 @@ button.back-btn { color:#ffffff; }
          la console lì non si vede. Sul desktop no (regola in testa): c'è il tab della console. Nel markup sta PRIMA di
          Annunci, che deve restare attaccato alla casella di ricerca (v7.187); nel panino va dopo (`order` 11). -->
     <a onclick="apriCercaVariazioni()" id="nav-cerca-var" style="display:none;">🔍 Cerca variazioni</a>
+    <!-- 🆕 v7.341 (Franco: «serve anche lanciare questa procedura da mobile») - «Brochure» nel panino del telefono, solo
+         admin (`apriBrochureNav`); nel panino sotto Cerca variazioni (`order` 13). Sul desktop no: c'è il tab della console. -->
+    <a onclick="apriBrochureNav()" id="nav-brochure" style="display:none;">📖 Brochure</a>
     <!-- 🆕 v7.312 (Franco: «da mobile vorrei l'accesso alle copie; aggiungi una voce di menu sotto annunci, che riprende la
          linguetta admin») - la linguetta `#ml-linguetta` nel panino del telefono, solo all'admin (`apriCopieNav`). Nel
          markup sta prima di Annunci, che deve restare attaccato alla casella di ricerca: sotto Annunci la mette `order` -->
@@ -7202,7 +7207,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.340"></script>
+<script src="js/app.js?v=7.341"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7226,7 +7231,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.340'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.341'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
