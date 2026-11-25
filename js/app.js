@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.342 - Modificati index.html (versione) e js/app.js. Tabella degli annunci dal telefono: il titolo della colonna
+//          «Account» diventa «Acc.» e «Finale» diventa «Fin.» (Franco); dal PC restano come prima.
 // v7.341 (2) - ⚠️ cambia anche css/style.css. LA BROCHURE DAL TELEFONO (Franco: «serve anche lanciare questa procedura da
 //          mobile»): voce «📖 Brochure» nel panino, solo admin (`#nav-brochure`, `apriBrochureNav`, `order` 13), che apre
 //          la sezione della console da sola come «Copie doppie» (style.css: `#admin-panel:has(#admin-brochure.active)`);
@@ -32344,7 +32346,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.341';
+const JS_VERSION = 'v7.342';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45133,7 +45135,9 @@ function _annDisegna() {
     //    della colonna, solo dal telefono (`tel`), come «TDA»
     // 🔄 v7.266 (Franco: «nella tabella degli annunci la colonna "Tipologia di articolo" rinominala in "TDA"») - «TDA»
     //    sempre, non più solo dal telefono
-    + th(it ? 'Sito' : 'Site') + th('Account') + th(it ? 'Serie' : 'Series') + th(it ? 'TDA' : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th(it ? 'Copia' : 'Copy') + th(it ? 'Titolo' : 'Title')
+    // 🔄 v7.342 (Franco: «nella versione mobile, nella lista degli annunci, la colonna account, accorciala ad Acc.»; e
+    //    «sempre solo da mobile, la colonna "finale"» in «Fin.», più sotto)
+    + th(it ? 'Sito' : 'Site') + th(tel ? 'Acc.' : 'Account') + th(it ? 'Serie' : 'Series') + th(it ? 'TDA' : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th(it ? 'Copia' : 'Copy') + th(it ? 'Titolo' : 'Title')
     // v7.187 (Franco: «il campo descrizione non mostrarlo nella tabella degli annunci; mostra invece la url») - la
     //    descrizione resta nella finestra; in tabella al suo posto il link, scritto per intero
     // v7.187 (Franco: «per ora togli il campo Foto dalla tabellina») - lo zip resta nella finestra
@@ -45144,7 +45148,7 @@ function _annDisegna() {
     //    `costo` e `prezzo`, così gli annunci già salvati si leggono come prima
     // 🔄 v7.242 (Franco, dal telefono: «Iniziale diventa "Mio"») - solo dal telefono, come «Account» e «TDA»
     // 🔄 v7.285 (Franco: «la colonna Iniziale falla della stessa larghezza della colonna Finale») - i titoli hanno il margine stretto delle celle (regola nell'index, `#annunci-tabella`), così la larghezza la danno le due caselle uguali
-    + th(it ? 'Voto' : 'Rating') + th(it ? (tel ? 'Mio' : 'Iniziale') : (tel ? 'Mine' : 'Initial')) + th(it ? 'Finale' : 'Final') + th('Link')
+    + th(it ? 'Voto' : 'Rating') + th(it ? (tel ? 'Mio' : 'Iniziale') : (tel ? 'Mine' : 'Initial')) + th(tel ? 'Fin.' : (it ? 'Finale' : 'Final')) + th('Link')
     // v7.200 - sopra i quattro tasti della riga, «Applica valori da album» (agli annunci spuntati)
     // 🔄 v7.202 (Franco: «chiamalo "Applica valori da album e venditore" (vai pure su due righe)») - a capo dopo «album»
     + '<th style="text-align:center;text-transform:none;letter-spacing:0;"><button type="button" class="btn-barra-admin pieno" id="ann-applica-album" onclick="_annApplicaDaAlbum()"'
