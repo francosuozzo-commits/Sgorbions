@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.341 (2) - ⚠️ cambia anche css/style.css. LA BROCHURE DAL TELEFONO (Franco: «serve anche lanciare questa procedura da
+//          mobile»): voce «📖 Brochure» nel panino, solo admin (`#nav-brochure`, `apriBrochureNav`, `order` 13), che apre
+//          la sezione della console da sola come «Copie doppie» (style.css: `#admin-panel:has(#admin-brochure.active)`);
+//          l'anteprima si stringe alla larghezza dello schermo con `zoom` solo a schermo (`_brZoom`, `--br-zoom`).
+// v7.341 - Modificati index.html (versione) e js/app.js. IL REGISTRO EVENTI (todo di Franco del 25/11): gli ingressi di
+//          «frasuo» non si registrano più (`_registraLogin`, `_LOGIN_NON_REGISTRATI`: «sono sempre io»; spariva così anche
+//          il suo «io» nel registro); si cancellano più eventi insieme: casella in fondo a ogni riga, «tutti»
+//          nell'intestazione, tasto «🗑️ Elimina selezionati (N)» sopra la tabella (`_eventiScelti`, `_eventiEliminaScelti`).
 // v7.340 (3) - Brochure, i ritocchi di Franco: fpa prima delle fcr (`PRODOTTI_INVENTARIO`); fcr con fronte e retro affiancati
 //          e il nome del retro sotto il retro; bustine, album e altri articoli proseguono il foglio precedente
 //          (`_BR_ACCODA`); il numero di articoli accanto al nome della tipologia; versioni a scelta; con / senza macchie;
@@ -32336,7 +32344,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.340';
+const JS_VERSION = 'v7.341';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -37194,7 +37202,7 @@ async function doLogin() {
     applyI18n();
   }
   fsSave('users', user); // lastLogin: non blocca il login, non serve attenderlo
-  if (!user.isAdmin) logEvent('login', 'Login effettuato da: ' + bold(user.username), { read: true, authUid: user.authUid || null });
+  if (!user.isAdmin) _registraLogin(user);
   else await _loadAdminOnlyData();
   await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
@@ -37279,7 +37287,7 @@ async function signInWithGoogle() {
     applyI18n();
   }
   if (!isNewUser) fsSave('users', user); // lastLogin: non blocca, non serve attenderlo (per un nuovo utente è già stato salvato sopra)
-  if (!isNewUser && !user.isAdmin) logEvent('login', 'Login effettuato da: ' + bold(user.username), { read: true, authUid: user.authUid || null });
+  if (!isNewUser && !user.isAdmin) _registraLogin(user);
   if (!isNewUser && user.isAdmin) await _loadAdminOnlyData();
   await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
@@ -38192,7 +38200,7 @@ function updateNavUser() {
   // 📌 Ognuno di questi viene riacceso piu' sotto da chi ne ha il diritto - `nav-reply-btn` per
   //    l'utente NON admin, gli altri per l'admin - e `nav-quota-warning-btn` da
   //    `_checkReadQuotaWarning()`, che gira dopo.
-  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-copie' /* v7.312 */, 'nav-cerca-var' /* v7.304 */, 'nav-quota-warning-btn',
+  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-copie' /* v7.312 */, 'nav-cerca-var' /* v7.304 */, 'nav-brochure' /* v7.341 */, 'nav-quota-warning-btn',
    'admin-add-series-btn', 'nav-wantlist', 'nav-js-version-wrap'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
@@ -38250,6 +38258,9 @@ function updateNavUser() {
     // 🆕 v7.304 - «Cerca variazioni» nel panino del telefono, solo all'admin (sul desktop la spegne la regola dell'index)
     const cvBtn = document.getElementById('nav-cerca-var');
     if (cvBtn) cvBtn.style.display = currentUser.isAdmin ? '' : 'none';
+    // 🆕 v7.341 - «Brochure» nel panino del telefono, solo all'admin (sul desktop la spegne la regola dell'index)
+    const brBtn = document.getElementById('nav-brochure');
+    if (brBtn) brBtn.style.display = currentUser.isAdmin ? '' : 'none';
     // 🆕 v7.312 - «Copie doppie» nel panino del telefono, solo all'admin (sul desktop la spegne la regola dell'index)
     const cpBtn = document.getElementById('nav-copie');
     if (cpBtn) cpBtn.style.display = currentUser.isAdmin ? '' : 'none';
@@ -42636,6 +42647,12 @@ function apriCopieNav() {
   if (!currentUser?.isAdmin) return;
   document.getElementById('admin-panel')?.classList.remove('tel-solo-ann');
   showAdminTab('doppioni');
+}
+// 🆕 v7.341 (Franco: «serve anche lanciare questa procedura da mobile») - la voce «📖 Brochure» del panino, solo admin: apre
+//    la sezione della console come «Copie doppie»; dal telefono si vede solo lei (regola in style.css)
+function apriBrochureNav() {
+  if (!currentUser?.isAdmin) return;
+  showAdminTab('brochure');
 }
 function apriCollage() {
   if (!_puoAnnunci()) return;   // v7.247 - anche il venditore
@@ -70558,6 +70575,8 @@ function _brApri() {
     + '<button type="button" class="btn-secondary" onclick="_brChiudi()">✕ ' + (it ? 'Chiudi' : 'Close') + '</button></div>' + html;
   document.body.appendChild(ov);
   document.body.classList.add('br-stampa');
+  _brZoom();
+  if (!_brZoomInAscolto) { _brZoomInAscolto = true; window.addEventListener('resize', () => { if (document.getElementById('br-anteprima')) _brZoom(); }); }
   // le foto si caricano tutte prima di stampare: la stampa non aspetta quelle in arrivo
   const imgs = [...ov.querySelectorAll('img')], tot = imgs.length;
   let fatte = 0;
@@ -70580,6 +70599,19 @@ function _brAdatta() {
   const celle = [...document.querySelectorAll('#br-anteprima .br-cella-card')].map(cella => ({ cella, c: cella.firstElementChild })).filter(x => x.c);
   const misure = celle.map(x => Math.min(1, (x.cella.clientHeight - 2) / Math.max(1, x.c.scrollHeight)));
   celle.forEach((x, i) => { x.c.style.transform = misure[i] < 1 ? 'scale(' + misure[i].toFixed(3) + ')' : ''; });
+}
+// 🆕 v7.341 (Franco: «serve anche lanciare questa procedura da mobile») - la pagina è larga quanto il foglio vero (A4 210 mm,
+//    circa 794 px): sul telefono uscirebbe dallo schermo. Si stringe con `zoom` (solo a schermo: `@media screen` in
+//    `_brCSS`) quanto basta a starci con 8 px di margine per lato; sul PC resta 1. Rifatta se si gira il telefono.
+//    `_brAdatta` misura rapporti fra altezze dentro la stessa pagina: lo zoom li lascia uguali.
+let _brZoomInAscolto = false;
+function _brZoom() {
+  const ov = document.getElementById('br-anteprima');
+  if (!ov || !_br) return;
+  const F = _BR_FORMATI[_br.formato] || _BR_FORMATI.A4;
+  const px = F.w * 96 / 25.4;
+  const z = Math.min(1, (window.innerWidth - 16) / px);
+  ov.style.setProperty('--br-zoom', z < 1 ? z.toFixed(3) : '1');
 }
 function _brChiudi() {
   const ov = document.getElementById('br-anteprima'); if (ov) ov.remove();
@@ -70683,6 +70715,8 @@ function _brCSS(F) {
   return '@page{size:' + (F === _BR_FORMATI.A5 ? 'A5' : 'A4') + ' portrait;margin:0;}'
     + '#br-anteprima{position:fixed;inset:0;z-index:100000;overflow:auto;background:#5a5a5a;}'
     + '#br-barra{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:center;gap:0.8rem;flex-wrap:wrap;padding:0.6rem;background:#222;color:#eee;font-family:var(--font-ui);font-size:0.9rem;}'
+    // v7.341 - dal telefono le pagine si stringono alla larghezza dello schermo (`_brZoom`); solo a schermo, la stampa no
+    + '@media screen{.br-pag{zoom:var(--br-zoom,1);}}'
     + '.br-pag{width:' + F.w + 'mm;height:' + F.h + 'mm;margin:8mm auto;background:#fff;color:#111;box-sizing:border-box;padding:' + mm(12) + ' ' + mm(11) + ' ' + mm(14) + ';position:relative;overflow:hidden;display:flex;flex-direction:column;'
       + 'font-family:var(--font-ui),sans-serif;box-shadow:0 2px 10px rgba(0,0,0,0.4);-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
     + '.br-copertina{align-items:center;justify-content:center;gap:' + mm(12) + ';}'
@@ -71918,6 +71952,15 @@ async function logEvent(type, description, extra = {}) {
   } catch(e) { console.error('logEvent error:', e); }
 }
 
+// 🆕 v7.341 (Franco: «non tracciare mai il login di "frasuo" … sono sempre io») - l'evento «login» di un utente normale,
+//    tranne quelli di questa lista (il nome utente, maiuscole o minuscole uguali). L'admin non lo ha mai scritto.
+const _LOGIN_NON_REGISTRATI = ['frasuo'];
+function _registraLogin(user) {
+  if (!user || user.isAdmin) return;
+  if (_LOGIN_NON_REGISTRATI.includes(String(user.username || '').trim().toLowerCase())) return;
+  logEvent('login', 'Login effettuato da: ' + bold(user.username), { read: true, authUid: user.authUid || null });
+}
+
 // 🆕 v7.252 (Franco: «nella tabella degli eventi, dove dici l'azione che un utente fa, per esempio "richiesto reset pwd",
 //    scrivi tra () il valore del campo "Chi è?", ove presente») - la descrizione col «Chi è?» (`chiE`) del suo utente
 //    fra parentesi, subito dopo il primo grassetto (il nome o l'e-mail: così resta attaccato alla persona, e non va
@@ -71944,19 +71987,67 @@ function renderAdminEventi() {
   }
   const typeIcon = { 'new_user': '👤', 'new_post': '📝', 'reset_pwd': '🔑', 'login': '🔓', 'newsletter_off': '📭', 'account_deleted': '🗑️', 'mancolista': '📮' };   // v7.327: + mancolista
   const noBellEvTypes = ['login'];
-  el.innerHTML = `<table class="data-table compact"><thead><tr>
-    <th>${(currentLang === 'it') ? 'Data' : 'Date'}</th><th>${(currentLang === 'it') ? 'Tipo' : 'Type'}</th><th>${(currentLang === 'it') ? 'Descrizione' : 'Description'}</th><th></th>
+  const it = currentLang === 'it';
+  // v7.341 - le scelte che non esistono più (eventi cancellati nel frattempo) si dimenticano
+  const vivi = new Set(eventi.map(e => e.id));
+  [..._eventiScelti].forEach(id => { if (!vivi.has(id)) _eventiScelti.delete(id); });
+  const n = _eventiScelti.size;
+  const tutti = n > 0 && n === eventi.length;
+  const barra = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;justify-content:flex-end;margin-bottom:0.6rem;">'
+    + '<button type="button" id="eventi-elimina-scelti" class="tbl-btn tbl-btn-del"' + (n ? '' : ' disabled style="opacity:0.45;cursor:default;"')
+    + ' onclick="_eventiEliminaScelti()">🗑️ ' + (it ? 'Elimina selezionati' : 'Delete selected') + ' (' + n + ')</button></div>';
+  el.innerHTML = barra + `<table class="data-table compact"><thead><tr>
+    <th>${it ? 'Data' : 'Date'}</th><th>${it ? 'Tipo' : 'Type'}</th><th>${it ? 'Descrizione' : 'Description'}</th><th></th>
+    <th style="text-align:center;"><input type="checkbox" id="eventi-scegli-tutti" ${tutti ? 'checked' : ''} onchange="_eventiScegliTutti(this.checked)" title="${it ? 'Seleziona tutti' : 'Select all'}"></th>
   </tr></thead><tbody>
   ${eventi.map(e => `<tr style="${e.read ? '' : 'background:rgba(181,255,46,0.05);'}">
     <td style="white-space:nowrap;font-size:0.78rem;">${new Date(e.date).toLocaleDateString('it-IT')} ${new Date(e.date).toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}</td>
     <td>${typeIcon[e.type] || '📌'}</td>
     <td>${_eventoConChiE(e)}</td>
     <td style="white-space:nowrap;">
-      <button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : (currentLang === 'it' ? 'Segna come letto' : 'Mark as read')}</button>
-      <button class="tbl-btn tbl-btn-del" style="margin-left:0.35rem;" onclick="deleteEvento('${e.id}')" title="${currentLang === 'it' ? 'Elimina questo evento' : 'Delete this event'}">🗑️</button>
+      <button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : (it ? 'Segna come letto' : 'Mark as read')}</button>
+      <button class="tbl-btn tbl-btn-del" style="margin-left:0.35rem;" onclick="deleteEvento('${e.id}')" title="${it ? 'Elimina questo evento' : 'Delete this event'}">🗑️</button>
     </td>
+    <td style="text-align:center;"><input type="checkbox" class="evento-scelto" ${_eventiScelti.has(e.id) ? 'checked' : ''} onchange="_eventoScegli('${e.id}', this.checked)"></td>
   </tr>`).join('')}
   </tbody></table>`;
+}
+
+// 🆕 v7.341 (Franco: «poter cancellare più eventi insieme») - una casella in fondo a ogni riga (colonna nuova: ultima),
+//    «tutti» nell'intestazione, e il tasto «Elimina selezionati (N)» sopra la tabella, spento a zero. Il 🗑️ della riga resta.
+const _eventiScelti = new Set();
+function _eventoScegli(id, si) {
+  if (si) _eventiScelti.add(id); else _eventiScelti.delete(id);
+  renderAdminEventi();
+}
+function _eventiScegliTutti(si) {
+  _eventiScelti.clear();
+  if (si) (_cache.eventi || []).forEach(e => _eventiScelti.add(e.id));
+  renderAdminEventi();
+}
+async function _eventiEliminaScelti() {
+  if (!currentUser || !currentUser.isAdmin) return;
+  const ids = [..._eventiScelti];
+  if (!ids.length) return;
+  const it = currentLang === 'it';
+  const ok = await _finestraConferma({
+    titolo: '🗑️ ' + (it ? 'Eliminare ' + ids.length + (ids.length === 1 ? ' evento' : ' eventi') + ' dal registro?' : 'Delete ' + ids.length + (ids.length === 1 ? ' event' : ' events') + ' from the log?'),
+    testo: it ? 'Gli eventi selezionati spariscono dal registro. Non si possono recuperare.' : 'The selected events disappear from the log. They cannot be recovered.',
+    ok: it ? 'Elimina' : 'Delete', annulla: it ? 'Annulla' : 'Cancel'
+  });
+  if (!ok) return;
+  const via = new Set();
+  let falliti = 0;
+  for (const id of ids) {
+    try { await fsDelete('eventi', id); via.add(id); }
+    catch (e) { falliti++; console.error('_eventiEliminaScelti', id, e); }
+  }
+  _cache.eventi = getData('eventi', []).filter(e => !via.has(e.id));
+  via.forEach(id => _eventiScelti.delete(id));
+  updateBellBadge();
+  renderAdminEventi();
+  if (falliti) toast(it ? 'Eliminati ' + via.size + ', non riusciti ' + falliti : 'Deleted ' + via.size + ', failed ' + falliti, 'error');
+  else toast(it ? (via.size === 1 ? 'Evento eliminato' : via.size + ' eventi eliminati') : (via.size === 1 ? 'Event deleted' : via.size + ' events deleted'), 'success');
 }
 
 // Cancellazione di un singolo evento. Serve soprattutto a ripulire i dati di
