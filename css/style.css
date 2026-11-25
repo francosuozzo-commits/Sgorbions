@@ -1890,8 +1890,9 @@ footer {
   .nav-links #nav-annunci        { order: 10; }
   .nav-links #nav-copie          { order: 11; }   /* v7.312 - «Copie doppie», solo admin, sotto Annunci */
   .nav-links #nav-cerca-var      { order: 12; }   /* v7.304 - «Cerca variazioni», solo admin */
-  .nav-links a[data-page="contact"] { order: 13; }
-  .nav-links #nav-logout-link    { order: 14; }
+  .nav-links #nav-brochure       { order: 13; }   /* v7.341 - «Brochure», solo admin */
+  .nav-links a[data-page="contact"] { order: 14; }
+  .nav-links #nav-logout-link    { order: 15; }
 
   #navbar .nav-logo img { height: 30px; }
 }
@@ -2220,6 +2221,11 @@ footer {
      della console restano spenti. Entrando da «📢 Annunci» (`apriAnnunciNav` mette `tel-solo-ann`) si vede solo
      Annunci, come prima. La classe e non il tab acceso: se no, passando al tab ANNUNCI dalle copie, i tab sparirebbero. */
   #admin-panel:has(#admin-doppioni.active) { display: block !important; }
+  /* 🆕 v7.341 (Franco: «serve anche lanciare questa procedura da mobile») - con la voce «📖 Brochure» del panino
+     (`apriBrochureNav`) si vede la sezione Brochure; titolo e tab della console restano spenti, come per le copie */
+  #admin-panel:has(#admin-brochure.active) { display: block !important; }
+  #admin-panel:has(#admin-brochure.active) > h2,
+  #admin-panel:has(#admin-brochure.active) > .admin-tabs,
   #admin-panel:has(#admin-doppioni.active) > h2,
   #admin-panel:has(#admin-doppioni.active) > .admin-tabs,
   #admin-panel.tel-solo-ann:has(#admin-doppioni.active #admin-fotoannuncio.active) #admin-doppioni > h3,
