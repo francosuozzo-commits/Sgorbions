@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.346">
+<link rel="stylesheet" href="css/style.css?v=7.347">
 
 
 <style>
@@ -441,7 +441,7 @@
 /* 🆕 v7.341 - «Brochure» solo nel panino: sul desktop c'è il tab della console */
 @media (min-width:861px) { .nav-links #nav-brochure { display:none !important; } }
 /* v7.343 - Franco: «da mobile, il triangolino per esplodere le sezioni delle serie è un po' troppo piccolo» (albero della brochure) */
-@media (max-width:860px) { #br-albero .br-ramo > summary { padding:0.45rem 0 !important; } #br-albero .br-ramo > summary::marker { font-size:1.7em; } }
+@media (max-width:860px) { #br-albero .br-ramo > summary { padding:0.6rem 0.75rem !important; } #br-albero .br-ramo > summary::marker { font-size:1.7em; } }
 /* 🆕 v7.312 - «Copie doppie» solo nel panino: sul desktop c'è la linguetta `#ml-linguetta` */
 @media (min-width:861px) { .nav-links #nav-copie { display:none !important; } }
 /* ⬜ E SOTTO I 1500px LA CASELLA SPARISCE, AL SUO POSTO UN TASTO 🔍 che apre la finestrella del
@@ -775,6 +775,42 @@ body:not(.wz-ripresa) #inv-linguetta { top: 80px; }
 #cc-linguetta:hover .wz-ling-corta, #cc-linguetta:focus-visible .wz-ling-corta { display: none; }
 #cc-linguetta:hover .wz-ling-lunga, #cc-linguetta:focus-visible .wz-ling-lunga { max-width: 26rem; opacity: 1; }
 @media (max-width: 860px) { #cc-linguetta { display: none !important; } }
+/* 🆕 v7.347 - la linguetta «📖 Brochure Sgorbions»: come quella di «Ciò che cerco», nella colonna `#linguette` */
+#br-linguetta { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.8rem 0.6rem 0.9rem; border: none; cursor: pointer;
+  border-radius: 0 12px 12px 0; background: var(--action); color: #fff; font-family: var(--font-ui); font-weight: 700;
+  font-size: 0.9rem; white-space: nowrap; box-shadow: 3px 3px 12px rgba(0,0,0,0.45); }
+#br-linguetta:hover { filter: brightness(1.12); }
+@media (max-width: 860px) { #br-linguetta { display: none !important; } }
+/* 🆕 v7.347 - LA PAGINA «BROCHURE SGORBIONS» (`renderBrochure`): la domanda a due schede, i passi in riquadri, le serie
+   come schede che si aprono, le tipologie e le opzioni come pillole che si accendono */
+#brochure-pagina { max-width: 900px; margin: 0 auto; }
+.br-intro { color: var(--text); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.1rem; }
+.br-intro p { margin: 0 0 0.4rem; }
+.br-intro ol { margin: 0 0 0 1.4rem; }
+.br-passo { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem 1rem; margin-bottom: 0.9rem; }
+.br-passo-tit { display: flex; align-items: center; gap: 0.55rem; font-family: var(--font-ui); font-weight: 700; font-size: 1rem; margin-bottom: 0.7rem; }
+.br-passo-n { display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  background: var(--action); color: #fff; font-size: 0.85rem; flex: 0 0 auto; }
+.br-modi { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+@media (max-width: 600px) { .br-modi { grid-template-columns: 1fr; } }
+.br-modo { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 1rem; border: 2px solid var(--border2);
+  border-radius: 14px; background: var(--card2); color: var(--text); cursor: pointer; font-family: var(--font-ui); }
+.br-modo:hover { border-color: var(--action); }
+.br-modo.on { border-color: var(--action); box-shadow: 0 0 0 3px color-mix(in srgb, var(--action) 35%, transparent); }
+.br-modo-ico { font-size: 2rem; line-height: 1; }
+.br-modo-tit { font-weight: 700; font-size: 1.05rem; }
+.br-modo-sub { font-size: 0.82rem; color: var(--muted); text-align: center; }
+.br-scelte { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.br-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; border: 1px solid var(--border2);
+  border-radius: 999px; cursor: pointer; font-size: 0.88rem; background: var(--card2); color: var(--text); }
+.br-chip:has(input:checked) { border-color: var(--action); background: color-mix(in srgb, var(--action) 22%, var(--card2)); }
+.br-quanti { color: var(--muted); font-weight: 400; font-size: 0.82rem; }
+#br-albero .br-ramo { border: 1px solid var(--border); border-radius: 10px; margin: 0.4rem 0; background: var(--card2); }
+#br-albero .br-ramo > summary { cursor: pointer; padding: 0.5rem 0.75rem; }
+#br-albero .br-ramo[open] > summary { border-bottom: 1px solid var(--border); }
+.br-ramo-nome { cursor: pointer; font-weight: 700; }
+.br-tda { display: flex; flex-wrap: wrap; gap: 0.45rem; padding: 0.6rem 0.75rem; }
+.br-crea-riga { display: flex; align-items: center; justify-content: center; gap: 0.9rem; flex-wrap: wrap; margin: 1.3rem 0 0.4rem; }
 /* 🆕 v7.118 (Franco: «metti una linguetta admin (arancio) a dx, per la funzione di Impersonifica») - LA LINGUETTA A
    DESTRA, solo per l'admin e solo sul desktop: «🎭 Impersona» apre una finestrella con gli utenti; impersonando
    diventa «🎭 Torna admin». Arancio dei comandi admin (`--action-admin`); speculare a quelle di sinistra. La accende
@@ -2583,6 +2619,9 @@ button.back-btn { color:#ffffff; }
   <span class="wz-ling-corta">❤️ <span data-i18n="nav.wishlist">Ciò che cerco</span></span>
   <span class="wz-ling-lunga" data-i18n="cc.linguetta">Le figurine che stai cercando</span>
 </button>
+<!-- 🆕 v7.347 (Franco: «nel menù laterale con la linguetta solita, che si chiama brochure sgorbions») - in tutte le pagine,
+     solo sul desktop, a chi ha fatto l'accesso (admin compreso): la accende `updateNavUser`. Sul telefono c'è la voce del panino. -->
+<button type="button" id="br-linguetta" onclick="apriBrochureNav()" aria-label="Brochure Sgorbions" style="display:none;">📖 Brochure Sgorbions</button>
 </div>
 <!-- 🆕 v7.325 (Franco: «una linguetta, da mostrare sulla sinistra dello schermo, come quelle admin arancio che abbiamo sulla
      destra, chiamata "Inviaci la tua mancolista"») - blu perché è dell'utente; la accende `_aggiornaLinguettaImpersona` -->
@@ -2689,7 +2728,9 @@ button.back-btn { color:#ffffff; }
     <a onclick="apriCercaVariazioni()" id="nav-cerca-var" style="display:none;">🔍 Cerca variazioni</a>
     <!-- 🆕 v7.341 (Franco: «serve anche lanciare questa procedura da mobile») - «Brochure» nel panino del telefono, solo
          admin (`apriBrochureNav`); nel panino sotto Cerca variazioni (`order` 13). Sul desktop no: c'è il tab della console. -->
-    <a onclick="apriBrochureNav()" id="nav-brochure" style="display:none;">📖 Brochure</a>
+    <!-- 🔄 v7.347 (Franco: «la fondi con questa nuova, semplicemente l'admin ha più funzionalità») - «📖 Brochure Sgorbions»,
+         a tutti quelli che hanno fatto l'accesso; apre la pagina `#page-brochure`. Sul desktop c'è la linguetta. -->
+    <a onclick="apriBrochureNav()" id="nav-brochure" style="display:none;">📖 Brochure Sgorbions</a>
     <!-- 🆕 v7.312 (Franco: «da mobile vorrei l'accesso alle copie; aggiungi una voce di menu sotto annunci, che riprende la
          linguetta admin») - la linguetta `#ml-linguetta` nel panino del telefono, solo all'admin (`apriCopieNav`). Nel
          markup sta prima di Annunci, che deve restare attaccato alla casella di ricerca: sotto Annunci la mette `order` -->
@@ -4366,9 +4407,7 @@ di tutte le serie</button>
           <!-- 🆕 v7.302 (Franco: «Vorrei un registro eventi, sulle attività svolte dagli utenti … Ne vorrei uno dedicato e
                strutturato») - lo disegna `renderAdminAttivita`; in ordine alfabetico viene dopo Aggiornamenti massivi -->
           <button class="admin-tab" onclick="adminTab('attivita')">👣 Attività utenti</button>
-          <!-- 🆕 v7.340 (Franco: «una nuova funzionalità chiamata brochure») - in ordine alfabetico dopo Attività utenti;
-               la disegna `renderAdminBrochure` -->
-          <button class="admin-tab" onclick="adminTab('brochure')">📖 Brochure</button>
+          <!-- 🗑️ v7.347 - qui c'era il tab «📖 Brochure» (v7.340): è diventato la pagina «📖 Brochure Sgorbions» -->
           <!-- 🆕 v7.182 (Franco: «fai una nuova sezione nella admin console, dedicata allo scopo»); 🔄 v7.184 si chiama
                «Annunci» (Franco), e in ordine alfabetico viene subito dopo Aggiornamenti massivi -->
           <button class="admin-tab" onclick="adminTab('caroselli')">🎠 Caroselli</button>
@@ -4762,10 +4801,7 @@ di tutte le serie</button>
         <div id="admin-aggiornamenti" class="admin-section">
           <div><div id="admin-aggiornamenti-box"></div></div>
         </div>
-        <!-- 🆕 v7.340 - LA SEZIONE «BROCHURE»: la disegna `renderAdminBrochure` -->
-        <div id="admin-brochure" class="admin-section">
-          <div><div id="admin-brochure-box"></div></div>
-        </div>
+        <!-- 🗑️ v7.347 - qui c'era la sezione «BROCHURE» della console: ora è `#page-brochure` -->
         <div id="admin-caroselli" class="admin-section">
           <div><div id="admin-caroselli-tda"></div></div>
         </div>
@@ -5040,6 +5076,16 @@ di tutte le serie</button>
   </section>
 </div>
 
+
+<!-- ==================== BROCHURE ==================== -->
+<!-- 🆕 v7.347 (Franco) - LA PAGINA «📖 BROCHURE SGORBIONS»: la disegna tutta `renderBrochure` -->
+<div id="page-brochure" class="page">
+  <section class="section">
+    <div class="section-inner">
+      <div id="brochure-pagina"></div>
+    </div>
+  </section>
+</div>
 
 <!-- ==================== WISHLIST ==================== -->
 <div id="page-wishlist" class="page">
@@ -7212,7 +7258,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.346"></script>
+<script src="js/app.js?v=7.347"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7236,7 +7282,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.346'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.347'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
