@@ -1,6 +1,22 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.347 - Modificati index.html e js/app.js. LA BROCHURE PER TUTTI (Franco): pagina «📖 Brochure Sgorbions»
+//          (`#page-brochure`, `renderBrochure`, protetta dall'accesso), dal PC la linguetta a sinistra (`#br-linguetta`,
+//          nella colonna `#linguette`), dal telefono la voce del panino (`#nav-brochure`, ora per tutti). Benvenuto, poi
+//          «Cosa vuoi stampare?»: l'Inventario o la *Mia lista* (`_br.modo`, `_brScegliModo`; in `_brGruppi` solo gli
+//          articoli segnati). Chi non è admin non vede le serie in arrivo e nascoste (`_serieStatoContabile`) né l'opzione
+//          delle macchie, e le sue foto protette escono macchiate (`_brApri`). Vestito nuovo: passi in riquadri, serie come
+//          schede, tipologie e opzioni come pillole (CSS nell'index). Via il tab «📖 Brochure» della console
+//          (`renderAdminBrochure`, `#admin-brochure`): «Stampa brochure» della serie apre la pagina. «Crea brochure» apre
+//          prima il riepilogo (`_brConferma`: serie e tipologie, pagine, foto e peso stimato con `_brStima`;
+//          `_finestraConferma` impara `blu`). In copertina, sotto la foto, «figurinesgorbions.it» e la frase della home
+//          (`hero.tagline`, nella lingua della brochure); la foto scende al 58% dell'altezza. 🖼️ Collage: coi numeri
+//          specifici «Quante foto devi unire ?» è in sola lettura (`_collageNSoloLettura`); dal PC non si vede più. I
+//          numeri specifici si separano con virgola, punto, punto e virgola o spazi, anche mescolati. «EFFETTO USATO ?»
+//          (Franco), sotto il tipo di collage: Nessuno (di serie) / Leggero / Medio / Forte, e le spunte Bordi consumati,
+//          Luce disturbata, Ingiallimento, Graffi e pieghe (spente di serie); ogni foto si invecchia a modo suo in
+//          `_collageInvecchia`, dentro `_collageDisegna` (anche i retro). Niente Cloudinary.
 // v7.346 - Modificati index.html (versione) e js/app.js. Brochure (Franco): le spille mai col retro, in tutte e due le
 //          schede (`_BR_SOLO_FRONTE`, `_brSoloFronte` in `_brFotoDi`; «come la card» con `C.soloFronte` in
 //          `_cardArticoloHTML`, che solo la brochure accende). Nel menu «Opzioni» della serie «📖 Stampa brochure»
@@ -30547,7 +30563,8 @@ function _finestraConferma(opz) {
     bNo.type = 'button';
     bNo.textContent = o.annulla || (it ? 'Annulla' : 'Cancel');
     const bSi = document.createElement('button');
-    bSi.className = 'btn-primary btn-admin admin-anche-telefono';   // v6.846: da telefono serve anche qui
+    // v6.846: da telefono serve anche qui; 🆕 v7.347 - `blu`: la conferma di un'azione dell'utente, blu come i suoi tasti
+    bSi.className = o.blu ? 'btn-primary' : 'btn-primary btn-admin admin-anche-telefono';
     bSi.type = 'button';
     bSi.textContent = o.ok || (it ? 'Procedi' : 'Proceed');
     // ANNULLA a sinistra e PROCEDI a destra, e il fuoco parte da ANNULLA: chi apre questa finestra
@@ -32365,7 +32382,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.346';
+const JS_VERSION = 'v7.347';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -36988,7 +37005,7 @@ function _caroselloEntitaDopo(quale, scorriPrima) {
 }
 
 function showPage(page) {
-  const protectedPages = ['catalog', 'blog', 'classifica', 'wantlist', 'profile', 'newsletter', 'wishlist', 'unsubscribe', 'lamialista'];   // v7.160
+  const protectedPages = ['catalog', 'blog', 'classifica', 'wantlist', 'profile', 'newsletter', 'wishlist', 'unsubscribe', 'lamialista', 'brochure'];   // v7.160; v7.347 brochure
   if (protectedPages.includes(page) && !currentUser) {
     openAuth('login');
     return;
@@ -37066,6 +37083,7 @@ function showPage(page) {
   if (page === 'home') { renderHomeStats(); renderHomeSeries(); }
   if (page === 'wantlist') renderWantlist();
   if (page === 'lamialista') renderMiaLista();   // v7.160
+  if (page === 'brochure') renderBrochure();   // v7.347
   if (page === 'newsletter') { renderNewsletterUsers(); renderEmailLog(); }
   if (page === 'wishlist') renderWishlist();
   if (page === 'unsubscribe') renderUnsubscribePage();
@@ -38221,7 +38239,7 @@ function updateNavUser() {
   // 📌 Ognuno di questi viene riacceso piu' sotto da chi ne ha il diritto - `nav-reply-btn` per
   //    l'utente NON admin, gli altri per l'admin - e `nav-quota-warning-btn` da
   //    `_checkReadQuotaWarning()`, che gira dopo.
-  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-copie' /* v7.312 */, 'nav-cerca-var' /* v7.304 */, 'nav-brochure' /* v7.341 */, 'nav-quota-warning-btn',
+  ['nav-msg-btn', 'nav-reply-btn', 'nav-bell-btn', 'nav-newsletter-btn', 'nav-annunci', 'nav-copie' /* v7.312 */, 'nav-cerca-var' /* v7.304 */, 'nav-brochure' /* v7.341 */, 'br-linguetta' /* v7.347 */, 'nav-quota-warning-btn',
    'admin-add-series-btn', 'nav-wantlist', 'nav-js-version-wrap'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
@@ -38270,6 +38288,8 @@ function updateNavUser() {
     const nwl = document.getElementById('nav-wishlist'); if (nwl) nwl.style.display = currentUser.isAdmin ? 'none' : '';
     // 🆕 v7.110 - e la sua linguetta a sinistra, alle stesse condizioni
     const ccl = document.getElementById('cc-linguetta'); if (ccl) ccl.style.display = currentUser.isAdmin ? 'none' : '';
+    // 🆕 v7.347 - la linguetta «📖 Brochure Sgorbions», a tutti (admin compreso), sotto le altre di sinistra
+    const brl = document.getElementById('br-linguetta'); if (brl) brl.style.display = '';
     const nlBtn = document.getElementById('nav-newsletter-btn');
     if (nlBtn) nlBtn.style.display = currentUser.isAdmin ? '' : 'none';
     // v7.186 (Franco) - la voce «Annunci», solo all'admin
@@ -38279,9 +38299,10 @@ function updateNavUser() {
     // 🆕 v7.304 - «Cerca variazioni» nel panino del telefono, solo all'admin (sul desktop la spegne la regola dell'index)
     const cvBtn = document.getElementById('nav-cerca-var');
     if (cvBtn) cvBtn.style.display = currentUser.isAdmin ? '' : 'none';
-    // 🆕 v7.341 - «Brochure» nel panino del telefono, solo all'admin (sul desktop la spegne la regola dell'index)
+    // 🆕 v7.341 - «Brochure» nel panino del telefono (sul desktop la spegne la regola dell'index: lì c'è la linguetta)
+    // 🔄 v7.347 - «📖 Brochure Sgorbions», a tutti quelli che hanno fatto l'accesso
     const brBtn = document.getElementById('nav-brochure');
-    if (brBtn) brBtn.style.display = currentUser.isAdmin ? '' : 'none';
+    if (brBtn) brBtn.style.display = '';
     // 🆕 v7.312 - «Copie doppie» nel panino del telefono, solo all'admin (sul desktop la spegne la regola dell'index)
     const cpBtn = document.getElementById('nav-copie');
     if (cpBtn) cpBtn.style.display = currentUser.isAdmin ? '' : 'none';
@@ -42671,9 +42692,9 @@ function apriCopieNav() {
 }
 // 🆕 v7.341 (Franco: «serve anche lanciare questa procedura da mobile») - la voce «📖 Brochure» del panino, solo admin: apre
 //    la sezione della console come «Copie doppie»; dal telefono si vede solo lei (regola in style.css)
+// 🔄 v7.347 - la pagina «📖 Brochure Sgorbions», per tutti quelli che hanno fatto l'accesso (a chi no, `showPage` chiede l'accesso)
 function apriBrochureNav() {
-  if (!currentUser?.isAdmin) return;
-  showAdminTab('brochure');
+  showPage('brochure');
 }
 // 🆕 v7.346 (Franco: «nella schermata di ogni serie un bottone … stampa brochure … che avvia la procedura di brochure per
 //    tutti gli articoli di quella serie»; poi «confermare direttamente oppure spegnere alcune tipologie … le opzioni che
@@ -42683,7 +42704,7 @@ let _brSerieDaAprire = null;
 function apriBrochureSerie(id) {
   if (!currentUser?.isAdmin || !id) return;
   _brSerieDaAprire = id;
-  showAdminTab('brochure');
+  showPage('brochure');   // v7.347: la pagina, non più la console
 }
 function apriCollage() {
   if (!_puoAnnunci()) return;   // v7.247 - anche il venditore
@@ -42746,6 +42767,15 @@ function _collageHTML(perBox) {
       // v7.227 (Franco: «quando la funzione è fatta partire da un box, "che tipo di collage vuoi?" deve essere
       //    preimpostato a "mazzo di carte"») - dalla card il mazzo, da Annunci la griglia
       (t.k === (perBox ? 'mazzo' : 'griglia') ? ' checked' : '') + ' onchange="_collageTipoScelto()"')).join('') +
+    // 🆕 v7.347 - «Effetto usato ?», parte della domanda 2 (senza numero): di serie Nessuno; scelto un livello compaiono
+    //    le quattro spunte, spente di serie (Franco: «nessuna»). Il disegno è `_collageInvecchia`
+    '<div style="' + dom + '">' + (it ? 'Effetto usato ?' : 'Worn look?') + '</div>' +
+    COLLAGE_USATO.map(u => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.88rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
+      '<input type="radio" name="collage-usato" value="' + u.k + '"' + (u.k === 0 ? ' checked' : '') + ' onchange="_collageUsatoMostra()">' + esc(it ? u.it : u.en) + '</label>').join('') +
+    '<div id="collage-usato-parti" style="display:none;margin-top:0.3rem;">' + COLLAGE_USATO_PARTI.map(x => '<label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.86rem;color:var(--text);margin:0.15rem 1rem 0.15rem 0;">' +
+      '<input type="checkbox" id="collage-usato-' + x.k + '">' + esc(it ? x.it : x.en) + '</label>').join('') +
+      '<div style="font-size:0.75rem;opacity:0.7;color:var(--text);margin:0.2rem 0 0;">' + (it ? 'Ogni figurina si consuma un po\' a modo suo: il livello dice quanto, le spunte cosa.' : 'Each card wears a little differently: the level says how much, the ticks what.') + '</div>' +
+    '</div>' +
     // 🆕 v7.261 (Franco: «invece di dividere articoli a 50 per pagina, chiedi quanti articoli mettere per pagina; il default
     //    è l'attuale valore»; «il discorso di mantenere unite le sottocategorie, fallo diventare una domanda; anche qui,
     //    default sì») - solo da Annunci (dalla card la foto è una sola). Il numero parte dal massimo del tipo e lo segue
@@ -43088,7 +43118,9 @@ function _collageDa() {
   // v7.222 - «Quante foto devi unire?» va sopra «Prendi le foto» o, dal PC, sotto la spunta dello sfondo
   const nb = document.getElementById('collage-n-box'), prendi = document.getElementById('collage-sito-prendi');
   if (nb && prendi && opz) { if (_collageModo === 'pc') opz.after(nb); else prendi.before(nb); }
-  if (nb && _collageModo === 'pc') nb.style.display = '';   // v7.303 - dal sito «Un articolo solo ?» può averla nascosta
+  // 🔄 v7.347 (Franco: «se le foto le passo io, quella domanda puoi del tutto nasconderla») - dal PC il numero lo danno
+  //    i file passati: la domanda non si vede (il campo resta, con quel numero, per `_collageProblema`)
+  if (nb && _collageModo === 'pc') nb.style.display = 'none';
   _collageFoto = [];
   _collageMostraScelte();
   _collageStato();
@@ -43304,10 +43336,20 @@ let _collageConSub = false;
 function _collageContaCandidati() {
   const nn = document.getElementById('collage-n');
   if (!nn || _collageModo !== 'sito') return;
-  const el = _collageCandidati().el;
+  const { el, spec } = _collageCandidati();
   _collageConSub = el.some(f => String(f.subcategory || '').trim());
   nn.value = el.length;
+  _collageNSoloLettura(!!spec);
   _collageStato();
+}
+// 🆕 v7.347 (Franco: «quella domanda rendila read only, se vengono specificati numeri specifici») - coi numeri
+//    specifici «Quante foto devi unire ?» la riempiono i numeri scritti, e non si cambia
+function _collageNSoloLettura(si) {
+  const nn = document.getElementById('collage-n');
+  if (!nn) return;
+  nn.readOnly = si;
+  nn.style.opacity = si ? '0.6' : '';
+  nn.title = si ? (currentLang === 'it' ? 'La danno i numeri specifici' : 'Set by the specific numbers') : '';
 }
 // 🆕 v7.214 (Franco: «nel collage, dopo che scelgo la serie, deve chiedermi la tda; solo dopo deve cercare gli articoli»)
 //    - LA TIPOLOGIA DENTRO LA SERIE. Le voci sono le tipologie che in quella serie hanno almeno un articolo base con la foto
@@ -43642,8 +43684,10 @@ function _collageSpecAttivo() {
   return _collageSpecPossibile() && (document.querySelector('input[name="collage-sito-spec"]:checked') || {}).value === 'si';
 }
 // i numeri scritti: separati da virgole o spazi, in maiuscolo (le lettere delle olografiche), senza doppioni
+// 🔄 v7.347 (Franco: «mi serve che sia digerito anche il carattere "." … metti dentro anche il ";" … non devono essere
+//    per forza tutti uguali») - separatori: virgola, punto, punto e virgola e spazi, anche mescolati
 function _collageSpecNumeri(t) {
-  return [...new Set(String(t || '').split(/[\s,;]+/).map(x => x.trim().toUpperCase()).filter(Boolean))];
+  return [...new Set(String(t || '').split(/[\s,.;]+/).map(x => x.trim().toUpperCase()).filter(Boolean))];
 }
 // i numeri a schermo di un articolo (una figurina doppia ne ha due: «12 - 13»), come li confronta il numero singolo
 const _collageNumeriDi = f => String(_numeroAschermo(f) ?? '').split(' - ').map(x => x.trim().toUpperCase()).filter(Boolean);
@@ -44240,6 +44284,7 @@ function _collageDisegna(tipo, foto, sfondo, grande, come, retri) {
   const k = Math.min(W * (1 - 2 * margine) / (b.x1 - b.x0), H * (1 - 2 * margine) / (b.y1 - b.y0));
   const ox = W / 2 - k * (b.x0 + b.x1) / 2, oy = H / 2 - k * (b.y0 + b.y1) / 2;
   ctx.imageSmoothingQuality = 'high';
+  const usato = _collageUsatoScelto();   // v7.347
   pezzi.forEach(p => {
     ctx.save();
     ctx.translate(ox + k * p.x, oy + k * p.y);
@@ -44247,10 +44292,152 @@ function _collageDisegna(tipo, foto, sfondo, grande, come, retri) {
     // un'ombra leggera dove le foto si sovrappongono o girano: sul trasparente è ciò che le stacca una dall'altra
     // v7.220 - sul tessuto l'ombra anche nella griglia: è lei che fa sembrare le foto appoggiate
     if (tipo !== 'griglia' || sfondo) { ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14 * s; ctx.shadowOffsetY = 3 * s; }
-    ctx.drawImage(p.img, -k * p.w / 2, -k * p.h / 2, k * p.w, k * p.h);
+    // v7.347 - con «Effetto usato ?» ogni foto si invecchia a modo suo, alla misura in cui si disegna
+    ctx.drawImage(usato ? _collageInvecchia(p.img, k * p.w, k * p.h, usato) : p.img, -k * p.w / 2, -k * p.h / 2, k * p.w, k * p.h);
     ctx.restore();
   });
   c.pezzi = pezzi;   // v7.223 - per la foto dei retro
+  return c;
+}
+// 🆕 v7.347 (Franco: «una opzione, alla procedura di collage, che permette di creare foto delle figurine dove queste
+//    sembrino usate … poco dettaglio ai bordi della figurina, effetto luce un pochino disturbato, o altri fattori …
+//    parametrico, guidato dalla form»; le spunte «vanno bene», di serie «nessuna») - L'EFFETTO USATO. Il livello dice
+//    quanto, le spunte cosa. Ogni foto si invecchia da sola e a caso, a ogni disegno: le figurine non sono consumate
+//    tutte uguali, e anche i retro (disegnati da `_collageDisegna` come i fronti) escono usati, allo stesso livello.
+//    Solo canvas e gradienti, niente `filter` (Safari non lo fa) e niente Cloudinary.
+const COLLAGE_USATO = [
+  { k: 0, it: 'Nessuno', en: 'None' },
+  { k: 1, it: 'Leggero', en: 'Light' },
+  { k: 2, it: 'Medio',   en: 'Medium' },
+  { k: 3, it: 'Forte',   en: 'Strong' },
+];
+const COLLAGE_USATO_PARTI = [
+  { k: 'bordi',  it: 'Bordi consumati',  en: 'Worn edges' },
+  { k: 'luce',   it: 'Luce disturbata',  en: 'Uneven light' },
+  { k: 'giallo', it: 'Ingiallimento',    en: 'Yellowing' },
+  { k: 'graffi', it: 'Graffi e pieghe',  en: 'Scratches and creases' },
+];
+// la risposta: null con «Nessuno», o senza nessuna spunta accesa (non ci sarebbe niente da fare)
+function _collageUsatoScelto() {
+  const livello = Number((document.querySelector('input[name="collage-usato"]:checked') || {}).value) || 0;
+  if (!livello) return null;
+  const parti = {};
+  COLLAGE_USATO_PARTI.forEach(x => { const el = document.getElementById('collage-usato-' + x.k); parti[x.k] = !!(el && el.checked); });
+  return Object.values(parti).some(Boolean) ? { livello, parti } : null;
+}
+// le spunte si vedono solo con un livello scelto
+function _collageUsatoMostra() {
+  const pb = document.getElementById('collage-usato-parti');
+  if (pb) pb.style.display = Number((document.querySelector('input[name="collage-usato"]:checked') || {}).value) ? '' : 'none';
+  _collageStato();
+}
+// La foto `img` invecchiata, in un canvas `w` × `h` (la misura a cui il collage la disegna). `u` = { livello 1-3, parti }.
+//    · Ingiallimento: la carta più calda e un velo chiaro che spegne i colori;
+//    · Luce disturbata: un riflesso in un punto a caso, un lato un po' in ombra, meno contrasto;
+//    · Graffi e pieghe: segni sottili e chiari, un po' storti; col Forte anche una piega che attraversa la figurina;
+//    · Bordi consumati: angoli arrotondati ognuno a modo suo, bordo irregolare, sbiancato e sfrangiato; dal Medio
+//      qualche piccola tacca. Il contorno vale anche per l'ombra del collage, che lo segue.
+// La trasparenza della foto (es. sfondo tolto) si rimette alla fine degli effetti di colore: fuori dalla figurina niente.
+function _collageInvecchia(img, w, h, u) {
+  const cw = Math.max(1, Math.round(w)), ch = Math.max(1, Math.round(h));
+  const c = document.createElement('canvas');
+  c.width = cw; c.height = ch;
+  const x = c.getContext('2d');
+  x.imageSmoothingQuality = 'high';
+  x.drawImage(img, 0, 0, cw, ch);
+  const f = u.livello / 3, m = Math.min(cw, ch), D = Math.hypot(cw, ch);
+  const caso = (a, b) => a + Math.random() * (b - a);
+  const P = u.parti || {};
+  x.save();
+  if (P.giallo) {
+    x.globalCompositeOperation = 'multiply';
+    x.fillStyle = 'rgba(255,226,168,' + (0.08 + 0.32 * f).toFixed(3) + ')';
+    x.fillRect(0, 0, cw, ch);
+    x.globalCompositeOperation = 'source-over';
+    x.fillStyle = 'rgba(236,226,202,' + (0.05 + 0.1 * f).toFixed(3) + ')';
+    x.fillRect(0, 0, cw, ch);
+  }
+  if (P.luce) {
+    const cx = caso(0.15, 0.85) * cw, cy = caso(0.15, 0.85) * ch, r = caso(0.35, 0.6) * D;
+    const g = x.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, 'rgba(255,255,255,' + (0.18 + 0.32 * f).toFixed(3) + ')');
+    g.addColorStop(0.5, 'rgba(255,255,255,' + (0.05 + 0.1 * f).toFixed(3) + ')');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.globalCompositeOperation = 'screen';
+    x.fillStyle = g; x.fillRect(0, 0, cw, ch);
+    x.globalCompositeOperation = 'source-over';
+    x.fillStyle = 'rgba(160,160,160,' + (0.02 + 0.06 * f).toFixed(3) + ')';
+    x.fillRect(0, 0, cw, ch);
+    const a = caso(0, 2 * Math.PI), dx = Math.cos(a) * D / 2, dy = Math.sin(a) * D / 2;
+    const o = x.createLinearGradient(cw / 2 + dx, ch / 2 + dy, cw / 2 - dx, ch / 2 - dy);
+    o.addColorStop(0, 'rgba(0,0,0,' + (0.04 + 0.12 * f).toFixed(3) + ')');
+    o.addColorStop(0.6, 'rgba(0,0,0,0)');
+    x.fillStyle = o; x.fillRect(0, 0, cw, ch);
+  }
+  if (P.graffi) {
+    x.globalCompositeOperation = 'source-over';
+    x.lineCap = 'round';
+    for (let i = 0, n = Math.round(caso(2, 4) * u.livello); i < n; i++) {
+      const x0 = caso(0, cw), y0 = caso(0, ch), a = caso(0, 2 * Math.PI), L = caso(0.1, 0.4) * m;
+      const x1 = x0 + Math.cos(a) * L, y1 = y0 + Math.sin(a) * L, piega = caso(-0.12, 0.12) * L;
+      x.strokeStyle = 'rgba(255,255,255,' + (caso(0.2, 0.45) * (0.5 + f / 2)).toFixed(3) + ')';
+      x.lineWidth = Math.max(0.6, m * caso(0.002, 0.005));
+      x.beginPath(); x.moveTo(x0, y0);
+      x.quadraticCurveTo((x0 + x1) / 2 - Math.sin(a) * piega, (y0 + y1) / 2 + Math.cos(a) * piega, x1, y1);
+      x.stroke();
+    }
+    if (u.livello === 3) {
+      const a = caso(0, Math.PI), px = caso(0.25, 0.75) * cw, py = caso(0.25, 0.75) * ch;
+      const ux = Math.cos(a) * D, uy = Math.sin(a) * D, nx = -Math.sin(a) * m * 0.006, ny = Math.cos(a) * m * 0.006;
+      const linea = (sx, sy, col, lw) => { x.strokeStyle = col; x.lineWidth = lw; x.beginPath(); x.moveTo(px - ux + sx, py - uy + sy); x.lineTo(px + ux + sx, py + uy + sy); x.stroke(); };
+      linea(0, 0, 'rgba(0,0,0,0.13)', Math.max(1, m * 0.012));
+      linea(nx, ny, 'rgba(255,255,255,0.32)', Math.max(0.6, m * 0.004));
+    }
+  }
+  x.restore();
+  // fuori dalla figurina (dove la foto era trasparente) i colori non devono restare
+  x.save(); x.globalCompositeOperation = 'destination-in'; x.drawImage(img, 0, 0, cw, ch); x.restore();
+  if (P.bordi) {
+    const ang = () => m * caso(0.015, 0.03 + 0.05 * f);
+    const [ra, rb, rc, rd] = [ang(), ang(), ang(), ang()];
+    const t = new Path2D(), passo = Math.max(4, m * 0.04), j = () => Math.random() * m * 0.004 * (0.5 + f);
+    // un lato da (xa, ya) a (xb, yb), coi punti spinti un poco verso l'interno (nx, ny): il bordo non è più dritto
+    const lato = (xa, ya, xb, yb, nx, ny) => {
+      const n = Math.max(1, Math.round(Math.hypot(xb - xa, yb - ya) / passo));
+      for (let i = 1; i <= n; i++) { const q = i / n, s = i === n ? 0 : j(); t.lineTo(xa + (xb - xa) * q + nx * s, ya + (yb - ya) * q + ny * s); }
+    };
+    t.moveTo(ra, 0);
+    lato(ra, 0, cw - rb, 0, 0, 1); t.quadraticCurveTo(cw, 0, cw, rb);
+    lato(cw, rb, cw, ch - rc, -1, 0); t.quadraticCurveTo(cw, ch, cw - rc, ch);
+    lato(cw - rc, ch, rd, ch, 0, -1); t.quadraticCurveTo(0, ch, 0, ch - rd);
+    lato(0, ch - rd, 0, ra, 1, 0); t.quadraticCurveTo(0, 0, ra, 0);
+    t.closePath();
+    x.save();
+    x.globalCompositeOperation = 'destination-in';
+    x.fill(t);
+    // il bordo sbiancato: tre passate, larga e leggera fuori, stretta e più chiara sul filo
+    x.globalCompositeOperation = 'source-atop';
+    [[0.05, 0.07], [0.03, 0.11], [0.014, 0.18]].forEach(([lw, al]) => {
+      x.lineWidth = m * lw * (0.5 + f); x.strokeStyle = 'rgba(255,250,240,' + (al * (0.6 + f)).toFixed(3) + ')'; x.stroke(t);
+    });
+    // sfrangiato: puntini chiari fitti sul filo, radi verso l'interno
+    for (let i = 0, n = Math.round(20 + m * 0.6 * f); i < n; i++) {
+      const dentro = Math.pow(Math.random(), 2) * m * 0.03, lungo = Math.random(), qu = Math.floor(Math.random() * 4);
+      const px = qu === 0 ? lungo * cw : qu === 1 ? cw - dentro : qu === 2 ? lungo * cw : dentro;
+      const py = qu === 0 ? dentro : qu === 1 ? lungo * ch : qu === 2 ? ch - dentro : lungo * ch;
+      const sz = Math.max(0.8, m * 0.004 * caso(0.5, 1.5));
+      x.fillStyle = 'rgba(255,252,245,' + caso(0.2, 0.6).toFixed(3) + ')';
+      x.fillRect(px, py, sz, sz);
+    }
+    // dal Medio, qualche piccola tacca sul bordo
+    x.globalCompositeOperation = 'destination-out';
+    for (let i = 0, n = u.livello >= 2 ? Math.round(caso(1, 2 * u.livello - 1)) : 0; i < n; i++) {
+      const lungo = Math.random(), qu = Math.floor(Math.random() * 4);
+      const px = qu === 0 || qu === 2 ? lungo * cw : qu === 1 ? cw : 0, py = qu === 1 || qu === 3 ? lungo * ch : qu === 2 ? ch : 0;
+      x.beginPath(); x.arc(px, py, m * caso(0.004, 0.01), 0, 2 * Math.PI); x.fill();
+    }
+    x.restore();
+  }
   return c;
 }
 // 🆕 v7.225 (Franco: «riusciresti a rovinare leggermente la texture, di modo da farla sembrare un oggetto più reale (tipo
@@ -70352,7 +70539,16 @@ function _brGruppi() {
   const ids = new Set(getData('series', []).map(s => s.id));
   const gruppi = new Map();
   const tutti = getData('figurines', []);
+  // 🆕 v7.347 - chi non è admin vede quello che contano i contatori del sito: fuori le serie in arrivo e nascoste coi loro
+  //    articoli (`_serieStatoContabile`, sulla cache grezza come `_articoliDaContare`), e un articolo con una serie che non
+  //    vede non finisce fra quelli «senza serie»; con «La Mia lista» solo gli articoli segnati lì
+  const adm = !!currentUser?.isAdmin;
+  const fuori = new Set();
+  if (!adm) for (const s of (Array.isArray(_cache.series) ? _cache.series : [])) if (!_serieStatoContabile(s)) fuori.add(s.id);
+  const mie = _br && _br.modo === 'lista' ? new Set(getOwned()) : null;
   for (const f of tutti) {
+    if (mie && !mie.has(f.id)) continue;
+    if (!adm && f.seriesId && (fuori.has(f.seriesId) || !ids.has(f.seriesId))) continue;
     // 🆕 v7.340 (Franco: «non devono essere inclusi gli articoli senza foto, a meno di quelli con apposito flag») - senza
     //    nessuna foto si entra solo con «Foto non disponibile» (e allora c'è il suo segnaposto)
     if (!f.fotoNonDisponibile && !_brFotoDi(f, tutti).some(Boolean)) continue;
@@ -70430,32 +70626,63 @@ function _brTagli(pezzi, c, R, tutti, R0, larghi) {
 const _brNomeGruppo = (v, it) => v.serie ? _nomeSerie(v.serie) : (it ? 'Articoli senza serie' : 'Items without series');
 const _brPubblicata = v => !v.serie || !['in-arrivo', 'nascosta'].includes(_statoSerie(v.serie));   // in completamento: si vede già
 
-function renderAdminBrochure() {
-  const box = document.getElementById('admin-brochure-box');
-  if (!box) return;
-  const it = currentLang === 'it';
-  const albero = _brAlbero();
-  if (!_br) _br = { scelte: null, formato: 'A4', lingua: currentLang === 'en' ? 'en' : 'it', schede: 'nomi', foto: null, versioni: new Set(), macchie: 'con', tutte: 'due' };
-  // v7.343 - Franco: «quando si apre la finestra di configurazione, di default deve essere tutto spento»
-  if (!_br.scelte) _br.scelte = new Map(albero.map(v => [v.chiave, new Set()]));
-  // v7.346 - aperta dalla pagina di una serie (`apriBrochureSerie`): accesa solo lei, tutta, e il suo ramo aperto
+// 🔄 v7.347 (Franco: «vorrei dare anche agli utenti normali la possibilità di crearsi una brochure … nel menù laterale con la
+//    linguetta solita … brochure sgorbions … una frase di benvenuto … una sorta di inventario stampabile … due modalità: …
+//    inventario sgorbions … la propria lista … la stessa struttura ad albero … un po' più carino»; «la linguetta … nel menù
+//    mobile per l'admin la fondi con questa nuova, semplicemente l'admin ha più funzionalità»; «via») - LA PAGINA
+//    «📖 BROCHURE SGORBIONS», per tutti quelli che hanno fatto l'accesso. Era il pannello `renderAdminBrochure` della console,
+//    che se n'è andato: la brochure vive in un posto solo.
+// 📌 Prima la domanda «Cosa vuoi stampare?» (`_br.modo`: 'inventario' o 'lista'), poi le scelte. Cambiare risposta rifà
+//    l'albero da capo, tutto spento (sono due alberi diversi).
+// 📌 L'admin vede in più: l'opzione delle macchie e, nell'albero, le serie in arrivo e nascoste col loro stato. Chi non è
+//    admin non le vede (`_brGruppi`), e le sue foto protette escono sempre con le macchie (`_brApri`).
+function renderBrochure() {
+  const box = document.getElementById('brochure-pagina');
+  if (!box || !currentUser) return;
+  const it = currentLang === 'it', adm = !!currentUser.isAdmin;
+  if (!_br) _br = { modo: null, scelte: null, formato: 'A4', lingua: currentLang === 'en' ? 'en' : 'it', schede: 'nomi', foto: null, versioni: new Set(), macchie: 'con', tutte: 'due' };
+  // v7.346 - aperta dalla pagina di una serie (`apriBrochureSerie`): l'Inventario, accesa solo lei, tutta, e il suo ramo aperto
   const daSerie = _brSerieDaAprire;
   _brSerieDaAprire = null;
+  if (daSerie && _br.modo !== 'inventario') { _br.modo = 'inventario'; _br.scelte = null; }
+  const modo = (m, ico, tit, sub) => '<button type="button" class="br-modo' + (_br.modo === m ? ' on' : '') + '" onclick="_brScegliModo(\'' + m + '\')">'
+    + '<span class="br-modo-ico">' + ico + '</span><span class="br-modo-tit">' + tit + '</span><span class="br-modo-sub">' + sub + '</span></button>';
+  const passo = (n, tit, dentro) => '<div class="br-passo"><div class="br-passo-tit"><span class="br-passo-n">' + n + '</span>' + tit + '</div>' + dentro + '</div>';
+  const testa = '<h1 class="titolo-pagina" style="font-family:var(--font-ui);font-size:2.2rem;margin-bottom:0.6rem;">📖 Brochure Sgorbions</h1>'
+    + '<div class="br-intro">' + (it
+      ? '<p>La <strong>Brochure Sgorbions</strong> è una sorta di Inventario stampabile degli Sgorbions: copertina, sommario e, serie per serie, le foto degli articoli.</p>'
+        + '<p>Si può creare in due modi:</p><ol><li>con gli articoli dell\'Inventario;</li><li>con gli articoli della <em>Mia lista</em>.</li></ol>'
+      : '<p>The <strong>Sgorbions Brochure</strong> is a sort of printable Sgorbions Inventory: cover, contents and, series by series, the photos of the items.</p>'
+        + '<p>It can be created in two ways:</p><ol><li>with the items of the Inventory;</li><li>with the items of <em>My list</em>.</li></ol>') + '</div>'
+    + passo(1, it ? 'Cosa vuoi stampare?' : 'What do you want to print?', '<div class="br-modi">'
+      + modo('inventario', '📚', it ? 'L\'Inventario' : 'The Inventory', it ? 'Tutti gli articoli del sito' : 'All the items of the site')
+      + modo('lista', '💚', it ? 'La <em>Mia lista</em>' : '<em>My list</em>', it ? 'Solo gli articoli segnati nella <em>Mia lista</em>' : 'Only the items marked in <em>My list</em>')
+      + '</div>');
+  if (!_br.modo) { box.innerHTML = testa; return; }
+  const albero = _brAlbero();
+  // v7.343 - Franco: «quando si apre la finestra di configurazione, di default deve essere tutto spento»
+  if (!_br.scelte) _br.scelte = new Map(albero.map(v => [v.chiave, new Set()]));
   if (daSerie) _br.scelte = new Map(albero.map(v => [v.chiave, new Set(v.chiave === daSerie ? v.tda.map(t => t.k) : [])]));
+  if (!albero.length) {
+    box.innerHTML = testa + '<div class="br-passo" style="text-align:center;">' + (_br.modo === 'lista'
+      ? (it ? 'La <em>Mia lista</em> è ancora vuota: segna gli articoli nell\'Inventario, poi torna qui.' : '<em>My list</em> is still empty: mark the items in the Inventory, then come back here.')
+      : (it ? 'Nessun articolo.' : 'No items.')) + '</div>';
+    return;
+  }
   const quanti = n => n + (it ? (n === 1 ? ' articolo' : ' articoli') : (n === 1 ? ' item' : ' items'));
-  const radio = (nome, val, testo) => '<label style="display:inline-flex;align-items:center;gap:0.3rem;margin-right:1.1rem;cursor:pointer;">'
+  const radio = (nome, val, testo) => '<label class="br-chip">'
     + '<input type="radio" name="br-' + nome + '" value="' + val + '"' + (_br[nome] === val ? ' checked' : '') + ' onchange="_brOpzione(\'' + nome + '\', this.value)">' + testo + '</label>';
   const rami = albero.map(v => {
     const sc = _br.scelte.get(v.chiave) || new Set();
     const tot = v.tda.reduce((a, t) => a + t.pezzi.length, 0);
-    const stato = v.serie && !_brPubblicata(v) ? ' <span style="color:var(--text-muted);font-weight:400;">(' + esc(_voceStatoSerie(v.serie)[it ? 'it' : 'en'] || _statoSerie(v.serie)) + ')</span>' : '';
-    return '<details class="br-ramo" style="margin:0.15rem 0;"' + (daSerie && v.chiave === daSerie ? ' open' : '') + '>'
-      + '<summary style="cursor:pointer;padding:0.2rem 0;">'
-      + '<label style="cursor:pointer;font-weight:700;" onclick="event.stopPropagation()"><input type="checkbox" data-br-serie="' + esc(v.chiave) + '" onchange="_brSpuntaSerie(this)"> '
-      + esc(_brNomeGruppo(v, it)) + '</label>' + stato + ' <span style="color:var(--text-muted);">· ' + quanti(tot) + '</span></summary>'
-      + '<div style="padding:0.15rem 0 0.4rem 1.8rem;display:flex;flex-direction:column;gap:0.15rem;">'
-      + v.tda.map(t => '<label style="cursor:pointer;"><input type="checkbox" data-br-s="' + esc(v.chiave) + '" data-br-k="' + esc(t.k) + '"' + (sc.has(t.k) ? ' checked' : '') + ' onchange="_brSpuntaTda(this)"> '
-        + esc(_nomeSezioneCard(t.k, 2)) + ' <span style="color:var(--text-muted);">· ' + quanti(t.pezzi.length) + '</span></label>').join('')
+    const stato = adm && v.serie && !_brPubblicata(v) ? ' <span class="br-quanti">(' + esc(_voceStatoSerie(v.serie)[it ? 'it' : 'en'] || _statoSerie(v.serie)) + ')</span>' : '';
+    return '<details class="br-ramo"' + (daSerie && v.chiave === daSerie ? ' open' : '') + '>'
+      + '<summary>'
+      + '<label class="br-ramo-nome" onclick="event.stopPropagation()"><input type="checkbox" data-br-serie="' + esc(v.chiave) + '" onchange="_brSpuntaSerie(this)"> '
+      + esc(_brNomeGruppo(v, it)) + '</label>' + stato + ' <span class="br-quanti">· ' + quanti(tot) + '</span></summary>'
+      + '<div class="br-tda">'
+      + v.tda.map(t => '<label class="br-chip"><input type="checkbox" data-br-s="' + esc(v.chiave) + '" data-br-k="' + esc(t.k) + '"' + (sc.has(t.k) ? ' checked' : '') + ' onchange="_brSpuntaTda(this)"> '
+        + esc(_nomeSezioneCard(t.k, 2)) + ' <span class="br-quanti">· ' + t.pezzi.length + '</span></label>').join('')
       + '</div></details>';
   }).join('');
   // 🆕 v7.344 (Franco: «dammi la opzione di selezionare una o più tda per tutte le serie, con un solo click (uno per tda)»)
@@ -70463,46 +70690,89 @@ function renderAdminBrochure() {
   const tdaTutte = [];
   albero.forEach(v => v.tda.forEach(t => { if (!tdaTutte.includes(t.k)) tdaTutte.push(t.k); }));
   const perTda = tdaTutte.length > 1 || albero.length > 1
-    ? '<div id="br-per-tda" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.2rem 1.1rem;margin:0.4rem 0 0.5rem;font-size:0.88rem;">'
-      + '<span style="color:var(--text-muted);">' + (it ? 'In tutte le serie:' : 'In every series:') + '</span>'
-      + tdaTutte.map(k => '<label style="cursor:pointer;"><input type="checkbox" data-br-tutte-k="' + esc(k) + '" onchange="_brSpuntaTdaTutte(this)"> '
+    ? '<div id="br-per-tda" class="br-scelte" style="align-items:center;margin:0.2rem 0 0.6rem;">'
+      + '<span class="br-quanti">' + (it ? 'In tutte le serie:' : 'In every series:') + '</span>'
+      + tdaTutte.map(k => '<label class="br-chip"><input type="checkbox" data-br-tutte-k="' + esc(k) + '" onchange="_brSpuntaTdaTutte(this)"> '
         + esc(_nomeSezioneCard(k, 2)) + '</label>').join('') + '</div>'
     : '';
-  box.innerHTML =
-    '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">📖 Brochure</h4>' +
-    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
-      (it ? 'Una versione compatta dell\'Inventario da stampare: copertina, sommario, poi per ogni serie una o più pagine per ogni tipologia, con le foto degli articoli in versione base. '
-          + 'Dopo le serie, gli articoli senza serie. Dall\'anteprima, «Stampa» porta alla stampante o a «Salva come PDF».'
-          : 'A compact printable version of the Inventory: cover, contents, then for each series one or more pages per item type, with the photos of the base items. Items without a series come last. From the preview, «Print» goes to the printer or to «Save as PDF».') +
-    '</p>' +
-    '<div style="font-weight:700;margin:0.8rem 0 0.3rem;">1. ' + (it ? 'Serie e tipologie' : 'Series and item types') + '</div>' +
-    '<div style="margin-bottom:0.3rem;"><button type="button" class="btn-secondary" onclick="_brTutto(true)">' + (it ? 'Tutto' : 'All') + '</button> '
-      + '<button type="button" class="btn-secondary" onclick="_brTutto(false)">' + (it ? 'Niente' : 'None') + '</button></div>' +
-    perTda +
-    '<div id="br-albero" style="font-size:0.88rem;">' + (rami || (it ? 'Nessun articolo.' : 'No items.')) + '</div>' +
-    '<div style="font-weight:700;margin:1rem 0 0.3rem;">2. ' + (it ? 'Formato' : 'Size') + '</div>' +
-    '<div>' + radio('formato', 'A4', 'A4') + radio('formato', 'A5', 'A5') + '<span style="color:var(--text-muted);font-size:0.82rem;">' + (it ? 'verticale' : 'portrait') + '</span></div>' +
-    '<div style="font-weight:700;margin:1rem 0 0.3rem;">3. ' + (it ? 'Lingua' : 'Language') + '</div>' +
-    '<div>' + radio('lingua', 'it', 'Italiano') + radio('lingua', 'en', 'English') + '</div>' +
-    '<div style="font-weight:700;margin:1rem 0 0.3rem;">4. ' + (it ? 'Sotto ogni foto' : 'Under each photo') + '</div>' +
-    '<div>' + radio('schede', 'nomi', it ? 'Nome e numero' : 'Name and number') + radio('schede', 'card', it ? 'Come la card della griglia' : 'Like the grid card') + '</div>' +
-    '<div style="font-weight:700;margin:1rem 0 0.3rem;">5. ' + (it ? 'Foto di copertina' : 'Cover photo') + '</div>' +
-    '<div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">'
+  let n = 1;
+  box.innerHTML = testa
+    + passo(++n, it ? 'Serie e tipologie di articolo' : 'Series and item types',
+      '<div class="br-scelte" style="margin-bottom:0.4rem;"><button type="button" class="btn-secondary" onclick="_brTutto(true)">' + (it ? 'Tutto' : 'All') + '</button>'
+      + '<button type="button" class="btn-secondary" onclick="_brTutto(false)">' + (it ? 'Niente' : 'None') + '</button></div>'
+      + perTda + '<div id="br-albero">' + rami + '</div>')
+    // 🆕 v7.340 (Franco) - le versioni oltre alle basi
+    + passo(++n, it ? 'Versioni (oltre alla versione base)' : 'Versions (besides the base version)',
+      '<div class="br-scelte">' + _VERSIONI_VIVE.map(v => '<label class="br-chip"><input type="checkbox" data-br-versione="' + esc(v.chiave) + '"'
+        + (_br.versioni.has(v.chiave) ? ' checked' : '') + ' onchange="_brVersione(this)"> ' + esc(it ? v.it : v.en) + '</label>').join('') + '</div>')
+    + passo(++n, it ? 'Formato' : 'Size', '<div class="br-scelte">' + radio('formato', 'A4', 'A4') + radio('formato', 'A5', 'A5')
+      + '<span class="br-quanti" style="align-self:center;">' + (it ? 'verticale' : 'portrait') + '</span></div>')
+    + passo(++n, it ? 'Lingua' : 'Language', '<div class="br-scelte">' + radio('lingua', 'it', 'Italiano') + radio('lingua', 'en', 'English') + '</div>')
+    + passo(++n, it ? 'Sotto ogni foto' : 'Under each photo', '<div class="br-scelte">' + radio('schede', 'nomi', it ? 'Nome e numero' : 'Name and number')
+      + radio('schede', 'card', it ? 'Come la card della griglia' : 'Like the grid card') + '</div>')
+    + passo(++n, it ? 'Articoli con più di 2 foto' : 'Items with more than 2 photos', '<div class="br-scelte">' + radio('tutte', 'due', it ? 'Fronte e retro' : 'Front and back')
+      + radio('tutte', 'tutte', it ? 'Tutte le foto' : 'All the photos') + '</div>')
+    + passo(++n, it ? 'Foto di copertina' : 'Cover photo',
+      '<div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">'
       + '<input type="file" id="br-foto-file" accept="image/*" onchange="_brFoto(this)">'
       + '<img id="br-foto-mini" alt="" style="max-height:60px;' + (_br.foto ? '' : 'display:none;') + '"' + (_br.foto ? ' src="' + _br.foto + '"' : '') + '>'
-      + '<span style="color:var(--text-muted);font-size:0.82rem;">' + (it ? 'Resta sul tuo computer: non si carica sul sito.' : 'It stays on your computer: it is not uploaded.') + '</span></div>' +
-    // 🆕 v7.340 (Franco) - le versioni oltre alle basi, e le macchie sulle foto protette
-    '<div style="font-weight:700;margin:1rem 0 0.3rem;">6. ' + (it ? 'Versioni (oltre alla versione base)' : 'Versions (besides the base version)') + '</div>' +
-    '<div style="display:flex;flex-wrap:wrap;gap:0.2rem 1.1rem;">' + _VERSIONI_VIVE.map(v => '<label style="cursor:pointer;"><input type="checkbox" data-br-versione="' + esc(v.chiave) + '"'
-      + (_br.versioni.has(v.chiave) ? ' checked' : '') + ' onchange="_brVersione(this)"> ' + esc(it ? v.it : v.en) + '</label>').join('') + '</div>' +
-    '<div style="font-weight:700;margin:1rem 0 0.3rem;">7. ' + (it ? 'Macchie sulle foto' : 'Watermark on the photos') + '</div>' +
-    '<div>' + radio('macchie', 'con', it ? 'Con le macchie' : 'With watermark') + radio('macchie', 'senza', it ? 'Senza macchie' : 'Without watermark') + '</div>' +
-    '<div style="font-weight:700;margin:1rem 0 0.3rem;">8. ' + (it ? 'Articoli con più di 2 foto' : 'Items with more than 2 photos') + '</div>' +
-    '<div>' + radio('tutte', 'due', it ? 'Fronte e retro' : 'Front and back') + radio('tutte', 'tutte', it ? 'Tutte le foto' : 'All the photos') + '</div>' +
-    '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:1.2rem;flex-wrap:wrap;">'
-      + '<button class="btn-primary btn-admin admin-anche-telefono" id="br-crea" onclick="_brApri()">📖 ' + (it ? 'Crea brochure' : 'Create brochure') + '</button>'
-      + '<span id="br-conto" style="font-size:0.85rem;color:var(--text);"></span></div>';
+      + '<span class="br-quanti">' + (it ? 'Resta sul tuo dispositivo: non si carica sul sito. Senza foto, la copertina usa il logo Sgorbions.' : 'It stays on your device: it is not uploaded. Without a photo, the cover uses the Sgorbions logo.') + '</span></div>')
+    // 🆕 v7.340 (Franco: «con macchie / senza macchie; default: con») - solo l'admin (v7.347: «l'utente non deve avere la
+    //    possibilità di selezionare l'opzione macchie»)
+    + (adm ? passo(++n, (it ? 'Macchie sulle foto' : 'Watermark on the photos') + ' <span class="br-quanti">(admin)</span>',
+      '<div class="br-scelte">' + radio('macchie', 'con', it ? 'Con le macchie' : 'With watermark') + radio('macchie', 'senza', it ? 'Senza macchie' : 'Without watermark') + '</div>') : '')
+    + '<div class="br-crea-riga">'
+      + '<button type="button" class="btn-primary" id="br-crea" onclick="_brConferma()" style="font-size:1.05rem;padding:0.7rem 1.6rem;">📖 ' + (it ? 'Crea brochure' : 'Create brochure') + '</button>'
+      + '<span id="br-conto" style="font-size:0.9rem;color:var(--text);"></span></div>'
+    + '<p class="br-quanti" style="text-align:center;">' + (it ? 'Dall\'anteprima, «Stampa» porta alla stampante o a «Salva come PDF».' : 'From the preview, «Print» goes to the printer or to «Save as PDF».') + '</p>';
   _brAggiornaSerie();
+}
+// 🆕 v7.347 (Franco: «una schermata finale di conferma per l'utente dove gli riepiloghi serie e TDA e dove gli dici quante
+//    pagine ha il PDF che sta creando ed eventualmente quanti mega occupa») - IL RIEPILOGO prima di creare: una riga per
+//    serie con le sue tipologie (e quanti articoli), poi pagine, foto e peso stimato. Per tutti, admin compreso.
+// 📏 Il peso è una STIMA, e lo dice: ~22 KB a foto (misurato il 26/11 su 60 foto della griglia, in JPEG come le
+//    converte `_brJpeg`: 1,28 MB) più ~0,3 MB di pagine e scritte. Le foto: quelle che la cella mostra (`_brFotoDi`:
+//    una, le prime due o tutte con «Tutte le foto»; le figurine col retro affiancato due), più la foto di ogni serie e
+//    la copertina.
+const _BR_KB_FOTO = 22, _BR_KB_BASE = 300;
+function _brStima(p) {
+  const tutti = getData('figurines', []);
+  let foto = 1;   // la copertina
+  for (const s of p.sezioni) for (const f of s.pezzi) {
+    const n = _brFotoDi(f, tutti).filter(Boolean).length;
+    foto += (f.section || 'figurines') === 'figurines' ? (f.retroId ? 2 : 1) : (_br.tutte === 'tutte' ? n : Math.min(2, n));
+  }
+  foto += new Set(p.sezioni.map(s => s.v.chiave)).size;   // la foto di ogni serie in cima al suo primo foglio
+  return { foto, mb: Math.max(1, Math.round((foto * _BR_KB_FOTO + _BR_KB_BASE) / 1024)) };
+}
+async function _brConferma() {
+  if (!currentUser || !_br) return;
+  const it = currentLang === 'it', p = _brPiano();
+  if (!p.sezioni.length) return;
+  const perSerie = new Map();
+  for (const s of p.sezioni) {
+    if (!perSerie.has(s.v.chiave)) perSerie.set(s.v.chiave, { v: s.v, tda: [] });
+    perSerie.get(s.v.chiave).tda.push({ t: s.pezzi.length + ' ' + _nomeSezioneCard(s.k, 2) });
+  }
+  const st = _brStima(p), num = n => n.toLocaleString(it ? 'it-IT' : 'en-GB');
+  const ok = await _finestraConferma({
+    titolo: it ? '📖 Riepilogo della brochure' : '📖 Brochure summary',
+    testo: (it ? 'Ecco cosa conterrà la brochure.' : 'This is what the brochure will contain.'),
+    colonne: [it ? 'Serie' : 'Series', it ? 'Tipologie di articolo' : 'Item types'],
+    righe: [...perSerie.values()].map(x => [_brNomeGruppo(x.v, it), x.tda]),
+    coda: (it ? 'Pagine: ' : 'Pages: ') + num(p.totale) + ' · ' + (it ? 'foto: circa ' : 'photos: about ') + num(st.foto)
+      + ' · ' + (it ? 'peso del PDF: circa ' : 'PDF size: about ') + num(st.mb) + ' MB'
+      + (it ? ' (una stima: dipende dalle foto).' : ' (an estimate: it depends on the photos).'),
+    ok: it ? '📖 Crea brochure' : '📖 Create brochure',
+    annulla: it ? '← Modifica le scelte' : '← Change the choices',
+    blu: true
+  });
+  if (ok) _brApri();
+}
+function _brScegliModo(m) {
+  if (!_br) return;
+  if (_br.modo !== m) { _br.modo = m; _br.scelte = null; }
+  renderBrochure();
 }
 // la casella della serie dice lo stato delle sue tipologie: tutte, nessuna, alcune (il trattino)
 function _brAggiornaSerie() {
@@ -70561,7 +70831,7 @@ function _brOpzione(nome, val) { _br[nome] = val; _brAggiornaSerie(); }
 //    tipologia che compare solo adesso (fatta di sole versioni) entra spenta
 function _brVersione(c) {
   if (c.checked) _br.versioni.add(c.dataset.brVersione); else _br.versioni.delete(c.dataset.brVersione);
-  renderAdminBrochure();
+  renderBrochure();
 }
 function _brFoto(inp) {
   const file = inp.files && inp.files[0];
@@ -70630,15 +70900,17 @@ function _brPiano() {
 }
 
 function _brApri() {
-  if (!currentUser || !currentUser.isAdmin || !_br) return;
+  // 🔄 v7.347 - per tutti quelli che hanno fatto l'accesso; le macchie le sceglie solo l'admin (`macchie` qui sotto)
+  if (!currentUser || !_br) return;
+  const macchie = currentUser.isAdmin ? _br.macchie : 'con';
   const prima = { lang: currentLang, s: currentSeriesId, sez: currentSection, tipo: _tipoProdottoCorrente, macchie: _adminSenzaMacchie };
   let html = '';
   try {
     currentLang = _br.lingua;   // la brochure nella sua lingua: i nomi del sito (serie, tipologie, articoli) la leggono da qui
     // 🆕 v7.340 (Franco: «con macchie / senza macchie; default: con») - come nel collage (`_collageUrlFoto`): «con» le
     //    chiede anche se l'admin le ha spente con «Togli macchie», «senza» le toglie dalle foto protette
-    _fpSenzaScritta = _br.macchie === 'senza';
-    if (_br.macchie !== 'senza') _adminSenzaMacchie = false;
+    _fpSenzaScritta = macchie === 'senza';
+    if (macchie !== 'senza') _adminSenzaMacchie = false;
     html = _brHTML(_brPiano());
   } finally {
     currentLang = prima.lang; currentSeriesId = prima.s; currentSection = prima.sez; _tipoProdottoCorrente = prima.tipo;
@@ -70753,7 +71025,10 @@ function _brHTML(P) {
   //    lo stesso dell'hero, letto dalla pagina: nessuna trasformazione Cloudinary nuova
   const fotoCop = _br.foto || _brFotoHero();
   pagine.push('<section class="br-pag br-copertina"><div class="br-titolo">SGORBIONS</div>'
-    + (fotoCop ? '<div class="br-cop-foto"><img src="' + esc(fotoCop) + '" alt=""></div>' : '') + '</section>');
+    + (fotoCop ? '<div class="br-cop-foto"><img src="' + esc(fotoCop) + '" alt=""></div>' : '')
+    // 🆕 v7.347 (Franco: «nella prima pagina sotto al Hero scrivi il nome del sito web, e metti anche la solita frase che
+    //    abbiamo nella home») - l'indirizzo e la frase della home (`hero.tagline`), nella lingua della brochure
+    + '<div class="br-cop-piede"><div class="br-cop-sito">figurinesgorbions.it</div><div class="br-cop-frase">' + esc(t('hero.tagline')) + '</div></div></section>');
   // 2 - il sommario: la serie col numero della sua prima pagina, sotto le sue tipologie
   const righe = [];
   let ultima = null;
@@ -70851,7 +71126,11 @@ function _brCSS(F) {
     + '.br-copertina{align-items:center;justify-content:center;gap:' + mm(12) + ';}'
     + '.br-titolo{font-size:' + mm(26) + ';font-weight:900;letter-spacing:0.08em;line-height:1;}'
     + '.br-cop-foto{flex:0 1 auto;max-height:70%;display:flex;justify-content:center;}'
-    + '.br-cop-foto img{max-width:100%;max-height:' + (F.h * 0.65).toFixed(0) + 'mm;object-fit:contain;}'
+    // 🔄 v7.347 - la foto 65% → 58% dell'altezza: sotto ci sono ora l'indirizzo del sito e la frase della home
+    + '.br-cop-foto img{max-width:100%;max-height:' + (F.h * 0.58).toFixed(0) + 'mm;object-fit:contain;}'
+    + '.br-cop-piede{text-align:center;}'
+    + '.br-cop-sito{font-size:' + mm(7) + ';font-weight:700;letter-spacing:0.03em;}'
+    + '.br-cop-frase{font-size:' + mm(4.6) + ';color:#555;margin-top:' + mm(2) + ';}'
     + '.br-som-titolo{font-size:' + mm(9) + ';font-weight:800;margin-bottom:' + mm(6) + ';}'
     + '.br-som-riga{display:flex;align-items:baseline;gap:' + mm(2) + ';font-size:' + mm(3.8) + ';line-height:1.55;padding-left:' + mm(6) + ';}'
     + '.br-som-serie{font-weight:800;padding-left:0;margin-top:' + mm(2) + ';}'
@@ -70938,7 +71217,7 @@ function adminTab(tab) {
   // 🔄 v7.276 - la linguetta 📢 Annunci entra sul tab ANNUNCI (`_cdVistaEntrando`), le altre strade sul primo di prima
   if (tab === 'doppioni') { const v = _cdVistaEntrando || 'el'; _cdVistaEntrando = null; _cdVista(v); }
   if (tab === 'aggiornamenti') renderAdminAggiornamenti();   // v7.170 (Franco)
-  if (tab === 'brochure') renderAdminBrochure();   // v7.340 (Franco)
+  // 🗑️ v7.347 - qui c'era il ramo `brochure`: la brochure è diventata la pagina «📖 Brochure Sgorbions» (`renderBrochure`)
   // 🗑️ v7.276 - qui c'era il ramo `fotoannuncio`: «📢 Annunci» è diventato il tab ANNUNCI di «Copie doppie» (`_cdVista('ann')`)
   // 🗑️ v7.267 - qui c'era il ramo `mancoliste`: Set doppi è diventato il secondo tab di «Copie doppie», e quello che
   //    faceva entrando (ordine per Quantità, riapertura del suo tab) lo fa `_cdVista('set')`
