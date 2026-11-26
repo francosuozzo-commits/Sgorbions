@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.345 - Modificati index.html (versione) e js/app.js. Brochure più leggera (Franco: 268 MB l'Inventario standard):
+//          le foto, che arrivano WebP, si convertono in JPEG nel browser prima della stampa (`_brJpeg`, qualità 0,85,
+//          sotto lo sfondo di chi le contiene, `_brSfondo`); `crossorigin` sulle <img> dell'anteprima. Nessuna
+//          trasformazione Cloudinary nuova. Misurato su 60 foto: PDF da 8,4 a ~1,3 MB.
 // v7.344 - Modificati index.html (versione) e js/app.js. Brochure (Franco): senza una foto scelta la copertina usa l'hero
 //          della home, il logo SGORBIONS (`_brFotoHero` legge l'indirizzo dall'hero: nessuna trasformazione Cloudinary nuova).
 //          Sopra l'albero, «In tutte le serie:» una casella per tipologia che la accende o spegne in ogni serie
@@ -32356,7 +32360,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.344';
+const JS_VERSION = 'v7.345';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -70626,7 +70630,9 @@ function _brApri() {
   ov.id = 'br-anteprima';
   ov.innerHTML = '<div id="br-barra"><span id="br-carico"></span>'
     + '<button type="button" class="btn-primary" id="br-stampa" onclick="window.print()">🖨️ ' + (it ? 'Stampa / Salva PDF' : 'Print / Save PDF') + '</button>'
-    + '<button type="button" class="btn-secondary" onclick="_brChiudi()">✕ ' + (it ? 'Chiudi' : 'Close') + '</button></div>' + html;
+    + '<button type="button" class="btn-secondary" onclick="_brChiudi()">✕ ' + (it ? 'Chiudi' : 'Close') + '</button></div>'
+    // v7.345 - `crossorigin` PRIMA che parta la richiesta: senza, la foto «sporca» la tela e non si converte (`_brJpeg`)
+    + html.replace(/<img /g, '<img crossorigin="anonymous" ');
   document.body.appendChild(ov);
   document.body.classList.add('br-stampa');
   _brZoom();
@@ -70640,10 +70646,48 @@ function _brApri() {
   };
   // ⚠️ le card si adattano UNA volta, quando ci sono tutte le foto (che ne cambiano l'altezza): rifarlo a ogni foto
   //    arrivata, con qualche centinaio di card, bloccava la scheda (misurato in preview)
+  // 🔄 v7.345 - ogni foto arrivata si converte in JPEG (`_brJpeg`) e conta solo dopo, così `_brAdatta` misura le foto
+  //    definitive
   const una = () => { fatte++; conta(); if (fatte === tot) _brAdatta(); };
-  imgs.forEach(im => { if (im.complete) fatte++; else { im.addEventListener('load', una, { once: true }); im.addEventListener('error', una, { once: true }); } });
+  imgs.forEach(im => {
+    const pronta = () => _brJpeg(im).then(una);
+    if (im.complete) { if (im.naturalWidth) pronta(); else una(); }
+    else { im.addEventListener('load', pronta, { once: true }); im.addEventListener('error', una, { once: true }); }
+  });
   conta();
-  if (fatte === tot) _brAdatta();
+  if (!tot) _brAdatta();
+}
+// 🆕 v7.345 (Franco: «si può fare qualcosa per alleggerire il peso del file? … tutto l'inventario standard pesa 268 mega»)
+//    - LE FOTO DIVENTANO JPEG NEL BROWSER. Arrivano WebP (`_formatoUnico`), e il PDF il WebP non lo sa tenere: Chrome,
+//    salvando, le riscrive senza perdita, pesantissime. Il JPEG invece lo mette nel PDF così com'è.
+//    📏 Misurato il 26/11 su 60 foto della griglia, A4: WebP 8,4 MB → JPEG 0,9 1,5 MB → JPEG 0,8 1,1 MB.
+//    📌 Le foto restano quelle di sempre (`cloudinaryUrl`, w_300): a Cloudinary non si chiede nessuna versione nuova.
+//    ⚠️ Il JPEG non ha trasparenza: sotto si dipinge lo sfondo vero di chi la contiene (bianco sulla pagina, quello della
+//    card nella brochure «come la card»), così una foto scontornata non si ritrova in un riquadro bianco.
+//    Se la conversione non riesce (tela «sporca», foto rotta), la foto resta com'era: pesa, ma c'è.
+const _BR_JPEG_QUALITA = 0.85;
+function _brSfondo(el) {
+  for (let e = el.parentElement; e; e = e.parentElement) {
+    const c = getComputedStyle(e).backgroundColor;
+    if (c && c !== 'transparent' && !/rgba\([^)]*,\s*0\)$/.test(c)) return c;
+  }
+  return '#fff';
+}
+function _brJpeg(im) {
+  return new Promise(ok => {
+    try {
+      if (!im.naturalWidth || /^data:image\/jpeg/.test(im.src)) return ok();
+      const c = document.createElement('canvas');
+      c.width = im.naturalWidth; c.height = im.naturalHeight;
+      const x = c.getContext('2d');
+      x.fillStyle = _brSfondo(im); x.fillRect(0, 0, c.width, c.height);
+      x.drawImage(im, 0, 0);
+      const d = c.toDataURL('image/jpeg', _BR_JPEG_QUALITA);
+      im.addEventListener('load', () => ok(), { once: true });
+      im.addEventListener('error', () => ok(), { once: true });
+      im.src = d;
+    } catch (e) { ok(); }
+  });
 }
 // LA CARD INTERA DENTRO LA SUA CASELLA: la card della griglia è alta quanto il suo contenuto (foto, commento, nome, numero),
 //    spesso il doppio della casella. Si rimpicciolisce quanto basta a farla stare tutta, invece di tagliarne il fondo.
