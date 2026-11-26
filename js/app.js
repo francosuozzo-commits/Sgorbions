@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.344 - Modificati index.html (versione) e js/app.js. Brochure (Franco): senza una foto scelta la copertina usa l'hero
+//          della home, il logo SGORBIONS (`_brFotoHero` legge l'indirizzo dall'hero: nessuna trasformazione Cloudinary nuova).
+//          Sopra l'albero, «In tutte le serie:» una casella per tipologia che la accende o spegne in ogni serie
+//          (`#br-per-tda`, `_brSpuntaTdaTutte`; il trattino in `_brAggiornaSerie` se è accesa solo in alcune).
 // v7.343 - Modificati index.html (versione) e js/app.js. Tabella degli annunci (Franco): dal telefono TDA «Album» → «Alb.»,
 //          titolo «Articolo» → «Art.», nell'articolo «versione standard» → «std», titolo «Copia» → «N.», «Mio» intero per
 //          eccesso (`tipoTel`, `nomeTel`, `visto` in `_annDisegna`; l'ordinamento usa i valori interi); dal telefono e
@@ -32352,7 +32356,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.343';
+const JS_VERSION = 'v7.344';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -70426,6 +70430,16 @@ function renderAdminBrochure() {
         + esc(_nomeSezioneCard(t.k, 2)) + ' <span style="color:var(--text-muted);">· ' + quanti(t.pezzi.length) + '</span></label>').join('')
       + '</div></details>';
   }).join('');
+  // 🆕 v7.344 (Franco: «dammi la opzione di selezionare una o più tda per tutte le serie, con un solo click (uno per tda)»)
+  //    - una casella per tipologia, fuori da #br-albero: accende o spegne quella tipologia in ogni serie che ce l'ha
+  const tdaTutte = [];
+  albero.forEach(v => v.tda.forEach(t => { if (!tdaTutte.includes(t.k)) tdaTutte.push(t.k); }));
+  const perTda = tdaTutte.length > 1 || albero.length > 1
+    ? '<div id="br-per-tda" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.2rem 1.1rem;margin:0.4rem 0 0.5rem;font-size:0.88rem;">'
+      + '<span style="color:var(--text-muted);">' + (it ? 'In tutte le serie:' : 'In every series:') + '</span>'
+      + tdaTutte.map(k => '<label style="cursor:pointer;"><input type="checkbox" data-br-tutte-k="' + esc(k) + '" onchange="_brSpuntaTdaTutte(this)"> '
+        + esc(_nomeSezioneCard(k, 2)) + '</label>').join('') + '</div>'
+    : '';
   box.innerHTML =
     '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">📖 Brochure</h4>' +
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
@@ -70436,6 +70450,7 @@ function renderAdminBrochure() {
     '<div style="font-weight:700;margin:0.8rem 0 0.3rem;">1. ' + (it ? 'Serie e tipologie' : 'Series and item types') + '</div>' +
     '<div style="margin-bottom:0.3rem;"><button type="button" class="btn-secondary" onclick="_brTutto(true)">' + (it ? 'Tutto' : 'All') + '</button> '
       + '<button type="button" class="btn-secondary" onclick="_brTutto(false)">' + (it ? 'Niente' : 'None') + '</button></div>' +
+    perTda +
     '<div id="br-albero" style="font-size:0.88rem;">' + (rami || (it ? 'Nessun articolo.' : 'No items.')) + '</div>' +
     '<div style="font-weight:700;margin:1rem 0 0.3rem;">2. ' + (it ? 'Formato' : 'Size') + '</div>' +
     '<div>' + radio('formato', 'A4', 'A4') + radio('formato', 'A5', 'A5') + '<span style="color:var(--text-muted);font-size:0.82rem;">' + (it ? 'verticale' : 'portrait') + '</span></div>' +
@@ -70469,6 +70484,13 @@ function _brAggiornaSerie() {
     c.checked = accese > 0 && accese === tutte.length;
     c.indeterminate = accese > 0 && accese < tutte.length;
   });
+  // v7.344 - la casella «in tutte le serie» di una tipologia: accesa se è accesa ovunque, il trattino se solo in alcune
+  document.querySelectorAll('#br-per-tda input[data-br-tutte-k]').forEach(c => {
+    const tutte = document.querySelectorAll('#br-albero input[data-br-k="' + CSS.escape(c.dataset.brTutteK) + '"]');
+    const accese = [...tutte].filter(x => x.checked).length;
+    c.checked = accese > 0 && accese === tutte.length;
+    c.indeterminate = accese > 0 && accese < tutte.length;
+  });
   const conto = document.getElementById('br-conto');
   if (conto && _br) {
     const it = currentLang === 'it', p = _brPiano();
@@ -70488,6 +70510,12 @@ function _brSpuntaTda(c) {
 function _brSpuntaSerie(c) {
   const si = c.checked;
   document.querySelectorAll('#br-albero input[data-br-s="' + CSS.escape(c.dataset.brSerie) + '"]').forEach(x => _brMetti(x, si));
+  _brAggiornaSerie();
+}
+// v7.344 - una tipologia in tutte le serie (il valore si legge prima del giro, come in `_brSpuntaSerie`)
+function _brSpuntaTdaTutte(c) {
+  const si = c.checked;
+  document.querySelectorAll('#br-albero input[data-br-k="' + CSS.escape(c.dataset.brTutteK) + '"]').forEach(x => _brMetti(x, si));
   _brAggiornaSerie();
 }
 function _brTutto(si) {
@@ -70645,13 +70673,19 @@ function _brChiudi() {
   document.body.classList.remove('br-stampa');
 }
 
+// l'hero sta sempre nell'index (#hero è statico): se un giorno sparisse, la copertina resta col solo titolo, come prima
+const _brFotoHero = () => (document.querySelector('#hero .hero-logo-img') || {}).src || '';
+
 function _brHTML(P) {
   const it = currentLang === 'it';
   const pagine = [];
   const piede = n => '<div class="br-piede">' + n + '</div>';
   // 1 - la copertina
+  // 🔄 v7.344 (Franco: «come foto per la copertina, se non viene fornita una foto, usa la Hero della home») - l'indirizzo è
+  //    lo stesso dell'hero, letto dalla pagina: nessuna trasformazione Cloudinary nuova
+  const fotoCop = _br.foto || _brFotoHero();
   pagine.push('<section class="br-pag br-copertina"><div class="br-titolo">SGORBIONS</div>'
-    + (_br.foto ? '<div class="br-cop-foto"><img src="' + _br.foto + '" alt=""></div>' : '') + '</section>');
+    + (fotoCop ? '<div class="br-cop-foto"><img src="' + esc(fotoCop) + '" alt=""></div>' : '') + '</section>');
   // 2 - il sommario: la serie col numero della sua prima pagina, sotto le sue tipologie
   const righe = [];
   let ultima = null;
