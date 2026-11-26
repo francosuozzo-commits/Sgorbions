@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.346 - Modificati index.html (versione) e js/app.js. Brochure (Franco): le spille mai col retro, in tutte e due le
+//          schede (`_BR_SOLO_FRONTE`, `_brSoloFronte` in `_brFotoDi`; «come la card» con `C.soloFronte` in
+//          `_cardArticoloHTML`, che solo la brochure accende). Nel menu «Opzioni» della serie «📖 Stampa brochure»
+//          (`#detail-brochure-btn`, `apriBrochureSerie`): il pannello si apre con accese tutte le tipologie di quella
+//          serie, spente le altre, il suo ramo aperto; le altre opzioni restano quelle dell'ultima volta.
 // v7.345 - Modificati index.html (versione) e js/app.js. Brochure più leggera (Franco: 268 MB l'Inventario standard):
 //          le foto, che arrivano WebP, si convertono in JPEG nel browser prima della stampa (`_brJpeg`, qualità 0,85,
 //          sotto lo sfondo di chi le contiene, `_brSfondo`); `crossorigin` sulle <img> dell'anteprima. Nessuna
@@ -32360,7 +32365,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.345';
+const JS_VERSION = 'v7.346';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42668,6 +42673,16 @@ function apriCopieNav() {
 //    la sezione della console come «Copie doppie»; dal telefono si vede solo lei (regola in style.css)
 function apriBrochureNav() {
   if (!currentUser?.isAdmin) return;
+  showAdminTab('brochure');
+}
+// 🆕 v7.346 (Franco: «nella schermata di ogni serie un bottone … stampa brochure … che avvia la procedura di brochure per
+//    tutti gli articoli di quella serie»; poi «confermare direttamente oppure spegnere alcune tipologie … le opzioni che
+//    oggi offriamo nel pannello») - dal menu «Opzioni» della serie: il pannello della brochure si apre con accese tutte
+//    le tipologie di QUELLA serie e spente le altre; le altre opzioni restano quelle scelte l'ultima volta
+let _brSerieDaAprire = null;
+function apriBrochureSerie(id) {
+  if (!currentUser?.isAdmin || !id) return;
+  _brSerieDaAprire = id;
   showAdminTab('brochure');
 }
 function apriCollage() {
@@ -67521,7 +67536,8 @@ function _cardArticoloHTML(f, C) {
     // 🔄 v6.969 - le due facce di un album possono venire dall'album indicato in «Foto dall'album»:
     //    si chiedono a `_fotoFigurina` e `_imgRetroDi`, che per chi le ha sue rispondono come prima.
     const _fCard = f.img || (f.section === 'albums' ? _fotoFigurina(f) : null), _rCard = _imgRetroDi(f);
-    if (!imgHTML && _schedaDueFoto(f) && _secondaFacciaSulRecord(currentSection) && (_fCard || _rCard)) {
+    // 🔄 v7.346 - `C.soloFronte` (la brochure, per le spille): la card prende solo il fronte, come con una foto sola
+    if (!imgHTML && _schedaDueFoto(f) && _secondaFacciaSulRecord(currentSection) && (_fCard || _rCard) && !(C.soloFronte && C.soloFronte(f))) {
       imgHTML = _coppiaAffiancataHTML(_fCard, _rCard, undefined, _latoErrCard, _tipoErrCard, !!f.fotoNonDisponibile, !!f.fotoNonDisponibile);   // v6.977: le due facce sono dello stesso record
     }
     if (!imgHTML) {
@@ -70371,10 +70387,14 @@ function _brAlbero(gruppi) {
 //    mettere opzione apposita; chiamala "Tutte le foto"») - LE FOTO DI UN ARTICOLO, nell'ordine della scheda: il fronte, il
 //    retro sul record (se la tipologia ne ha: «N. foto» da 2 in su; può mancare, e allora `null`), il fronte ruotato, le
 //    pagine. Le figurine con retro hanno il retro in un altro record: la loro coppia la fa `_coppiaFronteRetro`.
+// 🆕 v7.346 (Franco: «nella brochure per le spille non esportare mai il retro») - le tipologie di cui la brochure mostra
+//    solo il fronte, in tutte e due le schede («Nome e numero» e «Come la card»); il fronte ruotato resta, con «Tutte le foto»
+const _BR_SOLO_FRONTE = ['spille'];
+const _brSoloFronte = f => _BR_SOLO_FRONTE.includes(f && f.section);
 function _brFotoDi(f, tutti) {
   const out = [_fotoFigurina(f, tutti) || null];
   if ((f.section || 'figurines') === 'figurines') return out;
-  if (_nFotoArticolo(f) !== '1') out.push(f.imgRetro || null);
+  if (_nFotoArticolo(f) !== '1' && !_brSoloFronte(f)) out.push(f.imgRetro || null);
   if (_haFotoRuotata(f) && f.imgRuotato) out.push(f.imgRuotato);
   if (_haPagine(f.section, f)) _pagineDi(f).forEach(x => { if (x && x.url) out.push(x.url); });
   return out;
@@ -70418,6 +70438,10 @@ function renderAdminBrochure() {
   if (!_br) _br = { scelte: null, formato: 'A4', lingua: currentLang === 'en' ? 'en' : 'it', schede: 'nomi', foto: null, versioni: new Set(), macchie: 'con', tutte: 'due' };
   // v7.343 - Franco: «quando si apre la finestra di configurazione, di default deve essere tutto spento»
   if (!_br.scelte) _br.scelte = new Map(albero.map(v => [v.chiave, new Set()]));
+  // v7.346 - aperta dalla pagina di una serie (`apriBrochureSerie`): accesa solo lei, tutta, e il suo ramo aperto
+  const daSerie = _brSerieDaAprire;
+  _brSerieDaAprire = null;
+  if (daSerie) _br.scelte = new Map(albero.map(v => [v.chiave, new Set(v.chiave === daSerie ? v.tda.map(t => t.k) : [])]));
   const quanti = n => n + (it ? (n === 1 ? ' articolo' : ' articoli') : (n === 1 ? ' item' : ' items'));
   const radio = (nome, val, testo) => '<label style="display:inline-flex;align-items:center;gap:0.3rem;margin-right:1.1rem;cursor:pointer;">'
     + '<input type="radio" name="br-' + nome + '" value="' + val + '"' + (_br[nome] === val ? ' checked' : '') + ' onchange="_brOpzione(\'' + nome + '\', this.value)">' + testo + '</label>';
@@ -70425,7 +70449,7 @@ function renderAdminBrochure() {
     const sc = _br.scelte.get(v.chiave) || new Set();
     const tot = v.tda.reduce((a, t) => a + t.pezzi.length, 0);
     const stato = v.serie && !_brPubblicata(v) ? ' <span style="color:var(--text-muted);font-weight:400;">(' + esc(_voceStatoSerie(v.serie)[it ? 'it' : 'en'] || _statoSerie(v.serie)) + ')</span>' : '';
-    return '<details class="br-ramo" style="margin:0.15rem 0;">'
+    return '<details class="br-ramo" style="margin:0.15rem 0;"' + (daSerie && v.chiave === daSerie ? ' open' : '') + '>'
       + '<summary style="cursor:pointer;padding:0.2rem 0;">'
       + '<label style="cursor:pointer;font-weight:700;" onclick="event.stopPropagation()"><input type="checkbox" data-br-serie="' + esc(v.chiave) + '" onchange="_brSpuntaSerie(this)"> '
       + esc(_brNomeGruppo(v, it)) + '</label>' + stato + ' <span style="color:var(--text-muted);">· ' + quanti(tot) + '</span></summary>'
@@ -70753,7 +70777,8 @@ function _brHTML(P) {
     _commentoAlbumCard: f => ((f.section === 'attaccare' && _COMMENTO_CARD_CFG.fpa) || ((f.section || 'figurines') === 'figurines' && _COMMENTO_CARD_CFG.fcr)) ? lettore(f) : '',
     _retriFam: _retriDelleFamiglie(allFigs, _idx),
     _serieById: new Map(getData('series', []).map(x => [x.id, x])),
-    senzaNuovo: true
+    senzaNuovo: true,
+    soloFronte: _brSoloFronte   // v7.346 - le spille senza retro anche «come la card»
   };
   const card = _br.schede === 'card';
   let colOra = 1, righeOra = 1;   // le colonne e le righe del blocco che si sta scrivendo (per le caselle larghe)
@@ -74578,6 +74603,9 @@ function _aggiornaComandiTestata() {
   if (b2) b2.style.display = (adm && inBox) ? '' : 'none';
   // l'Ebay della serie segue la serie: dentro un box non c'e' una serie di cui parlare
   if (b3) b3.style.display = (adm && !inBox) ? '' : 'none';
+  // v7.346 - «Stampa brochure» della serie, come «Modifica serie»: admin e fuori da un box
+  const b4 = document.getElementById('detail-brochure-btn');
+  if (b4) b4.style.display = (adm && !inBox) ? '' : 'none';
   // 🆕 v6.641 - I DUE TASTI DELLA PAGINA PUBBLICA. La domanda non e' «sei admin?» ma
   //    «questa serie una pagina ce l'ha?», e la risposta la da' `_gscSerie()`, cioe' la
   //    stessa funzione che decide quali pagine il generatore scrive.
