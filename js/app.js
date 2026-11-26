@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.343 - Modificati index.html (versione) e js/app.js. Tabella degli annunci (Franco): dal telefono TDA «Album» → «Alb.»,
+//          titolo «Articolo» → «Art.», nell'articolo «versione standard» → «std», titolo «Copia» → «N.», «Mio» intero per
+//          eccesso (`tipoTel`, `nomeTel`, `visto` in `_annDisegna`; l'ordinamento usa i valori interi); dal telefono e
+//          dal PC la colonna «Titolo» passa prima di «Link» (`_ANN_COLONNE`).
+//          Brochure: la finestra parte con tutto spento; «Crea brochure» prende `.admin-anche-telefono` e si vede dal telefono;
+//          dal telefono il triangolo dell'albero è più grande (regola in index.html, `#br-albero .br-ramo > summary::marker`).
 // v7.342 - Modificati index.html (versione) e js/app.js. Tabella degli annunci dal telefono: il titolo della colonna
 //          «Account» diventa «Acc.» e «Finale» diventa «Fin.» (Franco); dal PC restano come prima.
 // v7.341 (2) - ⚠️ cambia anche css/style.css. LA BROCHURE DAL TELEFONO (Franco: «serve anche lanciare questa procedura da
@@ -32346,7 +32352,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.342';
+const JS_VERSION = 'v7.343';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45043,7 +45049,8 @@ function _annStileSito(sito) {
   return c ? 'background:' + c.bg + ';color:' + c.fg + ';' : '';
 }
 // v7.187 - l'ordinamento della tabella: le chiavi delle colonne, in fila come i titoli, e la colonna scelta
-const _ANN_COLONNE = ['sito', 'account', 'serie', 'tipologia', 'articolo', 'n', 'titolo', 'voto', 'costo', 'prezzo', 'link'];   // v7.191: + voto; v7.200: + tipologia
+// 🔄 v7.343 (Franco: «la colonna titolo spostala … prima della colonna url», anche dal PC) - titolo dopo Finale
+const _ANN_COLONNE = ['sito', 'account', 'serie', 'tipologia', 'articolo', 'n', 'voto', 'costo', 'prezzo', 'titolo', 'link'];   // v7.191: + voto; v7.200: + tipologia
 let _annOrdine = { col: null, su: true };
 let _annVisti = [];   // v7.189: gli indici delle righe come la tabella li mostra adesso (per «Salva e next»)
 function _annOrdina(k) {
@@ -45125,6 +45132,13 @@ function _annDisegna() {
   // 🔄 v7.242 (Franco: «stringi la colonna Sito») - il selettore da 2,4 a 1,6rem, senza la freccia né il margine dentro
   //    (resta il colore); il margine stretto della colonna sta in una regola dell'index (`#annunci-tabella`)
   const _annSitoTel = tel ? 'color:transparent;width:1.6rem;padding:0;-webkit-appearance:none;appearance:none;' : '';
+  // 🆕 v7.343 (Franco, dal telefono: «nella colonna TDA il valore album accorcialo ad Alb.»; «quando l'articolo si chiama
+  //    "versione standard", accorcia a "std"») - solo come si legge nella cella: l'ordinamento usa i nomi interi
+  const tipoTel = r => {
+    const k = r.tipologia || (figs.get(r.articoloId) ? _aggTipoDi(figs.get(r.articoloId)) : '');
+    return tel && k === 'albums' ? 'Alb.' : tipoDi(r);
+  };
+  const nomeTel = f => tel ? _annNomeArticolo(f).replace(/versione standard/gi, 'std') : _annNomeArticolo(f);
   box.innerHTML = '<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;">'
     + '<table class="data-table compact"><thead><tr>'
     // v7.200 - la spunta di tutte le righe che si vedono (coi filtri di adesso)
@@ -45137,7 +45151,8 @@ function _annDisegna() {
     //    sempre, non più solo dal telefono
     // 🔄 v7.342 (Franco: «nella versione mobile, nella lista degli annunci, la colonna account, accorciala ad Acc.»; e
     //    «sempre solo da mobile, la colonna "finale"» in «Fin.», più sotto)
-    + th(it ? 'Sito' : 'Site') + th(tel ? 'Acc.' : 'Account') + th(it ? 'Serie' : 'Series') + th(it ? 'TDA' : 'Item<br>type') + th(it ? 'Articolo' : 'Item') + th(it ? 'Copia' : 'Copy') + th(it ? 'Titolo' : 'Title')
+    // 🔄 v7.343 (Franco) - dal telefono «Art.» e «N.»; «Titolo» va più sotto, prima di «Link» (anche dal PC)
+    + th(it ? 'Sito' : 'Site') + th(tel ? 'Acc.' : 'Account') + th(it ? 'Serie' : 'Series') + th(it ? 'TDA' : 'Item<br>type') + th(tel ? 'Art.' : (it ? 'Articolo' : 'Item')) + th(tel ? 'N.' : (it ? 'Copia' : 'Copy'))
     // v7.187 (Franco: «il campo descrizione non mostrarlo nella tabella degli annunci; mostra invece la url») - la
     //    descrizione resta nella finestra; in tabella al suo posto il link, scritto per intero
     // v7.187 (Franco: «per ora togli il campo Foto dalla tabellina») - lo zip resta nella finestra
@@ -45148,7 +45163,7 @@ function _annDisegna() {
     //    `costo` e `prezzo`, così gli annunci già salvati si leggono come prima
     // 🔄 v7.242 (Franco, dal telefono: «Iniziale diventa "Mio"») - solo dal telefono, come «Account» e «TDA»
     // 🔄 v7.285 (Franco: «la colonna Iniziale falla della stessa larghezza della colonna Finale») - i titoli hanno il margine stretto delle celle (regola nell'index, `#annunci-tabella`), così la larghezza la danno le due caselle uguali
-    + th(it ? 'Voto' : 'Rating') + th(it ? (tel ? 'Mio' : 'Iniziale') : (tel ? 'Mine' : 'Initial')) + th(tel ? 'Fin.' : (it ? 'Finale' : 'Final')) + th('Link')
+    + th(it ? 'Voto' : 'Rating') + th(it ? (tel ? 'Mio' : 'Iniziale') : (tel ? 'Mine' : 'Initial')) + th(tel ? 'Fin.' : (it ? 'Finale' : 'Final')) + th(it ? 'Titolo' : 'Title') + th('Link')
     // v7.200 - sopra i quattro tasti della riga, «Applica valori da album» (agli annunci spuntati)
     // 🔄 v7.202 (Franco: «chiamalo "Applica valori da album e venditore" (vai pure su due righe)») - a capo dopo «album»
     + '<th style="text-align:center;text-transform:none;letter-spacing:0;"><button type="button" class="btn-barra-admin pieno" id="ann-applica-album" onclick="_annApplicaDaAlbum()"'
@@ -45180,8 +45195,12 @@ function _annDisegna() {
         //    colore (rosso)») - un annuncio «Da eliminare» ha i testi della riga in rosso e una barra rossa sul bordo
         //    sinistro; il Sito tiene il suo colore (è il colore del sito, v7.202)
         const del = r.daEliminare === true, rosso = del ? 'color:var(--danger);' : '';
+        // 🆕 v7.343 (Franco: «il valore della colonna mio, arrotondarlo per eccesso di modo che non abbia cifre decimali») -
+        //    dal telefono «Mio» si legge intero, per eccesso; il dato salvato non cambia finché non lo si riscrive
+        const visto = campo => { const v = _annVisto(r, campo, figs) ?? '';
+          return tel && campo === 'costo' && v !== '' && Number.isFinite(Number(v)) ? Math.ceil(Number(v)) : v; };
         const inp = (campo, tipo, val, st) => '<input class="ann-cella" type="' + tipo + '"' + (tipo === 'number' ? ' min="0" step="' + (campo === 'voto' ? '0.5' : 'any') + '"' : '')
-          + ' value="' + esc(_annVisto(r, campo, figs) ?? '') + '" style="' + st + rosso + (daCopia(campo) ? 'opacity:0.65;" readonly title="' + (it ? 'Dalla copia' : 'From the copy') + '"' : '"')
+          + ' value="' + esc(visto(campo)) + '" style="' + st + rosso + (daCopia(campo) ? 'opacity:0.65;" readonly title="' + (it ? 'Dalla copia' : 'From the copy') + '"' : '"')
           + ' onchange="_annCampo(' + i + ',\'' + campo + '\',this)">';
         return '<tr' + (del ? ' class="ann-da-eliminare" title="' + (it ? '🗑️ Da eliminare' : '🗑️ To be deleted') + '"' : '') + '>'
           + '<td style="text-align:center;' + (del ? 'box-shadow:inset 4px 0 0 var(--danger);' : '') + '"><input type="checkbox"' + (_annSpuntati.has(r.id) ? ' checked' : '') + ' onchange="_annSpunta(\'' + esc(r.id || '') + '\',this.checked)"></td>'   // v7.200
@@ -45190,9 +45209,9 @@ function _annDisegna() {
           // v7.187 (Franco: «nel campo serie degli annunci mettiamo il valore corto del nome della serie») - il nome
           //    breve, dove c'è (se no quello lungo)
           + '<td style="white-space:nowrap;' + (rosso || 'color:var(--nome-entita);') + '">' + esc(nomeSerie(s)) + '</td>'
-          + '<td style="white-space:nowrap;' + rosso + '">' + esc(tipoDi(r)) + '</td>'   // v7.200
+          + '<td style="white-space:nowrap;' + rosso + '">' + esc(tipoTel(r)) + '</td>'   // v7.200
           // v7.187 (Franco: «i 2 link non fanno leggere il testo, visto il blu scuro utilizzato; usiamo un azzurro»)
-          + '<td>' + (f ? '<a href="#" style="' + (rosso || 'color:var(--info);') + '" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;">' + esc(_annNomeArticolo(f)) + '</a>'
+          + '<td>' + (f ? '<a href="#" style="' + (rosso || 'color:var(--info);') + '" onclick="openFigDetail(\'' + esc(f.id) + '\');return false;">' + esc(nomeTel(f)) + '</a>'
                        : (r.articoloId ? '<span style="color:var(--warn);">' + (it ? 'articolo non trovato' : 'item not found') + '</span>' : ''))
             // 🗑️ v7.266 (Franco: «nella colonna "Articolo" riportiamo solo il valore chiave, senza riportare sotto il n. di
             //    copia e la qualità; tanto ci sono già i campi "N" e "Voto"») - qui la v7.263 scriveva la copia sotto l'articolo
@@ -45205,8 +45224,7 @@ function _annDisegna() {
           + '<td style="text-align:center;' + rosso + '">' + (_annCopiaDi(r, figs)
             ? '<a href="#" style="color:var(--info);font-weight:600;" title="' + (it ? 'Apri la copia' : 'Open the copy') + '" onclick="_copiaApri(\'' + esc(r.articoloId) + '\',\'' + esc(r.copiaId) + '\',true);return false;">' + esc(_annVisto(r, 'n', figs) ?? '') + '</a>'
             : esc(_annVisto(r, 'n', figs) ?? '')) + '</td>'
-          // v7.200 (Franco: «accorcia il campo "Titolo" di un 20%»; «riduci la larghezza della colonna Costo e Prezzo»)
-          + '<td>' + inp('titolo', 'text', r.titolo, 'min-width:272px;width:100%;') + '</td>'
+          // 🔄 v7.343 - qui c'era il Titolo: ora sta prima del Link (Franco)
           // 🔄 v7.202 (Franco: «le colonne Costo e Prezzo sono ancora troppo larghe; avvicina il simbolo dell'Euro al
           //    valore»; «stringi anche la colonna Voto») - caselle più strette (3,4 → 2,9 e 2,6rem), celle senza il
           //    margine largo della tabella, € attaccato alla casella
@@ -45221,6 +45239,9 @@ function _annDisegna() {
           // v7.187 (Franco: «il campo "Link" accorcialo, tanto per aprirlo c'è il bottoncino affianco»)
           // 🆕 v7.202 (Franco: «se il campo Sito è Vinted, il campo url deve contenere la parola "vinted"» - e così eBay e
           //    Subito) - un link che non nomina il suo sito si scrive in rosso (`_annLinkSbagliato`)
+          // v7.200 (Franco: «accorcia il campo "Titolo" di un 20%»; «riduci la larghezza della colonna Costo e Prezzo»)
+          // 🔄 v7.343 (Franco: «la colonna titolo … deve andare prima della colonna url») - anche dal PC
+          + '<td>' + inp('titolo', 'text', r.titolo, 'min-width:272px;width:100%;') + '</td>'
           + '<td style="white-space:nowrap;">' + inp('link', 'url', r.link, 'width:9rem;' + (_annLinkSbagliato(r.sito, r.link) ? 'color:var(--danger);' : ''))
             + ' <a href="#" style="color:var(--info);text-decoration:none;" title="' + (it ? 'Apri l\'annuncio' : 'Open the listing') + '" onclick="_annApriLink(' + i + ');return false;">🔗</a></td>'
           + '<td style="white-space:nowrap;">'
@@ -70387,7 +70408,8 @@ function renderAdminBrochure() {
   const it = currentLang === 'it';
   const albero = _brAlbero();
   if (!_br) _br = { scelte: null, formato: 'A4', lingua: currentLang === 'en' ? 'en' : 'it', schede: 'nomi', foto: null, versioni: new Set(), macchie: 'con', tutte: 'due' };
-  if (!_br.scelte) _br.scelte = new Map(albero.map(v => [v.chiave, new Set(_brPubblicata(v) ? v.tda.map(t => t.k) : [])]));
+  // v7.343 - Franco: «quando si apre la finestra di configurazione, di default deve essere tutto spento»
+  if (!_br.scelte) _br.scelte = new Map(albero.map(v => [v.chiave, new Set()]));
   const quanti = n => n + (it ? (n === 1 ? ' articolo' : ' articoli') : (n === 1 ? ' item' : ' items'));
   const radio = (nome, val, testo) => '<label style="display:inline-flex;align-items:center;gap:0.3rem;margin-right:1.1rem;cursor:pointer;">'
     + '<input type="radio" name="br-' + nome + '" value="' + val + '"' + (_br[nome] === val ? ' checked' : '') + ' onchange="_brOpzione(\'' + nome + '\', this.value)">' + testo + '</label>';
@@ -70435,7 +70457,7 @@ function renderAdminBrochure() {
     '<div style="font-weight:700;margin:1rem 0 0.3rem;">8. ' + (it ? 'Articoli con più di 2 foto' : 'Items with more than 2 photos') + '</div>' +
     '<div>' + radio('tutte', 'due', it ? 'Fronte e retro' : 'Front and back') + radio('tutte', 'tutte', it ? 'Tutte le foto' : 'All the photos') + '</div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:1.2rem;flex-wrap:wrap;">'
-      + '<button class="btn-primary btn-admin" id="br-crea" onclick="_brApri()">📖 ' + (it ? 'Crea brochure' : 'Create brochure') + '</button>'
+      + '<button class="btn-primary btn-admin admin-anche-telefono" id="br-crea" onclick="_brApri()">📖 ' + (it ? 'Crea brochure' : 'Create brochure') + '</button>'
       + '<span id="br-conto" style="font-size:0.85rem;color:var(--text);"></span></div>';
   _brAggiornaSerie();
 }
