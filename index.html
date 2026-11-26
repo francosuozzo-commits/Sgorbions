@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.342">
+<link rel="stylesheet" href="css/style.css?v=7.343">
 
 
 <style>
@@ -440,6 +440,8 @@
 @media (min-width:861px) { .nav-links #nav-cerca-var { display:none !important; } }
 /* 🆕 v7.341 - «Brochure» solo nel panino: sul desktop c'è il tab della console */
 @media (min-width:861px) { .nav-links #nav-brochure { display:none !important; } }
+/* v7.343 - Franco: «da mobile, il triangolino per esplodere le sezioni delle serie è un po' troppo piccolo» (albero della brochure) */
+@media (max-width:860px) { #br-albero .br-ramo > summary { padding:0.45rem 0 !important; } #br-albero .br-ramo > summary::marker { font-size:1.7em; } }
 /* 🆕 v7.312 - «Copie doppie» solo nel panino: sul desktop c'è la linguetta `#ml-linguetta` */
 @media (min-width:861px) { .nav-links #nav-copie { display:none !important; } }
 /* ⬜ E SOTTO I 1500px LA CASELLA SPARISCE, AL SUO POSTO UN TASTO 🔍 che apre la finestrella del
@@ -1654,7 +1656,8 @@ button.back-btn { color:#ffffff; }
 }
 /* 🔄 v7.285 (Franco: «la colonna Iniziale falla della stessa larghezza della colonna Finale») - i titoli di Iniziale (10ª colonna)
    e Finale (11ª) col margine stretto delle loro celle: così la larghezza la danno le due caselle uguali, non il titolo */
-#annunci-tabella th:nth-child(10), #annunci-tabella th:nth-child(11) { padding-left: 0.25rem; padding-right: 0.25rem; }
+/* 🔄 v7.343 - col Titolo spostato prima del Link (Franco), Iniziale e Finale sono la 9ª e la 10ª colonna */
+#annunci-tabella th:nth-child(9), #annunci-tabella th:nth-child(10) { padding-left: 0.25rem; padding-right: 0.25rem; }
 
 /* v5.953 — TELEFONO: il Logout passa nel panino, come ULTIMA voce (Franco).
    Il pulsante della navbar (#user-nav .btn-logout) e la voce di menu (#nav-logout-link) sono
@@ -7207,7 +7210,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.342"></script>
+<script src="js/app.js?v=7.343"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7231,7 +7234,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.342'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.343'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
