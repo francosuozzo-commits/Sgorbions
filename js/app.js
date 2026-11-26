@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.348 - Modificati index.html (versione) e js/app.js. Collage, «Quanto grande al massimo ?» (Franco: «un paio di
+//          risoluzioni inferiori in più»): anche 1200 × 675 («la più leggera») e 1800 × 1013 («molto leggera»);
+//          di serie resta 4000 (`COLLAGE_TETTI`).
 // v7.347 - Modificati index.html e js/app.js. LA BROCHURE PER TUTTI (Franco): pagina «📖 Brochure Sgorbions»
 //          (`#page-brochure`, `renderBrochure`, protetta dall'accesso), dal PC la linguetta a sinistra (`#br-linguetta`,
 //          nella colonna `#linguette`), dal telefono la voce del panino (`#nav-brochure`, ora per tutti). Benvenuto, poi
@@ -32382,7 +32385,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.347';
+const JS_VERSION = 'v7.348';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42822,7 +42825,7 @@ function _collageHTML(perBox) {
     // 🆕 v7.222 - la grandezza massima, solo da Annunci (dalla card il collage è sempre 1200×675)
     (perBox ? '' : '<div style="' + dom + '">5. ' + (it ? 'Quanto grande al massimo ?' : 'How large at most?') + '</div>' +
       COLLAGE_TETTI.map(w => scelta('collage-tetto', w, w + ' × ' + Math.round(w * COLLAGE_MAX_H / COLLAGE_MAX_W) + ' px' +
-        ' <span style="font-size:0.75rem;opacity:0.7;">(' + ({ 2400: it ? 'leggera' : 'light', 3200: it ? 'media' : 'medium', 4000: it ? 'la più nitida' : 'sharpest' })[w] + ')</span>',
+        ' <span style="font-size:0.75rem;opacity:0.7;">(' + ({ 1200: it ? 'la più leggera' : 'lightest', 1800: it ? 'molto leggera' : 'very light', 2400: it ? 'leggera' : 'light', 3200: it ? 'media' : 'medium', 4000: it ? 'la più nitida' : 'sharpest' })[w] + ')</span>',
         w === COLLAGE_MAX_W ? ' checked' : '')).join('') +
       '<div style="font-size:0.75rem;opacity:0.7;color:var(--text);margin:0.2rem 0 0;">' + (it ? 'Con poche foto piccole il collage resta più piccolo: le foto non si ingrandiscono oltre l\'originale.' : 'With few small photos the collage stays smaller.') + '</div>') +
     '<div id="collage-avviso" style="font-size:0.82rem;color:var(--warn);min-height:1.2rem;margin:0.7rem 0 0.4rem;"></div>' +
@@ -44234,7 +44237,9 @@ function _collageBordi(pezzi) {
 //    troppo male … vedi tu che tipo di domanda vuoi farmi») - il tetto si sceglie nella domanda 5, «Quanto grande al
 //    massimo?» (`COLLAGE_TETTI`, parole mie), di serie 4000
 const COLLAGE_MAX_W = 4000, COLLAGE_MAX_H = 2250;
-const COLLAGE_TETTI = [2400, 3200, 4000];
+// 🔄 v7.348 (Franco: «mi serve avere un paio di risoluzioni inferiori in più, sempre come opzione di scelta») - 1200
+//    (la misura della card, la più piccola possibile: `_collageMisuraGrande` non va mai sotto) e 1800; di serie sempre 4000
+const COLLAGE_TETTI = [1200, 1800, 2400, 3200, 4000];
 function _collageMisuraGrande(pezzi, b, margine, tetto) {
   const nat = pezzi.map(p => (p.img.naturalHeight || p.img.height) / p.h).sort((x, y) => x - y);
   const kNat = nat[Math.floor(nat.length / 2)] || 0;
