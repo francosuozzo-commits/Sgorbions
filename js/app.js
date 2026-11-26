@@ -1,7 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.348 - Modificati index.html (versione) e js/app.js. Collage, «Quanto grande al massimo ?» (Franco: «un paio di
+// v7.349 - Modificati index.html (versione) e js/app.js. Collage, «Effetto usato ?» (Franco: «la versione con i graffi
+//          e con i bordi usurati sono troppo esagerate … togliamole»): restano solo Luce disturbata e Ingiallimento
+//          (`COLLAGE_USATO_PARTI`); tolti i due blocchi da `_collageInvecchia`. 🗂️ L'ANNUNCIO CON PIÙ ALBUM (Franco): tasto
+//          «Crea annuncio più album» in Annunci (anche nella finestrella del venditore), `_fmApri` = `_faApri({ multi })`.
+//          Da 2 a 5 album base, uno per serie, ognuno con una copia fotografata (`_fmCopieDisponibili`); le foto dalle
+//          copie (`_fmCaricaCopie`), una linguetta per album (`_fmAttiva`). Foto 1 le copertine e foto 2 i retro, a griglia
+//          (`_fmGriglia`); poi gli interni: quante foto per album le scrive Franco (di partenza in parti uguali, somma al
+//          massimo 22 eBay / 18 Vinted / 4 Subito), fino a 4 pagine per foto, le pagine in più restano fuori dalle ultime
+//          (`_fmGruppi`). Senza copertina o retro ci si ferma (`_fmMancanti`). Tutto in `_fmComponi`.
+// v7.348 -Modificati index.html (versione) e js/app.js. Collage, «Quanto grande al massimo ?» (Franco: «un paio di
 //          risoluzioni inferiori in più»): anche 1200 × 675 («la più leggera») e 1800 × 1013 («molto leggera»);
 //          di serie resta 4000 (`COLLAGE_TETTI`).
 // v7.347 - Modificati index.html e js/app.js. LA BROCHURE PER TUTTI (Franco): pagina «📖 Brochure Sgorbions»
@@ -32385,7 +32394,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.348';
+const JS_VERSION = 'v7.349';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42589,6 +42598,8 @@ function renderAdminFotoAnnuncio() {
     //    annuncio da collage"») - i due tasti, qui e nella finestrella del venditore
     '<div class="fa-tasti">' +
     '<button class="btn-primary btn-admin admin-anche-telefono" onclick="_faApri()">' + (it ? '📸 Crea foto per annuncio album' : '📸 Create album listing photos') + '</button>' +
+    // 🆕 v7.349 (Franco: «un collage fotografico che comprende più album»; proposta accettata: un tasto nuovo qui) - `_fmApri`
+    '<button class="btn-primary btn-admin admin-anche-telefono" onclick="_fmApri()">' + (it ? '🗂️ Crea annuncio più album' : '🗂️ Create multi-album listing') + '</button>' +
     // 🆕 v7.219 (Franco: «sposta la funzione Collage foto nella sezione "Annunci"; lì dentro ci metti un tasto, dello stesso
     //    stile del tasto "Crea annuncio", fa iniziare la procedura di creazione collage in una finestra») - `apriCollage`
     '<button class="btn-primary btn-admin admin-anche-telefono" onclick="apriCollage()">' + (it ? '🖼️ Crea annuncio da collage' : '🖼️ Create listing from collage') + '</button>' +
@@ -42681,6 +42692,7 @@ function apriAnnunciNav() {
       (it ? 'Le foto si scaricano e basta: sul sito non si salva niente.' : 'Photos are only downloaded: nothing is saved on the site.') + '</p>' +
     '<div class="fa-tasti">' +
       '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();_faApri()">' + (it ? '📸 Crea foto per annuncio album' : '📸 Create album listing photos') + '</button>' +
+      '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();_fmApri()">' + (it ? '🗂️ Crea annuncio più album' : '🗂️ Create multi-album listing') + '</button>' +   // v7.349
       '<button class="btn-primary" onclick="document.getElementById(\'annunci-venditore-modal\').remove();apriCollage()">' + (it ? '🖼️ Crea annuncio da collage' : '🖼️ Create listing from collage') + '</button>' +
     '</div></div></div>';
   document.body.appendChild(ov);
@@ -44316,11 +44328,11 @@ const COLLAGE_USATO = [
   { k: 2, it: 'Medio',   en: 'Medium' },
   { k: 3, it: 'Forte',   en: 'Strong' },
 ];
+// 🔄 v7.349 (Franco: «la versione con i graffi e con i bordi usurati sono troppo esagerate … quelle due opzioni non le
+//    userò mai, togliamole») - via «Bordi consumati» e «Graffi e pieghe»: restano la luce e l'ingiallimento
 const COLLAGE_USATO_PARTI = [
-  { k: 'bordi',  it: 'Bordi consumati',  en: 'Worn edges' },
   { k: 'luce',   it: 'Luce disturbata',  en: 'Uneven light' },
   { k: 'giallo', it: 'Ingiallimento',    en: 'Yellowing' },
-  { k: 'graffi', it: 'Graffi e pieghe',  en: 'Scratches and creases' },
 ];
 // la risposta: null con «Nessuno», o senza nessuna spunta accesa (non ci sarebbe niente da fare)
 function _collageUsatoScelto() {
@@ -44339,9 +44351,7 @@ function _collageUsatoMostra() {
 // La foto `img` invecchiata, in un canvas `w` × `h` (la misura a cui il collage la disegna). `u` = { livello 1-3, parti }.
 //    · Ingiallimento: la carta più calda e un velo chiaro che spegne i colori;
 //    · Luce disturbata: un riflesso in un punto a caso, un lato un po' in ombra, meno contrasto;
-//    · Graffi e pieghe: segni sottili e chiari, un po' storti; col Forte anche una piega che attraversa la figurina;
-//    · Bordi consumati: angoli arrotondati ognuno a modo suo, bordo irregolare, sbiancato e sfrangiato; dal Medio
-//      qualche piccola tacca. Il contorno vale anche per l'ombra del collage, che lo segue.
+//    (v7.349: tolti graffi, pieghe e bordi consumati, troppo esagerati per Franco)
 // La trasparenza della foto (es. sfondo tolto) si rimette alla fine degli effetti di colore: fuori dalla figurina niente.
 function _collageInvecchia(img, w, h, u) {
   const cw = Math.max(1, Math.round(w)), ch = Math.max(1, Math.round(h));
@@ -44350,7 +44360,7 @@ function _collageInvecchia(img, w, h, u) {
   const x = c.getContext('2d');
   x.imageSmoothingQuality = 'high';
   x.drawImage(img, 0, 0, cw, ch);
-  const f = u.livello / 3, m = Math.min(cw, ch), D = Math.hypot(cw, ch);
+  const f = u.livello / 3, D = Math.hypot(cw, ch);
   const caso = (a, b) => a + Math.random() * (b - a);
   const P = u.parti || {};
   x.save();
@@ -44379,70 +44389,9 @@ function _collageInvecchia(img, w, h, u) {
     o.addColorStop(0.6, 'rgba(0,0,0,0)');
     x.fillStyle = o; x.fillRect(0, 0, cw, ch);
   }
-  if (P.graffi) {
-    x.globalCompositeOperation = 'source-over';
-    x.lineCap = 'round';
-    for (let i = 0, n = Math.round(caso(2, 4) * u.livello); i < n; i++) {
-      const x0 = caso(0, cw), y0 = caso(0, ch), a = caso(0, 2 * Math.PI), L = caso(0.1, 0.4) * m;
-      const x1 = x0 + Math.cos(a) * L, y1 = y0 + Math.sin(a) * L, piega = caso(-0.12, 0.12) * L;
-      x.strokeStyle = 'rgba(255,255,255,' + (caso(0.2, 0.45) * (0.5 + f / 2)).toFixed(3) + ')';
-      x.lineWidth = Math.max(0.6, m * caso(0.002, 0.005));
-      x.beginPath(); x.moveTo(x0, y0);
-      x.quadraticCurveTo((x0 + x1) / 2 - Math.sin(a) * piega, (y0 + y1) / 2 + Math.cos(a) * piega, x1, y1);
-      x.stroke();
-    }
-    if (u.livello === 3) {
-      const a = caso(0, Math.PI), px = caso(0.25, 0.75) * cw, py = caso(0.25, 0.75) * ch;
-      const ux = Math.cos(a) * D, uy = Math.sin(a) * D, nx = -Math.sin(a) * m * 0.006, ny = Math.cos(a) * m * 0.006;
-      const linea = (sx, sy, col, lw) => { x.strokeStyle = col; x.lineWidth = lw; x.beginPath(); x.moveTo(px - ux + sx, py - uy + sy); x.lineTo(px + ux + sx, py + uy + sy); x.stroke(); };
-      linea(0, 0, 'rgba(0,0,0,0.13)', Math.max(1, m * 0.012));
-      linea(nx, ny, 'rgba(255,255,255,0.32)', Math.max(0.6, m * 0.004));
-    }
-  }
   x.restore();
   // fuori dalla figurina (dove la foto era trasparente) i colori non devono restare
   x.save(); x.globalCompositeOperation = 'destination-in'; x.drawImage(img, 0, 0, cw, ch); x.restore();
-  if (P.bordi) {
-    const ang = () => m * caso(0.015, 0.03 + 0.05 * f);
-    const [ra, rb, rc, rd] = [ang(), ang(), ang(), ang()];
-    const t = new Path2D(), passo = Math.max(4, m * 0.04), j = () => Math.random() * m * 0.004 * (0.5 + f);
-    // un lato da (xa, ya) a (xb, yb), coi punti spinti un poco verso l'interno (nx, ny): il bordo non è più dritto
-    const lato = (xa, ya, xb, yb, nx, ny) => {
-      const n = Math.max(1, Math.round(Math.hypot(xb - xa, yb - ya) / passo));
-      for (let i = 1; i <= n; i++) { const q = i / n, s = i === n ? 0 : j(); t.lineTo(xa + (xb - xa) * q + nx * s, ya + (yb - ya) * q + ny * s); }
-    };
-    t.moveTo(ra, 0);
-    lato(ra, 0, cw - rb, 0, 0, 1); t.quadraticCurveTo(cw, 0, cw, rb);
-    lato(cw, rb, cw, ch - rc, -1, 0); t.quadraticCurveTo(cw, ch, cw - rc, ch);
-    lato(cw - rc, ch, rd, ch, 0, -1); t.quadraticCurveTo(0, ch, 0, ch - rd);
-    lato(0, ch - rd, 0, ra, 1, 0); t.quadraticCurveTo(0, 0, ra, 0);
-    t.closePath();
-    x.save();
-    x.globalCompositeOperation = 'destination-in';
-    x.fill(t);
-    // il bordo sbiancato: tre passate, larga e leggera fuori, stretta e più chiara sul filo
-    x.globalCompositeOperation = 'source-atop';
-    [[0.05, 0.07], [0.03, 0.11], [0.014, 0.18]].forEach(([lw, al]) => {
-      x.lineWidth = m * lw * (0.5 + f); x.strokeStyle = 'rgba(255,250,240,' + (al * (0.6 + f)).toFixed(3) + ')'; x.stroke(t);
-    });
-    // sfrangiato: puntini chiari fitti sul filo, radi verso l'interno
-    for (let i = 0, n = Math.round(20 + m * 0.6 * f); i < n; i++) {
-      const dentro = Math.pow(Math.random(), 2) * m * 0.03, lungo = Math.random(), qu = Math.floor(Math.random() * 4);
-      const px = qu === 0 ? lungo * cw : qu === 1 ? cw - dentro : qu === 2 ? lungo * cw : dentro;
-      const py = qu === 0 ? dentro : qu === 1 ? lungo * ch : qu === 2 ? ch - dentro : lungo * ch;
-      const sz = Math.max(0.8, m * 0.004 * caso(0.5, 1.5));
-      x.fillStyle = 'rgba(255,252,245,' + caso(0.2, 0.6).toFixed(3) + ')';
-      x.fillRect(px, py, sz, sz);
-    }
-    // dal Medio, qualche piccola tacca sul bordo
-    x.globalCompositeOperation = 'destination-out';
-    for (let i = 0, n = u.livello >= 2 ? Math.round(caso(1, 2 * u.livello - 1)) : 0; i < n; i++) {
-      const lungo = Math.random(), qu = Math.floor(Math.random() * 4);
-      const px = qu === 0 || qu === 2 ? lungo * cw : qu === 1 ? cw : 0, py = qu === 1 || qu === 3 ? lungo * ch : qu === 2 ? ch : 0;
-      x.beginPath(); x.arc(px, py, m * caso(0.004, 0.01), 0, 2 * Math.PI); x.fill();
-    }
-    x.restore();
-  }
   return c;
 }
 // 🆕 v7.225 (Franco: «riusciresti a rovinare leggermente la texture, di modo da farla sembrare un oggetto più reale (tipo
@@ -46270,9 +46219,9 @@ h1 { font-size:22px; margin:6px 0 4px; }
 .testa { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .esci { flex:none; width:40px; height:40px; border:1px solid #ddd; background:#fff; border-radius:8px; font-size:20px; line-height:1; cursor:pointer; color:#222; }
 </style></head><body><main>
-<div class="testa"><h1>📸 Crea foto per annuncio album</h1><button type="button" class="esci" id="esci" title="Chiudi">✕</button></div>
+<div class="testa"><h1 id="fa-titolo">📸 Crea foto per annuncio album</h1><button type="button" class="esci" id="esci" title="Chiudi">✕</button></div>
 <div class="nota">Le foto restano in questa finestra: sul sito non si salva niente.</div>
-<section class="passo"><h2>1. Quale album?</h2><div class="scelte" id="scelta-album"></div></section>
+<section class="passo"><h2 id="fa-passo1">1. Quale album?</h2><div class="scelte" id="scelta-album"></div></section>
 <section class="passo"><h2>2. Le foto delle pagine</h2>
   <div class="scelte">
     <label class="btn primario" id="carica">Carica le foto<input type="file" id="file" accept="image/*" multiple hidden></label>
@@ -46285,19 +46234,22 @@ h1 { font-size:22px; margin:6px 0 4px; }
   <div class="zoom" id="zoom-mini" style="display:none;">🔍 Miniature <button id="mini-meno" title="Più piccole">−</button><button id="mini-piu" title="Più grandi">+</button></div>
   <!-- v7.310 (Franco) - la pulizia dello sfondo qui, una volta per foto (era la spunta del passo 4); per una foto sola, il 🧽 della miniatura -->
   <div class="scelte" id="pulisci-box" style="display:none;margin:4px 0 10px;"><button class="btn" id="pulisci-tutte">🧽 Pulisci lo sfondo di tutte le foto</button></div>
+  <!-- v7.349 - con più album, una linguetta per album: le miniature sono quelle dell'album acceso -->
+  <div class="scelte" id="multi-schede" style="display:none;margin:4px 0 10px;"></div>
   <div class="griglia" id="miniature"></div>
 </section>
 <!-- v7.185 (Franco: «dovremmo invertire gli step 2 e 3; prima si caricano le foto e dopo si sceglie il sito») -->
 <!-- 🔄 v7.338 (Franco: l'account «obbligatorio, prima del sito») - ogni account ha le sue foto annunci: prima l'account, poi il sito -->
-<section class="passo"><h2>3. Per quale account?</h2><div class="nota">Ogni account ha il suo modo di unire le pagine (scheda dell’album, tab Annunci); mette già il suo tessuto.</div><div class="scelte" id="scelta-venditore"></div>
+<section class="passo"><h2>3. Per quale account?</h2><div class="nota" id="fa-nota-account">Ogni account ha il suo modo di unire le pagine (scheda dell’album, tab Annunci); mette già il suo tessuto.</div><div class="scelte" id="scelta-venditore"></div>
   <h2 style="margin-top:14px;">Per quale sito servono le foto?</h2><div class="scelte" id="scelta-sito"></div><div class="piano" id="piano"></div>
-  <div id="venditore-box" style="display:none;"><h2 style="margin-top:14px;">Quale texture di sfondo?</h2><div class="scelte" id="scelta-texture"></div></div></section>
+  <div id="venditore-box" style="display:none;"><h2 style="margin-top:14px;">Quale texture di sfondo?</h2><div class="scelte" id="scelta-texture"></div></div>
+  <div id="multi-quante" style="display:none;"></div></section>
 <section class="passo"><h2>4. Le foto per l'annuncio</h2>
   <div class="scelte"><button class="btn primario" id="componi" disabled>Prepara le foto</button><button class="btn primario" id="scarica" disabled>⬇️ Scarica tutte</button><span class="nota" id="componi-perche" style="align-self:center;"></span></div>
   <!-- v7.337 (Franco: «sarebbe possibile aggiungere una barra di avanzamento? ... potrebbe non risultare chiaro cosa stia accadendo») -->
   <div id="avanza" style="display:none;margin:10px 0 4px;"><div id="avanza-testo" style="font-size:14px;margin-bottom:4px;"></div><div style="height:14px;background:#e6e6e6;border-radius:7px;overflow:hidden;"><div id="avanza-barra" style="height:100%;width:0;background:#2e7d32;transition:width .25s;"></div></div></div>
   <!-- v7.272 (Franco: «anche nella sezione crea foto per annuncio vorrei avere i due bottoni») - i testi del tab Ebay dell'album, per il venditore scelto -->
-  <div class="scelte" style="margin-top:8px;"><button class="btn" id="copia-titolo">📋 Copia titolo annuncio</button><button class="btn" id="copia-desc">📋 Copia descrizione annuncio</button><span class="nota" id="copia-stato" style="align-self:center;"></span></div>
+  <div class="scelte" id="copia-riga" style="margin-top:8px;"><button class="btn" id="copia-titolo">📋 Copia titolo annuncio</button><button class="btn" id="copia-desc">📋 Copia descrizione annuncio</button><span class="nota" id="copia-stato" style="align-self:center;"></span></div>
   <div class="piano" id="piano2"></div><div class="risultati" id="risultati"></div>
 </section></main>
 <div id="editor">
@@ -46347,6 +46299,16 @@ function _faApri(parti) {
     $('copia-foto').style.display = ''; $('copia-foto').classList.add('primario');
     $('copia-foto').onclick = () => _faFotoDellaCopia().catch(err => _faStato('Errore: ' + err.message));
   }
+  // 🆕 v7.349 - l'annuncio con più album (`_fmApri`): stesse domande, il passo 1 a più scelte e le foto solo dalle copie
+  if (parti && parti.multi) {
+    _fa.multi = { voci: [], attivo: 0 };
+    w.document.title = 'Crea annuncio più album';
+    $('fa-titolo').textContent = '🗂️ Crea annuncio più album';
+    $('fa-passo1').textContent = '1. Quali album? (da 2 a ' + _FM_MAX_ALBUM + ', uno per serie, ognuno con una sua copia)';
+    $('fa-nota-account').textContent = 'L’account mette già il suo tessuto.';
+    $('carica').style.display = 'none'; $('demo').style.display = 'none'; $('copia-riga').style.display = 'none';
+    $('copia-foto').onclick = () => _fmCaricaCopie().catch(err => { _faStato('Errore: ' + err.message); _fmAttiva(_fa.multi.attivo); });
+  }
   _faDisegnaScelte();
   if (_fa.copia && _fa.album) _faFotoDellaCopia().catch(err => _faStato('Errore: ' + err.message));
   // 🐛 v7.185 (Franco: «quando premo il pulsante … mi mostra la ultima pagina dell'album aperta; dovrebbe reiniziare
@@ -46356,6 +46318,8 @@ function _faApri(parti) {
   if (w.document.documentElement) w.document.documentElement.scrollTop = 0;
   w.focus();
 }
+// 🆕 v7.349 - il tasto «🗂️ Crea annuncio più album» degli Annunci
+function _fmApri() { _faApri({ multi: true }); }
 function _faEsci() {
   const w = _fa && _fa.w;
   if (!w) return;
@@ -46415,6 +46379,7 @@ async function _faCopiaTesto(chiave) {
   st.textContent = fatto ? '📋 Copiato: ' + (r.testo.length > 80 ? r.testo.slice(0, 80) + '…' : r.testo) : '⚠️ Non riesco a copiare';
 }
 function _faDisegnaScelte() {
+  if (_fa.multi) { _fmDisegnaScelte(); return; }   // v7.349 - l'annuncio con più album
   const d = _fa.w.document;
   const albumBox = _fa$('scelta-album'); albumBox.innerHTML = '';
   // 🔄 v7.310 (Franco: «quando avvio la procedura di creazione annuncio dai sotto tab foto … anche alla domanda 1 non devo poter
@@ -46530,6 +46495,332 @@ function _faDisegnaScelte() {
   }
 }
 
+// ============================================================
+// 🆕 v7.349 (Franco: «creare un collage fotografico che comprende più album, da due a cinque … delle serie 1 2 3 4 ed
+//    holidays»; «no varianti»; «le foto si prendono solo da copie già presenti nell'inventario … obbligatorio selezionare copie
+//    di album già censite»; «la prima foto è una foto di gruppo con le n copertine frontali; la seconda idem ma con le foto del
+//    retro; la disposizione è sempre a griglia; le altre foto devono contenere foto di interni»; «per eBay 22 foto, tolte le
+//    copertine; per Vinted 18; per Subito 4»; «mi chiedi quante foto per ogni album e controllo solo che il numero totale sia
+//    corretto»; «non più di quattro foto di un album all'interno di una singola foto annuncio»; proposte accettate: tasto nuovo
+//    in Annunci, le pagine in più restano fuori dalle ultime, numeri di partenza in parti uguali, senza copertina o retro ci si
+//    ferma) - L'ANNUNCIO CON PIÙ ALBUM. La stessa finestra di «Crea foto per annuncio album» (`_faApri({ multi: true })`), con
+//    `_fa.multi = { voci, attivo }`: ogni voce è un album base con la sua copia (`k` = id album | chiave copia), le sue foto
+//    (`foto`, riconosciute come sempre da `_faCaricaFile`) e quante foto dell'annuncio le spettano (`quante`). Al passo 2 una
+//    linguetta per album: quella accesa mette le sue foto in `_fa.album` / `_fa.foto`, così miniature, editor e pulizia
+//    lavorano come per un album solo (`_fmAttiva`, `_fmSalva`). I piani scritti nelle schede degli album qui non contano.
+// ============================================================
+const _FM_MAX_ALBUM = 5;
+// gli album base con almeno una copia fotografata (linguetta Originali), raggruppati per serie nell'ordine delle serie
+function _fmCopieDisponibili() {
+  const idx = _indiceArticoli(), serie = getData('series', []), gruppi = [];
+  _faAlbum(true).filter(a => !a.senzaFoto).forEach(a => {
+    const art = idx.get(a.id);
+    if (!art || art.baseFigurineId) return;
+    const copie = Array.isArray(art.copie) ? art.copie : [];
+    const opz = copie.map((c, i) => ({ c, i })).filter(x => Array.isArray(x.c.foto) && x.c.foto.length).map(x => ({
+      k: a.id + '|' + _annChiaveCopia(x.c, x.i), album: a, artId: a.id, copiaChiave: _annChiaveCopia(x.c, x.i),
+      etichetta: a.nome + ' · ' + _annNomeCopia(x.c) + ' (' + x.c.foto.length + ' foto)' }));
+    if (!opz.length) return;
+    let g = gruppi.find(x => x.id === art.seriesId);
+    if (!g) { const s = serie.find(x => x.id === art.seriesId); g = { id: art.seriesId, nome: s ? _nomeSerieCard(s, true) : '—', opzioni: [] }; gruppi.push(g); }
+    g.opzioni.push(...opz);
+  });
+  return gruppi;
+}
+// le foto della linguetta accesa tornano nella sua voce (l'elenco può essere stato rifatto: 🗑️ di una miniatura)
+function _fmSalva() {
+  const M = _fa && _fa.multi, v = M && M.voci[M.attivo];
+  if (v && _fa.album === v.album) { v.foto = _fa.foto; v.rif = _fa.rif; }
+}
+function _fmAttiva(i) {
+  _fmSalva();
+  const M = _fa.multi, v = M.voci[i];
+  M.attivo = v ? i : 0;
+  _fa.album = v ? v.album : null; _fa.foto = v && v.foto ? v.foto : []; _fa.rif = v ? v.rif : null;
+  if (_fa.foto.length) _faMiniature();
+  else {
+    _faLibera(..._fa$('miniature').querySelectorAll('canvas'));
+    _fa$('miniature').innerHTML = ''; _fa$('avvisi').innerHTML = '';
+    ['spiega', 'zoom-mini', 'pulisci-box'].forEach(id => { _fa$(id).style.display = 'none'; });
+  }
+  _faDisegnaScelte();
+}
+// le foto degli interni divise in parti uguali (le prime voci prendono il resto)
+function _fmRidividi() {
+  const M = _fa.multi, n = M.voci.length, libere = _fa.sito ? _fa.sito.limite - 2 : 0;
+  M.voci.forEach((v, i) => { v.quante = n ? Math.floor(libere / n) + (i < libere % n ? 1 : 0) : 0; });
+}
+function _fmScegli(o, serieId) {
+  if (_fa.inCorso) return;
+  _fmSalva();
+  const M = _fa.multi, via = v => { if (v.foto) _faLibera(...v.foto.map(f => f.tela), ...v.foto.map(f => f.pulita && f.pulita.tela)); };
+  const attiva = M.voci[M.attivo];
+  const gia = M.voci.find(v => v.k === o.k);
+  if (gia) { via(gia); M.voci = M.voci.filter(v => v !== gia); }
+  else {
+    M.voci.filter(v => v.serieId === serieId).forEach(via);
+    M.voci = M.voci.filter(v => v.serieId !== serieId);
+    if (M.voci.length >= _FM_MAX_ALBUM) return;
+    M.voci.push({ k: o.k, serieId, album: o.album, artId: o.artId, copiaChiave: o.copiaChiave, nome: o.album.nome, foto: null, rif: null, quante: 0 });
+    const ordine = _fmCopieDisponibili().map(g => g.id);
+    M.voci.sort((a, b) => ordine.indexOf(a.serieId) - ordine.indexOf(b.serieId));
+  }
+  _fmRidividi();
+  _faInvalida();
+  const i = M.voci.indexOf(attiva);
+  _fmAttiva(i >= 0 ? i : 0);
+}
+// LE FOTO DELLE COPIE: per ogni album ancora senza foto, quelle della sua linguetta Originali, scaricate intere e riconosciute
+//    come quelle di una copia sola (`_faFotoDellaCopia`)
+async function _fmCaricaCopie() {
+  if (_fa.inCorso) return;
+  _fmSalva();
+  const M = _fa.multi;
+  // mentre scarica e riconosce, le scelte e le linguette restano spente (`_fmDisegnaScelte` guarda `inCorso`)
+  _fa.inCorso = true;
+  try {
+    for (let i = 0; i < M.voci.length; i++) {
+      const v = M.voci[i];
+      if (v.foto && v.foto.length) continue;
+      const copia = _annTrovaCopia(_articoloVivo(v.artId), v.copiaChiave);
+      const urls = copia && Array.isArray(copia.foto) ? copia.foto : [];
+      if (!urls.length) { _faAvviso('⚠️ La copia di «' + v.nome + '» non ha foto nella linguetta Originali.', true); return; }
+      M.attivo = i; _fa.album = v.album; _fa.foto = []; _fa.rif = v.rif;
+      const file = [];
+      for (let j = 0; j < urls.length; j++) {
+        _faStato('Album ' + (i + 1) + ' di ' + M.voci.length + ' (' + v.nome + '): scarico la foto ' + (j + 1) + ' di ' + urls.length + '…');
+        const r = await fetch(urls[j]);
+        if (!r.ok) throw new Error(v.nome + ', foto ' + (j + 1) + ' della copia: HTTP ' + r.status);
+        file.push(new File([await r.blob()], 'copia-' + String(j + 1).padStart(3, '0') + '.jpg', { type: 'image/jpeg' }));
+      }
+      await _faCaricaFile(file);
+      v.foto = _fa.foto; v.rif = _fa.rif;
+    }
+    _faStato('');
+  } finally {
+    _fa.inCorso = false;
+  }
+  _fmAttiva(M.attivo);
+}
+// copertina e retro che mancano, per album: senza, le prime due foto non si fanno
+function _fmMancanti() {
+  return _fa.multi.voci.filter(v => v.foto && v.foto.length).map(v => {
+    const N = v.album.pagine.length, ci = new Set(v.foto.map(f => f.pagina));
+    const m = [!ci.has(0) && 'la copertina', !ci.has(N - 1) && 'il retro'].filter(Boolean);
+    return m.length ? v.nome + ': manca ' + m.join(' e ') : '';
+  }).filter(Boolean);
+}
+// che cosa manca per preparare le foto ('' = niente)
+function _fmProblema() {
+  const M = _fa.multi, libere = _fa.sito ? _fa.sito.limite - 2 : 0, tot = M.voci.reduce((a, v) => a + (v.quante || 0), 0);
+  return M.voci.length < 2 ? 'Per preparare le foto: scegli almeno 2 album (passo 1).'
+    : M.voci.some(v => !v.foto || !v.foto.length) ? 'Per preparare le foto: carica le foto delle copie (passo 2).'
+    : !_fa.venditore ? 'Per preparare le foto: scegli l’account (passo 3).'
+    : !_fa.sito ? 'Per preparare le foto: scegli il sito (passo 3).'
+    : !_fa.texture ? 'Per preparare le foto: scegli la texture di sfondo (passo 3).'
+    : M.voci.some(v => !Number.isInteger(v.quante) || v.quante < 0) ? 'Scrivi quante foto per ogni album (passo 3).'
+    : tot > libere ? 'Le foto degli interni sono ' + tot + ': su ' + _fa.sito.nome + ' al massimo ' + libere + '.' : '';
+}
+// il totale scritto sotto i numeri, e «Prepara le foto»: a ogni tasto, senza ridisegnare le caselle (si perderebbe il cursore)
+function _fmTotale() {
+  const el = _fa$('multi-totale'), libere = _fa.sito ? _fa.sito.limite - 2 : 0;
+  const tot = _fa.multi.voci.reduce((a, v) => a + (v.quante || 0), 0);
+  if (el) { el.textContent = 'Totale: ' + tot + ' su ' + libere + '.'; el.style.color = tot > libere ? '#c0392b' : ''; }
+  _fa$('componi').disabled = !!_fmProblema() || !!_fa.inCorso;
+  _faComponiPerche();
+  _faControllaUscite();
+}
+function _fmDisegnaScelte() {
+  const d = _fa.w.document, M = _fa.multi;
+  _fmSalva();
+  // passo 1: per serie, gli album base con le loro copie fotografate; uno per serie, da 2 a 5
+  const albumBox = _fa$('scelta-album'); albumBox.innerHTML = '';
+  const gruppi = _fmCopieDisponibili();
+  if (!gruppi.length) albumBox.textContent = 'Nessun album base con una copia fotografata (linguetta Originali della copia).';
+  gruppi.forEach(g => {
+    const riga = d.createElement('div');
+    riga.style.cssText = 'margin:0 0 10px;';
+    const t = d.createElement('div'); t.className = 'nota'; t.style.margin = '0 0 4px'; t.textContent = g.nome;
+    const sc = d.createElement('div'); sc.className = 'scelte';
+    g.opzioni.forEach(o => {
+      const b = d.createElement('button');
+      const on = M.voci.some(v => v.k === o.k);
+      b.textContent = o.etichetta;
+      if (on) b.className = 'on';
+      b.disabled = !!_fa.inCorso || (!on && !M.voci.some(v => v.serieId === g.id) && M.voci.length >= _FM_MAX_ALBUM);
+      b.onclick = () => _fmScegli(o, g.id);
+      sc.appendChild(b);
+    });
+    riga.append(t, sc);
+    albumBox.appendChild(riga);
+  });
+  // passo 2: il tasto delle copie e una linguetta per album
+  const cf = _fa$('copia-foto');
+  cf.style.display = ''; cf.classList.add('primario');
+  cf.textContent = 'Usa le foto delle copie';
+  cf.disabled = !!_fa.inCorso || !M.voci.length || M.voci.every(v => v.foto && v.foto.length);
+  const schede = _fa$('multi-schede'); schede.innerHTML = '';
+  schede.style.display = M.voci.length ? '' : 'none';
+  M.voci.forEach((v, i) => {
+    const b = d.createElement('button');
+    b.textContent = v.nome + (v.foto && v.foto.length ? ' — ' + v.foto.length + ' foto' : ' — da caricare');
+    if (i === M.attivo) b.className = 'on';
+    b.disabled = !!_fa.inCorso;
+    b.onclick = () => _fmAttiva(i);
+    schede.appendChild(b);
+  });
+  // passo 3: account, sito, texture come per un album solo; il sito vale per tutti, coi posti degli interni
+  const vendBox = _fa$('scelta-venditore'); vendBox.innerHTML = '';
+  _ANN_ACCOUNT.forEach(v => {
+    const b = d.createElement('button');
+    b.textContent = v;
+    if (v === _fa.venditore) b.className = 'on';
+    b.onclick = () => { _fa.venditore = v; if (COLLAGE_TEXTURE_VENDITORE[v]) _fa.texture = COLLAGE_TEXTURE_VENDITORE[v]; _faDisegnaScelte(); };
+    vendBox.appendChild(b);
+  });
+  const sitoBox = _fa$('scelta-sito'); sitoBox.innerHTML = '';
+  _FA_SITI.forEach(s => {
+    const b = d.createElement('button');
+    b.textContent = s.nome + ' (' + s.limite + ' foto: 2 di gruppo e ' + (s.limite - 2) + ' di interni)' + (_fa.venditore ? '' : ' — scegli prima l’account');
+    b.disabled = !_fa.venditore;
+    if (s === _fa.sito) b.className = 'on';
+    b.onclick = () => { if (_fa.sito !== s) { _fa.sito = s; _fmRidividi(); } _faDisegnaScelte(); };
+    sitoBox.appendChild(b);
+  });
+  _fa$('venditore-box').style.display = _fa.sito ? '' : 'none';
+  const texBox = _fa$('scelta-texture'); texBox.innerHTML = '';
+  COLLAGE_TEXTURE.forEach(t => {
+    const b = d.createElement('button');
+    b.style.cssText = 'display:inline-flex;align-items:center;gap:8px;';
+    const mini = d.createElement('span');
+    mini.style.cssText = 'display:inline-block;width:56px;height:24px;border:1px solid #ccc;border-radius:4px;' +
+      (t.file ? 'background:url(\'' + location.origin + t.file + '\') center / cover;' : 'background:#fff;');
+    b.append(t.k === 'nessuna' ? 'Nessuna (sfondo bianco)' : t.it, mini);
+    if (t.k === _fa.texture) b.className = 'on';
+    b.onclick = () => { _fa.texture = t.k; _faDisegnaScelte(); };
+    texBox.appendChild(b);
+  });
+  // quante foto per album, coi numeri di partenza in parti uguali
+  const qb = _fa$('multi-quante'); qb.innerHTML = '';
+  qb.style.display = _fa.sito && M.voci.length ? '' : 'none';
+  if (_fa.sito && M.voci.length) {
+    const h = d.createElement('h2'); h.style.marginTop = '14px'; h.textContent = 'Quante foto per ogni album?';
+    const nota = d.createElement('div'); nota.className = 'nota';
+    nota.textContent = 'Le foto degli interni: al massimo ' + (_fa.sito.limite - 2) + ' su ' + _fa.sito.nome + '. In una foto stanno fino a 4 foto di pagine; le pagine che non ci stanno restano fuori, dalle ultime.';
+    qb.append(h, nota);
+    M.voci.forEach(v => {
+      const l = d.createElement('label');
+      l.style.cssText = 'display:flex;align-items:center;gap:8px;margin:6px 0;';
+      const inp = d.createElement('input');
+      inp.type = 'number'; inp.min = '0'; inp.max = String(_fa.sito.limite - 2); inp.step = '1'; inp.value = String(v.quante);
+      inp.style.cssText = 'width:5rem;font:inherit;padding:4px 6px;border:1px solid #ccc;border-radius:6px;';
+      inp.oninput = () => { v.quante = inp.value === '' ? NaN : Number(inp.value); _fmTotale(); };
+      const n = d.createElement('span'); n.textContent = v.nome;
+      l.append(inp, n);
+      qb.appendChild(l);
+    });
+    const tot = d.createElement('div'); tot.id = 'multi-totale'; tot.className = 'piano';
+    qb.appendChild(tot);
+  }
+  // la riga che dice a che punto si è
+  const manc = _fmMancanti();
+  _fa$('piano').innerHTML = !M.voci.length ? 'Scegli da 2 a ' + _FM_MAX_ALBUM + ' album, uno per serie, ognuno con la sua copia.'
+    : M.voci.length < 2 ? 'Album scelto: <b>' + esc(M.voci[0].nome) + '</b>. Scegline almeno un altro (passo 1).'
+    : (M.voci.length + ' album. ' + (_fa.sito ? 'Su ' + _fa.sito.nome + ': la foto 1 con le copertine, la 2 con i retro, poi le foto degli interni.' : 'Scegli l’account e il sito.'))
+      + (manc.length ? '<br><span style="color:#c0392b">⚠️ ' + esc(manc.join('; ')) + '. Senza, le prime due foto non si fanno: correggi la pagina dal menu della miniatura.</span>' : '');
+  _fmTotale();
+}
+// i gruppi di pagine di un album nelle sue `n` foto: tutte le `P` pagine se ci stanno (fino a 4 per foto), se no le prime
+//    che ci stanno. Prima le pagine da sole, poi le coppie, poi i gruppi da 4; indici da 0 nell'elenco delle pagine presenti
+function _fmGruppi(P, n) {
+  if (!(n > 0) || !(P > 0)) return [];
+  for (let K = Math.min(P, 4 * n); K > 0; K--) {
+    const g = Math.min(n, K), q = Math.floor((K - g) / 3), p = (K - g) % 3, s = g - q - p;
+    if (s < 0) continue;
+    const out = [];
+    let k = 0;
+    for (let i = 0; i < s; i++) out.push([k++]);
+    for (let i = 0; i < p; i++) { out.push([k, k + 1]); k += 2; }
+    for (let i = 0; i < q; i++) { out.push([k, k + 1, k + 2, k + 3]); k += 4; }
+    return out;
+  }
+  return [];
+}
+// la foto di gruppo, a griglia: fino a 3 in una riga, 4 su due righe da 2, 5 su una riga da 3 e una da 2
+function _fmGriglia(tele) {
+  const n = tele.length, col = n <= 3 ? n : n === 4 ? 2 : 3, righe = [];
+  for (let i = 0; i < n; i += col) righe.push(tele.slice(i, i + col));
+  const c = _faImpila(righe.map(r => _faAffianca(r, Math.round(_FA_LATO / righe.length))));
+  const fin = _faRiduci(c, c.width, c.height, _FA_LATO);
+  _faLibera(c);
+  return fin;
+}
+async function _fmComponi() {
+  if (_fa.inCorso || _fmProblema()) return;
+  _fmSalva();
+  const M = _fa.multi, sito = _fa.sito;
+  const manc = _fmMancanti();
+  if (manc.length) { _faAvviso('⚠️ ' + manc.join('; ') + '. Senza, le foto delle copertine e dei retro non si possono fare.', true); return; }
+  _fa.inCorso = true;
+  _fa$('componi').disabled = true;
+  try {
+    _fa.uscite.forEach(u => URL.revokeObjectURL(u.url)); _fa.uscite = []; _fa.saltate = [];
+    _fa.statoUscite = _faStatoScelte();
+    _fa$('scarica').disabled = true;
+    _fa$('risultati').innerHTML = '';
+    const tx = COLLAGE_TEXTURE.find(t => t.k === _fa.texture);
+    _fa.tessuto = null;
+    if (tx && tx.file) {
+      try { _fa.tessuto = await _collageLeggiTexture(tx); }
+      catch (e) { console.error('_fmComponi/texture', e); _faStato('⚠️ Non riesco a leggere il tessuto «' + tx.it + '»: foto su sfondo bianco.'); }
+    }
+    // il piano: [foto di pagine, didascalia] per ogni foto dell'annuncio
+    const piano = [], fuori = [];
+    const perPag = M.voci.map(v => new Map(v.foto.filter(f => f.pagina !== null).map(f => [f.pagina, f])));
+    const ultima = v => v.album.pagine.length - 1;
+    piano.push([M.voci.map((v, i) => perPag[i].get(0)), 'Copertine', 'Copertine: ' + M.voci.map(v => v.nome).join(', ')]);
+    piano.push([M.voci.map((v, i) => perPag[i].get(ultima(v))), 'Retro', 'Retro: ' + M.voci.map(v => v.nome).join(', ')]);
+    M.voci.forEach((v, i) => {
+      const N = v.album.pagine.length;
+      const interne = [...perPag[i].keys()].filter(p => p > 0 && p < N - 1).sort((a, b) => a - b);
+      const gruppi = _fmGruppi(interne.length, v.quante);
+      const usate = gruppi.reduce((a, g) => a + g.length, 0);
+      gruppi.forEach(g => {
+        const pag = g.map(k => interne[k]);
+        piano.push([pag.map(p => perPag[i].get(p)), v.nome + '\n' + pag.map(p => _faNomePagina(p, N, v.album)).join(' + '),
+          v.nome + ': ' + pag.map(p => _faNomePagina(p, N, v.album, true)).join(' + '), true]);
+      });
+      if (usate < interne.length) fuori.push(v.nome + ': ' + (interne.length - usate) + ' (da ' + _faNomePagina(interne[usate], N, v.album) + ')');
+    });
+    _fa.avTot = piano.length;
+    for (const [foto, dida, didaLunga, interni] of piano) {
+      const k = _fa.uscite.length + 1;
+      _faAvanza('Preparo la foto ' + k + ' di ' + piano.length + '…', k - 1, piano.length);
+      _faStato('Preparo la foto ' + k + '…');
+      _fa$('piano2').textContent = '⏳ Preparo la foto ' + k + '…';
+      const ritagli = foto.map(_faRitaglioPronto);
+      const pulite = foto.some(_faPulitaValida);
+      let c = interni ? _faComponiGruppo(ritagli) : _fmGriglia(ritagli);
+      _faLibera(...ritagli.filter(r => r !== c));
+      if (_fa.tessuto) c = _faSulTessuto(c, _fa.tessuto);
+      else if (pulite) { const b = _faTela(c.width, c.height), x = b.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, b.width, b.height); x.drawImage(c, 0, 0); _faLibera(c); c = b; }
+      const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.9));
+      _faLibera(c);
+      if (!blob) throw new Error('il telefono ha finito la memoria per le foto (foto ' + k + '). Chiudi le altre schede del browser e riprova.');
+      _fa.uscite.push({ nome: 'annuncio-' + M.voci.length + '-album-' + sito.chiave + '-' + String(k).padStart(2, '0') + '.jpg', blob, url: URL.createObjectURL(blob), dida, didaLunga });
+    }
+    if (!_fa$('stato').textContent.startsWith('⚠️')) _faStato('');
+    if (_fa.statoUscite !== _faStatoScelte()) { _faInvalida(); return; }
+    _faRisultati();
+    if (fuori.length) _fa$('piano2').innerHTML += '<br>Pagine rimaste fuori: ' + esc(fuori.join('; ')) + '.';
+  } finally {
+    _fa.inCorso = false; _faDisegnaScelte();
+    _fa$('scarica').disabled = !_fa.uscite.length;
+    _fa$('risultati').querySelectorAll('button.togli').forEach(b => { b.disabled = false; });
+    _faAvanza('');
+  }
+}
+
 // ---- le tele ----
 // ⚠️ Le tele e le immagini nascono nella FINESTRA, non nella scheda del sito: quella resta dietro, e il browser rallenta
 //    le schede nascoste. Provato: preparare 20 foto con le tele del sito ci metteva più di un minuto.
@@ -46545,6 +46836,7 @@ function _faTela(w, h) { const c = _fa.w.document.createElement('canvas'); c.wid
 function _faComponiPerche() {
   const el = _fa$('componi-perche');
   if (!el) return;
+  if (_fa.multi) { el.textContent = _fmProblema(); return; }   // v7.349
   el.textContent = !_fa.foto.length ? 'Per preparare le foto: carica prima le foto (passo 2).'
     : !_fa.venditore ? 'Per preparare le foto: scegli l’account (passo 3).'   // v7.338
     : !_fa.sito ? 'Per preparare le foto: scegli il sito (passo 3).'
@@ -46556,6 +46848,12 @@ function _faLibera(...tele) { tele.forEach(c => { if (c && c.getContext) { c.wid
 //    «Prepara le foto» si spegne solo se manca un dato) - la fotografia delle scelte con cui si sono fatte le foto pronte
 // 🔄 v7.310 - al posto della spunta «Pulisci sfondo» (tolta), se ogni foto è pulita: pulirne una dopo cambia le foto pronte
 function _faStatoScelte() {
+  // v7.349 - con più album: gli album con le loro copie, quante foto a testa, e le foto di tutti
+  if (_fa.multi) {
+    _fmSalva();
+    return [_fa.sito && _fa.sito.chiave, _fa.venditore, _fa.texture, ..._fa.multi.voci.map(v => [v.k, v.quante,
+      ...(v.foto || []).map(f => [f.pagina, f.rett.x, f.rett.y, f.rett.w, f.rett.h, f.giri || 0, _faPulitaValida(f) ? 1 : 0].join(','))].join(';'))].join('|');
+  }
   return [_fa.album && _fa.album.id, _fa.sito && _fa.sito.chiave, _fa.venditore, _fa.texture,
     ..._fa.foto.map(f => [f.pagina, f.rett.x, f.rett.y, f.rett.w, f.rett.h, f.giri || 0, _faPulitaValida(f) ? 1 : 0].join(','))].join('|');
 }
@@ -47531,6 +47829,7 @@ function _faComponiGruppo(tele) {
   return _faImpila([_faAffianca(tele.slice(0, 2), _FA_LATO / 2), _faAffianca(tele.slice(2, 4), _FA_LATO / 2)]);
 }
 async function _faComponi() {
+  if (_fa.multi) return _fmComponi();   // v7.349 - l'annuncio con più album
   const a = _fa.album, sito = _fa.sito;
   if (!a || !sito || !_fa.texture || !_fa.venditore) return;   // v7.338: senza account non c'è il piano
   if (_fa.inCorso) return;   // v7.292: con «Pulisci sfondo» dura, e un secondo clic non deve partire
