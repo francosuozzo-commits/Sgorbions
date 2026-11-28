@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.350 - Modificati index.html (versione) e js/app.js. 🗂️ Annuncio con più album, passo 2 (Franco: «perché mi appare
+//          "da caricare"?» … «ok vai»): le foto della copia si scaricano appena si sceglie l'album (`_fmScegli` →
+//          `_fmCaricaSubito`); il tasto «Usa le foto delle copie» non c'è più, torna come «Riprova a scaricare le foto»
+//          solo se uno scaricamento si è fermato; la linguetta dice «scarico…» mentre scarica.
+//          ✨ RIMUOVI SFONDO TOGLIE ANCHE L'OMBRA DELLE SPILLE (Franco: «è possibile migliorare la funzione che rimuove
+//          lo sfondo, andando a rimuovere anche l'ombra degli oggetti fotografati?» … «lo applichi solo a foto di
+//          articoli che sono spille»): `_sfondoTondo` trova il cerchio della spilla sul bordo del modello e toglie
+//          quello che sta fuori. Solo con `tondo` (`_eSpilla`: scheda, eBay, copia, caricamenti in blocco) e solo se
+//          la forma torna. La prima strada, dal colore, mangiava la spilla (retro grigi, fondi scuri): tolta. 🐞 E
+//          `_sfondoRaddrizzaMaschera`: transformers.js 3.4.0 a volte ripassa la sigmoide sulla maschera, fondo a 127
+//          invece di 0 (misurato sulle foto di Franco col modello sul processore): si torna indietro col logit.
 // v7.349 - Modificati index.html (versione) e js/app.js. Collage, «Effetto usato ?» (Franco: «la versione con i graffi
 //          e con i bordi usurati sono troppo esagerate … togliamole»): restano solo Luce disturbata e Ingiallimento
 //          (`COLLAGE_USATO_PARTI`); tolti i due blocchi da `_collageInvecchia`. 🗂️ L'ANNUNCIO CON PIÙ ALBUM (Franco): tasto
@@ -32394,7 +32405,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.349';
+const JS_VERSION = 'v7.350';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -46307,7 +46318,7 @@ function _faApri(parti) {
     $('fa-passo1').textContent = '1. Quali album? (da 2 a ' + _FM_MAX_ALBUM + ', uno per serie, ognuno con una sua copia)';
     $('fa-nota-account').textContent = 'L’account mette già il suo tessuto.';
     $('carica').style.display = 'none'; $('demo').style.display = 'none'; $('copia-riga').style.display = 'none';
-    $('copia-foto').onclick = () => _fmCaricaCopie().catch(err => { _faStato('Errore: ' + err.message); _fmAttiva(_fa.multi.attivo); });
+    $('copia-foto').onclick = () => _fmCaricaSubito();
   }
   _faDisegnaScelte();
   if (_fa.copia && _fa.album) _faFotoDellaCopia().catch(err => _faStato('Errore: ' + err.message));
@@ -46569,6 +46580,11 @@ function _fmScegli(o, serieId) {
   _faInvalida();
   const i = M.voci.indexOf(attiva);
   _fmAttiva(i >= 0 ? i : 0);
+  // v7.350 (Franco: «ok vai») - le foto della copia si scaricano appena si sceglie l'album: niente più «da caricare»
+  if (!gia) _fmCaricaSubito();
+}
+function _fmCaricaSubito() {
+  return _fmCaricaCopie().catch(err => { _faStato('Errore: ' + err.message); _fmAttiva(_fa.multi.attivo); });
 }
 // LE FOTO DELLE COPIE: per ogni album ancora senza foto, quelle della sua linguetta Originali, scaricate intere e riconosciute
 //    come quelle di una copia sola (`_faFotoDellaCopia`)
@@ -46578,6 +46594,7 @@ async function _fmCaricaCopie() {
   const M = _fa.multi;
   // mentre scarica e riconosce, le scelte e le linguette restano spente (`_fmDisegnaScelte` guarda `inCorso`)
   _fa.inCorso = true;
+  _faDisegnaScelte();
   try {
     for (let i = 0; i < M.voci.length; i++) {
       const v = M.voci[i];
@@ -46599,8 +46616,8 @@ async function _fmCaricaCopie() {
     _faStato('');
   } finally {
     _fa.inCorso = false;
+    _fmAttiva(M.attivo);
   }
-  _fmAttiva(M.attivo);
 }
 // copertina e retro che mancano, per album: senza, le prime due foto non si fanno
 function _fmMancanti() {
@@ -46654,16 +46671,18 @@ function _fmDisegnaScelte() {
     riga.append(t, sc);
     albumBox.appendChild(riga);
   });
-  // passo 2: il tasto delle copie e una linguetta per album
+  // passo 2: una linguetta per album; le foto arrivano da sole alla scelta (v7.350), il tasto resta solo per riprovare
+  //    quando uno scaricamento si è fermato
   const cf = _fa$('copia-foto');
-  cf.style.display = ''; cf.classList.add('primario');
-  cf.textContent = 'Usa le foto delle copie';
-  cf.disabled = !!_fa.inCorso || !M.voci.length || M.voci.every(v => v.foto && v.foto.length);
+  const ferme = !_fa.inCorso && M.voci.some(v => !(v.foto && v.foto.length));
+  cf.style.display = ferme ? '' : 'none'; cf.classList.add('primario');
+  cf.textContent = 'Riprova a scaricare le foto';
+  cf.disabled = !!_fa.inCorso;
   const schede = _fa$('multi-schede'); schede.innerHTML = '';
   schede.style.display = M.voci.length ? '' : 'none';
   M.voci.forEach((v, i) => {
     const b = d.createElement('button');
-    b.textContent = v.nome + (v.foto && v.foto.length ? ' — ' + v.foto.length + ' foto' : ' — da caricare');
+    b.textContent = v.nome + (v.foto && v.foto.length ? ' — ' + v.foto.length + ' foto' : _fa.inCorso ? ' — scarico…' : ' — non scaricate');
     if (i === M.attivo) b.className = 'on';
     b.disabled = !!_fa.inCorso;
     b.onclick = () => _fmAttiva(i);
@@ -77324,7 +77343,8 @@ async function _cpFotoScelte(input, campo) {
           di('⏳ ' + (it ? 'Pulisco lo sfondo: ' : 'Cleaning the background: ') + conto);
           blob = await _togliSfondoDaBlob(blob, (pct, fase) => di(fase === 'libreria'
             ? '⏳ ' + (it ? 'Scarico il modello…' : 'Loading the model…')
-            : '⏳ ' + (it ? 'Pulisco lo sfondo: ' : 'Cleaning the background: ') + conto + (pct ? ' — ' + pct + '%' : '')));
+            : '⏳ ' + (it ? 'Pulisco lo sfondo: ' : 'Cleaning the background: ') + conto + (pct ? ' — ' + pct + '%' : '')),
+            false, !!(modal && modal.dataset && modal.dataset.spilla === '1'));
         }
         if (document.getElementById('copia-modal') !== modal) return;
         _cpFotoElenco(campo).push({ blob, anteprima: URL.createObjectURL(blob) });
@@ -77402,6 +77422,8 @@ function _copiaApri(artId, chiave, sola) {
   const ov = document.createElement('div');
   ov.className = 'modal-overlay';
   ov.id = 'copia-modal';
+  // 🆕 v7.350 - la copia di una spilla: «Pulisci lo sfondo» toglie anche l'ombra (`_sfondoTondo`)
+  if (_eSpilla(art)) ov.dataset.spilla = '1';
   const lab = t => '<label class="detail-label" style="display:block;margin:0.7rem 0 0.25rem;">' + t + '</label>';
   const dis = sola ? ' disabled' : '';
   // 🔄 v7.327 (Franco: «la form di una copia … è molto piccola; farla grande quanto la form di dettaglio di un articolo») -
@@ -81798,16 +81820,189 @@ async function _loadRmbgPipe() {
   _rmbgLoading.catch(() => { _rmbgLoading = null; });
   return _rmbgLoading;
 }
+// 🆕 v7.350 (Franco: «è possibile migliorare la funzione che rimuove lo sfondo, andando a rimuovere anche l'ombra degli
+//    oggetti fotografati?» … «via») - L'OMBRA DELLE SPILLE, DALLA FORMA E NON DAL COLORE. RMBG-1.4 tiene spesso l'ombra
+//    attaccata all'oggetto: per lui è soggetto.
+// 🔴 La prima strada guardava il COLORE (il «fondo più scuro», a macchia d'olio) e Franco l'ha bocciata in preview:
+//    «mangia troppo spesso pixel della spilla». Misurato sulle sue foto: il retro di metallo grigio (3.jpeg) e il fondo
+//    viola scuro di un fronte (4.jpeg) SONO, per colore, il piano più scuro; nessuna taratura li separa da un'ombra.
+// ✅ Le spille sono tonde. Il bordo della maschera dal lato illuminato è il cerchio vero della spilla; l'ombra sporge da
+//    una parte sola. Si cerca il cerchio che passa per più punti del bordo (tre punti a caso → un cerchio, 600 volte;
+//    poi i minimi quadrati sui punti che ci stanno) e si toglie solo quello che sta FUORI: dentro non si tocca niente,
+//    quindi la spilla non si può mangiare. 📏 Provato col modello vero sulle quattro foto di Franco: ombra via, spilla
+//    intera, anche il retro grigio e il fronte viola.
+// 📌 SOLO PER LE SPILLE (Franco: «lo applichi solo a foto di articoli che sono spille. tanto tu lo sai che sono
+//    spille, perché gli articoli hanno gli attributi»): lo chiede chi chiama, con `tondo` (`_eSpilla`). E anche lì si
+//    applica solo se la forma torna, altrimenti la foto resta come l'ha data il modello:
+//    · almeno il 35% dei punti del bordo sul cerchio, sparsi su almeno 20 dei 36 spicchi;
+//    · il cerchio pieno di maschera al 97%;
+//    · fuori dal cerchio non più del 60% della sua area.
+// Lavora in posto sui dati RGBA, torna i numeri del cerchio con `esito` ('tondo' o 'non tondo'), o null. È quella che
+// la prova esegue.
+function _sfondoTondo(p, w, h) {
+  const n = w * h;
+  if (n < 100) return null;
+  const den = i => p[i * 4 + 3] > 127;
+  const bx = [], by = [];
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const i = y * w + x;
+    if (!den(i)) continue;
+    if (!den(i - 1) || !den(i + 1) || !den(i - w) || !den(i + w)) { bx.push(x); by.push(y); }
+  }
+  const nb = bx.length;
+  if (nb < 30) return null;
+  const passo = Math.max(1, Math.floor(nb / 3000));
+  const X = [], Y = [];
+  for (let k = 0; k < nb; k += passo) { X.push(bx[k]); Y.push(by[k]); }
+  const N = X.length;
+  // 📌 il «caso» è fisso (sempre la stessa sequenza): la stessa foto dà sempre lo stesso cerchio
+  let seme = 12345;
+  const caso = () => { seme = (seme * 1103515245 + 12345) & 0x7fffffff; return seme / 0x7fffffff; };
+  const minR = Math.min(w, h) * 0.08, maxR = Math.max(w, h) * 0.75;
+  const tolDi = c => Math.max(2, c.r * 0.015);
+  const sulCerchio = (c, q) => Math.abs(Math.hypot(X[q] - c.ux, Y[q] - c.uy) - c.r) < tolDi(c);
+  const quanti = c => { let k = 0; for (let q = 0; q < N; q++) if (sulCerchio(c, q)) k++; return k; };
+  // tre punti a caso fra quelli `usa` → un cerchio; vince quello che passa per più punti `usa`
+  const trova = usa => {
+    const idx = [];
+    for (let q = 0; q < N; q++) if (usa[q]) idx.push(q);
+    const U = idx.length;
+    if (U < 30) return null;
+    let best = null, bestN = 0;
+    for (let it = 0; it < 600; it++) {
+      const a = idx[(caso() * U) | 0], b = idx[(caso() * U) | 0], c = idx[(caso() * U) | 0];
+      const ax = X[a], ay = Y[a], bxx = X[b], byy = Y[b], cx = X[c], cy = Y[c];
+      const d = 2 * (ax * (byy - cy) + bxx * (cy - ay) + cx * (ay - byy));
+      if (Math.abs(d) < 1e-6) continue;
+      const a2 = ax * ax + ay * ay, b2 = bxx * bxx + byy * byy, c2 = cx * cx + cy * cy;
+      const ux = (a2 * (byy - cy) + b2 * (cy - ay) + c2 * (ay - byy)) / d;
+      const uy = (a2 * (cx - bxx) + b2 * (ax - cx) + c2 * (bxx - ax)) / d;
+      const r = Math.hypot(ax - ux, ay - uy);
+      if (r < minR || r > maxR) continue;
+      const cand = { ux, uy, r };
+      let k = 0;
+      for (const q of idx) if (sulCerchio(cand, q)) k++;
+      if (k > bestN) { bestN = k; best = cand; }
+    }
+    return best ? rifinisci(best) : null;
+  };
+  // la rifinitura: minimi quadrati (Kåsa) sui punti che ci stanno, cerchio x² + y² = A·x + B·y + C
+  const rifinisci = best => {
+    let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, sxz = 0, syz = 0, sz = 0, m = 0;
+    for (let q = 0; q < N; q++) {
+      if (!sulCerchio(best, q)) continue;
+      const x = X[q], y = Y[q], z = x * x + y * y;
+      sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y; sxz += x * z; syz += y * z; sz += z; m++;
+    }
+    const M = [[sxx, sxy, sx, sxz], [sxy, syy, sy, syz], [sx, sy, m, sz]];
+    for (let col = 0; col < 3; col++) {
+      let piv = col;
+      for (let r = col + 1; r < 3; r++) if (Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
+      [M[col], M[piv]] = [M[piv], M[col]];
+      if (Math.abs(M[col][col]) < 1e-9) return best;
+      for (let r = 0; r < 3; r++) {
+        if (r === col) continue;
+        const f = M[r][col] / M[col][col];
+        for (let k = col; k < 4; k++) M[r][k] -= f * M[col][k];
+      }
+    }
+    const A = M[0][3] / M[0][0], B = M[1][3] / M[1][1], C = M[2][3] / M[2][2];
+    const ux = A / 2, uy = B / 2, r = Math.sqrt(C + ux * ux + uy * uy);
+    return isFinite(r) && Math.abs(r - best.r) < best.r * 0.1 ? { ux, uy, r } : best;
+  };
+  // 🔴 L'OMBRA È ANCH'ESSA UN CERCHIO, dello stesso raggio, spostato. Se sporge molto, il suo arco sul bordo è lungo quanto
+  //    quello della spilla e può vincere lei: si terrebbe l'ombra e si taglierebbe la spilla (l'ha trovato la prova, con
+  //    un'ombra spostata di 28 punti su un raggio di 90). Quindi si cerca un SECONDO cerchio fra i punti che il primo
+  //    lascia fuori; se è comparabile (almeno metà dei punti, raggio entro il 15%), vince quello che, tagliando, butta via
+  //    la parte più SCURA: fuori dal cerchio della spilla c'è l'ombra, fuori da quello dell'ombra c'è un pezzo di spilla.
+  let primo = trova(new Uint8Array(N).fill(1));
+  if (!primo) return null;
+  {
+    const fuori1 = new Uint8Array(N);
+    for (let q = 0; q < N; q++) fuori1[q] = sulCerchio(primo, q) ? 0 : 1;
+    const secondo = trova(fuori1);
+    if (secondo && quanti(secondo) >= quanti(primo) * 0.5 && Math.abs(secondo.r - primo.r) < primo.r * 0.15
+      && Math.hypot(secondo.ux - primo.ux, secondo.uy - primo.uy) > 3 * tolDi(primo)) {
+      // la luce media dei punti tenuti dal modello che il cerchio butterebbe via
+      const buio = c => {
+        let s = 0, k = 0;
+        for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) {
+          const i = y * w + x;
+          if (!den(i) || Math.hypot(x - c.ux, y - c.uy) <= c.r + tolDi(c)) continue;
+          s += p[i * 4] + p[i * 4 + 1] + p[i * 4 + 2]; k++;
+        }
+        return k ? s / k : 765;
+      };
+      if (buio(secondo) < buio(primo)) primo = secondo;
+    }
+  }
+  const { ux, uy, r } = primo;
+  const tol = tolDi(primo);
+  const spicchi = new Uint8Array(36);
+  let sul = 0;
+  for (let q = 0; q < N; q++) {
+    if (Math.abs(Math.hypot(X[q] - ux, Y[q] - uy) - r) >= tol) continue;
+    sul++;
+    spicchi[(((Math.atan2(Y[q] - uy, X[q] - ux) + Math.PI) / (2 * Math.PI) * 36) | 0) % 36] = 1;
+  }
+  const arco = spicchi.reduce((a, b) => a + b, 0);
+  let cerchio = 0, pieno = 0, fuori = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const d = Math.hypot(x - ux, y - uy), i = y * w + x;
+    if (d < r - tol) { cerchio++; if (den(i)) pieno++; }
+    else if (d > r + tol && den(i)) fuori++;
+  }
+  const info = { ux: Math.round(ux), uy: Math.round(uy), r: Math.round(r), quota: +(sul / N).toFixed(2), arco,
+    pieno: cerchio ? +(pieno / cerchio).toFixed(3) : 0, fuori: cerchio ? +(fuori / cerchio).toFixed(3) : 0 };
+  if (!cerchio || sul / N < 0.35 || arco < 20 || pieno / cerchio < 0.97 || fuori / cerchio > 0.6) { info.esito = 'non tondo'; return info; }
+  // fuori dal cerchio via, con un punto e mezzo di sfumatura sul bordo
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const d = Math.hypot(x - ux, y - uy);
+    if (d <= r - 0.5) continue;
+    const k = (y * w + x) * 4;
+    p[k + 3] = Math.round(p[k + 3] * Math.max(0, Math.min(1, (r + 1 - d) / 1.5)));
+  }
+  info.esito = 'tondo';
+  return info;
+}
+// 📌 Chi è una spilla: la sezione dell'articolo, come in tutto il sito (`f.section`).
+function _eSpilla(f) { return !!f && f.section === 'spille'; }
+// L'articolo della scheda aperta: quello salvato, oppure la bozza di «+ Aggiungi» / «Clona».
+function _sfondoTondoScheda() {
+  return _eSpilla(_currentDetailFigId ? _articoloVivo(_currentDetailFigId) : _bozzaCorrente);
+}
+// 🆕 v7.350 - 🐞 LA MASCHERA SCHIACCIATA. Misurato il 28/11 sulle due foto di Franco (spille), modello sul processore
+//    (wasm, q8 e fp32 uguali): fondo con alpha 127, oggetto 186, e nient'altro. È transformers.js 3.4.0,
+//    `ImageSegmentationPipeline`: «if (item.data.some(x => x < 0 || x > 1)) item.sigmoid_()» — RMBG-1.4 dà già valori
+//    fra 0 e 1, ma basta UN punto che sfori di un'inezia e la sigmoide passa su tutta la maschera una seconda volta:
+//    0 → 0,5 (127), 1 → 0,73 (186). Il fondo restava mezzo trasparente, e il ritaglio (alpha > 10) non tagliava niente.
+// 📌 Si riconosce dal fatto che nessun punto scende sotto 126 né sale sopra 187: una maschera vera ha il fondo a zero.
+//    Si torna indietro con la funzione inversa (il logit), che è esatta: 127 → 0, 186 → 253.
+// Lavora in posto sui dati RGBA, torna true se ha raddrizzato. È quella che la prova esegue.
+function _sfondoRaddrizzaMaschera(p) {
+  let mn = 255, mx = 0;
+  for (let k = 3; k < p.length; k += 4) { const a = p[k]; if (a < mn) mn = a; if (a > mx) mx = a; }
+  if (mn < 126 || mx > 187) return false;
+  const tab = new Uint8Array(256);
+  for (let a = 126; a <= 187; a++) { const q = a / 255; tab[a] = Math.max(0, Math.min(255, Math.round(255 * Math.log(q / (1 - q))))); }
+  for (let k = 3; k < p.length; k += 4) p[k] = tab[p[k]];
+  return true;
+}
 // Interfaccia compatibile col codice esistente: riceve un Blob, torna un Blob PNG con alpha.
 // (Il 2° argomento delle vecchie chiamate — {model, progress} — viene semplicemente ignorato.)
-window._removeBackground = async function(blob) {
+// 🆕 v7.350 - prima di diventare PNG, la foto passa da `_sfondoRaddrizzaMaschera` (sempre) e, se il 2° argomento dice
+//    `tondo: true` (una spilla, `_eSpilla`), da `_sfondoTondo`. Da qui passano tutti i tasti dello sfondo.
+window._removeBackground = async function(blob, opz) {
   const pipe = await _loadRmbgPipe();
   const url = URL.createObjectURL(blob);
   try {
     const out = await pipe(url);            // array di RawImage RGBA con sfondo rimosso
     const raw = out[0];
+    const dati = new Uint8ClampedArray(raw.data);
+    if (_sfondoRaddrizzaMaschera(dati)) console.log('Maschera dello sfondo raddrizzata (doppia sigmoide)');
+    if (opz && opz.tondo) console.log('Ombra della spilla:', _sfondoTondo(dati, raw.width, raw.height));
     const c = document.createElement('canvas'); c.width = raw.width; c.height = raw.height;
-    c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(raw.data), raw.width, raw.height), 0, 0);
+    c.getContext('2d').putImageData(new ImageData(dati, raw.width, raw.height), 0, 0);
     return await new Promise(res => c.toBlob(res, 'image/png'));
   } finally {
     URL.revokeObjectURL(url);
@@ -81852,14 +82047,16 @@ function _riaccendiBottoniSfondo() {
 //    «Crea annuncio album» (Franco: «rimuovendo lo sfondo ad alcune foto, questo ne ha cambiato l'aspect ratio … la
 //    pagina album cambiata di dimensione (meno larga e più alta)»): se il modello si mangiava un bordo della pagina, il
 //    ritaglio della trasparenza la restringeva.
-async function _togliSfondoDaBlob(blob, onPct, intera) {
+// 🆕 v7.350 - `tondo`: la foto è di una spilla, e l'ombra fuori dal cerchio va via (`_sfondoTondo`). Lo decide chi chiama,
+//    che sa di quale articolo è la foto (`_eSpilla`, `_sfondoTondoScheda`).
+async function _togliSfondoDaBlob(blob, onPct, intera, tondo) {
   if (_sfondoInCorso) throw new Error('_SFONDO_OCCUPATO_');
   _sfondoInCorso = true;
   _spegniBottoniSfondo();
-  try { return await _sfondoDalModello(blob, onPct, intera); }
+  try { return await _sfondoDalModello(blob, onPct, intera, tondo); }
   finally { _sfondoInCorso = false; if (!_sfondoFila) _riaccendiBottoniSfondo(); }
 }
-async function _sfondoDalModello(blob, onPct, intera) {
+async function _sfondoDalModello(blob, onPct, intera, tondo) {
   let removeBackground = window._removeBackground;
   if (!removeBackground) {
     if (onPct) onPct(null, 'libreria');
@@ -81872,6 +82069,7 @@ async function _sfondoDalModello(blob, onPct, intera) {
     if (!removeBackground) throw new Error('_LIBRERIA_NON_DISPONIBILE_');
   }
   const resultBlob = await removeBackground(blob, {
+    tondo: !!tondo,
     model: 'isnet', // v5.793 - modello PIENO (meglio sui soggetti chiari a basso contrasto, es. retro bianchi)
     progress: (key, current, total) => { if (onPct && total) onPct(Math.round((current / total) * 100)); }
   });
@@ -81969,7 +82167,7 @@ async function removeBgFromEdit(slot) {
   if (btn) { btn.disabled = true; btn.textContent = currentLang === 'it' ? '\u23F3 Elaborazione...' : '\u23F3 Processing...'; }
   try {
     const blob = await (await fetch(preview.src)).blob();
-    const croppedBlob = await _togliSfondoDaBlob(blob, (pct, fase) => _bottoneSfondoAvanzamento(btn, pct, fase));
+    const croppedBlob = await _togliSfondoDaBlob(blob, (pct, fase) => _bottoneSfondoAvanzamento(btn, pct, fase), false, _sfondoTondoScheda());
     // \uD83D\uDD04 v7.087 - si ASPETTA anche la lettura del risultato, cos\u00EC chi chiama sa quando questa foto \u00E8 finita
     //    (\u00ABRimuovi sfondo da entrambe\u00BB fa il retro solo dopo il fronte).
     await new Promise((fatto, errore) => {
@@ -82141,7 +82339,7 @@ async function removeBgFromEbay() {
   if (btn) { btn.disabled = true; btn.textContent = currentLang === 'it' ? '\u23F3 Elaborazione...' : '\u23F3 Processing...'; }
   try {
     const blob = await (await fetch(preview.src)).blob();
-    const fuori = await _togliSfondoDaBlob(blob, (pct, fase) => _bottoneSfondoAvanzamento(btn, pct, fase));
+    const fuori = await _togliSfondoDaBlob(blob, (pct, fase) => _bottoneSfondoAvanzamento(btn, pct, fase), false, _sfondoTondoScheda());
     editingFeEbayImgFileSave = new File([fuori], 'ebay-sfondo-rimosso.png', { type: 'image/png' });
     const reader = new FileReader();
     reader.onload = e => {
@@ -89666,6 +89864,7 @@ async function startAdminFotoUpload() {
         if (doRemoveBg) {
           fotoLog('🎨 Rimozione sfondo #' + num + '...', 'info');
           blob = await window._removeBackground(blob, {
+            tondo: _eSpilla(fig),
             model: 'isnet',
             progress: (key, cur, tot) => fotoStatus('Sfondo #' + num + ': ' + Math.round((cur/tot)*100) + '%', Math.round((i/files.length)*100))
           });
@@ -89887,6 +90086,7 @@ async function startAdminFotoNoNumberUpload() {
         if (doRemoveBg) {
           fotoNnLog('🎨 Rimozione sfondo "' + name + '"...', 'info');
           blob = await window._removeBackground(blob, {
+            tondo: _eSpilla(fig),
             model: 'isnet',
             progress: (key, cur, tot) => fotoNnStatus('Sfondo "' + name + '": ' + Math.round((cur/tot)*100) + '%', Math.round((i/files.length)*100))
           });
