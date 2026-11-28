@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.353">
+<link rel="stylesheet" href="css/style.css?v=7.354">
 
 
 <style>
@@ -809,6 +809,22 @@ body:not(.wz-ripresa) #inv-linguetta { top: 80px; }
 #br-albero .br-ramo > summary { cursor: pointer; padding: 0.5rem 0.75rem; }
 #br-albero .br-ramo[open] > summary { border-bottom: 1px solid var(--border); }
 .br-ramo-nome { cursor: pointer; font-weight: 700; }
+/* 🆕 v7.354 (Franco: «quella domanda ha un collassatore di default chiuso» … «anche la domanda numero 3 falla con un default
+   collassato chiuso») - `.br-chiuso`, un riquadro che si apre (le tipologie in tutte le serie); `details.br-passo`, una
+   domanda intera che si apre (le versioni), con la freccia a destra del titolo */
+.br-chiuso { border: 1px solid var(--border); border-radius: 10px; margin: 0.2rem 0 0.6rem; background: var(--card2); }
+.br-chiuso > summary { cursor: pointer; padding: 0.5rem 0.75rem; font-weight: 600; }
+.br-chiuso[open] > summary { border-bottom: 1px solid var(--border); }
+.br-chiuso > .br-dentro { padding: 0.6rem 0.75rem; }
+details.br-passo > summary.br-passo-tit { cursor: pointer; list-style: none; margin-bottom: 0; }
+details.br-passo > summary.br-passo-tit::-webkit-details-marker { display: none; }
+details.br-passo > summary.br-passo-tit::after { content: '▾'; margin-left: auto; opacity: 0.7; }
+details.br-passo:not([open]) > summary.br-passo-tit::after { content: '▸'; }
+details.br-passo[open] > summary.br-passo-tit { margin-bottom: 0.7rem; }
+/* 🆕 v7.354 (Franco: «articoli per righe, non mi piace come viene posta occupa troppo spazio») - una pillola per tipologia,
+   col nome e la tendina del numero, tutte di fila */
+.br-col-voce { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.3rem 0.2rem 0.7rem; border: 1px solid var(--border2); border-radius: 999px; background: var(--card2); font-size: 0.88rem; }
+.br-col-voce select { padding: 0.1rem 0.3rem; border-radius: 999px; border: 1px solid var(--border2); background: var(--bg2); color: var(--text); }
 .br-tda { display: flex; flex-wrap: wrap; gap: 0.45rem; padding: 0.6rem 0.75rem; }
 .br-crea-riga { display: flex; align-items: center; justify-content: center; gap: 0.9rem; flex-wrap: wrap; margin: 1.3rem 0 0.4rem; }
 /* 🆕 v7.118 (Franco: «metti una linguetta admin (arancio) a dx, per la funzione di Impersonifica») - LA LINGUETTA A
@@ -7265,7 +7281,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.353"></script>
+<script src="js/app.js?v=7.354"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7289,7 +7305,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.353'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.354'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
