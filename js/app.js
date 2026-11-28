@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.355 - Modificati index.html (versione e lo stile della pagina Brochure) e js/app.js (solo la versione). 📖 Dal telefono
+//          la pagina «Brochure Sgorbions» perde il vuoto sopra il titolo (Franco: «presenta sopra il titolo uno spazio
+//          molto grande e vuoto che non serve a niente»): come la Classifica (v7.025), via i 56px di `.page` e la prima
+//          sezione a 1rem. E prima delle domande la frase «Per crearla segui i passi seguenti :» (Franco), in fondo al
+//          riquadro di presentazione.
 // v7.354 - Modificati index.html (versione) e js/app.js. 📖 Brochure, «Serie e tipologie di articolo»: «Tutto» →
 //          «Seleziona tutto», «Niente» → «Deseleziona tutto» (Franco: «Tutto diventa seleziona tutto, Niente diventa
 //          deseleziona tutto»; EN «Select all» / «Deselect all»). «In tutte le serie:» diventa un riquadro che si apre,
@@ -15,10 +20,10 @@
 //          segue il sito); «Sotto ogni foto» → «Dicitura foto». 🔄 Le righe: con più colonne crescono in proporzione alla
 //          misura del formato (`_brBase`, `_brRighe`), con meno restano quelle di sempre (via `_brPiuUnaColonna`, che da
 //          1 colonna avrebbe raddoppiato le righe dell'album).
-// v7.353 -Modificati index.html (versione) e js/app.js. Console → 📖 Brochure: «Salva» anche dal telefono
+// v7.353 - Modificati index.html (versione) e js/app.js. Console → 📖 Brochure: «Salva» anche dal telefono
 //          (`admin-anche-telefono`, la trentesima eccezione; Franco: «da telefonino non c'è tutto quello che è in console
 //          ma che sta anche fuori, sicuramente ha bisogno di essere salvato»).
-// v7.352 -Modificati index.html (versione; via il riquadro usa e getta) e js/app.js. 📖 Brochure, A4: si parte da un
+// v7.352 - Modificati index.html (versione; via il riquadro usa e getta) e js/app.js. 📖 Brochure, A4: si parte da un
 //          articolo in più per riga (Franco: «vorrei modificare i valori di default per la brochure delle seguenti TDA:
 //          Figurine per album, figurine con retro, trasferelli, carte olografiche, tatuaggi, spille e carte d'identità» …
 //          «rimangono invariati album bustine e altri articoli» … «intendevo dire di aumentare di 1. Ma io mi riferisco
@@ -37,7 +42,7 @@
 //          articoli per riga (solo le tipologie scelte), più di 2 foto, copertina, macchie, «← Indietro» e «Crea brochure».
 //          🗑️ Via il tasto usa e
 //          getta della v7.351 (il retro delle spille): fatto il suo lavoro il 28/11.
-// v7.351 -Modificati index.html (versione e un riquadro in «Foto orfane») e js/app.js. 🧹 VIA IL RETRO DELLE SPILLE
+// v7.351 - Modificati index.html (versione e un riquadro in «Foto orfane») e js/app.js. 🧹 VIA IL RETRO DELLE SPILLE
 //          (Franco: «sulle spille non serve a nulla la foto del retro. programmiamo la eliminazione del retro delle spille e
 //          quindi la cancellazione di tutte le foto gia caricate» … «dammi funzione temporanea usa e getta» … «il retro
 //          sparisce ovunque»). Console → Foto orfane, riquadro USA E GETTA `_spilleRetroDisegna`: un tasto toglie
@@ -32462,7 +32467,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.354';
+const JS_VERSION = 'v7.355';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -71041,7 +71046,9 @@ function renderBrochure() {
       ? '<p>La <strong>Brochure Sgorbions</strong> è una sorta di Inventario stampabile degli Sgorbions: copertina, sommario e, serie per serie, le foto degli articoli.</p>'
         + '<p>Si può creare in due modi:</p><ol><li>con gli articoli dell\'Inventario;</li><li>con gli articoli della <em>Mia lista</em>.</li></ol>'
       : '<p>The <strong>Sgorbions Brochure</strong> is a sort of printable Sgorbions Inventory: cover, contents and, series by series, the photos of the items.</p>'
-        + '<p>It can be created in two ways:</p><ol><li>with the items of the Inventory;</li><li>with the items of <em>My list</em>.</li></ol>') + '</div>'
+        + '<p>It can be created in two ways:</p><ol><li>with the items of the Inventory;</li><li>with the items of <em>My list</em>.</li></ol>')
+      // 🆕 v7.355 (Franco: «Prima delle varie domande metti una frase che dice "Per crearla segui i passi seguenti :"»)
+      + '<p style="margin-top:0.6rem;">' + (it ? 'Per crearla segui i passi seguenti :' : 'To create it, follow these steps:') + '</p></div>'
     + passo(1, it ? 'Cosa vuoi stampare?' : 'What do you want to print?', '<div class="br-modi">'
       + modo('inventario', '📚', it ? 'L\'Inventario' : 'The Inventory', it ? 'Tutti gli articoli del sito' : 'All the items of the site')
       + modo('lista', '💚', it ? 'La <em>Mia lista</em>' : '<em>My list</em>', it ? 'Solo gli articoli segnati nella <em>Mia lista</em>' : 'Only the items marked in <em>My list</em>')
