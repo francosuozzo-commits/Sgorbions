@@ -1,7 +1,21 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.353 - Modificati index.html (versione) e js/app.js. Console → 📖 Brochure: «Salva» anche dal telefono
+// v7.354 - Modificati index.html (versione) e js/app.js. 📖 Brochure, «Serie e tipologie di articolo»: «Tutto» →
+//          «Seleziona tutto», «Niente» → «Deseleziona tutto» (Franco: «Tutto diventa seleziona tutto, Niente diventa
+//          deseleziona tutto»; EN «Select all» / «Deselect all»). «In tutte le serie:» diventa un riquadro che si apre,
+//          chiuso di partenza, «Seleziona le tipologie di articolo», con dentro prima «Si applica a tutte le serie.»
+//          (`.br-chiuso`); la domanda 3, le Versioni, si apre e chiude anche lei, chiusa di partenza, col numero di quelle
+//          scelte nel titolo (`passoChiuso`, `details.br-passo`); quello che si apre resta aperto ai ridisegni (`_brAperto`,
+//          `_br.aperti`). La domanda 7, «Articoli per riga» (Franco: «non mi piace come viene posta occupa troppo spazio»):
+//          una pillola per tipologia col nome e una tendina (`.br-col-voce`), tutte di fila; la nota in una riga.
+//          Poi (Franco): prima delle tipologie la frase «Quanti articoli mettere in ogni riga della pagina, tipologia per
+//          tipologia.»; album e altri articoli partono da UNO per riga, in A4 e A5 (`_BR_UNO_PER_RIGA`), con le righe di
+//          sempre; via la domanda «Lingua» (Franco: «l'utente ha già autenticato con una delle due lingue»: `_br.lingua`
+//          segue il sito); «Sotto ogni foto» → «Dicitura foto». 🔄 Le righe: con più colonne crescono in proporzione alla
+//          misura del formato (`_brBase`, `_brRighe`), con meno restano quelle di sempre (via `_brPiuUnaColonna`, che da
+//          1 colonna avrebbe raddoppiato le righe dell'album).
+// v7.353 -Modificati index.html (versione) e js/app.js. Console → 📖 Brochure: «Salva» anche dal telefono
 //          (`admin-anche-telefono`, la trentesima eccezione; Franco: «da telefonino non c'è tutto quello che è in console
 //          ma che sta anche fuori, sicuramente ha bisogno di essere salvato»).
 // v7.352 -Modificati index.html (versione; via il riquadro usa e getta) e js/app.js. 📖 Brochure, A4: si parte da un
@@ -32448,7 +32462,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.353';
+const JS_VERSION = 'v7.354';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -71017,6 +71031,7 @@ function renderBrochure() {
   _brSerieDaAprire = null;
   if (daSerie && _br.modo !== 'inventario') { _br.modo = 'inventario'; _br.scelte = null; }
   if (daSerie) _br.passo = 1;   // v7.352 - dalla pagina di una serie si parte dalle scelte
+  _br.lingua = currentLang === 'en' ? 'en' : 'it';   // v7.354 - niente più la domanda: la lingua del sito
   const modo = (m, ico, tit, sub) => '<button type="button" class="br-modo' + (_br.modo === m ? ' on' : '') + '" onclick="_brScegliModo(\'' + m + '\')">'
     + '<span class="br-modo-ico">' + ico + '</span><span class="br-modo-tit">' + tit + '</span><span class="br-modo-sub">' + sub + '</span></button>';
   const passo = (n, tit, dentro) => '<div class="br-passo"><div class="br-passo-tit"><span class="br-passo-n">' + n + '</span>' + tit + '</div>' + dentro + '</div>';
@@ -71062,12 +71077,21 @@ function renderBrochure() {
   //    - una casella per tipologia, fuori da #br-albero: accende o spegne quella tipologia in ogni serie che ce l'ha
   const tdaTutte = [];
   albero.forEach(v => v.tda.forEach(t => { if (!tdaTutte.includes(t.k)) tdaTutte.push(t.k); }));
+  // 🔄 v7.354 (Franco: «La etichetta "in tutte le serie" diventa "Seleziona le tipologie di articolo". E quella domanda ha un
+  //    collassatore di default chiuso. E quando si apre prima delle spunte … una frasetta che dice "si applica a tutte le
+  //    serie"») - un riquadro che si apre (`.br-chiuso`), chiuso a ogni disegno
   const perTda = tdaTutte.length > 1 || albero.length > 1
-    ? '<div id="br-per-tda" class="br-scelte" style="align-items:center;margin:0.2rem 0 0.6rem;">'
-      + '<span class="br-quanti">' + (it ? 'In tutte le serie:' : 'In every series:') + '</span>'
+    // 📌 chiuso di partenza; aperto resta aperto quando la pagina si ridisegna (una versione spuntata), `_br.aperti`
+    ? '<details class="br-chiuso" ontoggle="_brAperto(\'perTda\', this.open)"' + (_brAperto('perTda') ? ' open' : '') + '><summary>' + (it ? 'Seleziona le tipologie di articolo' : 'Select the item types') + '</summary>'
+      + '<div class="br-dentro"><div class="br-quanti" style="margin-bottom:0.5rem;">' + (it ? 'Si applica a tutte le serie.' : 'It applies to every series.') + '</div>'
+      + '<div id="br-per-tda" class="br-scelte" style="align-items:center;">'
       + tdaTutte.map(k => '<label class="br-chip"><input type="checkbox" data-br-tutte-k="' + esc(k) + '" onchange="_brSpuntaTdaTutte(this)"> '
-        + esc(_nomeSezioneCard(k, 2)) + '</label>').join('') + '</div>'
+        + esc(_nomeSezioneCard(k, 2)) + '</label>').join('') + '</div></div></details>'
     : '';
+  // 🆕 v7.354 (Franco: «anche la domanda numero 3 falla con un default collassato chiuso») - una domanda intera che si apre:
+  //    il titolo col numero resta in vista, e dice quante ne sono scelte
+  const passoChiuso = (n, chiave, tit, dentro) => '<details class="br-passo" ontoggle="_brAperto(\'' + chiave + '\', this.open)"' + (_brAperto(chiave) ? ' open' : '') + '>'
+    + '<summary class="br-passo-tit"><span class="br-passo-n">' + n + '</span>' + tit + '</summary>' + dentro + '</details>';
   let n = 1;
   // 🆕 v7.352 (Franco: «la maschera sta diventando un po' lunga forse è meglio se prevediamo due maschere con due step dove
   //    nella prima maschera selezioni le serie e le tipologie di Articolo e nella seconda maschera eventuali opzioni legate
@@ -71078,11 +71102,13 @@ function renderBrochure() {
   if ((_br.passo || 1) === 1) {
     box.innerHTML = testa + barraPasso(1, it ? 'cosa mettere nella brochure' : 'what goes in the brochure')
       + passo(++n, it ? 'Serie e tipologie di articolo' : 'Series and item types',
-        '<div class="br-scelte" style="margin-bottom:0.4rem;"><button type="button" class="btn-secondary" onclick="_brTutto(true)">' + (it ? 'Tutto' : 'All') + '</button>'
-        + '<button type="button" class="btn-secondary" onclick="_brTutto(false)">' + (it ? 'Niente' : 'None') + '</button></div>'
+        // 🔄 v7.354 (Franco: «Tutto diventa seleziona tutto, Niente diventa deseleziona tutto»)
+        '<div class="br-scelte" style="margin-bottom:0.4rem;"><button type="button" class="btn-secondary" onclick="_brTutto(true)">' + (it ? 'Seleziona tutto' : 'Select all') + '</button>'
+        + '<button type="button" class="btn-secondary" onclick="_brTutto(false)">' + (it ? 'Deseleziona tutto' : 'Deselect all') + '</button></div>'
         + perTda + '<div id="br-albero">' + rami + '</div>')
       // 🆕 v7.340 (Franco) - le versioni oltre alle basi
-      + passo(++n, it ? 'Versioni (oltre alla versione base)' : 'Versions (besides the base version)',
+      + passoChiuso(++n, 'versioni', (it ? 'Versioni (oltre alla versione base)' : 'Versions (besides the base version)')
+          + (_br.versioni.size ? ' <span class="br-quanti">· ' + _br.versioni.size + (it ? (_br.versioni.size === 1 ? ' scelta' : ' scelte') : ' chosen') + '</span>' : ''),
         '<div class="br-scelte">' + _VERSIONI_VIVE.map(v => '<label class="br-chip"><input type="checkbox" data-br-versione="' + esc(v.chiave) + '"'
           + (_br.versioni.has(v.chiave) ? ' checked' : '') + ' onchange="_brVersione(this)"> ' + esc(it ? v.it : v.en) + '</label>').join('') + '</div>')
       + '<div class="br-crea-riga">'
@@ -71102,13 +71128,19 @@ function renderBrochure() {
       + '<button type="button" class="btn-secondary" onclick="_brPasso(1)">← ' + (it ? 'Modifica le scelte' : 'Change the choices') + '</button></div>'
     + passo(++n, it ? 'Formato' : 'Size', '<div class="br-scelte">' + radio('formato', 'A4', 'A4') + radio('formato', 'A5', 'A5')
       + '<span class="br-quanti" style="align-self:center;">' + (it ? 'verticale' : 'portrait') + '</span></div>')
-    + passo(++n, it ? 'Lingua' : 'Language', '<div class="br-scelte">' + radio('lingua', 'it', 'Italiano') + radio('lingua', 'en', 'English') + '</div>')
-    + passo(++n, it ? 'Sotto ogni foto' : 'Under each photo', '<div class="br-scelte">' + radio('schede', 'nomi', it ? 'Nome e numero' : 'Name and number')
+    // 🗑️ v7.354 (Franco: «La domanda sulla lingua la trovo inutile in quanto l'utente ha già autenticato con una delle due
+    //    lingue quindi toglila») - qui stava «Lingua»: la brochure è nella lingua del sito (`_br.lingua` la segue, sopra)
+    // 🔄 v7.354 (Franco: «La domanda numero 6 chiamala "dicitura foto"») - era «Sotto ogni foto»
+    + passo(++n, it ? 'Dicitura foto' : 'Photo caption', '<div class="br-scelte">' + radio('schede', 'nomi', it ? 'Nome e numero' : 'Name and number')
       + radio('schede', 'card', it ? 'Come la card della griglia' : 'Like the grid card') + '</div>')
     // 🆕 v7.351 (Franco) - quanti articoli per riga, per tipologia: quello di sempre o uno in più (`_brColonneHTML`)
-    + passo(++n, it ? 'Articoli per riga' : 'Items per row', '<div id="br-colonne">' + _brColonneHTML() + '</div>'
-      + '<span class="br-quanti">' + (it ? 'Il primo numero è quello di sempre. Con uno in più le foto sono più piccole, e in una pagina ne stanno di più.'
-        : 'The first number is the usual one. With one more the photos are smaller, and more fit in a page.') + '</span>')
+    // 🔄 v7.354 (Franco: «prima [delle] diverse tipologie di Articolo, metti una frasetta che dice a cosa serve questa opzione»)
+    + passo(++n, it ? 'Articoli per riga' : 'Items per row',
+      '<div class="br-quanti" style="margin-bottom:0.5rem;">' + (it ? 'Quanti articoli mettere in ogni riga della pagina, tipologia per tipologia.'
+        : 'How many items go in each row of the page, item type by item type.') + '</div>'
+      + '<div id="br-colonne">' + _brColonneHTML() + '</div>'
+      + '<div class="br-quanti" style="margin-top:0.4rem;">' + (it ? 'Con uno in più, foto più piccole e più articoli per pagina.'
+        : 'With one more, smaller photos and more items per page.') + '</div>')
     + passo(++n, it ? 'Articoli con più di 2 foto' : 'Items with more than 2 photos', '<div class="br-scelte">' + radio('tutte', 'due', it ? 'Fronte e retro' : 'Front and back')
       + radio('tutte', 'tutte', it ? 'Tutte le foto' : 'All the photos') + '</div>')
     + passo(++n, it ? 'Foto di copertina' : 'Cover photo',
@@ -71176,6 +71208,14 @@ function _brScegliModo(m) {
   if (_br.modo !== m) { _br.modo = m; _br.scelte = null; }
   _br.passo = 1;
   renderBrochure();
+}
+// 🆕 v7.354 - i riquadri che si aprono (le tipologie in tutte le serie, le versioni): chiusi di partenza, e quello che
+//    si è aperto resta aperto quando la pagina si ridisegna. Con un valore lo scrive, senza lo legge.
+function _brAperto(chiave, aperto) {
+  if (!_br) return false;
+  if (!_br.aperti) _br.aperti = {};
+  if (aperto !== undefined) _br.aperti[chiave] = !!aperto;
+  return !!_br.aperti[chiave];
 }
 // 🆕 v7.352 - da un passo all'altro (al 2 solo con almeno una tipologia), e la pagina riparte dall'alto
 function _brPasso(k) {
@@ -71256,29 +71296,42 @@ function _brOpzione(nome, val) {
 //    «Sotto ogni foto» e da quante foto mostra la casella) o uno in più (`_br.piuUno`, l'insieme delle tipologie alzate).
 //    Con una colonna in più crescono anche le righe, nella stessa proporzione: la casella resta della stessa forma, più
 //    piccola, e la pagina ne contiene di più.
-// 🔄 v7.352 - il numero di partenza: quello di `_BR_FORMATI`, più uno per le tipologie `alzate` del formato (A4)
-const _brPiuUnaColonna = ([c, r]) => [c + 1, Math.max(r, Math.floor(r * (c + 1) / c))];
+// 🔄 v7.354 - LE RIGHE. La misura naturale del formato (`_brBase`: colonne × righe di `_BR_FORMATI`) dà la forma della
+//    casella; con PIÙ colonne le righe crescono in proporzione a quella (`_brRighe`: la casella resta della stessa forma,
+//    più piccola), con MENO colonne restano quelle di sempre (una riga per articolo: un album a uno per riga non diventa uno
+//    per pagina). Prima la proporzione si contava dal numero di partenza, e da 1 colonna «uno in più» raddoppiava le righe.
+function _brBase(F, k, doppia, sch) {
+  return sch === 'card' ? F.card : (k === 'figurines' || doppia ? F.coppie : F.nomi);
+}
+const _brRighe = (m0, c, r) => Math.max(r, Math.floor(m0[1] * c / m0[0]));
 // 🆕 v7.352 (Franco: «rendi questi valori di default configurabili. Aggiungi una nuova sezione … nella admin console chiamata
 //    brochure») - il numero di sempre (`_brMisuraDiSempre`, quello del codice) e quello scritto in console → 📖 Brochure
-//    (`_BR_CFG`, da `settings/brochure`: { colonne: { 'A4:nomi:spille': 5, … } }, formato:sotto ogni foto:tipologia).
-//    Con un numero diverso le righe seguono nella stessa proporzione, come per «uno in più».
+//    (`_BR_CFG`, da `settings/brochure`: { colonne: { 'A4:nomi:spille': 5, … } }, formato:dicitura foto:tipologia).
 let _BR_CFG = {};
 function _impostaBrochure(d) {
   _BR_CFG = (d && d.colonne && typeof d.colonne === 'object') ? d.colonne : {};
 }
+// 🆕 v7.354 (Franco: «Cambia il default per gli album ad uno per riga. Stessa cosa per le tipologie di Articolo altri
+//    articoli») - partono da uno per riga, in A4 e in A5, con le righe di sempre (una per articolo, a tutta larghezza)
+const _BR_UNO_PER_RIGA = ['albums', 'extras'];
+// 🔄 v7.352 - il numero di partenza: quello di `_BR_FORMATI`, più uno per le tipologie `alzate` del formato (A4)
 function _brMisuraDiSempre(F, k, doppia, sch) {
-  const m = sch === 'card' ? F.card : (k === 'figurines' || doppia ? F.coppie : F.nomi);
-  return (F.alzate || []).includes(k) ? _brPiuUnaColonna(m) : m;
+  const m0 = _brBase(F, k, doppia, sch);
+  if (_BR_UNO_PER_RIGA.includes(k)) return [1, m0[1]];
+  return (F.alzate || []).includes(k) ? [m0[0] + 1, _brRighe(m0, m0[0] + 1, m0[1])] : m0;
 }
 function _brMisura(F, k, doppia) {
   const sch = _br.schede === 'card' ? 'card' : 'nomi';
-  const m = _brMisuraDiSempre(F, k, doppia, sch);
+  const m0 = _brBase(F, k, doppia, sch), m = _brMisuraDiSempre(F, k, doppia, sch);
   const c = (F.nome && typeof _BR_CFG !== 'undefined') ? Number(_BR_CFG[F.nome + ':' + sch + ':' + k]) : 0;
-  return (c >= 1 && c !== m[0]) ? [c, Math.max(1, Math.floor(m[1] * c / m[0]))] : m;
+  if (!(c >= 1 && c !== m[0])) return m;
+  return [c, c > m[0] ? _brRighe(m0, c, m[1]) : m[1]];
 }
 function _brMisuraTda(F, k, doppia) {
   const m = _brMisura(F, k, doppia);
-  return (_br.piuUno && _br.piuUno.has(k)) ? _brPiuUnaColonna(m) : m;
+  if (!(_br.piuUno && _br.piuUno.has(k))) return m;
+  const m0 = _brBase(F, k, doppia, _br.schede === 'card' ? 'card' : 'nomi');
+  return [m[0] + 1, _brRighe(m0, m[0] + 1, m[1])];
 }
 function _brColonneHTML() {
   const F = _BR_FORMATI[_br.formato] || _BR_FORMATI.A4, tutti = getData('figurines', []);
@@ -71288,13 +71341,15 @@ function _brColonneHTML() {
     if (_br.scelte && !(_br.scelte.get(v.chiave) || new Set()).has(t.k)) continue;
     if (!doppie.get(t.k)) doppie.set(t.k, t.pezzi.some(f => _brFotoDi(f, tutti).length > 1));
   }
-  return [...doppie].map(([k, doppia]) => {
+  // 🔄 v7.354 (Franco: «articoli per righe, non mi piace come viene posta occupa troppo spazio») - non più una riga per
+  //    tipologia con due caselle: una pillola per tipologia (nome e tendina col numero), tutte di fila
+  return '<div class="br-scelte">' + [...doppie].map(([k, doppia]) => {
     const c = _brMisura(F, k, doppia)[0], piu = !!(_br.piuUno && _br.piuUno.has(k));
-    const chip = (p, n) => '<label class="br-chip"><input type="radio" name="br-col-' + esc(k) + '"' + (p === piu ? ' checked' : '')
-      + ' onchange="_brColonnePiu(\'' + esc(k) + '\', ' + p + ')">' + n + '</label>';
-    return '<div class="br-scelte" style="align-items:center;margin-bottom:0.3rem;"><span style="min-width:12rem;">' + esc(_nomeSezioneCard(k, 2)) + '</span>'
-      + chip(false, c) + chip(true, c + 1) + '</div>';
-  }).join('');
+    return '<label class="br-col-voce">' + esc(_nomeSezioneCard(k, 2))
+      + '<select data-br-col="' + esc(k) + '" onchange="_brColonnePiu(\'' + esc(k) + '\', this.value === \'1\')">'
+      + '<option value="0"' + (piu ? '' : ' selected') + '>' + c + '</option>'
+      + '<option value="1"' + (piu ? ' selected' : '') + '>' + (c + 1) + '</option></select></label>';
+  }).join('') + '</div>';
 }
 function _brColonnePiu(k, piu) {
   if (!_br.piuUno) _br.piuUno = new Set();
