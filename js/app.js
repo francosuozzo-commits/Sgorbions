@@ -1,7 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.351 - Modificati index.html (versione e un riquadro in «Foto orfane») e js/app.js. 🧹 VIA IL RETRO DELLE SPILLE
+// v7.352 - Modificati index.html (versione; via il riquadro usa e getta) e js/app.js. 📖 Brochure, A4: si parte da un
+//          articolo in più per riga (Franco: «vorrei modificare i valori di default per la brochure delle seguenti TDA:
+//          Figurine per album, figurine con retro, trasferelli, carte olografiche, tatuaggi, spille e carte d'identità» …
+//          «rimangono invariati album bustine e altri articoli» … «intendevo dire di aumentare di 1. Ma io mi riferisco
+//          al formato A4»): `_BR_FORMATI.A4.alzate` (con anche Carte), letto da `_brMisura` (+1 colonna, righe in
+//          proporzione, `_brPiuUnaColonna`); «uno in più» si conta dal nuovo. A5 e Retro come prima. Con righe diverse
+//          album, bustine e altri articoli non proseguivano più il foglio prima (trovato dalle prove): in `_brPiano` ora
+//          prendono le righe di quel foglio, se ci stanno tutti.
+//          📖 CONSOLE → BROCHURE (Franco: «rendi questi valori di default configurabili. Aggiungi una nuova sezione se non
+//          c'è già nella admin console chiamata brochure»): linguetta dopo Attività utenti, `renderAdminBrochure`, una
+//          riga per tipologia e quattro colonne (A4/A5 × Nome e numero/Come la card); vuota = il numero di sempre in
+//          grigio (`_brMisuraDiSempre`); `settings/brochure` { colonne: {'A4:nomi:spille': 5} } → `_BR_CFG`
+//          (`_impostaBrochure`, nel giro di `_caricaLegendeDefinizioni`), letto da `_brMisura`; righe in proporzione.
+//          📖 LA PAGINA IN DUE PASSI (Franco: «la maschera sta diventando un po' lunga … due maschere con due step …
+//          valido anche da mobile»): `_br.passo`, `_brPasso`; 1 = cosa stampare, serie e tipologie, versioni, «Avanti →»
+//          (spento senza tipologie); 2 = cosa si è scelto con «← Modifica le scelte», formato, lingua, sotto ogni foto,
+//          articoli per riga (solo le tipologie scelte), più di 2 foto, copertina, macchie, «← Indietro» e «Crea brochure».
+//          🗑️ Via il tasto usa e
+//          getta della v7.351 (il retro delle spille): fatto il suo lavoro il 28/11.
+// v7.351 -Modificati index.html (versione e un riquadro in «Foto orfane») e js/app.js. 🧹 VIA IL RETRO DELLE SPILLE
 //          (Franco: «sulle spille non serve a nulla la foto del retro. programmiamo la eliminazione del retro delle spille e
 //          quindi la cancellazione di tutte le foto gia caricate» … «dammi funzione temporanea usa e getta» … «il retro
 //          sparisce ovunque»). Console → Foto orfane, riquadro USA E GETTA `_spilleRetroDisegna`: un tasto toglie
@@ -32426,7 +32445,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.351';
+const JS_VERSION = 'v7.352';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42106,6 +42125,7 @@ async function _caricaLegendeDefinizioni() {
     _impostaCercaVariazioni(docs.find(x => x.id === 'cercaVariazioni'));   // v7.331 - idem
     _impostaNFoto(docs.find(x => x.id === 'nFotoTDA'), docs.find(x => x.id === 'fotoRetroTDA'));   // v7.333 - idem
     _impostaOrdinePersonaggio(docs.find(x => x.id === 'ordinePersonaggio'));   // v7.334 - idem
+    _impostaBrochure(docs.find(x => x.id === 'brochure'));   // v7.352 - idem
   } catch (e) { /* silenzio voluto: senza, la legenda usa i testi del dizionario */ }
 }
 
@@ -70875,8 +70895,12 @@ const _BR_RIGHE_FOTO = 2;   // v7.340: le righe di caselle che prende la foto de
 // per formato: millimetri del foglio, colonne e righe di una pagina (con nome e numero / con la card), righe del sommario,
 //    e `k`, il fattore delle scritte
 const _BR_FORMATI = {
-  A4: { w: 210, h: 297, nomi: [4, 5], coppie: [2, 5], card: [3, 3], righeSommario: 38, k: 1 },
-  A5: { w: 148, h: 210, nomi: [3, 4], coppie: [2, 4], card: [2, 2], righeSommario: 26, k: 0.75 }
+  // 🔄 v7.352 (Franco: «vorrei modificare i valori di default per la brochure delle seguenti TDA … intendevo dire di
+  //    aumentare di 1 … mi riferisco al formato A4»; «rimangono invariati album bustine e altri articoli») - `alzate`: le
+  //    tipologie che in A4 partono da una colonna in più (e righe in proporzione, `_brPiuUnaColonna`)
+  A4: { nome: 'A4', w: 210, h: 297, nomi: [4, 5], coppie: [2, 5], card: [3, 3], righeSommario: 38, k: 1,
+    alzate: ['figurines', 'attaccare', 'carte', 'olografiche', 'spille', 'tatuaggi', 'trasferelli', 'cartoncini'] },
+  A5: { nome: 'A5', w: 148, h: 210, nomi: [3, 4], coppie: [2, 4], card: [2, 2], righeSommario: 26, k: 0.75 }
 };
 // le basi visibili, per serie (o senza serie) e per tipologia
 function _brGruppi() {
@@ -70989,10 +71013,12 @@ function renderBrochure() {
   const daSerie = _brSerieDaAprire;
   _brSerieDaAprire = null;
   if (daSerie && _br.modo !== 'inventario') { _br.modo = 'inventario'; _br.scelte = null; }
+  if (daSerie) _br.passo = 1;   // v7.352 - dalla pagina di una serie si parte dalle scelte
   const modo = (m, ico, tit, sub) => '<button type="button" class="br-modo' + (_br.modo === m ? ' on' : '') + '" onclick="_brScegliModo(\'' + m + '\')">'
     + '<span class="br-modo-ico">' + ico + '</span><span class="br-modo-tit">' + tit + '</span><span class="br-modo-sub">' + sub + '</span></button>';
   const passo = (n, tit, dentro) => '<div class="br-passo"><div class="br-passo-tit"><span class="br-passo-n">' + n + '</span>' + tit + '</div>' + dentro + '</div>';
-  const testa = '<h1 class="titolo-pagina" style="font-family:var(--font-ui);font-size:2.2rem;margin-bottom:0.6rem;">📖 Brochure Sgorbions</h1>'
+  const h1 = '<h1 class="titolo-pagina" style="font-family:var(--font-ui);font-size:2.2rem;margin-bottom:0.6rem;">📖 Brochure Sgorbions</h1>';
+  const testa = h1
     + '<div class="br-intro">' + (it
       ? '<p>La <strong>Brochure Sgorbions</strong> è una sorta di Inventario stampabile degli Sgorbions: copertina, sommario e, serie per serie, le foto degli articoli.</p>'
         + '<p>Si può creare in due modi:</p><ol><li>con gli articoli dell\'Inventario;</li><li>con gli articoli della <em>Mia lista</em>.</li></ol>'
@@ -71040,15 +71066,37 @@ function renderBrochure() {
         + esc(_nomeSezioneCard(k, 2)) + '</label>').join('') + '</div>'
     : '';
   let n = 1;
-  box.innerHTML = testa
-    + passo(++n, it ? 'Serie e tipologie di articolo' : 'Series and item types',
-      '<div class="br-scelte" style="margin-bottom:0.4rem;"><button type="button" class="btn-secondary" onclick="_brTutto(true)">' + (it ? 'Tutto' : 'All') + '</button>'
-      + '<button type="button" class="btn-secondary" onclick="_brTutto(false)">' + (it ? 'Niente' : 'None') + '</button></div>'
-      + perTda + '<div id="br-albero">' + rami + '</div>')
-    // 🆕 v7.340 (Franco) - le versioni oltre alle basi
-    + passo(++n, it ? 'Versioni (oltre alla versione base)' : 'Versions (besides the base version)',
-      '<div class="br-scelte">' + _VERSIONI_VIVE.map(v => '<label class="br-chip"><input type="checkbox" data-br-versione="' + esc(v.chiave) + '"'
-        + (_br.versioni.has(v.chiave) ? ' checked' : '') + ' onchange="_brVersione(this)"> ' + esc(it ? v.it : v.en) + '</label>').join('') + '</div>')
+  // 🆕 v7.352 (Franco: «la maschera sta diventando un po' lunga forse è meglio se prevediamo due maschere con due step dove
+  //    nella prima maschera selezioni le serie e le tipologie di Articolo e nella seconda maschera eventuali opzioni legate
+  //    al PDF … questo ragionamento lo vedo valido anche da mobile») - DUE PASSI (`_br.passo`): 1. cosa stampare, serie e
+  //    tipologie, versioni → «Avanti»; 2. le opzioni del PDF → «Crea brochure» (o «Indietro»). Le scelte stanno in `_br`:
+  //    andare e tornare non perde niente.
+  const barraPasso = (k, testo) => '<div class="br-quanti" style="margin:0 0 0.8rem;font-weight:600;">' + (it ? 'Passo ' + k + ' di 2 · ' : 'Step ' + k + ' of 2 · ') + testo + '</div>';
+  if ((_br.passo || 1) === 1) {
+    box.innerHTML = testa + barraPasso(1, it ? 'cosa mettere nella brochure' : 'what goes in the brochure')
+      + passo(++n, it ? 'Serie e tipologie di articolo' : 'Series and item types',
+        '<div class="br-scelte" style="margin-bottom:0.4rem;"><button type="button" class="btn-secondary" onclick="_brTutto(true)">' + (it ? 'Tutto' : 'All') + '</button>'
+        + '<button type="button" class="btn-secondary" onclick="_brTutto(false)">' + (it ? 'Niente' : 'None') + '</button></div>'
+        + perTda + '<div id="br-albero">' + rami + '</div>')
+      // 🆕 v7.340 (Franco) - le versioni oltre alle basi
+      + passo(++n, it ? 'Versioni (oltre alla versione base)' : 'Versions (besides the base version)',
+        '<div class="br-scelte">' + _VERSIONI_VIVE.map(v => '<label class="br-chip"><input type="checkbox" data-br-versione="' + esc(v.chiave) + '"'
+          + (_br.versioni.has(v.chiave) ? ' checked' : '') + ' onchange="_brVersione(this)"> ' + esc(it ? v.it : v.en) + '</label>').join('') + '</div>')
+      + '<div class="br-crea-riga">'
+        + '<button type="button" class="btn-primary" id="br-avanti" onclick="_brPasso(2)" style="font-size:1.05rem;padding:0.7rem 1.6rem;">' + (it ? 'Avanti →' : 'Next →') + '</button>'
+        + '<span class="br-quanti">' + (it ? 'Poi: formato, lingua e le altre opzioni del PDF.' : 'Then: size, language and the other PDF options.') + '</span></div>';
+    _brAggiornaSerie();
+    return;
+  }
+  // il passo 2: in cima cosa si è scelto, e la strada per tornare
+  const scelteN = [..._br.scelte.values()].reduce((a, s) => a + s.size, 0);
+  const serieN = [..._br.scelte.values()].filter(s => s.size).length;
+  n = 3;
+  box.innerHTML = h1 + barraPasso(2, it ? 'le opzioni del PDF' : 'the PDF options')
+    + '<div class="br-passo" style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">'
+      + '<span>' + (it ? 'Hai scelto <b>' + scelteN + '</b> ' + (scelteN === 1 ? 'tipologia' : 'tipologie') + ' in <b>' + serieN + '</b> ' + (serieN === 1 ? 'gruppo' : 'gruppi')
+        : 'You chose <b>' + scelteN + '</b> item types in <b>' + serieN + '</b> groups') + '.</span>'
+      + '<button type="button" class="btn-secondary" onclick="_brPasso(1)">← ' + (it ? 'Modifica le scelte' : 'Change the choices') + '</button></div>'
     + passo(++n, it ? 'Formato' : 'Size', '<div class="br-scelte">' + radio('formato', 'A4', 'A4') + radio('formato', 'A5', 'A5')
       + '<span class="br-quanti" style="align-self:center;">' + (it ? 'verticale' : 'portrait') + '</span></div>')
     + passo(++n, it ? 'Lingua' : 'Language', '<div class="br-scelte">' + radio('lingua', 'it', 'Italiano') + radio('lingua', 'en', 'English') + '</div>')
@@ -71070,6 +71118,7 @@ function renderBrochure() {
     + (adm ? passo(++n, (it ? 'Macchie sulle foto' : 'Watermark on the photos') + ' <span class="br-quanti">(admin)</span>',
       '<div class="br-scelte">' + radio('macchie', 'con', it ? 'Con le macchie' : 'With watermark') + radio('macchie', 'senza', it ? 'Senza macchie' : 'Without watermark') + '</div>') : '')
     + '<div class="br-crea-riga">'
+      + '<button type="button" class="btn-secondary" onclick="_brPasso(1)">← ' + (it ? 'Torna indietro' : 'Go back') + '</button>'
       + '<button type="button" class="btn-primary" id="br-crea" onclick="_brConferma()" style="font-size:1.05rem;padding:0.7rem 1.6rem;">📖 ' + (it ? 'Crea brochure' : 'Create brochure') + '</button>'
       + '<span id="br-conto" style="font-size:0.9rem;color:var(--text);"></span></div>'
     + '<p class="br-quanti" style="text-align:center;">' + (it ? 'Dall\'anteprima, «Stampa» porta alla stampante o a «Salva come PDF».' : 'From the preview, «Print» goes to the printer or to «Save as PDF».') + '</p>';
@@ -71122,7 +71171,20 @@ async function _brConferma() {
 function _brScegliModo(m) {
   if (!_br) return;
   if (_br.modo !== m) { _br.modo = m; _br.scelte = null; }
+  _br.passo = 1;
   renderBrochure();
+}
+// 🆕 v7.352 - da un passo all'altro (al 2 solo con almeno una tipologia), e la pagina riparte dall'alto
+function _brPasso(k) {
+  if (!_br) return;
+  if (k === 2 && ![...(_br.scelte || new Map()).values()].some(s => s.size)) {
+    toast(currentLang === 'it' ? 'Scegli almeno una tipologia.' : 'Choose at least one item type.', 'info');
+    return;
+  }
+  _br.passo = k;
+  renderBrochure();
+  const box = document.getElementById('brochure-pagina');
+  if (box && box.scrollIntoView) box.scrollIntoView({ block: 'start' });
 }
 // la casella della serie dice lo stato delle sue tipologie: tutte, nessuna, alcune (il trattino)
 function _brAggiornaSerie() {
@@ -71139,6 +71201,9 @@ function _brAggiornaSerie() {
     c.checked = accese > 0 && accese === tutte.length;
     c.indeterminate = accese > 0 && accese < tutte.length;
   });
+  // 🆕 v7.352 - nel passo 1, «Avanti» si accende con almeno una tipologia
+  const avanti = document.getElementById('br-avanti');
+  if (avanti && _br) avanti.disabled = ![...(_br.scelte || new Map()).values()].some(s => s.size);
   const conto = document.getElementById('br-conto');
   if (conto && _br) {
     const it = currentLang === 'it', p = _brPiano();
@@ -71188,18 +71253,36 @@ function _brOpzione(nome, val) {
 //    «Sotto ogni foto» e da quante foto mostra la casella) o uno in più (`_br.piuUno`, l'insieme delle tipologie alzate).
 //    Con una colonna in più crescono anche le righe, nella stessa proporzione: la casella resta della stessa forma, più
 //    piccola, e la pagina ne contiene di più.
+// 🔄 v7.352 - il numero di partenza: quello di `_BR_FORMATI`, più uno per le tipologie `alzate` del formato (A4)
+const _brPiuUnaColonna = ([c, r]) => [c + 1, Math.max(r, Math.floor(r * (c + 1) / c))];
+// 🆕 v7.352 (Franco: «rendi questi valori di default configurabili. Aggiungi una nuova sezione … nella admin console chiamata
+//    brochure») - il numero di sempre (`_brMisuraDiSempre`, quello del codice) e quello scritto in console → 📖 Brochure
+//    (`_BR_CFG`, da `settings/brochure`: { colonne: { 'A4:nomi:spille': 5, … } }, formato:sotto ogni foto:tipologia).
+//    Con un numero diverso le righe seguono nella stessa proporzione, come per «uno in più».
+let _BR_CFG = {};
+function _impostaBrochure(d) {
+  _BR_CFG = (d && d.colonne && typeof d.colonne === 'object') ? d.colonne : {};
+}
+function _brMisuraDiSempre(F, k, doppia, sch) {
+  const m = sch === 'card' ? F.card : (k === 'figurines' || doppia ? F.coppie : F.nomi);
+  return (F.alzate || []).includes(k) ? _brPiuUnaColonna(m) : m;
+}
 function _brMisura(F, k, doppia) {
-  return _br.schede === 'card' ? F.card : (k === 'figurines' || doppia ? F.coppie : F.nomi);
+  const sch = _br.schede === 'card' ? 'card' : 'nomi';
+  const m = _brMisuraDiSempre(F, k, doppia, sch);
+  const c = (F.nome && typeof _BR_CFG !== 'undefined') ? Number(_BR_CFG[F.nome + ':' + sch + ':' + k]) : 0;
+  return (c >= 1 && c !== m[0]) ? [c, Math.max(1, Math.floor(m[1] * c / m[0]))] : m;
 }
 function _brMisuraTda(F, k, doppia) {
-  const [c, r] = _brMisura(F, k, doppia);
-  if (!(_br.piuUno && _br.piuUno.has(k))) return [c, r];
-  return [c + 1, Math.max(r, Math.floor(r * (c + 1) / c))];
+  const m = _brMisura(F, k, doppia);
+  return (_br.piuUno && _br.piuUno.has(k)) ? _brPiuUnaColonna(m) : m;
 }
 function _brColonneHTML() {
   const F = _BR_FORMATI[_br.formato] || _BR_FORMATI.A4, tutti = getData('figurines', []);
   const doppie = new Map();
+  // 🔄 v7.352 - nel passo 2: solo le tipologie scelte nel passo 1
   for (const v of _brAlbero()) for (const t of v.tda) {
+    if (_br.scelte && !(_br.scelte.get(v.chiave) || new Set()).has(t.k)) continue;
     if (!doppie.get(t.k)) doppie.set(t.k, t.pezzi.some(f => _brFotoDi(f, tutti).length > 1));
   }
   return [...doppie].map(([k, doppia]) => {
@@ -71214,6 +71297,61 @@ function _brColonnePiu(k, piu) {
   if (!_br.piuUno) _br.piuUno = new Set();
   if (piu) _br.piuUno.add(k); else _br.piuUno.delete(k);
   _brAggiornaSerie();
+}
+// 🆕 v7.352 (Franco: «rendi questi valori di default configurabili. Aggiungi una nuova sezione se non c'è già nella admin
+//    console chiamata brochure») - CONSOLE → 📖 BROCHURE: una riga per tipologia, quattro colonne (A4 e A5, con «Nome e
+//    numero» e con la card). Vuota = il numero di sempre, scritto in grigio; si salva solo quello che si scrive.
+//    `doppia` come nella brochure: le tipologie le cui caselle mostrano due foto (fronte e retro) partono da meno.
+const _BR_CFG_COLONNE = [['A4', 'nomi'], ['A4', 'card'], ['A5', 'nomi'], ['A5', 'card']];
+function renderAdminBrochure() {
+  const box = document.getElementById('admin-brochure-box');
+  if (!box) return;
+  const it = currentLang === 'it', tutti = getData('figurines', []);
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
+  const st = 'width:4.2em;text-align:center;padding:2px 4px;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;';
+  const nomeCol = ([f, s]) => f + ' · ' + (s === 'card' ? (it ? 'Come la card' : 'Like the card') : (it ? 'Nome e numero' : 'Name and number'));
+  const righe = PRODOTTI_INVENTARIO.filter(sez => ARTICOLI[sez]).map(sez => {
+    const doppia = tutti.some(f => (f.section || 'figurines') === sez && _brFotoDi(f, tutti).length > 1);
+    return '<tr><td style="' + td + '">' + esc(getSectionLabel(sez)) + '</td>'
+      + _BR_CFG_COLONNE.map(([fm, sch]) => {
+        const chiave = fm + ':' + sch + ':' + sez, v = _BR_CFG[chiave];
+        return '<td style="' + td + 'text-align:center;"><input type="number" min="1" max="10" step="1" data-br-cfg="' + esc(chiave) + '"'
+          + ' value="' + (v ? esc(String(v)) : '') + '" placeholder="' + _brMisuraDiSempre(_BR_FORMATI[fm], sez, doppia, sch)[0] + '" style="' + st + '"></td>';
+      }).join('') + '</tr>';
+  }).join('');
+  box.innerHTML = '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">📖 ' + (it ? 'Articoli per riga' : 'Items per row') + '</h4>'
+    + '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;max-width:900px;">' + (it
+      ? 'Quanti articoli per riga ha ogni tipologia quando si apre la brochure. Una casella vuota usa il numero di sempre, scritto in grigio.<br>'
+        + 'Nella brochure resta sempre la scelta con uno in più. Le righe per pagina seguono il numero, nella stessa proporzione: la casella resta della stessa forma.'
+      : 'How many items per row each item type has when the brochure opens. An empty box uses the usual number, in grey.') + '</p>'
+    + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">'
+    + '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>'
+    + _BR_CFG_COLONNE.map(c => '<th style="' + th + 'text-align:center;">' + esc(nomeCol(c)) + '</th>').join('') + '</tr>'
+    + righe + '</table></div>'
+    + '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">'
+    + '<button class="btn-primary btn-admin" onclick="salvaBrochureCfg()">' + (it ? 'Salva' : 'Save') + '</button></div>';
+}
+async function salvaBrochureCfg() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it', colonne = {};
+  let scartati = 0;
+  document.querySelectorAll('#admin-brochure-box input[data-br-cfg]').forEach(x => {
+    const s = String(x.value || '').trim();
+    if (!s) return;
+    const n = Number(s);
+    if (Number.isInteger(n) && n >= 1 && n <= 10) colonne[x.dataset.brCfg] = n; else scartati++;
+  });
+  if (scartati) { toast(it ? '⚠️ Scrivi numeri interi da 1 a 10.' : '⚠️ Whole numbers from 1 to 10.', 'error'); return; }
+  try {
+    await fsSave('settings', { id: 'brochure', colonne });
+    _impostaBrochure({ colonne });
+    toast(it ? '✅ Salvato. Vale da subito per tutti.' : '✅ Saved.', 'success');
+  } catch (e) {
+    console.error('salvaBrochureCfg', e);
+    toast((it ? '⚠️ NON salvato: ' : '⚠️ NOT saved: ') + (e?.message || e), 'error');
+  }
+  renderAdminBrochure();
 }
 // una versione accesa o spenta cambia i conteggi dell'albero: si ridisegna il pannello (le spunte stanno in `_br`); una
 //    tipologia che compare solo adesso (fatta di sole versioni) entra spenta
@@ -71281,7 +71419,13 @@ function _brPiano() {
     const ultimo = fogli[fogli.length - 1];
     const fotoSerie = (!ultimo || ultimo.serie !== s.v.chiave) && s.v.serie && s.v.serie.img ? s.v.serie : null;
     // i fogli della tipologia, a righe (`_brTagli`)
-    const tagli = _brTagli(s.pezzi, s.col, s.righe, allFigs, fotoSerie ? s.righe - _BR_RIGHE_FOTO : s.righe, _br.schede !== 'card');
+    let tagli = _brTagli(s.pezzi, s.col, s.righe, allFigs, fotoSerie ? s.righe - _BR_RIGHE_FOTO : s.righe, _br.schede !== 'card');
+    // 🔄 v7.352 - dalla v7.351 le tipologie possono avere righe diverse (`_brMisuraTda`, e in A4 le alzate): una tipologia che
+    //    prosegue il foglio prima prende le SUE righe, se così ci sta tutta (le colonne restano le sue)
+    if (_BR_ACCODA.includes(s.k) && ultimo && ultimo.serie === s.v.chiave && ultimo.R !== s.righe) {
+      const t2 = _brTagli(s.pezzi, s.col, ultimo.R, allFigs, ultimo.R, _br.schede !== 'card');
+      if (t2.length === 1 && ultimo.R - ultimo.usate >= 1 + t2[0].righe) { s.righe = ultimo.R; tagli = t2; }
+    }
     const servono = tagli.length === 1 ? tagli[0].righe : Infinity;
     if (_BR_ACCODA.includes(s.k) && ultimo && ultimo.serie === s.v.chiave && ultimo.R === s.righe && ultimo.R - ultimo.usate >= 1 + servono) {
       ultimo.blocchi.push({ s, pezzi: s.pezzi, righe: servono, titolo: true });
@@ -71618,6 +71762,8 @@ function adminTab(tab) {
   if (tab === 'doppioni') { const v = _cdVistaEntrando || 'el'; _cdVistaEntrando = null; _cdVista(v); }
   if (tab === 'aggiornamenti') renderAdminAggiornamenti();   // v7.170 (Franco)
   // 🗑️ v7.347 - qui c'era il ramo `brochure`: la brochure è diventata la pagina «📖 Brochure Sgorbions» (`renderBrochure`)
+  // 🆕 v7.352 - e torna, per un'altra cosa: la configurazione (gli articoli per riga di partenza, `renderAdminBrochure`)
+  if (tab === 'brochure') renderAdminBrochure();
   // 🗑️ v7.276 - qui c'era il ramo `fotoannuncio`: «📢 Annunci» è diventato il tab ANNUNCI di «Copie doppie» (`_cdVista('ann')`)
   // 🗑️ v7.267 - qui c'era il ramo `mancoliste`: Set doppi è diventato il secondo tab di «Copie doppie», e quello che
   //    faceva entrando (ordine per Quantità, riapertura del suo tab) lo fa `_cdVista('set')`
@@ -71674,7 +71820,6 @@ async function _orfaniAvviso() {
 async function renderAdminOrfani() {
   const box = document.getElementById('admin-orfani-box');
   if (!box) return;
-  _spilleRetroDisegna();   // 🧹 v7.351, usa e getta: anche se l'elenco della sera non c'è
   const it = currentLang === 'it';
   box.textContent = it ? 'Leggo l’elenco…' : 'Reading the list…';
   let rep;
@@ -71764,50 +71909,8 @@ async function _orfaniChiedi() {
   _orfaniDisegna();
   toast(it ? '✅ Richiesta salvata: ci pensa il PC stasera.' : '✅ Request saved: the PC will handle it this evening.', 'success');
 }
-// 🧹 v7.351 USA E GETTA (Franco: «sulle spille non serve a nulla la foto del retro … il retro sparisce ovunque») - un tasto
-//    toglie la foto del retro da tutte le spille e mette «N. foto» delle Spille a 1. Le foto restano su Cloudinary finché il
-//    PC non le trova orfane (la sera); poi si cancellano dall'elenco qui sotto. Fatto il lavoro, il riquadro non si disegna
-//    più; il codice si toglie alla release dopo. Legge `_cache.figurines` (anche le invisibili).
-function _spilleConRetro() {
-  return (_cache.figurines || getData('figurines', [])).filter(f => _eSpilla(f) && f.imgRetro);
-}
-function _spilleRetroDisegna() {
-  const box = document.getElementById('admin-orfani-spille');
-  if (!box) return;
-  const it = currentLang === 'it', n = _spilleConRetro().length, nf = _nFotoTDA('spille');
-  if (!n && nf === '1') { box.innerHTML = ''; return; }
-  box.innerHTML = '<div style="border:2px dashed var(--warning);border-radius:8px;padding:0.8rem 1rem;margin-bottom:1.2rem;max-width:900px;">'
-    + '<p style="margin:0 0 0.4rem;font-weight:700;">🧹 ' + (it ? 'Una volta sola: via il retro delle spille' : 'One time only: remove the back of the pins') + '</p>'
-    + '<p style="margin:0 0 0.6rem;line-height:1.5;">' + (it
-      ? '<b>' + n + '</b> spille hanno la foto del retro. Il tasto la toglie da tutte e mette «N. foto» delle Spille a 1: il retro sparisce in tutto il sito. Le foto diventano orfane: stasera il PC le mette nell’elenco qui sotto, e da lì si cancellano da Cloudinary.'
-      : '<b>' + n + '</b> pins have a back photo. The button removes it from all of them and sets the Pins «No. of photos» to 1.') + '</p>'
-    + '<button type="button" class="btn-danger" onclick="_spilleRetroVia(this)">' + (it ? 'Togli il retro alle spille' : 'Remove the back of the pins') + ' (' + n + ')</button>'
-    + '</div>';
-}
-async function _spilleRetroVia(btn) {
-  if (!currentUser || !currentUser.isAdmin) return;
-  const it = currentLang === 'it', lista = _spilleConRetro();
-  const ok = await _finestraConferma({
-    titolo: '🧹 ' + (it ? 'Togliere il retro a ' + lista.length + ' spille?' : 'Remove the back of ' + lista.length + ' pins?'),
-    testo: it ? 'La foto del retro si stacca da ogni spilla e «N. foto» delle Spille diventa 1. Le foto restano su Cloudinary finché non le cancelli da «Foto orfane».'
-      : 'The back photo is removed from every pin and the Pins «No. of photos» becomes 1.',
-    ok: it ? 'Togli il retro' : 'Remove', annulla: it ? 'Annulla' : 'Cancel'
-  });
-  if (!ok) return;
-  if (btn) { btn.disabled = true; btn.textContent = it ? 'Salvo…' : 'Saving…'; }
-  try {
-    const intere = lista.filter(f => !f.isSlim).map(f => ({ ...f, imgRetro: null }));
-    if (intere.length) await _salvaFigurineInBlocco(intere);
-    for (const f of lista.filter(f => f.isSlim)) await _saveFigurineItem({ ...f, imgRetro: null });
-    if (_nFotoTDA('spille') !== '1') await salvaNFotoTDA('spille', false, '1');
-    else renderAll();
-    toast(it ? '✅ Retro tolto a ' + lista.length + ' spille.' : '✅ Back removed from ' + lista.length + ' pins.', 'success');
-  } catch (e) {
-    console.error('_spilleRetroVia', e);
-    toast((it ? '⚠️ NON finito: ' : '⚠️ NOT finished: ') + (e?.message || e) + (it ? ' — ripremi il tasto: riparte dalle spille rimaste.' : ''), 'error');
-  }
-  _spilleRetroDisegna();
-}
+// 🗑️ v7.352 - qui stava il riquadro usa e getta «Una volta sola: via il retro delle spille» (v7.351: `_spilleConRetro`,
+//    `_spilleRetroDisegna`, `_spilleRetroVia`): premuto da Franco il 28/11, 105 retro tolti e cancellati da Cloudinary.
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
 // Sono l'unica cosa nel sito che esiste ma non si vede, quindi senza un posto dove guardarli si
 // dimenticano - e un oggetto nascosto e dimenticato e' indistinguibile da un oggetto perso.
