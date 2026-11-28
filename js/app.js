@@ -1,6 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v7.351 - Modificati index.html (versione e un riquadro in «Foto orfane») e js/app.js. 🧹 VIA IL RETRO DELLE SPILLE
+//          (Franco: «sulle spille non serve a nulla la foto del retro. programmiamo la eliminazione del retro delle spille e
+//          quindi la cancellazione di tutte le foto gia caricate» … «dammi funzione temporanea usa e getta» … «il retro
+//          sparisce ovunque»). Console → Foto orfane, riquadro USA E GETTA `_spilleRetroDisegna`: un tasto toglie
+//          `imgRetro` da tutte le spille (`_salvaFigurineInBlocco`, una scrittura per serie) e mette «N. foto» delle
+//          Spille a 1 (`salvaNFotoTDA`), che spegne il retro in tutto il sito. Le foto diventano orfane: le elenca il PC la
+//          sera, e da «Foto orfane» si cancellano da Cloudinary (con la copia di 90 giorni nel cestino del PC). A lavoro
+//          fatto il riquadro sparisce da solo; il codice si toglie alla release dopo.
+//          📖 Brochure, il riepilogo prima di creare (Franco: «la form che fa il recap è troppo verbosa. fai a capo dopo
+//          ogni tda»): una tipologia per riga nella colonna «Tipologie di articolo» (`_finestraConferma`, opzione nuova
+//          `elenchiACapo`: fra i pezzi di una cella un a capo invece del « · »; le altre finestre restano come sono).
+//          🐞 Brochure, le sottoserie (Franco: «non gestisci bene le sottoserie delle spille. stai mischiando le spille» …
+//          «con le holiday non accade eppure ci sono le sottoserie anche lì»): in `_brPiano` prima la sottoserie,
+//          nell'ordine della serie (`_sottoserieUsate`), poi l'ordine della griglia. Le Holiday restavano unite grazie al
+//          numero; le spille, senza numero, andavano per nome e si mischiavano.
+//          📖 Brochure, «ARTICOLI PER RIGA» (Franco: «aggiungi una opzione che determina il numero di articoli per riga …
+//          come default value metti quello che stai usando oggi, sia per a4 che per a5 … mettiamo solo il valore
+//          successivo al default … il parametro è per tda solamente»): un passo nuovo dopo «Sotto ogni foto», una riga per
+//          tipologia col numero di sempre e quello dopo (`_brColonneHTML`, `_br.piuUno`); `_brMisura` (la misura di
+//          prima, da `_BR_FORMATI`) e `_brMisuraTda` (+1 colonna, e le righe crescono nella stessa proporzione).
 // v7.350 - Modificati index.html (versione) e js/app.js. 🗂️ Annuncio con più album, passo 2 (Franco: «perché mi appare
 //          "da caricare"?» … «ok vai»): le foto della copia si scaricano appena si sceglie l'album (`_fmScegli` →
 //          `_fmCaricaSubito`); il tasto «Usa le foto delle copie» non c'è più, torna come «Riprova a scaricare le foto»
@@ -30540,7 +30560,8 @@ function _finestraConferma(opz) {
           // deve poter diventare marcatura. Un `innerHTML` qui sarebbe comodo per due minuti.
           if (Array.isArray(cella)) {
             cella.forEach((p, k) => {
-              if (k) td.appendChild(document.createTextNode(' \u00b7 '));
+              // \ud83c\udd95 v7.351 - `elenchiACapo`: un pezzo per riga invece del \u00ab \u00b7 \u00bb (il riepilogo della brochure, una tipologia per riga)
+              if (k) td.appendChild(o.elenchiACapo ? document.createElement('br') : document.createTextNode(' \u00b7 '));
               const sp = document.createElement('span');
               sp.textContent = p.t;
               if (p.warn) sp.style.cssText = 'color:var(--warn);font-weight:700;';
@@ -32405,7 +32426,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.350';
+const JS_VERSION = 'v7.351';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -70963,7 +70984,7 @@ function renderBrochure() {
   const box = document.getElementById('brochure-pagina');
   if (!box || !currentUser) return;
   const it = currentLang === 'it', adm = !!currentUser.isAdmin;
-  if (!_br) _br = { modo: null, scelte: null, formato: 'A4', lingua: currentLang === 'en' ? 'en' : 'it', schede: 'nomi', foto: null, versioni: new Set(), macchie: 'con', tutte: 'due' };
+  if (!_br) _br = { modo: null, scelte: null, formato: 'A4', lingua: currentLang === 'en' ? 'en' : 'it', schede: 'nomi', foto: null, versioni: new Set(), macchie: 'con', tutte: 'due', piuUno: new Set() };
   // v7.346 - aperta dalla pagina di una serie (`apriBrochureSerie`): l'Inventario, accesa solo lei, tutta, e il suo ramo aperto
   const daSerie = _brSerieDaAprire;
   _brSerieDaAprire = null;
@@ -71033,6 +71054,10 @@ function renderBrochure() {
     + passo(++n, it ? 'Lingua' : 'Language', '<div class="br-scelte">' + radio('lingua', 'it', 'Italiano') + radio('lingua', 'en', 'English') + '</div>')
     + passo(++n, it ? 'Sotto ogni foto' : 'Under each photo', '<div class="br-scelte">' + radio('schede', 'nomi', it ? 'Nome e numero' : 'Name and number')
       + radio('schede', 'card', it ? 'Come la card della griglia' : 'Like the grid card') + '</div>')
+    // 🆕 v7.351 (Franco) - quanti articoli per riga, per tipologia: quello di sempre o uno in più (`_brColonneHTML`)
+    + passo(++n, it ? 'Articoli per riga' : 'Items per row', '<div id="br-colonne">' + _brColonneHTML() + '</div>'
+      + '<span class="br-quanti">' + (it ? 'Il primo numero è quello di sempre. Con uno in più le foto sono più piccole, e in una pagina ne stanno di più.'
+        : 'The first number is the usual one. With one more the photos are smaller, and more fit in a page.') + '</span>')
     + passo(++n, it ? 'Articoli con più di 2 foto' : 'Items with more than 2 photos', '<div class="br-scelte">' + radio('tutte', 'due', it ? 'Fronte e retro' : 'Front and back')
       + radio('tutte', 'tutte', it ? 'Tutte le foto' : 'All the photos') + '</div>')
     + passo(++n, it ? 'Foto di copertina' : 'Cover photo',
@@ -71083,6 +71108,8 @@ async function _brConferma() {
     testo: (it ? 'Ecco cosa conterrà la brochure.' : 'This is what the brochure will contain.'),
     colonne: [it ? 'Serie' : 'Series', it ? 'Tipologie di articolo' : 'Item types'],
     righe: [...perSerie.values()].map(x => [_brNomeGruppo(x.v, it), x.tda]),
+    // 🔄 v7.351 (Franco: «la form che fa il recap è troppo verbosa. fai a capo dopo ogni tda») - una tipologia per riga
+    elenchiACapo: true,
     coda: (it ? 'Pagine: ' : 'Pages: ') + num(p.totale) + ' · ' + (it ? 'foto: circa ' : 'photos: about ') + num(st.foto)
       + ' · ' + (it ? 'peso del PDF: circa ' : 'PDF size: about ') + num(st.mb) + ' MB'
       + (it ? ' (una stima: dipende dalle foto).' : ' (an estimate: it depends on the photos).'),
@@ -71149,7 +71176,45 @@ function _brMetti(x, si) {
   if (si) sc.add(x.dataset.brK); else sc.delete(x.dataset.brK);
   _br.scelte.set(x.dataset.brS, sc);
 }
-function _brOpzione(nome, val) { _br[nome] = val; _brAggiornaSerie(); }
+function _brOpzione(nome, val) {
+  _br[nome] = val;
+  // 🆕 v7.351 - i numeri di «Articoli per riga» dipendono dal formato e da cosa c'è sotto ogni foto
+  if (nome === 'formato' || nome === 'schede') { const c = document.getElementById('br-colonne'); if (c) c.innerHTML = _brColonneHTML(); }
+  _brAggiornaSerie();
+}
+// 🆕 v7.351 (Franco: «aggiungi una opzione che determina il numero di articoli per riga … come default value metti quello
+//    che stai usando oggi, sia per a4 che per a5 … mettiamo solo il valore successivo al default … il parametro è per tda
+//    solamente») - «ARTICOLI PER RIGA», una riga per tipologia: il numero di sempre (`_BR_FORMATI`, che dipende da formato,
+//    «Sotto ogni foto» e da quante foto mostra la casella) o uno in più (`_br.piuUno`, l'insieme delle tipologie alzate).
+//    Con una colonna in più crescono anche le righe, nella stessa proporzione: la casella resta della stessa forma, più
+//    piccola, e la pagina ne contiene di più.
+function _brMisura(F, k, doppia) {
+  return _br.schede === 'card' ? F.card : (k === 'figurines' || doppia ? F.coppie : F.nomi);
+}
+function _brMisuraTda(F, k, doppia) {
+  const [c, r] = _brMisura(F, k, doppia);
+  if (!(_br.piuUno && _br.piuUno.has(k))) return [c, r];
+  return [c + 1, Math.max(r, Math.floor(r * (c + 1) / c))];
+}
+function _brColonneHTML() {
+  const F = _BR_FORMATI[_br.formato] || _BR_FORMATI.A4, tutti = getData('figurines', []);
+  const doppie = new Map();
+  for (const v of _brAlbero()) for (const t of v.tda) {
+    if (!doppie.get(t.k)) doppie.set(t.k, t.pezzi.some(f => _brFotoDi(f, tutti).length > 1));
+  }
+  return [...doppie].map(([k, doppia]) => {
+    const c = _brMisura(F, k, doppia)[0], piu = !!(_br.piuUno && _br.piuUno.has(k));
+    const chip = (p, n) => '<label class="br-chip"><input type="radio" name="br-col-' + esc(k) + '"' + (p === piu ? ' checked' : '')
+      + ' onchange="_brColonnePiu(\'' + esc(k) + '\', ' + p + ')">' + n + '</label>';
+    return '<div class="br-scelte" style="align-items:center;margin-bottom:0.3rem;"><span style="min-width:12rem;">' + esc(_nomeSezioneCard(k, 2)) + '</span>'
+      + chip(false, c) + chip(true, c + 1) + '</div>';
+  }).join('');
+}
+function _brColonnePiu(k, piu) {
+  if (!_br.piuUno) _br.piuUno = new Set();
+  if (piu) _br.piuUno.add(k); else _br.piuUno.delete(k);
+  _brAggiornaSerie();
+}
 // una versione accesa o spenta cambia i conteggi dell'albero: si ridisegna il pannello (le spunte stanno in `_br`); una
 //    tipologia che compare solo adesso (fatta di sole versioni) entra spenta
 function _brVersione(c) {
@@ -71175,8 +71240,9 @@ function _brPiano() {
   // 🆕 v7.340 (Franco: «nelle figurine con retro, serve la foto del retro, affianco al fronte») - con nome e numero le fcr
   //    hanno caselle doppie (fronte e retro), quindi meno per pagina (`coppie`)
   // 🔄 v7.340 - e così le tipologie con più foto (`_brFotoDi`), che ne mostrano almeno due
-  const misura = (k, doppia) => _br.schede === 'card' ? F.card : (k === 'figurines' || doppia ? F.coppie : F.nomi);
-  const [col, righe] = misura('');
+  // 🔄 v7.351 - la misura sta in `_brMisura`, e «Articoli per riga» la può alzare di uno per tipologia (`_brMisuraTda`)
+  const misura = (k, doppia) => _brMisuraTda(F, k, doppia);
+  const [col, righe] = _brMisura(F, '', false);
   const allFigs = getData('figurines', []);
   let _idx = null;
   const tappe = [];   // ⚠️ non `sezioni`: prova-v6646 vieta quella scritta (una vecchia lista a mano)
@@ -71186,7 +71252,18 @@ function _brPiano() {
     for (const t of v.tda) {
       if (!sc.has(t.k)) continue;
       const pezzi = t.pezzi.slice();
-      try { if (!_idx) _idx = _figIndex(allFigs); pezzi.sort(_comparatoreGriglia(t.k, pezzi, _idx, allFigs)); } catch (e) { console.error('_brPiano', e); }
+      // 🐞 v7.351 (Franco: «non gestisci bene le sottoserie delle spille. stai mischiando le spille» … «con le holiday non
+      //    accade eppure ci sono le sottoserie anche lì») - prima le SOTTOSERIE, nell'ordine dichiarato nella serie
+      //    (`_sottoserieUsate`: quello delle card), poi dentro ognuna l'ordine della griglia. Nel sito ogni sottoserie è una
+      //    pagina sua; qui stavano tutte insieme, e il comparatore della griglia non la guarda: con le Holiday il numero le
+      //    teneva unite per caso, le spille (senza numero) andavano per nome e si mischiavano.
+      try {
+        if (!_idx) _idx = _figIndex(allFigs);
+        const cmp = _comparatoreGriglia(t.k, pezzi, _idx, allFigs);
+        const ss = v.serie ? _sottoserieUsate(v.serie, pezzi) : [];
+        const pos = f => { const i = ss.indexOf(String(f.subseries || '').trim()); return i < 0 ? ss.length : i; };
+        pezzi.sort(ss.length > 1 ? (a, b) => (pos(a) - pos(b)) || cmp(a, b) : cmp);
+      } catch (e) { console.error('_brPiano', e); }
       const doppia = pezzi.some(f => _brFotoDi(f, allFigs).length > 1);
       const [c, r] = misura(t.k, doppia);
       tappe.push({ v, k: t.k, pezzi, col: c, righe: r });
@@ -71597,6 +71674,7 @@ async function _orfaniAvviso() {
 async function renderAdminOrfani() {
   const box = document.getElementById('admin-orfani-box');
   if (!box) return;
+  _spilleRetroDisegna();   // 🧹 v7.351, usa e getta: anche se l'elenco della sera non c'è
   const it = currentLang === 'it';
   box.textContent = it ? 'Leggo l’elenco…' : 'Reading the list…';
   let rep;
@@ -71685,6 +71763,50 @@ async function _orfaniChiedi() {
   _orfaniSegnaTab(false);
   _orfaniDisegna();
   toast(it ? '✅ Richiesta salvata: ci pensa il PC stasera.' : '✅ Request saved: the PC will handle it this evening.', 'success');
+}
+// 🧹 v7.351 USA E GETTA (Franco: «sulle spille non serve a nulla la foto del retro … il retro sparisce ovunque») - un tasto
+//    toglie la foto del retro da tutte le spille e mette «N. foto» delle Spille a 1. Le foto restano su Cloudinary finché il
+//    PC non le trova orfane (la sera); poi si cancellano dall'elenco qui sotto. Fatto il lavoro, il riquadro non si disegna
+//    più; il codice si toglie alla release dopo. Legge `_cache.figurines` (anche le invisibili).
+function _spilleConRetro() {
+  return (_cache.figurines || getData('figurines', [])).filter(f => _eSpilla(f) && f.imgRetro);
+}
+function _spilleRetroDisegna() {
+  const box = document.getElementById('admin-orfani-spille');
+  if (!box) return;
+  const it = currentLang === 'it', n = _spilleConRetro().length, nf = _nFotoTDA('spille');
+  if (!n && nf === '1') { box.innerHTML = ''; return; }
+  box.innerHTML = '<div style="border:2px dashed var(--warning);border-radius:8px;padding:0.8rem 1rem;margin-bottom:1.2rem;max-width:900px;">'
+    + '<p style="margin:0 0 0.4rem;font-weight:700;">🧹 ' + (it ? 'Una volta sola: via il retro delle spille' : 'One time only: remove the back of the pins') + '</p>'
+    + '<p style="margin:0 0 0.6rem;line-height:1.5;">' + (it
+      ? '<b>' + n + '</b> spille hanno la foto del retro. Il tasto la toglie da tutte e mette «N. foto» delle Spille a 1: il retro sparisce in tutto il sito. Le foto diventano orfane: stasera il PC le mette nell’elenco qui sotto, e da lì si cancellano da Cloudinary.'
+      : '<b>' + n + '</b> pins have a back photo. The button removes it from all of them and sets the Pins «No. of photos» to 1.') + '</p>'
+    + '<button type="button" class="btn-danger" onclick="_spilleRetroVia(this)">' + (it ? 'Togli il retro alle spille' : 'Remove the back of the pins') + ' (' + n + ')</button>'
+    + '</div>';
+}
+async function _spilleRetroVia(btn) {
+  if (!currentUser || !currentUser.isAdmin) return;
+  const it = currentLang === 'it', lista = _spilleConRetro();
+  const ok = await _finestraConferma({
+    titolo: '🧹 ' + (it ? 'Togliere il retro a ' + lista.length + ' spille?' : 'Remove the back of ' + lista.length + ' pins?'),
+    testo: it ? 'La foto del retro si stacca da ogni spilla e «N. foto» delle Spille diventa 1. Le foto restano su Cloudinary finché non le cancelli da «Foto orfane».'
+      : 'The back photo is removed from every pin and the Pins «No. of photos» becomes 1.',
+    ok: it ? 'Togli il retro' : 'Remove', annulla: it ? 'Annulla' : 'Cancel'
+  });
+  if (!ok) return;
+  if (btn) { btn.disabled = true; btn.textContent = it ? 'Salvo…' : 'Saving…'; }
+  try {
+    const intere = lista.filter(f => !f.isSlim).map(f => ({ ...f, imgRetro: null }));
+    if (intere.length) await _salvaFigurineInBlocco(intere);
+    for (const f of lista.filter(f => f.isSlim)) await _saveFigurineItem({ ...f, imgRetro: null });
+    if (_nFotoTDA('spille') !== '1') await salvaNFotoTDA('spille', false, '1');
+    else renderAll();
+    toast(it ? '✅ Retro tolto a ' + lista.length + ' spille.' : '✅ Back removed from ' + lista.length + ' pins.', 'success');
+  } catch (e) {
+    console.error('_spilleRetroVia', e);
+    toast((it ? '⚠️ NON finito: ' : '⚠️ NOT finished: ') + (e?.message || e) + (it ? ' — ripremi il tasto: riparte dalle spille rimaste.' : ''), 'error');
+  }
+  _spilleRetroDisegna();
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
 // Sono l'unica cosa nel sito che esiste ma non si vede, quindi senza un posto dove guardarli si
