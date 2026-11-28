@@ -1,7 +1,22 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.355 - Modificati index.html (versione e lo stile della pagina Brochure) e js/app.js (solo la versione). 📖 Dal telefono
+// v7.356 - Modificati index.html (versione) e js/app.js. 📖 Brochure, passo 2: «Formato» → «In che formato stampiamo?»,
+//          «Articoli per riga» → «Quanti articoli per riga?» (Franco; EN «Which size do we print?», «How many items per
+//          row?»); «Dicitura foto» → «Cosa scriviamo sotto le foto?»; «Foto di copertina» → «Vuoi mettere una
+//          copertina?» con due scelte, «Logo Sgorbions standard» (la foto dell'hero, come prima senza foto) e «Uso una mia
+//          foto» (`_br.copertina`; il campo del file solo con questa), e via dalla nota la frase del logo. Il riepilogo:
+//          «Riepilogo brochure», una voce per riga (`codaACapo` di `_finestraConferma`), pagine e foto senza «circa» (il
+//          peso resta «circa»: si sa solo a PDF fatto). IL PDF: titolo «BROCHURE SGORBIONS» (era «SGORBIONS», 13mm); se il
+//          sommario sta in metà pagina (`_BR_SOMMARIO_IN_PRIMA`, `P.inPrima` di `_brPiano`) va nella prima pagina, sotto
+//          la copertina rimpicciolita, e niente pagine di sommario a parte. «Stampa / Salva PDF» e «Chiudi» più stretti,
+//          sulla stessa riga anche dal telefono. In testa a ogni pagina, accanto alla serie e con lo stesso carattere,
+//          «Sottoserie» e le sottoserie degli articoli della pagina. LA DIMENSIONE DELLE FOTO (Franco: «bustine … 50% più
+//          grande … album e altri articoli del 100% … una opzione … per ogni TDA … il valore attuale come default»): per
+//          tipologia, in percento, la riga alta quanto lei (`_brDimensione`, `_BR_DIM_DI_SEMPRE` bustine 150, album e altri
+//          articoli 200; in `_brMisuraTda`), configurabile in Console → Brochure (colonna «Dimensione foto», 50-300,
+//          `settings/brochure.dimensioni`). Chi prosegue il foglio prima ne occupa le righe in proporzione (`span`).
+// v7.355 -Modificati index.html (versione e lo stile della pagina Brochure) e js/app.js (solo la versione). 📖 Dal telefono
 //          la pagina «Brochure Sgorbions» perde il vuoto sopra il titolo (Franco: «presenta sopra il titolo uno spazio
 //          molto grande e vuoto che non serve a niente»): come la Classifica (v7.025), via i 56px di `.page` e la prima
 //          sezione a 1rem. E prima delle domande la frase «Per crearla segui i passi seguenti :» (Franco), in fondo al
@@ -30637,6 +30652,8 @@ function _finestraConferma(opz) {
     if (o.coda) {
       const p = document.createElement('p');
       p.style.cssText = 'color:var(--text);font-size:0.86rem;line-height:1.5;margin-bottom:1.1rem;';
+      // 🆕 v7.356 - `codaACapo`: ogni «\n» della coda va a capo (il riepilogo della brochure, una voce per riga)
+      if (o.codaACapo) p.style.whiteSpace = 'pre-line';
       p.textContent = o.coda;
       box.appendChild(p);
     }
@@ -32467,7 +32484,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.355';
+const JS_VERSION = 'v7.356';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -70913,6 +70930,7 @@ let _br = null;   // { scelte: Map(chiave serie -> Set di tipologie), formato, l
 const _BR_SENZA = '__senza__';
 // v7.340 (Franco) - le tipologie che non aprono un foglio nuovo: proseguono il precedente, se ci stanno
 const _BR_ACCODA = ['bustine', 'albums', 'extras'];
+const _BR_SOMMARIO_IN_PRIMA = 0.5;   // v7.356: la parte di pagina che resta al sommario sotto la copertina rimpicciolita
 const _BR_RIGHE_FOTO = 2;   // v7.340: le righe di caselle che prende la foto della serie in cima al suo primo foglio   // la chiave del gruppo «articoli senza serie»
 // per formato: millimetri del foglio, colonne e righe di una pagina (con nome e numero / con la card), righe del sommario,
 //    e `k`, il fattore delle scritte
@@ -71030,7 +71048,7 @@ function renderBrochure() {
   const box = document.getElementById('brochure-pagina');
   if (!box || !currentUser) return;
   const it = currentLang === 'it', adm = !!currentUser.isAdmin;
-  if (!_br) _br = { modo: null, scelte: null, formato: 'A4', lingua: currentLang === 'en' ? 'en' : 'it', schede: 'nomi', foto: null, versioni: new Set(), macchie: 'con', tutte: 'due', piuUno: new Set() };
+  if (!_br) _br = { modo: null, scelte: null, formato: 'A4', lingua: currentLang === 'en' ? 'en' : 'it', schede: 'nomi', foto: null, versioni: new Set(), macchie: 'con', tutte: 'due', piuUno: new Set(), copertina: 'logo' };
   // v7.346 - aperta dalla pagina di una serie (`apriBrochureSerie`): l'Inventario, accesa solo lei, tutta, e il suo ramo aperto
   const daSerie = _brSerieDaAprire;
   _brSerieDaAprire = null;
@@ -71133,16 +71151,19 @@ function renderBrochure() {
       + '<span>' + (it ? 'Hai scelto <b>' + scelteN + '</b> ' + (scelteN === 1 ? 'tipologia' : 'tipologie') + ' in <b>' + serieN + '</b> ' + (serieN === 1 ? 'gruppo' : 'gruppi')
         : 'You chose <b>' + scelteN + '</b> item types in <b>' + serieN + '</b> groups') + '.</span>'
       + '<button type="button" class="btn-secondary" onclick="_brPasso(1)">← ' + (it ? 'Modifica le scelte' : 'Change the choices') + '</button></div>'
-    + passo(++n, it ? 'Formato' : 'Size', '<div class="br-scelte">' + radio('formato', 'A4', 'A4') + radio('formato', 'A5', 'A5')
+    // 🔄 v7.356 (Franco: «La domanda numero 4 diventa "in che formato stampiamo?"») - era «Formato»
+    + passo(++n, it ? 'In che formato stampiamo?' : 'Which size do we print?', '<div class="br-scelte">' + radio('formato', 'A4', 'A4') + radio('formato', 'A5', 'A5')
       + '<span class="br-quanti" style="align-self:center;">' + (it ? 'verticale' : 'portrait') + '</span></div>')
     // 🗑️ v7.354 (Franco: «La domanda sulla lingua la trovo inutile in quanto l'utente ha già autenticato con una delle due
     //    lingue quindi toglila») - qui stava «Lingua»: la brochure è nella lingua del sito (`_br.lingua` la segue, sopra)
     // 🔄 v7.354 (Franco: «La domanda numero 6 chiamala "dicitura foto"») - era «Sotto ogni foto»
-    + passo(++n, it ? 'Dicitura foto' : 'Photo caption', '<div class="br-scelte">' + radio('schede', 'nomi', it ? 'Nome e numero' : 'Name and number')
+    // 🔄 v7.356 (Franco: «La domanda numero 5 diventa "cosa scriviamo sotto le foto?"»)
+    + passo(++n, it ? 'Cosa scriviamo sotto le foto?' : 'What do we write under the photos?', '<div class="br-scelte">' + radio('schede', 'nomi', it ? 'Nome e numero' : 'Name and number')
       + radio('schede', 'card', it ? 'Come la card della griglia' : 'Like the grid card') + '</div>')
     // 🆕 v7.351 (Franco) - quanti articoli per riga, per tipologia: quello di sempre o uno in più (`_brColonneHTML`)
     // 🔄 v7.354 (Franco: «prima [delle] diverse tipologie di Articolo, metti una frasetta che dice a cosa serve questa opzione»)
-    + passo(++n, it ? 'Articoli per riga' : 'Items per row',
+    // 🔄 v7.356 (Franco: «[La] domanda … diventa "Quanti articoli per riga?"») - era «Articoli per riga»
+    + passo(++n, it ? 'Quanti articoli per riga?' : 'How many items per row?',
       '<div class="br-quanti" style="margin-bottom:0.5rem;">' + (it ? 'Quanti articoli mettere in ogni riga della pagina, tipologia per tipologia.'
         : 'How many items go in each row of the page, item type by item type.') + '</div>'
       + '<div id="br-colonne">' + _brColonneHTML() + '</div>'
@@ -71150,11 +71171,18 @@ function renderBrochure() {
         : 'With one more, smaller photos and more items per page.') + '</div>')
     + passo(++n, it ? 'Articoli con più di 2 foto' : 'Items with more than 2 photos', '<div class="br-scelte">' + radio('tutte', 'due', it ? 'Fronte e retro' : 'Front and back')
       + radio('tutte', 'tutte', it ? 'Tutte le foto' : 'All the photos') + '</div>')
-    + passo(++n, it ? 'Foto di copertina' : 'Cover photo',
-      '<div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">'
-      + '<input type="file" id="br-foto-file" accept="image/*" onchange="_brFoto(this)">'
-      + '<img id="br-foto-mini" alt="" style="max-height:60px;' + (_br.foto ? '' : 'display:none;') + '"' + (_br.foto ? ' src="' + _br.foto + '"' : '') + '>'
-      + '<span class="br-quanti">' + (it ? 'Resta sul tuo dispositivo: non si carica sul sito. Senza foto, la copertina usa il logo Sgorbions.' : 'It stays on your device: it is not uploaded. Without a photo, the cover uses the Sgorbions logo.') + '</span></div>')
+    // 🔄 v7.356 (Franco: «La domanda numero 8 diventa "vuoi mettere una copertina?" … due opzioni: la opzione 1 è "logo
+    //    sgorbions standard", la seconda opzione è "uso una mia foto". Quindi nella nota … togli la frase che dice che viene
+    //    usato il logo») - `_br.copertina` ('logo' | 'mia'); il campo del file solo con «Uso una mia foto»
+    + passo(++n, it ? 'Vuoi mettere una copertina?' : 'Do you want a cover?',
+      '<div class="br-scelte">' + radio('copertina', 'logo', it ? 'Logo Sgorbions standard' : 'Standard Sgorbions logo')
+        + radio('copertina', 'mia', it ? 'Uso una mia foto' : 'I use my own photo') + '</div>'
+      + (_br.copertina === 'mia'
+        ? '<div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-top:0.6rem;">'
+          + '<input type="file" id="br-foto-file" accept="image/*" onchange="_brFoto(this)">'
+          + '<img id="br-foto-mini" alt="" style="max-height:60px;' + (_br.foto ? '' : 'display:none;') + '"' + (_br.foto ? ' src="' + _br.foto + '"' : '') + '>'
+          + '<span class="br-quanti">' + (it ? 'Resta sul tuo dispositivo: non si carica sul sito.' : 'It stays on your device: it is not uploaded.') + '</span></div>'
+        : ''))
     // 🆕 v7.340 (Franco: «con macchie / senza macchie; default: con») - solo l'admin (v7.347: «l'utente non deve avere la
     //    possibilità di selezionare l'opzione macchie»)
     + (adm ? passo(++n, (it ? 'Macchie sulle foto' : 'Watermark on the photos') + ' <span class="br-quanti">(admin)</span>',
@@ -71195,15 +71223,20 @@ async function _brConferma() {
   }
   const st = _brStima(p), num = n => n.toLocaleString(it ? 'it-IT' : 'en-GB');
   const ok = await _finestraConferma({
-    titolo: it ? '📖 Riepilogo della brochure' : '📖 Brochure summary',
+    // 🔄 v7.356 (Franco: «La pagina "riepilogo della brochure" chiamala "riepilogo brochure"»)
+    titolo: it ? '📖 Riepilogo brochure' : '📖 Brochure summary',
     testo: (it ? 'Ecco cosa conterrà la brochure.' : 'This is what the brochure will contain.'),
     colonne: [it ? 'Serie' : 'Series', it ? 'Tipologie di articolo' : 'Item types'],
     righe: [...perSerie.values()].map(x => [_brNomeGruppo(x.v, it), x.tda]),
     // 🔄 v7.351 (Franco: «la form che fa il recap è troppo verbosa. fai a capo dopo ogni tda») - una tipologia per riga
     elenchiACapo: true,
-    coda: (it ? 'Pagine: ' : 'Pages: ') + num(p.totale) + ' · ' + (it ? 'foto: circa ' : 'photos: about ') + num(st.foto)
-      + ' · ' + (it ? 'peso del PDF: circa ' : 'PDF size: about ') + num(st.mb) + ' MB'
-      + (it ? ' (una stima: dipende dalle foto).' : ' (an estimate: it depends on the photos).'),
+    // 🔄 v7.356 (Franco: «Quando elenchi le caratteristiche della brochure generata, fallo indicandone una per riga … E
+    //    togli la parola circa … visto che il numero lo sappiamo con esattezza») - una voce per riga; pagine e foto senza
+    //    «circa» (si contano). ⚠️ Il PESO invece resta «circa»: dipende da quanto pesa ogni foto, e si sa solo a PDF fatto
+    codaACapo: true,
+    coda: (it ? 'Pagine: ' : 'Pages: ') + num(p.totale)
+      + '\n' + (it ? 'Foto: ' : 'Photos: ') + num(st.foto)
+      + '\n' + (it ? 'Peso del PDF: circa ' : 'PDF size: about ') + num(st.mb) + ' MB',
     ok: it ? '📖 Crea brochure' : '📖 Create brochure',
     annulla: it ? '← Modifica le scelte' : '← Change the choices',
     blu: true
@@ -71295,6 +71328,8 @@ function _brOpzione(nome, val) {
   _br[nome] = val;
   // 🆕 v7.351 - i numeri di «Articoli per riga» dipendono dal formato e da cosa c'è sotto ogni foto
   if (nome === 'formato' || nome === 'schede') { const c = document.getElementById('br-colonne'); if (c) c.innerHTML = _brColonneHTML(); }
+  // 🆕 v7.356 - «Uso una mia foto» fa comparire il campo del file (e «Logo Sgorbions standard» lo toglie)
+  if (nome === 'copertina') { renderBrochure(); return; }
   _brAggiornaSerie();
 }
 // 🆕 v7.351 (Franco: «aggiungi una opzione che determina il numero di articoli per riga … come default value metti quello
@@ -71315,8 +71350,21 @@ const _brRighe = (m0, c, r) => Math.max(r, Math.floor(m0[1] * c / m0[0]));
 //    brochure») - il numero di sempre (`_brMisuraDiSempre`, quello del codice) e quello scritto in console → 📖 Brochure
 //    (`_BR_CFG`, da `settings/brochure`: { colonne: { 'A4:nomi:spille': 5, … } }, formato:dicitura foto:tipologia).
 let _BR_CFG = {};
+// 🆕 v7.356 (Franco: «Per gli articoli di tipologia bustine, usa una dimensione del 50% più grande … per gli album e gli
+//    altri articoli, del 100% più grande … Aggiungi al pannello di configurazione … una opzione legata alla dimensione delle
+//    fotografie per ogni TDA … il valore attuale come default») - LA DIMENSIONE DELLE FOTO, in percento, per tipologia:
+//    la riga diventa alta quanto la percentuale (le righe per pagina si dividono per lei), gli articoli per riga restano
+//    quelli. Di partenza 100, tranne bustine 150 e album e altri articoli 200; in console → Brochure si cambia
+//    (`settings/brochure` { dimensioni: { bustine: 150 } } → `_BR_DIM`).
+const _BR_DIM_DI_SEMPRE = { bustine: 150, albums: 200, extras: 200 };
+let _BR_DIM = {};
 function _impostaBrochure(d) {
   _BR_CFG = (d && d.colonne && typeof d.colonne === 'object') ? d.colonne : {};
+  _BR_DIM = (d && d.dimensioni && typeof d.dimensioni === 'object') ? d.dimensioni : {};
+}
+function _brDimensione(k) {
+  const v = Number(typeof _BR_DIM !== 'undefined' ? _BR_DIM[k] : 0);
+  return v >= 1 ? v : ((typeof _BR_DIM_DI_SEMPRE !== 'undefined' && _BR_DIM_DI_SEMPRE[k]) || 100);
 }
 // 🆕 v7.354 (Franco: «Cambia il default per gli album ad uno per riga. Stessa cosa per le tipologie di Articolo altri
 //    articoli») - partono da uno per riga, in A4 e in A5, con le righe di sempre (una per articolo, a tutta larghezza)
@@ -71335,10 +71383,14 @@ function _brMisura(F, k, doppia) {
   return [c, c > m[0] ? _brRighe(m0, c, m[1]) : m[1]];
 }
 function _brMisuraTda(F, k, doppia) {
-  const m = _brMisura(F, k, doppia);
-  if (!(_br.piuUno && _br.piuUno.has(k))) return m;
-  const m0 = _brBase(F, k, doppia, _br.schede === 'card' ? 'card' : 'nomi');
-  return [m[0] + 1, _brRighe(m0, m[0] + 1, m[1])];
+  let m = _brMisura(F, k, doppia);
+  if (_br.piuUno && _br.piuUno.has(k)) {
+    const m0 = _brBase(F, k, doppia, _br.schede === 'card' ? 'card' : 'nomi');
+    m = [m[0] + 1, _brRighe(m0, m[0] + 1, m[1])];
+  }
+  // 🆕 v7.356 - la dimensione delle foto: righe alte il suo percento (almeno una riga per pagina)
+  const p = typeof _brDimensione === 'function' ? _brDimensione(k) : 100;
+  return p === 100 ? m : [m[0], Math.max(1, Math.floor(m[1] * 100 / p))];
 }
 function _brColonneHTML() {
   const F = _BR_FORMATI[_br.formato] || _BR_FORMATI.A4, tutti = getData('figurines', []);
@@ -71383,16 +71435,22 @@ function renderAdminBrochure() {
         const chiave = fm + ':' + sch + ':' + sez, v = _BR_CFG[chiave];
         return '<td style="' + td + 'text-align:center;"><input type="number" min="1" max="10" step="1" data-br-cfg="' + esc(chiave) + '"'
           + ' value="' + (v ? esc(String(v)) : '') + '" placeholder="' + _brMisuraDiSempre(_BR_FORMATI[fm], sez, doppia, sch)[0] + '" style="' + st + '"></td>';
-      }).join('') + '</tr>';
+      }).join('')
+      // 🆕 v7.356 - la dimensione delle foto, in percento (vuota = quella di sempre, in grigio)
+      + '<td style="' + td + 'text-align:center;"><input type="number" min="50" max="300" step="10" data-br-dim="' + esc(sez) + '"'
+        + ' value="' + (_BR_DIM[sez] ? esc(String(_BR_DIM[sez])) : '') + '" placeholder="' + ((_BR_DIM_DI_SEMPRE[sez]) || 100) + '" style="' + st + '"> %</td>'
+      + '</tr>';
   }).join('');
   box.innerHTML = '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;color:var(--info);">📖 ' + (it ? 'Articoli per riga' : 'Items per row') + '</h4>'
     + '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;max-width:900px;">' + (it
       ? 'Quanti articoli per riga ha ogni tipologia quando si apre la brochure. Una casella vuota usa il numero di sempre, scritto in grigio.<br>'
-        + 'Nella brochure resta sempre la scelta con uno in più. Le righe per pagina seguono il numero, nella stessa proporzione: la casella resta della stessa forma.'
+        + 'Nella brochure resta sempre la scelta con uno in più. Le righe per pagina seguono il numero, nella stessa proporzione: la casella resta della stessa forma.<br>'
+        + '«Dimensione foto»: quanto è alta la riga, in percento (150 = una volta e mezza). Gli articoli per riga restano quelli, le righe per pagina diminuiscono.'
       : 'How many items per row each item type has when the brochure opens. An empty box uses the usual number, in grey.') + '</p>'
     + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">'
     + '<tr><th style="' + th + '">' + (it ? 'Tipologia di articolo' : 'Item type') + '</th>'
-    + _BR_CFG_COLONNE.map(c => '<th style="' + th + 'text-align:center;">' + esc(nomeCol(c)) + '</th>').join('') + '</tr>'
+    + _BR_CFG_COLONNE.map(c => '<th style="' + th + 'text-align:center;">' + esc(nomeCol(c)) + '</th>').join('')
+    + '<th style="' + th + 'text-align:center;">' + (it ? 'Dimensione foto' : 'Photo size') + '</th></tr>'
     + righe + '</table></div>'
     + '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">'
     // 🔄 v7.353 (Franco: «da telefonino non c'è tutto quello che è in console ma che sta anche fuori, sicuramente ha
@@ -71410,9 +71468,18 @@ async function salvaBrochureCfg() {
     if (Number.isInteger(n) && n >= 1 && n <= 10) colonne[x.dataset.brCfg] = n; else scartati++;
   });
   if (scartati) { toast(it ? '⚠️ Scrivi numeri interi da 1 a 10.' : '⚠️ Whole numbers from 1 to 10.', 'error'); return; }
+  // 🆕 v7.356 - la dimensione delle foto, da 50 a 300
+  const dimensioni = {};
+  document.querySelectorAll('#admin-brochure-box input[data-br-dim]').forEach(x => {
+    const s = String(x.value || '').trim();
+    if (!s) return;
+    const n = Number(s);
+    if (Number.isInteger(n) && n >= 50 && n <= 300) dimensioni[x.dataset.brDim] = n; else scartati++;
+  });
+  if (scartati) { toast(it ? '⚠️ Dimensione foto: numeri interi da 50 a 300.' : '⚠️ Photo size: whole numbers from 50 to 300.', 'error'); return; }
   try {
-    await fsSave('settings', { id: 'brochure', colonne });
-    _impostaBrochure({ colonne });
+    await fsSave('settings', { id: 'brochure', colonne, dimensioni });
+    _impostaBrochure({ colonne, dimensioni });
     toast(it ? '✅ Salvato. Vale da subito per tutti.' : '✅ Saved.', 'success');
   } catch (e) {
     console.error('salvaBrochureCfg', e);
@@ -71475,7 +71542,11 @@ function _brPiano() {
     }
   }
   const righeSommario = tappe.length + new Set(tappe.map(s => s.v.chiave)).size;
-  const pagSommario = Math.max(1, Math.ceil(righeSommario / F.righeSommario));
+  // 🆕 v7.356 (Franco: «quando il sommario sei sicuro che ci sta tutto nella prima pagina, allora mettilo nella prima
+  //    pagina») - sotto la copertina rimpicciolita resta circa metà pagina: ci sta se le righe sono al più `_BR_SOMMARIO_IN_PRIMA`
+  //    di quelle di una pagina intera (A4 19 su 38, A5 13 su 26). Allora niente pagine di sommario a parte.
+  const inPrima = righeSommario <= Math.floor(F.righeSommario * _BR_SOMMARIO_IN_PRIMA);
+  const pagSommario = inPrima ? 0 : Math.max(1, Math.ceil(righeSommario / F.righeSommario));
   // 🔄 v7.340 (Franco: «per le tda bustine, album, e altri articoli, non iniziare da una pagina vuota; prosegui la
   //    precedente») - I FOGLI. Un foglio ha `R` righe di caselle; una tipologia di `_BR_ACCODA` entra nelle righe libere del
   //    foglio prima (stessa serie, stesse righe), col suo titolo che vale una riga, se ci sta tutta; se no apre un foglio suo.
@@ -71486,17 +71557,16 @@ function _brPiano() {
     const ultimo = fogli[fogli.length - 1];
     const fotoSerie = (!ultimo || ultimo.serie !== s.v.chiave) && s.v.serie && s.v.serie.img ? s.v.serie : null;
     // i fogli della tipologia, a righe (`_brTagli`)
-    let tagli = _brTagli(s.pezzi, s.col, s.righe, allFigs, fotoSerie ? s.righe - _BR_RIGHE_FOTO : s.righe, _br.schede !== 'card');
-    // 🔄 v7.352 - dalla v7.351 le tipologie possono avere righe diverse (`_brMisuraTda`, e in A4 le alzate): una tipologia che
-    //    prosegue il foglio prima prende le SUE righe, se così ci sta tutta (le colonne restano le sue)
-    if (_BR_ACCODA.includes(s.k) && ultimo && ultimo.serie === s.v.chiave && ultimo.R !== s.righe) {
-      const t2 = _brTagli(s.pezzi, s.col, ultimo.R, allFigs, ultimo.R, _br.schede !== 'card');
-      if (t2.length === 1 && ultimo.R - ultimo.usate >= 1 + t2[0].righe) { s.righe = ultimo.R; tagli = t2; }
-    }
+    const tagli = _brTagli(s.pezzi, s.col, s.righe, allFigs, fotoSerie ? s.righe - _BR_RIGHE_FOTO : s.righe, _br.schede !== 'card');
     const servono = tagli.length === 1 ? tagli[0].righe : Infinity;
-    if (_BR_ACCODA.includes(s.k) && ultimo && ultimo.serie === s.v.chiave && ultimo.R === s.righe && ultimo.R - ultimo.usate >= 1 + servono) {
-      ultimo.blocchi.push({ s, pezzi: s.pezzi, righe: servono, titolo: true });
-      ultimo.usate += 1 + servono;
+    // 🔄 v7.356 - le tipologie possono avere righe di altezza diversa (articoli per riga, dimensione delle foto): una che
+    //    prosegue il foglio prima occupa le righe del FOGLIO in proporzione alle sue (`span`: le sue righe × R del foglio ÷
+    //    le sue R), e dentro tiene le sue righe e le sue colonne. Prima (v7.352) prendeva le righe del foglio, e un album
+    //    ingrandito sarebbe tornato piccolo.
+    const span = servono === Infinity ? Infinity : (ultimo && ultimo.R !== s.righe ? Math.ceil(servono * ultimo.R / s.righe) : servono);
+    if (_BR_ACCODA.includes(s.k) && ultimo && ultimo.serie === s.v.chiave && ultimo.R - ultimo.usate >= 1 + span) {
+      ultimo.blocchi.push({ s, pezzi: s.pezzi, righe: servono, span, titolo: true });
+      ultimo.usate += 1 + span;
       s.da = ultimo.n;
       continue;
     }
@@ -71507,7 +71577,7 @@ function _brPiano() {
       fogli.push({ n, serie: s.v.chiave, R: s.righe, usate: tg.righe + (foto ? _BR_RIGHE_FOTO : 0), fotoSerie: foto, blocchi: [{ s, pezzi: tg.pezzi, righe: tg.righe, segue: i > 0 }] });
     });
   }
-  return { F, col, righe, sezioni: tappe, fogli, pagSommario, totale: 1 + pagSommario + fogli.length };
+  return { F, col, righe, sezioni: tappe, fogli, pagSommario, inPrima, totale: 1 + pagSommario + fogli.length };
 }
 
 function _brApri() {
@@ -71634,12 +71704,8 @@ function _brHTML(P) {
   // 1 - la copertina
   // 🔄 v7.344 (Franco: «come foto per la copertina, se non viene fornita una foto, usa la Hero della home») - l'indirizzo è
   //    lo stesso dell'hero, letto dalla pagina: nessuna trasformazione Cloudinary nuova
-  const fotoCop = _br.foto || _brFotoHero();
-  pagine.push('<section class="br-pag br-copertina"><div class="br-titolo">SGORBIONS</div>'
-    + (fotoCop ? '<div class="br-cop-foto"><img src="' + esc(fotoCop) + '" alt=""></div>' : '')
-    // 🆕 v7.347 (Franco: «nella prima pagina sotto al Hero scrivi il nome del sito web, e metti anche la solita frase che
-    //    abbiamo nella home») - l'indirizzo e la frase della home (`hero.tagline`), nella lingua della brochure
-    + '<div class="br-cop-piede"><div class="br-cop-sito">figurinesgorbions.it</div><div class="br-cop-frase">' + esc(t('hero.tagline')) + '</div></div></section>');
+  // 🔄 v7.356 - «Uso una mia foto» con la foto scelta; se no il logo standard (la foto dell'hero, v7.344)
+  const fotoCop = (_br.copertina === 'mia' && _br.foto) || _brFotoHero();
   // 2 - il sommario: la serie col numero della sua prima pagina, sotto le sue tipologie
   const righe = [];
   let ultima = null;
@@ -71647,11 +71713,29 @@ function _brHTML(P) {
     if (s.v.chiave !== ultima) { ultima = s.v.chiave; righe.push({ serie: true, nome: _brNomeGruppo(s.v, it), p: s.da }); }
     righe.push({ serie: false, nome: _nomeSezioneCard(s.k, 2), p: s.da });
   });
+  const rigaSom = r => '<div class="br-som-riga' + (r.serie ? ' br-som-serie' : '') + '"><span>' + esc(r.nome) + '</span><span class="br-punti"></span><span>' + r.p + '</span></div>';
+  // 🔄 v7.356 (Franco: «Il titolo all'interno del documento … "BROCHURE SGORBIONS"») - era «SGORBIONS»
+  // 🔄 v7.356 (Franco: «Nel pdf generato stiamo usando una pagina per il solo logo. Io invece farei cominciare il tutto
+  //    all'inizio della prima pagina di modo che il sommario per le esportazioni semplici riesci a metterlo nella prima
+  //    pagina … quando il sommario sei sicuro che ci sta tutto nella prima pagina, allora mettilo nella prima pagina») -
+  //    `P.inPrima` (deciso da `_brPiano`): la copertina in cima alla prima pagina, più piccola, e sotto il sommario intero.
+  //    Se non ci sta, come prima: la copertina da sola, poi le pagine del sommario.
+  const testaCop = '<div class="br-titolo">BROCHURE SGORBIONS</div>'
+    + (fotoCop ? '<div class="br-cop-foto"><img src="' + esc(fotoCop) + '" alt=""></div>' : '')
+    // 🆕 v7.347 (Franco: «nella prima pagina sotto al Hero scrivi il nome del sito web, e metti anche la solita frase che
+    //    abbiamo nella home») - l'indirizzo e la frase della home (`hero.tagline`), nella lingua della brochure
+    + '<div class="br-cop-piede"><div class="br-cop-sito">figurinesgorbions.it</div><div class="br-cop-frase">' + esc(t('hero.tagline')) + '</div></div>';
+  if (P.inPrima) {
+    pagine.push('<section class="br-pag br-copertina br-cop-con-sommario"><div class="br-cop-testa">' + testaCop + '</div>'
+      + '<div class="br-cop-sommario"><div class="br-som-titolo">' + (it ? 'Sommario' : 'Contents') + '</div>' + righe.map(rigaSom).join('') + '</div></section>');
+  } else {
+    pagine.push('<section class="br-pag br-copertina">' + testaCop + '</section>');
+  }
   for (let i = 0; i < P.pagSommario; i++) {
     const qui = righe.slice(i * P.F.righeSommario, (i + 1) * P.F.righeSommario);
     pagine.push('<section class="br-pag">'
       + (i ? '' : '<div class="br-som-titolo">' + (it ? 'Sommario' : 'Contents') + '</div>')
-      + qui.map(r => '<div class="br-som-riga' + (r.serie ? ' br-som-serie' : '') + '"><span>' + esc(r.nome) + '</span><span class="br-punti"></span><span>' + r.p + '</span></div>').join('')
+      + qui.map(rigaSom).join('')
       + piede(2 + i) + '</section>');
   }
   // 3 - le pagine delle tipologie
@@ -71712,10 +71796,17 @@ function _brHTML(P) {
       currentSection = b.s.k;
       colOra = b.s.col; righeOra = b.s.righe;
       return (b.titolo ? '<div class="br-sottotda">' + titoloTda(b.s, false) + '</div>' : '')
-        + '<div class="br-griglia" style="grid-row:span ' + b.righe + ';grid-template-columns:repeat(' + b.s.col + ',minmax(0,1fr));grid-template-rows:repeat(' + b.righe + ',minmax(0,1fr));">'
+        // 🔄 v7.356 - `span`: le righe del foglio che il blocco occupa (diverse dalle sue quando prosegue un foglio con altre R)
+        + '<div class="br-griglia" style="grid-row:span ' + (b.span || b.righe) + ';grid-template-columns:repeat(' + b.s.col + ',minmax(0,1fr));grid-template-rows:repeat(' + b.righe + ',minmax(0,1fr));">'
         + b.pezzi.map(cella).join('') + '</div>';
     }).join('');
-    pagine.push('<section class="br-pag"><div class="br-testa"><div class="br-serie">' + esc(_brNomeGruppo(primo.s.v, it)) + '</div>'
+    // 🆕 v7.356 (Franco: «All'interno di ogni pagina, il nome della serie scrivilo con lo stesso font così come il nome della
+    //    sottoserie e prima della sottoserie scrivi "Sottoserie"») - accanto alla serie, con lo stesso carattere, le
+    //    sottoserie degli articoli della pagina (nell'ordine in cui compaiono), precedute da «Sottoserie»
+    const ssPag = [];
+    fo.blocchi.forEach(b => b.pezzi.forEach(f => { const v = String(f.subseries || '').trim(); if (v && !ssPag.includes(v)) ssPag.push(v); }));
+    pagine.push('<section class="br-pag"><div class="br-testa"><div class="br-serie">' + esc(_brNomeGruppo(primo.s.v, it))
+      + (ssPag.length ? ' · ' + _parolaSottoserie() + ' ' + esc(ssPag.join(', ')) : '') + '</div>'   // la parola in un posto solo (v6.781)
       + '<div class="br-tda">' + titoloTda(primo.s, primo.segue) + '</div></div>'
       + '<div class="br-corpo" style="grid-template-rows:repeat(' + fo.R + ',minmax(0,1fr));">'
       + (fo.fotoSerie ? '<div class="br-foto-serie" style="grid-row:span ' + _BR_RIGHE_FOTO + ';"><img src="' + cloudinaryUrl(fo.fotoSerie.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" alt=""></div>' : '')
@@ -71735,7 +71826,17 @@ function _brCSS(F) {
     + '.br-pag{width:' + F.w + 'mm;height:' + F.h + 'mm;margin:8mm auto;background:#fff;color:#111;box-sizing:border-box;padding:' + mm(12) + ' ' + mm(11) + ' ' + mm(14) + ';position:relative;overflow:hidden;display:flex;flex-direction:column;'
       + 'font-family:var(--font-ui),sans-serif;box-shadow:0 2px 10px rgba(0,0,0,0.4);-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
     + '.br-copertina{align-items:center;justify-content:center;gap:' + mm(12) + ';}'
-    + '.br-titolo{font-size:' + mm(26) + ';font-weight:900;letter-spacing:0.08em;line-height:1;}'
+    // 🔄 v7.356 - «BROCHURE SGORBIONS» è il doppio di «SGORBIONS»: 26 → 13mm, così sta su una riga anche in A5
+    + '.br-titolo{font-size:' + mm(13) + ';font-weight:900;letter-spacing:0.08em;line-height:1;text-align:center;}'
+    // 🆕 v7.356 - la copertina in cima alla prima pagina, col sommario sotto (`P.inPrima`): la foto più bassa
+    + '.br-cop-con-sommario{justify-content:flex-start;align-items:stretch;gap:' + mm(6) + ';}'
+    + '.br-cop-testa{display:flex;flex-direction:column;align-items:center;gap:' + mm(5) + ';}'
+    + '.br-cop-con-sommario .br-cop-foto img{max-height:' + (F.h * 0.26).toFixed(0) + 'mm;}'
+    + '.br-cop-sommario{flex:1;min-height:0;overflow:hidden;}'
+    // 🆕 v7.356 (Franco: «Il tasto stampa/salva PDF fallo un pochino più stretto in modo che il pulsante chiudi riesci a
+    //    mettere sulla stessa riga») - i due tasti più stretti; dal telefono la scritta del caricamento va su una riga sua
+    + '#br-barra button{padding:0.45rem 0.9rem;font-size:0.85rem;white-space:nowrap;}'
+    + '@media (max-width:860px){#br-carico{flex:1 1 100%;text-align:center;}#br-carico:empty{display:none;}}'
     + '.br-cop-foto{flex:0 1 auto;max-height:70%;display:flex;justify-content:center;}'
     // 🔄 v7.347 - la foto 65% → 58% dell'altezza: sotto ci sono ora l'indirizzo del sito e la frase della home
     + '.br-cop-foto img{max-width:100%;max-height:' + (F.h * 0.58).toFixed(0) + 'mm;object-fit:contain;}'
