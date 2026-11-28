@@ -31,7 +31,7 @@
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <script src="js/email.min.js?v=6.791"></script>
-<link rel="stylesheet" href="css/style.css?v=7.354">
+<link rel="stylesheet" href="css/style.css?v=7.355">
 
 
 <style>
@@ -784,6 +784,13 @@ body:not(.wz-ripresa) #inv-linguetta { top: 80px; }
 /* 🆕 v7.347 - LA PAGINA «BROCHURE SGORBIONS» (`renderBrochure`): la domanda a due schede, i passi in riquadri, le serie
    come schede che si aprono, le tipologie e le opzioni come pillole che si accendono */
 #brochure-pagina { max-width: 900px; margin: 0 auto; }
+/* 🆕 v7.355 (Franco: «La pagina brochure sgorbions da mobile presenta sopra il titolo uno spazio molto grande e vuoto che
+   non serve a niente») - come la Classifica (v7.025): via i 56px di `.page` (nati per una barra `fixed`) e la prima
+   sezione parte a 1rem invece di 2,5 */
+@media (max-width: 860px) {
+  #page-brochure { padding-top: 0; }
+  #page-brochure > .section:first-child { padding-top: 1rem; }
+}
 .br-intro { color: var(--text); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.1rem; }
 .br-intro p { margin: 0 0 0.4rem; }
 .br-intro ol { margin: 0 0 0 1.4rem; }
@@ -7281,7 +7288,7 @@ di tutte le serie</button>
     <span id="sfoglia-album-conta" style="font-family:var(--font-ui);font-size:0.95rem;min-width:5rem;text-align:center;"></span>
   </div>
 </div>
-<script src="js/app.js?v=7.354"></script>
+<script src="js/app.js?v=7.355"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -7305,7 +7312,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v7.354'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v7.355'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
