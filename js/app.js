@@ -1,7 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
-// v7.352 - Modificati index.html (versione; via il riquadro usa e getta) e js/app.js. 📖 Brochure, A4: si parte da un
+// v7.353 - Modificati index.html (versione) e js/app.js. Console → 📖 Brochure: «Salva» anche dal telefono
+//          (`admin-anche-telefono`, la trentesima eccezione; Franco: «da telefonino non c'è tutto quello che è in console
+//          ma che sta anche fuori, sicuramente ha bisogno di essere salvato»).
+// v7.352 -Modificati index.html (versione; via il riquadro usa e getta) e js/app.js. 📖 Brochure, A4: si parte da un
 //          articolo in più per riga (Franco: «vorrei modificare i valori di default per la brochure delle seguenti TDA:
 //          Figurine per album, figurine con retro, trasferelli, carte olografiche, tatuaggi, spille e carte d'identità» …
 //          «rimangono invariati album bustine e altri articoli» … «intendevo dire di aumentare di 1. Ma io mi riferisco
@@ -32445,7 +32448,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v7.352';
+const JS_VERSION = 'v7.353';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -71330,7 +71333,9 @@ function renderAdminBrochure() {
     + _BR_CFG_COLONNE.map(c => '<th style="' + th + 'text-align:center;">' + esc(nomeCol(c)) + '</th>').join('') + '</tr>'
     + righe + '</table></div>'
     + '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">'
-    + '<button class="btn-primary btn-admin" onclick="salvaBrochureCfg()">' + (it ? 'Salva' : 'Save') + '</button></div>';
+    // 🔄 v7.353 (Franco: «da telefonino non c'è tutto quello che è in console ma che sta anche fuori, sicuramente ha
+    //    bisogno di essere salvato») - la sezione si vede dal telefono, quindi anche il suo Salva: la trentesima eccezione
+    + '<button class="btn-primary btn-admin admin-anche-telefono" onclick="salvaBrochureCfg()">' + (it ? 'Salva' : 'Save') + '</button></div>';
 }
 async function salvaBrochureCfg() {
   if (!currentUser?.isAdmin) return;
